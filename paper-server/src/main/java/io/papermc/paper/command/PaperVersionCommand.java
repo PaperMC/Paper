@@ -30,8 +30,8 @@ import org.bukkit.util.StringUtil;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class PaperVersionCommand {
-    public static final String DESCRIPTION = "Gets the version of this server including any plugins in use";
+public final class PaperVersionCommand {
+    static final String DESCRIPTION = "Gets the version of this server including any plugins in use";
 
     private static final Component NOT_RUNNING = Component.text()
         .append(Component.text("This server is not running any plugin by that name."))
@@ -45,24 +45,22 @@ public class PaperVersionCommand {
     private static final Component FAILED_TO_FETCH = Component.text("Could not fetch version information!", NamedTextColor.RED);
     private static final Component FETCHING = Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC);
 
-    private final VersionFetcher versionFetcher = CraftMagicNumbers.INSTANCE.getVersionFetcher();
-    private CompletableFuture<ComputedVersion> computedVersion = CompletableFuture.completedFuture(new ComputedVersion(Component.empty(), -1)); // Precompute-- someday move that stuff out of bukkit
+    private static final VersionFetcher versionFetcher = CraftMagicNumbers.INSTANCE.getVersionFetcher();
+    private static CompletableFuture<ComputedVersion> computedVersion = CompletableFuture.completedFuture(new ComputedVersion(Component.empty(), -1)); // Precompute-- someday move that stuff out of bukkit
 
     public static LiteralCommandNode<CommandSourceStack> create() {
-        final PaperVersionCommand command = new PaperVersionCommand();
-
         return Commands.literal("version")
             .requires(source -> source.getSender().hasPermission("bukkit.command.version"))
+            .executes(PaperVersionCommand::serverVersion)
             .then(Commands.argument("plugin", StringArgumentType.word())
-                .suggests(command::suggestPlugins)
-                .executes(command::pluginVersion))
-            .executes(command::serverVersion)
+                .suggests(PaperVersionCommand::suggestPlugins)
+                .executes(PaperVersionCommand::pluginVersion))
             .build();
     }
 
-    private int pluginVersion(final CommandContext<CommandSourceStack> context) {
+    private static int pluginVersion(final CommandContext<CommandSourceStack> context) {
         final CommandSender sender = context.getSource().getSender();
-        final String pluginName = context.getArgument("plugin", String.class).toLowerCase(Locale.ROOT);
+        final String pluginName = StringArgumentType.getString(context, "plugin").toLowerCase(Locale.ROOT);
 
         Plugin plugin = Bukkit.getPluginManager().getPlugin(pluginName);
         if (plugin == null) {
@@ -73,18 +71,18 @@ public class PaperVersionCommand {
         }
 
         if (plugin != null) {
-            this.sendPluginInfo(plugin, sender);
+            sendPluginInfo(plugin, sender);
+            return Command.SINGLE_SUCCESS;
         } else {
             sender.sendMessage(NOT_RUNNING);
+            return 0;
         }
-
-        return Command.SINGLE_SUCCESS;
     }
 
-    private CompletableFuture<Suggestions> suggestPlugins(final CommandContext<CommandSourceStack> context, final SuggestionsBuilder builder) {
+    private static CompletableFuture<Suggestions> suggestPlugins(final CommandContext<CommandSourceStack> context, final SuggestionsBuilder builder) {
         for (final Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
             final String name = plugin.getName();
-            if (StringUtil.startsWithIgnoreCase(name, builder.getRemainingLowerCase())) {
+            if (StringUtil.startsWithIgnoreCase(name, builder.getRemaining())) {
                 builder.suggest(name);
             }
         }
@@ -92,7 +90,7 @@ public class PaperVersionCommand {
         return CompletableFuture.completedFuture(builder.build());
     }
 
-    private void sendPluginInfo(final Plugin plugin, final CommandSender sender) {
+    private static void sendPluginInfo(final Plugin plugin, final CommandSender sender) {
         final PluginMeta meta = plugin.getPluginMeta();
 
         final TextComponent.Builder builder = Component.text()
@@ -129,12 +127,12 @@ public class PaperVersionCommand {
         return Component.join(PLAYER_JOIN_CONFIGURATION, names.stream().map(Component::text).toList()).color(NamedTextColor.GREEN);
     }
 
-    private int serverVersion(CommandContext<CommandSourceStack> context) {
+    public static int serverVersion(CommandContext<CommandSourceStack> context) {
         sendVersion(context.getSource().getSender());
         return Command.SINGLE_SUCCESS;
     }
 
-    private void sendVersion(final CommandSender sender) {
+    private static void sendVersion(final CommandSender sender) {
         final CompletableFuture<ComputedVersion> version = getVersionOrFetch();
         if (!version.isDone()) {
             sender.sendMessage(FETCHING);
@@ -150,24 +148,24 @@ public class PaperVersionCommand {
         });
     }
 
-    private CompletableFuture<ComputedVersion> getVersionOrFetch() {
-        if (!this.computedVersion.isDone()) {
-            return this.computedVersion;
+    private static CompletableFuture<ComputedVersion> getVersionOrFetch() {
+        if (!computedVersion.isDone()) {
+            return computedVersion;
         }
 
-        if (this.computedVersion.isCompletedExceptionally() || System.currentTimeMillis() - this.computedVersion.resultNow().computedTime() > this.versionFetcher.getCacheTime()) {
-            this.computedVersion = this.fetchVersionMessage();
+        if (computedVersion.isCompletedExceptionally() || System.currentTimeMillis() - computedVersion.resultNow().computedTime() > versionFetcher.getCacheTime()) {
+            computedVersion = fetchVersionMessage();
         }
 
-        return this.computedVersion;
+        return computedVersion;
     }
 
-    private CompletableFuture<ComputedVersion> fetchVersionMessage() {
+    private static CompletableFuture<ComputedVersion> fetchVersionMessage() {
        return CompletableFuture.supplyAsync(() -> {
            final Component message = Component.textOfChildren(
                Component.text(Bukkit.getVersionMessage(), NamedTextColor.WHITE),
                Component.newline(),
-               this.versionFetcher.getVersionMessage()
+               versionFetcher.getVersionMessage()
            );
 
            return new ComputedVersion(

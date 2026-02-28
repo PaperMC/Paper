@@ -1,38 +1,47 @@
 package io.papermc.paper.command.subcommands;
 
-import io.papermc.paper.command.PaperSubcommand;
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import io.papermc.paper.command.PaperCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftServer;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.framework.qual.DefaultQualifier;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
 import static net.kyori.adventure.text.format.NamedTextColor.RED;
 import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
 
-@DefaultQualifier(NonNull.class)
-public final class HeapDumpCommand implements PaperSubcommand {
-    @Override
-    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
-        this.dumpHeap(sender);
-        return true;
+public final class HeapDumpCommand {
+
+    public static LiteralArgumentBuilder<CommandSourceStack> create() {
+        return Commands.literal("heap")
+            .requires(PaperCommand.hasPermission("heap"))
+            .executes(context -> {
+                return dumpHeap(context.getSource().getSender());
+            });
     }
 
-    private void dumpHeap(final CommandSender sender) {
-        java.nio.file.Path dir = java.nio.file.Paths.get("./dumps");
-        String name = "heap-dump-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now());
+    private static int dumpHeap(final CommandSender sender) {
+        Path dir = Path.of("dumps");
+        String name = "heap-dump-" + PaperCommand.FILENAME_DATE_TIME_FORMATTER.format(LocalDateTime.now());
 
-        Command.broadcastCommandMessage(sender, text("Writing JVM heap data...", YELLOW));
+        sender.sendMessage(text("Writing JVM heap data...", YELLOW));
 
-        java.nio.file.Path file = CraftServer.dumpHeap(dir, name);
-        if (file != null) {
-            Command.broadcastCommandMessage(sender, text("Heap dump saved to " + file, GREEN));
+        Path path = CraftServer.dumpHeap(dir, name);
+        if (path != null) {
+            sender.sendMessage(
+                text("Heap dump saved to", GREEN)
+                    .appendSpace()
+                    .append(PaperCommand.asFriendlyPath(path))
+            );
+            return Command.SINGLE_SUCCESS;
         } else {
-            Command.broadcastCommandMessage(sender, text("Failed to write heap dump, see server log for details", RED));
+            sender.sendMessage(text("Failed to write heap dump, see server log for details", RED));
+            return 0;
         }
     }
 }
