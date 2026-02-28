@@ -154,7 +154,7 @@ public final class CraftItemFactory implements ItemFactory {
     public ItemStack createItemStack(String input) throws IllegalArgumentException {
         try {
             StringReader reader = new StringReader(input);
-            ItemParser.ItemResult arg = new ItemParser(CraftRegistry.getMinecraftRegistry()).parse(reader);
+            ItemParser.ItemResult arg = new ItemParser(CraftRegistry.getRegistryAccess()).parse(reader);
             Preconditions.checkArgument(!reader.canRead(), "Trailing input found when parsing ItemStack: %s", input);
 
             Item item = arg.item().value();
@@ -210,7 +210,7 @@ public final class CraftItemFactory implements ItemFactory {
         Preconditions.checkArgument(!itemStack.getType().isAir(), "ItemStack must not be air");
         itemStack = CraftItemStack.asCraftCopy(itemStack);
         CraftItemStack craft = (CraftItemStack) itemStack;
-        RegistryAccess registry = CraftRegistry.getMinecraftRegistry();
+        RegistryAccess registry = CraftRegistry.getRegistryAccess();
         Optional<HolderSet.Named<Enchantment>> optional = (allowTreasures) ? Optional.empty() : registry.lookupOrThrow(Registries.ENCHANTMENT).get(EnchantmentTags.IN_ENCHANTING_TABLE);
         return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(source, craft.handle, level, registry, optional));
     }

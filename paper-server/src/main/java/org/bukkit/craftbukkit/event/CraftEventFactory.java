@@ -1825,7 +1825,7 @@ public class CraftEventFactory {
     public static BlockDispenseLootEvent callBlockDispenseLootEvent(ServerLevel level, BlockPos pos, net.minecraft.world.entity.player.Player player, List<ItemStack> rewardLoot, LootTable lootTable) {
         List<org.bukkit.inventory.ItemStack> craftItemStacks = rewardLoot.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
 
-        BlockDispenseLootEvent event = new BlockDispenseLootEvent((player == null) ? null : (Player) player.getBukkitEntity(), CraftBlock.at(level, pos), craftItemStacks, lootTable.craftLootTable);
+        BlockDispenseLootEvent event = new BlockDispenseLootEvent((player == null) ? null : (Player) player.getBukkitEntity(), CraftBlock.at(level, pos), craftItemStacks, CraftLootTable.minecraftToBukkit(lootTable));
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
@@ -1992,7 +1992,7 @@ public class CraftEventFactory {
         Entity entity = lootInfo.getOptionalParameter(LootContextParams.THIS_ENTITY);
         List<org.bukkit.inventory.ItemStack> bukkitLoot = loot.stream().map(CraftItemStack::asCraftMirror).collect(Collectors.toCollection(ArrayList::new));
 
-        LootGenerateEvent event = new LootGenerateEvent(world, (entity != null ? entity.getBukkitEntity() : null), inventory.getOwner(), lootTable.craftLootTable, CraftLootTable.convertContext(lootInfo), bukkitLoot, plugin);
+        LootGenerateEvent event = new LootGenerateEvent(world, (entity != null ? entity.getBukkitEntity() : null), inventory.getOwner(), CraftLootTable.minecraftToBukkit(lootTable), CraftLootTable.convertContext(lootInfo), bukkitLoot, plugin);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }

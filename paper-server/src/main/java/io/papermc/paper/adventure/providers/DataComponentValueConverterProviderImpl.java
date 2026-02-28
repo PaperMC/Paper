@@ -34,7 +34,7 @@ public class DataComponentValueConverterProviderImpl implements DataComponentVal
     }
 
     private static <T> RegistryOps<T> createOps(final DynamicOps<T> delegate) {
-        return CraftRegistry.getMinecraftRegistry().createSerializationContext(delegate);
+        return CraftRegistry.getRegistryAccess().createSerializationContext(delegate);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

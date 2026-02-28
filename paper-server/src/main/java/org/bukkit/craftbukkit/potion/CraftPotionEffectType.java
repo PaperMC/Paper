@@ -46,7 +46,7 @@ public class CraftPotionEffectType extends PotionEffectType implements Holderabl
 
     public CraftPotionEffectType(final Holder<MobEffect> holder) {
         this.holder = holder;
-        this.id = Suppliers.memoize(() -> CraftRegistry.getMinecraftRegistry(Registries.MOB_EFFECT).getId(this.getHandle()) + 1);
+        this.id = Suppliers.memoize(() -> CraftRegistry.getRegistry(Registries.MOB_EFFECT).getId(this.getHandle()) + 1);
     }
 
     @Override

@@ -15,6 +15,8 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import io.papermc.paper.configuration.ServerConfiguration;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Warning.WarningState;
 import org.bukkit.advancement.Advancement;
@@ -2575,8 +2577,10 @@ public final class Bukkit {
      *
      * @param key the name of the LootTable
      * @return the LootTable, or null if no LootTable is found with that name
+     * @deprecated loot table is now a proper registry, use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#LOOT_TABLE}
      */
     @Nullable
+    @Deprecated(since = "1.21.11")
     public static LootTable getLootTable(@NotNull NamespacedKey key) {
         return server.getLootTable(key);
     }

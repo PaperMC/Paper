@@ -18,7 +18,7 @@ public record PaperJukeboxPlayable(
     @Override
     public JukeboxSong jukeboxSong() {
         return this.impl.song()
-            .unwrap(CraftRegistry.getMinecraftRegistry())
+            .unwrap(CraftRegistry.getRegistryAccess())
             .map(CraftJukeboxSong::minecraftHolderToBukkit)
             .orElseThrow();
     }

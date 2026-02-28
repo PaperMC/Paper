@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import io.papermc.generator.rewriter.registration.PaperPatternSourceSetRewriter;
 import io.papermc.generator.rewriter.registration.PatternSourceSetRewriter;
 import io.papermc.generator.types.SourceGenerator;
+import io.papermc.generator.utils.MergedRegistryProvider;
 import io.papermc.generator.utils.experimental.ExperimentalCollector;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.util.Util;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.HolderLookup;
@@ -64,15 +66,15 @@ public class Main implements Callable<Integer> {
     @CommandLine.Option(names = {"--side"}, required = true)
     String side;
 
-    @CommandLine.Option(names = {"--bootstrap-tags"})
-    boolean tagBootstrap;
+    @CommandLine.Option(names = {"--bootstrap-resources"})
+    boolean loadResources;
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public static RegistryAccess.@MonotonicNonNull Frozen REGISTRY_ACCESS;
+    public static HolderLookup.Provider REGISTRIES;
     public static @MonotonicNonNull Map<TagKey<?>, String> EXPERIMENTAL_TAGS;
 
-    public static CompletableFuture<Void> bootStrap(boolean withTags) {
+    public static CompletableFuture<Void> bootStrap(boolean withResources) {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         Bootstrap.validate();
@@ -90,8 +92,8 @@ public class Main implements Callable<Integer> {
         List<HolderLookup.RegistryLookup<?>> staticAndWorldgenLookups = Stream.concat(worldGenLayer.stream(), frozenWorldgenRegistries.listRegistries()).toList();
         RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES);
         layers = layers.replaceFrom(RegistryLayer.DIMENSIONS, dimensionRegistries);
-        REGISTRY_ACCESS = layers.compositeAccess().freeze();
-        if (withTags) {
+        REGISTRIES = layers.compositeAccess().freeze();
+        if (withResources) {
             return ReloadableServerResources.loadResources(
                 resourceManager,
                 layers,
@@ -107,6 +109,7 @@ public class Main implements Callable<Integer> {
                 }
             }).thenAccept(resources -> {
                 resources.updateStaticRegistryTags();
+                REGISTRIES = new MergedRegistryProvider(REGISTRIES, resources.fullRegistries().lookup(), Set.of(Registries.LOOT_TABLE));
                 EXPERIMENTAL_TAGS = ExperimentalCollector.collectTags(resourceManager);
             });
         } else {
@@ -117,7 +120,7 @@ public class Main implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        bootStrap(this.tagBootstrap).join();
+        bootStrap(this.loadResources).join();
 
         try {
             if (this.isRewrite) {

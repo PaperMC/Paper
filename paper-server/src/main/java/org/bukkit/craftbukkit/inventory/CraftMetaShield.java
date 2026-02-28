@@ -250,7 +250,7 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
 
     private static Banner getBlockState(DyeColor color) {
         Material stateMaterial = CraftMetaShield.shieldToBannerHack(color);
-        return (Banner) CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), BlockPos.ZERO, stateMaterial, null);
+        return (Banner) CraftBlockStates.getBlockState(CraftRegistry.getRegistryAccess(), BlockPos.ZERO, stateMaterial, null);
     }
 
     @Override

@@ -51,6 +51,6 @@ public class CraftArt extends OldEnumHolderable<Art, PaintingVariant> implements
 
     @Override
     public int getId() {
-        return CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).getId(this.getHandle());
+        return CraftRegistry.getRegistry(Registries.PAINTING_VARIANT).getId(this.getHandle());
     }
 }

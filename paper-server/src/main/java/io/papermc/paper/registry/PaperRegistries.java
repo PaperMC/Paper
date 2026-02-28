@@ -25,6 +25,7 @@ import io.papermc.paper.registry.data.dialog.PaperDialogRegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.world.LootTables;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -50,6 +51,7 @@ import org.bukkit.craftbukkit.CraftFluid;
 import org.bukkit.craftbukkit.CraftGameEvent;
 import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.CraftJukeboxSong;
+import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.attribute.CraftAttribute;
@@ -92,6 +94,7 @@ import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.jspecify.annotations.Nullable;
@@ -142,6 +145,7 @@ public final class PaperRegistries {
             start(Registries.PIG_VARIANT, RegistryKey.PIG_VARIANT).craft(Pig.Variant.class, CraftPig.CraftVariant::new).writable(PaperPigVariantRegistryEntry.PaperBuilder::new),
             start(Registries.ZOMBIE_NAUTILUS_VARIANT, RegistryKey.ZOMBIE_NAUTILUS_VARIANT).craft(ZombieNautilus.Variant.class, CraftZombieNautilus.CraftVariant::new).writable(PaperZombieNautilusVariantRegistryEntry.PaperBuilder::new),
             start(Registries.DIALOG, RegistryKey.DIALOG).craft(Dialog.class, PaperDialog::new, true).writable(PaperDialogRegistryEntry.PaperBuilder::new),
+            start(Registries.LOOT_TABLE, RegistryKey.LOOT_TABLE).craft(LootTables.class, CraftLootTable::new, true).build(),
 
             // api-only
             start(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE).apiOnly(PaperSimpleRegistry::entityType),

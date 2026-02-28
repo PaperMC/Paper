@@ -1,17 +1,14 @@
 package org.bukkit.support;
 
-import static org.mockito.Mockito.*;
 import com.google.common.base.Preconditions;
 import java.util.logging.Logger;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import org.bukkit.Material;
 import org.bukkit.Server;
-import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemFactory;
 import org.bukkit.craftbukkit.tag.CraftBlockTag;
@@ -22,6 +19,11 @@ import org.bukkit.craftbukkit.tag.CraftItemTag;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Versioning;
+
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 public final class DummyServerHelper {
 
@@ -41,9 +43,6 @@ public final class DummyServerHelper {
         when(instance.getUnsafe()).then(mock -> CraftMagicNumbers.INSTANCE);
 
         when(instance.createBlockData(any(Material.class))).then(mock -> CraftBlockData.newData(((Material) mock.getArgument(0)).asBlockType(), null));
-
-        when(instance.getLootTable(any())).then(mock -> new CraftLootTable(mock.getArgument(0),
-                RegistryHelper.context().datapack().fullRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(mock.getArgument(0))))));
 
         when(instance.getTag(any(), any(), any())).then(mock -> {
             String registry = mock.getArgument(0);

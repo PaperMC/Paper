@@ -259,7 +259,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     @Override
     public ArgumentType<BlockState> blockState() {
         return this.wrap(BlockStateArgument.block(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
-            final BlockState snapshot = CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), BlockPos.ZERO, result.getState(), null);
+            final BlockState snapshot = CraftBlockStates.getBlockState(CraftRegistry.getRegistryAccess(), BlockPos.ZERO, result.getState(), null);
             if (result.tag != null && snapshot instanceof final CraftBlockEntityState<?> blockEntitySnapshot) {
                 blockEntitySnapshot.loadData(result.tag);
             }

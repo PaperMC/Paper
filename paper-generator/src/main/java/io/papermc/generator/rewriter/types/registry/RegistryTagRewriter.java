@@ -11,6 +11,7 @@ import io.papermc.typewriter.SourceFile;
 import io.papermc.typewriter.replace.SearchMetadata;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
 import java.util.Iterator;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
@@ -56,7 +57,7 @@ public class RegistryTagRewriter<T> extends SearchReplaceRewriter {
 
     @Override
     protected void insert(SearchMetadata metadata, StringBuilder builder) {
-        Registry<T> registry = Main.REGISTRY_ACCESS.lookupOrThrow(this.registryKey);
+        HolderLookup.RegistryLookup<T> registry = Main.REGISTRIES.lookupOrThrow(this.registryKey);
         Iterator<? extends TagKey<T>> keyIterator = registry.listTagIds().sorted(Formatting.TAG_ORDER).iterator();
 
         while (keyIterator.hasNext()) {

@@ -51,7 +51,7 @@ public final class ConfigSerializationUtil {
     }
 
     public static <T> HolderSet<T> getHolderSet(Object from, ResourceKey<Registry<T>> registryKey) {
-        Registry<T> registry = CraftRegistry.getMinecraftRegistry(registryKey);
+        Registry<T> registry = CraftRegistry.getRegistry(registryKey);
         if (from instanceof String parseString && parseString.startsWith("#")) { // Tag
             parseString = parseString.substring(1);
             Identifier key = Identifier.tryParse(parseString);

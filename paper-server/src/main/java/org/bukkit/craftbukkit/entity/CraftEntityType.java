@@ -18,7 +18,7 @@ public class CraftEntityType {
     public static EntityType minecraftToBukkit(net.minecraft.world.entity.EntityType<?> minecraft) {
         Preconditions.checkArgument(minecraft != null);
 
-        net.minecraft.core.Registry<net.minecraft.world.entity.EntityType<?>> registry = CraftRegistry.getMinecraftRegistry(Registries.ENTITY_TYPE);
+        net.minecraft.core.Registry<net.minecraft.world.entity.EntityType<?>> registry = CraftRegistry.getRegistry(Registries.ENTITY_TYPE);
         EntityType bukkit = Registry.ENTITY_TYPE.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().identifier()));
 
         Preconditions.checkArgument(bukkit != null);
@@ -29,14 +29,14 @@ public class CraftEntityType {
     private static final java.util.Map<EntityType, net.minecraft.resources.ResourceKey<net.minecraft.world.entity.EntityType<?>>> KEY_CACHE = java.util.Collections.synchronizedMap(new java.util.EnumMap<>(EntityType.class)); // Paper
     public static net.minecraft.world.entity.EntityType<?> bukkitToMinecraft(EntityType bukkit) {
         Preconditions.checkArgument(bukkit != null);
-        return CraftRegistry.getMinecraftRegistry(Registries.ENTITY_TYPE)
+        return CraftRegistry.getRegistry(Registries.ENTITY_TYPE)
                 .getOptional(KEY_CACHE.computeIfAbsent(bukkit, type -> net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, CraftNamespacedKey.toMinecraft(type.getKey())))).orElseThrow();
     }
 
     public static Holder<net.minecraft.world.entity.EntityType<?>> bukkitToMinecraftHolder(EntityType bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        net.minecraft.core.Registry<net.minecraft.world.entity.EntityType<?>> registry = CraftRegistry.getMinecraftRegistry(Registries.ENTITY_TYPE);
+        net.minecraft.core.Registry<net.minecraft.world.entity.EntityType<?>> registry = CraftRegistry.getRegistry(Registries.ENTITY_TYPE);
 
         if (registry.wrapAsHolder(CraftEntityType.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<net.minecraft.world.entity.EntityType<?>> holder) {
             return holder;

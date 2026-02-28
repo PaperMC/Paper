@@ -51,7 +51,8 @@ public class NormalExtension extends BaseExtension {
                 });
 
         RegistryAccess registry = mock(withSettings().stubOnly().defaultAnswer(NormalExtension.DEFAULT_ANSWER));
-        CraftRegistry.setMinecraftRegistry(registry);
+        CraftRegistry.setRegistryAccess(registry);
+        CraftRegistry.setReloadableRegistries(RegistryHelper.context().datapack().fullRegistries());
     }
 
     @Override

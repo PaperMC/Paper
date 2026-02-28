@@ -27,7 +27,7 @@ public final class CraftMapCursor {
 
         @Override
         public byte getValue() {
-            return (byte) CraftRegistry.getMinecraftRegistry(Registries.MAP_DECORATION_TYPE).getId(this.getHandle());
+            return (byte) CraftRegistry.getRegistry(Registries.MAP_DECORATION_TYPE).getId(this.getHandle());
         }
     }
 }
