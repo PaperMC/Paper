@@ -2,6 +2,7 @@ package io.papermc.paper.registry;
 
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -92,6 +93,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.VillagerProfessionKeys
      */
     RegistryKey<Villager.Profession> VILLAGER_PROFESSION = create("villager_profession");
+    /**
+     * Built-in registry for poi types.
+     * @see io.papermc.paper.registry.keys.PoiTypeKeys
+     */
+    RegistryKey<PoiType> POINT_OF_INTEREST_TYPE = create("point_of_interest_type");
     /**
      * Built-in registry for villager types.
      * @see io.papermc.paper.registry.keys.VillagerTypeKeys

@@ -1,5 +1,7 @@
 package org.bukkit;
 
+import io.papermc.paper.entity.poi.PoiSearchResult;
+import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import java.io.File;
 import java.nio.file.Path;
@@ -43,6 +45,7 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -4290,6 +4293,69 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     default Location locateNearestBiome(@NotNull Location origin, @NotNull Biome biome, int radius, int step) {
         return java.util.Optional.ofNullable(this.locateNearestBiome(origin, radius, step, step, biome)).map(BiomeSearchResult::getLocation).orElse(null);
     }
+
+    /**
+     * Finds the nearest point of interest closest to the given location
+     * without any occupancy restriction.
+     *
+     * @param origin where to start looking for a new point of interest at
+     * @param poiType the poi type to find
+     * @param radius the radius
+     * @return a location at the nearest PoiType or {@code null} if no poi was found
+     */
+    @Nullable
+    default Location locateNearestPoi(@NotNull Location origin, @NotNull PoiType poiType, @Positive int radius) {
+        return this.locateNearestPoi(origin, poiType, radius, PoiType.Occupancy.ANY);
+    }
+
+    /**
+     * Finds the nearest point of interest closest to the given location.
+     * <p>
+     * {@link PoiType} that return {@code false} for {@link PoiType#hasOccupants()}
+     * may not behave as expected for given occupancies other than
+     * {@link PoiType.Occupancy#ANY}.
+     *
+     * @param origin where to start looking for a new point of interest at
+     * @param poiType the poi type to find
+     * @param radius the radius
+     * @param occupancy the current required occupancy of the point of interest
+     * @return a location at the nearest PoiType or {@code null} if no poi was found
+     */
+    @Nullable
+    Location locateNearestPoi(@NotNull Location origin, @NotNull PoiType poiType, @Positive int radius, @NotNull PoiType.Occupancy occupancy);
+
+    /**
+     * Finds all valid {@link PoiType} in the provided radius and returns them
+     * in a list format without any occupancy restriction.
+     *
+     * @param origin the center point of the radius
+     * @param poiTypePredicate the predicate to test whether a PoiType
+     *                         can be collected into the result
+     * @param radius           the radius
+     * @return a list of search results containing all found Poi's in the range
+     */
+    @NotNull
+    default List<PoiSearchResult> locateAllPoiInRange(@NotNull Location origin, @NotNull Predicate<PoiType> poiTypePredicate, @Positive int radius) {
+        return this.locateAllPoiInRange(origin, poiTypePredicate, radius, PoiType.Occupancy.ANY);
+    }
+
+    /**
+     * Finds all valid {@link PoiType} in the provided radius and returns them
+     * in a list format.
+     * <p>
+     * {@link PoiType} that return false for {@link PoiType#hasOccupants()}
+     * may not behave as expected for given occupancies other than
+     * {@link PoiType.Occupancy#ANY}.
+     *
+     * @param origin the center point of the radius
+     * @param poiTypePredicate the predicate to test whether a PoiType
+     *                         can be collected into the result
+     * @param radius           the radius
+     * @param occupancy the current required occupancy of the point of interest
+     * @return a list of search results containing all found Poi's in the range
+     */
+    @NotNull
+    List<PoiSearchResult> locateAllPoiInRange(@NotNull Location origin, @NotNull Predicate<PoiType> poiTypePredicate, @Positive int radius, @NotNull PoiType.Occupancy occupancy);
 
     /**
      * Gets the coordinate scaling of this world.

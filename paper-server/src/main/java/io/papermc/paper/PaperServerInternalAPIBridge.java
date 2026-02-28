@@ -22,6 +22,9 @@ import org.bukkit.GameRule;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.block.CraftBiome;
+import io.papermc.paper.entity.poi.PaperPoiType;
+import io.papermc.paper.entity.poi.PoiType;
+import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
@@ -60,6 +63,11 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
             fallLocation,
             (float) mob.fallDistance
         );
+    }
+
+    @Override
+    public PoiType.Occupancy createOccupancy(final String enumNameEntry) {
+        return new PaperPoiType.PaperOccupancy(PoiManager.Occupancy.valueOf(enumNameEntry));
     }
 
     @Override
