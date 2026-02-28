@@ -15,7 +15,6 @@ import com.mojang.serialization.JavaOps;
 import com.mojang.serialization.JsonOps;
 import io.papermc.paper.adventure.AdventureCodecs;
 import io.papermc.paper.entity.EntitySerializationFlag;
-import io.papermc.paper.plugin.bytecode.EventToInterfaceMigration;
 import io.papermc.paper.pluginremap.reflect.ReflectionRemapper;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.File;
