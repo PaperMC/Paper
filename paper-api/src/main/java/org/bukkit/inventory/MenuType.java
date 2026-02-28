@@ -1,5 +1,6 @@
 package org.bukkit.inventory;
 
+import io.papermc.paper.registry.RegistryElement;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
@@ -29,7 +30,7 @@ import org.jspecify.annotations.Nullable;
  */
 @NullMarked
 @ApiStatus.Experimental
-public interface MenuType extends Keyed, io.papermc.paper.world.flag.FeatureDependant { // Paper - make FeatureDependant
+public interface MenuType extends RegistryElement<MenuType>, Keyed, io.papermc.paper.world.flag.FeatureDependant { // Paper - make FeatureDependant
 
     /**
      * A MenuType which represents a chest with 1 row.

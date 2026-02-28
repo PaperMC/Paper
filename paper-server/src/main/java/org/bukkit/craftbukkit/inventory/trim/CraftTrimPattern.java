@@ -10,7 +10,7 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftTrimPattern extends HolderableBase<net.minecraft.world.item.equipment.trim.TrimPattern> implements TrimPattern {
+public class CraftTrimPattern extends HolderableBase<net.minecraft.world.item.equipment.trim.TrimPattern, TrimPattern> implements TrimPattern {
 
     public static TrimPattern minecraftHolderToBukkit(Holder<net.minecraft.world.item.equipment.trim.TrimPattern> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.TRIM_PATTERN);

@@ -1,13 +1,13 @@
 package org.bukkit.craftbukkit.generator.structure;
 
-import io.papermc.paper.util.Holderable;
+import io.papermc.paper.util.HolderableElement;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.generator.structure.StructureType;
 
-public class CraftStructureType extends StructureType implements Holderable<net.minecraft.world.level.levelgen.structure.StructureType<?>> {
+public class CraftStructureType extends StructureType implements HolderableElement<net.minecraft.world.level.levelgen.structure.StructureType<?>, StructureType> {
 
     public static StructureType minecraftToBukkit(net.minecraft.world.level.levelgen.structure.StructureType<?> minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.STRUCTURE_TYPE);
@@ -30,21 +30,21 @@ public class CraftStructureType extends StructureType implements Holderable<net.
 
     @Override
     public NamespacedKey getKey() {
-        return Holderable.super.getKey();
+        return HolderableElement.super.getKey();
     }
 
     @Override
     public int hashCode() {
-        return Holderable.super.implHashCode();
+        return HolderableElement.super.implHashCode();
     }
 
     @Override
     public boolean equals(final Object obj) {
-        return Holderable.super.implEquals(obj);
+        return HolderableElement.super.implEquals(obj);
     }
 
     @Override
     public String toString() {
-        return Holderable.super.implToString();
+        return HolderableElement.super.implToString();
     }
 }
