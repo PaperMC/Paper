@@ -165,7 +165,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see EntityType
      */
-    Registry<EntityType> ENTITY_TYPE = registryFor(RegistryKey.ENTITY_TYPE);
+    Registry<EntityType<?>> ENTITY_TYPE = registryFor(RegistryKey.ENTITY_TYPE);
     /**
      * Server instruments.
      *
