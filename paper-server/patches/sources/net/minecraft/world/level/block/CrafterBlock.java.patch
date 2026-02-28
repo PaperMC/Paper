@@ -1,0 +1,68 @@
+--- a/net/minecraft/world/level/block/CrafterBlock.java
++++ b/net/minecraft/world/level/block/CrafterBlock.java
+@@ -155,6 +_,13 @@
+             } else {
+                 RecipeHolder<CraftingRecipe> pickedRecipe = recipe.get();
+                 ItemStack results = pickedRecipe.value().assemble(var11);
++                // CraftBukkit start
++                org.bukkit.event.block.CrafterCraftEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callCrafterCraftEvent(pos, level, results, recipeHolder);
++                if (event.isCancelled()) {
++                    return;
++                }
++                results = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getResult());
++                // CraftBukkit end
+                 if (results.isEmpty()) {
+                     level.levelEvent(LevelEvent.SOUND_CRAFTER_FAIL, pos, 0);
+                 } else {
+@@ -196,7 +_,25 @@
+         Container into = HopperBlockEntity.getContainerAt(level, pos.relative(direction));
+         ItemStack remaining = results.copy();
+         if (into != null && (into instanceof CrafterBlockEntity || results.getCount() > into.getMaxStackSize(results))) {
++            // CraftBukkit start - InventoryMoveItemEvent
++            org.bukkit.craftbukkit.inventory.CraftItemStack oitemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(remaining);
++
++            org.bukkit.inventory.Inventory destinationInventory;
++            // Have to special case large chests as they work oddly
++            if (into instanceof net.minecraft.world.CompoundContainer compoundContainer) {
++                destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest(compoundContainer);
++            } else {
++                destinationInventory = into.getOwner().getInventory();
++            }
++
++            org.bukkit.event.inventory.InventoryMoveItemEvent event = new org.bukkit.event.inventory.InventoryMoveItemEvent(blockEntity.getOwner().getInventory(), oitemstack, destinationInventory, true);
++            level.getCraftServer().getPluginManager().callEvent(event);
++            remaining = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
+             while (!remaining.isEmpty()) {
++                if (event.isCancelled()) {
++                    break;
++                }
++                // CraftBukkit end
+                 ItemStack copy = remaining.copyWithCount(1);
+                 ItemStack itemStack = HopperBlockEntity.addItem(blockEntity, into, copy, direction.getOpposite());
+                 if (!itemStack.isEmpty()) {
+@@ -206,7 +_,25 @@
+                 remaining.shrink(1);
+             }
+         } else if (into != null) {
++            // CraftBukkit start - InventoryMoveItemEvent
++            org.bukkit.craftbukkit.inventory.CraftItemStack oitemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(remaining);
++
++            org.bukkit.inventory.Inventory destinationInventory;
++            // Have to special case large chests as they work oddly
++            if (into instanceof net.minecraft.world.CompoundContainer compoundContainer) {
++                destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest(compoundContainer);
++            } else {
++                destinationInventory = into.getOwner().getInventory();
++            }
++
++            org.bukkit.event.inventory.InventoryMoveItemEvent event = new org.bukkit.event.inventory.InventoryMoveItemEvent(blockEntity.getOwner().getInventory(), oitemstack, destinationInventory, true);
++            level.getCraftServer().getPluginManager().callEvent(event);
++            remaining = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
+             while (!remaining.isEmpty()) {
++                if (event.isCancelled()) {
++                    break;
++                }
++                // CraftBukkit end
+                 int oldSize = remaining.getCount();
+                 remaining = HopperBlockEntity.addItem(blockEntity, into, remaining, direction.getOpposite());
+                 if (oldSize == remaining.getCount()) {

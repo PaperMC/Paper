@@ -1,0 +1,71 @@
+--- a/net/minecraft/world/level/block/VineBlock.java
++++ b/net/minecraft/world/level/block/VineBlock.java
+@@ -166,7 +_,7 @@
+     @Override
+     protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+         if (level.getGameRules().get(GameRules.SPREAD_VINES)) {
+-            if (random.nextInt(4) == 0) {
++            if (random.nextFloat() < (level.spigotConfig.vineModifier / (100.0F * 4))) { // Spigot - SPIGOT-7159: Better modifier resolution
+                 Direction testDirection = Direction.getRandom(random);
+                 BlockPos abovePos = pos.above();
+                 if (testDirection.getAxis().isHorizontal() && !state.getValue(getPropertyForFace(testDirection))) {
+@@ -180,30 +_,31 @@
+                             boolean ccwHasConnectingFace = state.getValue(getPropertyForFace(ccwDirection));
+                             BlockPos cwTestPos = testPos.relative(cwDirection);
+                             BlockPos ccwTestPos = testPos.relative(ccwDirection);
++                            // CraftBukkit start - Call BlockSpreadEvent
++                            BlockPos source = pos;
+                             if (cwHasConnectingFace && isAcceptableNeighbour(level, cwTestPos, cwDirection)) {
+-                                level.setBlock(testPos, this.defaultBlockState().setValue(getPropertyForFace(cwDirection), true), Block.UPDATE_CLIENTS);
++                                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, testPos, this.defaultBlockState().setValue(getPropertyForFace(cwDirection), true), Block.UPDATE_CLIENTS);
+                             } else if (ccwHasConnectingFace && isAcceptableNeighbour(level, ccwTestPos, ccwDirection)) {
+-                                level.setBlock(testPos, this.defaultBlockState().setValue(getPropertyForFace(ccwDirection), true), Block.UPDATE_CLIENTS);
++                                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, testPos, this.defaultBlockState().setValue(getPropertyForFace(ccwDirection), true), Block.UPDATE_CLIENTS);
+                             } else {
+                                 Direction opposite = testDirection.getOpposite();
+                                 if (cwHasConnectingFace && level.isEmptyBlock(cwTestPos) && isAcceptableNeighbour(level, pos.relative(cwDirection), opposite)) {
+-                                    level.setBlock(cwTestPos, this.defaultBlockState().setValue(getPropertyForFace(opposite), true), Block.UPDATE_CLIENTS);
+-                                } else if (ccwHasConnectingFace
+-                                    && level.isEmptyBlock(ccwTestPos)
+-                                    && isAcceptableNeighbour(level, pos.relative(ccwDirection), opposite)) {
+-                                    level.setBlock(ccwTestPos, this.defaultBlockState().setValue(getPropertyForFace(opposite), true), Block.UPDATE_CLIENTS);
++                                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, cwTestPos, this.defaultBlockState().setValue(getPropertyForFace(opposite), true), Block.UPDATE_CLIENTS);
++                                } else if (ccwHasConnectingFace && level.isEmptyBlock(ccwTestPos) && isAcceptableNeighbour(level, pos.relative(ccwDirection), opposite)) {
++                                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, ccwTestPos, this.defaultBlockState().setValue(getPropertyForFace(opposite), true), Block.UPDATE_CLIENTS);
+                                 } else if (random.nextFloat() < 0.05 && isAcceptableNeighbour(level, testPos.above(), Direction.UP)) {
+-                                    level.setBlock(testPos, this.defaultBlockState().setValue(UP, true), Block.UPDATE_CLIENTS);
++                                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, testPos, this.defaultBlockState().setValue(UP, true), Block.UPDATE_CLIENTS);
+                                 }
++                                // CraftBukkit end
+                             }
+                         } else if (isAcceptableNeighbour(level, testPos, testDirection)) {
+-                            level.setBlock(pos, state.setValue(getPropertyForFace(testDirection), true), Block.UPDATE_CLIENTS);
++                            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, state.setValue(VineBlock.getPropertyForFace(testDirection), true), Block.UPDATE_CLIENTS); // CraftBukkit
+                         }
+                     }
+                 } else {
+                     if (testDirection == Direction.UP && pos.getY() < level.getMaxY()) {
+                         if (this.canSupportAtFace(level, pos, testDirection)) {
+-                            level.setBlock(pos, state.setValue(UP, true), Block.UPDATE_CLIENTS);
++                            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, state.setValue(UP, true), Block.UPDATE_CLIENTS); // CraftBukkit
+                             return;
+                         }
+ 
+@@ -221,7 +_,7 @@
+                             }
+ 
+                             if (this.hasHorizontalConnection(aboveState)) {
+-                                level.setBlock(abovePos, aboveState, Block.UPDATE_CLIENTS);
++                                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, abovePos, aboveState, Block.UPDATE_CLIENTS); // CraftBukkit
+                             }
+ 
+                             return;
+@@ -235,7 +_,7 @@
+                             BlockState before = belowState.isAir() ? this.defaultBlockState() : belowState;
+                             BlockState after = this.copyRandomFaces(state, before, random);
+                             if (before != after && this.hasHorizontalConnection(after)) {
+-                                level.setBlock(belowPos, after, Block.UPDATE_CLIENTS);
++                                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, belowPos, after, Block.UPDATE_CLIENTS); // CraftBukkit
+                             }
+                         }
+                     }

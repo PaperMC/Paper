@@ -1,0 +1,99 @@
+--- a/net/minecraft/world/level/block/LayeredCauldronBlock.java
++++ b/net/minecraft/world/level/block/LayeredCauldronBlock.java
+@@ -90,39 +_,71 @@
+         final InsideBlockEffectApplier effectApplier,
+         final boolean isPrecise
+     ) {
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         if (level instanceof ServerLevel serverLevel) {
+             BlockPos blockPos = pos.immutable();
+             effectApplier.runBefore(InsideBlockEffectType.EXTINGUISH, e -> {
+-                if (e.isOnFire() && e.mayInteract(serverLevel, blockPos)) {
+-                    this.handleEntityOnFireInside(state, level, blockPos);
++                if (e.isOnFire() && (entity instanceof net.minecraft.world.entity.player.Player || serverLevel.getGameRules().get(net.minecraft.world.level.gamerules.GameRules.MOB_GRIEFING)) && e.mayInteract(serverLevel, blockPos)) { // Paper - Fixes MC-248588
++                    // Paper start - cauldron level change event
++                    if (this.handleEntityOnFireInside(state, level, blockPos, e)) { // Paper - track entity
++                        InsideBlockEffectType.EXTINGUISH.effect().affect(e, blockPos); // apply extinguishing if event was not cancelled.
++                    }
++                    // Paper end - cauldron level change event
+                 }
+             });
+         }
+ 
+-        effectApplier.apply(InsideBlockEffectType.EXTINGUISH);
++        // effectApplier.apply(InsideBlockEffectType.EXTINGUISH); // Paper - manually applied above - cauldron level change event - delay to not extinguish when event is cancelled
+     }
+ 
+-    private void handleEntityOnFireInside(final BlockState state, final Level level, final BlockPos pos) {
++    // CraftBukkit start
++    private boolean handleEntityOnFireInside(final BlockState state, final Level level, final BlockPos pos, @org.jspecify.annotations.Nullable Entity entity) {
+         if (this.precipitationType == Biome.Precipitation.SNOW) {
+-            lowerFillLevel(Blocks.WATER_CAULDRON.defaultBlockState().setValue(LEVEL, state.getValue(LEVEL)), level, pos);
++            return lowerFillLevel(Blocks.WATER_CAULDRON.defaultBlockState().setValue(LEVEL, state.getValue(LEVEL)), level, pos, entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.EXTINGUISH); // CraftBukkit
+         } else {
+-            lowerFillLevel(state, level, pos);
++            return lowerFillLevel(state, level, pos, entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.EXTINGUISH); // CraftBukkit
+         }
+     }
+ 
+     public static void lowerFillLevel(final BlockState state, final Level level, final BlockPos pos) {
++        // Paper start
++        lowerFillLevel(state, level, pos, null, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.UNKNOWN);
++    }
++    public static boolean lowerFillLevel(BlockState state, Level level, BlockPos pos, @org.jspecify.annotations.Nullable Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason) {
++        // Paper end
+         int newLevel = state.getValue(LEVEL) - 1;
+         BlockState newState = newLevel == 0 ? Blocks.CAULDRON.defaultBlockState() : state.setValue(LEVEL, newLevel);
+-        level.setBlockAndUpdate(pos, newState);
+-        level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(newState));
+-    }
++        return changeLevel(level, pos, newState, entity, reason); // Paper
++    }
++    // CraftBukkit start
++    // Paper start - Call CauldronLevelChangeEvent
++    public static boolean changeLevel(Level level, BlockPos pos, BlockState newBlock, @org.jspecify.annotations.Nullable Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason) { // Paper - entity is nullable
++        return changeLevel(level, pos, newBlock, entity, reason, true);
++    }
++
++    public static boolean changeLevel(Level level, BlockPos pos, BlockState newBlock, @org.jspecify.annotations.Nullable Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason, boolean sendGameEvent) { // Paper - entity is nullable
++        // Paper end - Call CauldronLevelChangeEvent
++        org.bukkit.craftbukkit.block.CraftBlockState newState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(level, pos);
++        newState.setData(newBlock);
++
++        org.bukkit.event.block.CauldronLevelChangeEvent event = new org.bukkit.event.block.CauldronLevelChangeEvent(
++            org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
++            (entity == null) ? null : entity.getBukkitEntity(), reason, newState
++        );
++        if (!event.callEvent()) {
++            return false;
++        }
++        newState.place(Block.UPDATE_ALL);
++        if (sendGameEvent) level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(newBlock)); // Paper - Call CauldronLevelChangeEvent
++        return true;
++    }
++    // CraftBukkit end
+ 
+     @Override
+     public void handlePrecipitation(final BlockState state, final Level level, final BlockPos pos, final Biome.Precipitation precipitation) {
+         if (CauldronBlock.shouldHandlePrecipitation(level, precipitation) && state.getValue(LEVEL) != 3 && precipitation == this.precipitationType) {
+             BlockState newState = state.cycle(LEVEL);
+-            level.setBlockAndUpdate(pos, newState);
+-            level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(newState));
++            changeLevel(level, pos, newState, null, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL); // CraftBukkit
+         }
+     }
+ 
+@@ -140,8 +_,11 @@
+     protected void receiveStalactiteDrip(final BlockState state, final Level level, final BlockPos pos, final Fluid fluid) {
+         if (!this.isFull(state)) {
+             BlockState newState = state.setValue(LEVEL, state.getValue(LEVEL) + 1);
+-            level.setBlockAndUpdate(pos, newState);
+-            level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(newState));
++            // CraftBukkit start
++            if (!changeLevel(level, pos, newState, null, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason.NATURAL_FILL)) {
++                return;
++            }
++            // CraftBukkit end
+             level.levelEvent(LevelEvent.SOUND_DRIP_WATER_INTO_CAULDRON, pos, 0);
+         }
+     }
