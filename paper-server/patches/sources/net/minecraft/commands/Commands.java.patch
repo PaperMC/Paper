@@ -134,7 +134,7 @@
              }
  
              return null;
-@@ -409,17 +_,110 @@
+@@ -409,17 +_,113 @@
      }
  
      public void sendCommands(ServerPlayer player) {
@@ -147,9 +147,10 @@
 +        // CraftBukkit start
 +        // Register Vanilla commands into builtRoot as before
 +        // Paper start - Perf: Async command map building
-+        // Copy root children to avoid concurrent modification during building
-+        final java.util.Collection<CommandNode<CommandSourceStack>> commandNodes = new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren());
-+        COMMAND_SENDING_POOL.execute(() -> this.sendAsync(player, commandNodes));
++        // Copy root node to avoid concurrent modification during building
++        final RootCommandNode<CommandSourceStack> rootNode = new RootCommandNode<>();
++        this.dispatcher.getRoot().getChildren().forEach(rootNode::addChild);
++        COMMAND_SENDING_POOL.execute(() -> this.sendAsync(player, rootNode));
 +    }
 +
 +    // Fixed pool, but with discard policy
@@ -163,13 +164,16 @@
 +        new java.util.concurrent.ThreadPoolExecutor.DiscardPolicy()
 +    );
 +
-+    private void sendAsync(ServerPlayer player, java.util.Collection<CommandNode<CommandSourceStack>> dispatcherRootChildren) {
++    private void sendAsync(ServerPlayer player, RootCommandNode<CommandSourceStack> dispatcherRoot) {
 +        // Paper end - Perf: Async command map building
          Map<CommandNode<CommandSourceStack>, CommandNode<CommandSourceStack>> map = new HashMap<>();
          RootCommandNode<CommandSourceStack> rootCommandNode = new RootCommandNode<>();
-         map.put(this.dispatcher.getRoot(), rootCommandNode);
+-        map.put(this.dispatcher.getRoot(), rootCommandNode);
 -        fillUsableCommands(this.dispatcher.getRoot(), rootCommandNode, player.createCommandSourceStack(), map);
-+        fillUsableCommands(dispatcherRootChildren, rootCommandNode, player.createCommandSourceStack(), map); // Paper - Perf: Async command map building; pass copy of children
++        // Paper start - Perf: Async command map building; pass copy of root
++        map.put(dispatcherRoot, rootCommandNode);
++        fillUsableCommands(dispatcherRoot, rootCommandNode, player.createCommandSourceStack(), map);
++        // Paper end - Perf: Async command map building; pass copy of root
 +
 +        java.util.Collection<String> bukkit = new java.util.LinkedHashSet<>();
 +        for (CommandNode node : rootCommandNode.getChildren()) {
@@ -198,10 +202,8 @@
          player.connection.send(new ClientboundCommandsPacket(rootCommandNode, COMMAND_NODE_INSPECTOR));
      }
  
--    private static <S> void fillUsableCommands(CommandNode<S> root, CommandNode<S> current, S source, Map<CommandNode<S>, CommandNode<S>> output) {
--        for (CommandNode<S> commandNode : root.getChildren()) {
-+    private static <S> void fillUsableCommands(java.util.Collection<CommandNode<S>> children, CommandNode<S> current, S source, Map<CommandNode<S>, CommandNode<S>> output) { // Paper - Perf: Async command map building; pass copy of children
-+        for (CommandNode<S> commandNode : children) {  // Paper - Perf: Async command map building; pass copy of children
+     private static <S> void fillUsableCommands(CommandNode<S> root, CommandNode<S> current, S source, Map<CommandNode<S>, CommandNode<S>> output) {
+         for (CommandNode<S> commandNode : root.getChildren()) {
 +            // Paper start - Brigadier API
 +            if (commandNode.clientNode != null) {
 +                commandNode = commandNode.clientNode;
@@ -248,12 +250,3 @@
                  if (argumentBuilder.getRedirect() != null) {
                      argumentBuilder.redirect(output.get(argumentBuilder.getRedirect()));
                  }
-@@ -428,7 +_,7 @@
-                 output.put(commandNode, commandNode1);
-                 current.addChild(commandNode1);
-                 if (!commandNode.getChildren().isEmpty()) {
--                    fillUsableCommands(commandNode, commandNode1, source, output);
-+                    fillUsableCommands(commandNode.getChildren(), commandNode1, source, output); // Paper - Perf: Async command map building; pass copy of children
-                 }
-             }
-         }
