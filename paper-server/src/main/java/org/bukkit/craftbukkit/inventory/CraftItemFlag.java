@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.plugin.ApiVersion;
 import org.bukkit.craftbukkit.legacy.FieldRename;
-import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.inventory.ItemFlag;
 
 public class CraftItemFlag {
