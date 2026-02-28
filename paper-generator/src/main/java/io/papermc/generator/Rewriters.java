@@ -112,7 +112,6 @@ public final class Rewriters {
     private static void bootstrapApi(PatternSourceSetRewriter sourceSet) {
         sourceSet
             .register("PotionType", PotionType.class, new EnumRegistryRewriter<>(Registries.POTION))
-            .register("EntityType", EntityType.class, new EntityTypeRewriter())
             .register("DisplaySlot", DisplaySlot.class, new EnumCloneRewriter<>(net.minecraft.world.scores.DisplaySlot.class) {
                 @Override
                 protected EnumValue.Builder rewriteEnumValue(net.minecraft.world.scores.DisplaySlot slot) {
@@ -228,6 +227,7 @@ public final class Rewriters {
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
             // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) - disable for now, lynx want the generic type
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
+            .register("EntityType", EntityType.class, new EntityTypeRewriter())
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
             .register("Tag", Tag.class, new TagRewriter())
             .register("MapPalette#colors", MapPalette.class, new MapPaletteRewriter());

@@ -3,6 +3,7 @@ package org.bukkit;
 import com.google.common.collect.Multimap;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
+import java.util.Map;
 import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
@@ -23,7 +24,6 @@ import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import java.util.Map;
 
 /**
  * This interface provides value conversions that may be specific to a
@@ -107,8 +107,6 @@ public interface UnsafeValues {
 
     @Deprecated(since = "1.21", forRemoval = true)
     String getItemTranslationKey(Material material);
-
-    String getTranslationKey(EntityType entityType);
 
     String getTranslationKey(ItemStack itemStack);
 
@@ -299,23 +297,6 @@ public interface UnsafeValues {
      * @return true if valid repair, false if not
      */
     public boolean isValidRepairItemStack(@org.jetbrains.annotations.NotNull ItemStack itemToBeRepaired, @org.jetbrains.annotations.NotNull ItemStack repairMaterial);
-
-    /**
-     * Checks if the entity represented by the namespaced key has default attributes.
-     *
-     * @param entityKey the entity's key
-     * @return true if it has default attributes
-     */
-    boolean hasDefaultEntityAttributes(@org.jetbrains.annotations.NotNull NamespacedKey entityKey);
-
-    /**
-     * Gets the default attributes for the entity represented by the namespaced key.
-     *
-     * @param entityKey the entity's key
-     * @return an unmodifiable instance of Attributable for reading default attributes.
-     * @throws IllegalArgumentException if the entity does not exist of have default attributes (use {@link #hasDefaultEntityAttributes(NamespacedKey)} first)
-     */
-    @org.jetbrains.annotations.NotNull org.bukkit.attribute.Attributable getDefaultEntityAttributes(@org.jetbrains.annotations.NotNull NamespacedKey entityKey);
     // Paper end
 
     // Paper start - namespaced key biome methods
