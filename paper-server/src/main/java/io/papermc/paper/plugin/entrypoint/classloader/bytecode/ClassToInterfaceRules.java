@@ -18,8 +18,11 @@ public final class ClassToInterfaceRules {
     private static final RewriteRuleVisitorFactory VISITOR_FACTORY = RewriteRuleVisitorFactory.create(
         Opcodes.ASM9,
         chain -> {
-            Map<ClassDesc, ClassDesc> descs = classes().entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().describeConstable().orElseThrow(), entry -> entry.getValue().describeConstable().orElseThrow()));
-            chain.then(new EnumToInterfaceRule(descs));
+            Map<ClassDesc, ClassDesc> enums = enums().entrySet().stream().collect(Collectors.toMap(
+                entry -> entry.getKey().describeConstable().orElseThrow(),
+                entry -> entry.getValue().describeConstable().orElseThrow()
+            ));
+            chain.then(new EnumToInterfaceRule(enums));
         },
         ClassInfoProvider.basic()
     );
@@ -38,7 +41,7 @@ public final class ClassToInterfaceRules {
         return classWriter.toByteArray();
     }
 
-    private static Map<Class<?>, Class<?>> classes() {
+    private static Map<Class<?>, Class<?>> enums() {
         return Map.of(
             PotionType.class, CraftPotionType.class
         );

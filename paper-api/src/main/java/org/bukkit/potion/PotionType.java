@@ -1,18 +1,11 @@
 package org.bukkit.potion;
 
-import com.google.common.base.Preconditions;
-import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.world.flag.FeatureDependant;
 import java.util.List;
-import java.util.Locale;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
-import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.util.OldEnum;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
