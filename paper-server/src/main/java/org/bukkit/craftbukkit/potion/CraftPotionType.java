@@ -1,59 +1,42 @@
 package org.bukkit.craftbukkit.potion;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Suppliers;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.util.LegacyEnumHolderable;
+import io.papermc.paper.world.flag.PaperFeatureDependent;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Supplier;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.alchemy.Potion;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.util.ApiVersion;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
+import org.jspecify.annotations.NullMarked;
 
-public class CraftPotionType implements PotionType.InternalPotionData {
+@NullMarked
+public class CraftPotionType extends LegacyEnumHolderable<Potion, CraftPotionType> implements PotionType, PaperFeatureDependent<Potion> {
 
     public static PotionType minecraftHolderToBukkit(Holder<Potion> minecraft) {
-        return CraftPotionType.minecraftToBukkit(minecraft.value());
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.POTION);
     }
 
     public static PotionType minecraftToBukkit(Potion minecraft) {
-        Preconditions.checkArgument(minecraft != null);
-
-        net.minecraft.core.Registry<Potion> registry = CraftRegistry.getMinecraftRegistry(Registries.POTION);
-        PotionType bukkit = Registry.POTION.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().identifier()));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.POTION);
     }
 
     public static Potion bukkitToMinecraft(PotionType bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        return CraftRegistry.getMinecraftRegistry(Registries.POTION)
-                .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     public static Holder<Potion> bukkitToMinecraftHolder(PotionType bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        net.minecraft.core.Registry<Potion> registry = CraftRegistry.getMinecraftRegistry(Registries.POTION);
-
-        if (registry.wrapAsHolder(CraftPotionType.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<Potion> holder) {
-            return holder;
-        }
-
-        throw new IllegalArgumentException("No Reference holder found for " + bukkit
-                + ", this can happen if a plugin creates its own sound effect with out properly registering it.");
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
     public static String bukkitToString(PotionType bukkit) {
@@ -76,49 +59,47 @@ public class CraftPotionType implements PotionType.InternalPotionData {
         return CraftRegistry.get(RegistryKey.POTION, key, ApiVersion.CURRENT);
     }
 
-    private final NamespacedKey key;
-    private final Potion potion;
-    private final Supplier<List<PotionEffect>> potionEffects;
-    private final Supplier<Boolean> upgradeable;
-    private final Supplier<Boolean> extendable;
-    private final Supplier<Integer> maxLevel;
+    private static int count = 0;
 
-    public CraftPotionType(NamespacedKey key, Potion potion) {
-        this.key = key;
-        this.potion = potion;
-        this.potionEffects = Suppliers.memoize(() -> potion.getEffects().stream().map(CraftPotionUtil::toBukkit).toList());
-        this.upgradeable = Suppliers.memoize(() -> Registry.POTION.get(new NamespacedKey(key.getNamespace(), "strong_" + key.getKey())) != null);
-        this.extendable = Suppliers.memoize(() -> Registry.POTION.get(new NamespacedKey(key.getNamespace(), "long_" + key.getKey())) != null);
-        this.maxLevel = Suppliers.memoize(() -> this.isUpgradeable() ? 2 : 1);
-    }
-
-    @Override
-    public PotionEffectType getEffectType() {
-        return this.getPotionEffects().isEmpty() ? null : this.getPotionEffects().get(0).getType();
+    public CraftPotionType(final Holder<Potion> holder) {
+        super(holder, count++);
     }
 
     @Override
     public List<PotionEffect> getPotionEffects() {
-        return this.potionEffects.get();
+        return this.getHandle().getEffects().stream().map(CraftPotionUtil::toBukkit).toList();
     }
 
     @Override
     public boolean isInstant() {
-        return this.potion.hasInstantEffects();
+        return this.getHandle().hasInstantEffects();
     }
 
     @Override
     public boolean isUpgradeable() {
-        return this.upgradeable.get();
+        return BuiltInRegistries.POTION.containsKey(this.getHolder().unwrapKey().orElseThrow().identifier().withPrefix("strong_"));
     }
 
     @Override
     public boolean isExtendable() {
-        return this.extendable.get();
+        return BuiltInRegistries.POTION.containsKey(this.getHolder().unwrapKey().orElseThrow().identifier().withPrefix("long_"));
     }
 
     @Override
     public int getMaxLevel() {
-        return this.maxLevel.get();
+        return this.isUpgradeable() ? 2 : 1;
+    }
+
+    @Deprecated // bytecode rewrites target this
+    public static PotionType valueOf(final String name) {
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        final PotionType potionType = key == null ? null : Bukkit.getUnsafe().get(RegistryKey.POTION, key);
+        Preconditions.checkArgument(potionType != null, "No potion type found with the name %s", name);
+        return potionType;
+    }
+
+    @Deprecated // bytecode rewrites target this
+    public static PotionType[] values() {
+        return Registry.POTION.stream().toArray(PotionType[]::new);
     }
 }

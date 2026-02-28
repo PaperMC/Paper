@@ -12,6 +12,7 @@ import org.bukkit.craftbukkit.legacy.reroute.DoNotReroute;
 import org.bukkit.craftbukkit.legacy.reroute.InjectPluginVersion;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodName;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteStatic;
+import org.bukkit.craftbukkit.potion.CraftPotionType;
 import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
@@ -271,7 +272,7 @@ public class FieldRename {
     @RerouteStatic("org/bukkit/potion/PotionType")
     public static PotionType valueOf_PotionType(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return PotionType.valueOf(FieldRename.convertPotionTypeName(ApiVersion.CURRENT, name));
+        return CraftPotionType.valueOf(FieldRename.convertPotionTypeName(ApiVersion.CURRENT, name));
     }
 
     // MusicInstrument
