@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import joptsimple.OptionParser;
@@ -80,37 +79,6 @@ public class Main {
                         .ofType(Integer.class)
                         .describedAs("Server size");
 
-                this.acceptsAll(asList("d", "date-format"), "Format of the date to display in the console (for log entries)")
-                        .withRequiredArg()
-                        .ofType(SimpleDateFormat.class)
-                        .describedAs("Log date format");
-
-                this.accepts("log-pattern", "Specifies the log filename pattern")
-                        .withRequiredArg()
-                        .ofType(String.class)
-                        .defaultsTo("server.log")
-                        .describedAs("Log filename");
-
-                this.accepts("log-limit", "Limits the maximum size of the log file (0 = unlimited)")
-                        .withRequiredArg()
-                        .ofType(Integer.class)
-                        .defaultsTo(0)
-                        .describedAs("Max log size");
-
-                this.accepts("log-count", "Specified how many log files to cycle through")
-                        .withRequiredArg()
-                        .ofType(Integer.class)
-                        .defaultsTo(1)
-                        .describedAs("Log count");
-
-                this.accepts("log-append", "Whether to append to the log file")
-                        .withRequiredArg()
-                        .ofType(Boolean.class)
-                        .defaultsTo(true)
-                        .describedAs("Log append");
-
-                this.accepts("log-strip-color", "Strips color codes from log file");
-
                 this.acceptsAll(asList("b", "bukkit-settings"), "File for bukkit settings")
                         .withRequiredArg()
                         .ofType(File.class)
@@ -136,6 +104,8 @@ public class Main {
                 this.acceptsAll(asList("v", "version"), "Show the CraftBukkit Version");
 
                 this.accepts("demo", "Demo mode");
+
+                this.accepts("bonusChest", "Enable the bonus chest");
 
                 this.accepts("initSettings", "Only create configuration files and then exit"); // SPIGOT-5761: Add initSettings option
 

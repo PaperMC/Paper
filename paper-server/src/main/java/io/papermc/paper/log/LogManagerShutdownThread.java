@@ -1,6 +1,4 @@
-package io.papermc.paper.util;
-
-import org.apache.logging.log4j.LogManager;
+package io.papermc.paper.log;
 
 public final class LogManagerShutdownThread extends Thread {
 
@@ -24,6 +22,6 @@ public final class LogManagerShutdownThread extends Thread {
 
     @Override
     public void run() {
-        LogManager.shutdown();
+        LoggerShutdown.shutdownLogging();
     }
 }

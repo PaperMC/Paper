@@ -297,7 +297,7 @@ index 0000000000000000000000000000000000000000..1b8193587814225c2ef2c5d9e667436e
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-index c50f13c735c97b0418cfe97d7d99b74bfb08b842..a91bcda9d6d8c8d75bce45373944743c55a1b4a5 100644
+index 2a5069d11f47d11726f08b597988f8a58546824b..bf051b6443edd32ecdbd177e02f40965477638de 100644
 --- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
 @@ -13,6 +13,7 @@ import net.minecraft.server.level.ChunkHolder;
@@ -325,7 +325,7 @@ index c50f13c735c97b0418cfe97d7d99b74bfb08b842..a91bcda9d6d8c8d75bce45373944743c
      }
  
      @Override
-@@ -239,7 +248,7 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
+@@ -249,7 +258,7 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
      @Override
      public void postLoadProtoChunk(final ServerLevel world, final ProtoChunk chunk) {
          try (final net.minecraft.util.ProblemReporter.ScopedCollector scopedCollector = new net.minecraft.util.ProblemReporter.ScopedCollector(chunk.problemPath(), LOGGER)) {
@@ -6731,10 +6731,10 @@ index 0000000000000000000000000000000000000000..7eafc5b7cba23d8dec92ecc1050afe3f
 \ No newline at end of file
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..467065e3b40df17f38716499259b46663c174fd0
+index 0000000000000000000000000000000000000000..41b4c5a87b5153f845421a7df8df04c9231253a8
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1565 @@
+@@ -0,0 +1,1568 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -7918,7 +7918,10 @@ index 0000000000000000000000000000000000000000..467065e3b40df17f38716499259b4666
 +        // We do need to process updates here so that any addTicket that is synchronised before this call does not go missed.
 +        this.processTicketUpdates();
 +
-+        final int toUnloadCount = Math.max(50, (int)(unloadCountTentative * 0.05));
++        final int toUnloadCount = Math.max(
++            PlatformHooks.get().configMinChunkUnloadCount(this.world),
++            (int)Math.round(unloadCountTentative * Math.clamp(PlatformHooks.get().configMinChunkUnloadFraction(this.world), 0.0, 1.0))
++        );
 +        int processedCount = 0;
 +
 +        for (final ChunkUnloadQueue.SectionToUnload sectionRef : unloadSectionsForRegion) {
@@ -15614,10 +15617,10 @@ index 0000000000000000000000000000000000000000..1414f25ef770b0fe73ea618a450ade2f
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java b/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..817e4ffd597938697f0c4dca16068f8d20c088b3
+index 0000000000000000000000000000000000000000..de764da80793d272ff597b4a0742ce785838799a
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
-@@ -0,0 +1,2190 @@
+@@ -0,0 +1,2199 @@
 +package ca.spottedleaf.moonrise.patches.collisions;
 +
 +import ca.spottedleaf.moonrise.common.util.WorldUtil;
@@ -17634,8 +17637,17 @@ index 0000000000000000000000000000000000000000..817e4ffd597938697f0c4dca16068f8d
 +                                    AABB singleAABB = ((CollisionVoxelShape)blockCollision).moonrise$getSingleAABBRepresentation();
 +                                    if (singleAABB != null) {
 +                                        singleAABB = singleAABB.move((double)blockX, (double)blockY, (double)blockZ);
-+                                        if (!voxelShapeIntersect(aabb, singleAABB)) {
-+                                            continue;
++
++                                        // Not using the epsilon violates the collision rules but this is what Vanilla does.
++                                        // Check BlockCollisions.class
++                                        if (blockCollision == Shapes.block()) {
++                                            if (!aabb.intersects(singleAABB)) {
++                                                continue;
++                                            }
++                                        } else {
++                                            if (!voxelShapeIntersect(aabb, singleAABB)) {
++                                                continue;
++                                            }
 +                                        }
 +
 +                                        if (predicate != null) {
@@ -23047,7 +23059,7 @@ index fd09226af661a6970062ee11d38f6e69464fb74b..ad1558693564ebd18f5e16b85ae552d2
          }
      }
 diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
-index cda915fcb4822689f42b25280eb99aee082ddb74..094d2d528cb74b8f1d277cd780bba7f438dbe764 100644
+index 3e8870cf4eade33894c6b2f7d3d42a5607645118..9216e85e74bb0121c72665f155b07cf9a37f430a 100644
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
 @@ -299,6 +299,7 @@ public class Main {
@@ -23059,7 +23071,7 @@ index cda915fcb4822689f42b25280eb99aee082ddb74..094d2d528cb74b8f1d277cd780bba7f4
                  thread1 -> {
                      DedicatedServer dedicatedServer1 = new DedicatedServer(
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 330d1f751006e6a5acfec1a3ab390b1c2d482299..af7e9692a38f8278734e2f1ab51c1e03b123ef3c 100644
+index 97a6c426654fe2e103ed46bb295e098a9c9be526..8588b380f9b5375cdb2515a01e46a5731ad3ab33 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -185,7 +185,7 @@ import net.minecraft.world.scores.ScoreboardSaveData;
@@ -23244,8 +23256,8 @@ index 330d1f751006e6a5acfec1a3ab390b1c2d482299..af7e9692a38f8278734e2f1ab51c1e03
 +        // Paper end - rewrite chunk system
          // Paper start - Improved watchdog support - move final shutdown items here
          Util.shutdownExecutors();
-         try {
-@@ -1081,16 +1177,31 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.onServerExit();
+@@ -1076,16 +1172,31 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              // execute small amounts of other tasks just in case the number of tasks we are
              // draining is large - chunk system and packet processing may be latency sensitive
  
@@ -23280,7 +23292,7 @@ index 330d1f751006e6a5acfec1a3ab390b1c2d482299..af7e9692a38f8278734e2f1ab51c1e03
          profiler.pop(); // moonrise:run_all_chunk
          profiler.pop(); // moonrise:run_all_tasks
  
-@@ -1396,6 +1507,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1391,6 +1502,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      private boolean pollTaskInternal() {
          if (super.pollTask()) {
@@ -23288,7 +23300,7 @@ index 330d1f751006e6a5acfec1a3ab390b1c2d482299..af7e9692a38f8278734e2f1ab51c1e03
              return true;
          } else {
              boolean ret = false; // Paper - force execution of all worlds, do not just bias the first
-@@ -1537,6 +1649,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1532,6 +1644,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // Paper - improve tick loop - moved into runAllTasksAtTickStart
          this.runAllTasksAtTickStart(); // Paper - improve tick loop
          this.tickServer(sprinting ? () -> false : this::haveTime);
@@ -23302,7 +23314,7 @@ index 330d1f751006e6a5acfec1a3ab390b1c2d482299..af7e9692a38f8278734e2f1ab51c1e03
          this.tickFrame.end();
          this.recordEndOfTick(); // Paper - improve tick loop
          profilerFiller.pop();
-@@ -2562,6 +2681,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2557,6 +2676,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -29136,7 +29148,7 @@ index 3d317880a257bf431f110048d305ddd2a06880d7..25f2e74e229fa12a2d7f1ff43c6cb12a
  
      public ClipContext(Vec3 from, Vec3 to, ClipContext.Block block, ClipContext.Fluid fluid, Entity entity) {
 diff --git a/net/minecraft/world/level/EntityGetter.java b/net/minecraft/world/level/EntityGetter.java
-index d4c78c7f521b31ea9ce0cf7d62978b8e324b5d10..bcbe39eed2d254861689c95f7040f27b6ff2d438 100644
+index b367eb61283c0cbf4ce9cda67089de2e22c95f4f..6ae3698e8e2c84fb21c0a4facbbf1568dbd45405 100644
 --- a/net/minecraft/world/level/EntityGetter.java
 +++ b/net/minecraft/world/level/EntityGetter.java
 @@ -15,7 +15,7 @@ import net.minecraft.world.phys.shapes.Shapes;

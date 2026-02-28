@@ -1,9 +1,10 @@
 package org.bukkit.attribute;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -159,8 +160,8 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
     Attribute WAYPOINT_RECEIVE_RANGE = getAttribute("waypoint_receive_range");
 
     @NotNull
-    private static Attribute getAttribute(@NotNull String key) {
-        return Registry.ATTRIBUTE.getOrThrow(NamespacedKey.minecraft(key));
+    private static Attribute getAttribute(@NotNull @KeyPattern.Value String key) {
+        return Registry.ATTRIBUTE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
@@ -177,19 +178,20 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute valueOf(@NotNull String name) {
-        Attribute attribute = Bukkit.getUnsafe().get(RegistryKey.ATTRIBUTE, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        Attribute attribute = key == null ? null : Bukkit.getUnsafe().get(RegistryKey.ATTRIBUTE, key);
         Preconditions.checkArgument(attribute != null, "No attribute found with the name %s", name);
         return attribute;
     }
 
     /**
      * @return an array of all known attributes.
-     * @deprecated use {@link Registry#iterator()}.
+     * @deprecated use {@link Registry#stream()}.
      */
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute[] values() {
-        return Lists.newArrayList(Registry.ATTRIBUTE).toArray(new Attribute[0]);
+        return Registry.ATTRIBUTE.stream().toArray(Attribute[]::new);
     }
 
     /**

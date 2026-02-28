@@ -1,9 +1,10 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
@@ -3701,8 +3702,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     // End generate - Sound
 
     @NotNull
-    private static Sound getSound(@NotNull String key) {
-        return Registry.SOUNDS.getOrThrow(NamespacedKey.minecraft(key));
+    private static Sound getSound(@NotNull @KeyPattern.Value String key) {
+        return Registry.SOUNDS.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
@@ -3713,9 +3714,14 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Sound valueOf(@NotNull String name) {
-        Sound sound = Bukkit.getUnsafe().get(RegistryKey.SOUND_EVENT, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
-        if (sound != null) {
-            return sound;
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        Sound sound;
+
+        if (key != null) {
+            sound = Bukkit.getUnsafe().get(RegistryKey.SOUND_EVENT, key);
+            if (sound != null) {
+                return sound;
+            }
         }
 
         // Sound keys can have dots in them which where converted to _. Since converting
@@ -3742,12 +3748,12 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     /**
      * @return an array of all known sounds.
-     * @deprecated use {@link Registry#iterator()}.
+     * @deprecated use {@link Registry#stream()}.
      */
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Sound[] values() {
-        return Lists.newArrayList(Registry.SOUNDS).toArray(new Sound[0]);
+        return Registry.SOUNDS.stream().toArray(Sound[]::new);
     }
 
     // Paper start

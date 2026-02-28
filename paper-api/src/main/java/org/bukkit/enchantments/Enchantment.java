@@ -1,9 +1,10 @@
 package org.bukkit.enchantments;
 
-import com.google.common.collect.Lists;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -235,8 +236,8 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
     public static final Enchantment LUNGE = getEnchantment("lunge");
 
     @NotNull
-    private static Enchantment getEnchantment(@NotNull String key) {
-        return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).getOrThrow(NamespacedKey.minecraft(key));
+    private static Enchantment getEnchantment(@NotNull @KeyPattern.Value String key) {
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
@@ -513,7 +514,7 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
         if (key == null) {
             return null;
         }
-        return Registry.ENCHANTMENT.get(key);
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(key);
     }
 
     /**
@@ -543,6 +544,6 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
     @NotNull
     @Deprecated(since = "1.20.3")
     public static Enchantment[] values() {
-        return Lists.newArrayList(Registry.ENCHANTMENT).toArray(new Enchantment[0]);
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).stream().toArray(Enchantment[]::new);
     }
 }
