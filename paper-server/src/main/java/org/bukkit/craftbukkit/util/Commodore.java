@@ -1,15 +1,13 @@
 package org.bukkit.craftbukkit.util;
 
 import com.google.common.base.Predicates;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
+import io.papermc.paper.plugin.ApiVersion;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -31,7 +29,6 @@ import org.bukkit.Material;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.legacy.MaterialRerouting;
 import org.bukkit.craftbukkit.legacy.MethodRerouting;
-import org.bukkit.craftbukkit.legacy.enums.EnumEvil;
 import org.bukkit.craftbukkit.legacy.reroute.Reroute;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteArgument;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
@@ -69,12 +66,6 @@ public class Commodore {
             "org/bukkit/inventory/ItemStack (I)V setTypeId",
             "org/bukkit/inventory/ItemStack (S)V setDurability"
     ));
-
-    private static final Map<String, String> ENUM_RENAMES = Map.of(
-            "java/lang/Enum", "java/lang/Object",
-            "java/util/EnumSet", "org/bukkit/craftbukkit/legacy/enums/ImposterEnumSet",
-            "java/util/EnumMap", "org/bukkit/craftbukkit/legacy/enums/ImposterEnumMap"
-    );
 
     private static final Map<String, String> RENAMES = Map.of(
             "org/bukkit/entity/TextDisplay$TextAligment", "org/bukkit/entity/TextDisplay$TextAlignment", // SPIGOT-7335
@@ -120,7 +111,6 @@ public class Commodore {
                 .create(compatibilityPresent)
                 .forClass(FieldRename.class)
                 .forClass(MethodRerouting.class)
-                .forClass(EnumEvil.class)
                 .build();
 
         this.reroutes.clear();

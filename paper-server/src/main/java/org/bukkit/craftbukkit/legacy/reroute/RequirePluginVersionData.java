@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.legacy.reroute;
 
-import org.bukkit.craftbukkit.util.ApiVersion;
+
+import io.papermc.paper.plugin.ApiVersion;
 
 public record RequirePluginVersionData(ApiVersion minInclusive, ApiVersion maxInclusive) {
 
