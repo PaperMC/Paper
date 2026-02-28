@@ -1694,30 +1694,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return this.getHandle().getGameRules().rules.has(CraftGameRule.bukkitToMinecraft(bukkit));
     }
 
-    public static <T> T shimLegacyValue(T value, org.bukkit.GameRule<?> gameRule){
-        //noinspection rawtypes unchecked
-        if (gameRule instanceof CraftGameRule.LegacyGameRuleWrapper legacyGameRuleWrapper) {
-            //noinspection unchecked
-            return (T) legacyGameRuleWrapper.getToLegacyFromModern().apply(value);
-        }
-
-        return value;
-    }
-
     @Override
-    public <T> @Nullable T getGameRuleValue(org.bukkit.@NotNull GameRule<T> rule) {
+    public <T> @NotNull T getGameRuleValue(org.bukkit.@NotNull GameRule<T> rule) {
         Preconditions.checkArgument(rule != null, "GameRule cannot be null");
 
         T value = this.getHandle().getGameRules().get(CraftGameRule.bukkitToMinecraft(rule));
-        return shimLegacyValue(value, rule);
-    }
-
-    @Override
-    public <T> @Nullable T getGameRuleDefault(org.bukkit.@NotNull GameRule<T> rule) {
-        Preconditions.checkArgument(rule != null, "GameRule cannot be null");
-        T value = CraftGameRule.bukkitToMinecraft(rule).defaultValue();
-
-        return shimLegacyValue(value, rule);
+        return CraftGameRule.shimLegacyValue(value, rule);
     }
 
     @Override

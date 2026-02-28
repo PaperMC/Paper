@@ -489,6 +489,14 @@ public abstract class GameRule<T> implements net.kyori.adventure.translation.Tra
     public abstract Class<T> getType();
 
     /**
+     * Get the default value of this rule.
+     *
+     * @return the default value
+     */
+    @NotNull
+    public abstract T getDefaultValue();
+
+    /**
      * Get a {@link GameRule} by its name.
      *
      * @param rule the name of the GameRule
