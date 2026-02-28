@@ -13,17 +13,24 @@ import net.minecraft.world.item.component.TypedEntityData;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.inventory.meta.AxolotlBucketMeta;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+@NullMarked
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBucketMeta {
 
+    @Deprecated
     static final ItemMetaKey VARIANT = new ItemMetaKey("Variant", "axolotl-variant");
+
     static final ItemMetaKeyType<TypedEntityData<EntityType<?>>> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
     static final ItemMetaKeyType<CustomData> BUCKET_ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.BUCKET_ENTITY_DATA, "bucket-entity-tag");
 
-    private Integer variant;
-    private CompoundTag entityTag;
-    private CompoundTag bucketEntityTag;
+    static final ItemMetaKeyType<net.minecraft.world.entity.animal.axolotl.Axolotl.Variant> AXOLOTL_VARIANT = new ItemMetaKeyType<>(DataComponents.AXOLOTL_VARIANT, "axolotl-variant");
+
+    private net.minecraft.world.entity.animal.axolotl.Axolotl.@Nullable Variant variant;
+    private @Nullable CompoundTag entityTag;
+    private @Nullable CompoundTag bucketEntityTag;
 
     CraftMetaAxolotlBucket(CraftMetaItem meta) {
         super(meta);
@@ -42,20 +49,29 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
 
         getOrEmpty(tag, CraftMetaAxolotlBucket.ENTITY_TAG).ifPresent((nbt) -> {
             this.entityTag = nbt.copyTagWithEntityId();
-            this.entityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
+            this.entityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT).ifPresent(variantId -> {
+                this.variant = net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.byId(variantId);
+            });
         });
         getOrEmpty(tag, CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG).ifPresent((nbt) -> {
             this.bucketEntityTag = nbt.copyTag();
-            this.bucketEntityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
+            this.bucketEntityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT).ifPresent(variantId -> {
+                this.variant = net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.byId(variantId);
+            });
+        });
+        getOrEmpty(tag, CraftMetaAxolotlBucket.AXOLOTL_VARIANT).ifPresent((variant) -> {
+            this.variant = variant;
         });
     }
 
     CraftMetaAxolotlBucket(Map<String, Object> map) {
         super(map);
 
-        Integer variant = SerializableMeta.getObject(Integer.class, map, CraftMetaAxolotlBucket.VARIANT.BUKKIT, true);
-        if (variant != null) {
-            this.variant = variant;
+        Object variant = SerializableMeta.getObject(Object.class, map, CraftMetaAxolotlBucket.AXOLOTL_VARIANT.BUKKIT, true);
+        if (variant instanceof String variantName) {
+            this.variant = net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.valueOf(variantName);
+        } else if (variant instanceof Integer variantId) { // legacy
+            this.variant = net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.byId(variantId);
         }
     }
 
@@ -85,16 +101,12 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
             tag.put(CraftMetaAxolotlBucket.ENTITY_TAG, TypedEntityData.decodeEntity(this.entityTag));
         }
 
-        CompoundTag bucketEntityTag = (this.bucketEntityTag != null) ? this.bucketEntityTag.copy() : null;
-        if (this.hasVariant()) {
-            if (bucketEntityTag == null) {
-                bucketEntityTag = new CompoundTag();
-            }
-            bucketEntityTag.putInt(CraftMetaAxolotlBucket.VARIANT.NBT, this.variant);
+        if (this.bucketEntityTag != null) {
+            tag.put(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG, CustomData.of(this.bucketEntityTag));
         }
 
-        if (bucketEntityTag != null) {
-            tag.put(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG, CustomData.of(bucketEntityTag));
+        if (this.variant != null) {
+            tag.put(CraftMetaAxolotlBucket.AXOLOTL_VARIANT, this.variant);
         }
     }
 
@@ -110,13 +122,13 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
     @Override
     public Axolotl.Variant getVariant() {
         com.google.common.base.Preconditions.checkState(this.hasVariant(), "Variant is absent, check hasVariant first!");
-        return Axolotl.Variant.values()[this.variant];
+        return Axolotl.Variant.values()[this.variant.ordinal()];
     }
 
     @Override
     public void setVariant(Axolotl.Variant variant) {
         com.google.common.base.Preconditions.checkArgument(variant != null, "Variant cannot be null!");
-        this.variant = variant.ordinal();
+        this.variant = net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.byId(variant.ordinal());
     }
 
     @Override
@@ -147,8 +159,8 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         final int original;
         int hash = original = super.applyHash();
 
-        if (this.hasVariant()) {
-            hash = 61 * hash + this.variant;
+        if (this.variant != null) {
+            hash = 61 * hash + this.variant.hashCode();
         }
         if (this.entityTag != null) {
             hash = 61 * hash + this.entityTag.hashCode();
@@ -170,6 +182,7 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         if (this.bucketEntityTag != null) {
             clone.bucketEntityTag = this.bucketEntityTag.copy();
         }
+        clone.variant = this.variant;
 
         return clone;
     }
@@ -178,8 +191,8 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
         super.serialize(builder);
 
-        if (this.hasVariant()) {
-            builder.put(CraftMetaAxolotlBucket.VARIANT.BUKKIT, this.variant);
+        if (this.variant != null) {
+            builder.put(CraftMetaAxolotlBucket.AXOLOTL_VARIANT.BUKKIT, this.variant.name());
         }
 
         return builder;
