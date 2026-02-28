@@ -20,8 +20,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.WeakHashMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,6 +40,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
+import org.bukkit.permissions.ServerOperator;
 import org.bukkit.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -978,13 +982,23 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     @Override
-    public boolean isTransitiveDependency(io.papermc.paper.plugin.configuration.PluginMeta pluginMeta, io.papermc.paper.plugin.configuration.PluginMeta dependencyConfig) {
-        return this.paperPluginManager.isTransitiveDependency(pluginMeta, dependencyConfig);
+    public Permissible createPermissible(@NotNull ServerOperator operator) {
+        return this.paperPluginManager.createPermissible(operator);
     }
 
     @Override
-    public void overridePermissionManager(@NotNull Plugin plugin, @Nullable io.papermc.paper.plugin.PermissionManager permissionManager) {
-        this.paperPluginManager.overridePermissionManager(plugin, permissionManager);
+    public Permissible createCommandBlockPermissible() {
+        return this.paperPluginManager.createCommandBlockPermissible();
+    }
+
+    @Override
+    public CompletableFuture<Optional<Permissible>> loadPlayerPermissible(@NotNull UUID playerUuid) {
+        return this.paperPluginManager.loadPlayerPermissible(playerUuid);
+    }
+
+    @Override
+    public boolean isTransitiveDependency(io.papermc.paper.plugin.configuration.PluginMeta pluginMeta, io.papermc.paper.plugin.configuration.PluginMeta dependencyConfig) {
+        return this.paperPluginManager.isTransitiveDependency(pluginMeta, dependencyConfig);
     }
 
     @Override

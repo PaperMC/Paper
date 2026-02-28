@@ -68,6 +68,7 @@ import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
+import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachment;
@@ -85,7 +86,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private static PermissibleBase perm;
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
     static final PointersSupplier<org.bukkit.entity.Entity> POINTERS_SUPPLIER = PointersSupplier.<org.bukkit.entity.Entity>builder()
         .resolving(net.kyori.adventure.identity.Identity.DISPLAY_NAME, org.bukkit.entity.Entity::name)
@@ -95,6 +95,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     protected final CraftServer server;
     protected Entity entity;
+    protected final Permissible perm;
     private final EntityType entityType;
     private EntityDamageEvent lastDamageEvent;
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftEntity.DATA_TYPE_REGISTRY);
@@ -112,6 +113,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         this.server = server;
         this.entity = entity;
         this.entityType = CraftEntityType.minecraftToBukkit(entity.getType());
+        this.perm = server.getPluginManager().createPermissible(this);
     }
 
     public static <T extends Entity> CraftEntity getEntity(CraftServer server, T entity) {
@@ -794,67 +796,67 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isPermissionSet(String name) {
-        return CraftEntity.getPermissibleBase().isPermissionSet(name);
+        return this.perm.isPermissionSet(name);
     }
 
     @Override
     public boolean isPermissionSet(Permission perm) {
-        return CraftEntity.getPermissibleBase().isPermissionSet(perm);
+        return this.perm.isPermissionSet(perm);
     }
 
     @Override
     public boolean hasPermission(String name) {
-        return CraftEntity.getPermissibleBase().hasPermission(name);
+        return this.perm.hasPermission(name);
     }
 
     @Override
     public boolean hasPermission(Permission perm) {
-        return CraftEntity.getPermissibleBase().hasPermission(perm);
+        return this.perm.hasPermission(perm);
     }
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
-        return CraftEntity.getPermissibleBase().addAttachment(plugin, name, value);
+        return this.perm.addAttachment(plugin, name, value);
     }
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin) {
-        return CraftEntity.getPermissibleBase().addAttachment(plugin);
+        return this.perm.addAttachment(plugin);
     }
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value, int ticks) {
-        return CraftEntity.getPermissibleBase().addAttachment(plugin, name, value, ticks);
+        return this.perm.addAttachment(plugin, name, value, ticks);
     }
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin, int ticks) {
-        return CraftEntity.getPermissibleBase().addAttachment(plugin, ticks);
+        return this.perm.addAttachment(plugin, ticks);
     }
 
     @Override
     public void removeAttachment(PermissionAttachment attachment) {
-        CraftEntity.getPermissibleBase().removeAttachment(attachment);
+        this.perm.removeAttachment(attachment);
     }
 
     @Override
     public void recalculatePermissions() {
-        CraftEntity.getPermissibleBase().recalculatePermissions();
+        this.perm.recalculatePermissions();
     }
 
     @Override
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
-        return CraftEntity.getPermissibleBase().getEffectivePermissions();
+        return this.perm.getEffectivePermissions();
     }
 
     @Override
     public boolean isOp() {
-        return CraftEntity.getPermissibleBase().isOp();
+        return this.perm.isOp();
     }
 
     @Override
     public void setOp(boolean value) {
-        CraftEntity.getPermissibleBase().setOp(value);
+        this.perm.setOp(value);
     }
 
     @Override
@@ -1090,24 +1092,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
 
         player.connection.send(this.getHandle().getAddEntityPacket(entityTracker.serverEntity));
-    }
-
-    private static PermissibleBase getPermissibleBase() {
-        if (CraftEntity.perm == null) {
-            CraftEntity.perm = new PermissibleBase(new ServerOperator() {
-
-                @Override
-                public boolean isOp() {
-                    return false;
-                }
-
-                @Override
-                public void setOp(boolean value) {
-
-                }
-            });
-        }
-        return CraftEntity.perm;
     }
 
     // Paper start - more teleport API / async chunk API

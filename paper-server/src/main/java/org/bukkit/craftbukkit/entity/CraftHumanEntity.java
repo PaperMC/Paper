@@ -79,7 +79,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     private CraftInventoryPlayer inventory;
     private final CraftInventory enderChest;
-    protected final PermissibleBase perm = new PermissibleBase(this);
     private boolean op;
     private GameMode mode;
 
@@ -244,64 +243,9 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
-    public boolean isPermissionSet(String name) {
-        return this.perm.isPermissionSet(name);
-    }
-
-    @Override
-    public boolean isPermissionSet(Permission perm) {
-        return this.perm.isPermissionSet(perm);
-    }
-
-    @Override
-    public boolean hasPermission(String name) {
-        return this.perm.hasPermission(name);
-    }
-
-    @Override
-    public boolean hasPermission(Permission perm) {
-        return this.perm.hasPermission(perm);
-    }
-
-    @Override
-    public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
-        return this.perm.addAttachment(plugin, name, value);
-    }
-
-    @Override
-    public PermissionAttachment addAttachment(Plugin plugin) {
-        return this.perm.addAttachment(plugin);
-    }
-
-    @Override
-    public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value, int ticks) {
-        return this.perm.addAttachment(plugin, name, value, ticks);
-    }
-
-    @Override
-    public PermissionAttachment addAttachment(Plugin plugin, int ticks) {
-        return this.perm.addAttachment(plugin, ticks);
-    }
-
-    @Override
-    public void removeAttachment(PermissionAttachment attachment) {
-        this.perm.removeAttachment(attachment);
-    }
-
-    @Override
-    public void recalculatePermissions() {
-        this.perm.recalculatePermissions();
-    }
-
-    @Override
     public void setOp(boolean value) {
         this.op = value;
         this.perm.recalculatePermissions();
-    }
-
-    @Override
-    public Set<PermissionAttachmentInfo> getEffectivePermissions() {
-        return this.perm.getEffectivePermissions();
     }
 
     @Override

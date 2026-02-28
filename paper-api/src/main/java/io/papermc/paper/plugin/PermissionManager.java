@@ -1,10 +1,15 @@
 package io.papermc.paper.plugin;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.ServerOperator;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -163,4 +168,13 @@ public interface PermissionManager {
      */
     void clearPermissions();
 
+    @ApiStatus.Experimental
+    Permissible createPermissible(@NotNull ServerOperator operator);
+
+    @ApiStatus.Experimental
+    Permissible createCommandBlockPermissible();
+
+    // This is very special, and also this is expected to hold no state to PermissionManager.
+    @ApiStatus.Experimental
+    CompletableFuture<Optional<Permissible>> loadPlayerPermissible(@NotNull UUID playerUuid);
 }

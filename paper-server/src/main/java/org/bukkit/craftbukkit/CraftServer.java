@@ -414,7 +414,7 @@ public final class CraftServer implements Server {
         // Paper start
         this.commandMap = new CraftCommandMap(this);
         this.pluginManager = new SimplePluginManager(this, commandMap);
-        this.paperPluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(this, this.commandMap, pluginManager);
+        this.paperPluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(this, this.commandMap);
         this.pluginManager.paperPluginManager = this.paperPluginManager;
          // Paper end
 
