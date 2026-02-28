@@ -53,7 +53,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      *
      * @return Location the player moved to
      */
-    @NotNull // Paper
+    @NotNull
     public Location getTo() {
         return to;
     }
@@ -139,7 +139,8 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
 
     private void validateLocation(@NotNull Location loc) {
         Preconditions.checkArgument(loc != null, "Cannot use null location!");
-        Preconditions.checkArgument(loc.getWorld() != null, "Cannot use null location with null world!");
+        Preconditions.checkArgument(loc.getWorld() != null, "Cannot use location with null world!");
+        loc.checkFinite();
     }
 
     @NotNull

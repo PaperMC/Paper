@@ -22,6 +22,7 @@ import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
+import io.papermc.paper.event.entity.PaperEntityTeleportEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -2067,7 +2068,7 @@ public class CraftEventFactory {
 
     public static EntityTeleportEvent callEntityTeleportEvent(Entity nmsEntity, Location to) {
         CraftEntity entity = nmsEntity.getBukkitEntity();
-        EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(entity, entity.getLocation(), to);
+        EntityTeleportEvent event = new PaperEntityTeleportEvent(entity, entity.getLocation(), to);
 
         Bukkit.getPluginManager().callEvent(event);
 
