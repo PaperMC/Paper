@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.ApiStatus;
@@ -14,7 +15,7 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface PotDecorations {
+public interface PotDecorations extends BuildableDataComponent<PotDecorations, PotDecorations.Builder> {
 
     @Contract(value = "_, _, _, _ -> new", pure = true)
     static PotDecorations potDecorations(final @Nullable ItemType back, final @Nullable ItemType left, final @Nullable ItemType right, final @Nullable ItemType front) {

@@ -23,6 +23,11 @@ public record PaperJukeboxPlayable(
             .orElseThrow();
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl(this.jukeboxSong());
+    }
+
     static final class BuilderImpl implements JukeboxPlayable.Builder {
 
         private JukeboxSong song;

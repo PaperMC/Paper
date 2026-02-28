@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.potion.SuspiciousEffectEntry;
 import java.util.Collection;
@@ -16,7 +17,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface SuspiciousStewEffects {
+public interface SuspiciousStewEffects extends BuildableDataComponent<SuspiciousStewEffects, SuspiciousStewEffects.Builder> {
 
     @Contract(value = "_ -> new", pure = true)
     static SuspiciousStewEffects suspiciousStewEffects(final Collection<SuspiciousEffectEntry> effects) {
@@ -62,5 +63,15 @@ public interface SuspiciousStewEffects {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addAll(Collection<SuspiciousEffectEntry> entries);
+
+        /**
+         * Sets effects applied to this builder.
+         *
+         * @param entries effect
+         * @return the builder for chaining
+         * @see #effects()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder effects(Collection<SuspiciousEffectEntry> entries);
     }
 }

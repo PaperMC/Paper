@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.List;
 import org.bukkit.block.banner.Pattern;
@@ -15,7 +16,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface BannerPatternLayers {
+public interface BannerPatternLayers extends BuildableDataComponent<BannerPatternLayers, BannerPatternLayers.Builder> {
 
     @Contract(value = "_ -> new", pure = true)
     static BannerPatternLayers bannerPatternLayers(final List<Pattern> patterns) {

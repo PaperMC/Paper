@@ -6,6 +6,7 @@ import io.papermc.paper.text.Filtered;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
@@ -53,6 +54,17 @@ public record PaperWrittenBookContent(
     @Override
     public boolean resolved() {
         return this.impl.resolved();
+    }
+
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl(this.title(), this.author())
+            .generation(this.generation())
+            .resolved(this.resolved())
+            .pages(this.pages().stream()
+                .map(Filtered::filtered)
+                .filter(Objects::nonNull)
+                .toList());
     }
 
     static final class BuilderImpl implements WrittenBookContent.Builder {
@@ -151,6 +163,17 @@ public record PaperWrittenBookContent(
         }
 
         @Override
+        public Builder pages(final List<? extends ComponentLike> pages) {
+            this.pages.clear();
+            for (final ComponentLike page : pages) {
+                final Component component = page.asComponent();
+                validatePageLength(component);
+                this.pages.add(Filterable.passThrough(asVanilla(component)));
+            }
+            return this;
+        }
+
+        @Override
         public WrittenBookContent.Builder addFilteredPage(final Filtered<? extends ComponentLike> page) {
             final Component raw = page.raw().asComponent();
             validatePageLength(raw);
@@ -165,6 +188,13 @@ public record PaperWrittenBookContent(
 
         @Override
         public WrittenBookContent.Builder addFilteredPages(final List<Filtered<? extends ComponentLike>> pages) {
+            pages.forEach(this::addFilteredPage);
+            return this;
+        }
+
+        @Override
+        public Builder filteredPages(final List<Filtered<? extends ComponentLike>> pages) {
+            this.pages.clear();
             pages.forEach(this::addFilteredPage);
             return this;
         }
