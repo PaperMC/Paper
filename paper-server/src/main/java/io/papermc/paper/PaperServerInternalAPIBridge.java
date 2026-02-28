@@ -78,10 +78,12 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
 
     @Override
     public Biome constructLegacyCustomBiome() {
-        class Holder {
-            static final Biome LEGACY_CUSTOM = new CraftBiome.LegacyCustomBiomeImpl();
-        }
-        return Holder.LEGACY_CUSTOM;
+        return CraftBiome.LegacyCustomImpl.INSTANCE;
+    }
+
+    @Override
+    public EntityType<?> constructLegacyUnknownEntityType() {
+        return CraftEntityType.LegacyUnknownImpl.INSTANCE;
     }
 
     @Override
