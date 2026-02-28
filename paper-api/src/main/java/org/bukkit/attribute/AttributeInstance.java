@@ -111,6 +111,12 @@ public interface AttributeInstance {
      * Gets the default value of the Attribute attached to this instance.
      *
      * @return server default value
+     *
+     * @deprecated This method is placed misleadingly as it does not return the default value in the current entity's context, but in the server's context.
+     *  Use {@link Attribute#getDefaultValue()} as a replacement and see the note there about default values for specific entity types.
+     * @see Attribute#getDefaultValue()
+     * @see org.bukkit.entity.EntityType#getDefaultAttributes()
      */
+    @Deprecated(since = "1.21.11")
     double getDefaultValue();
 }
