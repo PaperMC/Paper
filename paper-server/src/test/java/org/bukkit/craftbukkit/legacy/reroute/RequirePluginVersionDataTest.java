@@ -1,8 +1,9 @@
 package org.bukkit.craftbukkit.legacy.reroute;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import io.papermc.paper.plugin.ApiVersion;
 import java.lang.annotation.Annotation;
-import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 

@@ -5,15 +5,13 @@ import com.google.common.collect.ImmutableList;
 import io.papermc.paper.configuration.constraint.Constraint;
 import io.papermc.paper.configuration.serializer.ComponentSerializer;
 import io.papermc.paper.configuration.serializer.EnumValueSerializer;
+import io.papermc.paper.plugin.ApiVersion;
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import io.papermc.paper.plugin.provider.configuration.serializer.PermissionConfigurationSerializer;
 import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
 import io.papermc.paper.plugin.provider.configuration.type.DependencyConfiguration;
 import io.papermc.paper.plugin.provider.configuration.type.PermissionConfiguration;
 import io.papermc.paper.plugin.provider.configuration.type.PluginDependencyLifeCycle;
-import java.lang.reflect.Type;
-import java.util.function.Predicate;
-import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginLoadOrder;
@@ -26,8 +24,6 @@ import org.spongepowered.configurate.loader.HeaderMode;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.ObjectMapper;
 import org.spongepowered.configurate.objectmapping.meta.Required;
-import org.spongepowered.configurate.serialize.ScalarSerializer;
-import org.spongepowered.configurate.serialize.SerializationException;
 import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
@@ -63,6 +59,7 @@ public class PaperPluginMeta implements PluginMeta {
     @FlattenedResolver
     private PermissionConfiguration permissionConfiguration = new PermissionConfiguration(PermissionDefault.OP, List.of());
     @Required
+    @ApiVersion.Minimum("1.19")
     private ApiVersion apiVersion;
 
     private Map<PluginDependencyLifeCycle, Map<String, DependencyConfiguration>> dependencies = new EnumMap<>(PluginDependencyLifeCycle.class);
@@ -70,7 +67,6 @@ public class PaperPluginMeta implements PluginMeta {
     public PaperPluginMeta() {
     }
 
-    static final ApiVersion MINIMUM = ApiVersion.getOrCreateVersion("1.19");
     public static PaperPluginMeta create(BufferedReader reader) throws ConfigurateException {
         YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
             .indent(2)
@@ -78,28 +74,8 @@ public class PaperPluginMeta implements PluginMeta {
             .headerMode(HeaderMode.NONE)
             .source(() -> reader)
             .defaultOptions((options) -> {
-
                 return options.serializers((serializers) -> {
                     serializers
-                        .register(new ScalarSerializer<>(ApiVersion.class) {
-                            @Override
-                            public ApiVersion deserialize(final Type type, final Object obj) throws SerializationException {
-                                try {
-                                    final ApiVersion version = ApiVersion.getOrCreateVersion(obj.toString());
-                                    if (version.isOlderThan(MINIMUM)) {
-                                        throw new SerializationException(version + " is too old for a paper plugin!");
-                                    }
-                                    return version;
-                                } catch (final IllegalArgumentException e) {
-                                    throw new SerializationException(e);
-                                }
-                            }
-
-                            @Override
-                            protected Object serialize(final ApiVersion item, final Predicate<Class<?>> typeSupported) {
-                                return item.getVersionString();
-                            }
-                        })
                         .register(new EnumValueSerializer())
                         .register(PermissionConfiguration.class, PermissionConfigurationSerializer.SERIALIZER)
                         .register(new ComponentSerializer())

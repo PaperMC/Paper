@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.legacy;
 
+import io.papermc.paper.plugin.ApiVersion;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -30,7 +31,6 @@ import org.bukkit.craftbukkit.legacy.reroute.InjectPluginVersion;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteStatic;
 import org.bukkit.craftbukkit.tag.CraftBlockTag;
 import org.bukkit.craftbukkit.tag.CraftItemTag;
-import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.entity.Animals;
