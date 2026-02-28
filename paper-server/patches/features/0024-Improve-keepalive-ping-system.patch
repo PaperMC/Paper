@@ -100,10 +100,10 @@ index 21d50675bfe90c2276890779eb23de58ac915b9a..7be34e37562875313b8e43357921b5fe
      }
  }
 diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed501aad6239 100644
+index 0fd13e18902991d7ad4cbed0222d91cb71229d7a..a3768425e63722c8b0a99579a680f4cd9a9055c2 100644
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -39,12 +39,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -39,13 +39,14 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      protected final MinecraftServer server;
      public final Connection connection; // Paper
      private final boolean transferred;
@@ -117,19 +117,21 @@ index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed50
      private boolean closed = false;
 -    private int latency;
 +    private volatile int latency; // Paper - improve keepalives - make volatile
+     public int lastLatency; // Paper - Keep most recent latency in millis
 +    private final io.papermc.paper.util.KeepAlive keepAlive; // Paper - improve keepalives
      private volatile boolean suspendFlushingOnServerThread = false;
      // CraftBukkit start
      public final org.bukkit.craftbukkit.CraftServer cserver;
-@@ -61,13 +62,14 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -62,7 +63,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
          this.server = server;
          this.connection = connection;
 -        this.keepAliveTime = Util.getMillis();
 +        //this.keepAliveTime = Util.getMillis(); // Paper - improve keepalives
          this.latency = cookie.latency();
+         this.lastLatency = this.latency; // Paper - Keep most recent latency in millis
          this.transferred = cookie.transferred();
-         // Paper start
+@@ -70,6 +71,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
          this.playerBrand = cookie.brandName();
          this.cserver = server.server;
          this.pluginMessagerChannels = cookie.channels();
@@ -137,13 +139,14 @@ index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed50
          // Paper end
      }
  
-@@ -100,13 +102,41 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -102,14 +104,42 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
  
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
 -        if (this.keepAlivePending && packet.getId() == this.keepAliveChallenge) {
 -            int i = (int)(Util.getMillis() - this.keepAliveTime);
 -            this.latency = (this.latency * 3 + i) / 4;
+-            this.lastLatency = i; // Paper - Keep most recent latency in millis
 -            this.keepAlivePending = false;
 -        } else if (!this.isSingleplayerOwner()) {
 -            this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, io.papermc.paper.connection.DisconnectionReason.TIMEOUT); // Paper - add proper async disconnect
@@ -159,6 +162,7 @@ index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed50
 +            this.keepAlive.pingCalculator5s.update(response);
 +
 +            this.latency = this.keepAlive.pingCalculator5s.getAvgLatencyMS();
++            this.lastLatency = (int) java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(response.latencyNS()); // Paper - Keep most recent latency in millis
 +            return;
 +        }
 +
@@ -185,7 +189,7 @@ index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed50
      }
  
      @Override
-@@ -233,20 +263,23 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -236,20 +266,23 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      protected void keepConnectionAlive() {
          Profiler.get().push("keepAlive");
          long millis = Util.getMillis();
@@ -223,7 +227,7 @@ index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed50
              }
          }
  
-@@ -427,6 +460,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -430,6 +463,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      }
  
      protected CommonListenerCookie createCookie(ClientInformation clientInformation) {
