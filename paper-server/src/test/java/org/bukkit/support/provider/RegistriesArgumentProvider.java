@@ -8,7 +8,7 @@ import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.List;
 import java.util.stream.Stream;
-import io.papermc.paper.world.LootTables;
+import io.papermc.paper.loot.LootTables;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;

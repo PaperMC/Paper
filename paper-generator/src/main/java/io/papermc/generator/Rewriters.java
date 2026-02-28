@@ -26,7 +26,7 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
-import io.papermc.paper.world.LootTables;
+import io.papermc.paper.loot.LootTables;
 import io.papermc.paper.world.WeatheringCopperState;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;

@@ -1,4 +1,4 @@
-package io.papermc.paper.world;
+package io.papermc.paper.loot;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;

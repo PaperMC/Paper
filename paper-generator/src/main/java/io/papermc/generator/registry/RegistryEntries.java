@@ -20,7 +20,7 @@ import io.papermc.paper.registry.data.SoundEventRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
-import io.papermc.paper.world.LootTables;
+import io.papermc.paper.loot.LootTables;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;

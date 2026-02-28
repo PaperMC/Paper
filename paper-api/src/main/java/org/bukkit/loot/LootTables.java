@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * <a href="https://minecraft.wiki/w/Loot_table#List_of_loot_tables">
  * Minecraft Wiki</a> for more information on loot tables.
  *
- * @deprecated loot table is now a proper registry, see {@link io.papermc.paper.world.LootTables}
+ * @deprecated loot table is now a proper registry, see {@link io.papermc.paper.loot.LootTables}
  */
 @Deprecated(since = "1.21.11")
 public enum LootTables implements Keyed {
