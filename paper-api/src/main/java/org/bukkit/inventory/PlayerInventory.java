@@ -34,32 +34,28 @@ public interface PlayerInventory extends Inventory {
      *
      * @return The ItemStack in the helmet slot
      */
-    @Nullable
-    public ItemStack getHelmet();
+    public @NotNull ItemStack getHelmet();
 
     /**
      * Return the ItemStack from the chestplate slot
      *
      * @return The ItemStack in the chestplate slot
      */
-    @Nullable
-    public ItemStack getChestplate();
+    public @NotNull ItemStack getChestplate();
 
     /**
      * Return the ItemStack from the leg slot
      *
      * @return The ItemStack in the leg slot
      */
-    @Nullable
-    public ItemStack getLeggings();
+    public @NotNull ItemStack getLeggings();
 
     /**
      * Return the ItemStack from the boots slot
      *
      * @return The ItemStack in the boots slot
      */
-    @Nullable
-    public ItemStack getBoots();
+    public @NotNull ItemStack getBoots();
 
     /**
      * Stores the ItemStack at the given index of the inventory.
