@@ -36,7 +36,7 @@ public final class ClassToInterfaceRules {
 
     public static byte[] processClass(final byte[] bytes) {
         final ClassReader classReader = new ClassReader(bytes);
-        final ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        final ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
         classReader.accept(visitor(classWriter), 0);
         return classWriter.toByteArray();
     }
