@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: okx-code <okx@okx.sh>
+Date: Mon, 21 Jul 2025 19:52:53 +0100
+Subject: [PATCH] Optimise mob despawning
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index dda8d38ef61672cc714d9e5a475f9b0412ed5ff9..2c21fc430de7cec90ee83a508b45e56e6fdb4545 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -789,6 +789,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+             }
+ 
+             io.papermc.paper.entity.activation.ActivationRange.activateEntities(this); // Paper - EAR
++            generateEligiblePlayersForDespawning();
+             this.entityTickList
+                 .forEach(
+                     entity -> {
+@@ -2797,4 +2798,26 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         this.lagCompensationTick = (System.nanoTime() - MinecraftServer.SERVER_INIT) / (java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(50L));
+     }
+     // Paper end - lag compensation
++
++    // Paper start - optimise despawns
++    @Nullable
++    private io.papermc.paper.util.kdtree.Kd3Tree despawnEligiblePlayers;
++
++    private void generateEligiblePlayersForDespawning() {
++        Vec3[] nodes = new Vec3[players.size()];
++        int i = 0;
++        for (ServerPlayer player : players) {
++            if (net.minecraft.world.entity.EntitySelector.PLAYER_AFFECTS_SPAWNING.test(player)) {
++                nodes[i] = player.position();
++                i++;
++            }
++        }
++        this.despawnEligiblePlayers = new io.papermc.paper.util.kdtree.Kd3Tree(java.util.Arrays.copyOf(nodes, i));
++    }
++
++    @Nullable
++    public io.papermc.paper.util.kdtree.Kd3Tree getDespawnEligiblePlayers() {
++        return despawnEligiblePlayers;
++    }
++    // Paper end - optimise despawns
+ }
+diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
+index 0470c4bbf8be7e48ce8dfa4910c3b9f5ebb23360..415025f25d35f795bf0157fff7f5a20e25cbfd5d 100644
+--- a/net/minecraft/world/entity/Mob.java
++++ b/net/minecraft/world/entity/Mob.java
+@@ -700,15 +700,16 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+         if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
+             this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
+-            Entity nearestPlayer = this.level().findNearbyPlayer(this, -1.0, EntitySelector.PLAYER_AFFECTS_SPAWNING); // Paper - Affects Spawning API
+-            if (nearestPlayer != null) {
++            final io.papermc.paper.util.kdtree.Kd3Tree despawnEligiblePlayers = ((ServerLevel) this.level()).getDespawnEligiblePlayers();
++            if (despawnEligiblePlayers != null && !despawnEligiblePlayers.isEmpty()) {
++                final Vec3 nearest = despawnEligiblePlayers.nearest(this.position());
+                 // Paper start - Configurable despawn distances
+                 final io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
+                 final io.papermc.paper.configuration.type.DespawnRange.Shape shape = this.level().paperConfig().entities.spawning.despawnRangeShape;
+-                final double dy = Math.abs(nearestPlayer.getY() - this.getY());
++                final double dy = Math.abs(nearest.y() - this.getY());
+                 final double dySqr = Mth.square(dy);
+-                final double dxSqr = Mth.square(nearestPlayer.getX() - this.getX());
+-                final double dzSqr = Mth.square(nearestPlayer.getZ() - this.getZ());
++                final double dxSqr = Mth.square(nearest.x() - this.getX());
++                final double dzSqr = Mth.square(nearest.z() - this.getZ());
+                 final double distanceSquared = dxSqr + dzSqr + dySqr;
+                 // Despawn if hard/soft limit is exceeded
+                 if (despawnRangePair.hard().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy) && this.removeWhenFarAway(distanceSquared)) {
