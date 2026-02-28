@@ -21,7 +21,7 @@ import org.jspecify.annotations.Nullable;
  * the creative mode inventory
  */
 @NullMarked
-public interface PotionType extends OldEnum<PotionType>, Keyed, FeatureDependant {
+public interface PotionType extends Keyed, FeatureDependant {
 
     // Start generate - PotionType
     PotionType AWKWARD = getType("awkward");
@@ -179,25 +179,4 @@ public interface PotionType extends OldEnum<PotionType>, Keyed, FeatureDependant
         return null;
     }
 
-    /**
-     * @param name of the potion type.
-     * @return the potion type with the given name.
-     * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
-     */
-    @Deprecated(since = "1.21.11", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
-    static PotionType valueOf(String name) {
-        NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
-        PotionType potionType = key == null ? null : Bukkit.getUnsafe().get(RegistryKey.POTION, key);
-        Preconditions.checkArgument(potionType != null, "No potion type found with the name %s", name);
-        return potionType;
-    }
-
-    /**
-     * @return an array of all known potion types.
-     * @deprecated use {@link Registry#iterator()}.
-     */
-    @Deprecated(since = "1.21.11", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
-    static PotionType[] values() {
-        return Registry.POTION.stream().toArray(PotionType[]::new);
-    }
 }

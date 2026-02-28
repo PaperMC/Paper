@@ -9,6 +9,7 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
+includeBuild("../asm-utils")
 if (!file(".git").exists()) {
     val errorText = """
         

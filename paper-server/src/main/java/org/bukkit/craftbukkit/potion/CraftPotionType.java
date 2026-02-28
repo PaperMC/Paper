@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.potion;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.util.OldEnumHolderable;
+import io.papermc.paper.util.LegacyEnumHolderable;
 import io.papermc.paper.world.flag.PaperFeatureDependent;
 import java.util.List;
 import java.util.Locale;
@@ -10,7 +10,9 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.alchemy.Potion;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.util.ApiVersion;
@@ -19,7 +21,7 @@ import org.bukkit.potion.PotionType;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CraftPotionType extends OldEnumHolderable<PotionType, Potion> implements PotionType, PaperFeatureDependent<Potion> {
+public class CraftPotionType extends LegacyEnumHolderable<Potion, CraftPotionType> implements PotionType, PaperFeatureDependent<Potion> {
 
     public static PotionType minecraftHolderToBukkit(Holder<Potion> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.POTION);
@@ -86,5 +88,18 @@ public class CraftPotionType extends OldEnumHolderable<PotionType, Potion> imple
     @Override
     public int getMaxLevel() {
         return this.isUpgradeable() ? 2 : 1;
+    }
+
+    @Deprecated // bytecode rewrites target this
+    public static PotionType valueOf(final String name) {
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        final PotionType potionType = key == null ? null : Bukkit.getUnsafe().get(RegistryKey.POTION, key);
+        Preconditions.checkArgument(potionType != null, "No potion type found with the name %s", name);
+        return potionType;
+    }
+
+    @Deprecated // bytecode rewrites target this
+    public static PotionType[] values() {
+        return Registry.POTION.stream().toArray(PotionType[]::new);
     }
 }
