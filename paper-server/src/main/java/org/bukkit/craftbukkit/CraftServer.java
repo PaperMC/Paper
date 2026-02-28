@@ -1183,7 +1183,6 @@ public final class CraftServer implements Server {
         File folder = new File(this.getWorldContainer(), name);
         World world = this.getWorld(name);
 
-        // Paper start
         World worldByKey = this.getWorld(creator.key());
         if (world != null || worldByKey != null) {
             if (world == worldByKey) {
@@ -1191,7 +1190,6 @@ public final class CraftServer implements Server {
             }
             throw new IllegalArgumentException("Cannot create a world with key " + creator.key() + " and name " + name + " one (or both) already match a world that exists");
         }
-        // Paper end
 
         if (folder.exists()) {
             Preconditions.checkArgument(folder.isDirectory(), "File (%s) exists and isn't a folder", name);
@@ -1209,7 +1207,7 @@ public final class CraftServer implements Server {
             case NORMAL -> LevelStem.OVERWORLD;
             case NETHER -> LevelStem.NETHER;
             case THE_END -> LevelStem.END;
-            default -> throw new IllegalArgumentException("Illegal dimension (" + creator.environment() + ")");
+            case CUSTOM -> CraftNamespacedKey.toResourceKey(Registries.LEVEL_STEM, creator.key());
         };
 
         LevelStorageSource.LevelStorageAccess levelStorageAccess;
@@ -1282,7 +1280,7 @@ public final class CraftServer implements Server {
         } else if (name.equals(levelName + "_the_end")) {
             dimensionKey = net.minecraft.world.level.Level.END;
         } else {
-            dimensionKey = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
+            dimensionKey = CraftNamespacedKey.toResourceKey(Registries.DIMENSION, creator.key());
         }
 
         ServerLevel serverLevel = new ServerLevel(
