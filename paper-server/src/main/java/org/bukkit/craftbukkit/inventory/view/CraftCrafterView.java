@@ -4,11 +4,9 @@ import com.google.common.base.Preconditions;
 import net.minecraft.world.inventory.CrafterMenu;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.CrafterInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.view.CrafterView;
-import org.jetbrains.annotations.Nullable;
 
 public class CraftCrafterView extends CraftInventoryView<CrafterMenu, CrafterInventory> implements CrafterView {
 
@@ -63,7 +61,7 @@ public class CraftCrafterView extends CraftInventoryView<CrafterMenu, CrafterInv
     }
 
     @Override
-    public @Nullable Inventory mapValidSlotToInventory(final int rawSlot) {
+    public Inventory mapValidSlotToInventory(final int rawSlot) {
         // Raw slot ID for crafter inventory views is 45 for result slot and 0-8 for crafting grid slots.
         // Crafter inventory size is 10. Only check 0-8 and 45.
         if (rawSlot < (this.getTopInventory().getSize() - 1) || rawSlot == 45) {
