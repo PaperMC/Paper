@@ -22,12 +22,12 @@ public class RegistryBootstrapper {
         RegistryEntries.forEach(entry -> {
             generators.add(new GeneratedKeyType<>(PAPER_REGISTRY_PACKAGE + ".keys", entry));
             if (entry.registry().listTags().findAny().isPresent()) {
-                generators.add(new GeneratedTagKeyType(entry, PAPER_REGISTRY_PACKAGE + ".keys.tags"));
+                generators.add(new GeneratedTagKeyType<>(entry, PAPER_REGISTRY_PACKAGE + ".keys.tags"));
             }
         });
 
         // todo remove once entity type is a registry
-        generators.add(new GeneratedTagKeyType(RegistryEntries.byRegistryKey(Registries.ENTITY_TYPE), PAPER_REGISTRY_PACKAGE + ".keys.tags"));
+        generators.add(new GeneratedTagKeyType<>(RegistryEntries.byRegistryKey(Registries.ENTITY_TYPE), PAPER_REGISTRY_PACKAGE + ".keys.tags"));
     }
 
     public static void bootstrap(PatternSourceSetRewriter apiSourceSet, PatternSourceSetRewriter serverSourceSet) {

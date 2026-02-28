@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -30,7 +31,7 @@ public interface Cow extends AbstractCow {
     /**
      * Represents the variant of a cow.
      */
-    interface Variant extends Keyed {
+    interface Variant extends RegistryElement<Variant>, Keyed {
 
         // Start generate - CowVariant
         Variant COLD = getVariant("cold");

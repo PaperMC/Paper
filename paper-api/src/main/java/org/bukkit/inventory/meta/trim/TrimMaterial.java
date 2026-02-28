@@ -1,6 +1,7 @@
 package org.bukkit.inventory.meta.trim;
 
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -12,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a material that may be used in an {@link ArmorTrim}.
  */
-public interface TrimMaterial extends Keyed, Translatable {
+public interface TrimMaterial extends RegistryElement<TrimMaterial>, Keyed, Translatable {
 
     // Start generate - TrimMaterial
     TrimMaterial AMETHYST = getTrimMaterial("amethyst");

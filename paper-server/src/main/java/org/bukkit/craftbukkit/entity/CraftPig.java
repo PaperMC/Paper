@@ -82,7 +82,7 @@ public class CraftPig extends CraftAnimals implements Pig {
         this.getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
     }
 
-    public static class CraftVariant extends HolderableBase<PigVariant> implements Variant {
+    public static class CraftVariant extends HolderableBase<PigVariant, Variant> implements Variant {
 
         public static Variant minecraftHolderToBukkit(Holder<PigVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.PIG_VARIANT);

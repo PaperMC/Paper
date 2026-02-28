@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import io.papermc.paper.registry.RegistryElement;
 import java.util.Collection;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -9,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a generic Mojang game event.
  */
-public abstract class GameEvent implements Keyed {
+public abstract class GameEvent implements RegistryElement<GameEvent>, Keyed {
 
     // Start generate - GameEvent
     public static final GameEvent BLOCK_ACTIVATE = getEvent("block_activate");

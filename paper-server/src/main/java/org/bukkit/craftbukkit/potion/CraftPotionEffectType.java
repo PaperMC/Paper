@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.potion;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
+import io.papermc.paper.registry.PaperRegistryElement;
 import io.papermc.paper.util.Holderable;
 import io.papermc.paper.world.flag.PaperFeatureDependent;
 import java.util.Map;
@@ -23,7 +24,7 @@ import org.bukkit.potion.PotionEffectTypeCategory;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CraftPotionEffectType extends PotionEffectType implements Holderable<MobEffect>, io.papermc.paper.world.flag.PaperFeatureDependent<MobEffect> {
+public class CraftPotionEffectType extends PotionEffectType implements Holderable<MobEffect>, PaperRegistryElement<MobEffect, PotionEffectType>, io.papermc.paper.world.flag.PaperFeatureDependent<MobEffect> {
 
     public static PotionEffectType minecraftHolderToBukkit(Holder<MobEffect> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.MOB_EFFECT);

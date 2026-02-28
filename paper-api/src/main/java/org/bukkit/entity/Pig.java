@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -30,7 +31,7 @@ public interface Pig extends Steerable, Vehicle {
     /**
      * Represents the variant of a pig.
      */
-    interface Variant extends Keyed {
+    interface Variant extends RegistryElement<Variant>, Keyed {
 
         // Start generate - PigVariant
         Variant COLD = getVariant("cold");
