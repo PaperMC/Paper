@@ -1,7 +1,6 @@
 package io.papermc.paper.configuration;
 
 import com.mojang.logging.LogUtils;
-import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.serializer.collection.map.WriteKeyBack;
 import io.papermc.paper.configuration.type.number.DoubleOr;
@@ -350,6 +349,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean enableNether = true;
         @Comment("Keeps Paper's fix for MC-159283 enabled. Disable to use vanilla End ring terrain.")
         public boolean fixFarEndTerrainGeneration = true;
+        @Comment("Fix for MC-301114. This removes an oldest combat entry when hits the cap, to fix the memory leak on constant entity damaged.")
+        public IntOr.Disabled maxTrackingCombatEntries = new IntOr.Disabled(OptionalInt.of(10240));
     }
 
     public BlockUpdates blockUpdates;
