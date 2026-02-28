@@ -77,8 +77,22 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
     }
 
     @Override
+    public T getDefaultValue() {
+        return shimLegacyValue(this.getHandle().defaultValue(), this);
+    }
+
+    @Override
     public String translationKey() {
         return this.getHandle().getDescriptionId();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static <T> T shimLegacyValue(T value, GameRule<?> rule){
+        if (rule instanceof CraftGameRule.LegacyGameRuleWrapper wrapper) {
+            return (T) wrapper.getToLegacyFromModern().apply(value);
+        }
+
+        return value;
     }
 
     public static class LegacyGameRuleWrapper<LEGACY, MODERN> extends CraftGameRule<LEGACY> {
