@@ -1,7 +1,7 @@
 package io.papermc.paper.registry.set;
 
-import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryBuilder;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -22,5 +22,5 @@ public interface RegistrySetProvider {
         return Holder.INSTANCE.orElseThrow();
     }
 
-    <T extends Keyed & Registered.Inlineable<T, E, B>, E, B extends RegistryBuilder<T>> RegistryHolderSetBuilder<T, E, B> registryHolderSetBuilder(RegistryKey<T> registryKey); // TODO remove Keyed
+    <T extends Keyed & RegistryElement.Inlineable<T, E, B>, E, B extends RegistryBuilder<T>> RegistryHolderSetBuilder<T, E, B> registryHolderSetBuilder(RegistryKey<T> registryKey); // TODO remove Keyed
 }

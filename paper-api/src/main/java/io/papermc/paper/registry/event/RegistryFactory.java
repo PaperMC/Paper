@@ -1,8 +1,8 @@
 package io.papermc.paper.registry.event;
 
-import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.holder.RegistryHolder;
@@ -41,7 +41,7 @@ public interface RegistryFactory {
      * @param <E> the registry entry type
      * @param <B> the builder type
      */
-    <V extends Keyed & Registered.Buildable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Reference<V, E> getOrCreateReferenceHolder(TypedKey<V> key); // TODO remove Keyed
+    <V extends Keyed & RegistryElement.Buildable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Reference<V, E> getOrCreateReferenceHolder(TypedKey<V> key); // TODO remove Keyed
 
     /**
      * Creates an inlined holder wrapping an anonymous value built from the
@@ -54,7 +54,7 @@ public interface RegistryFactory {
      * @param <E> the registry entry type
      * @param <B> the builder type
      */
-    <V extends Keyed & Registered.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Inlined<V, E> getOrCreateInlinedHolder(RegistryKey<V> registryKey, final Consumer<RegistryBuilderFactory<V, ? extends B>> value); // TODO remove Keyed
+    <V extends Keyed & RegistryElement.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Inlined<V, E> getOrCreateInlinedHolder(RegistryKey<V> registryKey, final Consumer<RegistryBuilderFactory<V, ? extends B>> value); // TODO remove Keyed
 
     /**
      * Creates a new builder for a {@link RegistryHolderSetBuilder holder set} of the given registry.
@@ -65,5 +65,5 @@ public interface RegistryFactory {
      * @param <E> the registry entry type
      * @param <B> the builder type
      */
-    <V extends Keyed & Registered.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolderSetBuilder<V, E, B> createSetBuilder(RegistryKey<V> registryKey);// TODO remove Keyed
+    <V extends Keyed & RegistryElement.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolderSetBuilder<V, E, B> createSetBuilder(RegistryKey<V> registryKey); // TODO remove Keyed
 }

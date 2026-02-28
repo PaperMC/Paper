@@ -1,8 +1,8 @@
 package io.papermc.paper.registry.set;
 
-import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.TypedKey;
 import java.util.function.Consumer;
 
@@ -13,7 +13,7 @@ import java.util.function.Consumer;
  * @param <E> the registry entry type
  * @param <B> the builder type
  */
-public interface RegistryHolderSetBuilder<T extends Registered.Inlineable<T, E, B>, E, B extends RegistryBuilder<T>> {
+public interface RegistryHolderSetBuilder<T extends RegistryElement.Inlineable<T, E, B>, E, B extends RegistryBuilder<T>> {
 
     /**
      * Adds a value to the set.

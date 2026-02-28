@@ -1,6 +1,6 @@
 package org.bukkit;
 
-import io.papermc.paper.registry.Registered;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.data.GameEventRegistryEntry;
 import java.util.Collection;
 import net.kyori.adventure.key.Key;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a generic Mojang game event.
  */
-public abstract class GameEvent implements Keyed, Registered.Buildable<GameEvent, GameEventRegistryEntry, GameEventRegistryEntry.Builder> {
+public abstract class GameEvent implements RegistryElement.Buildable<GameEvent, GameEventRegistryEntry, GameEventRegistryEntry.Builder>, Keyed {
 
     // Start generate - GameEvent
     public static final GameEvent BLOCK_ACTIVATE = getEvent("block_activate");

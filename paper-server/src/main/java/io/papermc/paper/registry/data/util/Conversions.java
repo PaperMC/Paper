@@ -7,9 +7,9 @@ import io.papermc.paper.adventure.WrapperAwareSerializer;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.PaperRegistryBuilderFactory;
-import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
@@ -95,7 +95,7 @@ public class Conversions implements RegistryFactory {
         return buildableMeta;
     }
 
-    public <M, A extends Keyed & Registered.Buildable<A, E, ?>, E> Function<M, E> getEntryCreator(final RegistryKey<A> registryKey) {
+    public <M, A extends Keyed & RegistryElement.Buildable<A, E, ?>, E> Function<M, E> getEntryCreator(final RegistryKey<A> registryKey) {
         final RegistryEntryMeta.Buildable<M, A, E, ?> directHolderBuildableMeta = getDirectHolderBuildableMeta(registryKey);
         return m -> directHolderBuildableMeta.entryFactory().create(this, m);
     }
@@ -132,19 +132,19 @@ public class Conversions implements RegistryFactory {
     }
 
     @Override
-    public <V extends Keyed & Registered.Buildable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Reference<V, E> getOrCreateReferenceHolder(final TypedKey<V> key) {
+    public <V extends Keyed & RegistryElement.Buildable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Reference<V, E> getOrCreateReferenceHolder(final TypedKey<V> key) {
         final Holder.Reference<Object> reference = this.getReferenceHolder(key);
         return PaperRegistryHolders.createReference(reference, this.getEntryCreator(key.registryKey()));
     }
 
     @Override
-    public <V extends Keyed & Registered.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Inlined<V, E> getOrCreateInlinedHolder(final RegistryKey<V> registryKey, final Consumer<RegistryBuilderFactory<V, ? extends B>> value) {
+    public <V extends Keyed & RegistryElement.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Inlined<V, E> getOrCreateInlinedHolder(final RegistryKey<V> registryKey, final Consumer<RegistryBuilderFactory<V, ? extends B>> value) {
         final Holder.Direct<Object> directHolder = this.createHolderFromBuilder(registryKey, value);
         return PaperRegistryHolders.createInlined(registryKey, directHolder, this.getEntryCreator(registryKey));
     }
 
     @Override
-    public <V extends Keyed & Registered.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolderSetBuilder<V, E, B> createSetBuilder(final RegistryKey<V> registryKey) {
+    public <V extends Keyed & RegistryElement.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolderSetBuilder<V, E, B> createSetBuilder(final RegistryKey<V> registryKey) {
         return new RegistryHolderSetBuilderImpl<>(registryKey, this);
     }
 }

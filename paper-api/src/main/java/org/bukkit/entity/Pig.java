@@ -1,7 +1,7 @@
 package org.bukkit.entity;
 
-import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.PigVariantRegistryEntry;
 import net.kyori.adventure.key.Key;
@@ -46,7 +46,7 @@ public interface Pig extends Steerable, Vehicle {
     /**
      * Represents the variant of a pig.
      */
-    interface Variant extends Keyed, Registered.Buildable<Variant, PigVariantRegistryEntry, PigVariantRegistryEntry.Builder> {
+    interface Variant extends RegistryElement.Buildable<Variant, PigVariantRegistryEntry, PigVariantRegistryEntry.Builder>, Keyed {
 
         // Start generate - PigVariant
         Variant COLD = getVariant("cold");
@@ -64,7 +64,7 @@ public interface Pig extends Steerable, Vehicle {
     /**
      * Represents the sound variant of a pig.
      */
-    interface SoundVariant extends Keyed {
+    interface SoundVariant extends RegistryElement<SoundVariant>, Keyed {
 
         // Start generate - PigSoundVariant
         SoundVariant BIG = getSoundVariant("big");

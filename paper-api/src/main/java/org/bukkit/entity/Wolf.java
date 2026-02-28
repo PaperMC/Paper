@@ -1,7 +1,7 @@
 package org.bukkit.entity;
 
-import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import net.kyori.adventure.key.Key;
@@ -110,7 +110,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
     /**
      * Represents the variant of a wolf.
      */
-    interface Variant extends Keyed, Registered.Buildable<Variant, WolfVariantRegistryEntry, WolfVariantRegistryEntry.Builder> {
+    interface Variant extends RegistryElement.Buildable<Variant, WolfVariantRegistryEntry, WolfVariantRegistryEntry.Builder>, Keyed {
 
         // Start generate - WolfVariant
         // @GeneratedFrom 1.21.5
@@ -142,7 +142,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
     /**
      * Represents the sound variant of a wolf.
      */
-    interface SoundVariant extends Keyed {
+    interface SoundVariant extends RegistryElement<SoundVariant>, Keyed {
 
         // Start generate - WolfSoundVariant
         SoundVariant ANGRY = getSoundVariant("angry");

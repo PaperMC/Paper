@@ -1,7 +1,7 @@
 package io.papermc.paper.registry.set;
 
 import io.papermc.paper.registry.PaperRegistries;
-import io.papermc.paper.registry.Registered;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.data.util.Conversions;
@@ -28,7 +28,7 @@ public final class PaperRegistrySets {
         }
     }
 
-    public static <A extends Keyed & Registered.Buildable<A, E, ?>, E, M> HolderSet<M> convertToNmsWithDirects(final ResourceKey<? extends Registry<M>> resourceKey, final RegistryOps.RegistryInfoLookup lookup, final RegistrySet<A> registrySet) { // TODO remove Keyed
+    public static <A extends Keyed & RegistryElement.Buildable<A, E, ?>, E, M> HolderSet<M> convertToNmsWithDirects(final ResourceKey<? extends Registry<M>> resourceKey, final RegistryOps.RegistryInfoLookup lookup, final RegistrySet<A> registrySet) { // TODO remove Keyed
         if (registrySet instanceof NamedRegistryKeySetImpl<A, ?>) {
             return ((NamedRegistryKeySetImpl<A, M>) registrySet).namedSet();
         } else if (registrySet.isEmpty()) {
@@ -71,7 +71,7 @@ public final class PaperRegistrySets {
         }
     }
 
-    public static <A extends Keyed & Registered.Inlineable<A, E, ?>, E, M> RegistrySet<A> convertToApiWithDirects(final RegistryKey<A> registryKey, final HolderSet<M> holders, final Conversions conversions) { // TODO remove Keyed
+    public static <A extends Keyed & RegistryElement.Inlineable<A, E, ?>, E, M> RegistrySet<A> convertToApiWithDirects(final RegistryKey<A> registryKey, final HolderSet<M> holders, final Conversions conversions) { // TODO remove Keyed
         if (holders instanceof final HolderSet.Named<M> named) {
             return new NamedRegistryKeySetImpl<>(PaperRegistries.fromNms(named.key()), named);
         } else if (holders instanceof final HolderSet.Direct<M> direct) {

@@ -1,8 +1,8 @@
 package org.bukkit.block.banner;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
 import java.util.Locale;
@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface PatternType extends OldEnum<PatternType>, Keyed, Registered.Buildable<PatternType, BannerPatternRegistryEntry, BannerPatternRegistryEntry.Builder> {
+public interface PatternType extends RegistryElement.Buildable<PatternType, BannerPatternRegistryEntry, BannerPatternRegistryEntry.Builder>, OldEnum<PatternType>, Keyed {
 
     // Start generate - PatternType
     PatternType BASE = getType("base");

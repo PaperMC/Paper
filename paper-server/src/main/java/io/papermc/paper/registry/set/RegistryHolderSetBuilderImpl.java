@@ -1,8 +1,8 @@
 package io.papermc.paper.registry.set;
 
-import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.data.util.Conversions;
@@ -14,7 +14,7 @@ import net.minecraft.core.HolderSet;
 import org.bukkit.Keyed;
 import org.bukkit.craftbukkit.CraftRegistry;
 
-public class RegistryHolderSetBuilderImpl<T extends Registered.Inlineable<T, E, B> & Keyed, E, B extends RegistryBuilder<T>, M> implements RegistryHolderSetBuilder<T, E, B> { // TODO remove Keyed
+public class RegistryHolderSetBuilderImpl<T extends RegistryElement.Inlineable<T, E, B> & Keyed, E, B extends RegistryBuilder<T>, M> implements RegistryHolderSetBuilder<T, E, B> { // TODO remove Keyed
 
     private final RegistryKey<T> registryKey;
     final List<Holder<M>> holders = new ArrayList<>();

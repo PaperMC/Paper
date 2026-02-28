@@ -1,6 +1,6 @@
 package io.papermc.paper.registry.set;
 
-import io.papermc.paper.registry.Registered;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.holder.RegistryHolder;
 import java.util.Collection;
@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Unmodifiable;
  * @param <T> the API type
  * @param <E> the registry entry type
  */
-public non-sealed interface RegistryHolderSet<T extends Registered.Buildable<T, E, ?>, E> extends RegistrySet<T> {
+public non-sealed interface RegistryHolderSet<T extends RegistryElement.Buildable<T, E, ?>, E> extends RegistrySet<T> {
 
     /**
      * Gets the holders in this set.

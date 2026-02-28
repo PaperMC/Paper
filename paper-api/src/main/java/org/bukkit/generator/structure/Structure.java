@@ -1,6 +1,7 @@
 package org.bukkit.generator.structure;
 
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -16,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
  * there might be additional structures present (for example structures added by
  * data packs), which can be received via {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} and {@link io.papermc.paper.registry.RegistryKey#STRUCTURE}.
  */
-public abstract class Structure implements Keyed {
+public abstract class Structure implements RegistryElement<Structure>, Keyed {
 
     // Start generate - Structure
     public static final Structure ANCIENT_CITY = getStructure("ancient_city");

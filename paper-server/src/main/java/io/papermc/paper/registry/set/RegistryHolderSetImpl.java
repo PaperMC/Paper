@@ -1,6 +1,6 @@
 package io.papermc.paper.registry.set;
 
-import io.papermc.paper.registry.Registered;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.holder.PaperRegistryHolders;
 import io.papermc.paper.registry.holder.RegistryHolder;
@@ -13,7 +13,7 @@ import net.minecraft.core.HolderSet;
 import org.bukkit.Keyed;
 import org.jspecify.annotations.Nullable;
 
-final class RegistryHolderSetImpl<T extends Keyed & Registered.Buildable<T, E, ?>, E, M> implements RegistryHolderSet<T, E> { // TODO remove Keyed
+final class RegistryHolderSetImpl<T extends Keyed & RegistryElement.Buildable<T, E, ?>, E, M> implements RegistryHolderSet<T, E> { // TODO remove Keyed
 
     private final RegistryKey<T> registryKey;
     private final Function<M, E> entryCreator;

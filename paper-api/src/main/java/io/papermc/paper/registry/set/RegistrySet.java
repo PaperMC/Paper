@@ -1,8 +1,8 @@
 package io.papermc.paper.registry.set;
 
 import com.google.common.collect.Lists;
-import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryBuilder;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.tag.Tag;
@@ -39,7 +39,7 @@ public sealed interface RegistrySet<T> permits RegistryHolderSet, RegistryKeySet
      * @param <B> the builder type
      */
     @Contract(value = "_ -> new", pure = true)
-    static <T extends Keyed & Registered.Inlineable<T, E, B>, E, B extends RegistryBuilder<T>> RegistryHolderSetBuilder<T, E, B> holderSetBuilder(final RegistryKey<T> registryKey) { // TODO remove Keyed
+    static <T extends Keyed & RegistryElement.Inlineable<T, E, B>, E, B extends RegistryBuilder<T>> RegistryHolderSetBuilder<T, E, B> holderSetBuilder(final RegistryKey<T> registryKey) { // TODO remove Keyed
         return RegistrySetProvider.instance().registryHolderSetBuilder(registryKey);
     }
 
@@ -62,7 +62,7 @@ public sealed interface RegistrySet<T> permits RegistryHolderSet, RegistryKeySet
     /**
      * Creates a {@link RegistryKeySet} from registry-backed values.
      * <p>All values provided <b>must</b> have keys in the given registry.
-     * <!--For anonymous values, use {@link #valueSet(RegistryKey, Iterable)}--></p>
+     * For anonymous values, use {@link #valueSet(RegistryKey, Iterable)}.</p>
      * <p>If references to actual objects are not available yet, use {@link #keySet(RegistryKey, Iterable)} to
      * create an equivalent {@link RegistryKeySet} using just {@link TypedKey TypedKeys}.</p>
      *

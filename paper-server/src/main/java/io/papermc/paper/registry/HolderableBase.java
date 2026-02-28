@@ -1,10 +1,10 @@
 package io.papermc.paper.registry;
 
-import io.papermc.paper.util.Holderable;
+import io.papermc.paper.util.HolderableElement;
 import net.minecraft.core.Holder;
 import org.bukkit.NamespacedKey;
 
-public abstract class HolderableBase<M> implements Holderable<M> {
+public abstract class HolderableBase<M, A> implements HolderableElement<M, A> {
 
     protected final Holder<M> holder;
 
@@ -20,26 +20,26 @@ public abstract class HolderableBase<M> implements Holderable<M> {
 
     @Override
     public final M getHandle() {
-        return Holderable.super.getHandle();
+        return HolderableElement.super.getHandle();
     }
 
     @Override
     public final int hashCode() {
-        return Holderable.super.implHashCode();
+        return HolderableElement.super.implHashCode();
     }
 
     @Override
     public final boolean equals(final Object obj) {
-        return Holderable.super.implEquals(obj);
+        return HolderableElement.super.implEquals(obj);
     }
 
     @Override
     public String toString() {
-        return Holderable.super.implToString();
+        return HolderableElement.super.implToString();
     }
 
     @Override
     public final NamespacedKey getKey() {
-        return Holderable.super.getKey();
+        return HolderableElement.super.getKey();
     }
 }

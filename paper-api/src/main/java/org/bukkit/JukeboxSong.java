@@ -1,7 +1,7 @@
 package org.bukkit;
 
-import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.JukeboxSongRegistryEntry;
 import net.kyori.adventure.key.Key;
@@ -13,7 +13,7 @@ import org.jspecify.annotations.NullMarked;
  * Represents a song which may play in a Jukebox.
  */
 @NullMarked
-public interface JukeboxSong extends Keyed, Translatable, Registered.Buildable<JukeboxSong, JukeboxSongRegistryEntry, JukeboxSongRegistryEntry.Builder> {
+public interface JukeboxSong extends RegistryElement.Buildable<JukeboxSong, JukeboxSongRegistryEntry, JukeboxSongRegistryEntry.Builder>, Keyed, Translatable {
 
     // Start generate - JukeboxSong
     JukeboxSong ELEVEN = get("11");
