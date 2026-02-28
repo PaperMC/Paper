@@ -1,0 +1,37 @@
+--- a/net/minecraft/world/level/block/RespawnAnchorBlock.java
++++ b/net/minecraft/world/level/block/RespawnAnchorBlock.java
+@@ -115,11 +_,16 @@
+                         LevelData.RespawnData.of(serverLevel.dimension(), pos, 0.0F, 0.0F), false
+                     );
+                     if (respawnConfig == null || !respawnConfig.isSamePosition(newRespawnConfig)) {
+-                        serverPlayer.setRespawnPosition(newRespawnConfig, true);
++                        if (serverPlayer.setRespawnPosition(newRespawnConfig, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR)) { // Paper - Add PlayerSetSpawnEvent
+                         serverLevel.playSound(
+                             null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F
+                         );
+                         return InteractionResult.SUCCESS_SERVER;
++                        // Paper start - Add PlayerSetSpawnEvent
++                        } else {
++                            return InteractionResult.FAIL;
++                        }
++                        // Paper end - Add PlayerSetSpawnEvent
+                     }
+                 }
+ 
+@@ -156,6 +_,7 @@
+     }
+ 
+     private void explode(final BlockState state, final ServerLevel level, final BlockPos pos) {
++        org.bukkit.block.BlockState blockState = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos).getState(); // CraftBukkit - capture BlockState before remove block
+         level.removeBlock(pos, false);
+         boolean anyWaterNeighbors = Direction.Plane.HORIZONTAL.stream().map(pos::relative).anyMatch(neighborPos -> isWaterThatWouldFlow(neighborPos, level));
+         final boolean inWater = anyWaterNeighbors || level.getFluidState(pos.above()).is(FluidTags.WATER);
+@@ -174,7 +_,7 @@
+             }
+         };
+         Vec3 boomPos = pos.getCenter();
+-        level.explode(null, level.damageSources().badRespawnPointExplosion(boomPos), damageCalculator, boomPos, 5.0F, true, Level.ExplosionInteraction.BLOCK);
++        level.explode(null, level.damageSources().badRespawnPointExplosion(boomPos).causingBlockSnapshot(blockState), damageCalculator, boomPos, 5.0F, true, Level.ExplosionInteraction.BLOCK); // CraftBukkit - add state
+     }
+ 
+     public static boolean canSetSpawn(final ServerLevel level, final BlockPos pos) {
