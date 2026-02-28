@@ -1,0 +1,74 @@
+package io.papermc.paper.util.capture;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.jspecify.annotations.Nullable;
+
+public class SimpleBlockCapture implements AutoCloseable {
+
+    private final MinecraftCaptureBridge capturingWorldLevel;
+    private final ServerLevel level;
+    private final @Nullable SimpleBlockCapture oldCapture;
+
+    private boolean isOverlayingCaptureOnLevel = false;
+
+    public SimpleBlockCapture(BlockPlacementPredictor base, ServerLevel level, @Nullable SimpleBlockCapture oldCapture) {
+        this.capturingWorldLevel = new MinecraftCaptureBridge(level, base);
+        this.level = level;
+        this.oldCapture = oldCapture;
+    }
+
+    public MinecraftCaptureBridge capturingWorldLevel() {
+        return this.capturingWorldLevel;
+    }
+
+    public boolean isCapturing() {
+        return true;
+    }
+
+    public List<BlockState> getCapturedSnapshots() {
+        return this.capturingWorldLevel.calculateLatestSnapshots(this.level);
+    }
+
+    public Stream<Block> getAffectedBlocks() {
+        return this.capturingWorldLevel.getAffectedBlocks(this.level);
+    }
+
+    public net.minecraft.world.level.block.state.@Nullable BlockState getOverlayBlockState(BlockPos pos) {
+        return this.capturingWorldLevel.getLatestBlockState(pos);
+    }
+
+    public @Nullable Optional<BlockEntity> getOverlayBlockEntity(BlockPos pos) {
+        return this.capturingWorldLevel.getLatestBlockEntity(pos);
+    }
+
+    // This is done so that the captured blocks appear ontop of the world.
+    public void overlayCaptureOnLevel() {
+        this.isOverlayingCaptureOnLevel = true;
+        this.capturingWorldLevel.allowWriteOnLevel();
+    }
+
+    public boolean isOverlayingCaptureOnLevel() {
+        return this.isOverlayingCaptureOnLevel;
+    }
+
+    public void finalizePlacement() {
+        this.level.capturer.releaseCapture(this.oldCapture);
+        this.capturingWorldLevel.applyTasks();
+    }
+
+    @Override
+    public void close() {
+        this.level.capturer.releaseCapture(this.oldCapture);
+    }
+
+    public net.minecraft.world.level.block.state.@Nullable BlockState getCaptureBlockStateIfLoaded(BlockPos pos) {
+        return this.capturingWorldLevel.getBlockStateIfLoaded(pos);
+    }
+}

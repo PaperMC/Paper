@@ -18,18 +18,18 @@ import org.jetbrains.annotations.NotNull;
  */
 public class BlockMultiPlaceEvent extends BlockPlaceEvent {
 
-    private final List<BlockState> states;
+    private final List<BlockState> replacedStates;
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
-    public BlockMultiPlaceEvent(@NotNull List<BlockState> states, @NotNull Block clicked, @NotNull ItemStack itemInHand, @NotNull Player thePlayer, boolean canBuild) {
-        this(states, clicked, itemInHand, thePlayer, canBuild, org.bukkit.inventory.EquipmentSlot.HAND);
+    public BlockMultiPlaceEvent(@NotNull List<BlockState> replacedStates, @NotNull Block clicked, @NotNull ItemStack itemInHand, @NotNull Player thePlayer, boolean canBuild) {
+        this(replacedStates, clicked, itemInHand, thePlayer, canBuild, org.bukkit.inventory.EquipmentSlot.HAND);
     }
 
     @ApiStatus.Internal
-    public BlockMultiPlaceEvent(@NotNull List<BlockState> states, @NotNull Block clicked, @NotNull ItemStack itemInHand, @NotNull Player thePlayer, boolean canBuild, @NotNull org.bukkit.inventory.EquipmentSlot hand) {
-        super(states.get(0).getBlock(), states.get(0), clicked, itemInHand, thePlayer, canBuild, hand);
-        this.states = ImmutableList.copyOf(states);
+    public BlockMultiPlaceEvent(@NotNull List<BlockState> replacedStates, @NotNull Block clicked, @NotNull ItemStack itemInHand, @NotNull Player thePlayer, boolean canBuild, @NotNull org.bukkit.inventory.EquipmentSlot hand) {
+        super(replacedStates.getFirst().getBlock(), replacedStates.getFirst(), clicked, itemInHand, thePlayer, canBuild, hand);
+        this.replacedStates = ImmutableList.copyOf(replacedStates);
     }
 
     /**
@@ -41,6 +41,6 @@ public class BlockMultiPlaceEvent extends BlockPlaceEvent {
      */
     @NotNull
     public List<BlockState> getReplacedBlockStates() {
-        return this.states;
+        return this.replacedStates;
     }
 }

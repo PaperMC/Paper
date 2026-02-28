@@ -15,10 +15,10 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.storage.LevelData;
-import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 
@@ -34,7 +34,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     }
 
     @Override
-    public net.minecraft.world.level.block.state.BlockState getBlockState(BlockPos pos) {
+    public BlockState getBlockState(BlockPos pos) {
         CapturedBlock block = this.blocks.get(pos);
         return block != null ? block.state() : this.level.getBlockState(pos);
     }
@@ -52,7 +52,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
+    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
         pos = pos.immutable();
         // remove first to keep last updated order
         this.blocks.remove(pos);
@@ -77,7 +77,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
 
     @Override
     public boolean destroyBlock(BlockPos pos, boolean dropBlock, Entity entity, int recursionLeft) {
-        net.minecraft.world.level.block.state.BlockState blockState = this.getBlockState(pos);
+        BlockState blockState = this.getBlockState(pos);
         if (blockState.isAir()) {
             return false;
         }
@@ -97,7 +97,6 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
             CraftBlockState snapshot = CraftBlockStates.getBlockState(
                 this.getMinecraftWorld().getWorld(), entry.getKey(), block.state(), block.blockEntity()
             );
-            snapshot.setFlags(block.flags());
             snapshot.setWorldHandle(this.level);
             callback.accept(snapshot);
         }
@@ -107,7 +106,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
         this.placeSomeBlocks($ -> true);
     }
 
-    public void placeSomeBlocks(Predicate<? super BlockState> filter) {
+    public void placeSomeBlocks(Predicate<? super CraftBlockState> filter) {
         this.placeSomeBlocks($ -> {}, filter);
     }
 
@@ -115,13 +114,19 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
         this.placeSomeBlocks(beforeRun, $ -> true);
     }
 
-    public void placeSomeBlocks(Consumer<? super CraftBlockState> beforeRun, Predicate<? super BlockState> filter) {
+    public void placeSomeBlocks(Consumer<? super CraftBlockState> beforeRun, Predicate<? super CraftBlockState> filter) {
         for (CraftBlockState snapshot : this.getSnapshotBlocks()) {
             if (filter.test(snapshot)) {
+                int flags = this.getEffectiveFlags(snapshot.getPosition());
                 beforeRun.accept(snapshot);
-                snapshot.place(snapshot.getFlags());
+                snapshot.place(flags);
             }
         }
+    }
+
+    public @Block.UpdateFlags int getEffectiveFlags(BlockPos pos) {
+        CapturedBlock block = this.blocks.get(pos);
+        return block != null ? block.flags() : Block.UPDATE_ALL; // fallback for new API-added blocks
     }
 
     public List<CraftBlockState> getSnapshotBlocks() {
@@ -130,7 +135,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
             this.iterateSnapshots(snapshots::add);
             this.snapshots = snapshots;
         }
-        return snapshots;
+        return this.snapshots;
     }
 
     // For tree generation
@@ -151,7 +156,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     }
 
     @Override
-    public boolean isStateAtPosition(BlockPos pos, Predicate<net.minecraft.world.level.block.state.BlockState> state) {
+    public boolean isStateAtPosition(BlockPos pos, Predicate<BlockState> state) {
         return state.test(this.getBlockState(pos));
     }
 
