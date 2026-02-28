@@ -61,6 +61,7 @@ import net.minecraft.util.NullOps;
 import net.minecraft.world.attribute.BedRule;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
@@ -110,6 +111,7 @@ import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.generator.structure.CraftGeneratedStructure;
@@ -130,6 +132,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.TippedArrow;
@@ -671,27 +674,46 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public <T extends AbstractArrow> T spawnArrow(Location location, Vector direction, float speed, float spread, Class<T> clazz) {
+    public <A extends AbstractArrow> A spawnArrow(Location location, Vector direction, float speed, float spread, Class<A> clazz) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(direction != null, "Vector cannot be null");
         Preconditions.checkArgument(clazz != null, "clazz Entity for the arrow cannot be null");
 
-        net.minecraft.world.entity.projectile.arrow.AbstractArrow arrow;
-        if (TippedArrow.class.isAssignableFrom(clazz)) {
-            arrow = EntityTypes.ARROW.create(this.world, EntitySpawnReason.COMMAND);
-            ((Arrow) arrow.getBukkitEntity()).setBasePotionType(PotionType.WATER);
-        } else if (SpectralArrow.class.isAssignableFrom(clazz)) {
-            arrow = EntityTypes.SPECTRAL_ARROW.create(this.world, EntitySpawnReason.COMMAND);
+        EntityType<? extends net.minecraft.world.entity.projectile.arrow.AbstractArrow> type;
+        if (SpectralArrow.class.isAssignableFrom(clazz)) {
+            type = EntityTypes.SPECTRAL_ARROW;
         } else if (Trident.class.isAssignableFrom(clazz)) {
-            arrow = EntityTypes.TRIDENT.create(this.world, EntitySpawnReason.COMMAND);
+            type = EntityTypes.TRIDENT;
         } else {
-            arrow = EntityTypes.ARROW.create(this.world, EntitySpawnReason.COMMAND);
+            type = EntityTypes.ARROW;
+        }
+
+        A arrow = (A) this.spawnProjectile(location, type, direction, speed, spread).getBukkitEntity();
+        if (TippedArrow.class.isAssignableFrom(clazz)) { // legacy compat
+            ((Arrow) arrow).setBasePotionType(PotionType.WATER);
+        }
+        return arrow;
+    }
+
+    @Override
+    public <P extends Projectile> P spawnProjectile(Location location, org.bukkit.entity.EntityType<P> type, Vector direction, float speed, float spread) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(direction != null, "Vector cannot be null");
+        Preconditions.checkArgument(type != null, "Entity type for the arrow cannot be null");
+
+        return (P) this.spawnProjectile(location, CraftEntityType.bukkitToMinecraft(type), direction, speed, spread).getBukkitEntity();
+    }
+
+    private <P extends net.minecraft.world.entity.projectile.Projectile> P spawnProjectile(Location location, EntityType<P> type, Vector direction, float speed, float spread) {
+        P arrow = type.create(this.world, EntitySpawnReason.COMMAND);
+        if (arrow == null) {
+            throw new UnsupportedOperationException("Entity type " + EntityType.getKey(type) + " is not valid for this world");
         }
 
         arrow.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         arrow.shoot(direction.getX(), direction.getY(), direction.getZ(), speed, spread);
         this.world.addFreshEntity(arrow);
-        return (T) arrow.getBukkitEntity();
+        return arrow;
     }
 
     @Override
@@ -891,9 +913,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @NotNull
     @Override
-    public <T extends LivingEntity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull SpawnReason spawnReason, boolean randomizeData, @Nullable Consumer<? super T> function) throws IllegalArgumentException {
+    public <E extends LivingEntity> E spawn(@NotNull Location location, @NotNull Class<E> clazz, @NotNull SpawnReason spawnReason, boolean randomizeData, @Nullable Consumer<? super E> function) throws IllegalArgumentException {
         Preconditions.checkArgument(spawnReason != null, "Spawn reason cannot be null");
-        return this.spawn(location, clazz, function, spawnReason, randomizeData);
+        return this.spawn0(location, clazz, function, spawnReason, randomizeData);
     }
 
     @Override

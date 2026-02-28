@@ -27,7 +27,7 @@ public abstract class BaseTag<T extends Keyed, C extends BaseTag<T, C>> implemen
         add(filter);
     }
 
-    public BaseTag(@NotNull Class<T> clazz, @NotNull NamespacedKey key, @NotNull T...values) {
+    public BaseTag(@NotNull Class<T> clazz, @NotNull NamespacedKey key, @NotNull T... values) {
         this(clazz, key, Lists.newArrayList(values));
     }
 
