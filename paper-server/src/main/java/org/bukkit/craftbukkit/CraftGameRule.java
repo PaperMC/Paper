@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit;
 
 import com.mojang.serialization.DataResult;
-import io.papermc.paper.util.Holderable;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import io.papermc.paper.util.HolderableElement;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.GameRule;
@@ -11,7 +11,7 @@ import org.bukkit.NamespacedKey;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.minecraft.world.level.gamerules.GameRule<T>> {
+public class CraftGameRule<T> extends GameRule<T> implements HolderableElement<net.minecraft.world.level.gamerules.GameRule<T>, GameRule<T>> {
 
     public static final BiFunction<String, DataResult.Error<?>, IllegalArgumentException> INVALID_VALUE = (value, error) -> {
         return new IllegalArgumentException("Invalid value: %s (%s)".formatted(value, error.message()));
@@ -44,22 +44,22 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
 
     @Override
     public NamespacedKey getKey() {
-        return Holderable.super.getKey();
+        return HolderableElement.super.getKey();
     }
 
     @Override
     public int hashCode() {
-        return Holderable.super.implHashCode();
+        return HolderableElement.super.implHashCode();
     }
 
     @Override
     public boolean equals(final Object obj) {
-        return Holderable.super.implEquals(obj);
+        return HolderableElement.super.implEquals(obj);
     }
 
     @Override
     public String toString() {
-        return Holderable.super.implToString();
+        return HolderableElement.super.implToString();
     }
 
     @Override

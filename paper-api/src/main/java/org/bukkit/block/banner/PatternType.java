@@ -2,6 +2,7 @@ package org.bukkit.block.banner;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
@@ -14,7 +15,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface PatternType extends OldEnum<PatternType>, Keyed {
+public interface PatternType extends RegistryElement<PatternType>, OldEnum<PatternType>, Keyed {
 
     // Start generate - PatternType
     PatternType BASE = getType("base");

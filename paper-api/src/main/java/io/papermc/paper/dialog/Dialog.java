@@ -2,6 +2,7 @@ package io.papermc.paper.dialog;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
@@ -19,7 +20,7 @@ import org.jetbrains.annotations.ApiStatus;
  * Can also be created during bootstrap via {@link io.papermc.paper.registry.event.RegistryEvents#DIALOG}.
  */
 @ApiStatus.NonExtendable
-public interface Dialog extends Keyed, DialogLike {
+public interface Dialog extends RegistryElement<Dialog>, Keyed, DialogLike {
 
     /**
      * Creates a new dialog using the provided builder.

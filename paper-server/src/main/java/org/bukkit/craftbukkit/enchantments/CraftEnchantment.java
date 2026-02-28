@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.Holderable;
 import java.util.Locale;
+import io.papermc.paper.util.HolderableElement;
 import net.minecraft.util.Util;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -18,7 +19,7 @@ import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.enchantments.EnchantmentWrapper;
 import org.bukkit.inventory.ItemStack;
 
-public class CraftEnchantment extends Enchantment implements Holderable<net.minecraft.world.item.enchantment.Enchantment> {
+public class CraftEnchantment extends Enchantment implements HolderableElement<net.minecraft.world.item.enchantment.Enchantment, Enchantment> {
 
     public static Enchantment minecraftHolderToBukkit(Holder<net.minecraft.world.item.enchantment.Enchantment> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.ENCHANTMENT);
@@ -60,7 +61,7 @@ public class CraftEnchantment extends Enchantment implements Holderable<net.mine
 
     @Override
     public NamespacedKey getKey() {
-        return Holderable.super.getKey();
+        return HolderableElement.super.getKey();
     }
 
     @Override
@@ -233,16 +234,16 @@ public class CraftEnchantment extends Enchantment implements Holderable<net.mine
 
     @Override
     public boolean equals(Object other) {
-        return Holderable.super.implEquals(other);
+        return HolderableElement.super.implEquals(other);
     }
 
     @Override
     public int hashCode() {
-        return Holderable.super.implHashCode();
+        return HolderableElement.super.implHashCode();
     }
 
     @Override
     public String toString() {
-        return Holderable.super.implToString();
+        return HolderableElement.super.implToString();
     }
 }

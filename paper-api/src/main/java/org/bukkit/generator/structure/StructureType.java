@@ -1,5 +1,6 @@
 package org.bukkit.generator.structure;
 
+import io.papermc.paper.registry.RegistryElement;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
@@ -14,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * structure types added by data packs), which can be received via
  * {@link Registry#STRUCTURE_TYPE}.
  */
-public abstract class StructureType implements Keyed {
+public abstract class StructureType implements RegistryElement<StructureType>, Keyed {
 
     // Start generate - StructureType
     public static final StructureType BURIED_TREASURE = getStructureType("buried_treasure");

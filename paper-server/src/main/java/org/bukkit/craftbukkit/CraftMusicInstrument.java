@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.Holderable;
+import io.papermc.paper.util.HolderableElement;
 import net.kyori.adventure.text.Component;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -13,7 +14,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftMusicInstrument extends MusicInstrument implements io.papermc.paper.util.Holderable<Instrument> {
+public class CraftMusicInstrument extends MusicInstrument implements HolderableElement<Instrument, MusicInstrument> {
 
     public static MusicInstrument minecraftHolderToBukkit(Holder<Instrument> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.INSTRUMENT); // Paper - switch to Holder
@@ -84,7 +85,7 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
     @NotNull
     @Override
     public NamespacedKey getKey() {
-        return Holderable.super.getKey();
+        return HolderableElement.super.getKey();
     }
 
     @Override

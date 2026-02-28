@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
 @SuppressWarnings({"removal", "DeprecatedIsStillUsed"})
 @Deprecated
 @NullMarked
-public abstract class OldEnumHolderable<A extends OldEnum<A>, M> extends HolderableBase<M> implements Holderable<M>, OldEnum<A>, Keyed {
+public abstract class OldEnumHolderable<A extends OldEnum<A>, M> extends HolderableBase<M, A> implements Holderable<M>, OldEnum<A>, Keyed {
 
     private final int ordinal;
     private final @Nullable String name;
