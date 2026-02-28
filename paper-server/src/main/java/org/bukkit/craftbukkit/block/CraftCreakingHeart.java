@@ -21,7 +21,7 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
         super(world, blockEntity);
     }
 
-    protected CraftCreakingHeart(CraftCreakingHeart state, Location location) {
+    protected CraftCreakingHeart(CraftCreakingHeart state, @Nullable Location location) {
         super(state, location);
     }
 
@@ -58,25 +58,25 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
     @Override
     public Creaking spawnCreaking() {
         this.requirePlaced();
-        if (!this.getBlockEntity().hasLevel()) {
-            return null;
+        if (this.getBlockEntity().getLevel() instanceof ServerLevel serverLevel) {
+            net.minecraft.world.entity.monster.creaking.Creaking creaking = CreakingHeartBlockEntity.spawnProtector(serverLevel, this.getBlockEntity());
+            if (creaking != null) {
+                this.getBlockEntity().setCreakingInfo(creaking);
+                creaking.makeSound(SoundEvents.CREAKING_SPAWN);
+                serverLevel.playSound(null, this.getBlockEntity().getBlockPos(), SoundEvents.CREAKING_HEART_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
+            }
+            return creaking != null ? ((Creaking) creaking.getBukkitEntity()) : null;
         }
-        net.minecraft.world.entity.monster.creaking.Creaking creaking = CreakingHeartBlockEntity.spawnProtector(this.getBlockEntity().getLevel().getMinecraftWorld(), this.getBlockEntity());
-        if (creaking != null) {
-            this.getBlockEntity().setCreakingInfo(creaking);
-            creaking.makeSound(SoundEvents.CREAKING_SPAWN);
-            this.getBlockEntity().getLevel().playSound(null, this.getBlockEntity().getBlockPos(), SoundEvents.CREAKING_HEART_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
-        }
-        return creaking != null ? ((Creaking) creaking.getBukkitEntity()) : null;
+        return null;
     }
 
     @Nullable
     @Override
     public Location spreadResin() {
         this.requirePlaced();
-        if (!this.getBlockEntity().hasLevel()) {
-            return null;
+        if (this.getBlockEntity().getLevel() instanceof ServerLevel serverLevel) {
+            return this.getBlockEntity().spreadResin(serverLevel).map(blockPos -> CraftLocation.toBukkit(blockPos, this.getWorld())).orElse(null);
         }
-        return this.getBlockEntity().spreadResin(((ServerLevel) this.getBlockEntity().getLevel())).map(blockPos -> CraftLocation.toBukkit(blockPos, this.getWorld())).orElse(null);
+        return null;
     }
 }
