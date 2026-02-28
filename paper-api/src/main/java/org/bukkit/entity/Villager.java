@@ -1,10 +1,10 @@
 package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
-import java.util.Locale;
-import java.util.Map; // Paper
-import java.util.UUID; // Paper
 import io.papermc.paper.registry.RegistryElement;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;

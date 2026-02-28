@@ -1,7 +1,7 @@
 package org.bukkit;
 
-import java.util.Collection;
 import io.papermc.paper.registry.RegistryElement;
+import java.util.Collection;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.jetbrains.annotations.NotNull;

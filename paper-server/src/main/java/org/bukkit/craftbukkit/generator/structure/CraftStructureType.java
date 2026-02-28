@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.generator.structure;
 
-import io.papermc.paper.util.Holderable;
 import io.papermc.paper.util.HolderableElement;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;

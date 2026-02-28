@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit;
 
 import com.mojang.serialization.DataResult;
+import io.papermc.paper.util.HolderableElement;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import io.papermc.paper.util.HolderableElement;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.GameRule;

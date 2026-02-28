@@ -12,12 +12,12 @@ public interface PaperRegistryElement<M, A> extends RegistryElement<A> {
     Holder<M> getHolder();
 
     @Override
-    default boolean is(Key type) {
+    default boolean is(final Key type) {
         return this.getHolder().is(PaperAdventure.asVanilla(type));
     }
 
     @Override
-    default boolean is(TagKey<A> type) {
+    default boolean is(final TagKey<A> type) {
         return this.getHolder().is(PaperRegistries.toNms(type));
     }
 }

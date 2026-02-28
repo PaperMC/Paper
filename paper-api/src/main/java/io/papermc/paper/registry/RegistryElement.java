@@ -6,16 +6,21 @@ import org.bukkit.Keyed;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * An element in a registry which might be tied into it.
+ * An element of a registry which might or might not be registered.
  * <p>
- * For key-less element all the methods in this interface will return {@code false}
+ * For unregistered element, the equality methods exposed here will return {@code false}
+ * as there's no way to identify them with a key.
+ *
+ * @see RegistryKey
+ * @see org.bukkit.Registry
+ * @see org.bukkit.Registry#getKey(Keyed)
  */
 @NullMarked
 public interface RegistryElement<T> {
 
     /**
-     * Checks whether this element is equivalent to the
-     * given key extracted from this keyed type.
+     * Checks whether this element is identified by the
+     * given key extracted from this keyed.
      *
      * @param type the keyed to extract the key from
      * @return the result
@@ -25,8 +30,7 @@ public interface RegistryElement<T> {
     }
 
     /**
-     * Checks whether this element is equivalent to the
-     * given key type.
+     * Checks whether this element is identified by the given key.
      *
      * @param type the key
      * @return the result

@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.util.Holderable;
 import io.papermc.paper.util.HolderableElement;
 import net.kyori.adventure.text.Component;
 import net.minecraft.core.Holder;

@@ -1,8 +1,8 @@
 package org.bukkit.block;
 
+import io.papermc.paper.registry.RegistryElement;
 import java.util.Collection;
 import java.util.function.Consumer;
-import io.papermc.paper.registry.RegistryElement;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
