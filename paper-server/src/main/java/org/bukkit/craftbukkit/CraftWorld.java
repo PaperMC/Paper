@@ -944,11 +944,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public void addEntityToWorld(net.minecraft.world.entity.Entity entity, SpawnReason reason) {
-        this.getHandle().addFreshEntity(entity, reason);
-    }
-
-    @Override
     public void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, SpawnReason reason) {
         this.getHandle().tryAddFreshEntityWithPassengers(entity, reason);
     }

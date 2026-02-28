@@ -1,13 +1,13 @@
 package org.bukkit.craftbukkit.generator;
 
 import com.google.common.base.Preconditions;
+import com.mojang.logging.LogUtils;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
@@ -258,11 +258,6 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
         Preconditions.checkArgument(this.isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
         return super.spawn(location, clazz, function, reason);
-    }
-
-    @Override
-    public void addEntityToWorld(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason) {
-        this.entities.add(entity);
     }
 
     @Override
