@@ -1,17 +1,9 @@
-From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 06:37:42 -0700
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/block/TurtleEggBlock.java b/net/minecraft/world/level/block/TurtleEggBlock.java
-index efc955ccad31cc9f31dd3946f2d89d2fbba9f779..732f244b0265477434b26a47ddedab10f49b06a3 100644
 --- a/net/minecraft/world/level/block/TurtleEggBlock.java
 +++ b/net/minecraft/world/level/block/TurtleEggBlock.java
-@@ -75,6 +75,19 @@ public class TurtleEggBlock extends Block {
+@@ -75,6 +_,19 @@
              && level instanceof ServerLevel serverLevel
              && this.canDestroyEgg(serverLevel, entity)
-             && level.random.nextInt(chance) == 0) {
+             && level.getRandom().nextInt(randomness) == 0) {
 +            // CraftBukkit start - Step on eggs
 +            org.bukkit.event.Cancellable cancellable;
 +            if (entity instanceof Player) {
@@ -28,17 +20,17 @@ index efc955ccad31cc9f31dd3946f2d89d2fbba9f779..732f244b0265477434b26a47ddedab10
              this.decreaseEggs(serverLevel, pos, state);
          }
      }
-@@ -96,10 +109,19 @@ public class TurtleEggBlock extends Block {
+@@ -96,10 +_,19 @@
          if (this.shouldUpdateHatchLevel(level, pos) && onSand(level, pos)) {
-             int hatchValue = state.getValue(HATCH);
-             if (hatchValue < 2) {
+             int hatch = state.getValue(HATCH);
+             if (hatch < 2) {
 +                // CraftBukkit start - Call BlockGrowEvent
-+                if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, state.setValue(HATCH, hatchValue + 1), Block.UPDATE_CLIENTS)) {
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, state.setValue(HATCH, hatch + 1), Block.UPDATE_CLIENTS)) {
 +                    return;
 +                }
 +                // CraftBukkit end
                  level.playSound(null, pos, SoundEvents.TURTLE_EGG_CRACK, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
--                level.setBlock(pos, state.setValue(HATCH, hatchValue + 1), Block.UPDATE_CLIENTS);
+-                level.setBlock(pos, state.setValue(HATCH, hatch + 1), Block.UPDATE_CLIENTS);
                  level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(state));
              } else {
 +                // CraftBukkit start - Call BlockFadeEvent
@@ -49,7 +41,7 @@ index efc955ccad31cc9f31dd3946f2d89d2fbba9f779..732f244b0265477434b26a47ddedab10
                  level.playSound(null, pos, SoundEvents.TURTLE_EGG_HATCH, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
                  level.removeBlock(pos, false);
                  level.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(state));
-@@ -111,7 +133,7 @@ public class TurtleEggBlock extends Block {
+@@ -111,7 +_,7 @@
                          turtle.setAge(-24000);
                          turtle.setHomePos(pos);
                          turtle.snapTo(pos.getX() + 0.3 + i * 0.2, pos.getY(), pos.getZ() + 0.3, 0.0F, 0.0F);
@@ -58,14 +50,14 @@ index efc955ccad31cc9f31dd3946f2d89d2fbba9f779..732f244b0265477434b26a47ddedab10
                      }
                  }
              }
-@@ -139,8 +161,8 @@ public class TurtleEggBlock extends Block {
-     }
- 
-     @Override
--    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack stack) {
--        super.playerDestroy(level, player, pos, state, blockEntity, stack);
-+    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack stack, boolean includeDrops, boolean dropExp) { // Paper - fix drops not preventing stats/food exhaustion
-+        super.playerDestroy(level, player, pos, state, blockEntity, stack, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion
+@@ -146,8 +_,9 @@
+         final BlockState state,
+         final @Nullable BlockEntity blockEntity,
+         final ItemStack destroyedWith
++        , boolean includeDrops, boolean dropExp // Paper - fix drops not preventing stats/food exhaustion
+     ) {
+-        super.playerDestroy(level, player, pos, state, blockEntity, destroyedWith);
++        super.playerDestroy(level, player, pos, state, blockEntity, destroyedWith, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion
          this.decreaseEggs(level, pos, state);
      }
  

@@ -1,0 +1,33 @@
+--- a/net/minecraft/world/level/block/IceBlock.java
++++ b/net/minecraft/world/level/block/IceBlock.java
+@@ -40,8 +_,14 @@
+         final BlockState state,
+         final @Nullable BlockEntity blockEntity,
+         final ItemStack destroyedWith
++        , boolean includeDrops, boolean dropExp // Paper - fix drops not preventing stats/food exhaustion
+     ) {
+-        super.playerDestroy(level, player, pos, state, blockEntity, destroyedWith);
++        super.playerDestroy(level, player, pos, state, blockEntity, destroyedWith, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion
++        // Paper start - Improve Block#breakNaturally API
++        this.afterDestroy(level, pos, destroyedWith);
++    }
++    public void afterDestroy(Level level, BlockPos pos, ItemStack destroyedWith) {
++        // Paper end - Improve Block#breakNaturally API
+         if (!EnchantmentHelper.hasTag(destroyedWith, EnchantmentTags.PREVENTS_ICE_MELTING)) {
+             if (level.environmentAttributes().getValue(EnvironmentAttributes.WATER_EVAPORATES, pos)) {
+                 level.removeBlock(pos, false);
+@@ -63,7 +_,13 @@
+     }
+ 
+     protected void melt(final BlockState state, final Level level, final BlockPos pos) {
+-        if (level.environmentAttributes().getValue(EnvironmentAttributes.WATER_EVAPORATES, pos)) {
++        // Paper start - call BlockFadeEvent
++        final boolean waterEvaporates = level.environmentAttributes().getValue(EnvironmentAttributes.WATER_EVAPORATES, pos);
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, waterEvaporates ? Blocks.AIR.defaultBlockState() : Blocks.WATER.defaultBlockState()).isCancelled()) {
++            return;
++        }
++        if (waterEvaporates) {
++            // Paper end - call BlockFadeEvent
+             level.removeBlock(pos, false);
+         } else {
+             level.setBlockAndUpdate(pos, meltsInto());
