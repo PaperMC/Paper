@@ -582,7 +582,9 @@ public final class CraftItemStack extends ItemStack {
     }
 
     private <A, V> void setDataInternal(final io.papermc.paper.datacomponent.PaperDataComponentType<A, V> type, final A value) {
-        this.handle.set(type.getHandle(), type.getAdapter().toVanilla(value, type.getHolder()));
+        this.handle.set(type.getHandle(), type.getAdapter().toVanilla(value).getOrThrow(message -> {
+            return new IllegalArgumentException("Failed to encode data component %s (%s)".formatted(type.getKey().asString(), message));
+        }));
     }
 
     @Override
