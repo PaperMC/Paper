@@ -24,8 +24,17 @@
 package co.aikar.timings;
 
 import co.aikar.timings.TimingHistory.RegionData.RegionId;
+import co.aikar.util.LoadingMap;
+import co.aikar.util.MRUMapCache;
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
+import java.lang.management.ManagementFactory;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
@@ -34,21 +43,17 @@ import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import co.aikar.util.LoadingMap;
-import co.aikar.util.MRUMapCache;
-
-import java.lang.management.ManagementFactory;
-import java.util.Collection;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static co.aikar.timings.TimingsManager.FULL_SERVER_TICK;
 import static co.aikar.timings.TimingsManager.MINUTE_REPORTS;
-import static co.aikar.util.JSONUtil.*;
+import static co.aikar.util.JSONUtil.JSONPair;
+import static co.aikar.util.JSONUtil.createObject;
+import static co.aikar.util.JSONUtil.pair;
+import static co.aikar.util.JSONUtil.toArray;
+import static co.aikar.util.JSONUtil.toArrayMapper;
+import static co.aikar.util.JSONUtil.toObjectMapper;
 
 /**
  * @hidden
@@ -143,10 +148,10 @@ public class TimingHistory {
                                 input.regionId.x,
                                 input.regionId.z,
                                 toObjectMapper(input.entityCounts.entrySet(),
-                                    new Function<Map.Entry<EntityType, Counter>, JSONPair>() {
+                                    new Function<Map.Entry<EntityType<?>, Counter>, JSONPair>() {
                                         @NotNull
                                         @Override
-                                        public JSONPair apply(Map.Entry<EntityType, Counter> entry) {
+                                        public JSONPair apply(Map.Entry<EntityType<?>, Counter> entry) {
                                             entityTypeSet.add(entry.getKey());
                                             return pair(
                                                     String.valueOf(entry.getKey().ordinal()),
@@ -207,12 +212,12 @@ public class TimingHistory {
         }
 
         @SuppressWarnings("unchecked")
-        final Map<EntityType, Counter> entityCounts = MRUMapCache.of(LoadingMap.of(
-                new EnumMap<EntityType, Counter>(EntityType.class), k -> new Counter()
+        final Map<EntityType<?>, Counter> entityCounts = MRUMapCache.of(LoadingMap.of(
+                new HashMap<>(), k -> new Counter()
         ));
         @SuppressWarnings("unchecked")
         final Map<Material, Counter> tileEntityCounts = MRUMapCache.of(LoadingMap.of(
-                new EnumMap<Material, Counter>(Material.class), k -> new Counter()
+                new EnumMap<>(Material.class), k -> new Counter()
         ));
 
         static class RegionId {

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
+import org.bukkit.Registry;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractCow;
 import org.bukkit.entity.AbstractHorse;
@@ -63,8 +64,10 @@ import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.WaterMob;
 import org.bukkit.support.environment.AllFeatures;
+import org.bukkit.support.test.RegistriesTest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -180,11 +183,12 @@ public class EntityTypesTest {
         assertNotNull(entityTypeData, String.format("Class %s does not have an entity type data, please add on to CraftEntityTypes or mark the class as excluded in EntityTypesTest, if the class does not have an entity type.", clazz));
     }
 
-    @ParameterizedTest
-    @EnumSource(value = EntityType.class, names = "UNKNOWN", mode = EnumSource.Mode.EXCLUDE)
-    public void testEntityType(EntityType entityType) {
-        CraftEntityTypes.EntityTypeData<?, ?> entityTypeData = CraftEntityTypes.getEntityTypeData(entityType);
-        assertNotNull(entityTypeData, String.format("Entity type %s does not have an entity type data, please add on to CraftEntityTypes.", entityType));
+    @Test
+    public void testEntityType() {
+        Registry.ENTITY_TYPE.forEach(type -> {
+            CraftEntityTypes.EntityTypeData<?, ?> entityTypeData = CraftEntityTypes.getEntityTypeData(type);
+            assertNotNull(entityTypeData, String.format("Entity type %s does not have an entity type data, please add on to CraftEntityTypes.", type));
+        });
     }
 
     @AfterAll
