@@ -2,7 +2,7 @@ package io.papermc.paper.plugin.provider.type.spigot;
 
 import com.destroystokyo.paper.utils.PaperPluginLogger;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContextImpl;
-import io.papermc.paper.plugin.entrypoint.classloader.BytecodeModifyingURLClassLoader;
+import io.papermc.paper.plugin.entrypoint.classloader.bytecode.BytecodeModifyingURLClassLoader;
 import io.papermc.paper.plugin.entrypoint.classloader.PaperSimplePluginClassLoader;
 import io.papermc.paper.plugin.loader.PaperClasspathBuilder;
 import io.papermc.paper.plugin.loader.PluginLoader;

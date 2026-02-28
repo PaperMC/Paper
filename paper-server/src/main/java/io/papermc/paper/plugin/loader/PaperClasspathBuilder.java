@@ -2,7 +2,7 @@ package io.papermc.paper.plugin.loader;
 
 import io.papermc.paper.plugin.PluginInitializerManager;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
-import io.papermc.paper.plugin.entrypoint.classloader.BytecodeModifyingURLClassLoader;
+import io.papermc.paper.plugin.entrypoint.classloader.bytecode.BytecodeModifyingURLClassLoader;
 import io.papermc.paper.plugin.entrypoint.classloader.PaperPluginClassLoader;
 import io.papermc.paper.plugin.loader.library.ClassPathLibrary;
 import io.papermc.paper.plugin.loader.library.PaperLibraryStore;

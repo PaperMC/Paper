@@ -1,4 +1,4 @@
-package io.papermc.paper.plugin.entrypoint.classloader;
+package io.papermc.paper.plugin.entrypoint.classloader.bytecode;
 
 import io.papermc.paper.pluginremap.reflect.ReflectionRemapper;
 import java.io.IOException;
