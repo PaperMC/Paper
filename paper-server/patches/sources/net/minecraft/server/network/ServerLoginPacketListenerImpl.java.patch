@@ -17,7 +17,7 @@
      private static final int MAX_TICKS_BEFORE_LOGIN = 600;
      private final byte[] challenge;
      final MinecraftServer server;
-@@ -56,10 +_,15 @@
+@@ -56,10 +_,14 @@
      final ServerActivityMonitor serverActivityMonitor;
      public volatile ServerLoginPacketListenerImpl.State state = ServerLoginPacketListenerImpl.State.HELLO;
      private int tick;
@@ -31,11 +31,10 @@
 +    private int velocityLoginMessageId = -1; // Paper - Add Velocity IP Forwarding Support
 +    public java.util.@Nullable UUID requestedUuid; // Paper
 +    private final io.papermc.paper.connection.PaperPlayerLoginConnection paperLoginConnection; // Paper - Config API
-+    private volatile boolean disconnecting = false; // Paper - Fix disconnect still ticking login
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection, boolean transferred) {
          this.server = server;
-@@ -67,10 +_,20 @@
+@@ -67,10 +_,19 @@
          this.serverActivityMonitor = this.server.getServerActivityMonitor();
          this.challenge = Ints.toByteArray(RandomSource.create().nextInt());
          this.transferred = transferred;
@@ -44,7 +43,6 @@
  
      @Override
      public void tick() {
-+        if (this.disconnecting) return; // Paper - Fix disconnect being called multiple times due to not awaiting for disconnect
 +        // Paper start - login cookie API
 +        // Don't block the connection
 +        if (this.paperLoginConnection.isAwaitingCookies()) {
@@ -80,14 +78,6 @@
      @Override
      public boolean isAcceptingMessages() {
          return this.connection.isConnected();
-@@ -95,6 +_,7 @@
-             LOGGER.info("Disconnecting {}: {}", this.getUserName(), reason.getString());
-             this.connection.send(new ClientboundLoginDisconnectPacket(reason));
-             this.connection.disconnect(reason);
-+            this.disconnecting = true; // Paper - Fix disconnect still ticking login
-         } catch (Exception var3) {
-             LOGGER.error("Error whilst disconnecting player", (Throwable)var3);
-         }
 @@ -117,7 +_,14 @@
      @Override
      public void handleHello(ServerboundHelloPacket packet) {
