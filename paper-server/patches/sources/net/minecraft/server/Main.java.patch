@@ -116,7 +116,7 @@
              Dynamic<?> dataTag;
              if (levelStorageAccess.hasWorldData()) {
                  LevelSummary summary;
-@@ -166,12 +_,36 @@
+@@ -166,12 +_,18 @@
              }
  
              Dynamic<?> dynamic = dataTag;
@@ -128,26 +128,8 @@
  
              PackRepository packRepository = ServerPacksSource.createPackRepository(levelStorageAccess);
 +            // CraftBukkit start
-+            File bukkitDataPackFolder = new File(levelStorageAccess.getLevelPath(net.minecraft.world.level.storage.LevelResource.DATAPACK_DIR).toFile(), "bukkit");
-+            if (!bukkitDataPackFolder.exists()) {
-+                bukkitDataPackFolder.mkdirs();
-+            }
-+            File mcMeta = new File(bukkitDataPackFolder, "pack.mcmeta");
-+            try {
-+                final var major = SharedConstants.getCurrentVersion().packVersion(net.minecraft.server.packs.PackType.SERVER_DATA).major();
-+                final var minor = SharedConstants.getCurrentVersion().packVersion(net.minecraft.server.packs.PackType.SERVER_DATA).minor();
-+                com.google.common.io.Files.asCharSink(mcMeta, java.nio.charset.StandardCharsets.UTF_8).write("""
-+                    {
-+                        "pack": {
-+                            "description": "Data pack for resources provided by Bukkit plugins",
-+                            "min_format": [%d, %d],
-+                            "max_format": [%d, %d]
-+                        }
-+                    }
-+                    """.formatted(major, minor, major, minor)
-+                );
-+            } catch (java.io.IOException ex) {
-+                throw new RuntimeException("Could not initialize Bukkit datapack", ex);
++            if (!hasOptionSpec) { // not in safeMode
++                io.papermc.paper.datapack.DynamicBuiltinPacks.refreshAllMetadata(levelStorageAccess);
 +            }
 +            java.util.concurrent.atomic.AtomicReference<WorldLoader.DataLoadContext> worldLoader = new java.util.concurrent.atomic.AtomicReference<>();
 +            // CraftBukkit end
