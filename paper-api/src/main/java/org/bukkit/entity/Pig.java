@@ -2,8 +2,9 @@ package org.bukkit.entity;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -39,8 +40,8 @@ public interface Pig extends Steerable, Vehicle {
         Variant WARM = getVariant("warm");
         // End generate - PigVariant
 
-        private static Variant getVariant(String key) {
-            return RegistryAccess.registryAccess().getRegistry(RegistryKey.PIG_VARIANT).getOrThrow(NamespacedKey.minecraft(key));
+        private static Variant getVariant(@KeyPattern.Value String key) {
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.PIG_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }
 }

@@ -7,7 +7,6 @@ import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -142,7 +141,7 @@ public interface UnsafeValues {
     String get(Class<?> aClass, String value);
 
     @ApiStatus.Internal
-    <B extends Keyed> B get(RegistryKey<B> registry, NamespacedKey key);
+    @Nullable <B extends Keyed> B get(RegistryKey<B> registry, NamespacedKey key);
 
     // Paper start
     @Deprecated(forRemoval = true)
