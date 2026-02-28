@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/EventLoopGroupHolder.java
 +++ b/net/minecraft/server/network/EventLoopGroupHolder.java
-@@ -48,11 +_,20 @@
+@@ -48,19 +_,39 @@
              return LocalIoHandler.newFactory();
          }
      };
@@ -19,31 +19,34 @@
  
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - use variant with address param
      public static EventLoopGroupHolder remote(boolean tryNativeTransport) {
++        // Paper start - Unix domain socket support
++        return remote(null, tryNativeTransport);
++    }
++    public static EventLoopGroupHolder remote(java.net.@Nullable SocketAddress address, boolean tryNativeTransport) {
++        // Paper end - Unix domain socket support
          if (tryNativeTransport) {
              if (KQueue.isAvailable()) {
-@@ -66,6 +_,25 @@
+                 return KQUEUE;
+             }
  
-         return NIO;
-     }
-+
-+    // Paper start - Unix domain socket support
-+    public static EventLoopGroupHolder remote(java.net.SocketAddress address, boolean tryNativeTransport) {
-+        if (tryNativeTransport) {
-+            if (KQueue.isAvailable()) {
-+                return KQUEUE;
-+            }
-+
-+            if (Epoll.isAvailable()) {
+             if (Epoll.isAvailable()) {
+-                return EPOLL;
++                // Paper start - Unix domain socket support
 +                if (address instanceof io.netty.channel.unix.DomainSocketAddress) {
 +                    return EPOLL_UNIX_DOMAIN;
 +                } else {
 +                    return EPOLL;
 +                }
-+            }
-+        }
-+        return NIO;
-+    }
-+    // Paper end - Unix domain socket support
++                // Paper end - Unix domain socket support
+             }
+         }
  
-     public static EventLoopGroupHolder local() {
-         return LOCAL;
+@@ -78,7 +_,7 @@
+     }
+ 
+     private ThreadFactory createThreadFactory() {
+-        return new ThreadFactoryBuilder().setNameFormat("Netty " + this.type + " IO #%d").setDaemon(true).build();
++        return new ThreadFactoryBuilder().setNameFormat("Netty " + this.type + " IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build(); // Paper
+     }
+ 
+     protected abstract IoHandlerFactory ioHandlerFactory();
