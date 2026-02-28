@@ -1,10 +1,44 @@
 --- a/net/minecraft/world/item/MobBucketItem.java
 +++ b/net/minecraft/world/item/MobBucketItem.java
-@@ -49,7 +_,7 @@
+@@ -28,9 +_,9 @@
+     }
+ 
+     @Override
+-    public void checkExtraContent(@Nullable LivingEntity entity, Level level, ItemStack stack, BlockPos pos) {
++    public void checkExtraContent(net.minecraft.world.entity.player.@Nullable Player entity, Level level, ItemStack stack, BlockPos pos, net.minecraft.world.@Nullable InteractionHand hand, net.minecraft.core.@Nullable Direction direction) { // Paper - add parameters
+         if (level instanceof ServerLevel) {
+-            this.spawn((ServerLevel)level, stack, pos);
++            this.spawn((ServerLevel)level, stack, pos, entity, hand, direction); // Paper - add parameters
+             level.gameEvent(entity, GameEvent.ENTITY_PLACE, pos);
+         }
+     }
+@@ -40,7 +_,7 @@
+         level.playSound(entity, pos, this.emptySound, SoundSource.NEUTRAL, 1.0F, 1.0F);
+     }
+ 
+-    private void spawn(ServerLevel level, ItemStack bucketedMobStack, BlockPos pos) {
++    private void spawn(ServerLevel level, ItemStack bucketedMobStack, BlockPos pos, net.minecraft.world.entity.player.@Nullable Player player, net.minecraft.world.@Nullable InteractionHand hand, net.minecraft.core.@Nullable Direction direction) { // Paper - add more parameters for events
+         Mob mob = this.type.create(level, EntityType.createDefaultStackConfig(level, bucketedMobStack, null), pos, EntitySpawnReason.BUCKET, true, false);
+         if (mob instanceof Bucketable bucketable) {
+             CustomData customData = bucketedMobStack.getOrDefault(DataComponents.BUCKET_ENTITY_DATA, CustomData.EMPTY);
+@@ -49,7 +_,20 @@
          }
  
          if (mob != null) {
 -            level.addFreshEntityWithPassengers(mob);
++            // Paper start - BlockPlaceEntityEvent & EntityPlaceEvent
++            if (direction != null) {
++                if (hand == null) {
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEntityEvent(level, pos, direction, mob, bucketedMobStack).isCancelled()) {
++                        return; // mob doesn't exist yet, no need to discard
++                    }
++                } else {
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(level, pos, direction, player, mob, hand, bucketedMobStack).isCancelled()) {
++                        return; // mob doesn't exist yet, no need to discard
++                    }
++                }
++            }
++            // Paper end - BlockPlaceEntityEvent & EntityPlaceEvent
 +            level.addFreshEntityWithPassengers(mob, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BUCKET); // Paper - Add SpawnReason
              mob.playAmbientSound();
          }

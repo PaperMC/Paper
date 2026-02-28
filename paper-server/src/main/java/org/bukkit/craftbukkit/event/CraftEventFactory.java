@@ -6,6 +6,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
+import io.papermc.paper.event.entity.BlockPlaceEntityEvent;
+import io.papermc.paper.event.entity.ItemSpawnEntityEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -25,6 +27,7 @@ import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
@@ -68,6 +71,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
@@ -554,17 +558,42 @@ public class CraftEventFactory {
     }
 
     public static EntityPlaceEvent callEntityPlaceEvent(UseOnContext context, Entity entity) {
-        return CraftEventFactory.callEntityPlaceEvent(context.getLevel(), context.getClickedPos(), context.getClickedFace(), context.getPlayer(), entity, context.getHand());
+        return CraftEventFactory.callEntityPlaceEvent(context.getLevel(), context.getClickedPos(), context.getClickedFace(), context.getPlayer(), entity, context.getHand(), context.getItemInHand());
     }
 
-    public static EntityPlaceEvent callEntityPlaceEvent(Level world, BlockPos clickedPos, Direction clickedFace, net.minecraft.world.entity.player.Player player, Entity entity, InteractionHand hand) {
+    public static EntityPlaceEvent callEntityPlaceEvent(final Level world, final BlockPos clickedPos, final Direction clickedFace, final net.minecraft.world.entity.player.@Nullable Player player, final Entity entity, final InteractionHand hand, final ItemStack spawningStack) {
         Player cplayer = (player == null) ? null : (Player) player.getBukkitEntity();
         org.bukkit.block.Block clickedBlock = CraftBlock.at(world, clickedPos);
         org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(clickedFace);
 
-        EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), cplayer, clickedBlock, blockFace, CraftEquipmentSlot.getHand(hand));
+        final EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), cplayer, clickedBlock, blockFace, CraftEquipmentSlot.getHand(hand), spawningStack.asBukkitCopy());
         entity.level().getCraftServer().getPluginManager().callEvent(event);
 
+        return event;
+    }
+
+    public static ItemSpawnEntityEvent callItemSpawnEntityEvent(final Level world, final BlockPos clickPosition, final Direction clickedFace, @Nullable final net.minecraft.world.entity.player.Player human, final Entity entity, final ItemStack spawningStack) {
+        final Player who = (human == null) ? null : (Player) human.getBukkitEntity();
+        final Block blockClicked = CraftBlock.at(world, clickPosition);
+        final BlockFace blockFace = CraftBlock.notchToBlockFace(clickedFace);
+
+        final ItemSpawnEntityEvent event = new ItemSpawnEntityEvent(entity.getBukkitEntity(), who, blockClicked, blockFace, CraftItemStack.asBukkitCopy(spawningStack));
+        event.callEvent();
+        return event;
+    }
+
+    public static BlockPlaceEntityEvent callBlockPlaceEntityEvent(final BlockSource pointer, final Entity entity, final ItemStack spawningStack) {
+        final Direction direction = pointer.state().getValue(DispenserBlock.FACING);
+        return callBlockPlaceEntityEvent(pointer.level(), pointer.pos().relative(direction), direction.getOpposite(), entity, spawningStack);
+    }
+
+    public static BlockPlaceEntityEvent callBlockPlaceEntityEvent(final Level world, final BlockPos clickedPosition, final Direction clickedFace, final Entity entity, final ItemStack spawningStack) {
+        final Block blockClicked = CraftBlock.at(world, clickedPosition);
+        final BlockFace blockFace = CraftBlock.notchToBlockFace(clickedFace);
+        final org.bukkit.block.Dispenser dispenser = (org.bukkit.block.Dispenser) CraftBlockStates.getBlockState(CraftBlock.at(world, clickedPosition.relative(clickedFace)));
+
+        final BlockPlaceEntityEvent event = new BlockPlaceEntityEvent(entity.getBukkitEntity(), blockClicked, blockFace, CraftItemStack.asBukkitCopy(spawningStack), dispenser);
+        event.callEvent();
         return event;
     }
 

@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/dispenser/DispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/DispenseItemBehavior.java
-@@ -88,10 +_,38 @@
+@@ -88,22 +_,59 @@
                  if (type == null) {
                      return item;
                  } else {
@@ -40,7 +40,19 @@
                              null,
                              blockSource.pos().relative(direction),
                              EntitySpawnReason.DISPENSER,
-@@ -103,7 +_,8 @@
+                             direction != Direction.UP,
+                             false
++                            // Paper start - ItemSpawnEntityEvent
++                            , org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG,
++                            entity -> {
++                                if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemSpawnEntityEvent(blockSource.level(), blockSource.pos().relative(direction), direction.getOpposite(), null, entity, item).isCancelled()) {
++                                    entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
++                                }
++                            }
++                            // Paper end - ItemSpawnEntityEvent
+                         );
+                     } catch (Exception var6) {
+                         LOGGER.error("Error while dispensing spawn egg from dispenser at {}", blockSource.pos(), var6);
                          return ItemStack.EMPTY;
                      }
  
@@ -50,7 +62,7 @@
                      blockSource.level().gameEvent(null, GameEvent.ENTITY_PLACE, blockSource.pos());
                      return item;
                  }
-@@ -122,12 +_,38 @@
+@@ -122,12 +_,47 @@
                      Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
                      BlockPos blockPos = blockSource.pos().relative(direction);
                      ServerLevel serverLevel = blockSource.level();
@@ -84,7 +96,16 @@
 -                        armorStand1 -> armorStand1.setYRot(direction.toYRot()), serverLevel, item, null
 +                        armorStand1 -> armorStand1.setYRot(direction.toYRot()), serverLevel, newStack, null // Paper - track changed items in the dispense event
                      );
++                    // Paper start - BlockPlaceEntityEvent
++                    final java.util.concurrent.atomic.AtomicBoolean cancelled = new java.util.concurrent.atomic.AtomicBoolean(false);
++                    consumer = consumer.andThen(stand -> {
++                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEntityEvent(blockSource, stand, item).isCancelled()) {
++                            cancelled.set(true);
++                        }
++                    });
++                    // Paper end - BlockPlaceEntityEvent
                      ArmorStand armorStand = EntityType.ARMOR_STAND.spawn(serverLevel, consumer, blockPos, EntitySpawnReason.DISPENSER, false, false);
++                    if (cancelled.get()) shrink = false; // Paper
                      if (armorStand != null) {
 -                        item.shrink(1);
 +                        if (shrink) item.shrink(1); // Paper
@@ -172,7 +193,7 @@
 +
                  if (dispensibleContainerItem.emptyContents(null, level, blockPos, null)) {
 -                    dispensibleContainerItem.checkExtraContent(null, level, item, blockPos);
-+                    dispensibleContainerItem.checkExtraContent(null, level, dispensedItem, blockPos); // Paper - track changed item from dispense event
++                    dispensibleContainerItem.checkExtraContent(null, level, dispensedItem, blockPos, null, blockSource.state().getValue(DispenserBlock.FACING).getOpposite()); // Paper - track changed item from dispense event
                      return this.consumeWithRemainder(blockSource, item, new ItemStack(Items.BUCKET));
                  } else {
                      return this.defaultDispenseItemBehavior.dispense(blockSource, item);
@@ -274,7 +295,7 @@
  
                  return item;
              }
-@@ -281,11 +_,36 @@
+@@ -281,11 +_,41 @@
                      return item;
                  } else {
                      BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
@@ -305,6 +326,11 @@
 +
 +                    PrimedTnt primedTnt = new PrimedTnt(serverLevel, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), null);
 +                    // CraftBukkit end
++                    // Paper start - BlockPlaceEntityEvent
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEntityEvent(blockSource, primedTnt, item).isCancelled()) {
++                        return item;
++                    }
++                    // Paper end - BlockPlaceEntityEvent
                      serverLevel.addFreshEntity(primedTnt);
                      serverLevel.playSound(null, primedTnt.getX(), primedTnt.getY(), primedTnt.getZ(), SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 1.0F, 1.0F);
 -                    serverLevel.gameEvent(null, GameEvent.ENTITY_PLACE, blockPos);
