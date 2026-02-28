@@ -176,10 +176,11 @@ dependencies {
     implementation("net.neoforged:AutoRenamingTool:2.0.3") // Remap plugins
 
     // Remap reflection
-    val reflectionRewriterVersion = "0.0.3"
+    val reflectionRewriterVersion = "0.0.4-SNAPSHOT"
     implementation("io.papermc:reflection-rewriter:$reflectionRewriterVersion")
     implementation("io.papermc:reflection-rewriter-runtime:$reflectionRewriterVersion")
     implementation("io.papermc:reflection-rewriter-proxy-generator:$reflectionRewriterVersion")
+    implementation("io.papermc:asm-utils:$reflectionRewriterVersion")
 
     // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")

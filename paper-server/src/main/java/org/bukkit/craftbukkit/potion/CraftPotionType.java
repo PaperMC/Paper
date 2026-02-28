@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.potion;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
+import io.papermc.paper.plugin.ApiVersion;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.List;
 import java.util.Locale;
@@ -13,7 +14,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.legacy.FieldRename;
-import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;

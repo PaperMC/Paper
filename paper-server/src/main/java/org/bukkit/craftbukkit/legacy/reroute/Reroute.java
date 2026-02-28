@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.legacy.reroute;
 
+import io.papermc.paper.plugin.ApiVersion;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.craftbukkit.util.ClassTraverser;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.objectweb.asm.Type;
