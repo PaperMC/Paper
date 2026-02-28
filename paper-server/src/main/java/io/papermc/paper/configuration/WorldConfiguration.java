@@ -442,6 +442,7 @@ public class WorldConfiguration extends ConfigurationPart {
         public int portalSearchRadius = 128;
         public int portalCreateRadius = 16;
         public boolean portalSearchVanillaDimensionScaling = true;
+        public IntOr.Disabled netherPortalPreloadingTicksBefore = IntOr.Disabled.DISABLED;
         public IntOr.Disabled netherCeilingVoidDamageHeight = IntOr.Disabled.DISABLED;
         public int maxFluidTicks = 65536;
         public int maxBlockTicks = 65536;
