@@ -44,12 +44,12 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
     }
 
     @Override
-    public void setCreaking(@Nullable final Creaking creaking) {
+    public void setCreaking(final @Nullable Creaking creaking) {
         this.requirePlaced();
         if (creaking == null) {
             this.getBlockEntity().clearCreakingInfo();
         } else {
-            Preconditions.checkArgument(this.getLocation().getWorld().equals(creaking.getLocation().getWorld()), "the location of this creaking must be in the same world than this CreakingHeart");
+            Preconditions.checkArgument(this.getLocation().getWorld().equals(creaking.getLocation().getWorld()), "the location of the creaking must be in the same world as this CreakingHeart");
             this.getBlockEntity().setCreakingInfo(((CraftCreaking) creaking).getHandle());
         }
     }
@@ -58,25 +58,30 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
     @Override
     public Creaking spawnCreaking() {
         this.requirePlaced();
-        if (this.getBlockEntity().getLevel() instanceof ServerLevel serverLevel) {
-            net.minecraft.world.entity.monster.creaking.Creaking creaking = CreakingHeartBlockEntity.spawnProtector(serverLevel, this.getBlockEntity());
-            if (creaking != null) {
-                this.getBlockEntity().setCreakingInfo(creaking);
-                creaking.makeSound(SoundEvents.CREAKING_SPAWN);
-                serverLevel.playSound(null, this.getBlockEntity().getBlockPos(), SoundEvents.CREAKING_HEART_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
-            }
-            return creaking != null ? ((Creaking) creaking.getBukkitEntity()) : null;
+        if (!(this.getBlockEntity().getLevel() instanceof ServerLevel serverLevel)) {
+            return null;
         }
-        return null;
+
+        final net.minecraft.world.entity.monster.creaking.Creaking creaking = CreakingHeartBlockEntity.spawnProtector(serverLevel, this.getBlockEntity());
+        if (creaking == null) {
+            return null;
+        }
+
+        this.getBlockEntity().setCreakingInfo(creaking);
+        creaking.makeSound(SoundEvents.CREAKING_SPAWN);
+        serverLevel.playSound(null, this.getBlockEntity().getBlockPos(), SoundEvents.CREAKING_HEART_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
+
+        return (Creaking) creaking.getBukkitEntity();
     }
 
     @Nullable
     @Override
     public Location spreadResin() {
         this.requirePlaced();
-        if (this.getBlockEntity().getLevel() instanceof ServerLevel serverLevel) {
-            return this.getBlockEntity().spreadResin(serverLevel).map(blockPos -> CraftLocation.toBukkit(blockPos, this.getWorld())).orElse(null);
+        if (!(this.getBlockEntity().getLevel() instanceof ServerLevel serverLevel)) {
+            return null;
         }
-        return null;
+
+        return this.getBlockEntity().spreadResin(serverLevel).map(blockPos -> CraftLocation.toBukkit(blockPos, this.getWorld())).orElse(null);
     }
 }
