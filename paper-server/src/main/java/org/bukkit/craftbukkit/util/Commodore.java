@@ -227,8 +227,10 @@ public class Commodore {
 
         ClassVisitor visitor = cw;
 
+        if (pluginVersion.isOlderThanOrSameAs(ApiVersion.CLASS_TO_INTERFACE)) {
+            visitor = ClassToInterfaceRules.visitor(visitor);
+        }
         visitor = ReflectionRemapper.visitor(visitor);
-        visitor = ClassToInterfaceRules.visitor(visitor);
 
         Map<String, String> renames = new HashMap<>(RENAMES);
         if (pluginVersion.isOlderThan(ApiVersion.ABSTRACT_COW)) {
