@@ -22,6 +22,11 @@ public final class LogManagerShutdownThread extends Thread {
 
     @Override
     public void run() {
-        LoggerShutdown.shutdownLogging();
+        io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
+        LoggerShutdown.shutdownLogging(); // Flushes the async appender
+        try {
+            net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
+        } catch (final Exception ignored) {
+        }
     }
 }

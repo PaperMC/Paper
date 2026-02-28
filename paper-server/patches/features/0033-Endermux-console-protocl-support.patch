@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 4 Feb 2026 19:10:35 -0700
+Subject: [PATCH] Endermux console protocl support
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index ca2caace6aab0dfcb0ab7a0fd28e66555c62fdc5..397273e17c1b6de17d9b1ed4004a19c9557aa81f 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1110,6 +1110,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.isRestarting = isRestarting;
+         this.hasLoggedStop = true; // Paper - Debugging
+         if (isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
++        if (io.papermc.paper.console.endermux.PaperEndermux.INSTANCE != null) io.papermc.paper.console.endermux.PaperEndermux.INSTANCE.disableInteractivity();
+         // Paper end
+         this.running = false;
+         if (waitForShutdown) {
+@@ -1987,7 +1988,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     @Override
+     public void sendSystemMessage(Component message) {
+-        LOGGER.info(io.papermc.paper.adventure.PaperAdventure.ANSI_SERIALIZER.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(message))); // Paper - Log message with colors
++        final net.kyori.adventure.text.Component adventureMessage = io.papermc.paper.adventure.PaperAdventure.asAdventure(message);
++        try (final var _ = xyz.jpenilla.endermux.log4j.RichLogContext.pushComponent(adventureMessage)) {
++            LOGGER.info(net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer.ansi().serialize(adventureMessage));
++        }
+     }
+ 
+     public KeyPair getKeyPair() {
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index eb06d8f012684845146429832e977e6c1ddcd62b..15db6bb08ec3b0ca5b2d417d97b670e80c6f77b8 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -270,6 +270,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         // Paper end - fix converting txt to json file
+         org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
+         thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
++        if (io.papermc.paper.console.endermux.PaperEndermux.INSTANCE != null) io.papermc.paper.console.endermux.PaperEndermux.INSTANCE.enableInteractivity(this);
+         io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
+         this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
+         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
+@@ -540,6 +541,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             }
+         }
+ 
++        if (io.papermc.paper.console.endermux.PaperEndermux.INSTANCE != null) io.papermc.paper.console.endermux.PaperEndermux.INSTANCE.close();
++
+         this.hasFullyShutdown = true; // Paper - Improved watchdog support
+         System.exit(this.abnormalExit ? 70 : 0); // CraftBukkit // Paper - Improved watchdog support
+     }

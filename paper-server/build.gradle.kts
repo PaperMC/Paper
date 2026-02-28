@@ -133,6 +133,7 @@ dependencies {
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
     implementation("net.kyori:adventure-text-serializer-ansi")
+    implementation("xyz.jpenilla:endermux-server:0.0.1-SNAPSHOT")
 
     /*
       Required to add the missing Log4j2Plugins.dat file from log4j-core
@@ -289,10 +290,14 @@ fun TaskContainer.registerRunTask(
         .dir(providers.gradleProperty("paper.runWorkDir").getOrElse("run"))
         .asFile
     javaLauncher.set(project.javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of(21))
-        vendor.set(JvmVendorSpec.JETBRAINS)
+        languageVersion.set(JavaLanguageVersion.of(25))
+        // vendor.set(JvmVendorSpec.JETBRAINS) // JBR 25 is bugged (spark crashes, hotswapping not working)
     })
-    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
+    jvmArgs(
+        // "-XX:+AllowEnhancedClassRedefinition", // JBR 25 is bugged (spark crashes, hotswapping not working)
+        "--enable-native-access=ALL-UNNAMED",
+    )
+    systemProperty("paper.endermux.enabled", true)
 
     if (rootProject.childProjects["test-plugin"] != null) {
         val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
