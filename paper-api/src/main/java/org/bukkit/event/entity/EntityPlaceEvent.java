@@ -18,12 +18,13 @@ import org.jspecify.annotations.Nullable;
  * <br>
  * Note that this event is currently only fired for these specific placements:
  * armor stands, boats, minecarts, end crystals, and mob buckets.
+ *
  * @see org.bukkit.event.hanging.HangingPlaceEvent for paintings, item frames, and leashes.
  * @see io.papermc.paper.event.entity.BlockPlaceEntityEvent for a dispenser-only version
  * @see io.papermc.paper.event.entity.PlaceEntityEvent to listen to both blocks and players placing entities
  */
 @NullMarked
-public class EntityPlaceEvent extends PlaceEntityEvent implements Cancellable { // Paper - Add superclass
+public class EntityPlaceEvent extends PlaceEntityEvent {
 
     private final EquipmentSlot hand;
 

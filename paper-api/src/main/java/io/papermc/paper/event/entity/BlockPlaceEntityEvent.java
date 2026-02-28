@@ -13,7 +13,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a block, like a dispenser, places an
- * entity. {@link #getPlayer()} will always be null.
+ * entity. {@link #getPlayer()} will always be {@code null}.
+ *
  * @see org.bukkit.event.hanging.HangingPlaceEvent for paintings, item frames, and leashes.
  * @see org.bukkit.event.entity.EntityPlaceEvent for a player-only version with more context
  * @see PlaceEntityEvent to listen to both blocks and players placing entities

@@ -13,7 +13,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
- * When an itemstack causes the spawning of an entity. Most event fires are going to
+ * When an item causes the spawning of an entity. Most event fires are going to
  * be the through the sub-event {@link org.bukkit.event.entity.EntityPlaceEvent} but this
  * event will also be fired for mob spawn eggs from players and dispensers.
  */
@@ -65,12 +65,12 @@ public class ItemSpawnEntityEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Gets the itemstack responsible for spawning the entity. Mutating
-     * this itemstack has no effect.
+     * Gets the item responsible for spawning the entity. Mutating
+     * this item has no effect.
      * <p>
-     * May return an empty itemstack if the actual stack isn't available.
+     * May return an empty item if the actual stack isn't available.
      *
-     * @return the spawning itemstack
+     * @return the spawning item
      */
     public ItemStack getSpawningStack() {
         return this.spawningStack;

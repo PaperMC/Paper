@@ -15,9 +15,10 @@ import org.jspecify.annotations.Nullable;
  * <br>
  * Note that this event is currently only fired for these specific placements:
  * armor stands, boats, minecarts, end crystals, mob buckets, and tnt (dispenser only).
+ *
  * @see org.bukkit.event.hanging.HangingPlaceEvent for paintings, item frames, and leashes.
  * @see org.bukkit.event.entity.EntityPlaceEvent for a player-only version with more context
- * @see BlockPlaceEntityEvent for a dispener-only version with more context
+ * @see BlockPlaceEntityEvent for a dispenser-only version with more context
  */
 @NullMarked
 public abstract class PlaceEntityEvent extends ItemSpawnEntityEvent {

@@ -562,11 +562,11 @@ public class CraftEventFactory {
     }
 
     public static EntityPlaceEvent callEntityPlaceEvent(final Level world, final BlockPos clickedPos, final Direction clickedFace, final net.minecraft.world.entity.player.@Nullable Player player, final Entity entity, final InteractionHand hand, final ItemStack spawningStack) {
-        Player cplayer = (player == null) ? null : (Player) player.getBukkitEntity();
+        Player bukkitPlayer = (player == null) ? null : (Player) player.getBukkitEntity();
         org.bukkit.block.Block clickedBlock = CraftBlock.at(world, clickedPos);
         org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(clickedFace);
 
-        final EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), cplayer, clickedBlock, blockFace, CraftEquipmentSlot.getHand(hand), spawningStack.asBukkitCopy());
+        final EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), bukkitPlayer, clickedBlock, blockFace, CraftEquipmentSlot.getHand(hand), spawningStack.asBukkitCopy());
         entity.level().getCraftServer().getPluginManager().callEvent(event);
 
         return event;
