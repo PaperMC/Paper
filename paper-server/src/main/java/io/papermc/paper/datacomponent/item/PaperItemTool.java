@@ -1,7 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.data.util.Checks;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
@@ -14,11 +13,12 @@ import net.kyori.adventure.util.TriState;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.util.Handleable;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.requireArgumentNonNegative;
-import static io.papermc.paper.registry.data.util.Checks.requireArgumentPositive;
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
+import static io.papermc.paper.util.BoundChecker.requirePositive;
 
 public record PaperItemTool(
     net.minecraft.world.item.component.Tool impl
@@ -60,7 +60,7 @@ public record PaperItemTool(
     record PaperRule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops) implements Rule {
 
         public static PaperRule fromUnsafe(final RegistryKeySet<BlockType> blocks, final @Nullable Float speed, final TriState correctForDrops) {
-            return new PaperRule(blocks, (speed == null) ? null : requireArgumentPositive(speed, "speed"), correctForDrops);
+            return new PaperRule(blocks, (speed == null) ? null : requirePositive(speed, "speed"), correctForDrops);
         }
     }
 
@@ -72,8 +72,8 @@ public record PaperItemTool(
         private boolean canDestroyBlocksInCreative = true;
 
         @Override
-        public Builder damagePerBlock(final int damage) {
-            this.damage = Checks.requireArgumentNonNegative(damage, "damage");
+        public Builder damagePerBlock(final @NonNegative int damage) {
+            this.damage = requireNonNegative(damage, "damage");
             return this;
         }
 

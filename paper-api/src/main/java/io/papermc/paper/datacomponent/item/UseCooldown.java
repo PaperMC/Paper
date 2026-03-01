@@ -34,8 +34,7 @@ public interface UseCooldown {
      * @return cooldown seconds
      */
     @Contract(pure = true)
-    @Positive
-    float seconds();
+    @Positive float seconds();
 
     /**
      * The unique resource location to identify this cooldown group.

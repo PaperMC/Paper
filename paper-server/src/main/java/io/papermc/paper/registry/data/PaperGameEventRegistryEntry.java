@@ -4,11 +4,11 @@ import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.util.Conversions;
 import java.util.OptionalInt;
 import net.minecraft.world.level.gameevent.GameEvent;
-import org.jetbrains.annotations.Range;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.requireArgumentMin;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
 public class PaperGameEventRegistryEntry implements GameEventRegistryEntry {
 
@@ -24,7 +24,7 @@ public class PaperGameEventRegistryEntry implements GameEventRegistryEntry {
     }
 
     @Override
-    public @Range(from = 0, to = Integer.MAX_VALUE) int range() {
+    public @NonNegative int range() {
         return asConfigured(this.range, "range");
     }
 
@@ -39,8 +39,8 @@ public class PaperGameEventRegistryEntry implements GameEventRegistryEntry {
         }
 
         @Override
-        public GameEventRegistryEntry.Builder range(final @Range(from = 0, to = Integer.MAX_VALUE) int range) {
-            this.range = OptionalInt.of(requireArgumentMin(range, "range", 0));
+        public GameEventRegistryEntry.Builder range(final @NonNegative int range) {
+            this.range = OptionalInt.of(requireNonNegative(range, "range"));
             return this;
         }
 

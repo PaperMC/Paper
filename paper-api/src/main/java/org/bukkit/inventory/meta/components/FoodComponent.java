@@ -1,6 +1,7 @@
 package org.bukkit.inventory.meta.components;
 
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -21,7 +22,7 @@ public interface FoodComponent extends ConfigurationSerializable {
      *
      * @param nutrition new nutrition value, must be non-negative
      */
-    void setNutrition(int nutrition);
+    void setNutrition(@NonNegative int nutrition);
 
     /**
      * Gets the saturation restored by this item when eaten.

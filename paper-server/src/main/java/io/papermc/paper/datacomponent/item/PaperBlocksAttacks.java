@@ -13,9 +13,10 @@ import java.util.Optional;
 import net.kyori.adventure.key.Key;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.requireArgumentNonNegative;
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
 public record PaperBlocksAttacks(
     net.minecraft.world.item.component.BlocksAttacks impl
@@ -73,14 +74,14 @@ public record PaperBlocksAttacks(
         private @Nullable Key disableSound;
 
         @Override
-        public Builder blockDelaySeconds(final float delay) {
-            this.blockDelaySeconds = requireArgumentNonNegative(delay, "delay");
+        public Builder blockDelaySeconds(final @NonNegative float delay) {
+            this.blockDelaySeconds = requireNonNegative(delay, "delay");
             return this;
         }
 
         @Override
-        public Builder disableCooldownScale(final float scale) {
-            this.disableCooldownScale = requireArgumentNonNegative(scale, "scale");
+        public Builder disableCooldownScale(final @NonNegative float scale) {
+            this.disableCooldownScale = requireNonNegative(scale, "scale");
             return this;
         }
 

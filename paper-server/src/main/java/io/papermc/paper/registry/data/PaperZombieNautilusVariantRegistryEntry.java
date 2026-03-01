@@ -10,7 +10,7 @@ import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.ZombieNautilus;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.requireArgument;
+import static io.papermc.paper.registry.data.util.Checks.asArgument;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperZombieNautilusVariantRegistryEntry implements ZombieNautilusVariantRegistryEntry {
@@ -57,13 +57,13 @@ public class PaperZombieNautilusVariantRegistryEntry implements ZombieNautilusVa
 
         @Override
         public ZombieNautilusVariantRegistryEntry.Builder clientTextureAsset(final ClientTextureAsset clientTextureAsset) {
-            this.clientTextureAsset = this.conversions.asVanilla(requireArgument(clientTextureAsset, "clientTextureAsset"));
+            this.clientTextureAsset = this.conversions.asVanilla(asArgument(clientTextureAsset, "clientTextureAsset"));
             return this;
         }
 
         @Override
         public ZombieNautilusVariantRegistryEntry.Builder model(final ZombieNautilusVariantRegistryEntry.Model model) {
-            this.model = switch (requireArgument(model, "model")) {
+            this.model = switch (asArgument(model, "model")) {
                 case NORMAL -> ZombieNautilusVariant.ModelType.NORMAL;
                 case WARM -> ZombieNautilusVariant.ModelType.WARM;
             };

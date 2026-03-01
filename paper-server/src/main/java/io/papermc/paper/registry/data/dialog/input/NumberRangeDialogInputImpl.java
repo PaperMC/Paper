@@ -1,15 +1,14 @@
 package io.papermc.paper.registry.data.dialog.input;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.registry.data.util.Checks;
 import net.kyori.adventure.text.Component;
 import net.minecraft.commands.functions.StringTemplate;
 import net.minecraft.server.dialog.body.PlainMessage;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.requireArgumentMinInclusive;
-import static io.papermc.paper.registry.data.util.Checks.requireArgumentPositive;
-import static io.papermc.paper.registry.data.util.Checks.requireArgumentRange;
+import static io.papermc.paper.util.BoundChecker.requirePositive;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public record NumberRangeDialogInputImpl(
     String key,
@@ -42,8 +41,8 @@ public record NumberRangeDialogInputImpl(
         }
 
         @Override
-        public BuilderImpl width(final int width) {
-            this.width = Checks.requireArgumentRange(width, "width", 1, 1024);
+        public BuilderImpl width(final @Range(from = 1, to = 1024) int width) {
+            this.width = requireRange(width, "width", 1, 1024);
             return this;
         }
 
@@ -55,13 +54,13 @@ public record NumberRangeDialogInputImpl(
 
         @Override
         public BuilderImpl initial(final @Nullable Float initial) {
-            this.initial = (initial == null ? null : requireArgumentMinInclusive(initial, "initial", this.start, this.end));
+            this.initial = (initial == null ? null : requireRange(initial, "initial", this.start, this.end));
             return this;
         }
 
         @Override
         public BuilderImpl step(final @Nullable Float step) {
-            this.step = (step == null ? null : requireArgumentPositive(step, "step"));
+            this.step = (step == null ? null : requirePositive(step, "step"));
             return this;
         }
 

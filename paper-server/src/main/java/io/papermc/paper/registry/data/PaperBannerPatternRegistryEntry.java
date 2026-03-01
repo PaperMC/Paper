@@ -9,7 +9,8 @@ import net.minecraft.world.level.block.entity.BannerPattern;
 import org.bukkit.block.banner.PatternType;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.util.Checks.*;
+import static io.papermc.paper.registry.data.util.Checks.asArgument;
+import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperBannerPatternRegistryEntry implements BannerPatternRegistryEntry {
 
@@ -44,13 +45,13 @@ public class PaperBannerPatternRegistryEntry implements BannerPatternRegistryEnt
 
         @Override
         public Builder assetId(final Key assetId) {
-            this.assetId = PaperAdventure.asVanilla(requireArgument(assetId, "assetId"));
+            this.assetId = PaperAdventure.asVanilla(asArgument(assetId, "assetId"));
             return this;
         }
 
         @Override
         public Builder translationKey(final String translationKey) {
-            this.translationKey = requireArgument(translationKey, "translationKey");
+            this.translationKey = asArgument(translationKey, "translationKey");
             return this;
         }
 
