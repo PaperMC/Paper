@@ -1,18 +1,10 @@
-From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 06:37:42 -0700
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/item/component/Consumable.java b/net/minecraft/world/item/component/Consumable.java
-index 07b4d5c28c216730e750fc93fea3ea3f81567696..7402a09f7773281654eb7876f4e72a5f2f8f816b 100644
 --- a/net/minecraft/world/item/component/Consumable.java
 +++ b/net/minecraft/world/item/component/Consumable.java
-@@ -84,7 +84,18 @@ public record Consumable(
+@@ -84,13 +_,35 @@
  
-         stack.getAllOfType(ConsumableListener.class).forEach(consumableListener -> consumableListener.onConsume(level, entity, stack, this));
+         stack.getAllOfType(ConsumableListener.class).forEach(component -> component.onConsume(level, user, stack, this));
          if (!level.isClientSide()) {
--            this.onConsumeEffects.forEach(consumeEffect -> consumeEffect.apply(level, stack, entity));
+-            this.onConsumeEffects.forEach(action -> action.apply(level, stack, user));
 +            // CraftBukkit start
 +            org.bukkit.event.entity.EntityPotionEffectEvent.Cause cause;
 +            if (stack.is(net.minecraft.world.item.Items.MILK_BUCKET)) {
@@ -23,15 +15,15 @@ index 07b4d5c28c216730e750fc93fea3ea3f81567696..7402a09f7773281654eb7876f4e72a5f
 +                cause = org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD;
 +            }
 +
-+            this.onConsumeEffects.forEach(consumeEffect -> consumeEffect.apply(level, stack, entity, cause));
++            this.onConsumeEffects.forEach(consumeEffect -> consumeEffect.apply(level, stack, user, cause));
 +            // CraftBukkit end
          }
  
-         entity.gameEvent(this.animation == ItemUseAnimation.DRINK ? GameEvent.DRINK : GameEvent.EAT);
-@@ -92,6 +103,17 @@ public record Consumable(
+         user.gameEvent(this.animation == ItemUseAnimation.DRINK ? GameEvent.DRINK : GameEvent.EAT);
+         stack.consume(1, user);
          return stack;
      }
- 
++
 +    // CraftBukkit start
 +    public void cancelUsingItem(ServerPlayer player, ItemStack stack) {
 +        final java.util.List<net.minecraft.network.protocol.Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> packets = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>(); // Paper - properly resend entities - collect packets for bundle
@@ -42,7 +34,6 @@ index 07b4d5c28c216730e750fc93fea3ea3f81567696..7402a09f7773281654eb7876f4e72a5f
 +        player.connection.send(new net.minecraft.network.protocol.game.ClientboundBundlePacket(packets));
 +    }
 +    // CraftBukkit end
-+
-     public boolean canConsume(LivingEntity entity, ItemStack stack) {
+ 
+     public boolean canConsume(final LivingEntity user, final ItemStack stack) {
          FoodProperties foodProperties = stack.get(DataComponents.FOOD);
-         return !(foodProperties != null && entity instanceof Player player) || player.canEat(foodProperties.canAlwaysEat());
