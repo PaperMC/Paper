@@ -1,0 +1,50 @@
+--- a/net/minecraft/world/effect/MobEffectInstance.java
++++ b/net/minecraft/world/effect/MobEffectInstance.java
+@@ -227,6 +_,7 @@
+         } else {
+             int tickCount = this.isInfiniteDuration() ? target.tickCount : this.duration;
+             if (this.effect.value().shouldApplyEffectTickThisTick(tickCount, this.amplifier)
++                && new io.papermc.paper.event.entity.EntityEffectTickEvent(target.getBukkitLivingEntity(), org.bukkit.craftbukkit.potion.CraftPotionEffectType.minecraftHolderToBukkit(this.effect), this.amplifier).callEvent() // Paper - Add EntityEffectTickEvent
+                 && !this.effect.value().applyEffectTick(serverLevel, target, this.amplifier)) {
+                 return false;
+             } else {
+@@ -262,13 +_,16 @@
+     }
+ 
+     private boolean downgradeToHiddenEffect() {
+-        if (this.duration == 0 && this.hiddenEffect != null) {
++        // Paper start - Fix MC-259832
++        if (this.duration != 0 || this.hiddenEffect == null) return false;
++
++        do {
+             this.setDetailsFrom(this.hiddenEffect);
+             this.hiddenEffect = this.hiddenEffect.hiddenEffect;
+-            return true;
+-        } else {
+-            return false;
+-        }
++        } while (this.duration == 0 && this.hiddenEffect != null);
++
++        return true;
++        // Paper end - Fix MC-259832
+     }
+ 
+     public void onEffectStarted(final LivingEntity mob) {
+@@ -425,7 +_,7 @@
+                     .apply(i, MobEffectInstance.Details::create)
+             )
+         );
+-        public static final StreamCodec<ByteBuf, MobEffectInstance.Details> STREAM_CODEC = StreamCodec.recursive(
++        public static final StreamCodec<net.minecraft.network.FriendlyByteBuf, MobEffectInstance.Details> STREAM_CODEC = StreamCodec.recursive( // Paper - Track codec depth
+             subCodec -> StreamCodec.composite(
+                 ByteBufCodecs.VAR_INT,
+                 MobEffectInstance.Details::amplifier,
+@@ -437,7 +_,7 @@
+                 MobEffectInstance.Details::showParticles,
+                 ByteBufCodecs.BOOL,
+                 MobEffectInstance.Details::showIcon,
+-                subCodec.apply(ByteBufCodecs::optional),
++                subCodec.apply(ByteBufCodecs::increaseDepth).apply(ByteBufCodecs::optional), // Paper - Track codec depth
+                 MobEffectInstance.Details::hiddenEffect,
+                 MobEffectInstance.Details::new
+             )
