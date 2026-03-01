@@ -1,0 +1,44 @@
+--- a/net/minecraft/world/entity/monster/Shulker.java
++++ b/net/minecraft/world/entity/monster/Shulker.java
+@@ -277,8 +_,10 @@
+     }
+ 
+     @Override
+-    public void stopRiding() {
+-        super.stopRiding();
++    // Paper start - Force entity dismount during teleportation
++    public void stopRiding(boolean suppressCancellation) {
++        super.stopRiding(suppressCancellation);
++        // Paper end - Force entity dismount during teleportation
+         if (this.level().isClientSide()) {
+             this.clientOldAttachPosition = this.blockPosition();
+         }
+@@ -389,6 +_,14 @@
+                     && this.level().getWorldBorder().isWithinBounds(target)
+                     && this.level().noCollision(this, new AABB(target).deflate(1.0E-6))) {
+                     Direction attachmentDirection = this.findAttachableSurface(target);
++                    // CraftBukkit start
++                    org.bukkit.event.entity.EntityTeleportEvent teleportEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTeleportEvent(this, target.getX(), target.getY(), target.getZ());
++                    if (teleportEvent.isCancelled() || teleportEvent.getTo() == null) { // Paper
++                        return false;
++                    } else {
++                        target = org.bukkit.craftbukkit.util.CraftLocation.toBlockPosition(teleportEvent.getTo());
++                    }
++                    // CraftBukkit end
+                     if (attachmentDirection != null) {
+                         this.unRide();
+                         this.setAttachFace(attachmentDirection);
+@@ -453,7 +_,12 @@
+                 if (baby != null) {
+                     baby.setVariant(this.getVariant());
+                     baby.snapTo(oldPosition);
+-                    this.level().addFreshEntity(baby);
++                    // Paper start - Call ShulkerDuplicateEvent
++                    if (!new io.papermc.paper.event.entity.ShulkerDuplicateEvent((org.bukkit.entity.Shulker) baby.getBukkitEntity(), (org.bukkit.entity.Shulker) this.getBukkitEntity()).callEvent()) {
++                        return;
++                    }
++                    // Paper end - Call ShulkerDuplicateEvent
++                    this.level().addFreshEntity(baby, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - the mysteries of life
+                 }
+             }
+         }
