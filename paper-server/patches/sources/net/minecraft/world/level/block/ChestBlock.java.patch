@@ -1,23 +1,15 @@
-From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 06:37:42 -0700
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/block/ChestBlock.java b/net/minecraft/world/level/block/ChestBlock.java
-index 75f5a10e3a6149b6d003d9369a61d7aa3c2887ba..fa2dce759419f62825000718361f47c6f208cdb2 100644
 --- a/net/minecraft/world/level/block/ChestBlock.java
 +++ b/net/minecraft/world/level/block/ChestBlock.java
-@@ -96,7 +96,7 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+@@ -97,7 +_,7 @@
          @Override
          public Optional<MenuProvider> acceptDouble(final ChestBlockEntity first, final ChestBlockEntity second) {
              final Container container = new CompoundContainer(first, second);
 -            return Optional.of(new MenuProvider() {
 +            return Optional.of(DoubleInventory.wrap(new MenuProvider() { // CraftBukkit - wrap for identification
-                 @Override
-                 public @Nullable AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-                     if (first.canOpen(player) && second.canOpen(player)) {
-@@ -117,10 +117,10 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+                 {
+                     Objects.requireNonNull(container);
+                 }
+@@ -122,10 +_,10 @@
                      if (first.hasCustomName()) {
                          return first.getDisplayName();
                      } else {
@@ -30,7 +22,7 @@ index 75f5a10e3a6149b6d003d9369a61d7aa3c2887ba..fa2dce759419f62825000718361f47c6
          }
  
          @Override
-@@ -134,6 +134,34 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+@@ -139,6 +_,34 @@
          }
      };
  
@@ -65,8 +57,8 @@ index 75f5a10e3a6149b6d003d9369a61d7aa3c2887ba..fa2dce759419f62825000718361f47c6
      @Override
      public MapCodec<? extends ChestBlock> codec() {
          return CODEC;
-@@ -261,8 +289,7 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
-     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+@@ -268,8 +_,7 @@
+     ) {
          if (level instanceof ServerLevel serverLevel) {
              MenuProvider menuProvider = this.getMenuProvider(state, level, pos);
 -            if (menuProvider != null) {
@@ -75,31 +67,30 @@ index 75f5a10e3a6149b6d003d9369a61d7aa3c2887ba..fa2dce759419f62825000718361f47c6
                  player.awardStat(this.getOpenChestStat());
                  PiglinAi.angerNearbyPiglins(serverLevel, player, true);
              }
-@@ -299,7 +326,14 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+@@ -310,7 +_,13 @@
  
      @Override
-     public @Nullable MenuProvider getMenuProvider(BlockState state, Level level, BlockPos pos) {
+     public @Nullable MenuProvider getMenuProvider(final BlockState state, final Level level, final BlockPos pos) {
 -        return this.combine(state, level, pos, false).apply(MENU_PROVIDER_COMBINER).orElse(null);
 +    // CraftBukkit start
 +        return this.getMenuProvider(state, level, pos, false);
 +    }
 +
-+    @Nullable
-+    public MenuProvider getMenuProvider(BlockState state, Level level, BlockPos pos, boolean ignoreObstructions) {
++    public @Nullable MenuProvider getMenuProvider(final BlockState state, final Level level, final BlockPos pos, final boolean ignoreObstructions) {
 +        return this.combine(state, level, pos, ignoreObstructions).apply(MENU_PROVIDER_COMBINER).orElse(null);
 +    // CraftBukkit end
      }
  
-     public static DoubleBlockCombiner.Combiner<ChestBlockEntity, Float2FloatFunction> opennessCombiner(final LidBlockEntity lid) {
-@@ -341,6 +375,11 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+     public static DoubleBlockCombiner.Combiner<ChestBlockEntity, Float2FloatFunction> opennessCombiner(final LidBlockEntity entity) {
+@@ -352,6 +_,11 @@
      }
  
-     private static boolean isCatSittingOnChest(LevelAccessor level, BlockPos pos) {
+     private static boolean isCatSittingOnChest(final LevelAccessor level, final BlockPos pos) {
 +        // Paper start - Option to disable chest cat detection
 +        if (level.getMinecraftWorld().paperConfig().entities.behavior.disableChestCatDetection) {
 +            return false;
 +        }
 +        // Paper end - Option to disable chest cat detection
-         List<Cat> entitiesOfClass = level.getEntitiesOfClass(
-             Cat.class, new AABB(pos.getX(), pos.getY() + 1, pos.getZ(), pos.getX() + 1, pos.getY() + 2, pos.getZ() + 1)
-         );
+         List<Cat> cats = level.getEntitiesOfClass(Cat.class, new AABB(pos.getX(), pos.getY() + 1, pos.getZ(), pos.getX() + 1, pos.getY() + 2, pos.getZ() + 1));
+         if (!cats.isEmpty()) {
+             for (Cat cat : cats) {

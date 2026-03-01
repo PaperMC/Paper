@@ -1,0 +1,68 @@
+--- a/net/minecraft/world/level/block/PointedDripstoneBlock.java
++++ b/net/minecraft/world/level/block/PointedDripstoneBlock.java
+@@ -144,6 +_,11 @@
+                 && projectile.mayBreak(serverLevel)
+                 && projectile instanceof ThrownTrident
+                 && projectile.getDeltaMovement().length() > 0.6) {
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, blockPos, state.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
++                    return;
++                }
++                // CraftBukkit end
+                 level.destroyBlock(blockPos, true);
+             }
+         }
+@@ -152,7 +_,7 @@
+     @Override
+     public void fallOn(final Level level, final BlockState state, final BlockPos pos, final Entity entity, final double fallDistance) {
+         if (state.getValue(TIP_DIRECTION) == Direction.UP && state.getValue(THICKNESS) == DripstoneThickness.TIP) {
+-            entity.causeFallDamage(fallDistance + 2.5, 2.0F, level.damageSources().stalagmite());
++            entity.causeFallDamage(fallDistance + 2.5, 2.0F, level.damageSources().stalagmite().eventBlockDamager(level, pos)); // CraftBukkit
+         } else {
+             super.fallOn(level, state, pos, entity, fallDistance);
+         }
+@@ -210,10 +_,12 @@
+                         if (stalactiteTipPos != null) {
+                             if (fluidInfo.get().sourceState.is(Blocks.MUD) && fluid == Fluids.WATER) {
+                                 BlockState newState = Blocks.CLAY.defaultBlockState();
++                                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(level, fluidInfo.get().pos, newState, Block.UPDATE_ALL)) { // Paper - Call BlockFormEvent
+                                 level.setBlockAndUpdate(fluidInfo.get().pos, newState);
+                                 Block.pushEntitiesUp(fluidInfo.get().sourceState, newState, level, fluidInfo.get().pos);
+                                 level.gameEvent(GameEvent.BLOCK_CHANGE, fluidInfo.get().pos, GameEvent.Context.of(newState));
+                                 level.levelEvent(LevelEvent.DRIPSTONE_DRIP, stalactiteTipPos, 0);
++                                } // Paper - Call BlockFormEvent
+                             } else {
+                                 BlockPos cauldronPos = findFillableCauldronBelowStalactiteTip(level, stalactiteTipPos, fluid);
+                                 if (cauldronPos != null) {
+@@ -359,17 +_,17 @@
+         if (isUnmergedTipWithDirection(existingStateAtTargetPos, growToDirection.getOpposite())) {
+             createMergedTips(existingStateAtTargetPos, level, targetPos);
+         } else if (existingStateAtTargetPos.isAir() || existingStateAtTargetPos.is(Blocks.WATER)) {
+-            createDripstone(level, targetPos, growToDirection, DripstoneThickness.TIP);
++            createDripstone(level, targetPos, growToDirection, DripstoneThickness.TIP, growFromPos); // CraftBukkit
+         }
+     }
+ 
+-    private static void createDripstone(final LevelAccessor level, final BlockPos pos, final Direction direction, final DripstoneThickness thickness) {
++    private static void createDripstone(final LevelAccessor level, final BlockPos pos, final Direction direction, final DripstoneThickness thickness, final BlockPos source) { // CraftBukkit
+         BlockState state = Blocks.POINTED_DRIPSTONE
+             .defaultBlockState()
+             .setValue(TIP_DIRECTION, direction)
+             .setValue(THICKNESS, thickness)
+             .setValue(WATERLOGGED, level.getFluidState(pos).is(Fluids.WATER));
+-        level.setBlock(pos, state, Block.UPDATE_ALL);
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, pos, state, Block.UPDATE_ALL); // CraftBukkit
+     }
+ 
+     private static void createMergedTips(final BlockState tipState, final LevelAccessor level, final BlockPos tipPos) {
+@@ -383,8 +_,8 @@
+             stalagmitePos = tipPos.below();
+         }
+ 
+-        createDripstone(level, stalactitePos, Direction.DOWN, DripstoneThickness.TIP_MERGE);
+-        createDripstone(level, stalagmitePos, Direction.UP, DripstoneThickness.TIP_MERGE);
++        createDripstone(level, stalactitePos, Direction.DOWN, DripstoneThickness.TIP_MERGE, tipPos); // CraftBukkit
++        createDripstone(level, stalagmitePos, Direction.UP, DripstoneThickness.TIP_MERGE, tipPos); // CraftBukkit
+     }
+ 
+     public static void spawnDripParticle(final Level level, final BlockPos stalactiteTipPos, final BlockState stalactiteTipState) {
