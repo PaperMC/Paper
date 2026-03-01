@@ -1,0 +1,157 @@
+--- a/net/minecraft/world/level/block/ComposterBlock.java
++++ b/net/minecraft/world/level/block/ComposterBlock.java
+@@ -258,6 +_,11 @@
+         if (fillLevel < 8 && COMPOSTABLES.containsKey(itemStack.getItem())) {
+             if (fillLevel < 7 && !level.isClientSide()) {
+                 BlockState newState = addItem(player, state, level, pos, itemStack);
++                // Paper start - handle cancelled events
++                if (newState == null) {
++                    return InteractionResult.PASS;
++                }
++                // Paper end
+                 level.levelEvent(LevelEvent.COMPOSTER_FILL, pos, state != newState ? 1 : 0);
+                 player.awardStat(Stats.ITEM_USED.get(itemStack.getItem()));
+                 itemStack.consume(1, player);
+@@ -287,7 +_,19 @@
+     ) {
+         int fillLevel = state.getValue(LEVEL);
+         if (fillLevel < 7 && COMPOSTABLES.containsKey(itemStack.getItem())) {
+-            BlockState newState = addItem(sourceEntity, state, level, pos, itemStack);
++            // CraftBukkit start
++            double rand = level.getRandom().nextDouble();
++            BlockState newState = null; // Paper
++            if (false && (state == newState || !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(sourceEntity, pos, newState))) { // Paper - move event call into addItem
++                return state;
++            }
++            newState = ComposterBlock.addItem(sourceEntity, state, level, pos, itemStack, rand);
++            // Paper start - handle cancelled events
++            if (newState == null) {
++                return state;
++            }
++            // Paper end
++            // CraftBukkit end
+             itemStack.shrink(1);
+             return newState;
+         } else {
+@@ -296,6 +_,14 @@
+     }
+ 
+     public static BlockState extractProduce(final Entity sourceEntity, final BlockState state, final Level level, final BlockPos pos) {
++        // CraftBukkit start
++        if (!(sourceEntity instanceof Player)) {
++            BlockState emptyState = ComposterBlock.empty(sourceEntity, state, org.bukkit.craftbukkit.util.DummyGeneratorAccess.INSTANCE, pos);
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(sourceEntity, pos, emptyState)) {
++                return state;
++            }
++        }
++        // CraftBukkit end
+         if (!level.isClientSide()) {
+             Vec3 itemPos = Vec3.atLowerCornerWithOffset(pos, 0.5, 1.01, 0.5).offsetRandomXZ(level.getRandom(), 0.7F);
+             ItemEntity entity = new ItemEntity(level, itemPos.x(), itemPos.y(), itemPos.z(), new ItemStack(Items.BONE_MEAL));
+@@ -315,16 +_,44 @@
+         return newState;
+     }
+ 
++    @Nullable // Paper
+     private static BlockState addItem(
+         final @Nullable Entity sourceEntity, final BlockState state, final LevelAccessor level, final BlockPos pos, final ItemStack itemStack
+     ) {
++        // CraftBukkit start
++        return ComposterBlock.addItem(sourceEntity, state, level, pos, itemStack, level.getRandom().nextDouble());
++    }
++    @Nullable // Paper - make it nullable
++    private static BlockState addItem(
++        final @Nullable Entity sourceEntity, final BlockState state, final LevelAccessor level, final BlockPos pos, final ItemStack itemStack, final double rand
++        // CraftBukkit end
++    ) {
+         int fillLevel = state.getValue(LEVEL);
+         float chance = COMPOSTABLES.getFloat(itemStack.getItem());
+-        if ((fillLevel != 0 || !(chance > 0.0F)) && !(level.getRandom().nextDouble() < chance)) {
++        // Paper start - Add CompostItemEvent and EntityCompostItemEvent
++        boolean willRaiseLevel = !((fillLevel != 0 || chance <= 0.0F) && rand >= (double) chance);
++        final io.papermc.paper.event.block.CompostItemEvent event;
++        if (sourceEntity == null) {
++            event = new io.papermc.paper.event.block.CompostItemEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), itemStack.getBukkitStack(), willRaiseLevel);
++        } else {
++            event = new io.papermc.paper.event.entity.EntityCompostItemEvent(sourceEntity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), itemStack.getBukkitStack(), willRaiseLevel);
++        }
++        if (!event.callEvent()) { // check for cancellation of entity event (non entity event can't be cancelled cause of hoppers)
++            return null;
++        }
++        willRaiseLevel = event.willRaiseLevel();
++
++        if (!willRaiseLevel) {
++            // Paper end - Add CompostItemEvent and EntityCompostItemEvent
+             return state;
+         } else {
+             int newLevel = fillLevel + 1;
+             BlockState newState = state.setValue(LEVEL, newLevel);
++            // Paper start - move the EntityChangeBlockEvent here to avoid conflict later for the compost events
++            if (sourceEntity != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(sourceEntity, pos, newState)) {
++                return null;
++            }
++            // Paper end
+             level.setBlock(pos, newState, Block.UPDATE_ALL);
+             level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(sourceEntity, newState));
+             if (newLevel == 7) {
+@@ -369,13 +_,14 @@
+         if (contentLevel == 8) {
+             return new ComposterBlock.OutputContainer(state, level, pos, new ItemStack(Items.BONE_MEAL));
+         } else {
+-            return (WorldlyContainer)(contentLevel < 7 ? new ComposterBlock.InputContainer(state, level, pos) : new ComposterBlock.EmptyContainer());
++            return (WorldlyContainer)(contentLevel < 7 ? new ComposterBlock.InputContainer(state, level, pos) : new ComposterBlock.EmptyContainer(level, pos)); // CraftBukkit - empty generatoraccess, blockposition
+         }
+     }
+ 
+     public static class EmptyContainer extends SimpleContainer implements WorldlyContainer {
+-        public EmptyContainer() {
++        public EmptyContainer(LevelAccessor levelAccessor, BlockPos blockPos) { // CraftBukkit
+             super(0);
++            this.bukkitOwner = new org.bukkit.craftbukkit.inventory.CraftBlockInventoryHolder(levelAccessor, blockPos, this); // CraftBukkit
+         }
+ 
+         @Override
+@@ -402,6 +_,7 @@
+ 
+         public InputContainer(final BlockState state, final LevelAccessor level, final BlockPos pos) {
+             super(1);
++            this.bukkitOwner = new org.bukkit.craftbukkit.inventory.CraftBlockInventoryHolder(level, pos, this); // CraftBukkit
+             this.state = state;
+             this.level = level;
+             this.pos = pos;
+@@ -433,6 +_,11 @@
+             if (!contents.isEmpty()) {
+                 this.changed = true;
+                 BlockState newState = ComposterBlock.addItem(null, this.state, this.level, this.pos, contents);
++                // Paper start - Add CompostItemEvent and EntityCompostItemEvent
++                if (newState == null) {
++                    return;
++                }
++                // Paper end - Add CompostItemEvent and EntityCompostItemEvent
+                 this.level.levelEvent(LevelEvent.COMPOSTER_FILL, this.pos, newState != this.state ? 1 : 0);
+                 this.removeItemNoUpdate(0);
+             }
+@@ -447,6 +_,7 @@
+ 
+         public OutputContainer(final BlockState state, final LevelAccessor level, final BlockPos pos, final ItemStack contents) {
+             super(contents);
++            this.bukkitOwner = new org.bukkit.craftbukkit.inventory.CraftBlockInventoryHolder(level, pos, this); // Paper
+             this.state = state;
+             this.level = level;
+             this.pos = pos;
+@@ -474,8 +_,15 @@
+ 
+         @Override
+         public void setChanged() {
++            // CraftBukkit start - allow putting items back (eg cancelled InventoryMoveItemEvent)
++            if (this.isEmpty()) {
+             ComposterBlock.empty(null, this.state, this.level, this.pos);
+             this.changed = true;
++            } else {
++                this.level.setBlock(this.pos, this.state, Block.UPDATE_ALL);
++                this.changed = false;
++            }
++            // CraftBukkit end
+         }
+     }
+ }

@@ -1,0 +1,86 @@
+--- a/net/minecraft/world/level/block/BambooStalkBlock.java
++++ b/net/minecraft/world/level/block/BambooStalkBlock.java
+@@ -119,9 +_,9 @@
+     @Override
+     protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+         if (state.getValue(STAGE) == 0) {
+-            if (random.nextInt(3) == 0 && level.isEmptyBlock(pos.above()) && level.getRawBrightness(pos.above(), 0) >= 9) {
++            if (random.nextFloat() < (level.spigotConfig.bambooModifier / (100.0F * 3)) && level.isEmptyBlock(pos.above()) && level.getRawBrightness(pos.above(), 0) >= 9) { // Spigot - SPIGOT-7159: Better modifier resolution
+                 int height = this.getHeightBelowUpToMax(level, pos) + 1;
+-                if (height < 16) {
++                if (height < level.paperConfig().maxGrowthHeight.bamboo.max) { // Paper - Configurable cactus/bamboo/reed growth height
+                     this.growBamboo(state, level, pos, random, height);
+                 }
+             }
+@@ -158,7 +_,7 @@
+         int heightAbove = this.getHeightAboveUpToMax(level, pos);
+         int heightBelow = this.getHeightBelowUpToMax(level, pos);
+         BlockPos growthPos = pos.above(heightAbove + 1);
+-        return heightAbove + heightBelow + 1 < 16
++        return heightAbove + heightBelow + 1 < ((Level) level).paperConfig().maxGrowthHeight.bamboo.max // Paper - Configurable cactus/bamboo/reed growth height
+             && level.getBlockState(pos.above(heightAbove)).getValue(STAGE) != 1
+             && level.isInsideBuildHeight(growthPos)
+             && level.isEmptyBlock(growthPos);
+@@ -180,7 +_,7 @@
+             BlockPos topPos = pos.above(heightAbove);
+             BlockState topState = level.getBlockState(topPos);
+             BlockPos growthPos = topPos.above();
+-            if (totalHeight >= 16 || topState.getValue(STAGE) == 1 || !level.isEmptyBlock(growthPos) || level.isOutsideBuildHeight(growthPos)) {
++            if (totalHeight >= level.paperConfig().maxGrowthHeight.bamboo.max || !topState.is(Blocks.BAMBOO) || topState.getValue(STAGE) == 1 || !level.isEmptyBlock(growthPos) || level.isOutsideBuildHeight(growthPos)) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here // Paper - Configurable cactus/bamboo/reed growth height
+                 return;
+             }
+ 
+@@ -195,27 +_,39 @@
+         BlockPos twoBelowPos = pos.below(2);
+         BlockState twoBelowState = level.getBlockState(twoBelowPos);
+         BambooLeaves leaves = BambooLeaves.NONE;
++        boolean shouldUpdateOthers = false; // CraftBukkit
+         if (height >= 1) {
+             if (!belowState.is(Blocks.BAMBOO) || belowState.getValue(LEAVES) == BambooLeaves.NONE) {
+                 leaves = BambooLeaves.SMALL;
+             } else if (belowState.is(Blocks.BAMBOO) && belowState.getValue(LEAVES) != BambooLeaves.NONE) {
+                 leaves = BambooLeaves.LARGE;
+                 if (twoBelowState.is(Blocks.BAMBOO)) {
+-                    level.setBlock(pos.below(), belowState.setValue(LEAVES, BambooLeaves.SMALL), Block.UPDATE_ALL);
+-                    level.setBlock(twoBelowPos, twoBelowState.setValue(LEAVES, BambooLeaves.NONE), Block.UPDATE_ALL);
++                    // CraftBukkit start - moved down
++                    // level.setBlock(pos.below(), belowState.setValue(LEAVES, BambooLeaves.SMALL), Block.UPDATE_ALL);
++                    // level.setBlock(twoBelowPos, twoBelowState.setValue(LEAVES, BambooLeaves.NONE), Block.UPDATE_ALL);
++                    shouldUpdateOthers = true;
++                    // CraftBukkit end
+                 }
+             }
+         }
+ 
+         int age = state.getValue(AGE) != 1 && !twoBelowState.is(Blocks.BAMBOO) ? 0 : 1;
+-        int stage = (height < 11 || !(random.nextFloat() < 0.25F)) && height != 15 ? 0 : 1;
+-        level.setBlock(pos.above(), this.defaultBlockState().setValue(AGE, age).setValue(LEAVES, leaves).setValue(STAGE, stage), Block.UPDATE_ALL);
++        int stage = (height < level.paperConfig().maxGrowthHeight.bamboo.min || !(random.nextFloat() < 0.25F)) && height != (level.paperConfig().maxGrowthHeight.bamboo.max - 1) ? 0 : 1; // Paper - Configurable cactus/bamboo/reed growth height
++        // level.setBlock(pos.above(), this.defaultBlockState().setValue(AGE, age).setValue(LEAVES, leaves).setValue(STAGE, stage), Block.UPDATE_ALL);
++        // CraftBukkit start
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, pos.above(), this.defaultBlockState().setValue(AGE, age).setValue(LEAVES, leaves).setValue(STAGE, stage), Block.UPDATE_ALL)) {
++            if (shouldUpdateOthers) {
++                level.setBlock(pos.below(), belowState.setValue(LEAVES, BambooLeaves.SMALL), Block.UPDATE_ALL);
++                level.setBlock(twoBelowPos, twoBelowState.setValue(LEAVES, BambooLeaves.NONE), Block.UPDATE_ALL);
++            }
++        }
++        // CraftBukkit end
+     }
+ 
+     protected int getHeightAboveUpToMax(final BlockGetter level, final BlockPos pos) {
+         int height = 0;
+ 
+-        while (height < 16 && level.getBlockState(pos.above(height + 1)).is(Blocks.BAMBOO)) {
++        while (height < ((Level) level).paperConfig().maxGrowthHeight.bamboo.max && level.getBlockState(pos.above(height + 1)).is(Blocks.BAMBOO)) {  // Paper - Configurable cactus/bamboo/reed growth height
+             height++;
+         }
+ 
+@@ -225,7 +_,7 @@
+     protected int getHeightBelowUpToMax(final BlockGetter level, final BlockPos pos) {
+         int height = 0;
+ 
+-        while (height < 16 && level.getBlockState(pos.below(height + 1)).is(Blocks.BAMBOO)) {
++        while (height < ((Level) level).paperConfig().maxGrowthHeight.bamboo.max && level.getBlockState(pos.below(height + 1)).is(Blocks.BAMBOO)) { // Paper - Configurable cactus/bamboo/reed growth height
+             height++;
+         }
+ 

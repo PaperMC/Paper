@@ -1,0 +1,40 @@
+--- a/net/minecraft/world/level/block/DropperBlock.java
++++ b/net/minecraft/world/level/block/DropperBlock.java
+@@ -53,6 +_,7 @@
+             BlockSource source = new BlockSource(level, pos, state, blockEntity);
+             int slot = blockEntity.getRandomSlot(level.getRandom());
+             if (slot < 0) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFailedDispenseEvent(level, pos)) // Paper - Add BlockFailedDispenseEvent
+                 level.levelEvent(LevelEvent.SOUND_DISPENSER_FAIL, pos, 0);
+             } else {
+                 ItemStack itemStack = blockEntity.getItem(slot);
+@@ -61,10 +_,27 @@
+                     Container into = HopperBlockEntity.getContainerAt(level, pos.relative(direction));
+                     ItemStack remaining;
+                     if (into == null) {
++                        if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockPreDispenseEvent(level, pos, itemStack, slot)) return; // Paper - Add BlockPreDispenseEvent
+                         remaining = DISPENSE_BEHAVIOUR.dispense(source, itemStack);
+                     } else {
+-                        remaining = HopperBlockEntity.addItem(blockEntity, into, itemStack.copyWithCount(1), direction.getOpposite());
+-                        if (remaining.isEmpty()) {
++                        // CraftBukkit start - Fire event when pushing items into other inventories
++                        org.bukkit.craftbukkit.inventory.CraftItemStack oitemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack.copyWithCount(1));
++
++                        org.bukkit.inventory.Inventory destinationInventory;
++                        // Have to special case large chests as they work oddly
++                        if (into instanceof net.minecraft.world.CompoundContainer compoundContainer) {
++                            destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest(compoundContainer);
++                        } else {
++                            destinationInventory = into.getOwner().getInventory();
++                        }
++
++                        org.bukkit.event.inventory.InventoryMoveItemEvent event = new org.bukkit.event.inventory.InventoryMoveItemEvent(blockEntity.getOwner().getInventory(), oitemstack, destinationInventory, true);
++                        if (!event.callEvent()) {
++                            return;
++                        }
++                        itemStack = HopperBlockEntity.addItem(blockEntity, into, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()), direction.getOpposite());
++                        if (event.getItem().equals(oitemstack) && itemStack.isEmpty()) {
++                            // CraftBukkit end
+                             remaining = itemStack.copy();
+                             remaining.shrink(1);
+                         } else {

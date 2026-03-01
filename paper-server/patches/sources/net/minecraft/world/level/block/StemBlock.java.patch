@@ -1,0 +1,33 @@
+--- a/net/minecraft/world/level/block/StemBlock.java
++++ b/net/minecraft/world/level/block/StemBlock.java
+@@ -83,7 +_,7 @@
+     protected void randomTick(BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
+         if (level.getRawBrightness(pos, 0) >= 9) {
+             float growthSpeed = CropBlock.getGrowthSpeed(this, level, pos);
+-            if (random.nextInt((int)(25.0F / growthSpeed) + 1) == 0) {
++            if (random.nextFloat() < ((this == Blocks.PUMPKIN_STEM ? level.spigotConfig.pumpkinModifier : level.spigotConfig.melonModifier) / (100.0F * (Math.floor((25.0F / growthSpeed) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
+                 int age = state.getValue(AGE);
+                 if (age < 7) {
+                     state = state.setValue(AGE, age + 1);
+@@ -97,7 +_,11 @@
+                         Optional<Block> fruit = blocks.getOptional(this.fruit);
+                         Optional<Block> stem = blocks.getOptional(this.attachedStem);
+                         if (fruit.isPresent() && stem.isPresent()) {
+-                            level.setBlockAndUpdate(relative, fruit.get().defaultBlockState());
++                            // CraftBukkit start
++                            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, relative, fruit.get().defaultBlockState(), Block.UPDATE_ALL)) {
++                                return;
++                            }
++                            // CraftBukkit end
+                             level.setBlockAndUpdate(pos, stem.get().defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, direction));
+                         }
+                     }
+@@ -125,7 +_,7 @@
+     public void performBonemeal(final ServerLevel level, final RandomSource random, final BlockPos pos, final BlockState state) {
+         int age = Math.min(7, state.getValue(AGE) + Mth.nextInt(random, 2, 5));
+         BlockState newState = state.setValue(AGE, age);
+-        level.setBlock(pos, newState, Block.UPDATE_CLIENTS);
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, newState, Block.UPDATE_CLIENTS); // CraftBukkit
+         if (age == 7) {
+             newState.randomTick(level, pos, random);
+         }

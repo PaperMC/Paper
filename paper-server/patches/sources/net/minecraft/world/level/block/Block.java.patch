@@ -1,14 +1,6 @@
-From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 06:37:42 -0700
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/block/Block.java b/net/minecraft/world/level/block/Block.java
-index 09045eb5a9bd1a9fbfffa5fea970df0f4d52723d..fffb4a9bcbf87254bdc51a32577d188d169b6a51 100644
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
-@@ -88,29 +88,46 @@ public class Block extends BlockBehaviour implements ItemLike {
+@@ -89,29 +_,46 @@
                  return !Shapes.joinIsNotEmpty(Shapes.block(), shape, BooleanOp.NOT_SAME);
              }
          });
@@ -22,6 +14,14 @@ index 09045eb5a9bd1a9fbfffa5fea970df0f4d52723d..fffb4a9bcbf87254bdc51a32577d188d
 -    public static final int UPDATE_SKIP_SHAPE_UPDATE_ON_WIRE = 128;
 -    public static final int UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS = 256;
 -    public static final int UPDATE_SKIP_ON_PLACE = 512;
+-    @Block.UpdateFlags
+-    public static final int UPDATE_NONE = 260;
+-    @Block.UpdateFlags
+-    public static final int UPDATE_ALL = 3;
+-    @Block.UpdateFlags
+-    public static final int UPDATE_ALL_IMMEDIATE = 11;
+-    @Block.UpdateFlags
+-    public static final int UPDATE_SKIP_ALL_SIDEEFFECTS = 816;
 +    // Paper start - diff on change - all listed in UpdateFlags annotation
 +    public static final int UPDATE_NEIGHBORS = 1; // Paper - diff on change - all listed in UpdateFlags annotation
 +    public static final int UPDATE_CLIENTS = 2; // Paper - diff on change - all listed in UpdateFlags annotation
@@ -34,17 +34,13 @@ index 09045eb5a9bd1a9fbfffa5fea970df0f4d52723d..fffb4a9bcbf87254bdc51a32577d188d
 +    public static final int UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS = 256; // Paper - diff on change - all listed in UpdateFlags annotation
 +    public static final int UPDATE_SKIP_ON_PLACE = 512; // Paper - diff on change - all listed in UpdateFlags annotation
 +    // Paper end - diff on change - all listed in UpdateFlags annotation
-     @Block.UpdateFlags
--    public static final int UPDATE_NONE = 260;
++    @Block.UpdateFlags
 +    public static final int UPDATE_NONE = UPDATE_INVISIBLE | UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS; // Paper - help unpick a bit
-     @Block.UpdateFlags
--    public static final int UPDATE_ALL = 3;
++    @Block.UpdateFlags
 +    public static final int UPDATE_ALL = UPDATE_NEIGHBORS | UPDATE_CLIENTS; // Paper - help unpick a bit
-     @Block.UpdateFlags
--    public static final int UPDATE_ALL_IMMEDIATE = 11;
++    @Block.UpdateFlags
 +    public static final int UPDATE_ALL_IMMEDIATE = UPDATE_NEIGHBORS | UPDATE_CLIENTS | UPDATE_IMMEDIATE; // Paper - help unpick a bit
-     @Block.UpdateFlags
--    public static final int UPDATE_SKIP_ALL_SIDEEFFECTS = 816;
++    @Block.UpdateFlags
 +    public static final int UPDATE_SKIP_ALL_SIDEEFFECTS = UPDATE_KNOWN_SHAPE | UPDATE_SUPPRESS_DROPS | UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS | UPDATE_SKIP_ON_PLACE; // Paper - help unpick a bit
      public static final float INDESTRUCTIBLE = -1.0F;
      public static final float INSTANT = 0.0F;
@@ -69,19 +65,19 @@ index 09045eb5a9bd1a9fbfffa5fea970df0f4d52723d..fffb4a9bcbf87254bdc51a32577d188d
      private @Nullable Item item;
      private static final int CACHE_SIZE = 256;
      private static final ThreadLocal<Object2ByteLinkedOpenHashMap<Block.ShapePairKey>> OCCLUSION_CACHE = ThreadLocal.withInitial(() -> {
-@@ -366,6 +383,27 @@ public class Block extends BlockBehaviour implements ItemLike {
-         return state.getDrops(builder);
+@@ -382,6 +_,27 @@
+         return state.getDrops(params);
      }
  
 +    // Paper start - Add BlockBreakBlockEvent
-+    public static boolean dropResources(BlockState state, LevelAccessor levelAccessor, BlockPos pos, @Nullable BlockEntity blockEntity, BlockPos source) {
-+        if (levelAccessor instanceof ServerLevel serverLevel) {
++    public static boolean dropResources(final BlockState state, final Level level, final BlockPos pos, final @Nullable BlockEntity blockEntity, final BlockPos source) {
++        if (level instanceof ServerLevel serverLevel) {
 +            List<org.bukkit.inventory.ItemStack> items = new java.util.ArrayList<>();
 +            for (ItemStack drop : Block.getDrops(state, serverLevel, pos, blockEntity)) {
 +                items.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(drop));
 +            }
 +            Block block = state.getBlock(); // Paper - Properly handle xp dropping
-+            io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, pos), org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, source), items);
++            io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), org.bukkit.craftbukkit.block.CraftBlock.at(level, source), items);
 +            event.setExpToDrop(block.getExpDrop(state, serverLevel, pos, net.minecraft.world.item.ItemStack.EMPTY, true)); // Paper - Properly handle xp dropping
 +            event.callEvent();
 +            for (org.bukkit.inventory.ItemStack drop : event.getDrops()) {
@@ -94,41 +90,51 @@ index 09045eb5a9bd1a9fbfffa5fea970df0f4d52723d..fffb4a9bcbf87254bdc51a32577d188d
 +    }
 +    // Paper end - Add BlockBreakBlockEvent
 +
-     public static void dropResources(BlockState state, Level level, BlockPos pos) {
-         if (level instanceof ServerLevel) {
-             getDrops(state, (ServerLevel)level, pos, null).forEach(stack -> popResource(level, pos, stack));
-@@ -381,9 +419,14 @@ public class Block extends BlockBehaviour implements ItemLike {
-     }
- 
-     public static void dropResources(BlockState state, Level level, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool) {
-+        // Paper start - Properly handle xp dropping
-+        dropResources(state, level, pos, blockEntity, entity, tool, true);
-+    }
-+    public static void dropResources(BlockState state, Level level, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool, boolean dropExperience) {
-+        // Paper end - Properly handle xp dropping
-         if (level instanceof ServerLevel) {
-             getDrops(state, (ServerLevel)level, pos, blockEntity, entity, tool).forEach(stack -> popResource(level, pos, stack));
--            state.spawnAfterBreak((ServerLevel)level, pos, tool, true);
-+            state.spawnAfterBreak((ServerLevel)level, pos, tool, dropExperience); // Paper - Properly handle xp dropping
+     public static void dropResources(final BlockState state, final Level level, final BlockPos pos) {
+         if (level instanceof ServerLevel serverLevel) {
+             getDrops(state, serverLevel, pos, null).forEach(stack -> popResource(level, pos, stack));
+@@ -396,6 +_,12 @@
          }
      }
  
-@@ -414,13 +457,25 @@ public class Block extends BlockBehaviour implements ItemLike {
-         if (level instanceof ServerLevel serverLevel && !stack.isEmpty() && serverLevel.getGameRules().get(GameRules.BLOCK_DROPS)) {
-             ItemEntity itemEntity = itemEntitySupplier.get();
-             itemEntity.setDefaultPickUpDelay();
--            level.addFreshEntity(itemEntity);
++    // Paper start - Properly handle xp dropping
++    public static void dropResources(final BlockState state, final Level level, final BlockPos pos, final @Nullable BlockEntity blockEntity, final @Nullable Entity breaker, final ItemStack tool) {
++        dropResources(state, level, pos, blockEntity, breaker, tool, true);
++    }
++    // Paper end - Properly handle xp dropping
++
+     public static void dropResources(
+         final BlockState state,
+         final Level level,
+@@ -403,10 +_,11 @@
+         final @Nullable BlockEntity blockEntity,
+         final @Nullable Entity breaker,
+         final ItemStack tool
++        , final boolean dropExperience // Paper - Properly handle xp dropping
+     ) {
+         if (level instanceof ServerLevel serverLevel) {
+             getDrops(state, serverLevel, pos, blockEntity, breaker, tool).forEach(stack -> popResource(level, pos, stack));
+-            state.spawnAfterBreak(serverLevel, pos, tool, true);
++            state.spawnAfterBreak(serverLevel, pos, tool, dropExperience); // Paper - Properly handle xp dropping
+         }
+     }
+ 
+@@ -439,13 +_,25 @@
+         if (level instanceof ServerLevel serverLevel && !itemStack.isEmpty() && serverLevel.getGameRules().get(GameRules.BLOCK_DROPS)) {
+             ItemEntity entity = entityFactory.get();
+             entity.setDefaultPickUpDelay();
+-            level.addFreshEntity(entity);
 +            // CraftBukkit start
 +            if (level.captureDrops != null) {
-+                level.captureDrops.add(itemEntity);
++                level.captureDrops.add(entity);
 +            } else {
-+                level.addFreshEntity(itemEntity);
++                level.addFreshEntity(entity);
 +            }
 +            // CraftBukkit end
          }
      }
  
-     public void popExperience(ServerLevel level, BlockPos pos, int amount) {
+     public void popExperience(final ServerLevel level, final BlockPos pos, final int amount) {
 +        // Paper start - add entity parameter
 +        popExperience(level, pos, amount, null);
 +    }
@@ -141,52 +147,61 @@ index 09045eb5a9bd1a9fbfffa5fea970df0f4d52723d..fffb4a9bcbf87254bdc51a32577d188d
          }
      }
  
-@@ -438,10 +493,19 @@ public class Block extends BlockBehaviour implements ItemLike {
+@@ -463,6 +_,13 @@
          return this.defaultBlockState();
      }
  
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - fix drops not preventing stats/food exhaustion
-     public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
-+        // Paper start - fix drops not preventing stats/food exhaustion
-+        this.playerDestroy(level, player, pos, state, blockEntity, tool, true, true);
++    // Paper start - fix drops not preventing stats/food exhaustion
++    @Deprecated @io.papermc.paper.annotation.DoNotUse
++    public void playerDestroy(final Level level, final Player player, final BlockPos pos, final BlockState state, final @Nullable BlockEntity blockEntity, final ItemStack destroyedWith) {
++        playerDestroy(level, player, pos, state, blockEntity, destroyedWith, true, true);
 +    }
++    // Paper end - fix drops not preventing stats/food exhaustion
 +
-+    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) {
-+        // Paper end - fix drops not preventing stats/food exhaustion
+     public void playerDestroy(
+         final Level level,
+         final Player player,
+@@ -470,10 +_,13 @@
+         final BlockState state,
+         final @Nullable BlockEntity blockEntity,
+         final ItemStack destroyedWith
++        , final boolean includeDrops, final boolean dropExp // Paper - fix drops not preventing stats/food exhaustion
+     ) {
          player.awardStat(Stats.BLOCK_MINED.get(this));
 -        player.causeFoodExhaustion(0.005F);
--        dropResources(state, level, pos, blockEntity, player, tool);
+-        dropResources(state, level, pos, blockEntity, player, destroyedWith);
 +        player.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED); // CraftBukkit - EntityExhaustionEvent
 +        if (includeDrops) { // Paper - fix drops not preventing stats/food exhaustion
-+        Block.dropResources(state, level, pos, blockEntity, player, tool, dropExp); // Paper - Properly handle xp dropping
++        dropResources(state, level, pos, blockEntity, player, destroyedWith, dropExp); // Paper - Properly handle xp dropping
 +        } // Paper - fix drops not preventing stats/food exhaustion
      }
  
-     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-@@ -580,12 +644,20 @@ public class Block extends BlockBehaviour implements ItemLike {
+     public void setPlacedBy(final Level level, final BlockPos pos, final BlockState state, final @Nullable LivingEntity by, final ItemStack itemStack) {
+@@ -613,12 +_,20 @@
          return this.builtInRegistryHolder;
      }
  
--    protected void tryDropExperience(ServerLevel level, BlockPos pos, ItemStack heldItem, IntProvider amount) {
-+    protected int tryDropExperience(ServerLevel level, BlockPos pos, ItemStack heldItem, IntProvider amount) { // CraftBukkit
-         int i = EnchantmentHelper.processBlockExperience(level, heldItem, amount.sample(level.getRandom()));
-         if (i > 0) {
--            this.popExperience(level, pos, i);
+-    protected void tryDropExperience(final ServerLevel level, final BlockPos pos, final ItemStack tool, final IntProvider xpRange) {
++    protected int tryDropExperience(final ServerLevel level, final BlockPos pos, final ItemStack tool, final IntProvider xpRange) { // CraftBukkit
+         int experience = EnchantmentHelper.processBlockExperience(level, tool, xpRange.sample(level.getRandom()));
+         if (experience > 0) {
+-            this.popExperience(level, pos, experience);
 +            // CraftBukkit start
-+            //this.popExperience(level, pos, i);
-+            return i;
++            // this.popExperience(level, pos, experience);
++            return experience;
          }
+-    }
 +        return 0;
 +    }
 +
-+    public int getExpDrop(BlockState state, ServerLevel level, BlockPos pos, ItemStack stack, boolean dropExperience) {
++    public int getExpDrop(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
 +        return 0;
-     }
++    }
 +    // CraftBukkit end
  
-     record ShapePairKey(VoxelShape first, VoxelShape second) {
+     private record ShapePairKey(VoxelShape first, VoxelShape second) {
          @Override
-@@ -601,6 +673,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+@@ -634,6 +_,7 @@
  
      @Retention(RetentionPolicy.CLASS)
      @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE, ElementType.METHOD, ElementType.TYPE_USE})
