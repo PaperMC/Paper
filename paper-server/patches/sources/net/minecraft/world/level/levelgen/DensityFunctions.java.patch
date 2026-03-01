@@ -1,0 +1,55 @@
+--- a/net/minecraft/world/level/levelgen/DensityFunctions.java
++++ b/net/minecraft/world/level/levelgen/DensityFunctions.java
+@@ -532,6 +_,16 @@
+         );
+         private static final float ISLAND_THRESHOLD = -0.9F;
+         private final SimplexNoise islandNoise;
++        // Paper start - Perf: Optimize end generation
++        private static final class NoiseCache {
++            public long[] keys = new long[8192];
++            public float[] values = new float[8192];
++            public NoiseCache() {
++                java.util.Arrays.fill(keys, Long.MIN_VALUE);
++            }
++        }
++        private static final ThreadLocal<java.util.Map<SimplexNoise, NoiseCache>> noiseCache = ThreadLocal.withInitial(java.util.WeakHashMap::new);
++        // Paper end - Perf: Optimize end generation
+ 
+         public EndIslandDensityFunction(final long seed) {
+             RandomSource islandRandom = new LegacyRandomSource(seed);
+@@ -544,15 +_,31 @@
+             int chunkZ = sectionZ / 2;
+             int subSectionX = sectionX % 2;
+             int subSectionZ = sectionZ % 2;
+-            float doffs = 100.0F - Mth.sqrt(sectionX * sectionX + sectionZ * sectionZ) * 8.0F;
++            float doffs = 100.0F - (io.papermc.paper.configuration.GlobalConfiguration.get().misc.fixFarEndTerrainGeneration ? Mth.sqrt((long) sectionX * (long) sectionX + (long) sectionZ * (long) sectionZ) : Mth.sqrt(sectionX * sectionX + sectionZ * sectionZ)) * 8.0F; // Paper - cast ints to long when MC-159283 fix enabled
+             doffs = Mth.clamp(doffs, -100.0F, 80.0F);
+ 
++            NoiseCache cache = noiseCache.get().computeIfAbsent(islandNoise, noiseKey -> new NoiseCache()); // Paper - Perf: Optimize end generation
+             for (int xo = -12; xo <= 12; xo++) {
+                 for (int zo = -12; zo <= 12; zo++) {
+-                    long totalChunkX = chunkX + xo;
+-                    long totalChunkZ = chunkZ + zo;
++                    long totalChunkX = chunkX + xo; final int totalChunkXInt = (int) totalChunkX; // Paper - OBFHELPER
++                    long totalChunkZ = chunkZ + zo; final int totalChunkZInt = (int) totalChunkZ; // Paper - OBFHELPER
++                    // Paper start - Perf: Optimize end generation by using a noise cache
++                    final long chunkKey = net.minecraft.world.level.ChunkPos.asLong(totalChunkXInt, totalChunkZInt);
++                    final int cacheIndex = (int) it.unimi.dsi.fastutil.HashCommon.mix(chunkKey) & 8191;
++                    float islandSize = Float.MIN_VALUE; // noise value
++                    if (cache.keys[cacheIndex] == chunkKey) {
++                        // Use cache
++                        islandSize = cache.values[cacheIndex];
++                    } else {
++                    // Vanilla function
+                     if (totalChunkX * totalChunkX + totalChunkZ * totalChunkZ > 4096L && islandNoise.getValue(totalChunkX, totalChunkZ) < -0.9F) {
+-                        float islandSize = (Mth.abs((float)totalChunkX) * 3439.0F + Mth.abs((float)totalChunkZ) * 147.0F) % 13.0F + 9.0F;
++                            islandSize = (Mth.abs((float)totalChunkX) * 3439.0F + Mth.abs((float) totalChunkZ) * 147.0F) % 13.0F + 9.0F;
++                        }
++                        cache.keys[cacheIndex] = chunkKey;
++                        cache.values[cacheIndex] = islandSize;
++                    }
++                    if (islandSize != Float.MIN_VALUE) {
++                        // Paper end - Perf: Optimize end generation
+                         float xd = subSectionX - xo * 2;
+                         float zd = subSectionZ - zo * 2;
+                         float newDoffs = 100.0F - Mth.sqrt(xd * xd + zd * zd) * islandSize;
