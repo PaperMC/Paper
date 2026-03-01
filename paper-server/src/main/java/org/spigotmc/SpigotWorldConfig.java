@@ -280,7 +280,7 @@ public class SpigotWorldConfig {
     private void arrowDespawnRate() {
         this.arrowDespawnRate = this.getInt("arrow-despawn-rate", 1200);
         this.tridentDespawnRate = this.getInt("trident-despawn-rate", this.arrowDespawnRate);
-        this.log("Arrow Despawn Rate: " + this.arrowDespawnRate + " Trident Respawn Rate:" + this.tridentDespawnRate);
+        this.log("Arrow Despawn Rate: " + this.arrowDespawnRate + " Trident Despawn Rate:" + this.tridentDespawnRate);
     }
 
     public boolean zombieAggressiveTowardsVillager;
