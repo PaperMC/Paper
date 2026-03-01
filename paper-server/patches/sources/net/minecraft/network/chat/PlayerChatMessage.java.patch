@@ -1,14 +1,6 @@
-From c8366d72279d30331daff185f7b263159a86ff4d Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 06:37:42 -0700
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/network/chat/PlayerChatMessage.java b/net/minecraft/network/chat/PlayerChatMessage.java
-index 14cd0846966cbc0fe94f338be7fdd86ff476861b..0020227e8fc0c0895e625c424280052e5f60ff24 100644
 --- a/net/minecraft/network/chat/PlayerChatMessage.java
 +++ b/net/minecraft/network/chat/PlayerChatMessage.java
-@@ -18,6 +18,43 @@ import org.jspecify.annotations.Nullable;
+@@ -18,6 +_,43 @@
  public record PlayerChatMessage(
      SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask
  ) {
@@ -50,21 +42,21 @@ index 14cd0846966cbc0fe94f338be7fdd86ff476861b..0020227e8fc0c0895e625c424280052e
 +    // Paper end - adventure; support signed messages
 +
      public static final MapCodec<PlayerChatMessage> MAP_CODEC = RecordCodecBuilder.mapCodec(
-         instance -> instance.group(
+         i -> i.group(
                  SignedMessageLink.CODEC.fieldOf("link").forGetter(PlayerChatMessage::link),
-@@ -48,7 +85,14 @@ public record PlayerChatMessage(
+@@ -50,7 +_,14 @@
      }
  
-     public PlayerChatMessage withUnsignedContent(Component message) {
--        Component component = !message.equals(Component.literal(this.signedContent())) ? message : null;
+     public PlayerChatMessage withUnsignedContent(final Component content) {
+-        Component unsignedContent = !content.equals(Component.literal(this.signedContent())) ? content : null;
 +        // Paper start - adventure
-+        final Component component;
-+        if (message instanceof io.papermc.paper.adventure.AdventureComponent advComponent) {
-+            component = this.signedContent().equals(io.papermc.paper.adventure.AdventureCodecs.tryCollapseToString(advComponent.adventure$component())) ? null : message;
++        final Component unsignedContent;
++        if (content instanceof io.papermc.paper.adventure.AdventureComponent advComponent) {
++            unsignedContent = this.signedContent().equals(io.papermc.paper.adventure.AdventureCodecs.tryCollapseToString(advComponent.adventure$component())) ? null : content;
 +        } else {
-+            component = !message.equals(Component.literal(this.signedContent())) ? message : null;
++            unsignedContent = !content.equals(Component.literal(this.signedContent())) ? content : null;
 +        }
 +        // Paper end - adventure
-         return new PlayerChatMessage(this.link, this.signature, this.signedBody, component, this.filterMask);
+         return new PlayerChatMessage(this.link, this.signature, this.signedBody, unsignedContent, this.filterMask);
      }
  
