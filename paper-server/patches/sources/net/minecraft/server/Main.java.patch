@@ -5,7 +5,7 @@
  
      @SuppressForbidden(reason = "System.out needed before bootstrap")
 -    public static void main(final String[] args) {
-+    public static void main(final OptionSet optionSet) { // CraftBukkit - replaces main(String[] args)
++    public static void main(final OptionSet options) { // CraftBukkit - replaces main(String[] args)
 +        io.papermc.paper.log.LogManagerShutdownThread.hook(); // Paper - Improved watchdog support
          SharedConstants.tryDetectVersion();
 +        /* CraftBukkit start - Replace everything
@@ -20,42 +20,42 @@
 +        try {
  
 -            Path pidFilePath = options.valueOf(pidFile);
-+            Path pidFilePath = (Path) optionSet.valueOf("pidFile"); // CraftBukkit
++            Path pidFilePath = (Path) options.valueOf("pidFile"); // CraftBukkit
              if (pidFilePath != null) {
                  writePidFile(pidFilePath);
              }
  
              CrashReport.preload();
 -            if (options.has(jfrProfilingOption)) {
-+            if (optionSet.has("jfrProfile")) { // CraftBukkit
++            if (options.has("jfrProfile")) { // CraftBukkit
                  JvmProfiler.INSTANCE.start(Environment.SERVER);
              }
  
-+            io.papermc.paper.plugin.PluginInitializerManager.load(optionSet); // Paper
++            io.papermc.paper.plugin.PluginInitializerManager.load(options); // Paper
              Bootstrap.bootStrap();
              Bootstrap.validate();
              Util.startTimerHackThread();
              Path settingsFile = Paths.get("server.properties");
 -            DedicatedServerSettings settings = new DedicatedServerSettings(settingsFile);
-+            DedicatedServerSettings settings = new DedicatedServerSettings(optionSet); // CraftBukkit - CLI argument support
++            DedicatedServerSettings settings = new DedicatedServerSettings(options); // CraftBukkit - CLI argument support
              settings.forceSave();
              RegionFileVersion.configure(settings.getProperties().regionFileComression);
              Path eulaFile = Paths.get("eula.txt");
              Eula eula = new Eula(eulaFile);
 -            if (options.has(initSettings)) {
 +            // Paper start - load config files early for access below if needed
-+            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionSet.valueOf("bukkit-settings"));
-+            org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionSet.valueOf("spigot-settings"));
++            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) options.valueOf("bukkit-settings"));
++            org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) options.valueOf("spigot-settings"));
 +            // Paper end - load config files early for access below if needed
-+            if (optionSet.has("initSettings")) { // CraftBukkit
++            if (options.has("initSettings")) { // CraftBukkit
 +                // CraftBukkit start - SPIGOT-5761: Create bukkit.yml and commands.yml if not present
-+                File configFile = (File) optionSet.valueOf("bukkit-settings");
++                File configFile = (File) options.valueOf("bukkit-settings");
 +                org.bukkit.configuration.file.YamlConfiguration configuration = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(configFile);
 +                configuration.options().copyDefaults(true);
 +                configuration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/bukkit.yml"), java.nio.charset.StandardCharsets.UTF_8)));
 +                configuration.save(configFile);
 +
-+                File commandFile = (File) optionSet.valueOf("commands-settings");
++                File commandFile = (File) options.valueOf("commands-settings");
 +                org.bukkit.configuration.file.YamlConfiguration commandsConfiguration = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(commandFile);
 +                commandsConfiguration.options().copyDefaults(true);
 +                commandsConfiguration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/commands.yml"), java.nio.charset.StandardCharsets.UTF_8)));
@@ -99,16 +99,16 @@
 +            // Paper start - fix SPIGOT-5824
 +            File universePath;
 +            File userCacheFile = new File(Services.USERID_CACHE_FILE);
-+            if (optionSet.has("universe")) {
-+                universePath = (File) optionSet.valueOf("universe"); // CraftBukkit
++            if (options.has("universe")) {
++                universePath = (File) options.valueOf("universe"); // CraftBukkit
 +                userCacheFile = new File(universePath, Services.USERID_CACHE_FILE);
 +            } else {
 +                universePath = new File(bukkitConfiguration.getString("settings.world-container", "."));
 +            }
 +            // Paper end - fix SPIGOT-5824
-+            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), universePath, userCacheFile, optionSet); // Paper - pass OptionSet to load paper config files; override authentication service; fix world-container
++            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), universePath, userCacheFile, options); // Paper - pass OptionSet to load paper config files; override authentication service; fix world-container
 +            // CraftBukkit start
-+            String levelName = Optional.ofNullable((String) optionSet.valueOf("world")).orElse(settings.getProperties().levelName);
++            String levelName = Optional.ofNullable((String) options.valueOf("world")).orElse(settings.getProperties().levelName);
              LevelStorageSource levelStorageSource = LevelStorageSource.createDefault(universePath.toPath());
 -            LevelStorageSource.LevelStorageAccess access = levelStorageSource.validateAndCreateAccess(levelName);
 +            LevelStorageSource.LevelStorageAccess access = levelStorageSource.validateAndCreateAccess(levelName, LevelStem.OVERWORLD);
@@ -121,7 +121,7 @@
              }
  
 -            boolean safeModeEnabled = options.has(safeMode);
-+            boolean safeModeEnabled = optionSet.has("safeMode"); // CraftBukkit
++            boolean safeModeEnabled = options.has("safeMode"); // CraftBukkit
              if (safeModeEnabled) {
                  LOGGER.warn("Safe mode active, only vanilla datapack will be loaded");
              }
@@ -167,7 +167,7 @@
                                  } else {
                                      LOGGER.info("No existing world data, creating new world");
 -                                    return createNewWorldData(settings, context, datapackDimensions, options.has(demo), options.has(bonusChest));
-+                                    return createNewWorldData(settings, context, datapackDimensions, optionSet.has("demo"), optionSet.has("bonusChest")); // CraftBukkit
++                                    return createNewWorldData(settings, context, datapackDimensions, options.has("demo"), options.has("bonusChest")); // CraftBukkit
                                  }
                              },
                              WorldStem::new,
@@ -189,7 +189,7 @@
                      DedicatedServer server = new DedicatedServer(
 -                        thread, access, packRepository, worldStem, Optional.empty(), settings, DataFixers.getDataFixer(), services
 +                        // CraftBukkit start
-+                        optionSet,
++                        options,
 +                        worldLoader.get(),
 +                        thread,
 +                        access,
@@ -204,22 +204,22 @@
 -                    server.setDemo(options.has(demo));
 +                     */
 +                    // Paper start
-+                    if (optionSet.has("serverId")) {
-+                        server.setId((String) optionSet.valueOf("serverId"));
++                    if (options.has("serverId")) {
++                        server.setId((String) options.valueOf("serverId"));
 +                    }
-+                    server.setDemo(optionSet.has("demo"));
++                    server.setDemo(options.has("demo"));
 +                    // Paper end
 +                    /*
                      server.setId(options.valueOf(serverId));
 -                    boolean gui = !options.has(nogui) && !options.valuesOf(nonOptions).contains("nogui");
 +                     */
-+                    boolean gui = !optionSet.has("nogui") && !optionSet.nonOptionArguments().contains("nogui");
++                    boolean gui = !options.has("nogui") && !options.nonOptionArguments().contains("nogui");
                      if (gui && !GraphicsEnvironment.isHeadless()) {
                          server.showGui();
                      }
 +                    // Paper start
-+                    if (optionSet.has("port")) {
-+                        int port = (Integer) optionSet.valueOf("port");
++                    if (options.has("port")) {
++                        int port = (Integer) options.valueOf("port");
 +                        if (port > 0) {
 +                            server.setPort(port);
 +                        }
