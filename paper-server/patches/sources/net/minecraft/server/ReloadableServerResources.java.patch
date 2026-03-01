@@ -1,0 +1,28 @@
+--- a/net/minecraft/server/ReloadableServerResources.java
++++ b/net/minecraft/server/ReloadableServerResources.java
+@@ -44,7 +_,9 @@
+         this.postponedTags = postponedTags;
+         this.newComponents = newComponents;
+         this.recipes = new RecipeManager(loadingContext);
+-        this.commands = new Commands(commandSelection, CommandBuildContext.simple(loadingContext, enabledFeatures));
++        this.commands = new Commands(commandSelection, CommandBuildContext.simple(loadingContext, enabledFeatures), true); // Paper - Brigadier Command API - use modern alias registration
++        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setDispatcher(this.commands, CommandBuildContext.simple(loadingContext, enabledFeatures)); // Paper - Brigadier Command API
++        io.papermc.paper.command.PaperCommands.registerCommands(); // Paper
+         this.advancements = new ServerAdvancementManager(loadingContext);
+         this.functionLibrary = new ServerFunctionLibrary(functionCompilationPermissions, this.commands.getDispatcher());
+     }
+@@ -99,6 +_,14 @@
+                                 functionCompilationPermissions,
+                                 (List<DataComponentInitializers.PendingComponents<?>>)pendingComponents
+                             );
++                            // Paper start - call commands event for bootstraps
++                            //noinspection ConstantValue
++                            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(
++                                io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS,
++                                io.papermc.paper.command.brigadier.PaperCommands.INSTANCE,
++                                io.papermc.paper.plugin.bootstrap.BootstrapContext.class,
++                                MinecraftServer.getServer() == null ? io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL : io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD);
++                            // Paper end - call commands event
+                             return SimpleReloadInstance.create(
+                                     resourceManager,
+                                     result.listeners(),
