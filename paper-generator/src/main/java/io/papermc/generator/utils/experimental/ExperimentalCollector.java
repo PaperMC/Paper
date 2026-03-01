@@ -93,7 +93,7 @@ public final class ExperimentalCollector {
         // then distinct with other data-pack tags to know for sure newly created tags and so experimental one
         resourceManager.listPacks().forEach(pack -> {
             String packId = pack.packId();
-            if (packId.equals(BuiltInPackSource.VANILLA_ID)) return;
+            if (packId.equals(BuiltInPackSource.VANILLA_ID) || packId.equals("file/paper")) return; // skip built-in packs
 
             collectTagsFromPack(pack, (entry, path) -> {
                 if (vanillaTags.get(entry.key()).contains(path)) {

@@ -229,7 +229,7 @@ tasks.withType<JavaCompile>().configureEach {
 
 val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
-    jarToScan.set(tasks.jar.flatMap { it.archiveFile })
+    jarToScan = tasks.jar.flatMap { it.archiveFile }
     classpath.from(configurations.compileClasspath)
 }
 tasks.check {
@@ -283,15 +283,15 @@ fun TaskContainer.registerRunTask(
     block: JavaExec.() -> Unit
 ): TaskProvider<JavaExec> = register<JavaExec>(name) {
     group = "runs"
-    mainClass.set("org.bukkit.craftbukkit.Main")
+    mainClass = "org.bukkit.craftbukkit.Main"
     standardInput = System.`in`
     workingDir = rootProject.layout.projectDirectory
         .dir(providers.gradleProperty("paper.runWorkDir").getOrElse("run"))
         .asFile
-    javaLauncher.set(project.javaToolchains.launcherFor {
+    javaLauncher = project.javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(21))
         vendor.set(JvmVendorSpec.JETBRAINS)
-    })
+    }
     jvmArgs("-XX:+AllowEnhancedClassRedefinition")
 
     if (rootProject.childProjects["test-plugin"] != null) {
@@ -338,22 +338,75 @@ tasks.registerRunTask("runDevServer") {
 tasks.registerRunTask("runBundler") {
     description = "Spin up a test server from the Mojang mapped bundler jar"
     classpath(tasks.createMojmapBundlerJar.flatMap { it.outputZip })
-    mainClass.set(null as String?)
+    mainClass = null as String?
 }
 tasks.registerRunTask("runReobfBundler") {
     description = "Spin up a test server from the reobf bundler jar"
     classpath(tasks.createReobfBundlerJar.flatMap { it.outputZip })
-    mainClass.set(null as String?)
+    mainClass = null as String?
 }
 tasks.registerRunTask("runPaperclip") {
     description = "Spin up a test server from the Mojang mapped Paperclip jar"
     classpath(tasks.createMojmapPaperclipJar.flatMap { it.outputZip })
-    mainClass.set(null as String?)
+    mainClass = null as String?
 }
 tasks.registerRunTask("runReobfPaperclip") {
     description = "Spin up a test server from the reobf Paperclip jar"
     classpath(tasks.createReobfPaperclipJar.flatMap { it.outputZip })
-    mainClass.set(null as String?)
+    mainClass = null as String?
+}
+
+tasks.register<GeneratePackTask>("generatePack") {
+    group = "generation"
+    description = "Generate datapacks"
+    classpath(sourceSets.main.map { it.runtimeClasspath })
+    javaLauncher = project.javaToolchains.defaultJavaLauncher(project)
+}
+
+enum class PackType(
+    val resourceDir: String,
+    val relativePackPath: String,
+    val outputDirName: String
+) {
+    VANILLA("src/minecraft/resources", "data/minecraft", "generateVanillaPacks"),
+    PAPER("src/main/resources", "data/minecraft/datapacks/paper", "generatePaperPack")
+}
+
+abstract class GeneratePackTask @Inject constructor(
+    private val fsOps: FileSystemOperations,
+    private val layout: ProjectLayout
+) : JavaExec() {
+
+    @get:Option(option = "type", description = "Select the type of packs to generate")
+    @get:Input
+    abstract val type: Property<PackType>
+
+    init {
+        mainClass = "net.minecraft.data.Main"
+        workingDir = temporaryDir
+    }
+
+    override fun exec() {
+        workingDir.mkdirs()
+
+        val type = this@GeneratePackTask.type.get()
+        val target = layout.projectDirectory.dir(type.resourceDir).dir(type.relativePackPath)
+        args(
+            "--type=${type.name}",
+            "--output=${type.outputDirName}"
+        )
+
+        super.exec()
+
+        if (type != PackType.VANILLA) {
+            // only clear paper pack target, vanilla has an extra structure dir that is not generated
+            target.asFile.toPath().cleanDir()
+        }
+        fsOps.copy {
+            from(workingDir.resolve("${type.outputDirName}/${type.relativePackPath}"))
+            into(target)
+        }
+    }
 }
 
 fill {
