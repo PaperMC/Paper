@@ -4,7 +4,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.data.util.Checks;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
@@ -21,12 +20,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.Enchantment;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.inventory.ItemType;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentMin;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
 
@@ -120,7 +121,7 @@ public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
     }
 
     @Override
-    public @Range(from = 0, to = Integer.MAX_VALUE) int anvilCost() {
+    public @NonNegative int anvilCost() {
         return asConfigured(this.anvilCost, "anvilCost");
     }
 
@@ -161,13 +162,13 @@ public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
 
         @Override
         public Builder weight(final @Range(from = 1, to = 1024) int weight) {
-            this.weight = OptionalInt.of(Checks.asArgumentRange(weight, "weight", 1, 1024));
+            this.weight = OptionalInt.of(requireRange(weight, "weight", 1, 1024));
             return this;
         }
 
         @Override
         public Builder maxLevel(final @Range(from = 1, to = 255) int maxLevel) {
-            this.maxLevel = OptionalInt.of(Checks.asArgumentRange(maxLevel, "maxLevel", 1, 255));
+            this.maxLevel = OptionalInt.of(requireRange(maxLevel, "maxLevel", 1, 255));
             return this;
         }
 
@@ -186,8 +187,8 @@ public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
         }
 
         @Override
-        public Builder anvilCost(final @Range(from = 0, to = Integer.MAX_VALUE) int anvilCost) {
-            this.anvilCost = OptionalInt.of(asArgumentMin(anvilCost, "anvilCost", 0));
+        public Builder anvilCost(final @NonNegative int anvilCost) {
+            this.anvilCost = OptionalInt.of(requireNonNegative(anvilCost, "anvilCost"));
             return this;
         }
 

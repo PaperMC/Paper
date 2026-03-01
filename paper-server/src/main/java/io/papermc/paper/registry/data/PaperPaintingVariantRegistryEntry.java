@@ -14,8 +14,8 @@ import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentRange;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public class PaperPaintingVariantRegistryEntry implements PaintingVariantRegistryEntry {
 
@@ -74,13 +74,13 @@ public class PaperPaintingVariantRegistryEntry implements PaintingVariantRegistr
 
         @Override
         public Builder width(final @Range(from = 1, to = 16) int width) {
-            this.width = OptionalInt.of(asArgumentRange(width, "width", 1, 16));
+            this.width = OptionalInt.of(requireRange(width, "width", 1, 16));
             return this;
         }
 
         @Override
         public Builder height(final @Range(from = 1, to = 16) int height) {
-            this.height = OptionalInt.of(asArgumentRange(height, "height", 1, 16));
+            this.height = OptionalInt.of(requireRange(height, "height", 1, 16));
             return this;
         }
 

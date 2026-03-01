@@ -10,6 +10,8 @@ import net.minecraft.world.item.component.OminousBottleAmplifier;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.meta.OminousBottleMeta;
 
+import static io.papermc.paper.util.BoundChecker.requireRange;
+
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBottleMeta {
 
@@ -76,8 +78,7 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
 
     @Override
     public void setAmplifier(int amplifier) {
-        Preconditions.checkArgument(0 <= amplifier && amplifier <= 4, "Amplifier must be in range [0, 4]");
-        this.ominousBottleAmplifier = amplifier;
+        this.ominousBottleAmplifier = requireRange(amplifier, "amplifier", OminousBottleAmplifier.MIN_AMPLIFIER, OminousBottleAmplifier.MAX_AMPLIFIER);
     }
 
     @Override
