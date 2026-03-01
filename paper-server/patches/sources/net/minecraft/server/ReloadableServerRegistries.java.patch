@@ -1,0 +1,37 @@
+--- a/net/minecraft/server/ReloadableServerRegistries.java
++++ b/net/minecraft/server/ReloadableServerRegistries.java
+@@ -48,8 +_,9 @@
+         );
+         HolderLookup.Provider loadingContextWithTags = HolderLookup.Provider.create(contextRegistriesWithTags.stream());
+         RegistryOps<JsonElement> ops = loadingContextWithTags.createSerializationContext(JsonOps.INSTANCE);
++        final io.papermc.paper.registry.data.util.Conversions conversions = new io.papermc.paper.registry.data.util.Conversions(ops.lookupProvider); // Paper
+         List<CompletableFuture<WritableRegistry<?>>> registryLoads = LootDataType.values()
+-            .map(type -> scheduleRegistryLoad((LootDataType<?>)type, ops, manager, executor))
++            .map(type -> scheduleRegistryLoad((LootDataType<?>)type, ops, manager, executor, conversions)) // Paper
+             .toList();
+         CompletableFuture<List<WritableRegistry<?>>> sequence = Util.sequence(registryLoads);
+         return sequence.thenApplyAsync(
+@@ -58,14 +_,20 @@
+     }
+ 
+     private static <T extends Validatable> CompletableFuture<WritableRegistry<?>> scheduleRegistryLoad(
+-        final LootDataType<T> type, final RegistryOps<JsonElement> ops, final ResourceManager manager, final Executor taskExecutor
++        final LootDataType<T> type, final RegistryOps<JsonElement> ops, final ResourceManager manager, final Executor taskExecutor, final io.papermc.paper.registry.data.util.Conversions conversions // Paper
+     ) {
+         return CompletableFuture.supplyAsync(() -> {
+             WritableRegistry<T> registry = new MappedRegistry<>(type.registryKey(), Lifecycle.experimental());
++            io.papermc.paper.registry.PaperRegistryAccess.instance().registerReloadableRegistry(registry); // Paper - register reloadable registry
+             Map<Identifier, T> elements = new HashMap<>();
+             SimpleJsonResourceReloadListener.scanDirectory(manager, type.registryKey(), ops, type.codec(), elements);
+-            elements.forEach((id, element) -> registry.register(ResourceKey.create(type.registryKey(), id), (T)element, DEFAULT_REGISTRATION_INFO));
+-            TagLoader.loadTagsForRegistry(manager, registry);
++            // Paper start - register with listeners
++            elements.forEach((id, element) -> {
++                io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.registerWithListeners(
++                    registry, ResourceKey.create(type.registryKey(), id), (T)element, DEFAULT_REGISTRATION_INFO, conversions);
++            });
++            // Paper end - register with listeners
++            TagLoader.loadTagsForRegistry(manager, registry, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // Paper - tag life cycle - reload
+             return registry;
+         }, taskExecutor);
+     }
