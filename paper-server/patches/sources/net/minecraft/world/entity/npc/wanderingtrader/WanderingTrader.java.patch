@@ -1,0 +1,48 @@
+--- a/net/minecraft/world/entity/npc/wanderingtrader/WanderingTrader.java
++++ b/net/minecraft/world/entity/npc/wanderingtrader/WanderingTrader.java
+@@ -52,6 +_,10 @@
+     private static final int DEFAULT_DESPAWN_DELAY = 0;
+     private @Nullable BlockPos wanderTarget;
+     private int despawnDelay = 0;
++    // Paper start - Add more WanderingTrader API
++    public boolean canDrinkPotion = true;
++    public boolean canDrinkMilk = true;
++    // Paper end - Add more WanderingTrader API
+ 
+     public WanderingTrader(final EntityType<? extends WanderingTrader> type, final Level level) {
+         super(type, level);
+@@ -67,14 +_,14 @@
+                     this,
+                     PotionContents.createItemStack(Items.POTION, Potions.INVISIBILITY),
+                     SoundEvents.WANDERING_TRADER_DISAPPEARED,
+-                    e -> this.level().isDarkOutside() && !e.isInvisible()
++                    e -> this.canDrinkPotion && this.level().isDarkOutside() && !e.isInvisible() // Paper - Add more WanderingTrader API
+                 )
+             );
+         this.goalSelector
+             .addGoal(
+                 0,
+                 new UseItemGoal<>(
+-                    this, new ItemStack(Items.MILK_BUCKET), SoundEvents.WANDERING_TRADER_REAPPEARED, e -> this.level().isBrightOutside() && e.isInvisible()
++                    this, new ItemStack(Items.MILK_BUCKET), SoundEvents.WANDERING_TRADER_REAPPEARED, e -> this.canDrinkMilk && this.level().isBrightOutside() && e.isInvisible() // Paper - Add more WanderingTrader API
+                 )
+             );
+         this.goalSelector.addGoal(1, new TradeWithPlayerGoal(this));
+@@ -159,7 +_,7 @@
+     protected void rewardTradeXp(final MerchantOffer offer) {
+         if (offer.shouldRewardExp()) {
+             int popXp = 3 + this.random.nextInt(4);
+-            this.level().addFreshEntity(new ExperienceOrb(this.level(), this.getX(), this.getY() + 0.5, this.getZ(), popXp));
++            this.level().addFreshEntity(new ExperienceOrb(this.level(), this.getX(), this.getY() + 0.5, this.getZ(), popXp, org.bukkit.entity.ExperienceOrb.SpawnReason.VILLAGER_TRADE, this.getTradingPlayer(), this)); // Paper
+         }
+     }
+ 
+@@ -211,7 +_,7 @@
+ 
+     private void maybeDespawn() {
+         if (this.despawnDelay > 0 && !this.isTrading() && --this.despawnDelay == 0) {
+-            this.discard();
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         }
+     }
+ 
