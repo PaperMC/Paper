@@ -1,0 +1,35 @@
+--- a/net/minecraft/world/inventory/ResultSlot.java
++++ b/net/minecraft/world/inventory/ResultSlot.java
+@@ -39,6 +_,11 @@
+     protected void onQuickCraft(final ItemStack picked, final int count) {
+         this.removeCount += count;
+         this.checkTakeAchievements(picked);
++        // Paper start - add ItemCraftedEvent
++        if (!picked.isEmpty()) {
++            new io.papermc.paper.event.inventory.ItemCraftedEvent((org.bukkit.entity.Player) this.player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(picked)).callEvent();
++        }
++        // Paper end - add ItemCraftedEvent
+     }
+ 
+     @Override
+@@ -72,7 +_,7 @@
+     private NonNullList<ItemStack> getRemainingItems(final CraftingInput input, final Level level) {
+         return level instanceof ServerLevel serverLevel
+             ? serverLevel.recipeAccess()
+-                .getRecipeFor(RecipeType.CRAFTING, input, serverLevel)
++                .getRecipeFor(RecipeType.CRAFTING, input, serverLevel, this.craftSlots.getCurrentRecipe()) // Paper - Perf: Improve mass crafting; check last recipe used first
+                 .map(recipe -> recipe.value().getRemainingItems(input))
+                 .orElseGet(() -> copyAllInputItems(input))
+             : CraftingRecipe.defaultCraftingReminder(input);
+@@ -80,6 +_,11 @@
+ 
+     @Override
+     public void onTake(final Player player, final ItemStack carried) {
++        // Paper start - add ItemCraftedEvent
++        if (!carried.isEmpty()) {
++            new io.papermc.paper.event.inventory.ItemCraftedEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(carried)).callEvent();
++        }
++        // Paper end - add ItemCraftedEvent
+         this.checkTakeAchievements(carried);
+         CraftingInput.Positioned positionedRecipe = this.craftSlots.asPositionedCraftInput();
+         CraftingInput input = positionedRecipe.input();
