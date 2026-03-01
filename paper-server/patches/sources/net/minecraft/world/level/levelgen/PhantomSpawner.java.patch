@@ -1,0 +1,50 @@
+--- a/net/minecraft/world/level/levelgen/PhantomSpawner.java
++++ b/net/minecraft/world/level/levelgen/PhantomSpawner.java
+@@ -25,13 +_,22 @@
+     public void tick(final ServerLevel level, final boolean spawnEnemies) {
+         if (spawnEnemies) {
+             if (level.getGameRules().get(GameRules.SPAWN_PHANTOMS)) {
++                // Paper start - Ability to control player's insomnia and phantoms
++                if (level.paperConfig().entities.behavior.phantomsSpawnAttemptMaxSeconds <= 0) {
++                    return;
++                }
++                // Paper end - Ability to control player's insomnia and phantoms
+                 RandomSource random = level.getRandom();
+                 this.nextTick--;
+                 if (this.nextTick <= 0) {
+-                    this.nextTick = this.nextTick + (60 + random.nextInt(60)) * 20;
++                    // Paper start - Ability to control player's insomnia and phantoms
++                    int spawnAttemptMinSeconds = level.paperConfig().entities.behavior.phantomsSpawnAttemptMinSeconds;
++                    int spawnAttemptMaxSeconds = level.paperConfig().entities.behavior.phantomsSpawnAttemptMaxSeconds;
++                    this.nextTick += (spawnAttemptMinSeconds + random.nextInt(spawnAttemptMaxSeconds - spawnAttemptMinSeconds + 1)) * 20;
++                    // Paper end - Ability to control player's insomnia and phantoms
+                     if (level.getSkyDarken() >= 5 || !level.dimensionType().hasSkyLight()) {
+                         for (ServerPlayer player : level.players()) {
+-                            if (!player.isSpectator()) {
++                            if (!player.isSpectator() && (!level.paperConfig().entities.behavior.phantomsDoNotSpawnOnCreativePlayers || !player.isCreative())) { // Paper - Add phantom creative and insomniac controls
+                                 BlockPos playerPos = player.blockPosition();
+                                 if (!level.dimensionType().hasSkyLight() || playerPos.getY() >= level.getSeaLevel() && level.canSeeSky(playerPos)) {
+                                     DifficultyInstance difficulty = level.getCurrentDifficultyAt(playerPos);
+@@ -50,11 +_,21 @@
+                                                 int groupSize = 1 + random.nextInt(difficulty.getDifficulty().getId() + 1);
+ 
+                                                 for (int i = 0; i < groupSize; i++) {
++                                                    // Paper start - PhantomPreSpawnEvent
++                                                    com.destroystokyo.paper.event.entity.PhantomPreSpawnEvent event = new com.destroystokyo.paper.event.entity.PhantomPreSpawnEvent(org.bukkit.craftbukkit.util.CraftLocation.toBukkit(spawnPos, level), player.getBukkitEntity(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL);
++                                                    if (!event.callEvent()) {
++                                                        if (event.shouldAbortSpawn()) {
++                                                            break;
++                                                        }
++                                                        continue;
++                                                    }
++                                                    // Paper end - PhantomPreSpawnEvent
+                                                     Phantom phantom = EntityType.PHANTOM.create(level, EntitySpawnReason.NATURAL);
+                                                     if (phantom != null) {
++                                                        phantom.spawningEntity = player.getUUID(); // Paper - PhantomPreSpawnEvent
+                                                         phantom.snapTo(spawnPos, 0.0F, 0.0F);
+                                                         groupData = phantom.finalizeSpawn(level, difficulty, EntitySpawnReason.NATURAL, groupData);
+-                                                        level.addFreshEntityWithPassengers(phantom);
++                                                        level.addFreshEntityWithPassengers(phantom, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL); // CraftBukkit
+                                                     }
+                                                 }
+                                             }
