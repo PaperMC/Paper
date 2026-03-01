@@ -1,0 +1,47 @@
+--- a/net/minecraft/world/level/chunk/LevelChunkSection.java
++++ b/net/minecraft/world/level/chunk/LevelChunkSection.java
+@@ -15,12 +_,12 @@
+     public static final int SECTION_HEIGHT = 16;
+     public static final int SECTION_SIZE = 4096;
+     public static final int BIOME_CONTAINER_BITS = 2;
+-    private short nonEmptyBlockCount;
++    short nonEmptyBlockCount; // Paper - package private
+     private short fluidCount;
+     private short tickingBlockCount;
+     private short tickingFluidCount;
+     public final PalettedContainer<BlockState> states;
+-    private PalettedContainerRO<Holder<Biome>> biomes;
++    private PalettedContainer<Holder<Biome>> biomes; // CraftBukkit - read/write
+ 
+     private LevelChunkSection(final LevelChunkSection source) {
+         this.nonEmptyBlockCount = source.nonEmptyBlockCount;
+@@ -31,7 +_,7 @@
+         this.biomes = source.biomes.copy();
+     }
+ 
+-    public LevelChunkSection(final PalettedContainer<BlockState> states, final PalettedContainerRO<Holder<Biome>> biomes) {
++    public LevelChunkSection(final PalettedContainer<BlockState> states, final PalettedContainer<Holder<Biome>> biomes) { // CraftBukkit - read/write
+         this.states = states;
+         this.biomes = biomes;
+         this.recalcBlockCounts();
+@@ -47,7 +_,7 @@
+     }
+ 
+     public FluidState getFluidState(final int sectionX, final int sectionY, final int sectionZ) {
+-        return this.states.get(sectionX, sectionY, sectionZ).getFluidState();
++        return this.states.get(sectionX, sectionY, sectionZ).getFluidState(); // Paper - Perf: Optimise LevelChunk#getFluidState; diff on change - we expect this to be effectively just get(x, y, z).getFluidState(). If this changes we need to check other patches that use BlockBehaviour#getFluidState.
+     }
+ 
+     public void acquire() {
+@@ -203,6 +_,11 @@
+     public Holder<Biome> getNoiseBiome(final int quartX, final int quartY, final int quartZ) {
+         return this.biomes.get(quartX, quartY, quartZ);
+     }
++    // CraftBukkit start
++    public void setBiome(int x, int y, int z, Holder<Biome> biome) {
++        this.biomes.set(x, y, z, biome);
++    }
++    // CraftBukkit end
+ 
+     public void fillBiomesFromNoise(
+         final BiomeResolver biomeResolver, final Climate.Sampler sampler, final int quartMinX, final int quartMinY, final int quartMinZ
