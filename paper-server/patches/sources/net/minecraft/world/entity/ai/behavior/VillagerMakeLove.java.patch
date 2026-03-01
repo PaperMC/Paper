@@ -1,0 +1,23 @@
+--- a/net/minecraft/world/entity/ai/behavior/VillagerMakeLove.java
++++ b/net/minecraft/world/entity/ai/behavior/VillagerMakeLove.java
+@@ -110,11 +_,17 @@
+         if (child == null) {
+             return Optional.empty();
+         } else {
+-            source.setAge(6000);
+-            target.setAge(6000);
+             child.setAge(-24000);
++            // Paper - Move age setting down
+             child.snapTo(source.getX(), source.getY(), source.getZ(), 0.0F, 0.0F);
+-            level.addFreshEntityWithPassengers(child);
++            // CraftBukkit start - call EntityBreedEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(child, source, target, null, null, 0).isCancelled()) {
++                return Optional.empty();
++            }
++            source.setAge(6000);
++            target.setAge(6000);
++            level.addFreshEntityWithPassengers(child, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING);
++            // CraftBukkit end - call EntityBreedEvent
+             level.broadcastEntityEvent(child, EntityEvent.LOVE_HEARTS);
+             return Optional.of(child);
+         }
