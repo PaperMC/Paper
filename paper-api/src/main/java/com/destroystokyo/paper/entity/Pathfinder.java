@@ -3,6 +3,7 @@ package com.destroystokyo.paper.entity;
 import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -45,7 +46,7 @@ public interface Pathfinder {
     @Nullable PathResult findPath(Location loc);
 
     /**
-     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * Calculates a destination for the Entity to navigate to reach the target entity,
      * but does not set it as the current target.
      * Useful for calculating what would happen before setting it.
      * <p>
@@ -57,7 +58,25 @@ public interface Pathfinder {
      * @param target the Entity to navigate to
      * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
      */
-    @Nullable PathResult findPath(LivingEntity target);
+    @Nullable
+    default PathResult findPath(LivingEntity target) {
+        return this.findPath((Entity) target);
+    }
+
+    /**
+     * Calculates a destination for the Entity to navigate to reach the target entity,
+     * but does not set it as the current target.
+     * Useful for calculating what would happen before setting it.
+     * <p>
+     * The behavior of this PathResult is subject to the games pathfinding rules, and may
+     * result in the pathfinding automatically updating to follow the target Entity.
+     * <p>
+     * However, this behavior is not guaranteed, and is subject to the game's behavior.
+     *
+     * @param target the Entity to navigate to
+     * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
+     */
+    @Nullable PathResult findPath(Entity target);
 
     /**
      * Calculates a destination for the Entity to navigate to, and sets it with default speed
@@ -84,7 +103,7 @@ public interface Pathfinder {
     }
 
     /**
-     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * Calculates a destination for the Entity to navigate to reach the target entity,
      * and sets it with default speed.
      * <p>
      * The behavior of this PathResult is subject to the games pathfinding rules, and may
@@ -100,7 +119,7 @@ public interface Pathfinder {
     }
 
     /**
-     * Calculates a destination for the Entity to navigate to to reach the target entity,
+     * Calculates a destination for the Entity to navigate to reach the target entity,
      * and sets it with specified speed.
      * <p>
      * The behavior of this PathResult is subject to the games pathfinding rules, and may
@@ -113,6 +132,39 @@ public interface Pathfinder {
      * @return If the pathfinding was successfully started
      */
     default boolean moveTo(LivingEntity target, double speed) {
+        return this.moveTo((Entity) target, speed);
+    }
+
+    /**
+     * Calculates a destination for the Entity to navigate to reach the target entity,
+     * and sets it with default speed.
+     * <p>
+     * The behavior of this PathResult is subject to the games pathfinding rules, and may
+     * result in the pathfinding automatically updating to follow the target Entity.
+     * <p>
+     * However, this behavior is not guaranteed, and is subject to the game's behavior.
+     *
+     * @param target the Entity to navigate to
+     * @return If the pathfinding was successfully started
+     */
+    default boolean moveTo(Entity target) {
+        return this.moveTo(target, 1);
+    }
+
+    /**
+     * Calculates a destination for the Entity to navigate to reach the target entity,
+     * and sets it with specified speed.
+     * <p>
+     * The behavior of this PathResult is subject to the games pathfinding rules, and may
+     * result in the pathfinding automatically updating to follow the target Entity.
+     * <p>
+     * However, this behavior is not guaranteed, and is subject to the game's behavior.
+     *
+     * @param target the Entity to navigate to
+     * @param speed  Speed multiplier to navigate at, where 1 is 'normal'
+     * @return If the pathfinding was successfully started
+     */
+    default boolean moveTo(Entity target, double speed) {
         PathResult path = this.findPath(target);
         return path != null && this.moveTo(path, speed);
     }

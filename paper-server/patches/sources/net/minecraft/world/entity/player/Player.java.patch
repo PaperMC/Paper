@@ -42,6 +42,15 @@
              if (this.sleepCounter > 100) {
                  this.sleepCounter = 100;
              }
+@@ -273,7 +_,7 @@
+         ItemStack mainHandItem = this.getMainHandItem();
+         if (!ItemStack.matches(this.lastItemInMainHand, mainHandItem)) {
+             if (!ItemStack.isSameItem(this.lastItemInMainHand, mainHandItem)) {
+-                this.resetAttackStrengthTicker();
++                this.resetAttackStrengthTicker(); // Paper - diff on change (detectEquipmentUpdates override)
+             }
+ 
+             this.lastItemInMainHand = mainHandItem.copy();
 @@ -327,7 +_,7 @@
      }
  
@@ -474,7 +483,7 @@
              }
          }
      }
-@@ -1821,7 +_,7 @@
+@@ -1821,10 +_,31 @@
  
      @Override
      public void onAttack() {
@@ -483,6 +492,30 @@
          super.onAttack();
      }
  
++    // Paper start - Force update attributes.
++    @Override
++    public void detectEquipmentUpdates() {
++        super.detectEquipmentUpdates();
++
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) {
++            return;
++        }
++
++        // Copied from the tick method
++        ItemStack mainHandItem = this.getMainHandItem();
++        if (!ItemStack.matches(this.lastItemInMainHand, mainHandItem)) {
++            if (!ItemStack.isSameItem(this.lastItemInMainHand, mainHandItem)) {
++                this.resetAttackStrengthTicker();
++            }
++
++            this.lastItemInMainHand = mainHandItem.copy();
++        }
++    }
++    // Paper end - Force update attributes.
++
+     public void resetOnlyAttackStrengthTicker() {
+         this.attackStrengthTicker = 0;
+     }
 @@ -1856,17 +_,32 @@
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
      }
