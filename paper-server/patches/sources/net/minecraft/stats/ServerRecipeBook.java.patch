@@ -1,0 +1,35 @@
+--- a/net/minecraft/stats/ServerRecipeBook.java
++++ b/net/minecraft/stats/ServerRecipeBook.java
+@@ -64,17 +_,21 @@
+         for (RecipeHolder<?> recipe : recipes) {
+             ResourceKey<Recipe<?>> id = recipe.id();
+             if (!this.known.contains(id) && !recipe.value().isSpecial()) {
++                // Paper start - PlayerRecipeDiscoverEvent event
++                final org.bukkit.event.player.PlayerRecipeDiscoverEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerRecipeListUpdateEvent(player, recipe);
++                if (event.isCancelled()) continue;
++                // Paper end - PlayerRecipeDiscoverEvent event
+                 this.add(id);
+                 this.addHighlight(id);
+                 this.displayResolver
+                     .displaysForRecipe(
+-                        id, display -> recipesToAdd.add(new ClientboundRecipeBookAddPacket.Entry(display, recipe.value().showNotification(), true))
++                        id, display -> recipesToAdd.add(new ClientboundRecipeBookAddPacket.Entry(display, event.shouldShowNotification(), true)) // Paper - set notification from the event
+                     );
+                 CriteriaTriggers.RECIPE_UNLOCKED.trigger(player, recipe);
+             }
+         }
+ 
+-        if (!recipesToAdd.isEmpty()) {
++        if (!recipesToAdd.isEmpty() && player.connection != null) { // SPIGOT-4478 during PlayerLoginEvent
+             player.connection.send(new ClientboundRecipeBookAddPacket(recipesToAdd, false));
+         }
+ 
+@@ -92,7 +_,7 @@
+             }
+         }
+ 
+-        if (!recipesToRemove.isEmpty()) {
++        if (!recipesToRemove.isEmpty() && player.connection != null) { // SPIGOT-4478 during PlayerLoginEvent
+             player.connection.send(new ClientboundRecipeBookRemovePacket(recipesToRemove));
+         }
+ 
