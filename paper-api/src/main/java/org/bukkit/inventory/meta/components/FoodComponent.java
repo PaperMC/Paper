@@ -15,7 +15,7 @@ public interface FoodComponent extends ConfigurationSerializable {
      *
      * @return nutrition value
      */
-    int getNutrition();
+    @NonNegative int getNutrition();
 
     /**
      * Sets the food restored by this item when eaten.
