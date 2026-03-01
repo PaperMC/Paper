@@ -1,0 +1,25 @@
+--- a/net/minecraft/server/commands/GameModeCommand.java
++++ b/net/minecraft/server/commands/GameModeCommand.java
+@@ -63,9 +_,21 @@
+     }
+ 
+     private static boolean setGameMode(final CommandSourceStack source, final ServerPlayer player, final GameType type) {
+-        if (player.setGameMode(type)) {
++        // Paper start - Expand PlayerGameModeChangeEvent
++        return setGameMode(source, player, type, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.COMMAND);
++    }
++
++    public static boolean setGameMode(final CommandSourceStack source, final ServerPlayer player, final GameType type, final org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause) {
++        org.bukkit.event.player.PlayerGameModeChangeEvent event = player.setGameMode(type, cause, null);
++        if (event != null && !event.isCancelled()) {
++            // Paper end - Expand PlayerGameModeChangeEvent
+             logGamemodeChange(source, player, type);
+             return true;
++            // Paper start - Expand PlayerGameModeChangeEvent
++        } else if (event != null && event.cancelMessage() != null) {
++            source.sendSuccess(() -> io.papermc.paper.adventure.PaperAdventure.asVanilla(event.cancelMessage()), true);
++            return false;
++            // Paper end - Expand PlayerGameModeChangeEvent
+         } else {
+             return false;
+         }
