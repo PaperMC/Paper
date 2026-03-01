@@ -1,0 +1,20 @@
+--- a/net/minecraft/world/item/component/BlocksAttacks.java
++++ b/net/minecraft/world/item/component/BlocksAttacks.java
+@@ -86,11 +_,15 @@
+             );
+     }
+ 
+-    public void disable(final ServerLevel level, final LivingEntity user, final float baseSeconds, final ItemStack blockingWith) {
++    public void disable(final ServerLevel level, final LivingEntity user, final float baseSeconds, final ItemStack blockingWith, LivingEntity attacker) { // Paper
+         int cooldownTicks = this.disableBlockingForTicks(baseSeconds);
+         if (cooldownTicks > 0) {
+             if (user instanceof Player player) {
+-                player.getCooldowns().addCooldown(blockingWith, cooldownTicks);
++                // Paper start
++                final io.papermc.paper.event.player.PlayerShieldDisableEvent shieldDisableEvent = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) player.getBukkitEntity(), attacker.getBukkitEntity(), cooldownTicks);
++                if (!shieldDisableEvent.callEvent()) return;
++                player.getCooldowns().addCooldown(blockingWith, shieldDisableEvent.getCooldown());
++                // Paper end
+             }
+ 
+             user.stopUsingItem();
