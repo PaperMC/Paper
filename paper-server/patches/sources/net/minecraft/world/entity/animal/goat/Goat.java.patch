@@ -1,0 +1,53 @@
+--- a/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -211,13 +_,22 @@
+     public InteractionResult mobInteract(final Player player, final InteractionHand hand) {
+         ItemStack heldItem = player.getItemInHand(hand);
+         if (heldItem.is(Items.BUCKET) && !this.isBaby()) {
++            // CraftBukkit start - Got milk?
++            org.bukkit.event.player.PlayerBucketFillEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketFillEvent(player.level(), player, this.blockPosition(), this.blockPosition(), null, heldItem, Items.MILK_BUCKET, hand);
++
++            if (event.isCancelled()) {
++                player.containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
++                return InteractionResult.PASS;
++            }
++            // CraftBukkit end
+             player.playSound(this.getMilkingSound(), 1.0F, 1.0F);
+-            ItemStack bucketOrMilkBucket = ItemUtils.createFilledResult(heldItem, player, Items.MILK_BUCKET.getDefaultInstance());
++            ItemStack bucketOrMilkBucket = ItemUtils.createFilledResult(heldItem, player, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack())); // CraftBukkit
+             player.setItemInHand(hand, bucketOrMilkBucket);
+             return InteractionResult.SUCCESS;
+         } else {
++            boolean isFood = this.isFood(heldItem); // Paper - track before stack is possibly decreased to 0 (Fixes MC-244739)
+             InteractionResult interactionResult = super.mobInteract(player, hand);
+-            if (interactionResult.consumesAction() && this.isFood(heldItem)) {
++            if (interactionResult.consumesAction() && isFood) { // Paper
+                 this.playEatingSound();
+             }
+ 
+@@ -326,8 +_,7 @@
+                 double deltaY = Mth.randomBetween(this.random, 0.3F, 0.7F);
+                 double deltaZ = Mth.randomBetween(this.random, -0.2F, 0.2F);
+                 ItemEntity itemEntity = new ItemEntity(this.level(), bodyPosition.x(), bodyPosition.y(), bodyPosition.z(), item, deltaX, deltaY, deltaZ);
+-                this.level().addFreshEntity(itemEntity);
+-                return true;
++                return this.spawnAtLocation((net.minecraft.server.level.ServerLevel) this.level(), itemEntity) != null; // Paper - Call EntityDropItemEvent
+             }
+         }
+     }
+@@ -349,4 +_,15 @@
+     ) {
+         return level.getBlockState(pos.below()).is(BlockTags.GOATS_SPAWNABLE_ON) && isBrightEnoughToSpawn(level, pos);
+     }
++
++    // Paper start - Goat ram API
++    public void ram(net.minecraft.world.entity.LivingEntity entity) {
++        Brain<Goat> brain = this.getBrain();
++        brain.setMemory(MemoryModuleType.RAM_TARGET, entity.position());
++        brain.eraseMemory(MemoryModuleType.RAM_COOLDOWN_TICKS);
++        brain.eraseMemory(MemoryModuleType.BREED_TARGET);
++        brain.eraseMemory(MemoryModuleType.TEMPTING_PLAYER);
++        brain.setActiveActivityIfPossible(net.minecraft.world.entity.schedule.Activity.RAM);
++    }
++    // Paper end - Goat ram API
+ }
