@@ -167,7 +167,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
         if (thread.getLockedMonitors().length != 0) {
             logger.log(Level.SEVERE, "\tThread is waiting on monitor(s):");
             for (MonitorInfo monitor : thread.getLockedMonitors()) {
-                logger.log(Level.SEVERE, "\t\tLocked on:" + monitor.getLockedStackFrame());
+                logger.log(Level.SEVERE, "\t\tLocked on: " + monitor.getLockedStackFrame());
             }
         }
         logger.log(Level.SEVERE, "\tStack:");
