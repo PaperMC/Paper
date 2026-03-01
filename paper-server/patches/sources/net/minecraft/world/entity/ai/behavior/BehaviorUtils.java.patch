@@ -1,0 +1,24 @@
+--- a/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
++++ b/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
+@@ -94,6 +_,7 @@
+     public static void throwItem(
+         final LivingEntity thrower, final ItemStack item, final Vec3 targetPos, final Vec3 throwVelocity, final float handYDistanceFromEye
+     ) {
++        if (item.isEmpty()) return; // CraftBukkit - SPIGOT-4940: no empty loot
+         double yHandPos = thrower.getEyeY() - handYDistanceFromEye;
+         ItemEntity itemEntity = new ItemEntity(thrower.level(), thrower.getX(), yHandPos, thrower.getZ(), item);
+         itemEntity.setThrower(thrower);
+@@ -101,6 +_,13 @@
+         throwVector = throwVector.normalize().multiply(throwVelocity.x, throwVelocity.y, throwVelocity.z);
+         itemEntity.setDeltaMovement(throwVector);
+         itemEntity.setDefaultPickUpDelay();
++        // CraftBukkit start
++        org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(thrower.getBukkitEntity(), (org.bukkit.entity.Item) itemEntity.getBukkitEntity());
++        itemEntity.level().getCraftServer().getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            return;
++        }
++        // CraftBukkit end
+         thrower.level().addFreshEntity(itemEntity);
+     }
+ 
