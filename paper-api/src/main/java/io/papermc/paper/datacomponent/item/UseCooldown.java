@@ -24,7 +24,7 @@ public interface UseCooldown {
      * @return builder
      */
     @Contract(value = "_ -> new", pure = true)
-    static UseCooldown.Builder useCooldown(@Positive final float seconds) {
+    static UseCooldown.Builder useCooldown(final @Positive float seconds) {
         return ItemComponentTypesBridge.bridge().useCooldown(seconds);
     }
 
