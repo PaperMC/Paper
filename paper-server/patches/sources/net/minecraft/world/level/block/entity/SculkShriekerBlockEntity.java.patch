@@ -1,0 +1,25 @@
+--- a/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
+@@ -89,6 +_,13 @@
+     }
+ 
+     public static @Nullable ServerPlayer tryGetPlayer(final @Nullable Entity sourceEntity) {
++    // Paper start - check global player list where appropriate; ensure level is the same for sculk events
++        final ServerPlayer player = tryGetPlayer0(sourceEntity);
++        return player != null && sourceEntity != null && player.level() == sourceEntity.level() ? player : null;
++    }
++    @Nullable
++    private static ServerPlayer tryGetPlayer0(final @Nullable Entity sourceEntity) {
++    // Paper end - check global player list where appropriate
+         if (sourceEntity instanceof ServerPlayer player) {
+             return player;
+         } else if (sourceEntity != null && sourceEntity.getControllingPassenger() instanceof ServerPlayer player) {
+@@ -165,7 +_,7 @@
+     private boolean trySummonWarden(final ServerLevel level) {
+         return this.warningLevel >= 4
+             && SpawnUtil.trySpawnMob(
+-                    EntityType.WARDEN, EntitySpawnReason.TRIGGERED, level, this.getBlockPos(), 20, 5, 6, SpawnUtil.Strategy.ON_TOP_OF_COLLIDER, false
++                    EntityType.WARDEN, EntitySpawnReason.TRIGGERED, level, this.getBlockPos(), 20, 5, 6, SpawnUtil.Strategy.ON_TOP_OF_COLLIDER, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL, null // Paper - Entity#getEntitySpawnReason
+                 )
+                 .isPresent();
+     }
