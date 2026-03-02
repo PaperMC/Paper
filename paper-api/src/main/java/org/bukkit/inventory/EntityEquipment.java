@@ -303,7 +303,7 @@ public interface EntityEquipment {
      * <p>
      * This returns a copy if this equipment instance is from a non-player,
      * or it's an empty stack (has AIR as its type).
-     * For non-empty stacks from players, this returns a live mirror (or null). You can check if this
+     * For non-empty stacks from players, this returns a live mirror. You can check if this
      * will return a mirror with
      * <pre>{@code
      * EntityEquipment equipment = entity.getEquipment();

@@ -52,7 +52,7 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
         }
         Preconditions.checkArgument(rawSlot >= 0, "Negative, non outside slot %s", rawSlot);
         Preconditions.checkArgument(rawSlot < this.countSlots(), "Slot %s greater than inventory slot count", rawSlot);
-        return mapValidSlotToInventory(rawSlot);
+        return this.mapValidSlotToInventory(rawSlot);
     }
 
     public Inventory mapValidSlotToInventory(final int rawSlot) {
