@@ -87,11 +87,10 @@ public class CraftGameRule<T> extends GameRule<T> implements Holderable<net.mine
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public static <T> T shimLegacyValue(T value, GameRule<?> rule){
-        if (rule instanceof CraftGameRule.LegacyGameRuleWrapper wrapper) {
+    public static <T> T shimLegacyValue(T value, GameRule<?> rule) {
+        if (rule instanceof LegacyGameRuleWrapper wrapper) {
             return (T) wrapper.getToLegacyFromModern().apply(value);
         }
-
         return value;
     }
 
