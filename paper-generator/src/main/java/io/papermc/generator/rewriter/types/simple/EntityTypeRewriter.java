@@ -1,6 +1,5 @@
 package io.papermc.generator.rewriter.types.simple;
 
-import com.google.common.base.CaseFormat;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import io.papermc.generator.registry.RegistryEntries;
@@ -28,19 +27,32 @@ public class EntityTypeRewriter extends RegistryFieldRewriter<EntityType<?>> {
         });
 
     private static final Map<String, String> CLASS_RENAMES = ImmutableMap.<String, String>builder()
-        .put("ExperienceBottle", "ThrownExpBottle")
-        .put("EyeOfEnder", "EnderSignal")
+        .put("ItemEntity", "Item")
         .put("EndCrystal", "EnderCrystal")
-        .put("FireworkRocket", "Firework")
-        .put("FishingBobber", "FishHook")
-        .put("LeashKnot", "LeashHitch")
+        .put("ThrownEgg", "Egg")
+        .put("ThrownEnderpearl", "EnderPearl")
+        .put("ThrownExperienceBottle", "ThrownExpBottle")
+        .put("ThrownLingeringPotion", "LingeringPotion")
+        .put("ThrownSplashPotion", "SplashPotion")
+        .put("ThrownTrident", "Trident")
+        .put("PrimedTnt", "TNTPrimed")
+        .put("EyeOfEnder", "EnderSignal")
+        .put("FallingBlockEntity", "FallingBlock")
+        .put("FireworkRocketEntity", "Firework")
+        .put("FishingHook", "FishHook")
+        .put("LeashFenceKnotEntity", "LeashHitch")
         .put("LightningBolt", "LightningStrike")
-        .put("Tnt", "TNTPrimed")
+
+        .put("MinecartChest", "StorageMinecart")
+        .put("MinecartCommandBlock", "CommandMinecart")
+        .put("MinecartFurnace", "PoweredMinecart")
+        .put("MinecartHopper", "HopperMinecart")
+        .put("MinecartSpawner", "SpawnerMinecart")
+        .put("MinecartTNT", "ExplosiveMinecart")
         .put("Minecart", "RideableMinecart")
-        .put("ChestMinecart", "StorageMinecart")
-        .put("CommandBlockMinecart", "CommandMinecart")
-        .put("TntMinecart", "ExplosiveMinecart")
-        .put("FurnaceMinecart", "PoweredMinecart")
+
+        .put("Raft", "Boat")
+        .put("ChestRaft", "ChestBoat")
         .buildOrThrow();
 
     private static final ClassResolver runtime = new ClassResolver(EntityTypeRewriter.class.getClassLoader());
@@ -63,11 +75,12 @@ public class EntityTypeRewriter extends RegistryFieldRewriter<EntityType<?>> {
             return this.importCollector.getShortName(MobGoalNames.BUKKIT_BRIDGE.get((Class<? extends Mob>) internalClass));
         }
 
-        String className = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, reference.key().identifier().getPath()); // use the key instead of the internal class name since name match a bit more
-        ClassNamed resolvedClass = this.classNamedView.tryFindFirst(CLASS_RENAMES.getOrDefault(className, className))
-            .orElseThrow(() -> new IllegalStateException("Could not find entity class for " + reference.key().identifier()))
+        String internalClassName = internalClass.getSimpleName();
+        String className = CLASS_RENAMES.getOrDefault(internalClassName, internalClassName);
+        ClassNamed resolvedClass = this.classNamedView.tryFindFirst(className)
+            .orElseThrow(() -> new IllegalStateException("Could not find entity class for " + reference.key().identifier() + " (" + className + ")"))
             .resolve(runtime);
         Preconditions.checkArgument(org.bukkit.entity.Entity.class.isAssignableFrom(resolvedClass.knownClass()), "Generic type must be an entity");
-        return this.importCollector.getShortName(this.classNamedView.findFirst(CLASS_RENAMES.getOrDefault(className, className)).resolve(runtime));
+        return this.importCollector.getShortName(resolvedClass);
     }
 }

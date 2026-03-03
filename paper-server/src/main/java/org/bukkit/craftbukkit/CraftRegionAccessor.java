@@ -18,12 +18,10 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnGroupData;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
-import net.minecraft.world.level.portal.TeleportTransition;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.RegionAccessor;
@@ -252,11 +250,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public Entity spawnEntity(Location loc, EntityType type, boolean randomizeData) {
-        return this.spawn(loc, type.getEntityClass(), null, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
-    }
-
-    @Override
     public List<Entity> getEntities() {
         List<Entity> list = new ArrayList<>();
 
@@ -351,20 +344,34 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function) throws IllegalArgumentException {
-        return this.spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM);
+    @SuppressWarnings("unchecked")
+    public <T extends Entity> T createEntity(Location location, EntityType<T> type) throws IllegalArgumentException {
+        net.minecraft.world.entity.Entity entity = this.createEntity(location, type, true);
+
+        if (!this.isNormalWorld()) {
+            entity.generation = true;
+        }
+
+        return (T) entity.getBukkitEntity();
     }
 
     @Override
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, boolean randomizeData, Consumer<? super T> function) throws IllegalArgumentException {
-        return this.spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
+    public <E extends Entity> E spawnEntity(Location location, EntityType<E> type, boolean randomizeData, CreatureSpawnEvent.SpawnReason reason, Consumer<? super E> function) throws IllegalArgumentException {
+        net.minecraft.world.entity.Entity entity = this.createEntity(location, type, randomizeData);
+
+        return this.addEntity(entity, reason, function, randomizeData);
     }
 
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
-        return this.spawn(location, clazz, function, reason, true);
+    @Override
+    public <E extends Entity> E spawn(Location location, Class<E> clazz, boolean randomizeData, Consumer<? super E> function) throws IllegalArgumentException {
+        return this.spawn0(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
     }
 
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason, boolean randomizeData) throws IllegalArgumentException {
+    public <E extends Entity> E spawn(Location location, Class<E> clazz, Consumer<? super E> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
+        return this.spawn0(location, clazz, function, reason, true);
+    }
+
+    protected <E extends Entity> E spawn0(Location location, Class<E> clazz, Consumer<? super E> function, CreatureSpawnEvent.SpawnReason reason, boolean randomizeData) throws IllegalArgumentException {
         net.minecraft.world.entity.Entity entity = this.createEntity(location, clazz, randomizeData);
 
         return this.addEntity(entity, reason, function, randomizeData);
@@ -411,6 +418,28 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     public abstract void addEntityToWorld(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
 
     public abstract void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
+
+    public <E extends Entity> net.minecraft.world.entity.Entity createEntity(Location location, EntityType<E> type, boolean randomizeData) throws IllegalArgumentException {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(type != null, "Entity type cannot be null");
+
+        CraftEntityTypes.EntityTypeData<?, ?> entityTypeData = CraftEntityTypes.getEntityTypeData(type);
+        if (entityTypeData.spawnFunction() == null) {
+            throw new IllegalArgumentException("Cannot spawn an entity for " + type.key().asString());
+        }
+
+        if (!this.isEnabled(entityTypeData.entityType())) {
+            throw new IllegalArgumentException("Cannot spawn an entity for " + type.key().asString() + " because it is not an enabled feature");
+        }
+
+        net.minecraft.world.entity.Entity entity = entityTypeData.spawnFunction().apply(new CraftEntityTypes.SpawnData(this.getHandle(), location, randomizeData, this.isNormalWorld()));
+
+        if (entity != null) {
+            return entity;
+        }
+
+        throw new IllegalArgumentException("Cannot spawn an entity for " + type.key().asString());
+    }
 
     @SuppressWarnings("unchecked")
     public net.minecraft.world.entity.Entity createEntity(Location location, Class<? extends Entity> clazz, boolean randomizeData) throws IllegalArgumentException {
