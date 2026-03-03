@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableBiMap;
 import io.papermc.paper.attribute.UnmodifiableAttributeMap;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.util.OldEnumHolderable;
+import io.papermc.paper.util.LegacyEnumHolderable;
 import io.papermc.paper.world.flag.PaperFeatureDependent;
 import java.util.Locale;
 import java.util.Objects;
@@ -30,7 +30,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public class CraftEntityType<E extends Entity> extends OldEnumHolderable<EntityType<E>, net.minecraft.world.entity.EntityType<?>> implements EntityType<E>, PaperFeatureDependent<net.minecraft.world.entity.EntityType<?>> {
+public class CraftEntityType<E extends Entity> extends LegacyEnumHolderable<net.minecraft.world.entity.EntityType<?>, CraftEntityType<E>> implements EntityType<E>, PaperFeatureDependent<net.minecraft.world.entity.EntityType<?>> {
 
     private static int count = 0;
 
@@ -78,7 +78,7 @@ public class CraftEntityType<E extends Entity> extends OldEnumHolderable<EntityT
      */
     @Deprecated(forRemoval = true, since = "1.21.11")
     @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
-    public static class LegacyUnknownImpl implements EntityType<Entity> {
+    public static class LegacyUnknownImpl implements EntityType<Entity> { // todo legacy enum but getKey needs to be overridden, no vanilla holder
 
         public static final EntityType<?> INSTANCE = new LegacyUnknownImpl();
 
@@ -93,6 +93,7 @@ public class CraftEntityType<E extends Entity> extends OldEnumHolderable<EntityT
             return null;
         }
 
+        /*
         @Override
         public int compareTo(final EntityType other) {
             return this.ordinal - other.ordinal();
@@ -106,7 +107,7 @@ public class CraftEntityType<E extends Entity> extends OldEnumHolderable<EntityT
         @Override
         public int ordinal() {
             return this.ordinal;
-        }
+        }*/
 
         @Override
         public boolean equals(final Object object) {

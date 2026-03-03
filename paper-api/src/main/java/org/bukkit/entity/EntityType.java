@@ -19,13 +19,12 @@ import org.bukkit.entity.minecart.PoweredMinecart;
 import org.bukkit.entity.minecart.RideableMinecart;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
-import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Keyed, Translatable, net.kyori.adventure.translation.Translatable, FeatureDependant {
+public interface EntityType<E extends Entity> extends Keyed, Translatable, net.kyori.adventure.translation.Translatable, FeatureDependant {
 
     // Start generate - EntityType
     EntityType<Boat> ACACIA_BOAT = getType("acacia_boat");
@@ -355,12 +354,10 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
     }
 
     /**
-     * Some entities cannot be spawned using {@link
-     * World#spawnEntity(Location, EntityType)} or {@link
-     * World#spawn(Location, Class)}, usually because they require additional
-     * information in order to spawn.
+     * Some entities cannot be spawned using {@link World#spawnEntity(Location, EntityType)},
+     * usually because they require additional information in order to spawn.
      *
-     * @return False if the entity type cannot be spawned
+     * @return {@code false} if the entity type cannot be spawned
      */
     boolean isSpawnable();
 
