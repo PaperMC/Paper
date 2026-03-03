@@ -36,6 +36,6 @@ public class EntitySetTag extends BaseTag<EntityType, EntitySetTag> {
     @NotNull
     @Override
     protected String getName(@NotNull EntityType value) {
-        return value.name();
+        return value.key().value().toUpperCase(); // should be close enough
     }
 }

@@ -42,7 +42,7 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
      * As per {@link #bukkitToMinecraftHolder(Biome)} it cannot be
      * converted into an internal biome and only serves backwards compatibility reasons.
      */
-    @Deprecated(forRemoval = true, since = "1.21.5")
+    @Deprecated(since = "1.21.5", forRemoval = true)
     @ApiStatus.ScheduledForRemoval(inVersion = "26.3")
     public static class LegacyCustomImpl implements Biome {
 

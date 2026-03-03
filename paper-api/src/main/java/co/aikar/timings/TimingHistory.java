@@ -154,7 +154,7 @@ public class TimingHistory {
                                         public JSONPair apply(Map.Entry<EntityType<?>, Counter> entry) {
                                             entityTypeSet.add(entry.getKey());
                                             return pair(
-                                                    String.valueOf(entry.getKey().ordinal()),
+                                                    entry.getKey().key().asString(), // todo check format
                                                     entry.getValue().count()
                                             );
                                         }
