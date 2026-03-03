@@ -333,26 +333,26 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends Entity> T createEntity(Location location, Class<T> clazz) throws IllegalArgumentException {
+    public <E extends Entity> E createEntity(Location location, Class<E> clazz) throws IllegalArgumentException {
         net.minecraft.world.entity.Entity entity = this.createEntity(location, clazz, true);
 
         if (!this.isNormalWorld()) {
             entity.generation = true;
         }
 
-        return (T) entity.getBukkitEntity();
+        return (E) entity.getBukkitEntity();
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends Entity> T createEntity(Location location, EntityType<T> type) throws IllegalArgumentException {
+    public <E extends Entity> E createEntity(Location location, EntityType<E> type) throws IllegalArgumentException {
         net.minecraft.world.entity.Entity entity = this.createEntity(location, type, true);
 
         if (!this.isNormalWorld()) {
             entity.generation = true;
         }
 
-        return (T) entity.getBukkitEntity();
+        return (E) entity.getBukkitEntity();
     }
 
     @Override

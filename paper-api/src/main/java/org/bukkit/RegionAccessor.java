@@ -327,7 +327,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * created in, care should be taken that the entity does not outlive the
      * world instance as this will lead to memory leaks.
      *
-     * @param <T> the class of the {@link Entity} to create
+     * @param <E> the class of the {@link Entity} to create
      * @param location the {@link Location} to create the entity at
      * @param clazz the class of the {@link Entity} to spawn
      * @return an instance of the created {@link Entity}
@@ -337,7 +337,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      */
     @NotNull
     @Deprecated(since = "1.21.11")
-    <T extends Entity> T createEntity(@NotNull Location location, @NotNull Class<T> clazz);
+    <E extends Entity> E createEntity(@NotNull Location location, @NotNull Class<E> clazz);
 
     /**
      * Creates an entity of a specific entity type at the given {@link Location} but
@@ -347,7 +347,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * created in, care should be taken that the entity does not outlive the
      * world instance as this will lead to memory leaks.
      *
-     * @param <T> the class of the {@link Entity} to create
+     * @param <E> the class of the {@link Entity} to create
      * @param location the {@link Location} to create the entity at
      * @param type the entity type of the {@link Entity} to spawn
      * @return an instance of the created {@link Entity}
@@ -355,7 +355,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @see Entity#createSnapshot()
      */
     @NotNull
-    <T extends Entity> T createEntity(@NotNull Location location, @NotNull EntityType<T> type);
+    <E extends Entity> E createEntity(@NotNull Location location, @NotNull EntityType<E> type);
 
     /**
      * Spawn an entity of a specific class at the given {@link Location}
