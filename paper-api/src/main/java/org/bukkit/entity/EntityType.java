@@ -20,7 +20,6 @@ import org.bukkit.entity.minecart.RideableMinecart;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.util.OldEnum;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -45,9 +44,9 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
 
     EntityType<Axolotl> AXOLOTL = getType("axolotl");
 
-    EntityType<ChestBoat> BAMBOO_CHEST_RAFT = getType("bamboo_chest_raft");
+    EntityType<ChestRaft> BAMBOO_CHEST_RAFT = getType("bamboo_chest_raft");
 
-    EntityType<Boat> BAMBOO_RAFT = getType("bamboo_raft");
+    EntityType<Raft> BAMBOO_RAFT = getType("bamboo_raft");
 
     EntityType<Bat> BAT = getType("bat");
 
@@ -365,6 +364,12 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
      */
     boolean isSpawnable();
 
+    /**
+     * Equivalent to check if {@link #getEntityClass()} extends of {@link LivingEntity}
+     *
+     * @deprecated do not rely on a concrete implementation
+     */
+    @Deprecated(since = "1.21.11")
     boolean isAlive();
 
     /**

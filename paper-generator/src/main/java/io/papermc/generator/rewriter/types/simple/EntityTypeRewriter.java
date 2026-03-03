@@ -50,9 +50,6 @@ public class EntityTypeRewriter extends RegistryFieldRewriter<EntityType<?>> {
         .put("MinecartSpawner", "SpawnerMinecart")
         .put("MinecartTNT", "ExplosiveMinecart")
         .put("Minecart", "RideableMinecart")
-
-        .put("Raft", "Boat")
-        .put("ChestRaft", "ChestBoat")
         .buildOrThrow();
 
     private static final ClassResolver runtime = new ClassResolver(EntityTypeRewriter.class.getClassLoader());

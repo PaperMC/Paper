@@ -23,6 +23,7 @@ import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
@@ -49,7 +50,8 @@ public class CraftEntityType<E extends Entity> extends OldEnumHolderable<EntityT
 
     @Override
     public boolean isAlive() {
-        return this.hasDefaultAttributes(); // should be roughly equivalent
+        Class<E> entity = this.getEntityClass();
+        return entity != null && LivingEntity.class.isAssignableFrom(entity);
     }
 
     @Override

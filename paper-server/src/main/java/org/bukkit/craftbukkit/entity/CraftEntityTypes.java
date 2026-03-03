@@ -55,6 +55,7 @@ import org.bukkit.entity.CamelHusk;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.CaveSpider;
 import org.bukkit.entity.ChestBoat;
+import org.bukkit.entity.ChestRaft;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Cod;
 import org.bukkit.entity.CopperGolem;
@@ -128,6 +129,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.PolarBear;
 import org.bukkit.entity.PufferFish;
 import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Raft;
 import org.bukkit.entity.Ravager;
 import org.bukkit.entity.Salmon;
 import org.bukkit.entity.Sheep;
@@ -379,8 +381,6 @@ public final class CraftEntityTypes {
         // Move (boats)
         register(new EntityTypeData<>(EntityType.ACACIA_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.ACACIA_BOAT)));
         register(new EntityTypeData<>(EntityType.ACACIA_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.ACACIA_CHEST_BOAT)));
-        register(new EntityTypeData<>(EntityType.BAMBOO_RAFT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.BAMBOO_RAFT)));
-        register(new EntityTypeData<>(EntityType.BAMBOO_CHEST_RAFT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.BAMBOO_CHEST_RAFT)));
         register(new EntityTypeData<>(EntityType.BIRCH_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.BIRCH_BOAT)));
         register(new EntityTypeData<>(EntityType.BIRCH_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.BIRCH_CHEST_BOAT)));
         register(new EntityTypeData<>(EntityType.CHERRY_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.CHERRY_BOAT)));
@@ -397,6 +397,8 @@ public final class CraftEntityTypes {
         register(new EntityTypeData<>(EntityType.PALE_OAK_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.PALE_OAK_CHEST_BOAT)));
         register(new EntityTypeData<>(EntityType.SPRUCE_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.SPRUCE_BOAT)));
         register(new EntityTypeData<>(EntityType.SPRUCE_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.SPRUCE_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.BAMBOO_RAFT, Raft.class, CraftRaft::new, createAndMove(net.minecraft.world.entity.EntityType.BAMBOO_RAFT)));
+        register(new EntityTypeData<>(EntityType.BAMBOO_CHEST_RAFT, ChestRaft.class, CraftChestRaft::new, createAndMove(net.minecraft.world.entity.EntityType.BAMBOO_CHEST_RAFT)));
 
         // Set pos
         register(new EntityTypeData<>(EntityType.MARKER, Marker.class, CraftMarker::new, createAndSetPos(net.minecraft.world.entity.EntityType.MARKER)));
