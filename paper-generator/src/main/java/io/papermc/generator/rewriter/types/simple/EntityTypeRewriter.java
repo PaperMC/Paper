@@ -41,6 +41,7 @@ public class EntityTypeRewriter extends EnumRegistryRewriter<EntityType<?>> {
         .put("EndCrystal", "EnderCrystal")
         .put("FireworkRocket", "Firework")
         .put("FishingBobber", "FishHook")
+        .put("Fireball", "LargeFireball")
         .put("LeashKnot", "LeashHitch")
         .put("LightningBolt", "LightningStrike")
         .put("Tnt", "TNTPrimed")
