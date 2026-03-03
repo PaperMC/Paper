@@ -1,22 +1,22 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableBiMap;
 import io.papermc.paper.attribute.UnmodifiableAttributeMap;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.OldEnumHolderable;
 import io.papermc.paper.world.flag.PaperFeatureDependent;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.util.Util;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
+import org.bukkit.Bukkit;
 import org.bukkit.FeatureFlag;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.legacy.FieldRename;
@@ -31,96 +31,6 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class CraftEntityType<E extends Entity> extends OldEnumHolderable<EntityType<E>, net.minecraft.world.entity.EntityType<?>> implements EntityType<E>, PaperFeatureDependent<net.minecraft.world.entity.EntityType<?>> {
 
-    @Deprecated
-    private static final Object2IntMap<net.minecraft.world.entity.EntityType<?>> LEGACY_ID = Util.make(new Object2IntOpenHashMap<>(), map -> {
-        map.put(net.minecraft.world.entity.EntityType.ITEM, 1);
-        map.put(net.minecraft.world.entity.EntityType.EXPERIENCE_ORB, 2);
-        map.put(net.minecraft.world.entity.EntityType.AREA_EFFECT_CLOUD, 3);
-        map.put(net.minecraft.world.entity.EntityType.ELDER_GUARDIAN, 4);
-        map.put(net.minecraft.world.entity.EntityType.WITHER_SKELETON, 5);
-        map.put(net.minecraft.world.entity.EntityType.STRAY, 6);
-        map.put(net.minecraft.world.entity.EntityType.EGG, 7);
-        map.put(net.minecraft.world.entity.EntityType.LEASH_KNOT, 8);
-        map.put(net.minecraft.world.entity.EntityType.PAINTING, 9);
-        map.put(net.minecraft.world.entity.EntityType.ARROW, 10);
-        map.put(net.minecraft.world.entity.EntityType.SNOWBALL, 11);
-        map.put(net.minecraft.world.entity.EntityType.FIREBALL, 12);
-        map.put(net.minecraft.world.entity.EntityType.SMALL_FIREBALL, 13);
-        map.put(net.minecraft.world.entity.EntityType.ENDER_PEARL, 14);
-        map.put(net.minecraft.world.entity.EntityType.EYE_OF_ENDER, 15);
-        map.put(net.minecraft.world.entity.EntityType.SPLASH_POTION, 16);
-        map.put(net.minecraft.world.entity.EntityType.EXPERIENCE_BOTTLE, 17);
-        map.put(net.minecraft.world.entity.EntityType.ITEM_FRAME, 18);
-        map.put(net.minecraft.world.entity.EntityType.WITHER_SKULL, 19);
-        map.put(net.minecraft.world.entity.EntityType.TNT, 20);
-        map.put(net.minecraft.world.entity.EntityType.FALLING_BLOCK, 21);
-        map.put(net.minecraft.world.entity.EntityType.FIREWORK_ROCKET, 22);
-        map.put(net.minecraft.world.entity.EntityType.HUSK, 23);
-        map.put(net.minecraft.world.entity.EntityType.SPECTRAL_ARROW, 24);
-        map.put(net.minecraft.world.entity.EntityType.SHULKER_BULLET, 25);
-        map.put(net.minecraft.world.entity.EntityType.DRAGON_FIREBALL, 26);
-        map.put(net.minecraft.world.entity.EntityType.ZOMBIE_VILLAGER, 27);
-        map.put(net.minecraft.world.entity.EntityType.SKELETON_HORSE, 28);
-        map.put(net.minecraft.world.entity.EntityType.ZOMBIE_HORSE, 29);
-        map.put(net.minecraft.world.entity.EntityType.ARMOR_STAND, 30);
-        map.put(net.minecraft.world.entity.EntityType.DONKEY, 31);
-        map.put(net.minecraft.world.entity.EntityType.MULE, 32);
-        map.put(net.minecraft.world.entity.EntityType.EVOKER_FANGS, 33);
-        map.put(net.minecraft.world.entity.EntityType.EVOKER, 34);
-        map.put(net.minecraft.world.entity.EntityType.VEX, 35);
-        map.put(net.minecraft.world.entity.EntityType.VINDICATOR, 36);
-        map.put(net.minecraft.world.entity.EntityType.ILLUSIONER, 37);
-
-        map.put(net.minecraft.world.entity.EntityType.COMMAND_BLOCK_MINECART, 40);
-        map.put(net.minecraft.world.entity.EntityType.MINECART, 42);
-        map.put(net.minecraft.world.entity.EntityType.CHEST_MINECART, 43);
-        map.put(net.minecraft.world.entity.EntityType.FURNACE_MINECART, 44);
-        map.put(net.minecraft.world.entity.EntityType.TNT_MINECART, 45);
-        map.put(net.minecraft.world.entity.EntityType.HOPPER_MINECART, 46);
-        map.put(net.minecraft.world.entity.EntityType.SPAWNER_MINECART, 47);
-
-        map.put(net.minecraft.world.entity.EntityType.CREEPER, 50);
-        map.put(net.minecraft.world.entity.EntityType.SKELETON, 51);
-        map.put(net.minecraft.world.entity.EntityType.SPIDER, 52);
-        map.put(net.minecraft.world.entity.EntityType.GIANT, 53);
-        map.put(net.minecraft.world.entity.EntityType.ZOMBIE, 54);
-        map.put(net.minecraft.world.entity.EntityType.SLIME, 55);
-        map.put(net.minecraft.world.entity.EntityType.GHAST, 56);
-        map.put(net.minecraft.world.entity.EntityType.ZOMBIFIED_PIGLIN, 57);
-        map.put(net.minecraft.world.entity.EntityType.ENDERMAN, 58);
-        map.put(net.minecraft.world.entity.EntityType.CAVE_SPIDER, 59);
-        map.put(net.minecraft.world.entity.EntityType.SILVERFISH, 60);
-        map.put(net.minecraft.world.entity.EntityType.BLAZE, 61);
-        map.put(net.minecraft.world.entity.EntityType.MAGMA_CUBE, 62);
-        map.put(net.minecraft.world.entity.EntityType.ENDER_DRAGON, 63);
-        map.put(net.minecraft.world.entity.EntityType.WITHER, 64);
-        map.put(net.minecraft.world.entity.EntityType.BAT, 65);
-        map.put(net.minecraft.world.entity.EntityType.WITCH, 66);
-        map.put(net.minecraft.world.entity.EntityType.ENDERMITE, 67);
-        map.put(net.minecraft.world.entity.EntityType.GUARDIAN, 68);
-        map.put(net.minecraft.world.entity.EntityType.SHULKER, 69);
-
-        map.put(net.minecraft.world.entity.EntityType.PIG, 90);
-        map.put(net.minecraft.world.entity.EntityType.SHEEP, 91);
-        map.put(net.minecraft.world.entity.EntityType.COW, 92);
-        map.put(net.minecraft.world.entity.EntityType.CHICKEN, 93);
-        map.put(net.minecraft.world.entity.EntityType.SQUID, 94);
-        map.put(net.minecraft.world.entity.EntityType.WOLF, 95);
-        map.put(net.minecraft.world.entity.EntityType.MOOSHROOM, 96);
-        map.put(net.minecraft.world.entity.EntityType.SNOW_GOLEM, 97);
-        map.put(net.minecraft.world.entity.EntityType.OCELOT, 98);
-        map.put(net.minecraft.world.entity.EntityType.IRON_GOLEM, 99);
-        map.put(net.minecraft.world.entity.EntityType.HORSE, 100);
-        map.put(net.minecraft.world.entity.EntityType.RABBIT, 101);
-        map.put(net.minecraft.world.entity.EntityType.POLAR_BEAR, 102);
-        map.put(net.minecraft.world.entity.EntityType.LLAMA, 103);
-        map.put(net.minecraft.world.entity.EntityType.LLAMA_SPIT, 104);
-        map.put(net.minecraft.world.entity.EntityType.PARROT, 105);
-
-        map.put(net.minecraft.world.entity.EntityType.VILLAGER, 120);
-
-        map.put(net.minecraft.world.entity.EntityType.END_CRYSTAL, 200);
-    });
     private static int count = 0;
 
     public CraftEntityType(final Holder<net.minecraft.world.entity.EntityType<?>> holder) {
@@ -130,17 +40,6 @@ public class CraftEntityType<E extends Entity> extends OldEnumHolderable<EntityT
     @Nullable
     public String getName() {
         return this.getKey().getKey();
-    }
-
-    @Override
-    public Class<? extends Entity> getEntityClass() {
-        return null;
-    }
-
-    @Override
-    @Deprecated(since = "1.6.2", forRemoval = true)
-    public short getTypeId() {
-        return (short) LEGACY_ID.getOrDefault(this.getHandle(), -1);
     }
 
     @Override
@@ -171,7 +70,7 @@ public class CraftEntityType<E extends Entity> extends OldEnumHolderable<EntityT
     }
 
     /**
-     * Implementation for the deprecated, API only, CUSTOM entity type.
+     * Implementation for the deprecated, API only, UNKNOWN entity type.
      * As per {@link #bukkitToMinecraftHolder(EntityType)} it cannot be
      * converted into an internal entity type and only serves backwards compatibility reasons.
      */
@@ -274,7 +173,7 @@ public class CraftEntityType<E extends Entity> extends OldEnumHolderable<EntityT
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.ENTITY_TYPE);
     }
 
-    public static net.minecraft.world.entity.@Nullable EntityType<?> bukkitToMinecraft(EntityType<?> bukkit) {
+    public static <M extends net.minecraft.world.entity.Entity, B extends Entity> net.minecraft.world.entity.@Nullable EntityType<M> bukkitToMinecraft(EntityType<B> bukkit) {
         if (bukkit == EntityType.UNKNOWN) {
             return null;
         }
@@ -309,5 +208,138 @@ public class CraftEntityType<E extends Entity> extends OldEnumHolderable<EntityT
 
         // Now also convert from when keys where saved
         return CraftRegistry.get(RegistryKey.ENTITY_TYPE, key, ApiVersion.CURRENT);
+    }
+
+    @Override
+    public @Nullable Class<E> getEntityClass() { // todo return old value for boats when api version is low
+        CraftEntityTypes.EntityTypeData<E, ?> data = CraftEntityTypes.getEntityTypeData(this);
+        if (data == null) {
+            return null;
+        }
+        return data.entityClass();
+    }
+
+    @Override
+    @Deprecated(since = "1.6.2", forRemoval = true)
+    public short getTypeId() {
+        return LegacyHolder.NUMERIC_IDS.getOrDefault(this, -1).shortValue();
+    }
+
+    @Deprecated // bytecode rewrites target this
+    public static EntityType<?> valueOf(String name) {
+        if ("UNKNOWN".equals(name)) {
+            return EntityType.UNKNOWN;
+        }
+
+        NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        EntityType<?> entityType = key == null ? null : Bukkit.getUnsafe().get(RegistryKey.ENTITY_TYPE, key);
+        Preconditions.checkArgument(entityType != null, "No entity type found with the name %s", name);
+        return entityType;
+    }
+
+    @Deprecated // bytecode rewrites target this
+    public static EntityType<?>[] values() {
+        return Registry.ENTITY_TYPE.stream().toArray(EntityType[]::new);
+    }
+
+    @Deprecated // bytecode rewrites target this
+    public static @Nullable EntityType<?> fromId(int id) {
+        if (id > Short.MAX_VALUE) {
+            return null;
+        }
+        return LegacyHolder.NUMERIC_IDS.inverse().get(id);
+    }
+
+    private static class LegacyHolder {
+        @Deprecated
+        private static final ImmutableBiMap<EntityType<?>, Integer> NUMERIC_IDS = ImmutableBiMap.<EntityType<?>, Integer>builder()
+            .put(EntityType.ITEM, 1)
+            .put(EntityType.EXPERIENCE_ORB, 2)
+            .put(EntityType.AREA_EFFECT_CLOUD, 3)
+            .put(EntityType.ELDER_GUARDIAN, 4)
+            .put(EntityType.WITHER_SKELETON, 5)
+            .put(EntityType.STRAY, 6)
+            .put(EntityType.EGG, 7)
+            .put(EntityType.LEASH_KNOT, 8)
+            .put(EntityType.PAINTING, 9)
+            .put(EntityType.ARROW, 10)
+            .put(EntityType.SNOWBALL, 11)
+            .put(EntityType.FIREBALL, 12)
+            .put(EntityType.SMALL_FIREBALL, 13)
+            .put(EntityType.ENDER_PEARL, 14)
+            .put(EntityType.EYE_OF_ENDER, 15)
+            .put(EntityType.SPLASH_POTION, 16)
+            .put(EntityType.EXPERIENCE_BOTTLE, 17)
+            .put(EntityType.ITEM_FRAME, 18)
+            .put(EntityType.WITHER_SKULL, 19)
+            .put(EntityType.TNT, 20)
+            .put(EntityType.FALLING_BLOCK, 21)
+            .put(EntityType.FIREWORK_ROCKET, 22)
+            .put(EntityType.HUSK, 23)
+            .put(EntityType.SPECTRAL_ARROW, 24)
+            .put(EntityType.SHULKER_BULLET, 25)
+            .put(EntityType.DRAGON_FIREBALL, 26)
+            .put(EntityType.ZOMBIE_VILLAGER, 27)
+            .put(EntityType.SKELETON_HORSE, 28)
+            .put(EntityType.ZOMBIE_HORSE, 29)
+            .put(EntityType.ARMOR_STAND, 30)
+            .put(EntityType.DONKEY, 31)
+            .put(EntityType.MULE, 32)
+            .put(EntityType.EVOKER_FANGS, 33)
+            .put(EntityType.EVOKER, 34)
+            .put(EntityType.VEX, 35)
+            .put(EntityType.VINDICATOR, 36)
+            .put(EntityType.ILLUSIONER, 37)
+
+            .put(EntityType.COMMAND_BLOCK_MINECART, 40)
+            .put(EntityType.MINECART, 42)
+            .put(EntityType.CHEST_MINECART, 43)
+            .put(EntityType.FURNACE_MINECART, 44)
+            .put(EntityType.TNT_MINECART, 45)
+            .put(EntityType.HOPPER_MINECART, 46)
+            .put(EntityType.SPAWNER_MINECART, 47)
+
+            .put(EntityType.CREEPER, 50)
+            .put(EntityType.SKELETON, 51)
+            .put(EntityType.SPIDER, 52)
+            .put(EntityType.GIANT, 53)
+            .put(EntityType.ZOMBIE, 54)
+            .put(EntityType.SLIME, 55)
+            .put(EntityType.GHAST, 56)
+            .put(EntityType.ZOMBIFIED_PIGLIN, 57)
+            .put(EntityType.ENDERMAN, 58)
+            .put(EntityType.CAVE_SPIDER, 59)
+            .put(EntityType.SILVERFISH, 60)
+            .put(EntityType.BLAZE, 61)
+            .put(EntityType.MAGMA_CUBE, 62)
+            .put(EntityType.ENDER_DRAGON, 63)
+            .put(EntityType.WITHER, 64)
+            .put(EntityType.BAT, 65)
+            .put(EntityType.WITCH, 66)
+            .put(EntityType.ENDERMITE, 67)
+            .put(EntityType.GUARDIAN, 68)
+            .put(EntityType.SHULKER, 69)
+
+            .put(EntityType.PIG, 90)
+            .put(EntityType.SHEEP, 91)
+            .put(EntityType.COW, 92)
+            .put(EntityType.CHICKEN, 93)
+            .put(EntityType.SQUID, 94)
+            .put(EntityType.WOLF, 95)
+            .put(EntityType.MOOSHROOM, 96)
+            .put(EntityType.SNOW_GOLEM, 97)
+            .put(EntityType.OCELOT, 98)
+            .put(EntityType.IRON_GOLEM, 99)
+            .put(EntityType.HORSE, 100)
+            .put(EntityType.RABBIT, 101)
+            .put(EntityType.POLAR_BEAR, 102)
+            .put(EntityType.LLAMA, 103)
+            .put(EntityType.LLAMA_SPIT, 104)
+            .put(EntityType.PARROT, 105)
+
+            .put(EntityType.VILLAGER, 120)
+
+            .put(EntityType.END_CRYSTAL, 200)
+            .buildOrThrow();
     }
 }

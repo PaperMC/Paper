@@ -1,13 +1,10 @@
 package org.bukkit.entity;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.InternalAPIBridge;
-import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.world.flag.FeatureDependant;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
-import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -15,26 +12,6 @@ import org.bukkit.Registry;
 import org.bukkit.Translatable;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
-import org.bukkit.entity.boat.AcaciaBoat;
-import org.bukkit.entity.boat.AcaciaChestBoat;
-import org.bukkit.entity.boat.BambooChestRaft;
-import org.bukkit.entity.boat.BambooRaft;
-import org.bukkit.entity.boat.BirchBoat;
-import org.bukkit.entity.boat.BirchChestBoat;
-import org.bukkit.entity.boat.CherryBoat;
-import org.bukkit.entity.boat.CherryChestBoat;
-import org.bukkit.entity.boat.DarkOakBoat;
-import org.bukkit.entity.boat.DarkOakChestBoat;
-import org.bukkit.entity.boat.JungleBoat;
-import org.bukkit.entity.boat.JungleChestBoat;
-import org.bukkit.entity.boat.MangroveBoat;
-import org.bukkit.entity.boat.MangroveChestBoat;
-import org.bukkit.entity.boat.OakBoat;
-import org.bukkit.entity.boat.OakChestBoat;
-import org.bukkit.entity.boat.PaleOakBoat;
-import org.bukkit.entity.boat.PaleOakChestBoat;
-import org.bukkit.entity.boat.SpruceBoat;
-import org.bukkit.entity.boat.SpruceChestBoat;
 import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
 import org.bukkit.entity.minecart.HopperMinecart;
@@ -52,9 +29,9 @@ import org.jspecify.annotations.Nullable;
 public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Keyed, Translatable, net.kyori.adventure.translation.Translatable, FeatureDependant {
 
     // Start generate - EntityType
-    EntityType<AcaciaBoat> ACACIA_BOAT = getType("acacia_boat");
+    EntityType<Boat> ACACIA_BOAT = getType("acacia_boat");
 
-    EntityType<AcaciaChestBoat> ACACIA_CHEST_BOAT = getType("acacia_chest_boat");
+    EntityType<ChestBoat> ACACIA_CHEST_BOAT = getType("acacia_chest_boat");
 
     EntityType<Allay> ALLAY = getType("allay");
 
@@ -68,17 +45,17 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
 
     EntityType<Axolotl> AXOLOTL = getType("axolotl");
 
-    EntityType<BambooChestRaft> BAMBOO_CHEST_RAFT = getType("bamboo_chest_raft");
+    EntityType<ChestBoat> BAMBOO_CHEST_RAFT = getType("bamboo_chest_raft");
 
-    EntityType<BambooRaft> BAMBOO_RAFT = getType("bamboo_raft");
+    EntityType<Boat> BAMBOO_RAFT = getType("bamboo_raft");
 
     EntityType<Bat> BAT = getType("bat");
 
     EntityType<Bee> BEE = getType("bee");
 
-    EntityType<BirchBoat> BIRCH_BOAT = getType("birch_boat");
+    EntityType<Boat> BIRCH_BOAT = getType("birch_boat");
 
-    EntityType<BirchChestBoat> BIRCH_CHEST_BOAT = getType("birch_chest_boat");
+    EntityType<ChestBoat> BIRCH_CHEST_BOAT = getType("birch_chest_boat");
 
     EntityType<Blaze> BLAZE = getType("blaze");
 
@@ -98,9 +75,9 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
 
     EntityType<CaveSpider> CAVE_SPIDER = getType("cave_spider");
 
-    EntityType<CherryBoat> CHERRY_BOAT = getType("cherry_boat");
+    EntityType<Boat> CHERRY_BOAT = getType("cherry_boat");
 
-    EntityType<CherryChestBoat> CHERRY_CHEST_BOAT = getType("cherry_chest_boat");
+    EntityType<ChestBoat> CHERRY_CHEST_BOAT = getType("cherry_chest_boat");
 
     EntityType<StorageMinecart> CHEST_MINECART = getType("chest_minecart");
 
@@ -118,9 +95,9 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
 
     EntityType<Creeper> CREEPER = getType("creeper");
 
-    EntityType<DarkOakBoat> DARK_OAK_BOAT = getType("dark_oak_boat");
+    EntityType<Boat> DARK_OAK_BOAT = getType("dark_oak_boat");
 
-    EntityType<DarkOakChestBoat> DARK_OAK_CHEST_BOAT = getType("dark_oak_chest_boat");
+    EntityType<ChestBoat> DARK_OAK_CHEST_BOAT = getType("dark_oak_chest_boat");
 
     EntityType<Dolphin> DOLPHIN = getType("dolphin");
 
@@ -156,7 +133,7 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
 
     EntityType<FallingBlock> FALLING_BLOCK = getType("falling_block");
 
-    EntityType<Fireball> FIREBALL = getType("fireball");
+    EntityType<LargeFireball> FIREBALL = getType("fireball");
 
     EntityType<Firework> FIREWORK_ROCKET = getType("firework_rocket");
 
@@ -202,9 +179,9 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
 
     EntityType<ItemFrame> ITEM_FRAME = getType("item_frame");
 
-    EntityType<JungleBoat> JUNGLE_BOAT = getType("jungle_boat");
+    EntityType<Boat> JUNGLE_BOAT = getType("jungle_boat");
 
-    EntityType<JungleChestBoat> JUNGLE_CHEST_BOAT = getType("jungle_chest_boat");
+    EntityType<ChestBoat> JUNGLE_CHEST_BOAT = getType("jungle_chest_boat");
 
     EntityType<LeashHitch> LEASH_KNOT = getType("leash_knot");
 
@@ -218,9 +195,9 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
 
     EntityType<MagmaCube> MAGMA_CUBE = getType("magma_cube");
 
-    EntityType<MangroveBoat> MANGROVE_BOAT = getType("mangrove_boat");
+    EntityType<Boat> MANGROVE_BOAT = getType("mangrove_boat");
 
-    EntityType<MangroveChestBoat> MANGROVE_CHEST_BOAT = getType("mangrove_chest_boat");
+    EntityType<ChestBoat> MANGROVE_CHEST_BOAT = getType("mangrove_chest_boat");
 
     EntityType<Mannequin> MANNEQUIN = getType("mannequin");
 
@@ -234,9 +211,9 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
 
     EntityType<Nautilus> NAUTILUS = getType("nautilus");
 
-    EntityType<OakBoat> OAK_BOAT = getType("oak_boat");
+    EntityType<Boat> OAK_BOAT = getType("oak_boat");
 
-    EntityType<OakChestBoat> OAK_CHEST_BOAT = getType("oak_chest_boat");
+    EntityType<ChestBoat> OAK_CHEST_BOAT = getType("oak_chest_boat");
 
     EntityType<Ocelot> OCELOT = getType("ocelot");
 
@@ -244,9 +221,9 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
 
     EntityType<Painting> PAINTING = getType("painting");
 
-    EntityType<PaleOakBoat> PALE_OAK_BOAT = getType("pale_oak_boat");
+    EntityType<Boat> PALE_OAK_BOAT = getType("pale_oak_boat");
 
-    EntityType<PaleOakChestBoat> PALE_OAK_CHEST_BOAT = getType("pale_oak_chest_boat");
+    EntityType<ChestBoat> PALE_OAK_CHEST_BOAT = getType("pale_oak_chest_boat");
 
     EntityType<Panda> PANDA = getType("panda");
 
@@ -306,9 +283,9 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
 
     EntityType<SplashPotion> SPLASH_POTION = getType("splash_potion");
 
-    EntityType<SpruceBoat> SPRUCE_BOAT = getType("spruce_boat");
+    EntityType<Boat> SPRUCE_BOAT = getType("spruce_boat");
 
-    EntityType<SpruceChestBoat> SPRUCE_CHEST_BOAT = getType("spruce_chest_boat");
+    EntityType<ChestBoat> SPRUCE_CHEST_BOAT = getType("spruce_chest_boat");
 
     EntityType<Squid> SQUID = getType("squid");
 
@@ -379,58 +356,6 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
     }
 
     /**
-     * Gets the entity type name.
-     *
-     * @return the entity type's name
-     * @deprecated Magic value
-     */
-    @Deprecated(since = "1.6.2")
-    @Nullable String getName();
-
-    @Nullable Class<? extends Entity> getEntityClass();
-
-    /**
-     * Gets the entity type id.
-     *
-     * @return the raw type id
-     * @deprecated Magic value
-     */
-    @Deprecated(since = "1.6.2", forRemoval = true)
-    short getTypeId();
-
-    /**
-     * Gets an entity type from its name.
-     *
-     * @param name the entity type's name
-     * @return the matching entity type or null
-     * @apiNote Internal Use Only
-     */
-    @ApiStatus.Internal
-    @Contract("null -> null")
-    static @Nullable EntityType<?> fromName(@Nullable String name) {
-        if (name == null) {
-            return null;
-        }
-        return Registry.ENTITY_TYPE.get(Key.key(Key.MINECRAFT_NAMESPACE, name.toLowerCase(Locale.ROOT)));
-    }
-
-    /**
-     * Gets an entity from its id.
-     *
-     * @param id the raw type id
-     * @return the matching entity type or null
-     * @deprecated Magic value
-     */
-    @Deprecated(since = "1.6.2", forRemoval = true)
-    static @Nullable EntityType<?> fromId(int id) {
-        if (id > Short.MAX_VALUE) {
-            return null;
-        }
-        return null;
-        //return ID_MAP.get((short) id);
-    }
-
-    /**
      * Some entities cannot be spawned using {@link
      * World#spawnEntity(Location, EntityType)} or {@link
      * World#spawn(Location, Class)}, usually because they require additional
@@ -472,28 +397,49 @@ public interface EntityType<E extends Entity> extends OldEnum<EntityType<E>>, Ke
     Attributable getDefaultAttributes();
 
     /**
-     * @param name of the entity type.
-     * @return the entity type with the given name.
-     * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
+     * Gets the entity type name.
+     *
+     * @return the entity type's name
+     * @deprecated use {@link #key()} instead
      */
-    @Deprecated(since = "1.21.11", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
-    static EntityType<?> valueOf(String name) {
-        if ("UNKNOWN".equals(name)) {
-            return EntityType.UNKNOWN;
-        }
-
-        NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
-        EntityType<?> entityType = key == null ? null : Bukkit.getUnsafe().get(RegistryKey.ENTITY_TYPE, key);
-        Preconditions.checkArgument(entityType != null, "No entity type found with the name %s", name);
-        return entityType;
-    }
+    @Deprecated(since = "1.6.2", forRemoval = true)
+    @Nullable String getName();
 
     /**
-     * @return an array of all known entity types.
-     * @deprecated use {@link Registry#stream()}.
+     * Gets the entity type name.
+     *
+     * @return the entity type's name
+     * @deprecated no longer needed as the entity type hold the entity class as a generic
      */
-    @Deprecated(since = "1.21.11", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
-    static EntityType<?>[] values() {
-        return Registry.ENTITY_TYPE.stream().toArray(EntityType[]::new);
+    @Deprecated(since = "1.21.11", forRemoval = true)
+    @Nullable Class<? extends Entity> getEntityClass();
+
+    /**
+     * Gets the entity type id.
+     *
+     * @return the raw type id
+     * @deprecated Magic value
+     */
+    @Deprecated(since = "1.6.2", forRemoval = true)
+    short getTypeId();
+
+    /**
+     * Gets an entity type from its name.
+     *
+     * @param name the entity type's name
+     * @return the matching entity type or null
+     * @deprecated only for backwards compatibility, use {@link Registry#get(Key)} instead.
+     */
+    @Contract("null -> null")
+    @Deprecated(since = "1.21.11", forRemoval = true)
+    static @Nullable EntityType<?> fromName(@Nullable String name) {
+        if (name == null) {
+            return null;
+        }
+        NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        if (key == null) {
+            return null;
+        }
+        return Registry.ENTITY_TYPE.get(key);
     }
 }
