@@ -185,7 +185,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see LootTables
      * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#LOOT_TABLE}
      */
-    @Deprecated(since = "1.21.11")
+    @Deprecated(since = "1.21.11", forRemoval = true)
     Registry<LootTables> LOOT_TABLES = new SimpleRegistry<>(LootTables.class);
     /**
      * Server materials.

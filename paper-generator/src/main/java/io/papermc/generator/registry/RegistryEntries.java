@@ -4,6 +4,7 @@ import io.papermc.generator.utils.ClassHelper;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.loot.LootTables;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
@@ -20,7 +21,6 @@ import io.papermc.paper.registry.data.SoundEventRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
-import io.papermc.paper.loot.LootTables;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
@@ -221,6 +222,19 @@ public final class RegistryEntries {
     }
 
     // real registries
+    public static Stream<RegistryEntry<?>> stream() {
+        return Stream.concat(RegistryEntries.BUILT_IN.stream(), RegistryEntries.DATA_DRIVEN.stream());
+    }
+
+    @Deprecated(forRemoval = true)
+    public static Stream<ResourceKey<? extends Registry<?>>> streamLegacy() { // todo remove once all the api only registry are migrated
+        Stream<ResourceKey<? extends Registry<?>>> injectedKeys = Stream.of( // todo remove once stats is a proper registry
+            Registries.STAT_TYPE,
+            Registries.CUSTOM_STAT
+        );
+        return Stream.concat(Stream.concat(stream(), RegistryEntries.API_ONLY.stream()).map(RegistryEntry::registryKey), injectedKeys);
+    }
+
     public static void forEach(Consumer<RegistryEntry<?>> callback) {
         forEach(callback, RegistryEntries.BUILT_IN, RegistryEntries.DATA_DRIVEN);
     }

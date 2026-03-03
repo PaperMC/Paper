@@ -13,13 +13,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderOwner;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.ReloadableServerRegistries;
+import net.minecraft.world.level.storage.loot.LootDataType;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
@@ -33,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
+    private static final Set<ResourceKey<? extends net.minecraft.core.Registry<?>>> RELOADABLE_REGISTRY_KEYS = LootDataType.values().map(LootDataType::registryKey).collect(Collectors.toSet());
     private static net.minecraft.core.RegistryAccess registries;
     private static ReloadableServerRegistries.Holder reloadableRegistries;
 
@@ -51,7 +54,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     }
 
     public static <E> net.minecraft.core.Registry<E> getRegistry(ResourceKey<? extends net.minecraft.core.Registry<E>> registryKey) {
-        if (registryKey.equals(Registries.LOOT_TABLE)) {
+        if (RELOADABLE_REGISTRY_KEYS.contains(registryKey)) {
             return (net.minecraft.core.Registry<E>) CraftRegistry.reloadableRegistries.lookup().lookupOrThrow(registryKey);
         }
         return CraftRegistry.getRegistryAccess().lookupOrThrow(registryKey);

@@ -1,10 +1,10 @@
 package io.papermc.generator;
 
 import com.mojang.logging.LogUtils;
+import io.papermc.generator.registry.RegistryEntries;
 import io.papermc.generator.rewriter.registration.PaperPatternSourceSetRewriter;
 import io.papermc.generator.rewriter.registration.PatternSourceSetRewriter;
 import io.papermc.generator.types.SourceGenerator;
-import io.papermc.generator.utils.MergedRegistryProvider;
 import io.papermc.generator.utils.experimental.ExperimentalCollector;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,17 +16,17 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.util.Util;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.RegistryLayer;
@@ -39,10 +39,12 @@ import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.tags.TagKey;
 import net.minecraft.tags.TagLoader;
+import net.minecraft.util.Util;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.DataPackConfig;
 import net.minecraft.world.level.WorldDataConfiguration;
+import net.minecraft.world.level.storage.loot.LootDataType;
 import org.apache.commons.io.file.PathUtils;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.slf4j.Logger;
@@ -109,7 +111,13 @@ public class Main implements Callable<Integer> {
                 }
             }).thenAccept(resources -> {
                 resources.updateStaticRegistryTags();
-                REGISTRIES = new MergedRegistryProvider(REGISTRIES, resources.fullRegistries().lookup(), Set.of(Registries.LOOT_TABLE));
+                Set<ResourceKey<? extends Registry<?>>> reloadableRegistries = LootDataType.values().map(LootDataType::registryKey).collect(Collectors.toSet());
+                /*REGISTRIES = HolderLookup.Provider.create(RegistryEntries.stream().map(entry -> {
+                    return (reloadableRegistries.contains(entry.registryKey()) ? resources.fullRegistries().lookup() : REGISTRIES).lookupOrThrow(entry.registryKey());
+                }));*/
+                REGISTRIES = HolderLookup.Provider.create(RegistryEntries.streamLegacy().map(key -> {
+                    return (reloadableRegistries.contains(key) ? resources.fullRegistries().lookup() : REGISTRIES).lookupOrThrow(key);
+                }));
                 EXPERIMENTAL_TAGS = ExperimentalCollector.collectTags(resourceManager);
             });
         } else {
