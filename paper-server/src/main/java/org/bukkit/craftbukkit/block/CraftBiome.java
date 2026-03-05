@@ -8,6 +8,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -31,6 +32,11 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
         super(holder, count++);
     }
 
+    @Override
+    public @NotNull String translationKey() {
+        return "biome." + this.key().asString();
+    }
+
     /**
      * Implementation for the deprecated, API only, CUSTOM biome.
      * As per {@link #bukkitToMinecraftHolder(Biome)} it cannot be
@@ -38,12 +44,14 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
      */
     @Deprecated(forRemoval = true, since = "1.21.5")
     @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
-    public static class LegacyCustomBiomeImpl implements Biome {
+    public static class LegacyCustomImpl implements Biome {
 
-        private static final NamespacedKey LEGACY_CUSTOM_KEY = new NamespacedKey("minecraft", "custom");
+        public static final Biome INSTANCE = new LegacyCustomImpl();
+        private static final NamespacedKey LEGACY_CUSTOM_KEY = NamespacedKey.minecraft("custom");
+
         private final int ordinal;
 
-        public LegacyCustomBiomeImpl() {
+        private LegacyCustomImpl() {
             this.ordinal = count++;
         }
 
@@ -70,13 +78,18 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
         @Override
         public boolean equals(final Object object) {
             if (object == null || getClass() != object.getClass()) return false;
-            final LegacyCustomBiomeImpl that = (LegacyCustomBiomeImpl) object;
-            return ordinal == that.ordinal;
+            final LegacyCustomImpl that = (LegacyCustomImpl) object;
+            return this.ordinal == that.ordinal;
+        }
+
+        @Override
+        public @NotNull String translationKey() {
+            throw new IllegalStateException("CUSTOM biome do not have translation key");
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(ordinal);
+            return Objects.hashCode(this.ordinal);
         }
 
         @Override

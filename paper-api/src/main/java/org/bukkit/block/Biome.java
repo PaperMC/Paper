@@ -197,11 +197,4 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
     static Biome[] values() {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).stream().toArray(Biome[]::new);
     }
-
-    // Paper start
-    @Override
-    default @NotNull String translationKey() {
-        return "biome.minecraft." + this.getKey().getKey();
-    }
-    // Paper end
 }

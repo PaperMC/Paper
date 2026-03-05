@@ -11,9 +11,7 @@ import net.minecraft.world.flag.FeatureFlags;
 import org.bukkit.FeatureFlag;
 import org.bukkit.GameRule;
 import org.bukkit.craftbukkit.CraftGameRule;
-import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.potion.CraftPotionType;
-import org.bukkit.entity.EntityType;
 import org.bukkit.potion.PotionType;
 
 public class PaperFeatureFlagProviderImpl implements FeatureFlagProvider {
@@ -44,10 +42,7 @@ public class PaperFeatureFlagProviderImpl implements FeatureFlagProvider {
     }
 
     static FeatureElement getFeatureElement(final FeatureDependant dependant) {
-        if (dependant instanceof final EntityType entityType) {
-            // TODO remove when EntityType is server-backed
-            return CraftEntityType.bukkitToMinecraft(entityType);
-        } else if (dependant instanceof final PotionType potionType) {
+        if (dependant instanceof final PotionType potionType) {
             return CraftPotionType.bukkitToMinecraft(potionType);
         } else if (dependant instanceof final GameRule<?> gameRule) {
             return () -> CraftGameRule.bukkitToMinecraft(gameRule).requiredFeatures();

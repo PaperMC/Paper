@@ -24,10 +24,12 @@ import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
+import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftMannequin;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pose;
 import org.jspecify.annotations.NullMarked;
@@ -44,10 +46,12 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
 
     @Override
     public Biome constructLegacyCustomBiome() {
-        class Holder {
-            static final Biome LEGACY_CUSTOM = new CraftBiome.LegacyCustomBiomeImpl();
-        }
-        return Holder.LEGACY_CUSTOM;
+        return CraftBiome.LegacyCustomImpl.INSTANCE;
+    }
+
+    @Override
+    public EntityType<?> constructLegacyUnknownEntityType() {
+        return CraftEntityType.LegacyUnknownImpl.INSTANCE;
     }
 
     @Override

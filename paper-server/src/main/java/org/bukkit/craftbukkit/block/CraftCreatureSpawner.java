@@ -63,7 +63,7 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
             this.getSnapshot().getSpawner().nextSpawnData = new SpawnData();
             return;
         }
-        Preconditions.checkArgument(entityType != EntityType.UNKNOWN, "Can't spawn EntityType %s from mob spawners!", entityType);
+        Preconditions.checkArgument(entityType != CraftEntityType.LegacyUnknownImpl.INSTANCE, "Can't spawn EntityType %s from mob spawners!", entityType);
 
         RandomSource rand = (this.isPlaced()) ? this.getWorldHandle().getRandom() : RandomSource.create();
         this.getSnapshot().setEntityId(CraftEntityType.bukkitToMinecraft(entityType), rand);

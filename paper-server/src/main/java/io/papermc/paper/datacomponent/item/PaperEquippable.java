@@ -57,7 +57,7 @@ public record PaperEquippable(
     }
 
     @Override
-    public @Nullable RegistryKeySet<EntityType> allowedEntities() {
+    public @Nullable RegistryKeySet<EntityType<?>> allowedEntities() {
         return this.impl.allowedEntities()
             .map((set) -> PaperRegistrySets.convertToApi(RegistryKey.ENTITY_TYPE, set))
             .orElse(null);
@@ -150,7 +150,7 @@ public record PaperEquippable(
         }
 
         @Override
-        public Builder allowedEntities(final @Nullable RegistryKeySet<EntityType> allowedEntities) {
+        public Builder allowedEntities(final @Nullable RegistryKeySet<EntityType<?>> allowedEntities) {
             this.allowedEntities = Optional.ofNullable(allowedEntities)
                 .map((set) -> PaperRegistrySets.convertToNms(Registries.ENTITY_TYPE, Conversions.global().lookup(), set));
             return this;

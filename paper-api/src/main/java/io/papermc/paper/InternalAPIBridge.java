@@ -14,6 +14,7 @@ import org.bukkit.GameRule;
 import org.bukkit.block.Biome;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pose;
 import org.jetbrains.annotations.ApiStatus;
@@ -60,6 +61,15 @@ public interface InternalAPIBridge {
     @Deprecated(forRemoval = true, since = "1.21.5")
     @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
     Biome constructLegacyCustomBiome();
+
+    /**
+     * Constructs the legacy unknown entity type instance for the entity type enum.
+     *
+     * @return the created entity type.
+     */
+    @Deprecated(forRemoval = true, since = "1.21.11")
+    @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
+    EntityType<?> constructLegacyUnknownEntityType();
 
     /**
      * Creates a new combat entry.

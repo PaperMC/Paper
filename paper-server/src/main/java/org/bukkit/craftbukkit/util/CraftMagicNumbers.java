@@ -430,12 +430,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public String getTranslationKey(EntityType entityType) {
-        Preconditions.checkArgument(entityType.getName() != null, "Invalid name of EntityType %s for translation key", entityType);
-        return net.minecraft.world.entity.EntityType.byString(entityType.getName()).map(net.minecraft.world.entity.EntityType::getDescriptionId).orElseThrow();
-    }
-
-    @Override
     public String getTranslationKey(ItemStack itemStack) {
         net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
         return nmsItemStack.getItem().getDescriptionId();
@@ -801,18 +795,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
             return false;
         }
         return CraftItemStack.unwrap(itemToBeRepaired).isValidRepairItem(CraftItemStack.unwrap(repairMaterial));
-    }
-
-    @Override
-    public boolean hasDefaultEntityAttributes(NamespacedKey entityKey) {
-        return net.minecraft.world.entity.ai.attributes.DefaultAttributes.hasSupplier(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(CraftNamespacedKey.toMinecraft(entityKey)));
-    }
-
-    @Override
-    public org.bukkit.attribute.Attributable getDefaultEntityAttributes(NamespacedKey entityKey) {
-        Preconditions.checkArgument(hasDefaultEntityAttributes(entityKey), entityKey + " doesn't have default attributes");
-        var supplier = net.minecraft.world.entity.ai.attributes.DefaultAttributes.getSupplier((net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.LivingEntity>) net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(CraftNamespacedKey.toMinecraft(entityKey)));
-        return new io.papermc.paper.attribute.UnmodifiableAttributeMap(supplier);
     }
 
     @Override

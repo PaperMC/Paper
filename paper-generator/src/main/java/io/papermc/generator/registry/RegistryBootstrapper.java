@@ -9,7 +9,6 @@ import io.papermc.generator.types.registry.GeneratedKeyType;
 import io.papermc.generator.types.registry.GeneratedTagKeyType;
 import io.papermc.paper.registry.event.RegistryEvents;
 import java.util.List;
-import net.minecraft.core.registries.Registries;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -25,9 +24,6 @@ public class RegistryBootstrapper {
                 generators.add(new GeneratedTagKeyType(entry, PAPER_REGISTRY_PACKAGE + ".keys.tags"));
             }
         });
-
-        // todo remove once entity type is a registry
-        generators.add(new GeneratedTagKeyType(RegistryEntries.byRegistryKey(Registries.ENTITY_TYPE), PAPER_REGISTRY_PACKAGE + ".keys.tags"));
     }
 
     public static void bootstrap(PatternSourceSetRewriter apiSourceSet, PatternSourceSetRewriter serverSourceSet) {

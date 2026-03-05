@@ -173,7 +173,7 @@ public final class CraftItemFactory implements ItemFactory {
 
     @Override
     public Material getSpawnEgg(EntityType type) {
-        if (type == EntityType.UNKNOWN) {
+        if (type == CraftEntityType.LegacyUnknownImpl.INSTANCE) {
             return null;
         }
         net.minecraft.world.entity.EntityType<?> nmsType = CraftEntityType.bukkitToMinecraft(type);

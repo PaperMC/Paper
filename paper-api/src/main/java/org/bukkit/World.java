@@ -18,6 +18,7 @@ import org.bukkit.boss.DragonBattle;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LightningStrike;
@@ -721,6 +722,23 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public Item dropItemNaturally(@NotNull Location location, @NotNull ItemStack item, @Nullable Consumer<? super Item> function);
 
     /**
+     * Creates an arrow entity of the given class at the given {@link Location}
+     *
+     * @param <E> type of arrow to spawn
+     * @param location Location to spawn the arrow
+     * @param direction Direction to shoot the arrow in
+     * @param speed Speed of the arrow. A recommend speed is 0.6
+     * @param spread Spread of the arrow. A recommend spread is 12
+     * @param clazz the Entity class for the arrow
+     * {@link org.bukkit.entity.SpectralArrow}, {@link org.bukkit.entity.Arrow}, {@link org.bukkit.entity.Trident}
+     * @return Arrow entity spawned as a result of this method
+     * @deprecated use {@link #spawnArrow(Location, EntityType, Vector, float, float)}
+     */
+    @NotNull
+    @Deprecated(since = "1.21.11")
+    public <E extends AbstractArrow> E spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread, @NotNull Class<E> clazz);
+
+    /**
      * Creates an {@link Arrow} entity at the given {@link Location}
      *
      * @param location Location to spawn the arrow
@@ -731,23 +749,22 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @NotNull
     default Arrow spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread) {
-        return this.spawnArrow(location, direction, speed, spread, Arrow.class);
+        return this.spawnArrow(location, EntityType.ARROW, direction, speed, spread);
     }
 
     /**
      * Creates an arrow entity of the given class at the given {@link Location}
      *
-     * @param <T> type of arrow to spawn
+     * @param <E> type of arrow to spawn
      * @param location Location to spawn the arrow
-     * @param direction Direction to shoot the arrow in
-     * @param speed Speed of the arrow. A recommend speed is 0.6
-     * @param spread Spread of the arrow. A recommend spread is 12
-     * @param clazz the Entity class for the arrow
-     * {@link org.bukkit.entity.SpectralArrow},{@link org.bukkit.entity.Arrow},{@link org.bukkit.entity.TippedArrow}
+     * @param type the entity type for the arrow
+     * @param direction direction to shoot the arrow in
+     * @param speed speed of the arrow. A recommend speed is 0.6
+     * @param spread spread of the arrow. A recommend spread is 12
      * @return Arrow entity spawned as a result of this method
      */
     @NotNull
-    public <T extends AbstractArrow> T spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread, @NotNull Class<T> clazz);
+    public <E extends AbstractArrow> E spawnArrow(@NotNull Location location, @NotNull EntityType<E> type, @NotNull Vector direction, float speed, float spread); // todo in region accessor?
 
     /**
      * Creates a tree at the given {@link Location}
