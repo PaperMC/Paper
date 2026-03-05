@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableBiMap;
+import io.papermc.asm.rules.classes.LegacyEnum;
 import io.papermc.paper.attribute.UnmodifiableAttributeMap;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.LegacyEnumHolderable;
@@ -73,12 +74,12 @@ public class CraftEntityType<E extends Entity> extends LegacyEnumHolderable<net.
 
     /**
      * Implementation for the deprecated, API only, UNKNOWN entity type.
-     * As per {@link #bukkitToMinecraftHolder(EntityType)} it cannot be
-     * converted into an internal entity type and only serves backwards compatibility reasons.
+     * As per {@link #bukkitToMinecraftHolder(EntityType)} and {@link #bukkitToMinecraft(EntityType)}
+     * it cannot be converted into an internal entity type and only serves backwards compatibility reasons.
      */
     @Deprecated(forRemoval = true, since = "1.21.11")
     @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
-    public static class LegacyUnknownImpl implements EntityType<Entity> { // todo legacy enum but getKey needs to be overridden, no vanilla holder
+    public static class LegacyUnknownImpl implements LegacyEnum<LegacyUnknownImpl>, EntityType<Entity> {
 
         public static final EntityType<?> INSTANCE = new LegacyUnknownImpl();
 
@@ -93,9 +94,8 @@ public class CraftEntityType<E extends Entity> extends LegacyEnumHolderable<net.
             return null;
         }
 
-        /*
         @Override
-        public int compareTo(final EntityType other) {
+        public int compareTo(final LegacyUnknownImpl other) {
             return this.ordinal - other.ordinal();
         }
 
@@ -107,18 +107,18 @@ public class CraftEntityType<E extends Entity> extends LegacyEnumHolderable<net.
         @Override
         public int ordinal() {
             return this.ordinal;
-        }*/
+        }
 
         @Override
         public boolean equals(final Object object) {
             if (object == null || getClass() != object.getClass()) return false;
             final LegacyUnknownImpl that = (LegacyUnknownImpl) object;
-            return ordinal == that.ordinal;
+            return this.ordinal == that.ordinal;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(ordinal);
+            return Objects.hashCode(this.ordinal);
         }
 
         @Override
@@ -177,7 +177,7 @@ public class CraftEntityType<E extends Entity> extends LegacyEnumHolderable<net.
     }
 
     public static <M extends net.minecraft.world.entity.Entity, B extends Entity> net.minecraft.world.entity.@Nullable EntityType<M> bukkitToMinecraft(EntityType<B> bukkit) {
-        if (bukkit == EntityType.UNKNOWN) {
+        if (bukkit == LegacyUnknownImpl.INSTANCE) {
             return null;
         }
         return CraftRegistry.bukkitToMinecraft(bukkit);
@@ -188,7 +188,7 @@ public class CraftEntityType<E extends Entity> extends LegacyEnumHolderable<net.
     }
 
     public static @Nullable Holder<net.minecraft.world.entity.EntityType<?>> bukkitToMinecraftHolder(EntityType<?> bukkit) {
-        if (bukkit == EntityType.UNKNOWN) {
+        if (bukkit == LegacyUnknownImpl.INSTANCE) {
             return null;
         }
         return CraftRegistry.bukkitToMinecraftHolder(bukkit);
@@ -231,7 +231,7 @@ public class CraftEntityType<E extends Entity> extends LegacyEnumHolderable<net.
     @Deprecated // bytecode rewrites target this
     public static EntityType<?> valueOf(String name) {
         if ("UNKNOWN".equals(name)) {
-            return EntityType.UNKNOWN;
+            return LegacyUnknownImpl.INSTANCE;
         }
 
         NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
@@ -253,8 +253,9 @@ public class CraftEntityType<E extends Entity> extends LegacyEnumHolderable<net.
         return LegacyHolder.NUMERIC_IDS.inverse().get(id);
     }
 
+    @Deprecated
     private static class LegacyHolder {
-        @Deprecated
+
         private static final ImmutableBiMap<EntityType<?>, Integer> NUMERIC_IDS = ImmutableBiMap.<EntityType<?>, Integer>builder()
             .put(EntityType.ITEM, 1)
             .put(EntityType.EXPERIENCE_ORB, 2)

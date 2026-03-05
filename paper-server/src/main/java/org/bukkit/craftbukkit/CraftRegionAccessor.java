@@ -441,7 +441,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         throw new IllegalArgumentException("Cannot spawn an entity for " + type.key().asString());
     }
 
-    @SuppressWarnings("unchecked")
     public net.minecraft.world.entity.Entity createEntity(Location location, Class<? extends Entity> clazz, boolean randomizeData) throws IllegalArgumentException {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(clazz != null, "Entity class cannot be null");

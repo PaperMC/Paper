@@ -33,8 +33,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.generator.LimitedRegion;
 import org.bukkit.util.BoundingBox;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRegion {
@@ -263,15 +261,9 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     }
 
     @Override
-    public <E extends Entity> E spawn(@NotNull Location location, @NotNull Class<E> clazz, boolean randomizeData, @Nullable Consumer<? super E> function) {
+    protected <E extends Entity> E spawn0(Location location, Class<E> clazz, Consumer<? super E> function, CreatureSpawnEvent.SpawnReason reason, boolean randomizeData) throws IllegalArgumentException {
         Preconditions.checkArgument(this.isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        return super.spawn(location, clazz, randomizeData, function);
-    }
-
-    @Override
-    public <E extends Entity> E spawn(Location location, Class<E> clazz, Consumer<? super E> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
-        Preconditions.checkArgument(this.isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        return super.spawn(location, clazz, function, reason);
+        return super.spawn0(location, clazz, function, reason, randomizeData);
     }
 
     @Override

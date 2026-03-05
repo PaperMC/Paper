@@ -11,7 +11,7 @@ public class PaperClassloaderBytecodeModifier implements ClassloaderBytecodeModi
 
         ApiVersion version = ApiVersion.getOrCreateVersion(configuration.getAPIVersion());
         if (version.isOlderThanOrSameAs(ApiVersion.CLASS_TO_INTERFACE)) {
-            bytecode = ClassToInterfaceRules.processClass(bytecode);
+            bytecode = EntityTypeRules.processClass(bytecode);
         }
         return bytecode;
     }

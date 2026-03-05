@@ -1,6 +1,7 @@
 package io.papermc.paper.tag;
 
 import java.util.Collection;
+import java.util.Locale;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -36,6 +37,6 @@ public class EntitySetTag extends BaseTag<EntityType, EntitySetTag> {
     @NotNull
     @Override
     protected String getName(@NotNull EntityType value) {
-        return value.key().value().toUpperCase(); // should be close enough
+        return value.key().value().toUpperCase(Locale.ROOT); // should be close enough
     }
 }

@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.util;
 
 import com.google.common.base.Predicates;
 import com.google.common.io.ByteStreams;
-import io.papermc.paper.plugin.entrypoint.classloader.bytecode.ClassToInterfaceRules;
+import io.papermc.paper.plugin.entrypoint.classloader.bytecode.EntityTypeRules;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -227,7 +227,7 @@ public class Commodore {
         ClassVisitor visitor = cw;
 
         if (pluginVersion.isOlderThanOrSameAs(ApiVersion.CLASS_TO_INTERFACE)) {
-            visitor = ClassToInterfaceRules.visitor(visitor);
+            visitor = EntityTypeRules.visitor(visitor);
         }
         visitor = io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(visitor); // Paper
 

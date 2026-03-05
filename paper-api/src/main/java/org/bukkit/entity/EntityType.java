@@ -346,7 +346,9 @@ public interface EntityType<E extends Entity> extends Keyed, Translatable, net.k
      * An unknown entity without an Entity Class
      */
     @Deprecated(since = "1.21.11", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
-    EntityType<?> UNKNOWN = InternalAPIBridge.get().constructLegacyUnknownEntityType();
+    static EntityType<?> getUnknownInstance() {
+        return InternalAPIBridge.get().constructLegacyUnknownEntityType();
+    }
 
     @SuppressWarnings("unchecked")
     private static <E extends Entity> EntityType<E> getType(final @KeyPattern.Value String key) {
