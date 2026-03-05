@@ -79,6 +79,7 @@ public class PaperPluginMeta implements PluginMeta {
                         .register(new EnumValueSerializer())
                         .register(PermissionConfiguration.class, PermissionConfigurationSerializer.SERIALIZER)
                         .register(new ComponentSerializer())
+                        .register(ApiVersion.SERIALIZER)
                         .registerAnnotatedObjects(
                             ObjectMapper.factoryBuilder()
                                 .addConstraint(Constraint.class, new Constraint.Factory())
