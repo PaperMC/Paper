@@ -47,8 +47,6 @@ public class PaperFeatureFlagProviderImpl implements FeatureFlagProvider {
         if (dependant instanceof final EntityType entityType) {
             // TODO remove when EntityType is server-backed
             return CraftEntityType.bukkitToMinecraft(entityType);
-        } else if (dependant instanceof final PotionType potionType) {
-            return CraftPotionType.bukkitToMinecraft(potionType);
         } else if (dependant instanceof final GameRule<?> gameRule) {
             return () -> CraftGameRule.bukkitToMinecraft(gameRule).requiredFeatures();
         } else {
