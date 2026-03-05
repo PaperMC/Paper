@@ -2,6 +2,7 @@ package io.papermc.paper.plugin.entrypoint.classloader.bytecode;
 
 import io.papermc.asm.ClassInfoProvider;
 import io.papermc.asm.RewriteRuleVisitorFactory;
+import io.papermc.asm.rules.RewriteRule;
 import io.papermc.asm.rules.classes.EnumToInterfaceRule;
 import java.lang.constant.ClassDesc;
 import java.util.Map;
@@ -13,7 +14,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 
-public final class ClassToInterfaceRules {
+public final class EntityTypeRules {
 
     private static final RewriteRuleVisitorFactory VISITOR_FACTORY = RewriteRuleVisitorFactory.create(
         Opcodes.ASM9,
@@ -23,11 +24,17 @@ public final class ClassToInterfaceRules {
                 entry -> entry.getValue().describeConstable().orElseThrow()
             ));
             chain.then(new EnumToInterfaceRule(enums));
+
+            chain.then(RewriteRule.forOwnerClass(EntityType.class, factory -> {
+                factory.changeFieldToMethod("getUnknownInstance", null, true, e -> { // todo move method along CraftEntityType
+                    e.match("UNKNOWN", EntityType.class.describeConstable().orElseThrow());
+                });
+            }));
         },
         ClassInfoProvider.basic()
     );
 
-    private ClassToInterfaceRules() {
+    private EntityTypeRules() {
     }
 
     public static ClassVisitor visitor(final ClassVisitor parent) {

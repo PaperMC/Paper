@@ -9,7 +9,7 @@ public class PaperClassloaderBytecodeModifier implements ClassloaderBytecodeModi
     public byte[] modify(PluginMeta configuration, byte[] bytecode) {
         ApiVersion version = ApiVersion.getOrCreateVersion(configuration.getAPIVersion());
         if (version.isOlderThanOrSameAs(ApiVersion.CLASS_TO_INTERFACE)) {
-            bytecode = ClassToInterfaceRules.processClass(bytecode);
+            bytecode = EntityTypeRules.processClass(bytecode);
         }
         return bytecode;
     }
