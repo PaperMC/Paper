@@ -16,7 +16,7 @@ import com.mojang.serialization.JsonOps;
 import io.papermc.paper.adventure.AdventureCodecs;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.plugin.ApiVersion;
-import io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier;
+import io.papermc.paper.plugin.entrypoint.classloader.bytecode.ClassloaderBytecodeModifier;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.File;
 import java.io.IOException;

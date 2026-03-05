@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.asm.rules.classes.LegacyEnum;
 import io.papermc.paper.registry.HolderableBase;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import net.minecraft.core.Holder;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -25,7 +26,7 @@ public abstract class LegacyEnumHolderable<M, I extends LegacyEnum<I>> extends H
             // Custom registry items will return the key with namespace. For a plugin this should look like a new registry item
             // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
             if (NamespacedKey.MINECRAFT.equals(reference.key().identifier().getNamespace())) {
-                this.name = reference.key().identifier().getPath().toUpperCase(Locale.ROOT);
+                this.name = formatKeyAsField(reference.key().identifier().getPath());
             } else {
                 this.name = reference.key().identifier().toString();
             }
@@ -59,8 +60,9 @@ public abstract class LegacyEnumHolderable<M, I extends LegacyEnum<I>> extends H
         Preconditions.checkState(this.holder.kind() == Holder.Kind.REFERENCE, "Cannot call method for this registry item, because it is not registered.");
     }
 
-    @Override
-    public String toString() {
-        return this.implToString();
+    private static final Pattern ILLEGAL_FIELD_CHARACTERS = Pattern.compile("[.-/]");
+
+    public static String formatKeyAsField(String path) {
+        return ILLEGAL_FIELD_CHARACTERS.matcher(path.toUpperCase(Locale.ENGLISH)).replaceAll("_");
     }
 }
