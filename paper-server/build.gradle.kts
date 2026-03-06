@@ -132,7 +132,7 @@ dependencies {
     }
     implementation("io.netty:netty-codec-haproxy:4.2.7.Final") // Add support for proxy protocol
     implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1")
-    implementation("org.ow2.asm:asm-commons:9.8")
+    implementation("org.ow2.asm:asm-commons:9.9.1")
     implementation("org.spongepowered:configurate-yaml:4.2.0")
 
     // Deps that were previously in the API but have now been moved here for backwards compat, eventually to be removed
@@ -144,15 +144,15 @@ dependencies {
         isTransitive = false // includes junit
     }
 
-    testImplementation("io.github.classgraph:classgraph:4.8.179") // For mob goal test
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
-    testImplementation("org.junit.platform:junit-platform-suite-engine:1.12.2")
+    testImplementation("io.github.classgraph:classgraph:4.8.184") // For mob goal test
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.0.3")
+    testImplementation("org.junit.platform:junit-platform-suite-engine:6.0.3")
     testImplementation("org.hamcrest:hamcrest:2.2")
-    testImplementation("org.mockito:mockito-core:5.14.1")
-    mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Configure mockito agent that is needed in newer java versions
-    testImplementation("org.ow2.asm:asm-tree:9.8")
-    testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // CartesianTest
+    testImplementation("org.mockito:mockito-core:5.22.0")
+    mockitoAgent("org.mockito:mockito-core:5.22.0") { isTransitive = false } // Configure mockito agent that is needed in newer java versions
+    testImplementation("org.ow2.asm:asm-tree:9.9.1")
+    testImplementation("org.junit-pioneer:junit-pioneer:2.3.0") // CartesianTest
 
     implementation("net.neoforged:srgutils:1.0.9") // Mappings handling
     implementation("net.neoforged:AutoRenamingTool:2.0.3") // Remap plugins

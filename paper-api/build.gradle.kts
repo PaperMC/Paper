@@ -82,13 +82,13 @@ dependencies {
     api("org.jspecify:jspecify:1.0.0")
 
     // Test dependencies
-    testImplementation("org.apache.commons:commons-lang3:3.17.0")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
+    testImplementation("org.apache.commons:commons-lang3:3.20.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.0.3")
     testImplementation("org.hamcrest:hamcrest:2.2")
-    testImplementation("org.mockito:mockito-core:5.14.1")
-    testImplementation("org.ow2.asm:asm-tree:9.8")
-    mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // configure mockito agent that is needed in newer java versions
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.mockito:mockito-core:5.22.0")
+    testImplementation("org.ow2.asm:asm-tree:9.9.1")
+    mockitoAgent("org.mockito:mockito-core:5.22.0") { isTransitive = false } // configure mockito agent that is needed in newer java versions
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
 }
 
 val generatedDir: java.nio.file.Path = layout.projectDirectory.dir("src/generated/java").asFile.toPath()
