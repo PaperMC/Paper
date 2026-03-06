@@ -1768,7 +1768,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
                 force,
                 false,
                 x, y, z, // Position
-                count,  // Count
+                count, // Count
                 offsetX, offsetY, offsetZ, // Random offset
                 extra // Speed?
         );

@@ -21,8 +21,8 @@
                  FluidState newNeighborFluid = entry.getValue();
                  BlockPos neighborPos = pos.relative(spread);
 -                this.spreadTo(level, neighborPos, level.getBlockState(neighborPos), spread, newNeighborFluid);
-+                final BlockState blockStateIfLoaded = level.getBlockStateIfLoaded(neighborPos); // Paper - Prevent chunk loading from fluid flowing
-+                if (blockStateIfLoaded == null) continue; // Paper - Prevent chunk loading from fluid flowing
++                final BlockState neighborState = level.getBlockStateIfLoaded(neighborPos); // Paper - Prevent chunk loading from fluid flowing
++                if (neighborState == null) continue; // Paper - Prevent chunk loading from fluid flowing
 +                // CraftBukkit start
 +                org.bukkit.block.Block source = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +                org.bukkit.event.block.BlockFromToEvent event = new org.bukkit.event.block.BlockFromToEvent(source, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(spread));
@@ -32,7 +32,7 @@
 +                    continue;
 +                }
 +                // CraftBukkit end
-+                this.spreadTo(level, neighborPos, blockStateIfLoaded, spread, newNeighborFluid); // Paper - Prevent chunk loading from fluid flowing
++                this.spreadTo(level, neighborPos, neighborState, spread, newNeighborFluid); // Paper - Prevent chunk loading from fluid flowing
              }
          }
      }
@@ -108,23 +108,23 @@
                  level.setBlock(pos, blockState, Block.UPDATE_ALL);
                  level.scheduleTick(pos, newFluidState.getType(), tickDelay);
              }
-@@ -509,9 +_,27 @@
-         public BlockState getBlockState(final BlockPos pos) {
+@@ -510,8 +_,27 @@
              return this.getBlockState(pos, this.getCacheKey(pos));
          }
+ 
 +        // Paper start - Prevent chunk loading from fluid flowing
-+        public @javax.annotation.Nullable BlockState getBlockStateIfLoaded(BlockPos pos) {
++        public @org.jspecify.annotations.Nullable BlockState getBlockStateIfLoaded(BlockPos pos) {
 +            return this.getBlockState(pos, this.getCacheKey(pos), false);
 +        }
 +        // Paper end - Prevent chunk loading from fluid flowing
- 
++
          private BlockState getBlockState(final BlockPos pos, final short key) {
 -            return this.stateCache.computeIfAbsent(key, k -> this.level.getBlockState(pos));
 +            // Paper start - Prevent chunk loading from fluid flowing
 +            return this.getBlockState(pos, key, true);
 +        }
 +
-+        private @javax.annotation.Nullable BlockState getBlockState(final BlockPos pos, final short key, final boolean load) {
++        private @org.jspecify.annotations.Nullable BlockState getBlockState(final BlockPos pos, final short key, final boolean load) {
 +            BlockState blockState = this.stateCache.get(key);
 +            if (blockState == null) {
 +                blockState = load ? this.level.getBlockState(pos) : this.level.getBlockStateIfLoaded(pos);

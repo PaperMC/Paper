@@ -202,7 +202,7 @@
      }
  
      private static boolean containsInvalidValues(final double x, final double y, final double z, final float yRot, final float xRot) {
-@@ -439,17 +_,29 @@
+@@ -439,11 +_,23 @@
      public void handleMoveVehicle(final ServerboundMoveVehiclePacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          if (containsInvalidValues(packet.position().x(), packet.position().y(), packet.position().z(), packet.yRot(), packet.xRot())) {
@@ -227,28 +227,19 @@
                  double oldX = vehicle.getX();
                  double oldY = vehicle.getY();
                  double oldZ = vehicle.getZ();
--                double targetX = clampHorizontal(packet.position().x());
--                double targetY = clampVertical(packet.position().y());
--                double targetZ = clampHorizontal(packet.position().z());
-+                double targetX = clampHorizontal(packet.position().x()); final double toX = targetX; // Paper - OBFHELPER
-+                double targetY = clampVertical(packet.position().y()); final double toY = targetY; // Paper - OBFHELPER
-+                double targetZ = clampHorizontal(packet.position().z()); final double toZ = targetZ; // Paper - OBFHELPER
-                 float targetYRot = Mth.wrapDegrees(packet.yRot());
-                 float targetXRot = Mth.wrapDegrees(packet.xRot());
-                 double xDist = targetX - this.vehicleFirstGoodX;
 @@ -457,7 +_,52 @@
                  double zDist = targetZ - this.vehicleFirstGoodZ;
                  double expectedDist = vehicle.getDeltaMovement().lengthSqr();
                  double movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
 -                if (movedDist - expectedDist > 100.0 && !this.isSingleplayerOwner()) {
 +                // Paper start - fix large move vectors killing the server
-+                double currDeltaX = toX - oldX;
-+                double currDeltaY = toY - oldY;
-+                double currDeltaZ = toZ - oldZ;
++                double currDeltaX = targetX - oldX;
++                double currDeltaY = targetY - oldY;
++                double currDeltaZ = targetZ - oldZ;
 +                movedDist = Math.max(movedDist, (currDeltaX * currDeltaX + currDeltaY * currDeltaY + currDeltaZ * currDeltaZ) - 1);
-+                double otherFieldX = toX - this.vehicleLastGoodX;
-+                double otherFieldY = toY - this.vehicleLastGoodY;
-+                double otherFieldZ = toZ - this.vehicleLastGoodZ;
++                double otherFieldX = targetX - this.vehicleLastGoodX;
++                double otherFieldY = targetY - this.vehicleLastGoodY;
++                double otherFieldZ = targetZ - this.vehicleLastGoodZ;
 +                movedDist = Math.max(movedDist, (otherFieldX * otherFieldX + otherFieldY * otherFieldY + otherFieldZ * otherFieldZ) - 1);
 +                // Paper end - fix large move vectors killing the server
 +
@@ -278,8 +269,8 @@
 +
 +                // Paper start - Prevent moving into unloaded chunks
 +                if (this.player.level().paperConfig().chunks.preventMovingIntoUnloadedChunks && (
-+                    !level.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(toX, toY, toZ).subtract(this.player.position()))) ||
-+                        !level.areChunksLoadedForMove(vehicle.getBoundingBox().expandTowards(new Vec3(toX, toY, toZ).subtract(vehicle.position())))
++                    !level.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(targetX, targetY, targetZ).subtract(this.player.position()))) ||
++                        !level.areChunksLoadedForMove(vehicle.getBoundingBox().expandTowards(new Vec3(targetX, targetY, targetZ).subtract(vehicle.position())))
 +                )) {
 +                    this.connection.send(ClientboundMoveVehiclePacket.fromEntity(vehicle));
 +                    return;
@@ -694,7 +685,7 @@
          }
      }
  
-@@ -1057,27 +_,35 @@
+@@ -1057,10 +_,10 @@
      public void handleMovePlayer(final ServerboundMovePlayerPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          if (containsInvalidValues(packet.getX(0.0), packet.getY(0.0), packet.getZ(0.0), packet.getYRot(0.0F), packet.getXRot(0.0F))) {
@@ -707,21 +698,7 @@
                  if (this.tickCount == 0) {
                      this.resetPosition();
                  }
- 
-                 if (this.hasClientLoaded()) {
--                    float targetYRot = Mth.wrapDegrees(packet.getYRot(this.player.getYRot()));
--                    float targetXRot = Mth.wrapDegrees(packet.getXRot(this.player.getXRot()));
-+                    float targetYRot = Mth.wrapDegrees(packet.getYRot(this.player.getYRot())); final float toYaw = targetYRot; // Paper - OBFHELPER
-+                    float targetXRot = Mth.wrapDegrees(packet.getXRot(this.player.getXRot())); final float toPitch = targetXRot; // Paper - OBFHELPER
-                     if (this.updateAwaitingTeleport()) {
-                         this.player.absSnapRotationTo(targetYRot, targetXRot);
-                     } else {
--                        double targetX = clampHorizontal(packet.getX(this.player.getX()));
--                        double targetY = clampVertical(packet.getY(this.player.getY()));
--                        double targetZ = clampHorizontal(packet.getZ(this.player.getZ()));
-+                        double targetX = clampHorizontal(packet.getX(this.player.getX())); final double toX = targetX; // Paper - OBFHELPER
-+                        double targetY = clampVertical(packet.getY(this.player.getY())); final double toY = targetY; // Paper - OBFHELPER
-+                        double targetZ = clampHorizontal(packet.getZ(this.player.getZ())); final double toZ = targetZ; // Paper - OBFHELPER
+@@ -1077,7 +_,15 @@
                          if (this.player.isPassenger()) {
                              this.player.absSnapTo(this.player.getX(), this.player.getY(), this.player.getZ(), targetYRot, targetXRot);
                              this.player.level().getChunkSource().move(this.player);
@@ -742,9 +719,9 @@
                              double expectedDist = this.player.getDeltaMovement().lengthSqr();
                              double movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
 +                            // Paper start - fix large move vectors killing the server
-+                            double currDeltaX = toX - prevX;
-+                            double currDeltaY = toY - prevY;
-+                            double currDeltaZ = toZ - prevZ;
++                            double currDeltaX = targetX - prevX;
++                            double currDeltaY = targetY - prevY;
++                            double currDeltaZ = targetZ - prevZ;
 +                            movedDist = Math.max(movedDist, (currDeltaX * currDeltaX + currDeltaY * currDeltaY + currDeltaZ * currDeltaZ) - 1);
 +                            double otherFieldX = targetX - this.lastGoodX;
 +                            double otherFieldY = targetY - this.lastGoodY;
@@ -786,10 +763,10 @@
 +                                        speed = this.player.getAbilities().walkingSpeed * 10f;
 +                                    }
 +                                    // Paper start - Prevent moving into unloaded chunks
-+                                    if (this.player.level().paperConfig().chunks.preventMovingIntoUnloadedChunks && (this.player.getX() != toX || this.player.getZ() != toZ) && !level.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(toX, toY, toZ).subtract(this.player.position())))) {
++                                    if (this.player.level().paperConfig().chunks.preventMovingIntoUnloadedChunks && (this.player.getX() != targetX || this.player.getZ() != targetZ) && !level.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(targetX, targetY, targetZ).subtract(this.player.position())))) {
 +                                        // Paper start - Add fail move event
 +                                        io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_INTO_UNLOADED_CHUNK,
-+                                                toX, toY, toZ, toYaw, toPitch, false);
++                                                targetX, targetY, targetZ, targetYRot, targetXRot, false);
 +                                        if (!event.isAllowed()) {
 +                                            this.internalTeleport(PositionMoveRotation.of(this.player), Collections.emptySet());
 +                                            return;
@@ -805,7 +782,7 @@
 +                                            // CraftBukkit end
 +                                            // Paper start - Add fail move event
 +                                            io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY,
-+                                                    toX, toY, toZ, toYaw, toPitch, true);
++                                                    targetX, targetY, targetZ, targetYRot, targetXRot, true);
 +                                            if (!event.isAllowed()) {
 +                                                if (event.getLogWarning()) {
                                              LOGGER.warn("{} moved too quickly! {},{},{}", this.player.getPlainTextName(), xDist, yDist, zDist);
@@ -891,7 +868,7 @@
 -                                    fail = true;
 +                                    // Paper start - Add fail move event
 +                                    io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_WRONGLY,
-+                                            toX, toY, toZ, toYaw, toPitch, true);
++                                            targetX, targetY, targetZ, targetYRot, targetXRot, true);
 +                                    if (!event.isAllowed()) {
 +                                        movedWrongly = true;
 +                                        if (event.getLogWarning())
@@ -910,7 +887,7 @@
 +                                boolean allowMovement = this.player.noPhysics || this.player.isSleeping() || (!movedWrongly || !level.noCollision(this.player, oldAABB)) && !this.isEntityCollidingWithAnythingNew(level, this.player, oldAABB, targetX, targetY, targetZ);
 +                                if (!allowMovement) {
 +                                    io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
-+                                            toX, toY, toZ, toYaw, toPitch, false);
++                                            targetX, targetY, targetZ, targetYRot, targetXRot, false);
 +                                    if (event.isAllowed()) {
 +                                        allowMovement = true;
 +                                    }

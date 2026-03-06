@@ -752,7 +752,7 @@
      @Override
 -    public @Nullable ServerPlayer teleport(final TeleportTransition transition) {
 +    public @Nullable ServerPlayer teleport(TeleportTransition transition) { // Paper - make non-final
-+             if (this.isSleeping()) return null; // CraftBukkit - SPIGOT-3154
++        if (this.isSleeping()) return null; // CraftBukkit - SPIGOT-3154
          if (this.isRemoved()) {
              return null;
          } else {
@@ -913,9 +913,9 @@
 +    }
 +
 +    @Override
-+    public Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos bedPos, boolean force) {
-+        Direction direction = this.level().getBlockState(bedPos).getValue(HorizontalDirectionalBlock.FACING);
-+        Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> bedResult = this.getBedResult(bedPos, direction);
++    public Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos pos, boolean force) {
++        Direction direction = this.level().getBlockState(pos).getValue(HorizontalDirectionalBlock.FACING);
++        Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> bedResult = this.getBedResult(pos, direction);
 +
 +        if (bedResult.left().orElse(null) == net.minecraft.world.entity.player.Player.BedSleepingProblem.OTHER_PROBLEM) {
 +            return bedResult; // return immediately if the result is not bypassable by plugins
@@ -925,14 +925,14 @@
 +            bedResult = Either.right(Unit.INSTANCE);
 +        }
 +
-+        bedResult = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBedEnterEvent(this, bedPos, bedResult);
++        bedResult = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBedEnterEvent(this, pos, bedResult);
 +        if (bedResult.left().isPresent()) {
 +            return bedResult;
 +        }
 +
 +        {
 +            {
-+                    Either<Player.BedSleepingProblem, Unit> result = super.startSleepInBed(bedPos, force).ifRight(unit -> {
++                    Either<Player.BedSleepingProblem, Unit> result = super.startSleepInBed(pos, force).ifRight(unit -> {
 +                        // CraftBukkit end
                          this.awardStat(Stats.SLEEP_IN_BED);
                          CriteriaTriggers.SLEPT_IN_BED.trigger(this);
@@ -1033,7 +1033,7 @@
              if (menu == null) {
                  if (this.isSpectator()) {
                      this.sendOverlayMessage(Component.translatable("container.spectatorCantOpen").withStyle(ChatFormatting.RED));
-@@ -1351,9 +_,14 @@
+@@ -1351,9 +_,13 @@
  
                  return OptionalInt.empty();
              } else {
@@ -1041,8 +1041,7 @@
 +                // CraftBukkit start
 +                this.containerMenu = menu; // Moved up
 +                if (!this.isImmobile())
-+                this.connection
-+                    .send(new net.minecraft.network.protocol.game.ClientboundOpenScreenPacket(menu.containerId, menu.getType(), java.util.Objects.requireNonNullElseGet(title, menu::getTitle))); // Paper - Add titleOverride to InventoryOpenEven
++                this.connection.send(new net.minecraft.network.protocol.game.ClientboundOpenScreenPacket(menu.containerId, menu.getType(), java.util.Objects.requireNonNullElseGet(title, menu::getTitle))); // Paper - Add titleOverride to InventoryOpenEven
 +                // CraftBukkit end
                  this.initMenu(menu);
 -                this.containerMenu = menu;
