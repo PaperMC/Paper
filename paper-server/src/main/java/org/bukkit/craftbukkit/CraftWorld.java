@@ -56,6 +56,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.NullOps;
+import net.minecraft.util.TriState;
 import net.minecraft.world.attribute.BedRule;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -1361,7 +1362,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean isNatural() {
-        throw new UnsupportedOperationException("// TODO - snapshot");
+        return this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.CREAKING_ACTIVE)
+            && this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.EYEBLOSSOM_OPEN).toBoolean(true)
+            && this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.NETHER_PORTAL_SPAWNS_PIGLINS);
     }
 
     @Override
@@ -1398,8 +1401,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public boolean isUltraWarm() {
         return this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.WATER_EVAPORATES)
-            && this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.FAST_LAVA)
-            && this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.DEFAULT_DRIPSTONE_PARTICLE).equals(ParticleTypes.DRIPPING_DRIPSTONE_LAVA);
+            && this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.FAST_LAVA);
     }
 
     @Override
