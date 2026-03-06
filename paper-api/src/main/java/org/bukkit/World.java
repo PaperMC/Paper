@@ -2051,7 +2051,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     }
 
     /**
-     * Gets the relative in-game time of this world.
+     * Gets the relative in-game time of this world, or {@code 0} if this world does not have a world clock.
      * <p>
      * The relative time is analogous to hours * 1000
      *
@@ -2076,7 +2076,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public void setTime(long time);
 
     /**
-     * Gets the full in-game time on this world
+     * Gets the full in-game time on this world, or {@code 0} if this world does not have a world clock.
      *
      * @return The current absolute time
      * @see #getTime() Returns a relative time of this world
@@ -2091,7 +2091,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param time The new absolute time to set this world to
      * @see #setTime(long) Sets the relative time of this world
+     * @deprecated all overworlds share the same world clock by default now
+     * @throws IllegalArgumentException if this world does not have a world clock (e.g. the nether)
      */
+    @Deprecated // TODO world clock API with links to it
     public void setFullTime(long time);
 
     // Paper start

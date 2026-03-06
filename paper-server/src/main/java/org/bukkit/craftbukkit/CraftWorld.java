@@ -40,7 +40,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
-import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.Identifier;
@@ -798,27 +797,24 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public long getFullTime() {
-        return this.world.getDayTime();
+        return this.world.getDefaultClockTime();
     }
 
     @Override
     public void setFullTime(long time) {
-        // Notify anyone who's listening
-        TimeSkipEvent event = new TimeSkipEvent(this, TimeSkipEvent.SkipReason.CUSTOM, time - this.world.getDayTime());
+        if (this.world.dimensionType().defaultClock().isEmpty()) {
+            throw new IllegalArgumentException("Cannot set time in world without world clock");
+        }
+
+        final long currentClockTime = this.world.getDefaultClockTime();
+        final TimeSkipEvent event = new TimeSkipEvent(this, TimeSkipEvent.SkipReason.CUSTOM, time - currentClockTime);
         this.server.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             return;
         }
 
-        this.world.setDayTime(this.world.getDayTime() + event.getSkipAmount());
-
-        // Forces the client to update to the new time immediately
-        for (Player p : this.getPlayers()) {
-            CraftPlayer cp = (CraftPlayer) p;
-            if (cp.getHandle().connection == null) continue;
-
-            cp.getHandle().connection.send(new ClientboundSetTimePacket(cp.getHandle().level().getGameTime(), cp.getHandle().getPlayerTime(), cp.getHandle().relativeTime && cp.getHandle().level().getGameRules().get(GameRules.ADVANCE_TIME)));
-        }
+        // Updates the clock for all players
+        this.world.clockManager().setTotalTicks(this.world.dimensionType().defaultClock().get(), currentClockTime + event.getSkipAmount());
     }
 
     // Paper start

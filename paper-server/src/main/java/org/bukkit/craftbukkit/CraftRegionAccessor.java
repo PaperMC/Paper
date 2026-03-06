@@ -15,15 +15,16 @@ import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnGroupData;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.MoonPhase;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
-import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.RegionAccessor;
@@ -466,7 +467,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public io.papermc.paper.world.MoonPhase getMoonPhase() {
-        return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().getLevel().getDayTime() / SharedConstants.TICKS_PER_GAME_DAY);
+        final MoonPhase moonPhase = this.getHandle().environmentAttributes().getValue(EnvironmentAttributes.MOON_PHASE, Vec3.ZERO);
+        return io.papermc.paper.world.MoonPhase.values()[moonPhase.index()];
     }
 
     @Override

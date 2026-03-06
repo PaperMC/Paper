@@ -1794,15 +1794,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param time The current player's perceived time or the player's time
      *     offset from the server time.
-     * @param relative When true the player time is kept relative to its world
-     *     time.
+     * @param tickTime if true, the player time keeps ticking up relative to its world time.
      */
-    public void setPlayerTime(long time, boolean relative);
+    public void setPlayerTime(long time, boolean tickTime);
 
     /**
      * Returns the player's current timestamp.
      *
-     * @return The player's time
+     * @return The player's time, or {@code 0} if the current world does not have a world clock.
      */
     public long getPlayerTime();
 

@@ -95,6 +95,7 @@ import net.minecraft.network.protocol.game.ClientboundSetExperiencePacket;
 import net.minecraft.network.protocol.game.ClientboundSetHealthPacket;
 import net.minecraft.network.protocol.game.ClientboundSetPlayerInventoryPacket;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
@@ -115,6 +116,8 @@ import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.clock.ClockState;
+import net.minecraft.world.clock.WorldClock;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -127,6 +130,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SignText;
 import net.minecraft.world.level.border.BorderChangeListener;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.saveddata.maps.MapDecoration;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
@@ -1526,18 +1530,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public void setPlayerTime(long time, boolean relative) {
+    public void setPlayerTime(long time, boolean tickTime) {
         this.getHandle().timeOffset = time;
-        this.getHandle().relativeTime = relative;
+        this.getHandle().relativeTime = tickTime;
 
-        if (this.getHandle().connection == null) {
+        final ServerLevel level = this.getHandle().level();
+        if (this.getHandle().connection == null || level.dimensionType().defaultClock().isEmpty()) {
             return;
         }
 
-        final long gameTime = this.getHandle().level().getGameTime();
-        final long dayTime = this.getHandle().getPlayerTime();
-        final boolean tickDayTime = this.getHandle().relativeTime && this.getHandle().level().getGameRules().get(net.minecraft.world.level.gamerules.GameRules.ADVANCE_TIME);
-        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSetTimePacket(gameTime, dayTime, tickDayTime));
+        final long gameTime = level.getGameTime();
+        final long playerClockTime = this.getHandle().getPlayerTime();
+        final Holder<WorldClock> worldClock = level.dimensionType().defaultClock().get();
+        final boolean paused = !this.getHandle().relativeTime || !level.getGameRules().get(GameRules.ADVANCE_TIME) || level.clockManager().isPaused(worldClock);
+        this.getHandle().connection.send(new ClientboundSetTimePacket(gameTime, Map.of(worldClock, new ClockState(playerClockTime, paused))));
     }
 
     @Override
