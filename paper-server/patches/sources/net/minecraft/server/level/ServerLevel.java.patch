@@ -9,7 +9,7 @@
      private final EntityTickList entityTickList = new EntityTickList();
      private final ServerWaypointManager waypointManager;
      private final EnvironmentAttributeSystem environmentAttributes;
-@@ -221,24 +_,176 @@
+@@ -221,24 +_,179 @@
      private final boolean tickTime;
      private final LevelDebugSynchronizers debugSynchronizers = new LevelDebugSynchronizers(this);
  
@@ -19,6 +19,7 @@
 +    public final net.minecraft.server.level.progress.LevelLoadListener levelLoadListener;
 +    private final net.minecraft.world.level.gamerules.GameRules gameRules;
 +    private final WeatherData weatherData;
++    public final net.minecraft.world.level.storage.LevelDataAndDimensions.WorldDataAndGenSettings worldDataAndGenSettings;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
 +
@@ -141,7 +142,7 @@
          final Executor executor,
          final LevelStorageSource.LevelStorageAccess levelStorage,
 -        final ServerLevelData levelData,
-+        final net.minecraft.world.level.storage.PrimaryLevelData levelData, // CraftBukkit
++        final net.minecraft.world.level.storage.LevelDataAndDimensions.WorldDataAndGenSettings worldDataAndGenSettings, // CraftBukkit
          final ResourceKey<Level> dimension,
          final LevelStem levelStem,
          final boolean isDebug,
@@ -150,19 +151,21 @@
          final boolean tickTime
 +        , org.bukkit.World.Environment env, // CraftBukkit
 +        org.bukkit.generator.ChunkGenerator gen, // CraftBukkit
-+        org.bukkit.generator.BiomeProvider biomeProvider // CraftBukkit
++        org.bukkit.generator.BiomeProvider biomeProvider, // CraftBukkit
++        SavedDataStorage savedDataStorage // Paper - pass SavedDataStorage
      ) {
 -        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates());
 +        // CraftBukkit start
-+        final SavedDataStorage savedDataStorage = new SavedDataStorage(levelStorage.getDimensionPath(dimension), server.getFixerUpper(), server.registryAccess());
++        final var levelData = (net.minecraft.world.level.storage.PrimaryLevelData) worldDataAndGenSettings.data();
 +        final GameRules gameRules = new GameRules(levelData.enabledFeatures(), savedDataStorage.computeIfAbsent(net.minecraft.world.level.gamerules.GameRuleMap.TYPE));
 +        this.gameRules = gameRules;
-+        this.weatherData = savedDataStorage.computeIfAbsent(WeatherData.TYPE);
 +        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorage.levelDirectory.path(), levelData.getLevelName(), dimension.identifier(), spigotConfig, server.registryAccess(), gameRules))); // Paper - create paper world configs
++        this.weatherData = savedDataStorage.computeIfAbsent(WeatherData.TYPE);
 +        this.weatherData.setLevel(this);
 +        this.levelStorageAccess = levelStorage;
 +        this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getOrCreate(levelStorageAccess.levelDirectory.path().toFile());
 +        this.levelLoadListener = new net.minecraft.server.level.progress.LoggingLevelLoadListener(false, this);
++        this.worldDataAndGenSettings = worldDataAndGenSettings;
 +        // CraftBukkit end
          this.tickTime = tickTime;
          this.server = server;
@@ -209,7 +212,15 @@
          }
  
          this.raids = this.getDataStorage().computeIfAbsent(Raids.TYPE);
-@@ -284,7 +_,7 @@
+@@ -277,14 +_,14 @@
+             levelData.setGameType(server.getDefaultGameType());
+         }
+ 
+-        WorldGenSettings worldGenSettings = server.getWorldGenSettings();
++        WorldGenSettings worldGenSettings = worldDataAndGenSettings.genSettings(); // Paper - use world's gen settings
+         WorldOptions options = worldGenSettings.options();
+         long seed = options.seed();
+         this.structureCheck = new StructureCheck(
              this.chunkSource.chunkScanner(),
              this.registryAccess(),
              server.getStructureManager(),
@@ -224,7 +235,7 @@
          );
 -        this.structureManager = new StructureManager(this, options, this.structureCheck);
 -        if (this.dimensionType().hasEnderDragonFight()) {
-+        this.structureManager = new StructureManager(this, this.serverLevelData.worldGenOptions(), this.structureCheck); // CraftBukkit
++        this.structureManager = new StructureManager(this, worldDataAndGenSettings.genSettings().options(), this.structureCheck); // CraftBukkit
 +        if (this.dimension() == Level.END && this.dimensionTypeRegistration().is(net.minecraft.world.level.dimension.BuiltinDimensionTypes.END) || env == org.bukkit.World.Environment.THE_END) { // CraftBukkit - Allow to create EnderDragonBattle in default and custom END
 +            // this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenOptions().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit // TODO - snapshot
              this.dragonFight = this.getDataStorage().computeIfAbsent(EnderDragonFight.TYPE);
@@ -536,7 +547,7 @@
 +
 +        // CraftBukkit start - moved from MinecraftServer#saveAllChunks
 +        com.mojang.authlib.GameProfile singleplayerProfile = this.server.getSingleplayerProfile();
-+        this.levelStorageAccess.saveDataTag(this.server.worldData, singleplayerProfile == null ? null : singleplayerProfile.id()); // Paper - moved to ServerLevel#save
++        this.levelStorageAccess.saveDataTag(this.worldDataAndGenSettings.data(), singleplayerProfile == null ? null : singleplayerProfile.id()); // Paper - moved to ServerLevel#save
 +        // CraftBukkit end
      }
  
@@ -928,7 +939,7 @@
          final TagKey<Structure> structureTag, final BlockPos origin, final int maxSearchRadius, final boolean createReference
      ) {
 -        if (!this.server.getWorldGenSettings().options().generateStructures()) {
-+        if (!this.serverLevelData.worldGenOptions().generateStructures()) { // CraftBukkit
++        if (!this.worldDataAndGenSettings.genSettings().options().generateStructures()) { // CraftBukkit
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> tag = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
@@ -1019,7 +1030,7 @@
      @Override
      public long getSeed() {
 -        return this.server.getWorldGenSettings().options().seed();
-+        return this.serverLevelData.worldGenOptions().seed(); // CraftBukkit
++        return this.worldDataAndGenSettings.genSettings().options().seed(); // CraftBukkit
      }
  
      public @Nullable EnderDragonFight getDragonFight() {

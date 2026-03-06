@@ -2,8 +2,8 @@ package org.bukkit.craftbukkit.generator;
 
 import java.util.UUID;
 import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.storage.LevelDataAndDimensions;
 import net.minecraft.world.level.storage.LevelStorageSource;
-import net.minecraft.world.level.storage.PrimaryLevelData;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.util.WorldUUID;
@@ -21,16 +21,16 @@ public class CraftWorldInfo implements WorldInfo {
     private final net.minecraft.world.level.chunk.ChunkGenerator vanillaChunkGenerator;
     private final net.minecraft.core.RegistryAccess.Frozen registryAccess;
 
-    public CraftWorldInfo(PrimaryLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, World.Environment environment, DimensionType dimensionManager, net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator, net.minecraft.core.RegistryAccess.Frozen registryAccess, long seed) {
+    public CraftWorldInfo(LevelDataAndDimensions.WorldDataAndGenSettings settings, LevelStorageSource.LevelStorageAccess session, World.Environment environment, DimensionType dimensionManager, net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator, net.minecraft.core.RegistryAccess.Frozen registryAccess) {
         this.registryAccess = registryAccess;
         this.vanillaChunkGenerator = chunkGenerator;
-        this.name = worldDataServer.getLevelName();
+        this.name = settings.data().getLevelName();
         this.uuid = WorldUUID.getOrCreate(session.levelDirectory.path().toFile());
         this.environment = environment;
-        this.seed = seed;
+        this.seed = settings.genSettings().options().seed();
         this.minHeight = dimensionManager.minY();
         this.maxHeight = dimensionManager.minY() + dimensionManager.height();
-        this.enabledFeatures = worldDataServer.enabledFeatures();
+        this.enabledFeatures = settings.data().enabledFeatures();
     }
 
     @Override

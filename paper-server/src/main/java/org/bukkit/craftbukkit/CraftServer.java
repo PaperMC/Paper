@@ -780,7 +780,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean getGenerateStructures() {
-        return this.getServer().getWorldData().worldGenOptions().generateStructures();
+        return this.getServer().getWorldGenSettings().options().generateStructures();
     }
 
     @Override
@@ -1306,7 +1306,7 @@ public final class CraftServer implements Server {
         }
 
         this.console.addLevel(serverLevel); // Paper - Put world into worldlist before initing the world; move up
-        this.console.initWorld(serverLevel, primaryLevelData, primaryLevelData.worldGenOptions());
+        this.console.initWorld(serverLevel);
 
         serverLevel.setSpawnSettings(true);
         // Paper - Put world into worldlist before initing the world; move up

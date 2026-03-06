@@ -1460,12 +1460,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean canGenerateStructures() {
-        return this.world.serverLevelData.worldGenOptions().generateStructures();
+        return this.world.worldDataAndGenSettings.genSettings().options().generateStructures();
     }
 
     @Override
     public boolean hasBonusChest() {
-        return this.world.serverLevelData.worldGenOptions().generateBonusChest();
+        return this.world.worldDataAndGenSettings.genSettings().options().generateBonusChest();
     }
 
     @Override

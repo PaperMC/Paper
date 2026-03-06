@@ -270,7 +270,7 @@
          if (profiledDuration != null) {
              profiledDuration.finish(true);
          }
-@@ -422,33 +_,131 @@
+@@ -422,33 +_,135 @@
          }
      }
  
@@ -309,59 +309,64 @@
 -        ServerLevelData levelData = this.worldData.overworldData();
 -        boolean isDebug = this.worldData.isDebugWorld();
 -        Registry<LevelStem> dimensions = this.registries.compositeAccess().lookupOrThrow(Registries.LEVEL_STEM);
+-        WorldOptions worldOptions = this.worldGenSettings.options();
 +    // Paper start - rework world loading process
 +    public void createLevel(
 +        LevelStem levelStem,
 +        io.papermc.paper.world.PaperWorldLoader.WorldLoadingInfo loadingInfo,
 +        LevelStorageSource.LevelStorageAccess levelStorageAccess,
-+        net.minecraft.world.level.storage.PrimaryLevelData levelData
++        net.minecraft.world.level.storage.LevelDataAndDimensions.WorldDataAndGenSettings worldDataAndGenSettings
 +    ) {
-         WorldOptions worldOptions = this.worldGenSettings.options();
++        final WorldOptions worldOptions = worldDataAndGenSettings.genSettings().options();
++        final ResourceKey<Level> dimensionKey = ResourceKey.create(Registries.DIMENSION, loadingInfo.stemKey().identifier());
++        final SavedDataStorage savedDataStorage = new SavedDataStorage(levelStorageAccess.getDimensionPath(dimensionKey), this.getFixerUpper(), this.registryAccess());
          long seed = worldOptions.seed();
          long biomeZoomSeed = BiomeManager.obfuscateSeed(seed);
          List<CustomSpawner> overworldCustomSpawners = ImmutableList.of(
-             new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(this.savedDataStorage)
-         );
+-            new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(this.savedDataStorage)
+-        );
 -        LevelStem overworldData = dimensions.getValue(LevelStem.OVERWORLD);
 -        ServerLevel overworld = new ServerLevel(
 -            this, this.executor, this.storageSource, levelData, Level.OVERWORLD, overworldData, isDebug, biomeZoomSeed, overworldCustomSpawners, true
-+        final org.bukkit.generator.ChunkGenerator chunkGenerator = this.server.getGenerator(loadingInfo.name());
-+        org.bukkit.generator.BiomeProvider biomeProvider = this.server.getBiomeProvider(loadingInfo.name());
-+        final org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(
-+            levelData,
-+            levelStorageAccess,
-+            org.bukkit.World.Environment.getEnvironment(loadingInfo.dimension()),
-+            levelStem.type().value(),
-+            levelStem.generator(),
-+            this.registryAccess(),
-+            worldOptions.seed()
-         );
+-        );
 -        this.levels.put(Level.OVERWORLD, overworld);
 -        this.scoreboard.load(this.savedDataStorage.computeIfAbsent(ScoreboardSaveData.TYPE).getData());
 -        this.commandStorage = new CommandStorage(this.savedDataStorage);
 -        this.stopwatches = this.savedDataStorage.computeIfAbsent(Stopwatches.TYPE);
++            new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(savedDataStorage) // Paper - save to world data
++        );
++        final org.bukkit.generator.ChunkGenerator chunkGenerator = this.server.getGenerator(loadingInfo.name());
++        org.bukkit.generator.BiomeProvider biomeProvider = this.server.getBiomeProvider(loadingInfo.name());
++        final org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(
++            worldDataAndGenSettings,
++            levelStorageAccess,
++            org.bukkit.World.Environment.getEnvironment(loadingInfo.dimension()),
++            levelStem.type().value(),
++            levelStem.generator(),
++            this.registryAccess()
++        );
 +        if (biomeProvider == null && chunkGenerator != null) {
 +            biomeProvider = chunkGenerator.getDefaultBiomeProvider(worldInfo);
 +        }
-+        final ResourceKey<Level> dimensionKey = ResourceKey.create(Registries.DIMENSION, loadingInfo.stemKey().identifier());
 +        ServerLevel serverLevel;
 +        if (loadingInfo.stemKey() == LevelStem.OVERWORLD) {
 +            serverLevel = new ServerLevel(
 +                this,
 +                this.executor,
 +                levelStorageAccess,
-+                levelData,
++                worldDataAndGenSettings,
 +                dimensionKey,
 +                levelStem,
-+                levelData.isDebugWorld(),
++                worldDataAndGenSettings.data().isDebugWorld(),
 +                biomeZoomSeed,
 +                overworldCustomSpawners,
 +                true,
 +                org.bukkit.World.Environment.getEnvironment(loadingInfo.dimension()),
 +                chunkGenerator,
-+                biomeProvider
++                biomeProvider,
++                savedDataStorage
 +            );
-+            this.worldData = levelData;
++            this.worldData = worldDataAndGenSettings.data();
 +            this.worldData.setGameType(((net.minecraft.server.dedicated.DedicatedServer) this).getProperties().gameMode.get()); // From DedicatedServer.init
 +            SavedDataStorage dataStorage = serverLevel.getDataStorage();
 +            this.scoreboard.load(dataStorage.computeIfAbsent(ScoreboardSaveData.TYPE).getData());
@@ -379,7 +384,7 @@
 +                this,
 +                this.executor,
 +                levelStorageAccess,
-+                levelData,
++                worldDataAndGenSettings,
 +                dimensionKey,
 +                levelStem,
 +                this.worldData.isDebugWorld(),
@@ -388,13 +393,16 @@
 +                true,
 +                org.bukkit.World.Environment.getEnvironment(loadingInfo.dimension()),
 +                chunkGenerator,
-+                biomeProvider
++                biomeProvider,
++                savedDataStorage
 +            );
 +        }
 +        this.addLevel(serverLevel);
-+        this.initWorld(serverLevel, levelData, worldOptions);
++        this.initWorld(serverLevel);
 +    }
-+    public void initWorld(ServerLevel overworld, net.minecraft.world.level.storage.PrimaryLevelData levelData, WorldOptions worldOptions) {
++    public void initWorld(ServerLevel overworld) {
++        final net.minecraft.world.level.storage.PrimaryLevelData levelData = overworld.serverLevelData;
++        final WorldOptions worldOptions = overworld.worldDataAndGenSettings.genSettings().options();
 +        final boolean isDebug = this.worldData.isDebugWorld();
 +        if (overworld.generator != null) {
 +            overworld.getWorld().getPopulators().addAll(overworld.generator.getDefaultPopulators(overworld.getWorld()));
