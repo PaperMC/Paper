@@ -8,6 +8,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.dedicated.DedicatedServer;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jline.reader.Highlighter;
@@ -28,12 +29,20 @@ public final class BrigadierCommandHighlighter implements Highlighter {
 
     @Override
     public AttributedString highlight(final @NonNull LineReader reader, final @NonNull String buffer) {
+        return highlight(this.server, this.commandSourceStack, buffer);
+    }
+
+    public static AttributedString highlight(
+        final MinecraftServer server,
+        final Supplier<CommandSourceStack> stack,
+        final String buffer
+    ) {
         //noinspection ConstantConditions
-        if (this.server.overworld() == null) { // check if overworld is null, as worlds haven't been loaded yet
+        if (server.overworld() == null) { // check if overworld is null, as worlds haven't been loaded yet
             return new AttributedString(buffer, AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
         }
         final AttributedStringBuilder builder = new AttributedStringBuilder();
-        final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(new StringReader(buffer), this.commandSourceStack.get());
+        final ParseResults<CommandSourceStack> results = server.getCommands().getDispatcher().parse(new StringReader(buffer), stack.get());
         int pos = 0;
         int component = -1;
         for (final ParsedCommandNode<CommandSourceStack> node : results.getContext().getLastChild().getNodes()) {

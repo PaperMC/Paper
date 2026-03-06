@@ -1,6 +1,7 @@
 package io.papermc.paper;
 
 import java.util.List;
+import io.papermc.paper.console.endermux.PaperEndermux;
 import joptsimple.OptionSet;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Main;
@@ -15,6 +16,11 @@ public final class PaperBootstrap {
 
     public static void boot(final OptionSet options) {
         SharedConstants.tryDetectVersion();
+
+        if (PaperEndermux.ENABLED) {
+            PaperEndermux.INSTANCE = new PaperEndermux();
+            PaperEndermux.INSTANCE.start();
+        }
 
         getStartupVersionMessages().forEach(LOGGER::info);
 
