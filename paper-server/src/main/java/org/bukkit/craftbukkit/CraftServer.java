@@ -1261,7 +1261,6 @@ public final class CraftServer implements Server {
         final PrimaryLevelData primaryLevelData = (PrimaryLevelData) worldDataAndGenSettings.data();
 
         contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
-        primaryLevelData.customDimensions = contextLevelStemRegistry;
         primaryLevelData.checkName(name);
         primaryLevelData.setModdedInfo(this.console.getServerModName(), this.console.getModdedStatus().shouldReportAsModified());
 
@@ -1288,6 +1287,7 @@ public final class CraftServer implements Server {
         }
 
         final SavedDataStorage savedDataStorage = new SavedDataStorage(levelStorageAccess.getDimensionPath(dimensionKey).resolve("data"), this.console.getFixerUpper(), this.console.registryAccess());
+        savedDataStorage.set(WorldGenSettings.TYPE, worldDataAndGenSettings.genSettings());
         List<CustomSpawner> list = ImmutableList.of(
             new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(savedDataStorage)
         );
