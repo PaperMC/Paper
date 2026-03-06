@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/levelgen/PatrolSpawner.java
 +++ b/net/minecraft/world/level/levelgen/PatrolSpawner.java
-@@ -18,17 +_,47 @@
+@@ -18,17 +_,51 @@
  
      @Override
      public void tick(final ServerLevel level, final boolean spawnEnemies) {
@@ -37,9 +37,13 @@
 +                if (patrolSpawnDelay <= 0) {
 +                    long dayCount;
 +                    if (level.paperConfig().entities.behavior.pillagerPatrols.start.perPlayer) {
-+                        dayCount = player.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.PLAY_TIME)) / 24000L; // PLAY_TIME is counting in ticks
++                        dayCount = player.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.PLAY_TIME)) / net.minecraft.SharedConstants.TICKS_PER_GAME_DAY; // PLAY_TIME is counting in ticks
 +                    } else {
-+                        dayCount = level.getDayCount();
++                        dayCount = level
++                            .registryAccess()
++                            .get(net.minecraft.world.timeline.Timelines.OVERWORLD_DAY)
++                            .map(timeline -> timeline.value().getPeriodCount(level.clockManager()))
++                            .orElse(0);
 +                    }
 +                    if (level.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.perPlayer) {
 +                        player.patrolSpawnDelay += level.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.ticks + random.nextInt(1200);

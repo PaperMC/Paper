@@ -19,6 +19,7 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import net.minecraft.world.level.levelgen.structure.templatesystem.loader.TemplateSource;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.structure.Structure;
@@ -60,8 +61,8 @@ public class CraftStructureManager implements StructureManager {
 
         Optional<StructureTemplate> structure = this.structureManager.structureRepository.get(minecraftKey);
         structure = structure == null ? Optional.empty() : structure;
-        structure = structure.isPresent() ? structure : this.structureManager.loadFromGenerated(minecraftKey);
-        structure = structure.isPresent() ? structure : this.structureManager.loadFromResource(minecraftKey);
+        structure = structure.isPresent() ? structure : this.structureManager.tryLoad(minecraftKey);
+        structure = structure.isPresent() ? structure : this.structureManager.tryLoad(minecraftKey);
 
         if (register) {
             this.structureManager.structureRepository.put(minecraftKey, structure);
@@ -124,14 +125,14 @@ public class CraftStructureManager implements StructureManager {
         if (unregister) {
             this.structureManager.structureRepository.remove(key);
         }
-        Path path = this.structureManager.createAndValidatePathToGeneratedStructure(key, ".nbt");
+        Path path = this.structureManager.worldTemplates().createAndValidatePathToStructure(key, StructureTemplateManager.WORLD_STRUCTURE_LISTER);
         Files.deleteIfExists(path);
     }
 
     @Override
     public File getStructureFile(NamespacedKey structureKey) {
         Identifier minecraftKey = this.createAndValidateMinecraftStructureKey(structureKey);
-        return this.structureManager.createAndValidatePathToGeneratedStructure(minecraftKey, ".nbt").toFile();
+        return this.structureManager.worldTemplates().createAndValidatePathToStructure(minecraftKey, StructureTemplateManager.WORLD_STRUCTURE_LISTER).toFile();
     }
 
     @Override
@@ -146,7 +147,7 @@ public class CraftStructureManager implements StructureManager {
     public Structure loadStructure(InputStream inputStream) throws IOException {
         Preconditions.checkArgument(inputStream != null, "inputStream cannot be null");
 
-        return new CraftStructure(this.structureManager.readStructure(inputStream), this.registry);
+        return new CraftStructure(this.structureManager.resourceManagerSource.readStructure(TemplateSource.readStructure(inputStream)), this.registry);
     }
 
     @Override
@@ -183,6 +184,6 @@ public class CraftStructureManager implements StructureManager {
     @Override
     public Structure copy(Structure structure) {
         Preconditions.checkArgument(structure != null, "Structure cannot be null");
-        return new CraftStructure(this.structureManager.readStructure(((CraftStructure) structure).getHandle().save(new CompoundTag())), this.registry);
+        return new CraftStructure(this.structureManager.resourceManagerSource.readStructure(((CraftStructure) structure).getHandle().save(new CompoundTag())), this.registry);
     }
 }
