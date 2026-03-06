@@ -12,6 +12,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.Lifecycle;
+import io.papermc.paper.command.PaperCommand;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
@@ -416,7 +417,11 @@ public final class CraftServer implements Server {
         this.pluginManager = new SimplePluginManager(this, commandMap);
         this.paperPluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(this, this.commandMap, pluginManager);
         this.pluginManager.paperPluginManager = this.paperPluginManager;
-         // Paper end
+        // Paper end
+
+        // We have to register the permissions of the PaperCommand **after** the Commands have already been registered
+        // because of the pluginManager not being set then.
+        PaperCommand.registerPermissions();
 
         CraftRegistry.setMinecraftRegistry(console.registryAccess());
 
@@ -1022,7 +1027,7 @@ public final class CraftServer implements Server {
         // Paper end
         this.reloadData();
         org.spigotmc.SpigotConfig.registerCommands(); // Spigot
-        io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper
+        io.papermc.paper.command.PaperCommands.registerLegacyCommands(this.console); // Paper
         this.spark.registerCommandBeforePlugins(this); // Paper - spark
         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");

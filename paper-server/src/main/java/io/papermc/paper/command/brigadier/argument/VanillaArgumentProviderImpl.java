@@ -61,12 +61,13 @@ import net.minecraft.commands.arguments.GameModeArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.HeightmapTypeArgument;
 import net.minecraft.commands.arguments.HexColorArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.MessageArgument;
 import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
 import net.minecraft.commands.arguments.RangeArgument;
 import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.commands.arguments.ResourceKeyArgument;
-import net.minecraft.commands.arguments.IdentifierArgument;
+import net.minecraft.commands.arguments.ResourceOrTagArgument;
 import net.minecraft.commands.arguments.ScoreboardSlotArgument;
 import net.minecraft.commands.arguments.StyleArgument;
 import net.minecraft.commands.arguments.TemplateMirrorArgument;
@@ -85,6 +86,8 @@ import net.minecraft.commands.arguments.item.ItemArgument;
 import net.minecraft.commands.arguments.item.ItemPredicateArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -407,7 +410,17 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     public <T> ArgumentType<TypedKey<T>> resourceKey(final RegistryKey<T> registryKey) {
         return this.wrap(
             ResourceKeyArgument.key(PaperRegistries.registryToNms(registryKey)),
-            nmsRegistryKey -> TypedKey.create(registryKey, CraftNamespacedKey.fromMinecraft(nmsRegistryKey.identifier()))
+            nmsRegistryKey -> TypedKey.create(registryKey, PaperAdventure.asAdventure(nmsRegistryKey.identifier()))
+        );
+    }
+
+    // expose to api?
+    public static <T> ArgumentType<List<Holder<T>>> resourceOrTag(final ResourceKey<? extends Registry<T>> registryKey) {
+        return new NativeWrapperArgumentType<>(
+            ResourceOrTagArgument.resourceOrTag(PaperCommands.INSTANCE.getBuildContext(), registryKey),
+            result -> result.unwrap().map(List::of, tag -> {
+                return tag.stream().toList();
+            })
         );
     }
 
