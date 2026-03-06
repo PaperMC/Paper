@@ -39,6 +39,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import org.bukkit.support.RegistryHelper;
 import org.bukkit.support.environment.VanillaFeature;
@@ -165,11 +166,11 @@ class AdventureCodecsTest {
         assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
         final net.minecraft.network.chat.HoverEvent.ShowItem nms = (net.minecraft.network.chat.HoverEvent.ShowItem) dataResult.result().orElseThrow().getFirst();
         assertEquals(hoverEvent.action().toString(), nms.action().getSerializedName());
-        final ItemStack item = nms.item();
-        assertNotNull(item);
-        assertEquals(hoverEvent.value().count(), item.getCount());
-        assertEquals(hoverEvent.value().item().asString(), item.getItem().toString());
-        assertEquals(stack.getComponentsPatch(), item.getComponentsPatch());
+        final ItemStackTemplate itemTemplate = nms.item();
+        assertNotNull(itemTemplate);
+        assertEquals(hoverEvent.value().count(), itemTemplate.count());
+        assertEquals(hoverEvent.value().item().asString(), itemTemplate.item().toString());
+        assertEquals(stack.getComponentsPatch(), itemTemplate.components());
     }
 
     @Test
