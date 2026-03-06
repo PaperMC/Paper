@@ -467,8 +467,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public io.papermc.paper.world.MoonPhase getMoonPhase() {
-        final MoonPhase moonPhase = this.getHandle().environmentAttributes().getValue(EnvironmentAttributes.MOON_PHASE, Vec3.ZERO);
-        return io.papermc.paper.world.MoonPhase.values()[moonPhase.index()];
+        final MoonPhase moonPhase = this.getHandle().getLevel().environmentAttributes().getDimensionValue(EnvironmentAttributes.MOON_PHASE);
+        return io.papermc.paper.world.MoonPhase.values()[moonPhase.ordinal()];
     }
 
     @Override
