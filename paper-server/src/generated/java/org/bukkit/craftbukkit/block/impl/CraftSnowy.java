@@ -10,10 +10,10 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @GeneratedClass
-public class CraftSnowyDirt extends CraftBlockData implements Snowable {
+public class CraftSnowy extends CraftBlockData implements Snowable {
     private static final BooleanProperty SNOWY = SnowyBlock.SNOWY;
 
-    public CraftSnowyDirt(BlockState state) {
+    public CraftSnowy(BlockState state) {
         super(state);
     }
 

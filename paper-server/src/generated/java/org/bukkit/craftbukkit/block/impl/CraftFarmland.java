@@ -10,10 +10,10 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @GeneratedClass
-public class CraftFarm extends CraftBlockData implements Farmland {
+public class CraftFarmland extends CraftBlockData implements Farmland {
     private static final IntegerProperty MOISTURE = FarmlandBlock.MOISTURE;
 
-    public CraftFarm(BlockState state) {
+    public CraftFarmland(BlockState state) {
         super(state);
     }
 

@@ -424,7 +424,7 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.world.level.block.EndPortalFrameBlock.class, org.bukkit.craftbukkit.block.impl.CraftEndPortalFrame::new);
         register(net.minecraft.world.level.block.EndRodBlock.class, org.bukkit.craftbukkit.block.impl.CraftEndRod::new);
         register(net.minecraft.world.level.block.EnderChestBlock.class, org.bukkit.craftbukkit.block.impl.CraftEnderChest::new);
-        register(net.minecraft.world.level.block.FarmlandBlock.class, org.bukkit.craftbukkit.block.impl.CraftFarm::new);
+        register(net.minecraft.world.level.block.FarmlandBlock.class, org.bukkit.craftbukkit.block.impl.CraftFarmland::new);
         register(net.minecraft.world.level.block.FenceBlock.class, org.bukkit.craftbukkit.block.impl.CraftFence::new);
         register(net.minecraft.world.level.block.FenceGateBlock.class, org.bukkit.craftbukkit.block.impl.CraftFenceGate::new);
         register(net.minecraft.world.level.block.FireBlock.class, org.bukkit.craftbukkit.block.impl.CraftFire::new);
@@ -498,7 +498,7 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.world.level.block.SmokerBlock.class, org.bukkit.craftbukkit.block.impl.CraftSmoker::new);
         register(net.minecraft.world.level.block.SnifferEggBlock.class, org.bukkit.craftbukkit.block.impl.CraftSnifferEgg::new);
         register(net.minecraft.world.level.block.SnowLayerBlock.class, org.bukkit.craftbukkit.block.impl.CraftSnowLayer::new);
-        register(net.minecraft.world.level.block.SnowyBlock.class, org.bukkit.craftbukkit.block.impl.CraftSnowyDirt::new);
+        register(net.minecraft.world.level.block.SnowyBlock.class, org.bukkit.craftbukkit.block.impl.CraftSnowy::new);
         register(net.minecraft.world.level.block.StainedGlassPaneBlock.class, org.bukkit.craftbukkit.block.impl.CraftStainedGlassPane::new);
         register(net.minecraft.world.level.block.StairBlock.class, org.bukkit.craftbukkit.block.impl.CraftStair::new);
         register(net.minecraft.world.level.block.StandingSignBlock.class, org.bukkit.craftbukkit.block.impl.CraftStandingSign::new);
