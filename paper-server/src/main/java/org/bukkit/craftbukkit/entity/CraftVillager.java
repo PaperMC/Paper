@@ -95,10 +95,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         Preconditions.checkArgument(net.minecraft.world.entity.npc.villager.VillagerData.MIN_VILLAGER_LEVEL <= supposedFinalLevel && supposedFinalLevel <= net.minecraft.world.entity.npc.villager.VillagerData.MAX_VILLAGER_LEVEL,
             "Final level reached after the donation (%d) must be between [%d, %d]".formatted(supposedFinalLevel, net.minecraft.world.entity.npc.villager.VillagerData.MIN_VILLAGER_LEVEL, net.minecraft.world.entity.npc.villager.VillagerData.MAX_VILLAGER_LEVEL));
 
-        it.unimi.dsi.fastutil.ints.Int2ObjectMap<net.minecraft.world.entity.npc.villager.VillagerTrades.ItemListing[]> trades =
-            net.minecraft.world.entity.npc.villager.VillagerTrades.TRADES.get((this.getHandle().getVillagerData().profession().unwrapKey().orElseThrow()));
-
-        if (trades == null || trades.isEmpty()) {
+        if (this.getHandle().getVillagerData().profession().value().getTrades(this.getVillagerLevel()) == null) {
             this.getHandle().setVillagerData(this.getHandle().getVillagerData().withLevel(supposedFinalLevel));
             return false;
         }
