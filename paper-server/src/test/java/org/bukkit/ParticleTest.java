@@ -163,7 +163,7 @@ public class ParticleTest {
         ItemStack itemStack = new ItemStack(Material.STONE);
         ItemParticleOption param = this.createAndTest(bukkit, minecraft, itemStack, ItemParticleOption.class);
 
-        // TODO uses template
+        // TODO - snapshot - uses template
         assertEquals(itemStack, CraftItemStack.asBukkitCopy(param.getItem().create()), String.format("""
                 ItemStack for particle %s do not match.
                 Did something change in the implementation or minecraft?

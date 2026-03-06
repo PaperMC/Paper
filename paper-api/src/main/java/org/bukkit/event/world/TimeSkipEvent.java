@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * If the event is cancelled the time will not change.
  */
-// TODO: 26.1 API needed for clock!
+// TODO - snapshot - 26.1 API needed for clock!
 public class TimeSkipEvent extends WorldEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
