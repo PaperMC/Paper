@@ -2,6 +2,8 @@ package io.papermc.paper.registry;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.block.PaperTrialSpawnerConfig;
+import io.papermc.paper.block.TrialSpawnerConfigs;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.dialog.Dialog;
@@ -19,6 +21,7 @@ import io.papermc.paper.registry.data.PaperJukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperPigVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperSoundEventRegistryEntry;
+import io.papermc.paper.registry.data.PaperTrialSpawnerConfigRegistryEntry;
 import io.papermc.paper.registry.data.PaperWolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.PaperDialogRegistryEntry;
@@ -142,6 +145,7 @@ public final class PaperRegistries {
             start(Registries.PIG_VARIANT, RegistryKey.PIG_VARIANT).craft(Pig.Variant.class, CraftPig.CraftVariant::new).writable(PaperPigVariantRegistryEntry.PaperBuilder::new),
             start(Registries.ZOMBIE_NAUTILUS_VARIANT, RegistryKey.ZOMBIE_NAUTILUS_VARIANT).craft(ZombieNautilus.Variant.class, CraftZombieNautilus.CraftVariant::new).writable(PaperZombieNautilusVariantRegistryEntry.PaperBuilder::new),
             start(Registries.DIALOG, RegistryKey.DIALOG).craft(Dialog.class, PaperDialog::new, true).writable(PaperDialogRegistryEntry.PaperBuilder::new),
+            start(Registries.TRIAL_SPAWNER_CONFIG, RegistryKey.TRIAL_SPAWNER_CONFIG).craft(TrialSpawnerConfigs.class, PaperTrialSpawnerConfig::new, true).writable(PaperTrialSpawnerConfigRegistryEntry.PaperBuilder::new),
 
             // api-only
             start(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE).apiOnly(PaperSimpleRegistry::entityType),
