@@ -154,15 +154,6 @@ dependencies {
     testImplementation("org.ow2.asm:asm-tree:9.9.1")
     testImplementation("org.junit-pioneer:junit-pioneer:2.3.0") // CartesianTest
 
-    implementation("net.neoforged:srgutils:1.0.9") // Mappings handling
-    implementation("net.neoforged:AutoRenamingTool:2.0.3") // Remap plugins
-
-    // Remap reflection
-    val reflectionRewriterVersion = "0.0.3"
-    implementation("io.papermc:reflection-rewriter:$reflectionRewriterVersion")
-    implementation("io.papermc:reflection-rewriter-runtime:$reflectionRewriterVersion")
-    implementation("io.papermc:reflection-rewriter-proxy-generator:$reflectionRewriterVersion")
-
     // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
     implementation("me.lucko:spark-paper:1.10.152")
