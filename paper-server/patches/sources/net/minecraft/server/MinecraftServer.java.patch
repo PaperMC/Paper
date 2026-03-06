@@ -185,7 +185,7 @@
          final Thread serverThread,
          final LevelStorageSource.LevelStorageAccess storageSource,
          final PackRepository packRepository,
-@@ -322,8 +_,9 @@
+@@ -322,27 +_,27 @@
          final boolean propagatesCrashes
      ) {
          super("Server", propagatesCrashes);
@@ -196,7 +196,11 @@
              throw new IllegalStateException("Missing Overworld dimension data");
          } else {
              this.savedDataStorage = new SavedDataStorage(storageSource.getLevelPath(LevelResource.DATA), fixerUpper, this.registries.compositeAccess());
-@@ -334,15 +_,14 @@
+             this.worldData = worldStem.worldDataAndGenSettings().data();
+             this.worldGenSettings = worldStem.worldDataAndGenSettings().genSettings();
+-            this.savedDataStorage.set(WorldGenSettings.TYPE, this.worldGenSettings);
++            // this.savedDataStorage.set(WorldGenSettings.TYPE, this.worldGenSettings); // Paper - save in level storage
+             this.proxy = proxy;
              this.packRepository = packRepository;
              this.resources = new MinecraftServer.ReloadableResources(worldStem.resourceManager(), worldStem.dataPackResources());
              this.services = services;
@@ -280,7 +284,7 @@
          if (profiledDuration != null) {
              profiledDuration.finish(true);
          }
-@@ -422,33 +_,134 @@
+@@ -422,33 +_,135 @@
          }
      }
  
@@ -329,7 +333,8 @@
 +    ) {
 +        final WorldOptions worldOptions = worldDataAndGenSettings.genSettings().options();
 +        final ResourceKey<Level> dimensionKey = ResourceKey.create(Registries.DIMENSION, loadingInfo.stemKey().identifier());
-+        final SavedDataStorage savedDataStorage = new SavedDataStorage(levelStorageAccess.getDimensionPath(dimensionKey), this.getFixerUpper(), this.registryAccess());
++        final SavedDataStorage savedDataStorage = new SavedDataStorage(levelStorageAccess.getDimensionPath(dimensionKey).resolve("data"), this.getFixerUpper(), this.registryAccess());
++        savedDataStorage.set(WorldGenSettings.TYPE, worldDataAndGenSettings.genSettings());
          long seed = worldOptions.seed();
          long biomeZoomSeed = BiomeManager.obfuscateSeed(seed);
          List<CustomSpawner> overworldCustomSpawners = ImmutableList.of(

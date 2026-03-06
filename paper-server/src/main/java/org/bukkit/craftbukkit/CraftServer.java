@@ -1287,7 +1287,7 @@ public final class CraftServer implements Server {
             dimensionKey = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
         }
 
-        final SavedDataStorage savedDataStorage = new SavedDataStorage(levelStorageAccess.getDimensionPath(dimensionKey), this.console.getFixerUpper(), this.console.registryAccess());
+        final SavedDataStorage savedDataStorage = new SavedDataStorage(levelStorageAccess.getDimensionPath(dimensionKey).resolve("data"), this.console.getFixerUpper(), this.console.registryAccess());
         List<CustomSpawner> list = ImmutableList.of(
             new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(savedDataStorage)
         );
