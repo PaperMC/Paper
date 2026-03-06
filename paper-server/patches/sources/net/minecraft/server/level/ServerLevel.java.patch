@@ -9,7 +9,7 @@
      private final EntityTickList entityTickList = new EntityTickList();
      private final ServerWaypointManager waypointManager;
      private final EnvironmentAttributeSystem environmentAttributes;
-@@ -221,24 +_,179 @@
+@@ -221,24 +_,181 @@
      private final boolean tickTime;
      private final LevelDebugSynchronizers debugSynchronizers = new LevelDebugSynchronizers(this);
  
@@ -19,6 +19,7 @@
 +    public final net.minecraft.server.level.progress.LevelLoadListener levelLoadListener;
 +    private final net.minecraft.world.level.gamerules.GameRules gameRules;
 +    private final WeatherData weatherData;
++    public final net.minecraft.world.level.timers.TimerQueue<net.minecraft.server.MinecraftServer> scheduledEvents;
 +    public final net.minecraft.world.level.storage.LevelDataAndDimensions.WorldDataAndGenSettings worldDataAndGenSettings;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
@@ -166,6 +167,7 @@
 +        this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getOrCreate(levelStorageAccess.levelDirectory.path().toFile());
 +        this.levelLoadListener = new net.minecraft.server.level.progress.LoggingLevelLoadListener(false, this);
 +        this.worldDataAndGenSettings = worldDataAndGenSettings;
++        this.scheduledEvents = savedDataStorage.computeIfAbsent(net.minecraft.world.level.timers.TimerQueue.TYPE);
 +        // CraftBukkit end
          this.tickTime = tickTime;
          this.server = server;
@@ -305,6 +307,15 @@
          if (isActive) {
              this.resetEmptyTime();
          }
+@@ -460,7 +_,7 @@
+             long time = this.levelData.getGameTime() + 1L;
+             this.serverLevelData.setGameTime(time);
+             Profiler.get().push("scheduledFunctions");
+-            this.server.getScheduledEvents().tick(this.server, time);
++            this.scheduledEvents.tick(this.server, time); // Paper - per-level scheduledEvents
+             Profiler.get().pop();
+         }
+     }
 @@ -483,11 +_,13 @@
          ProfilerFiller profiler = Profiler.get();
          profiler.push("iceandsnow");

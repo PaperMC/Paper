@@ -104,6 +104,7 @@ import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.PatrolSpawner;
 import net.minecraft.world.level.levelgen.PhantomSpawner;
 import net.minecraft.world.level.levelgen.WorldDimensions;
+import net.minecraft.world.level.levelgen.WorldGenSettings;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.saveddata.maps.MapId;
@@ -112,6 +113,7 @@ import net.minecraft.world.level.storage.LevelDataAndDimensions;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.PlayerDataStorage;
 import net.minecraft.world.level.storage.PrimaryLevelData;
+import net.minecraft.world.level.storage.SavedDataStorage;
 import net.minecraft.world.level.validation.ContentValidationException;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.BanList;
@@ -1221,16 +1223,16 @@ public final class CraftServer implements Server {
 
         boolean hardcore = creator.hardcore();
 
-        PrimaryLevelData primaryLevelData;
+        LevelDataAndDimensions.WorldDataAndGenSettings worldDataAndGenSettings;
         WorldLoader.DataLoadContext context = this.console.worldLoaderContext;
         RegistryAccess.Frozen registryAccess = context.datapackDimensions();
         net.minecraft.core.Registry<LevelStem> contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
         Dynamic<?> dataTag = PaperWorldLoader.getLevelData(levelStorageAccess).dataTag();
         if (dataTag != null) {
             LevelDataAndDimensions levelDataAndDimensions = LevelStorageSource.getLevelDataAndDimensions(
-                dataTag, context.dataConfiguration(), contextLevelStemRegistry, context.datapackWorldgen()
+                levelStorageAccess, dataTag, context.dataConfiguration(), contextLevelStemRegistry, context.datapackWorldgen()
             );
-            primaryLevelData = (PrimaryLevelData) levelDataAndDimensions.worldData();
+            worldDataAndGenSettings = levelDataAndDimensions.worldDataAndGenSettings();
             registryAccess = levelDataAndDimensions.dimensions().dimensionsRegistryAccess();
         } else {
             LevelSettings levelSettings;
@@ -1241,9 +1243,8 @@ public final class CraftServer implements Server {
             levelSettings = new LevelSettings(
                 name,
                 GameType.byId(this.getDefaultGameMode().getValue()),
-                hardcore, Difficulty.EASY,
+                new LevelSettings.DifficultySettings(Difficulty.EASY, hardcore, false),
                 false,
-                new GameRules(context.dataConfiguration().enabledFeatures()),
                 context.dataConfiguration()
             );
             worldDimensions = properties.create(context.datapackWorldgen());
@@ -1251,9 +1252,13 @@ public final class CraftServer implements Server {
             WorldDimensions.Complete complete = worldDimensions.bake(contextLevelStemRegistry);
             Lifecycle lifecycle = complete.lifecycle().add(context.datapackWorldgen().allRegistriesLifecycle());
 
-            primaryLevelData = new PrimaryLevelData(levelSettings, worldOptions, complete.specialWorldProperty(), lifecycle);
+            worldDataAndGenSettings = new LevelDataAndDimensions.WorldDataAndGenSettings(
+                new PrimaryLevelData(levelSettings, complete.specialWorldProperty(), lifecycle),
+                new WorldGenSettings(worldOptions, worldDimensions)
+            );
             registryAccess = complete.dimensionsRegistryAccess();
         }
+        final PrimaryLevelData primaryLevelData = (PrimaryLevelData) worldDataAndGenSettings.data();
 
         contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
         primaryLevelData.customDimensions = contextLevelStemRegistry;
@@ -1261,16 +1266,13 @@ public final class CraftServer implements Server {
         primaryLevelData.setModdedInfo(this.console.getServerModName(), this.console.getModdedStatus().shouldReportAsModified());
 
         if (this.console.options.has("forceUpgrade")) {
-            net.minecraft.server.Main.forceUpgrade(levelStorageAccess, primaryLevelData, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, registryAccess, this.console.options.has("recreateRegionFiles"));
+            net.minecraft.server.Main.forceUpgrade(levelStorageAccess, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, registryAccess, this.console.options.has("recreateRegionFiles"));
         }
 
-        long i = BiomeManager.obfuscateSeed(primaryLevelData.worldGenOptions().seed());
-        List<CustomSpawner> list = ImmutableList.of(
-            new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(primaryLevelData)
-        );
+        long biomeZoomSeed = BiomeManager.obfuscateSeed(worldDataAndGenSettings.genSettings().options().seed());
         LevelStem customStem = contextLevelStemRegistry.getValue(actualDimension);
 
-        WorldInfo worldInfo = new CraftWorldInfo(primaryLevelData, levelStorageAccess, creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess()); // Paper - Expose vanilla BiomeProvider from WorldInfo
+        WorldInfo worldInfo = new CraftWorldInfo(worldDataAndGenSettings, levelStorageAccess, creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess()); // Paper - Expose vanilla BiomeProvider from WorldInfo
         if (biomeProvider == null && chunkGenerator != null) {
             biomeProvider = chunkGenerator.getDefaultBiomeProvider(worldInfo);
         }
@@ -1285,20 +1287,26 @@ public final class CraftServer implements Server {
             dimensionKey = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
         }
 
+        final SavedDataStorage savedDataStorage = new SavedDataStorage(levelStorageAccess.getDimensionPath(dimensionKey), this.console.getFixerUpper(), this.console.registryAccess());
+        List<CustomSpawner> list = ImmutableList.of(
+            new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(savedDataStorage)
+        );
+
         ServerLevel serverLevel = new ServerLevel(
             this.console,
             this.console.executor,
             levelStorageAccess,
-            primaryLevelData,
+            worldDataAndGenSettings,
             dimensionKey,
             customStem,
             primaryLevelData.isDebugWorld(),
-            i,
+            biomeZoomSeed,
             creator.environment() == Environment.NORMAL ? list : ImmutableList.of(),
             true,
-            this.console.overworld().getRandomSequences(),
             creator.environment(),
-            chunkGenerator, biomeProvider
+            chunkGenerator,
+            biomeProvider,
+            savedDataStorage
         );
 
         if (!(this.worlds.containsKey(name.toLowerCase(Locale.ROOT)))) {

@@ -58,7 +58,13 @@
      private final ServerFunctionManager functionManager;
      private boolean enforceWhitelist;
      private boolean usingWhitelist;
-@@ -297,8 +_,9 @@
+@@ -292,13 +_,14 @@
+     private final SuppressedExceptionCollector suppressedExceptions = new SuppressedExceptionCollector();
+     private final DiscontinuousFrame tickFrame;
+     private final PacketProcessor packetProcessor;
+-    private final TimerQueue<MinecraftServer> scheduledEvents;
++    // Paper - per-level scheduledEvents
+     private final ServerClockManager clockManager;
  
      public static <S extends MinecraftServer> S spin(final Function<Thread, S> factory) {
          AtomicReference<S> serverReference = new AtomicReference<>();
@@ -210,10 +216,14 @@
              this.fixerUpper = fixerUpper;
              this.functionManager = new ServerFunctionManager(this, this.resources.managers.getFunctionLibrary());
              HolderGetter<Block> blockLookup = this.registries
-@@ -364,6 +_,38 @@
+@@ -362,8 +_,40 @@
+             this.clockManager = this.getDataStorage().computeIfAbsent(ServerClockManager.TYPE);
+             this.clockManager.init(this);
              this.customBossEvents = this.savedDataStorage.computeIfAbsent(CustomBossEvents.TYPE);
-             this.scheduledEvents = this.savedDataStorage.computeIfAbsent(TimerQueue.TYPE);
-         }
+-            this.scheduledEvents = this.savedDataStorage.computeIfAbsent(TimerQueue.TYPE);
+-        }
++            // Paper - per-level scheduledEvents
++        }
 +        // CraftBukkit start
 +        this.options = options;
 +        this.worldLoaderContext = worldLoaderContext;
@@ -270,7 +280,7 @@
          if (profiledDuration != null) {
              profiledDuration.finish(true);
          }
-@@ -422,33 +_,135 @@
+@@ -422,33 +_,134 @@
          }
      }
  
@@ -330,9 +340,6 @@
 -            this, this.executor, this.storageSource, levelData, Level.OVERWORLD, overworldData, isDebug, biomeZoomSeed, overworldCustomSpawners, true
 -        );
 -        this.levels.put(Level.OVERWORLD, overworld);
--        this.scoreboard.load(this.savedDataStorage.computeIfAbsent(ScoreboardSaveData.TYPE).getData());
--        this.commandStorage = new CommandStorage(this.savedDataStorage);
--        this.stopwatches = this.savedDataStorage.computeIfAbsent(Stopwatches.TYPE);
 +            new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(savedDataStorage) // Paper - save to world data
 +        );
 +        final org.bukkit.generator.ChunkGenerator chunkGenerator = this.server.getGenerator(loadingInfo.name());
@@ -368,10 +375,9 @@
 +            );
 +            this.worldData = worldDataAndGenSettings.data();
 +            this.worldData.setGameType(((net.minecraft.server.dedicated.DedicatedServer) this).getProperties().gameMode.get()); // From DedicatedServer.init
-+            SavedDataStorage dataStorage = serverLevel.getDataStorage();
-+            this.scoreboard.load(dataStorage.computeIfAbsent(ScoreboardSaveData.TYPE).getData());
-+            this.commandStorage = new CommandStorage(dataStorage);
-+            this.stopwatches = dataStorage.computeIfAbsent(Stopwatches.TYPE);
+         this.scoreboard.load(this.savedDataStorage.computeIfAbsent(ScoreboardSaveData.TYPE).getData());
+         this.commandStorage = new CommandStorage(this.savedDataStorage);
+         this.stopwatches = this.savedDataStorage.computeIfAbsent(Stopwatches.TYPE);
 +            this.server.scoreboardManager = new org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager(this, serverLevel.getScoreboard());
 +        } else {
 +            final List<CustomSpawner> spawners;
@@ -1520,8 +1526,14 @@
              this.getPlayerList().broadcastAll(this.clockManager().createFullSyncPacket());
          }
      }
-@@ -2161,8 +_,9 @@
-         return this.scheduledEvents;
+@@ -2157,12 +_,14 @@
+         return this.savedDataStorage;
+     }
+ 
++    @Deprecated(forRemoval = true) @io.papermc.paper.annotation.DoNotUse
+     public TimerQueue<MinecraftServer> getScheduledEvents() {
+-        return this.scheduledEvents;
++        throw new UnsupportedOperationException("Use ServerLevel.getScheduledEvents() instead"); // Paper
      }
  
 +    @Deprecated(forRemoval = true) @io.papermc.paper.annotation.DoNotUse // Paper
