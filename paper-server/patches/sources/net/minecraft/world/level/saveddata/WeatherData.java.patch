@@ -1,0 +1,67 @@
+--- a/net/minecraft/world/level/saveddata/WeatherData.java
++++ b/net/minecraft/world/level/saveddata/WeatherData.java
+@@ -50,6 +_,25 @@
+     }
+ 
+     public void setThundering(final boolean thundering) {
++        // Paper start - Add cause to Weather/ThunderChangeEvents
++        this.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.UNKNOWN);
++    }
++    public void setThundering(boolean thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause cause) {
++        // Paper end - Add cause to Weather/ThunderChangeEvents
++        // CraftBukkit start
++        if (this.thundering == thundering) {
++            return;
++        }
++
++        org.bukkit.World world = this.level == null ? null : this.level.getWorld();
++        if (world != null) {
++            org.bukkit.event.weather.ThunderChangeEvent thunder = new org.bukkit.event.weather.ThunderChangeEvent(world, thundering, cause); // Paper - Add cause to Weather/ThunderChangeEvents
++            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(thunder);
++            if (thunder.isCancelled()) {
++                return;
++            }
++        }
++        // CraftBukkit end
+         this.thundering = thundering;
+         this.setDirty();
+     }
+@@ -68,6 +_,26 @@
+     }
+ 
+     public void setRaining(final boolean raining) {
++        // Paper start - Add cause to Weather/ThunderChangeEvents
++        this.setRaining(raining, org.bukkit.event.weather.WeatherChangeEvent.Cause.UNKNOWN);
++    }
++
++    public void setRaining(boolean raining, org.bukkit.event.weather.WeatherChangeEvent.Cause cause) {
++        // Paper end - Add cause to Weather/ThunderChangeEvents
++        // CraftBukkit start
++        if (this.raining == raining) {
++            return;
++        }
++
++        org.bukkit.World world = this.level == null ? null : this.level.getWorld();
++        if (world != null) {
++            org.bukkit.event.weather.WeatherChangeEvent weather = new org.bukkit.event.weather.WeatherChangeEvent(world, raining, cause); // Paper - Add cause to Weather/ThunderChangeEvents
++            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(weather);
++            if (weather.isCancelled()) {
++                return;
++            }
++        }
++        // CraftBukkit end
+         this.raining = raining;
+         this.setDirty();
+     }
+@@ -80,4 +_,11 @@
+         this.rainTime = rainTime;
+         this.setDirty();
+     }
++
++    // Paper start - pass level for events
++    private net.minecraft.server.level.@org.jspecify.annotations.Nullable ServerLevel level;
++    public void setLevel(final net.minecraft.server.level.ServerLevel level) {
++        this.level = level;
++    }
++    // Paper end - pass level for events
+ }

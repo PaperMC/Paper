@@ -5,6 +5,7 @@ import java.util.Optional;
 import net.minecraft.advancements.criterion.DataComponentMatchers;
 import net.minecraft.advancements.criterion.ItemPredicate;
 import net.minecraft.advancements.criterion.MinMaxBounds;
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentExactPredicate;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -34,7 +35,9 @@ public abstract class CraftContainer<T extends BaseContainerBlockEntity> extends
 
     @Override
     public String getLock() {
-        Optional<? extends Component> customName = this.getSnapshot().lockKey.predicate().components().exact().asPatch().get(DataComponents.CUSTOM_NAME);
+        Optional<? extends Component> customName = Optional.ofNullable(
+            this.getSnapshot().lockKey.predicate().components().exact().asPatch().get(DataComponentMap.EMPTY, DataComponents.CUSTOM_NAME)
+        );
 
         return (customName != null) ? customName.map(CraftChatMessage::fromComponent).orElse("") : "";
     }

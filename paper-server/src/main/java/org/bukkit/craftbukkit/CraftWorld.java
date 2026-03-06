@@ -138,6 +138,8 @@ import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.Trident;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.weather.LightningStrikeEvent;
+import org.bukkit.event.weather.ThunderChangeEvent;
+import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.world.SpawnChangeEvent;
 import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BiomeProvider;
@@ -475,7 +477,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean refreshChunk(int x, int z) {
-        ChunkHolder playerChunk = this.world.getChunkSource().chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
+        ChunkHolder playerChunk = this.world.getChunkSource().chunkMap.getVisibleChunkIfPresent(ChunkPos.pack(x, z));
         if (playerChunk == null) return false;
 
         // Paper start - chunk system
@@ -619,7 +621,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean isChunkForceLoaded(int x, int z) {
-        return this.getHandle().getForceLoadedChunks().contains(ChunkPos.asLong(x, z));
+        return this.getHandle().getForceLoadedChunks().contains(ChunkPos.pack(x, z));
     }
 
     @Override
@@ -663,9 +665,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(item != null, "ItemStack cannot be null");
 
-        double xs = Mth.nextDouble(this.world.random, -0.25D, 0.25D);
-        double ys = Mth.nextDouble(this.world.random, -0.25D, 0.25D) - ((double) EntityType.ITEM.getHeight() / 2.0D);
-        double zs = Mth.nextDouble(this.world.random, -0.25D, 0.25D);
+        double xs = Mth.nextDouble(this.world.getRandom(), -0.25D, 0.25D);
+        double ys = Mth.nextDouble(this.world.getRandom(), -0.25D, 0.25D) - ((double) EntityType.ITEM.getHeight() / 2.0D);
+        double zs = Mth.nextDouble(this.world.getRandom(), -0.25D, 0.25D);
         location = location.clone().add(xs, ys, zs);
         return this.dropItem(location, item, function);
     }
@@ -1178,46 +1180,46 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean hasStorm() {
-        return this.world.levelData.isRaining();
+        return this.world.getWeatherData().isRaining();
     }
 
     @Override
     public void setStorm(boolean hasStorm) {
-        this.world.serverLevelData.setRaining(hasStorm, org.bukkit.event.weather.WeatherChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
+        this.world.getWeatherData().setRaining(hasStorm, WeatherChangeEvent.Cause.PLUGIN);
         this.setWeatherDuration(0); // Reset weather duration (legacy behaviour)
         this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
     }
 
     @Override
     public int getWeatherDuration() {
-        return this.world.serverLevelData.getRainTime();
+        return this.world.getWeatherData().getRainTime();
     }
 
     @Override
     public void setWeatherDuration(int duration) {
-        this.world.serverLevelData.setRainTime(duration);
+        this.world.getWeatherData().setRainTime(duration);
     }
 
     @Override
     public boolean isThundering() {
-        return this.world.levelData.isThundering();
+        return this.world.getWeatherData().isThundering();
     }
 
     @Override
     public void setThundering(boolean thundering) {
-        this.world.serverLevelData.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
+        this.world.getWeatherData().setThundering(thundering, ThunderChangeEvent.Cause.PLUGIN);
         this.setThunderDuration(0); // Reset weather duration (legacy behaviour)
         this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
     }
 
     @Override
     public int getThunderDuration() {
-        return this.world.serverLevelData.getThunderTime();
+        return this.world.getWeatherData().getThunderTime();
     }
 
     @Override
     public void setThunderDuration(int duration) {
-        this.world.serverLevelData.setThunderTime(duration);
+        this.world.getWeatherData().setThunderTime(duration);
     }
 
     @Override
@@ -1227,12 +1229,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void setClearWeatherDuration(int duration) {
-        this.world.serverLevelData.setClearWeatherTime(duration);
+        this.world.getWeatherData().setClearWeatherTime(duration);
     }
 
     @Override
     public int getClearWeatherDuration() {
-        return this.world.serverLevelData.getClearWeatherTime();
+        return this.world.getWeatherData().getClearWeatherTime();
     }
 
     @Override
@@ -1538,12 +1540,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void playSound(Location loc, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        this.playSound(loc, sound, category, volume, pitch, this.getHandle().random.nextLong());
+        this.playSound(loc, sound, category, volume, pitch, this.getHandle().getRandom().nextLong());
     }
 
     @Override
     public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        this.playSound(loc, sound, category, volume, pitch, this.getHandle().random.nextLong());
+        this.playSound(loc, sound, category, volume, pitch, this.getHandle().getRandom().nextLong());
     }
 
     @Override
@@ -1573,12 +1575,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void playSound(Entity entity, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        this.playSound(entity, sound, category, volume, pitch, this.getHandle().random.nextLong());
+        this.playSound(entity, sound, category, volume, pitch, this.getHandle().getRandom().nextLong());
     }
 
     @Override
     public void playSound(Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        this.playSound(entity, sound, category, volume, pitch, this.getHandle().random.nextLong());
+        this.playSound(entity, sound, category, volume, pitch, this.getHandle().getRandom().nextLong());
     }
 
     @Override

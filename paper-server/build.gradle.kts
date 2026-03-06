@@ -271,10 +271,11 @@ fun TaskContainer.registerRunTask(
         .dir(providers.gradleProperty("paper.runWorkDir").getOrElse("run"))
         .asFile
     javaLauncher.set(project.javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of(21))
-        vendor.set(JvmVendorSpec.JETBRAINS)
+        languageVersion.set(JavaLanguageVersion.of(25))
+        // TODO - JB runtime 25 has issues with spark rn
+        // vendor.set(JvmVendorSpec.JETBRAINS)
     })
-    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
+    //jvmArgs("-XX:+AllowEnhancedClassRedefinition")
 
     if (rootProject.childProjects["test-plugin"] != null) {
         val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }

@@ -9,7 +9,7 @@
      private final EntityTickList entityTickList = new EntityTickList();
      private final ServerWaypointManager waypointManager;
      private final EnvironmentAttributeSystem environmentAttributes;
-@@ -221,24 +_,169 @@
+@@ -221,24 +_,176 @@
      private final boolean tickTime;
      private final LevelDebugSynchronizers debugSynchronizers = new LevelDebugSynchronizers(this);
  
@@ -17,6 +17,8 @@
 +    public final LevelStorageSource.LevelStorageAccess levelStorageAccess;
 +    public final UUID uuid;
 +    public final net.minecraft.server.level.progress.LevelLoadListener levelLoadListener;
++    private final net.minecraft.world.level.gamerules.GameRules gameRules;
++    private final WeatherData weatherData;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
 +
@@ -152,7 +154,12 @@
      ) {
 -        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates());
 +        // CraftBukkit start
-+        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorage.levelDirectory.path(), levelData.getLevelName(), dimension.identifier(), spigotConfig, server.registryAccess(), levelData.getGameRules()))); // Paper - create paper world configs
++        final SavedDataStorage savedDataStorage = new SavedDataStorage(levelStorage.getDimensionPath(dimension), server.getFixerUpper(), server.registryAccess());
++        final GameRules gameRules = new GameRules(levelData.enabledFeatures(), savedDataStorage.computeIfAbsent(net.minecraft.world.level.gamerules.GameRuleMap.TYPE));
++        this.gameRules = gameRules;
++        this.weatherData = savedDataStorage.computeIfAbsent(WeatherData.TYPE);
++        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorage.levelDirectory.path(), levelData.getLevelName(), dimension.identifier(), spigotConfig, server.registryAccess(), gameRules))); // Paper - create paper world configs
++        this.weatherData.setLevel(this);
 +        this.levelStorageAccess = levelStorage;
 +        this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getOrCreate(levelStorageAccess.levelDirectory.path().toFile());
 +        this.levelLoadListener = new net.minecraft.server.level.progress.LoggingLevelLoadListener(false, this);
@@ -181,7 +188,7 @@
          boolean syncWrites = server.forceSynchronousWrites();
          DataFixer fixerUpper = server.getFixerUpper();
          EntityPersistentStorage<Entity> entityStorage = new EntityStorage(
-@@ -260,8 +_,8 @@
+@@ -260,16 +_,17 @@
              server.getStructureManager(),
              executor,
              generator,
@@ -192,6 +199,16 @@
              syncWrites,
              this.entityManager::updateChunkStatus,
              () -> server.overworld().getDataStorage()
++            , savedDataStorage // Paper - pass SavedDataStorage
+         );
+         this.chunkSource.getGeneratorState().ensureStructuresGenerated();
+         this.portalForcer = new PortalForcer(this);
+         if (this.canHaveWeather()) {
+-            this.prepareWeather(server.getWeatherData());
++            this.prepareWeather(this.weatherData); // Paper - per-level WeatherData
+         }
+ 
+         this.raids = this.getDataStorage().computeIfAbsent(Raids.TYPE);
 @@ -284,7 +_,7 @@
              this.chunkSource.chunkScanner(),
              this.registryAccess(),
@@ -386,7 +403,7 @@
 -                weatherData.setThundering(thundering);
 -                weatherData.setRaining(raining);
 +                weatherData.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.NATURAL); // Paper - Add cause to Weather/ThunderChangeEvents
-+                weatherData.setRaining(raining, org.bukkit.event.weather.ThunderChangeEvent.Cause.NATURAL); // Paper - Add cause to Weather/ThunderChangeEvents
++                weatherData.setRaining(raining, org.bukkit.event.weather.WeatherChangeEvent.Cause.NATURAL); // Paper - Add cause to Weather/ThunderChangeEvents
              }
  
              this.oThunderLevel = this.thunderLevel;
@@ -519,16 +536,14 @@
              if (progressListener != null) {
                  progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
              }
-@@ -875,9 +_,17 @@
+@@ -875,9 +_,15 @@
                  this.entityManager.autoSave();
              }
          }
 +
 +        // CraftBukkit start - moved from MinecraftServer#saveAllChunks
-+        ServerLevel serverLevel1 = this;
-+
-+        this.serverLevelData.setCustomBossEvents(this.server.getCustomBossEvents().save(this.registryAccess()));
-+        this.levelStorageAccess.saveDataTag(this.server.registryAccess(), this.serverLevelData, this.server.getPlayerList().getSingleplayerData());
++        com.mojang.authlib.GameProfile singleplayerProfile = this.server.getSingleplayerProfile();
++        this.levelStorageAccess.saveDataTag(this.server.worldData, singleplayerProfile == null ? null : singleplayerProfile.id()); // Paper - moved to ServerLevel#save
 +        // CraftBukkit end
      }
  
@@ -1015,6 +1030,15 @@
      }
  
      public @Nullable EnderDragonFight getDragonFight() {
+@@ -1682,7 +_,7 @@
+     }
+ 
+     public WeatherData getWeatherData() {
+-        return this.server.getWeatherData();
++        return this.weatherData; // Paper - per-level WeatherData
+     }
+ 
+     @Override
 @@ -1729,6 +_,7 @@
  
      @Override
@@ -1023,10 +1047,15 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1836,6 +_,28 @@
-         return this.server.getGameRules();
+@@ -1833,8 +_,30 @@
      }
  
+     public GameRules getGameRules() {
+-        return this.server.getGameRules();
+-    }
++        return this.gameRules; // Paper - per-level GameRules
++    }
++
 +    // Paper start - respect global sound events gamerule
 +    public List<net.minecraft.server.level.ServerPlayer> getPlayersForGlobalSoundGamerule() {
 +        return this.getGameRules().get(GameRules.GLOBAL_SOUND_EVENTS) ? ((ServerLevel) this).getServer().getPlayerList().players : ((ServerLevel) this).players();
@@ -1048,10 +1077,9 @@
 +        }
 +    }
 +    // Paper end - notify observers even if grow failed
-+
+ 
      @Override
      public CrashReportCategory fillReportDetails(final CrashReport report) {
-         CrashReportCategory category = super.fillReportDetails(report);
 @@ -1897,6 +_,7 @@
              if (entity instanceof WaypointTransmitter waypoint && waypoint.isTransmittingWaypoint()) {
                  ServerLevel.this.getWaypointManager().trackWaypoint(waypoint);

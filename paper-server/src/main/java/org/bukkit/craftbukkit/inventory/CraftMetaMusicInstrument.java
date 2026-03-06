@@ -29,8 +29,7 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
         super(tag, extraHandledDcts); // Paper
 
         getOrEmpty(tag, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT).ifPresent((en) -> {
-            en.instrument().unwrap(CraftRegistry.getMinecraftRegistry())
-                .ifPresent(instrument -> this.instrument = CraftMusicInstrument.minecraftHolderToBukkit(instrument));
+            this.instrument = CraftMusicInstrument.minecraftHolderToBukkit(en.instrument());
         });
     }
 

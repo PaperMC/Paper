@@ -271,10 +271,6 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
         return this.delegate.getBlockStatesIfLoaded(box);
     }
 
-    @Override
-    public int getBlockTint(BlockPos pos, ColorResolver colorResolver) {
-        return this.delegate.getBlockTint(pos, colorResolver);
-    }
 
     @Override
     public Holder<Biome> getNoiseBiome(int biomeX, int biomeY, int biomeZ) {
@@ -416,10 +412,6 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
         return this.delegate.holderLookup(registryKey);
     }
 
-    @Override
-    public float getShade(Direction direction, boolean shade) {
-        return this.delegate.getShade(direction, shade);
-    }
 
     @Override
     public LevelLightEngine getLightEngine() {
@@ -779,4 +771,3 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
         return this.delegate.getChunkIfLoadedImmediately(x, z);
     }
 }
-

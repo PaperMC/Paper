@@ -15,6 +15,15 @@
      private static final int OVERLOADED_TICKS_THRESHOLD = 20;
      private static final long OVERLOADED_WARNING_INTERVAL_NANOS = 10L * TimeUtil.NANOSECONDS_PER_SECOND;
      private static final int OVERLOADED_TICKS_WARNING_INTERVAL = 100;
+@@ -219,7 +_,7 @@
+     public final PlayerDataStorage playerDataStorage;
+     private final SavedDataStorage savedDataStorage;
+     private final List<Runnable> tickables = Lists.newArrayList();
+-    private final GameRules gameRules;
++    // Paper - per-level GameRules
+     private MetricsRecorder metricsRecorder = InactiveMetricsRecorder.INSTANCE;
+     private Consumer<ProfileResults> onMetricsRecordingStopped = results -> this.stopRecordingMetrics();
+     private Consumer<Path> onMetricsRecordingFinished = ignored -> {};
 @@ -227,7 +_,7 @@
      private MinecraftServer.@Nullable TimeProfiler debugCommandProfiler;
      private boolean debugCommandProfilerDelayStart;
@@ -40,6 +49,15 @@
      private int playerIdleTimeout;
      private final long[] tickTimesNanos = new long[100];
      private long aggregatedTickTimesNanos = 0L;
+@@ -272,7 +_,7 @@
+     private @Nullable CommandStorage commandStorage;
+     private final CustomBossEvents customBossEvents;
+     private final RandomSequences randomSequences;
+-    private final WeatherData weatherData;
++    // Paper - per-level WeatherData
+     private final ServerFunctionManager functionManager;
+     private boolean enforceWhitelist;
+     private boolean usingWhitelist;
 @@ -297,8 +_,9 @@
  
      public static <S extends MinecraftServer> S spin(final Function<Thread, S> factory) {
@@ -172,7 +190,7 @@
              throw new IllegalStateException("Missing Overworld dimension data");
          } else {
              this.savedDataStorage = new SavedDataStorage(storageSource.getLevelPath(LevelResource.DATA), fixerUpper, this.registries.compositeAccess());
-@@ -334,9 +_,9 @@
+@@ -334,15 +_,14 @@
              this.packRepository = packRepository;
              this.resources = new MinecraftServer.ReloadableResources(worldStem.resourceManager(), worldStem.dataPackResources());
              this.services = services;
@@ -180,10 +198,18 @@
 +            // this.connection = new ServerConnectionListener(this); // Spigot
              this.tickRateManager = new ServerTickRateManager(this);
 -            this.levelLoadListener = levelLoadListener;
-+            // Paper - per level load listener - move LevelLoadListener to ServerLevel
++            // Paper - per-level load listener - move LevelLoadListener to ServerLevel
              this.storageSource = storageSource;
              this.playerDataStorage = storageSource.createPlayerStorage();
              this.randomSequences = this.savedDataStorage.computeIfAbsent(RandomSequences.TYPE);
+-            this.weatherData = this.getDataStorage().computeIfAbsent(WeatherData.TYPE);
+-            this.gameRules = new GameRules(this.worldData.enabledFeatures(), this.savedDataStorage.computeIfAbsent(GameRuleMap.TYPE));
+-            gameRules.ifPresent(g -> this.gameRules.setAll(g, null));
++            // Paper - per-level WeatherData
++            // Paper - per-level GameRules
+             this.fixerUpper = fixerUpper;
+             this.functionManager = new ServerFunctionManager(this, this.resources.managers.getFunctionLibrary());
+             HolderGetter<Block> blockLookup = this.registries
 @@ -364,6 +_,38 @@
              this.customBossEvents = this.savedDataStorage.computeIfAbsent(CustomBossEvents.TYPE);
              this.scheduledEvents = this.savedDataStorage.computeIfAbsent(TimerQueue.TYPE);
@@ -244,7 +270,7 @@
          if (profiledDuration != null) {
              profiledDuration.finish(true);
          }
-@@ -422,30 +_,127 @@
+@@ -422,33 +_,131 @@
          }
      }
  
@@ -307,7 +333,8 @@
 +            org.bukkit.World.Environment.getEnvironment(loadingInfo.dimension()),
 +            levelStem.type().value(),
 +            levelStem.generator(),
-+            this.registryAccess()
++            this.registryAccess(),
++            worldOptions.seed()
          );
 -        this.levels.put(Level.OVERWORLD, overworld);
 -        this.scoreboard.load(this.savedDataStorage.computeIfAbsent(ScoreboardSaveData.TYPE).getData());
@@ -383,7 +410,11 @@
 +                setInitialSpawn(overworld, levelData, worldOptions.generateBonusChest(), isDebug, overworld.levelLoadListener); // Paper - per world level load listener
                  levelData.setInitialized(true);
                  if (isDebug) {
-                     this.setupDebugLevel(this.worldData);
+-                    this.setupDebugLevel(this.worldData);
++                    this.setupDebugLevel(this.worldData, overworld); // Paper - per-level GameRules
+                 }
+             } catch (Throwable var20) {
+                 CrashReport report = CrashReport.forThrowable(var20, "Exception initializing level");
 @@ -465,25 +_,7 @@
          }
  
@@ -440,7 +471,18 @@
              ChunkPos spawnChunk = ChunkPos.containing(chunkSource.randomState().sampler().findSpawnPosition());
              levelLoadListener.start(LevelLoadListener.Stage.PREPARE_GLOBAL_SPAWN, 0);
              levelLoadListener.updateFocus(level.dimension(), spawnChunk);
-@@ -553,10 +_,13 @@
+@@ -544,19 +_,22 @@
+         }
+     }
+ 
+-    private void setupDebugLevel(final WorldData worldData) {
++    private void setupDebugLevel(final WorldData worldData, final ServerLevel level) { // Paper - pass level
+         worldData.setDifficulty(Difficulty.PEACEFUL);
+         worldData.setDifficultyLocked(true);
+         ServerLevelData levelData = worldData.overworldData();
+-        this.getGameRules().set(GameRules.ADVANCE_WEATHER, false, this);
++        level.getGameRules().set(GameRules.ADVANCE_WEATHER, false, level); // Paper - per-level GameRules
+         this.clockManager.moveToTimeMarker(this.registryAccess().getOrThrow(WorldClocks.OVERWORLD), ClockTimeMarkers.NOON);
          levelData.setGameType(GameType.SPECTATOR);
      }
  
@@ -491,16 +533,14 @@
          boolean result = false;
  
          for (ServerLevel level : this.getAllLevels()) {
-@@ -609,8 +_,10 @@
+@@ -609,8 +_,8 @@
              result = true;
          }
  
 -        GameProfile singleplayerProfile = this.getSingleplayerProfile();
 -        this.storageSource.saveDataTag(this.worldData, singleplayerProfile == null ? null : singleplayerProfile.id());
-+        // CraftBukkit start - moved to ServerLevel#save
-+        // this.worldData.setCustomBossEvents(this.getCustomBossEvents().save(this.registryAccess()));
-+        // this.storageSource.saveDataTag(this.registryAccess(), this.worldData, this.getPlayerList().getSingleplayerData());
-+        // CraftBukkit end
++        // GameProfile singleplayerProfile = this.getSingleplayerProfile(); // Paper - moved to ServerLevel#save
++        // this.storageSource.saveDataTag(this.worldData, singleplayerProfile == null ? null : singleplayerProfile.id()); // Paper - moved to ServerLevel#save
          if (flush) {
              this.savedDataStorage.saveAndJoin();
          } else {
@@ -1338,6 +1378,41 @@
      public void setRespawnData(final LevelData.RespawnData respawnData) {
          ServerLevelData levelData = this.worldData.overworldData();
          LevelData.RespawnData oldRespawnData = levelData.getRespawnData();
+@@ -1788,17 +_,20 @@
+         return this.randomSequences;
+     }
+ 
+-    public void setWeatherParameters(final int clearTime, final int rainTime, final boolean raining, final boolean thundering) {
+-        WeatherData weatherData = this.getWeatherData();
++    // Paper start - per-level WeatherData
++    public void setWeatherParameters(final ServerLevel level, final int clearTime, final int rainTime, final boolean raining, final boolean thundering) {
++        WeatherData weatherData = level.getWeatherData();
++        // Paper end - per-level WeatherData
+         weatherData.setClearWeatherTime(clearTime);
+         weatherData.setRainTime(rainTime);
+         weatherData.setThunderTime(rainTime);
+-        weatherData.setRaining(raining);
+-        weatherData.setThundering(thundering);
++        weatherData.setRaining(raining, org.bukkit.event.weather.WeatherChangeEvent.Cause.COMMAND); // Paper - per-level WeatherData
++        weatherData.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.COMMAND); // Paper - per-level WeatherData
+     }
+ 
++    @Deprecated(forRemoval = true) @io.papermc.paper.annotation.DoNotUse // Paper
+     public WeatherData getWeatherData() {
+-        return this.weatherData;
++        throw new UnsupportedOperationException("Use ServerLevel.getWeatherData() instead"); // Paper
+     }
+ 
+     public boolean isEnforceWhitelist() {
+@@ -1889,7 +_,7 @@
+     private void dumpGameRules(final Path path) throws IOException {
+         try (Writer output = Files.newBufferedWriter(path)) {
+             final List<String> entries = Lists.newArrayList();
+-            final GameRules gameRules = this.getGameRules();
++            final GameRules gameRules = this.overworld().getGameRules(); // Paper - per-level GameRules
+             gameRules.visitGameRuleTypes(new GameRuleTypeVisitor() {
+                 {
+                     Objects.requireNonNull(MinecraftServer.this);
 @@ -1951,6 +_,17 @@
          }
      }
@@ -1437,6 +1512,17 @@
              this.getPlayerList().broadcastAll(this.clockManager().createFullSyncPacket());
          }
      }
+@@ -2161,8 +_,9 @@
+         return this.scheduledEvents;
+     }
+ 
++    @Deprecated(forRemoval = true) @io.papermc.paper.annotation.DoNotUse // Paper
+     public GameRules getGameRules() {
+-        return this.gameRules;
++        throw new UnsupportedOperationException("Use ServerLevel.getGameRules() instead"); // Paper
+     }
+ 
+     public boolean acceptsTransfers() {
 @@ -2312,4 +_,53 @@
              };
          }

@@ -83,7 +83,11 @@ public final class DumpItemCommand implements PaperSubcommand {
         final List<String> commandComponents = new ArrayList<>();
         for (final DataComponentType<?> type : referencedComponentTypes) {
             final String path = registry.getResourceKey(type).orElseThrow().identifier().getPath();
-            final @Nullable Optional<?> patchedValue = patch.get(type);
+            final @Nullable Optional<?> patchedValue = patch.entrySet().stream()
+                .filter(entry -> entry.getKey() == type)
+                .findFirst()
+                .map(Map.Entry::getValue)
+                .orElse(null);
             final @Nullable TypedDataComponent<?> prototypeValue = prototype.getTyped(type);
             if (patchedValue != null) {
                 if (patchedValue.isEmpty()) {
