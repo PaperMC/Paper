@@ -70,6 +70,7 @@ public class RegistryConstantsTest {
             EnvironmentAttributes.DEFAULT_DRIPSTONE_PARTICLE
         ));
         ignore(Registries.MEMORY_MODULE_TYPE, Set.of(
+            MemoryModuleType.DUMMY, // no use case
             MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES,
             MemoryModuleType.WALK_TARGET,
             MemoryModuleType.LOOK_TARGET,

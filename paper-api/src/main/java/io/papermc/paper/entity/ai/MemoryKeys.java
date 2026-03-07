@@ -22,7 +22,6 @@ import org.bukkit.entity.Player;
 
 public final class MemoryKeys {
 
-    public static final MemoryKey.NonValued DUMMY = unvalued("dummy");
     public static final MemoryKey.Valued<Location> HOME = valued("home");
     public static final MemoryKey.Valued<Location> JOB_SITE = valued("job_site");
     public static final MemoryKey.Valued<Location> POTENTIAL_JOB_SITE = valued("potential_job_site");

@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.entity;
 
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import io.papermc.paper.adventure.PaperAdventure;
@@ -892,7 +891,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     public <API, NMS> API getMemory0(io.papermc.paper.entity.ai.PaperMemoryKey.ValuedImpl<API, NMS> memoryKey) {
         final Optional<NMS> memory = this.getHandle().getBrain().getMemoryInternal(memoryKey.getHandle());
-        return memory != null ? memory.map(a -> memoryKey.getAdapter().fromVanilla(a)).orElse(null) : null;
+        return memory != null ? memory.map(a -> memoryKey.getConverter().fromVanilla(a)).orElse(null) : null;
     }
 
     @Override
@@ -916,14 +915,10 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     public <API, NMS> void setMemory0(PaperMemoryKey<API, NMS> memoryKey, API value, final OptionalLong expirationTime) {
-        final Function<String, RuntimeException> error = message -> {
-            return new IllegalArgumentException("Failed to encode memory key %s (%s)".formatted(memoryKey.getKey().asString(), message));
-        };
         if (expirationTime.isPresent()) {
-            this.getHandle().getBrain().setMemoryWithExpiry(memoryKey.getHandle(), memoryKey.getAdapter().toVanilla(value).getOrThrow(error), expirationTime.getAsLong());
+            this.getHandle().getBrain().setMemoryWithExpiry(memoryKey.getHandle(), memoryKey.getConverter().toVanilla(value), expirationTime.getAsLong());
         } else {
-            // todo proper handling for dummy?
-            this.getHandle().getBrain().setMemory(memoryKey.getHandle(), memoryKey == MemoryKeys.DUMMY ? null : memoryKey.getAdapter().toVanilla(value).getOrThrow(error));
+            this.getHandle().getBrain().setMemory(memoryKey.getHandle(), memoryKey.getConverter().toVanilla(value));
         }
     }
 

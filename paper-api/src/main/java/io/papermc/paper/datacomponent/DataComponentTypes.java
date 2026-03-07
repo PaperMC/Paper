@@ -407,6 +407,7 @@ public final class DataComponentTypes {
             return (DataComponentType.Valued<T>) dataComponentType;
         }
         throw new IllegalStateException(name + " is not a valid valued type, it is a " + dataComponentType.getClass().getTypeName());
+
     }
 
     private DataComponentTypes() {

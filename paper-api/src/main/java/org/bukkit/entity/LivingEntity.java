@@ -1001,7 +1001,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return an unmodifiable collection of the memories
      */
-    @Unmodifiable Collection<io.papermc.paper.entity.ai.MemoryKey> getAvailableMemories();
+    @Unmodifiable @NotNull Collection<io.papermc.paper.entity.ai.MemoryKey> getAvailableMemories();
 
     /**
      * Checks the existence of the memory specified.
