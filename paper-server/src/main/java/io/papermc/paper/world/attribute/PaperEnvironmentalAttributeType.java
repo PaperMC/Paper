@@ -2,94 +2,130 @@ package io.papermc.paper.world.attribute;
 
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.HolderableBase;
-import io.papermc.paper.registry.typed.PaperTypedDataAdapter;
 import io.papermc.paper.registry.typed.PaperTypedDataAdapters;
+import io.papermc.paper.registry.typed.TypedDataCollector;
+import io.papermc.paper.registry.typed.converter.Converter;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.util.ARGB;
+import net.minecraft.util.TriState;
+import net.minecraft.util.Util;
+import net.minecraft.world.attribute.AttributeType;
+import net.minecraft.world.attribute.AttributeTypes;
 import net.minecraft.world.attribute.EnvironmentAttribute;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.level.MoonPhase;
+import org.bukkit.Color;
 
-public final class PaperEnvironmentalAttributeType<API, NMS> extends HolderableBase<EnvironmentAttribute<NMS>> implements EnvironmentalAttributeType<API> {
+import static io.papermc.paper.registry.typed.converter.Converter.direct;
 
-    private static final PaperTypedDataAdapters<EnvironmentAttribute<?>> ADAPTERS = PaperTypedDataAdapters.create(
+public final class PaperEnvironmentalAttributeType<A, M> extends HolderableBase<EnvironmentAttribute<M>> implements EnvironmentalAttributeType<A> {
+
+    @SuppressWarnings("RedundantTypeArguments")
+    private static final PaperTypedDataAdapters<EnvironmentAttribute<?>> ADAPTERS = PaperTypedDataAdapters.<EnvironmentAttribute<?>, TypedDataCollector<EnvironmentAttribute<?>>>create(
         BuiltInRegistries.ENVIRONMENT_ATTRIBUTE,
-        PaperEnvironmentalAttributeTypeCollector::new,
+        TypedDataCollector::new,
         collector -> {
-            // Audio
-            // collector.register(EnvironmentAttributes.AMBIENT_SOUNDS, toApi, toNms);
-            // collector.register(EnvironmentAttributes.BACKGROUND_MUSIC, toApi, toNms);
-            collector.registerIdentity(EnvironmentAttributes.FIREFLY_BUSH_SOUNDS);
-            collector.registerIdentity(EnvironmentAttributes.MUSIC_VOLUME);
+            final Converter<Integer, Color> intAsColor = direct(
+                Color::fromARGB,
+                Color::asARGB
+            );
+            final Converter<Integer, Color> intAsOpaqueColor = direct(
+                color -> Color.fromRGB(color & 0x00FFFFFF), color -> ARGB.opaque(color.asRGB())
+            );
+            final Converter<TriState, net.kyori.adventure.util.TriState> triState = direct(PaperAdventure::asAdventure, PaperAdventure::asVanilla);
+            final Converter<MoonPhase, io.papermc.paper.world.MoonPhase> moonPhase = direct(
+                phase -> io.papermc.paper.world.MoonPhase.values()[phase.ordinal()],
+                phase -> MoonPhase.values()[phase.ordinal()]
+            );
 
-            // Gameplay
-            // collector.register(EnvironmentAttributes.BABY_VILLAGER_ACTIVITY, toApi, toNms);
-            // collector.register(EnvironmentAttributes.BED_RULE, toApi, toNms);
-            collector.registerIdentity(EnvironmentAttributes.BEES_STAY_IN_HIVE);
-            collector.registerIdentity(EnvironmentAttributes.CAN_PILLAGER_PATROL_SPAWN);
-            collector.registerIdentity(EnvironmentAttributes.CAN_START_RAID);
-            collector.registerIdentity(EnvironmentAttributes.CAT_WAKING_UP_GIFT_CHANCE);
-            collector.registerIdentity(EnvironmentAttributes.CREAKING_ACTIVE);
-            collector.register(EnvironmentAttributes.EYEBLOSSOM_OPEN, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
-            collector.registerIdentity(EnvironmentAttributes.FAST_LAVA);
-            collector.registerIdentity(EnvironmentAttributes.INCREASED_FIRE_BURNOUT);
-            collector.registerIdentity(EnvironmentAttributes.MONSTERS_BURN);
-            collector.registerIdentity(EnvironmentAttributes.NETHER_PORTAL_SPAWNS_PIGLINS);
-            collector.registerIdentity(EnvironmentAttributes.PIGLINS_ZOMBIFY);
-            collector.registerIdentity(EnvironmentAttributes.RESPAWN_ANCHOR_WORKS);
-            collector.registerIdentity(EnvironmentAttributes.SKY_LIGHT_LEVEL);
-            collector.registerIdentity(EnvironmentAttributes.SNOW_GOLEM_MELTS);
-            collector.registerIdentity(EnvironmentAttributes.SURFACE_SLIME_SPAWN_CHANCE);
-            collector.registerIdentity(EnvironmentAttributes.TURTLE_EGG_HATCH_CHANCE);
-            // collector.register(EnvironmentAttributes.VILLAGER_ACTIVITY, toApi, toNms);
-            collector.registerIdentity(EnvironmentAttributes.WATER_EVAPORATES);
+            final Map<AttributeType<?>, Converter<?, ?>> converters = Util.make(new IdentityHashMap<>(), map -> {
+                map.put(AttributeTypes.ARGB_COLOR, intAsColor);
+                map.put(AttributeTypes.RGB_COLOR, intAsOpaqueColor);
+                map.put(AttributeTypes.TRI_STATE, triState);
+                map.put(AttributeTypes.MOON_PHASE, moonPhase);
+            });
 
-            // Visual
-            // collector.register(EnvironmentAttributes.AMBIENT_PARTICLES, toApi, toNms);
-            collector.registerIntAsColor(EnvironmentAttributes.CLOUD_COLOR);
-            collector.registerIdentity(EnvironmentAttributes.CLOUD_FOG_END_DISTANCE);
-            collector.registerIdentity(EnvironmentAttributes.CLOUD_HEIGHT);
-            // collector.register(EnvironmentAttributes.DEFAULT_DRIPSTONE_PARTICLE, toApi, toNms);
-            collector.registerIntAsColor(EnvironmentAttributes.FOG_COLOR);
-            collector.registerIdentity(EnvironmentAttributes.FOG_END_DISTANCE);
-            collector.registerIdentity(EnvironmentAttributes.FOG_START_DISTANCE);
-            collector.registerIdentity(EnvironmentAttributes.MOON_ANGLE);
-            collector.register(EnvironmentAttributes.MOON_PHASE, moonPhase -> io.papermc.paper.world.MoonPhase.values()[moonPhase.ordinal()], moonPhase -> MoonPhase.values()[moonPhase.ordinal()]);
-            collector.registerIntAsColor(EnvironmentAttributes.SKY_COLOR);
-            collector.registerIdentity(EnvironmentAttributes.SKY_FOG_END_DISTANCE);
-            collector.registerIntAsColor(EnvironmentAttributes.SKY_LIGHT_COLOR);
-            collector.registerIdentity(EnvironmentAttributes.SKY_LIGHT_FACTOR);
-            collector.registerIdentity(EnvironmentAttributes.STAR_ANGLE);
-            collector.registerIdentity(EnvironmentAttributes.STAR_BRIGHTNESS);
-            collector.registerIdentity(EnvironmentAttributes.SUN_ANGLE);
-            collector.registerIntAsColor(EnvironmentAttributes.SUNRISE_SUNSET_COLOR);
-            collector.registerIntAsColor(EnvironmentAttributes.WATER_FOG_COLOR);
-            collector.registerIdentity(EnvironmentAttributes.WATER_FOG_END_DISTANCE);
-            collector.registerIdentity(EnvironmentAttributes.WATER_FOG_START_DISTANCE);
+            collector.dispatch(attribute -> {
+                final Converter<?, ?> converter = converters.get(attribute.type());
+                if (converter == null) {
+                    throw new UnsupportedOperationException("Unknown attribute type: " + BuiltInRegistries.ATTRIBUTE_TYPE.getKey(attribute.type()));
+                }
+                return converter;
+            }).add(
+                EnvironmentAttributes.EYEBLOSSOM_OPEN,
+                EnvironmentAttributes.MOON_PHASE,
+                EnvironmentAttributes.CLOUD_COLOR,
+                EnvironmentAttributes.FOG_COLOR,
+                EnvironmentAttributes.SKY_COLOR,
+                EnvironmentAttributes.SKY_LIGHT_COLOR,
+                EnvironmentAttributes.SUNRISE_SUNSET_COLOR,
+                EnvironmentAttributes.WATER_FOG_COLOR
+                // EnvironmentAttributes.VILLAGER_ACTIVITY
+                // EnvironmentAttributes.AMBIENT_PARTICLES
+                // EnvironmentAttributes.DEFAULT_DRIPSTONE_PARTICLE
+                // EnvironmentAttributes.AMBIENT_SOUNDS
+                // EnvironmentAttributes.BACKGROUND_MUSIC
+                // EnvironmentAttributes.BABY_VILLAGER_ACTIVITY
+                // EnvironmentAttributes.BED_RULE
+            );
+            collector.dispatch(type -> Converter.identity(type.valueCodec())).add(
+                EnvironmentAttributes.FIREFLY_BUSH_SOUNDS,
+                EnvironmentAttributes.MUSIC_VOLUME,
+                EnvironmentAttributes.BEES_STAY_IN_HIVE,
+                EnvironmentAttributes.CAN_PILLAGER_PATROL_SPAWN,
+                EnvironmentAttributes.CAN_START_RAID,
+                EnvironmentAttributes.CAT_WAKING_UP_GIFT_CHANCE,
+                EnvironmentAttributes.CREAKING_ACTIVE,
+                EnvironmentAttributes.FAST_LAVA,
+                EnvironmentAttributes.INCREASED_FIRE_BURNOUT,
+                EnvironmentAttributes.MONSTERS_BURN,
+                EnvironmentAttributes.NETHER_PORTAL_SPAWNS_PIGLINS,
+                EnvironmentAttributes.PIGLINS_ZOMBIFY,
+                EnvironmentAttributes.RESPAWN_ANCHOR_WORKS,
+                EnvironmentAttributes.SKY_LIGHT_LEVEL,
+                EnvironmentAttributes.SNOW_GOLEM_MELTS,
+                EnvironmentAttributes.SURFACE_SLIME_SPAWN_CHANCE,
+                EnvironmentAttributes.TURTLE_EGG_HATCH_CHANCE,
+                EnvironmentAttributes.WATER_EVAPORATES,
+                EnvironmentAttributes.CLOUD_FOG_END_DISTANCE,
+                EnvironmentAttributes.CLOUD_HEIGHT,
+                EnvironmentAttributes.FOG_END_DISTANCE,
+                EnvironmentAttributes.FOG_START_DISTANCE,
+                EnvironmentAttributes.MOON_ANGLE,
+                EnvironmentAttributes.SKY_FOG_END_DISTANCE,
+                EnvironmentAttributes.SKY_LIGHT_FACTOR,
+                EnvironmentAttributes.STAR_ANGLE,
+                EnvironmentAttributes.STAR_BRIGHTNESS,
+                EnvironmentAttributes.SUN_ANGLE,
+                EnvironmentAttributes.WATER_FOG_END_DISTANCE,
+                EnvironmentAttributes.WATER_FOG_START_DISTANCE
+            );
         }
     );
 
-    private final PaperTypedDataAdapter<API, NMS> adapter;
+    private final Converter<M, A> converter;
 
-    private PaperEnvironmentalAttributeType(Holder<EnvironmentAttribute<NMS>> holder, PaperTypedDataAdapter<API, NMS> adapter) {
+    private PaperEnvironmentalAttributeType(final Holder<EnvironmentAttribute<M>> holder, final Converter<M, A> converter) {
         super(holder);
-
-        this.adapter = adapter;
+        this.converter = converter;
     }
 
     @SuppressWarnings("unchecked")
-    public static <NMS> EnvironmentalAttributeType<?> of(final Holder<?> holder) {
-        final Holder.Reference<EnvironmentAttribute<NMS>> reference = (Holder.Reference<EnvironmentAttribute<NMS>>) holder;
-        final PaperTypedDataAdapter<?, NMS> adapter = PaperEnvironmentalAttributeType.ADAPTERS.get(reference.key());
+    public static <M> EnvironmentalAttributeType<?> of(final Holder<?> holder) {
+        final Holder.Reference<EnvironmentAttribute<M>> reference = (Holder.Reference<EnvironmentAttribute<M>>) holder;
+        final Converter<M, ?> adapter = PaperEnvironmentalAttributeType.ADAPTERS.get(reference.key());
         return new PaperEnvironmentalAttributeType<>(reference, adapter);
     }
 
     @Override
-    public API getDefaultValue() {
-        return this.getAdapter().fromVanilla(this.getHandle().defaultValue());
+    public A getDefaultValue() {
+        return this.getConverter().fromVanilla(this.getHandle().defaultValue());
     }
 
-    public PaperTypedDataAdapter<API, NMS> getAdapter() {
-        return this.adapter;
+    public Converter<M, A> getConverter() {
+        return this.converter;
     }
 }

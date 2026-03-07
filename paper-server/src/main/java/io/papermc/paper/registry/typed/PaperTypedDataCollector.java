@@ -1,40 +1,49 @@
 package io.papermc.paper.registry.typed;
 
-import com.mojang.serialization.Codec;
+import io.papermc.paper.registry.typed.converter.Converter;
+import io.papermc.paper.registry.typed.converter.ConverterClassDispatcher;
+import io.papermc.paper.registry.typed.converter.ConverterDispatcher;
 import java.util.Map;
 import java.util.function.Function;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import org.jspecify.annotations.Nullable;
 
-public interface PaperTypedDataCollector<TYPE> {
+public interface PaperTypedDataCollector<T> {
 
-    void registerUntyped(TYPE type);
+    interface Unvalued<T> {
+        void registerUnvalued(T type);
 
-    default void registerUntyped(Holder.Reference<TYPE> type) {
-        this.registerUntyped(type.key());
+        default void registerUnvalued(final Holder.Reference<T> type) {
+            this.registerUnvalued(type.key());
+        }
+
+        void registerUnvalued(ResourceKey<T> type);
     }
 
-    void registerUntyped(ResourceKey<TYPE> type);
+    <M, A> void register(T type, Function<M, A> vanillaToApi, Function<A, M> apiToVanilla);
 
-    <NMS> void registerIdentity(TYPE type, Function<TYPE, @Nullable Codec<NMS>> codecGetter);
-
-    <NMS> void registerIdentity(Holder.Reference<TYPE> type, Function<TYPE, @Nullable Codec<NMS>> codecGetter);
-
-    <NMS> void registerIdentity(ResourceKey<TYPE> type, Function<TYPE, @Nullable Codec<NMS>> codecGetter);
-
-    <NMS, API> void register(TYPE type, Function<NMS, API> vanillaToApi, Function<API, NMS> apiToVanilla);
-
-    default <NMS, API> void register(Holder.Reference<TYPE> type, Function<NMS, API> vanillaToApi, Function<API, NMS> apiToVanilla) {
+    default <M, A> void register(final Holder.Reference<T> type, final Function<M, A> vanillaToApi, final Function<A, M> apiToVanilla) {
         this.register(type.key(), vanillaToApi, apiToVanilla);
     }
 
-    <NMS, API> void register(ResourceKey<TYPE> type, Function<NMS, API> vanillaToApi, Function<API, NMS> apiToVanilla);
+    <M, A> void register(ResourceKey<T> type, Function<M, A> vanillaToApi, Function<A, M> apiToVanilla);
 
-    interface Factory<TYPE, COLLECTOR extends PaperTypedDataCollector<TYPE>> {
+    <M, A> void register(T type, Converter<M, A> converter);
 
-        COLLECTOR create(Registry<TYPE> registry, Map<ResourceKey<TYPE>, PaperTypedDataAdapter<?, ?>> adapters);
+    default <M, A> void register(final Holder.Reference<T> type, final Converter<M, A> converter) {
+        this.register(type.key(), converter);
+    }
+
+    <M, A>  void register(ResourceKey<T> type, Converter<M, A> converter);
+
+    ConverterDispatcher<T> dispatch(Function<T, Converter<?, ?>> converter);
+
+    ConverterClassDispatcher<T> dispatchClass(Function<Class<?>, Converter<?, ?>> converter);
+
+    interface Factory<T, C extends PaperTypedDataCollector<T>> {
+
+        C create(Registry<T> registry, Map<ResourceKey<T>, Converter<?, ?>> adapters);
 
     }
 }
