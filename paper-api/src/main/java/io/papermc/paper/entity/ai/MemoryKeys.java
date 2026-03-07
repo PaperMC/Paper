@@ -14,11 +14,11 @@ import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Hoglin;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.PiglinAbstract;
-import org.bukkit.entity.Player;
 
 public final class MemoryKeys {
 
@@ -30,10 +30,10 @@ public final class MemoryKeys {
     public static final MemoryKey.Valued<List<LivingEntity>> NEAREST_LIVING_ENTITIES = valued("mobs");
     //public static final MemoryKey.Valued<NearestVisibleLivingEntities> NEAREST_VISIBLE_LIVING_ENTITIES = valued("visible_mobs");
     public static final MemoryKey.Valued<List<LivingEntity>> VISIBLE_VILLAGER_BABIES = valued("visible_villager_babies");
-    public static final MemoryKey.Valued<List<Player>> NEAREST_PLAYERS = valued("nearest_players");
-    public static final MemoryKey.Valued<Player> NEAREST_VISIBLE_PLAYER = valued("nearest_visible_player");
-    public static final MemoryKey.Valued<Player> NEAREST_VISIBLE_ATTACKABLE_PLAYER = valued("nearest_visible_targetable_player");
-    public static final MemoryKey.Valued<List<Player>> NEAREST_VISIBLE_ATTACKABLE_PLAYERS = valued("nearest_visible_targetable_players");
+    public static final MemoryKey.Valued<List<HumanEntity>> NEAREST_PLAYERS = valued("nearest_players");
+    public static final MemoryKey.Valued<HumanEntity> NEAREST_VISIBLE_PLAYER = valued("nearest_visible_player");
+    public static final MemoryKey.Valued<HumanEntity> NEAREST_VISIBLE_ATTACKABLE_PLAYER = valued("nearest_visible_targetable_player");
+    public static final MemoryKey.Valued<List<HumanEntity>> NEAREST_VISIBLE_ATTACKABLE_PLAYERS = valued("nearest_visible_targetable_players");
     //public static final MemoryKey.Valued<WalkTarget> WALK_TARGET = valued("walk_target");
     //public static final MemoryKey.Valued<PositionTracker> LOOK_TARGET = valued("look_target");
     public static final MemoryKey.Valued<LivingEntity> ATTACK_TARGET = valued("attack_target");
@@ -62,7 +62,7 @@ public final class MemoryKeys {
     public static final MemoryKey.Valued<Item> NEAREST_VISIBLE_WANTED_ITEM = valued("nearest_visible_wanted_item");
     public static final MemoryKey.Valued<Mob> NEAREST_VISIBLE_NEMESIS = valued("nearest_visible_nemesis");
     public static final MemoryKey.Valued<Integer> PLAY_DEAD_TICKS = valued("play_dead_ticks");
-    public static final MemoryKey.Valued<Player> TEMPTING_PLAYER = valued("tempting_player");
+    public static final MemoryKey.Valued<HumanEntity> TEMPTING_PLAYER = valued("tempting_player");
     public static final MemoryKey.Valued<Integer> TEMPTATION_COOLDOWN_TICKS = valued("temptation_cooldown_ticks");
     public static final MemoryKey.Valued<Integer> GAZE_COOLDOWN_TICKS = valued("gaze_cooldown_ticks");
     public static final MemoryKey.Valued<Boolean> IS_TEMPTED = valued("is_tempted");
@@ -96,7 +96,7 @@ public final class MemoryKeys {
     public static final MemoryKey.Valued<Boolean> DANCING = valued("dancing");
     public static final MemoryKey.Valued<Hoglin> NEAREST_VISIBLE_HUNTABLE_HOGLIN = valued("nearest_visible_huntable_hoglin");
     public static final MemoryKey.Valued<Hoglin> NEAREST_VISIBLE_BABY_HOGLIN = valued("nearest_visible_baby_hoglin");
-    public static final MemoryKey.Valued<Player> NEAREST_TARGETABLE_PLAYER_NOT_WEARING_GOLD = valued("nearest_targetable_player_not_wearing_gold");
+    public static final MemoryKey.Valued<HumanEntity> NEAREST_TARGETABLE_PLAYER_NOT_WEARING_GOLD = valued("nearest_targetable_player_not_wearing_gold");
     public static final MemoryKey.Valued<List<PiglinAbstract>> NEARBY_ADULT_PIGLINS = valued("nearby_adult_piglins");
     public static final MemoryKey.Valued<List<PiglinAbstract>> NEAREST_VISIBLE_ADULT_PIGLINS = valued("nearest_visible_adult_piglins");
     public static final MemoryKey.Valued<List<Hoglin>> NEAREST_VISIBLE_ADULT_HOGLINS = valued("nearest_visible_adult_hoglins");
@@ -104,7 +104,7 @@ public final class MemoryKeys {
     public static final MemoryKey.Valued<LivingEntity> NEAREST_VISIBLE_ZOMBIFIED = valued("nearest_visible_zombified");
     public static final MemoryKey.Valued<Integer> VISIBLE_ADULT_PIGLIN_COUNT = valued("visible_adult_piglin_count");
     public static final MemoryKey.Valued<Integer> VISIBLE_ADULT_HOGLIN_COUNT = valued("visible_adult_hoglin_count");
-    public static final MemoryKey.Valued<Player> NEAREST_PLAYER_HOLDING_WANTED_ITEM = valued("nearest_player_holding_wanted_item");
+    public static final MemoryKey.Valued<HumanEntity> NEAREST_PLAYER_HOLDING_WANTED_ITEM = valued("nearest_player_holding_wanted_item");
     public static final MemoryKey.Valued<Boolean> ATE_RECENTLY = valued("ate_recently");
     public static final MemoryKey.Valued<BlockPosition> NEAREST_REPELLENT = valued("nearest_repellent");
     public static final MemoryKey.Valued<Boolean> PACIFIED = valued("pacified");
