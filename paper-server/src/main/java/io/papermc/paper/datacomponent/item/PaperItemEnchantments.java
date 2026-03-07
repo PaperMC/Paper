@@ -16,8 +16,8 @@ public record PaperItemEnchantments(
     Map<Enchantment, Integer> enchantments // API values are stored externally as the concept of a lazy key transformer map does not make much sense
 ) implements ItemEnchantments, Handleable<net.minecraft.world.item.enchantment.ItemEnchantments> {
 
-    public PaperItemEnchantments(final net.minecraft.world.item.enchantment.ItemEnchantments itemEnchantments) {
-        this(itemEnchantments, convert(itemEnchantments));
+    public static PaperItemEnchantments of(final net.minecraft.world.item.enchantment.ItemEnchantments itemEnchantments) {
+        return new PaperItemEnchantments(itemEnchantments, convert(itemEnchantments));
     }
 
     private static Map<Enchantment, Integer> convert(final net.minecraft.world.item.enchantment.ItemEnchantments itemEnchantments) {
@@ -62,14 +62,14 @@ public record PaperItemEnchantments(
         public ItemEnchantments build() {
             final net.minecraft.world.item.enchantment.ItemEnchantments initialEnchantments = net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY;
             if (this.enchantments.isEmpty()) {
-                return new PaperItemEnchantments(initialEnchantments);
+                return PaperItemEnchantments.of(initialEnchantments);
             }
 
             final net.minecraft.world.item.enchantment.ItemEnchantments.Mutable mutable = new net.minecraft.world.item.enchantment.ItemEnchantments.Mutable(initialEnchantments);
             this.enchantments.forEach((enchantment, level) ->
                 mutable.set(CraftEnchantment.bukkitToMinecraftHolder(enchantment), level)
             );
-            return new PaperItemEnchantments(mutable.toImmutable());
+            return PaperItemEnchantments.of(mutable.toImmutable());
         }
     }
 }
