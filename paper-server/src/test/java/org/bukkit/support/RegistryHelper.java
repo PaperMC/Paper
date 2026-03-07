@@ -78,11 +78,11 @@ public final class RegistryHelper {
         List<Registry.PendingTags<?>> pendingTags = TagLoader.loadTagsForExistingRegistries(resourceManager, layers.getLayer(RegistryLayer.STATIC));
 
         List<HolderLookup.RegistryLookup<?>> lookupsWithPendingTags = TagLoader.buildUpdatedLookups(layers.getAccessForLoading(RegistryLayer.WORLDGEN), pendingTags);
-        RegistryAccess.Frozen worldGenRegistries = RegistryDataLoader.load(resourceManager, lookupsWithPendingTags, RegistryDataLoader.WORLDGEN_REGISTRIES, Runnable::run).join();
+        RegistryAccess.Frozen worldGenRegistries = RegistryDataLoader.load(resourceManager, lookupsWithPendingTags, RegistryDataLoader.WORLDGEN_REGISTRIES, Util.backgroundExecutor()).join();
         layers = layers.replaceFrom(RegistryLayer.WORLDGEN, worldGenRegistries);
 
         List<HolderLookup.RegistryLookup<?>> staticAndWorldgenLookups = Stream.concat(lookupsWithPendingTags.stream(), worldGenRegistries.listRegistries()).toList();
-        RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES, Runnable::run).join();
+        RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES, Util.backgroundExecutor()).join();
         layers = layers.replaceFrom(RegistryLayer.DIMENSIONS, dimensionRegistries);
         // load registry here to ensure bukkit object registry are correctly delayed if needed
         try {

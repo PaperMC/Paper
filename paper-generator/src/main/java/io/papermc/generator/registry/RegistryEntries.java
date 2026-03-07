@@ -153,7 +153,8 @@ public final class RegistryEntries {
 
     public static final Set<Class<?>> REGISTRY_CLASS_NAME_BASED_ON_API = Set.of(
         BlockType.class,
-        ItemType.class
+        ItemType.class,
+        PotionType.class
     );
 
     public static final List<RegistryEntry<?>> BUILT_IN = List.of(
