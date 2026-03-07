@@ -9,8 +9,10 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Unit;
+import net.minecraft.world.entity.Entity;
 import org.bukkit.Keyed;
 import org.bukkit.craftbukkit.CraftRegistry;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.util.Handleable;
 
 import static io.papermc.paper.util.MCUtil.transformUnmodifiable;
@@ -64,6 +66,13 @@ public final class Converters {
 
     public static <M, A extends Handleable<M>> Converter<M, A> wrapper(final Function<M, A> vanillaToApi) {
         return Converter.direct(vanillaToApi, Handleable::getHandle);
+    }
+
+    public static <M extends Entity, A extends CraftEntity> Converter<M, A> entity(final Class<M> vanillaEntity, final Class<A> apiEntity) {
+        return Converter.direct(
+            entity -> apiEntity.cast(entity.getBukkitEntity()),
+            entity -> vanillaEntity.cast(entity.getHandle())
+        );
     }
 
     private static final Converter<?, ?> UNIMPLEMENTED = Converter.direct($ -> {

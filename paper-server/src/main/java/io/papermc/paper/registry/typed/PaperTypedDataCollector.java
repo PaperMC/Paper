@@ -3,6 +3,7 @@ package io.papermc.paper.registry.typed;
 import io.papermc.paper.registry.typed.converter.Converter;
 import io.papermc.paper.registry.typed.converter.ConverterClassDispatcher;
 import io.papermc.paper.registry.typed.converter.ConverterDispatcher;
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.function.Function;
 import net.minecraft.core.Holder;
@@ -39,7 +40,7 @@ public interface PaperTypedDataCollector<T> {
 
     ConverterDispatcher<T> dispatch(Function<T, Converter<?, ?>> converter);
 
-    ConverterClassDispatcher<T> dispatchClass(Function<Class<?>, Converter<?, ?>> converter);
+    ConverterClassDispatcher<T> dispatchClass(Function<Type, Converter<?, ?>> converter);
 
     interface Factory<T, C extends PaperTypedDataCollector<T>> {
 

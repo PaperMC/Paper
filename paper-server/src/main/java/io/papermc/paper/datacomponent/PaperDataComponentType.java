@@ -262,11 +262,11 @@ public abstract class PaperDataComponentType<A, M> extends HolderableBase<net.mi
         final Holder.Reference<net.minecraft.core.component.DataComponentType<M>> reference = (Holder.Reference<net.minecraft.core.component.DataComponentType<M>>) holder;
         final Converter<M, ?> converter = PaperDataComponentType.ADAPTERS.get(reference.key());
         if (converter == Converters.unimplemented()) {
-            return new Unimplemented<>((Holder<net.minecraft.core.component.DataComponentType<M>>) holder, converter);
+            return new Unimplemented<>(reference, converter);
         } else if (converter == Converters.unvalued()) {
-            return new NonValuedImpl<>((Holder<net.minecraft.core.component.DataComponentType<M>>) holder, converter);
+            return new NonValuedImpl<>(reference, converter);
         } else {
-            return new ValuedImpl<>((Holder<net.minecraft.core.component.DataComponentType<M>>) holder, converter);
+            return new ValuedImpl<>(reference, converter);
         }
     }
 

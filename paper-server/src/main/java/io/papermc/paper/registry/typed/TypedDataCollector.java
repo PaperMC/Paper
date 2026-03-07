@@ -6,6 +6,7 @@ import io.papermc.paper.registry.typed.converter.ConverterDispatcher;
 import io.papermc.paper.registry.typed.converter.Converters;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.function.Function;
 import net.minecraft.core.Registry;
@@ -69,23 +70,25 @@ public class TypedDataCollector<T> implements PaperTypedDataCollector<T> {
     }
 
     @Override
-    public ConverterClassDispatcher<T> dispatchClass(final Function<Class<?>, Converter<?, ?>> converter) {
-        return (from, toType, toValueClass) -> {
+    public ConverterClassDispatcher<T> dispatchClass(final Function<Type, Converter<?, ?>> converter) {
+        return (from, toType, toValueType) -> {
             for (final Field field : from.getDeclaredFields()) {
                 final int mod = field.getModifiers();
                 if (!Modifier.isStatic(mod) || !Modifier.isPublic(mod)) {
                     continue;
                 }
 
-                final Class<?> valueClass = toValueClass.apply(field);
-                if (valueClass == null) {
-                    continue;
-                }
+                final T value;
                 try {
-                    TypedDataCollector.this.register(TypedDataCollector.this.getKey(toType.apply(field)), converter.apply(valueClass));
+                    value = toType.apply(field);
                 } catch (final ReflectiveOperationException e) {
                     throw new RuntimeException(e);
                 }
+                final Type valueType = toValueType.apply(value, field);
+                if (valueType == null) {
+                    continue;
+                }
+                TypedDataCollector.this.register(TypedDataCollector.this.getKey(value), converter.apply(valueType));
             }
         };
     }
