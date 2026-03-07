@@ -34,7 +34,7 @@ public final class PaperCodecs {
     }, TriState::name);
 
     /**
-     * This serializer is lenient on decoding and encoding compared to native OptionalFieldCodec
+     * This codec is lenient on decoding and encoding compared to native OptionalFieldCodec
      * which only has options to be lenient on decoding.
      */
     public static <M> MapCodec<Optional<M>> lenientCodec(final String name, final Codec<M> codec) {

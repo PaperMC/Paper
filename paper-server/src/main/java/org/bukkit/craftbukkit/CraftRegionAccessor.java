@@ -507,7 +507,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public <T> PaperEnvironmentalAttribute<T, ?> getEnvironmentalAttribute(final EnvironmentalAttributeType<T> type) {
-        // todo should probably restrict the position lookup for LimitedRegion
         return new PaperEnvironmentalAttribute<>(this.getHandle().getLevel().environmentAttributes(), (PaperEnvironmentalAttributeType<T, ?>) type);
     }
 }
