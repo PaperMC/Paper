@@ -1,6 +1,7 @@
 package io.papermc.paper.registry.typed.converter;
 
 import com.mojang.serialization.Encoder;
+import org.jspecify.annotations.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -34,8 +35,12 @@ public interface Converter<M, A> {
         return (Converter<I, I>) Holder.NO_OP;
     }
 
-    static <I> Converter<I, I> identity(final Encoder<I> serializer) {
-        return new CodecConverter<>(identity(), serializer);
+    static <I> Converter<I, I> identity(final @Nullable Encoder<I> serializer) {
+        final Converter<I, I> i = identity();
+        if (serializer == null) {
+            return i;
+        }
+        return i.serializable(serializer);
     }
 
     default Converter<M, A> serializable(final Encoder<M> serializer) {
@@ -57,8 +62,8 @@ public interface Converter<M, A> {
             return codecConverter.converter().list();
         }
         return Converter.direct(
-            collection -> transformUnmodifiable(collection, this::fromVanilla),
-            collection -> transformUnmodifiable(collection, this::toVanilla)
+            list -> transformUnmodifiable(list, this::fromVanilla),
+            list -> transformUnmodifiable(list, this::toVanilla)
         );
     }
 
