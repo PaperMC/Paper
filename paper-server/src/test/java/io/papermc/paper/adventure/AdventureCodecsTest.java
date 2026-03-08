@@ -169,7 +169,7 @@ class AdventureCodecsTest {
         final ItemStackTemplate itemTemplate = nms.item();
         assertNotNull(itemTemplate);
         assertEquals(hoverEvent.value().count(), itemTemplate.count());
-        assertEquals(hoverEvent.value().item().asString(), itemTemplate.item().toString());
+        assertEquals(hoverEvent.value().item().asString(), itemTemplate.item().unwrapKey().orElseThrow().identifier().toString());
         assertEquals(stack.getComponentsPatch(), itemTemplate.components());
     }
 

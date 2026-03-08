@@ -76,33 +76,49 @@ public enum Instrument {
      */
     PLING(0xF, Sound.BLOCK_NOTE_BLOCK_PLING),
     /**
+     * Trumpet is normally played when a note block is on top of a copper block.
+     */
+    TRUMPET(0x10, Sound.BLOCK_NOTE_BLOCK_TRUMPET),
+    /**
+     * Trumpet exposed is normally played when a note block is on top of an exposed copper block.
+     */
+    TRUMPET_EXPOSED(0x11, Sound.BLOCK_NOTE_BLOCK_TRUMPET_EXPOSED),
+    /**
+     * Trumpet oxidized is normally played when a note block is on top of an oxidized copper block.
+     */
+    TRUMPET_OXIDIZED(0x12, Sound.BLOCK_NOTE_BLOCK_TRUMPET_OXIDIZED),
+    /**
+     * Trumpet weathered is normally played when a note block is on top of a weathered copper block.
+     */
+    TRUMPET_WEATHERED(0x13, Sound.BLOCK_NOTE_BLOCK_TRUMPET_WEATHERED),
+    /**
      * Zombie is normally played when a Zombie Head is on top of the note block.
      */
-    ZOMBIE(0x10, Sound.BLOCK_NOTE_BLOCK_IMITATE_ZOMBIE), // Paper
+    ZOMBIE(0x14, Sound.BLOCK_NOTE_BLOCK_IMITATE_ZOMBIE),
     /**
      * Skeleton is normally played when a Skeleton Head is on top of the note block.
      */
-    SKELETON(0x11, Sound.BLOCK_NOTE_BLOCK_IMITATE_SKELETON), // Paper
+    SKELETON(0x15, Sound.BLOCK_NOTE_BLOCK_IMITATE_SKELETON),
     /**
      * Creeper is normally played when a Creeper Head is on top of the note block.
      */
-    CREEPER(0x12, Sound.BLOCK_NOTE_BLOCK_IMITATE_CREEPER), // Paper
+    CREEPER(0x16, Sound.BLOCK_NOTE_BLOCK_IMITATE_CREEPER),
     /**
      * Dragon is normally played when a Dragon Head is on top of the note block.
      */
-    DRAGON(0x13, Sound.BLOCK_NOTE_BLOCK_IMITATE_ENDER_DRAGON), // Paper
+    DRAGON(0x17, Sound.BLOCK_NOTE_BLOCK_IMITATE_ENDER_DRAGON),
     /**
      * Wither Skeleton is normally played when a Wither Skeleton Head is on top of the note block.
      */
-    WITHER_SKELETON(0x14, Sound.BLOCK_NOTE_BLOCK_IMITATE_WITHER_SKELETON), // Paper
+    WITHER_SKELETON(0x18, Sound.BLOCK_NOTE_BLOCK_IMITATE_WITHER_SKELETON),
     /**
      * Piglin is normally played when a Piglin Head is on top of the note block.
      */
-    PIGLIN(0x15, Sound.BLOCK_NOTE_BLOCK_IMITATE_PIGLIN), // Paper
+    PIGLIN(0x19, Sound.BLOCK_NOTE_BLOCK_IMITATE_PIGLIN),
     /**
      * Custom Sound is normally played when a Player Head with the required data is on top of the note block.
      */
-    CUSTOM_HEAD(0x16, null); // Paper
+    CUSTOM_HEAD(0x1A, null);
 
     private final byte type;
     private final Sound sound;

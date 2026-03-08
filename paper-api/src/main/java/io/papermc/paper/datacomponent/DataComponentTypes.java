@@ -239,8 +239,9 @@ public final class DataComponentTypes {
      * @see #ENCHANTMENTS
      */
     public static final DataComponentType.Valued<ItemEnchantments> STORED_ENCHANTMENTS = valued("stored_enchantments");
+    public static final DataComponentType.Valued<DyeColor> DYE = valued("dye");
     /**
-     * Represents a color applied to a dyeable item (in the {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys#DYEABLE} item tag).
+     * Represents a color applied to a dyeable item.
      */
     public static final DataComponentType.Valued<DyedItemColor> DYED_COLOR = valued("dyed_color");
     /**
@@ -378,9 +379,11 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<MushroomCow.Variant> MOOSHROOM_VARIANT = valued("mooshroom/variant");
     public static final DataComponentType.Valued<Rabbit.Type> RABBIT_VARIANT = valued("rabbit/variant");
     public static final DataComponentType.Valued<Pig.Variant> PIG_VARIANT = valued("pig/variant");
+    public static final DataComponentType.Valued<Pig.SoundVariant> PIG_SOUND_VARIANT = valued("pig/sound_variant");
     public static final DataComponentType.Valued<Cow.Variant> COW_VARIANT = valued("cow/variant");
+    public static final DataComponentType.Valued<Cow.SoundVariant> COW_SOUND_VARIANT = valued("cow/sound_variant");
     public static final DataComponentType.Valued<Chicken.Variant> CHICKEN_VARIANT = valued("chicken/variant");
-    // This is a eitherholder? Why specifically the chicken?? Oh wait this is prolly for chicken egg cause legacy item loading
+    public static final DataComponentType.Valued<Chicken.SoundVariant> CHICKEN_SOUND_VARIANT = valued("chicken/sound_variant");
     public static final DataComponentType.Valued<Frog.Variant> FROG_VARIANT = valued("frog/variant");
     public static final DataComponentType.Valued<Horse.Color> HORSE_VARIANT = valued("horse/variant");
     public static final DataComponentType.Valued<Art> PAINTING_VARIANT = valued("painting/variant");
@@ -388,6 +391,7 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<Axolotl.Variant> AXOLOTL_VARIANT = valued("axolotl/variant");
     public static final DataComponentType.Valued<ZombieNautilus.Variant> ZOMBIE_NAUTILUS_VARIANT = valued("zombie_nautilus/variant");
     public static final DataComponentType.Valued<Cat.Type> CAT_VARIANT = valued("cat/variant");
+    public static final DataComponentType.Valued<Cat.SoundVariant> CAT_SOUND_VARIANT = valued("cat/sound_variant");
     public static final DataComponentType.Valued<DyeColor> CAT_COLLAR = valued("cat/collar");
     public static final DataComponentType.Valued<DyeColor> SHEEP_COLOR = valued("sheep/color");
     public static final DataComponentType.Valued<DyeColor> SHULKER_COLOR = valued("shulker/color");
