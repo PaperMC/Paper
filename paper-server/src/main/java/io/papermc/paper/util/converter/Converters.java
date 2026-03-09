@@ -1,4 +1,4 @@
-package io.papermc.paper.registry.typed.converter;
+package io.papermc.paper.util.converter;
 
 import java.util.Collection;
 import java.util.List;

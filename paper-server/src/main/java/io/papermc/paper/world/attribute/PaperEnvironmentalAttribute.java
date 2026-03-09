@@ -1,8 +1,8 @@
 package io.papermc.paper.world.attribute;
 
 import io.papermc.paper.math.Position;
-import io.papermc.paper.registry.typed.converter.Converter;
 import io.papermc.paper.util.MCUtil;
+import io.papermc.paper.util.converter.Converter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.attribute.EnvironmentAttributeSystem;
 

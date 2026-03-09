@@ -3,8 +3,9 @@ package io.papermc.paper.world.attribute;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.HolderableBase;
 import io.papermc.paper.registry.typed.PaperTypedDataAdapters;
-import io.papermc.paper.registry.typed.TypedDataCollector;
-import io.papermc.paper.registry.typed.converter.Converter;
+import io.papermc.paper.registry.typed.PaperTypedDataCollector;
+import io.papermc.paper.util.converter.Converter;
+import io.papermc.paper.util.converter.Converters;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import net.minecraft.core.Holder;
@@ -19,27 +20,22 @@ import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.level.MoonPhase;
 import org.bukkit.Color;
 
-import static io.papermc.paper.registry.typed.converter.Converter.direct;
+import static io.papermc.paper.util.converter.Converter.direct;
+import static io.papermc.paper.util.converter.Converters.sameOrder;
 
 public final class PaperEnvironmentalAttributeType<A, M> extends HolderableBase<EnvironmentAttribute<M>> implements EnvironmentalAttributeType<A> {
 
     @SuppressWarnings("RedundantTypeArguments")
-    private static final PaperTypedDataAdapters<EnvironmentAttribute<?>> ADAPTERS = PaperTypedDataAdapters.<EnvironmentAttribute<?>, TypedDataCollector<EnvironmentAttribute<?>>>create(
+    private static final PaperTypedDataAdapters<EnvironmentAttribute<?>> ADAPTERS = PaperTypedDataAdapters.<EnvironmentAttribute<?>, PaperTypedDataCollector<EnvironmentAttribute<?>>>create(
         BuiltInRegistries.ENVIRONMENT_ATTRIBUTE,
-        TypedDataCollector::new,
+        PaperTypedDataCollector::new,
         collector -> {
-            final Converter<Integer, Color> intAsColor = direct(
-                Color::fromARGB,
-                Color::asARGB
-            );
+            final Converter<Integer, Color> intAsColor = direct(Color::fromARGB, Color::asARGB);
             final Converter<Integer, Color> intAsOpaqueColor = direct(
                 color -> Color.fromRGB(color & 0x00FFFFFF), color -> ARGB.opaque(color.asRGB())
             );
             final Converter<TriState, net.kyori.adventure.util.TriState> triState = direct(PaperAdventure::asAdventure, PaperAdventure::asVanilla);
-            final Converter<MoonPhase, io.papermc.paper.world.MoonPhase> moonPhase = direct(
-                phase -> io.papermc.paper.world.MoonPhase.values()[phase.ordinal()],
-                phase -> MoonPhase.values()[phase.ordinal()]
-            );
+            final Converter<MoonPhase, io.papermc.paper.world.MoonPhase> moonPhase = sameOrder(io.papermc.paper.world.MoonPhase.class, MoonPhase.class);
 
             final Map<AttributeType<?>, Converter<?, ?>> converters = Util.make(new IdentityHashMap<>(), map -> {
                 map.put(AttributeTypes.ARGB_COLOR, intAsColor);
@@ -116,8 +112,11 @@ public final class PaperEnvironmentalAttributeType<A, M> extends HolderableBase<
     @SuppressWarnings("unchecked")
     public static <M> EnvironmentalAttributeType<?> of(final Holder<?> holder) {
         final Holder.Reference<EnvironmentAttribute<M>> reference = (Holder.Reference<EnvironmentAttribute<M>>) holder;
-        final Converter<M, ?> adapter = PaperEnvironmentalAttributeType.ADAPTERS.get(reference.key());
-        return new PaperEnvironmentalAttributeType<>(reference, adapter);
+        final Converter<M, ?> converter = PaperEnvironmentalAttributeType.ADAPTERS.get(reference.key());
+        if (converter == Converters.unvalued()) {
+             throw new IllegalStateException("Non-valued converter is not supported for environmental attribute type: " + reference.key());
+        }
+        return new PaperEnvironmentalAttributeType<>(reference, converter);
     }
 
     @Override

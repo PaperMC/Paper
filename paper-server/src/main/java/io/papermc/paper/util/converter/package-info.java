@@ -1,4 +1,4 @@
 @NullMarked
-package io.papermc.paper.registry.typed.converter;
+package io.papermc.paper.util.converter;
 
 import org.jspecify.annotations.NullMarked;

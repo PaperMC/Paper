@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
-import io.papermc.paper.registry.typed.converter.CodecConverter;
+import io.papermc.paper.util.converter.CodecConverter;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;

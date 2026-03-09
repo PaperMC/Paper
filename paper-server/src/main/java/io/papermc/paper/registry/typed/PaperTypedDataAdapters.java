@@ -1,7 +1,7 @@
 package io.papermc.paper.registry.typed;
 
-import io.papermc.paper.registry.typed.converter.Converter;
-import io.papermc.paper.registry.typed.converter.Converters;
+import io.papermc.paper.util.converter.Converter;
+import io.papermc.paper.util.converter.Converters;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -16,9 +16,9 @@ public final class PaperTypedDataAdapters<T> {
         this.converters = converters;
     }
 
-    public static <T, C extends PaperTypedDataCollector<T>> PaperTypedDataAdapters<T> create(
+    public static <T, C extends TypedDataCollector<T>> PaperTypedDataAdapters<T> create(
         final Registry<T> registry,
-        final PaperTypedDataCollector.Factory<T, C> collectorFactory,
+        final TypedDataCollector.Factory<T, C> collectorFactory,
         final Consumer<C> consumer
     ) {
         final Map<ResourceKey<T>, Converter<?, ?>> converters = new IdentityHashMap<>();

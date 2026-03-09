@@ -1,12 +1,12 @@
-package io.papermc.paper.registry.typed.converter;
+package io.papermc.paper.util.converter;
 
 import com.mojang.serialization.Encoder;
-import org.jspecify.annotations.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.util.MCUtil.transformUnmodifiable;
 

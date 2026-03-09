@@ -49,9 +49,9 @@ import io.papermc.paper.item.MapPostProcessing;
 import io.papermc.paper.registry.HolderableBase;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.typed.PaperTypedDataAdapters;
-import io.papermc.paper.registry.typed.TypedDataCollector;
-import io.papermc.paper.registry.typed.converter.Converter;
-import io.papermc.paper.registry.typed.converter.Converters;
+import io.papermc.paper.registry.typed.PaperTypedDataCollector;
+import io.papermc.paper.util.converter.Converter;
+import io.papermc.paper.util.converter.Converters;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -84,29 +84,35 @@ import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.ItemRarity;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.typed.converter.Converter.direct;
-import static io.papermc.paper.registry.typed.converter.Converters.list;
-import static io.papermc.paper.registry.typed.converter.Converters.registryElement;
-import static io.papermc.paper.registry.typed.converter.Converters.sameName;
-import static io.papermc.paper.registry.typed.converter.Converters.sameOrder;
-import static io.papermc.paper.registry.typed.converter.Converters.wrapper;
+import static io.papermc.paper.util.converter.Converter.direct;
+import static io.papermc.paper.util.converter.Converters.list;
+import static io.papermc.paper.util.converter.Converters.registryElement;
+import static io.papermc.paper.util.converter.Converters.sameName;
+import static io.papermc.paper.util.converter.Converters.sameOrder;
+import static io.papermc.paper.util.converter.Converters.wrapper;
 
 public abstract class PaperDataComponentType<A, M> extends HolderableBase<net.minecraft.core.component.DataComponentType<M>> implements DataComponentType {
 
     // this is a hack around generics limitations to prevent
     // having to define generics on each register call as seen below, making collectors easier to read:
     //   collector.<T, A>register(...)
-    private static <M, A> void register(final TypedDataCollector<net.minecraft.core.component.DataComponentType<?>> collector, final net.minecraft.core.component.DataComponentType<M> dataComponentType, final Function<M, A> vanillaToApi, final Function<A, M> apiToVanilla) {
+    private static <M, A> void register(final PaperTypedDataCollector<net.minecraft.core.component.DataComponentType<?>> collector, final net.minecraft.core.component.DataComponentType<M> dataComponentType, final Function<M, A> vanillaToApi, final Function<A, M> apiToVanilla) {
         collector.register(dataComponentType, vanillaToApi, apiToVanilla);
     }
 
     @SuppressWarnings("RedundantTypeArguments")
-    private static final PaperTypedDataAdapters<net.minecraft.core.component.DataComponentType<?>> ADAPTERS = PaperTypedDataAdapters.<net.minecraft.core.component.DataComponentType<?>, TypedDataCollector.Unvaluable<net.minecraft.core.component.DataComponentType<?>>>create(
+    private static final PaperTypedDataAdapters<net.minecraft.core.component.DataComponentType<?>> ADAPTERS = PaperTypedDataAdapters.<net.minecraft.core.component.DataComponentType<?>, PaperTypedDataCollector<net.minecraft.core.component.DataComponentType<?>>>create(
         BuiltInRegistries.DATA_COMPONENT_TYPE,
-        TypedDataCollector.Unvaluable::new,
+        PaperTypedDataCollector::new,
         collector -> {
             final Converter<net.minecraft.world.item.DyeColor, DyeColor> dyeColor = direct(
                 nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData())
+            );
+            collector.dispatch($ -> Converters.unvalued()).add(
+                DataComponents.UNBREAKABLE,
+                DataComponents.INTANGIBLE_PROJECTILE,
+                DataComponents.GLIDER
+                // DataComponents.CREATIVE_SLOT_LOCK
             );
             collector.dispatch(type -> Converter.identity(type.codec())).add(
                 DataComponents.MAX_STACK_SIZE,
@@ -117,7 +123,6 @@ public abstract class PaperDataComponentType<A, M> extends HolderableBase<net.mi
                 DataComponents.REPAIR_COST,
                 DataComponents.ENCHANTMENT_GLINT_OVERRIDE
             );
-            collector.registerUnvalued(DataComponents.UNBREAKABLE);
             collector.register(DataComponents.USE_EFFECTS, wrapper(PaperUseEffects::new));
             register(collector, DataComponents.CUSTOM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
             register(collector, DataComponents.DAMAGE_TYPE, nms -> CraftDamageType.minecraftHolderToBukkit(nms.unwrap(CraftRegistry.getMinecraftRegistry()).orElseThrow()), api -> new EitherHolder<>(CraftDamageType.bukkitToMinecraftHolder(api)));
@@ -130,8 +135,6 @@ public abstract class PaperDataComponentType<A, M> extends HolderableBase<net.mi
             collector.register(DataComponents.CAN_BREAK, wrapper(PaperItemAdventurePredicate::new));
             collector.register(DataComponents.ATTRIBUTE_MODIFIERS, wrapper(PaperItemAttributeModifiers::new));
             collector.register(DataComponents.CUSTOM_MODEL_DATA, wrapper(PaperCustomModelData::new));
-            // registerUntyped(DataComponents.CREATIVE_SLOT_LOCK);
-            collector.registerUnvalued(DataComponents.INTANGIBLE_PROJECTILE);
             collector.register(DataComponents.FOOD, wrapper(PaperFoodProperties::new));
             collector.register(DataComponents.CONSUMABLE, wrapper(PaperConsumable::new));
             collector.register(DataComponents.USE_REMAINDER, wrapper(PaperUseRemainder::new));
@@ -141,7 +144,6 @@ public abstract class PaperDataComponentType<A, M> extends HolderableBase<net.mi
             collector.register(DataComponents.ENCHANTABLE, wrapper(PaperEnchantable::new));
             collector.register(DataComponents.EQUIPPABLE, wrapper(PaperEquippable::new));
             collector.register(DataComponents.REPAIRABLE, wrapper(PaperRepairable::new));
-            collector.registerUnvalued(DataComponents.GLIDER);
             register(collector, DataComponents.TOOLTIP_STYLE, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
             collector.register(DataComponents.DEATH_PROTECTION, wrapper(PaperDeathProtection::new));
             collector.register(DataComponents.STORED_ENCHANTMENTS, wrapper(PaperItemEnchantments::of));
