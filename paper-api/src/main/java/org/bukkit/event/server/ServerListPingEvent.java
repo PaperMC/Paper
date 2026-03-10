@@ -3,6 +3,7 @@ package org.bukkit.event.server;
 import com.google.common.base.Preconditions;
 import java.net.InetAddress;
 import java.util.Iterator;
+import io.papermc.paper.event.server.AbstractServerListPingEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
@@ -21,39 +22,21 @@ import org.jetbrains.annotations.NotNull;
  * <b>Note:</b> The players in {@link #iterator()} will not be shown in the
  * server info if {@link Bukkit#getHideOnlinePlayers()} is {@code true}.
  */
-public class ServerListPingEvent extends ServerEvent implements Iterable<Player> {
-
-    private static final int MAGIC_PLAYER_COUNT = Integer.MIN_VALUE;
+public class ServerListPingEvent extends AbstractServerListPingEvent implements Iterable<Player> {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final String hostname;
-    private final InetAddress address;
-    private final int numPlayers;
-    private Component motd;
-    private int maxPlayers;
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
-        super(true);
+        super(hostname, address, LegacyComponentSerializer.legacySection().deserialize(motd), numPlayers, maxPlayers);
         Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
-        this.hostname = hostname;
-        this.address = address;
-        this.motd = LegacyComponentSerializer.legacySection().deserialize(motd);
-        this.numPlayers = numPlayers;
-        this.maxPlayers = maxPlayers;
     }
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     protected ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int maxPlayers) {
-        super(true);
-        this.numPlayers = MAGIC_PLAYER_COUNT;
-        this.hostname = hostname;
-        this.address = address;
-        this.motd = LegacyComponentSerializer.legacySection().deserialize(motd);
-        this.maxPlayers = maxPlayers;
+        super(hostname, address, LegacyComponentSerializer.legacySection().deserialize(motd), MAGIC_PLAYER_COUNT, maxPlayers);
     }
 
     @ApiStatus.Internal
@@ -64,12 +47,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
 
     @ApiStatus.Internal
     public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final Component motd, final int numPlayers, final int maxPlayers) {
-        super(true);
-        this.hostname = hostname;
-        this.address = address;
-        this.motd = motd;
-        this.numPlayers = numPlayers;
-        this.maxPlayers = maxPlayers;
+        super(hostname, address, motd, numPlayers, maxPlayers);
     }
 
     @ApiStatus.Internal
@@ -85,50 +63,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      */
     @ApiStatus.Internal
     protected ServerListPingEvent(final @NotNull String hostname, final @NotNull InetAddress address, final @NotNull Component motd, final int maxPlayers) {
-        this.numPlayers = MAGIC_PLAYER_COUNT;
-        this.hostname = hostname;
-        this.address = address;
-        this.motd = motd;
-        this.maxPlayers = maxPlayers;
-    }
-
-    /**
-     * Gets the hostname that the player used to connect to the server, or
-     * blank if unknown
-     *
-     * @return The hostname
-     */
-    @NotNull
-    public String getHostname() {
-        return this.hostname;
-    }
-
-    /**
-     * Get the address the ping is coming from.
-     *
-     * @return the address
-     */
-    @NotNull
-    public InetAddress getAddress() {
-        return this.address;
-    }
-
-    /**
-     * Get the message of the day message.
-     *
-     * @return the message of the day
-     */
-    public @NotNull Component motd() {
-        return this.motd;
-    }
-
-    /**
-     * Change the message of the day message.
-     *
-     * @param motd the message of the day
-     */
-    public void motd(@NotNull Component motd) {
-        this.motd = motd;
+        super(hostname, address, motd, MAGIC_PLAYER_COUNT, maxPlayers);
     }
 
     /**
@@ -140,7 +75,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
     @NotNull
     @Deprecated
     public String getMotd() {
-        return LegacyComponentSerializer.legacySection().serialize(this.motd);
+        return LegacyComponentSerializer.legacySection().serialize(this.motd());
     }
 
     /**
@@ -151,7 +86,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      */
     @Deprecated
     public void setMotd(@NotNull String motd) {
-        this.motd = LegacyComponentSerializer.legacySection().deserialize(motd);
+        this.motd(LegacyComponentSerializer.legacySection().deserialize(motd));
     }
 
     /**
@@ -159,6 +94,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      *
      * @return the number of players
      */
+    @Override
     public int getNumPlayers() {
         int numPlayers = this.numPlayers;
         if (numPlayers == MAGIC_PLAYER_COUNT) {
@@ -168,24 +104,6 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
             }
         }
         return numPlayers;
-    }
-
-    /**
-     * Get the maximum number of players sent.
-     *
-     * @return the maximum number of players
-     */
-    public int getMaxPlayers() {
-        return this.maxPlayers;
-    }
-
-    /**
-     * Set the maximum number of players sent.
-     *
-     * @param maxPlayers the maximum number of player
-     */
-    public void setMaxPlayers(int maxPlayers) {
-        this.maxPlayers = maxPlayers;
     }
 
     /**
@@ -211,6 +129,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * @throws UnsupportedOperationException if the caller of this event does
      *     not support setting the server icon
      */
+    @Override
     public void setServerIcon(@UndefinedNullability("implementation dependent") CachedServerIcon icon) throws IllegalArgumentException, UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
