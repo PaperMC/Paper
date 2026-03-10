@@ -16,9 +16,9 @@ import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
-import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.EyeOfEnder;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEgg;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownLingeringPotion;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplashPotion;
@@ -36,26 +36,6 @@ import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.entity.boat.CraftAcaciaBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftAcaciaChestBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftBambooChestRaft;
-import org.bukkit.craftbukkit.entity.boat.CraftBambooRaft;
-import org.bukkit.craftbukkit.entity.boat.CraftBirchBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftBirchChestBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftCherryBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftCherryChestBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftDarkOakBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftDarkOakChestBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftJungleBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftJungleChestBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftMangroveBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftMangroveChestBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftOakBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftOakChestBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftPaleOakBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftPaleOakChestBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftSpruceBoat;
-import org.bukkit.craftbukkit.entity.boat.CraftSpruceChestBoat;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Armadillo;
@@ -66,6 +46,7 @@ import org.bukkit.entity.Bat;
 import org.bukkit.entity.Bee;
 import org.bukkit.entity.Blaze;
 import org.bukkit.entity.BlockDisplay;
+import org.bukkit.entity.Boat;
 import org.bukkit.entity.Bogged;
 import org.bukkit.entity.Breeze;
 import org.bukkit.entity.BreezeWindCharge;
@@ -73,6 +54,8 @@ import org.bukkit.entity.Camel;
 import org.bukkit.entity.CamelHusk;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.CaveSpider;
+import org.bukkit.entity.ChestBoat;
+import org.bukkit.entity.ChestRaft;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Cod;
 import org.bukkit.entity.CopperGolem;
@@ -146,6 +129,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.PolarBear;
 import org.bukkit.entity.PufferFish;
 import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Raft;
 import org.bukkit.entity.Ravager;
 import org.bukkit.entity.Salmon;
 import org.bukkit.entity.Sheep;
@@ -189,26 +173,6 @@ import org.bukkit.entity.Zombie;
 import org.bukkit.entity.ZombieHorse;
 import org.bukkit.entity.ZombieNautilus;
 import org.bukkit.entity.ZombieVillager;
-import org.bukkit.entity.boat.AcaciaBoat;
-import org.bukkit.entity.boat.AcaciaChestBoat;
-import org.bukkit.entity.boat.BambooChestRaft;
-import org.bukkit.entity.boat.BambooRaft;
-import org.bukkit.entity.boat.BirchBoat;
-import org.bukkit.entity.boat.BirchChestBoat;
-import org.bukkit.entity.boat.CherryBoat;
-import org.bukkit.entity.boat.CherryChestBoat;
-import org.bukkit.entity.boat.DarkOakBoat;
-import org.bukkit.entity.boat.DarkOakChestBoat;
-import org.bukkit.entity.boat.JungleBoat;
-import org.bukkit.entity.boat.JungleChestBoat;
-import org.bukkit.entity.boat.MangroveBoat;
-import org.bukkit.entity.boat.MangroveChestBoat;
-import org.bukkit.entity.boat.OakBoat;
-import org.bukkit.entity.boat.OakChestBoat;
-import org.bukkit.entity.boat.PaleOakBoat;
-import org.bukkit.entity.boat.PaleOakChestBoat;
-import org.bukkit.entity.boat.SpruceBoat;
-import org.bukkit.entity.boat.SpruceChestBoat;
 import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
 import org.bukkit.entity.minecart.HopperMinecart;
@@ -415,26 +379,26 @@ public final class CraftEntityTypes {
         register(new EntityTypeData<>(EntityType.LLAMA_SPIT, LlamaSpit.class, CraftLlamaSpit::new, createAndMove(net.minecraft.world.entity.EntityType.LLAMA_SPIT)));
         register(new EntityTypeData<>(EntityType.OMINOUS_ITEM_SPAWNER, OminousItemSpawner.class, CraftOminousItemSpawner::new, createAndMove(net.minecraft.world.entity.EntityType.OMINOUS_ITEM_SPAWNER)));
         // Move (boats)
-        register(new EntityTypeData<>(EntityType.ACACIA_BOAT, AcaciaBoat.class, CraftAcaciaBoat::new, createAndMove(net.minecraft.world.entity.EntityType.ACACIA_BOAT)));
-        register(new EntityTypeData<>(EntityType.ACACIA_CHEST_BOAT, AcaciaChestBoat.class, CraftAcaciaChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.ACACIA_CHEST_BOAT)));
-        register(new EntityTypeData<>(EntityType.BAMBOO_RAFT, BambooRaft.class, CraftBambooRaft::new, createAndMove(net.minecraft.world.entity.EntityType.BAMBOO_RAFT)));
-        register(new EntityTypeData<>(EntityType.BAMBOO_CHEST_RAFT, BambooChestRaft.class, CraftBambooChestRaft::new, createAndMove(net.minecraft.world.entity.EntityType.BAMBOO_CHEST_RAFT)));
-        register(new EntityTypeData<>(EntityType.BIRCH_BOAT, BirchBoat.class, CraftBirchBoat::new, createAndMove(net.minecraft.world.entity.EntityType.BIRCH_BOAT)));
-        register(new EntityTypeData<>(EntityType.BIRCH_CHEST_BOAT, BirchChestBoat.class, CraftBirchChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.BIRCH_CHEST_BOAT)));
-        register(new EntityTypeData<>(EntityType.CHERRY_BOAT, CherryBoat.class, CraftCherryBoat::new, createAndMove(net.minecraft.world.entity.EntityType.CHERRY_BOAT)));
-        register(new EntityTypeData<>(EntityType.CHERRY_CHEST_BOAT, CherryChestBoat.class, CraftCherryChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.CHERRY_CHEST_BOAT)));
-        register(new EntityTypeData<>(EntityType.DARK_OAK_BOAT, DarkOakBoat.class, CraftDarkOakBoat::new, createAndMove(net.minecraft.world.entity.EntityType.DARK_OAK_BOAT)));
-        register(new EntityTypeData<>(EntityType.DARK_OAK_CHEST_BOAT, DarkOakChestBoat.class, CraftDarkOakChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.DARK_OAK_CHEST_BOAT)));
-        register(new EntityTypeData<>(EntityType.JUNGLE_BOAT, JungleBoat.class, CraftJungleBoat::new, createAndMove(net.minecraft.world.entity.EntityType.JUNGLE_BOAT)));
-        register(new EntityTypeData<>(EntityType.JUNGLE_CHEST_BOAT, JungleChestBoat.class, CraftJungleChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.JUNGLE_CHEST_BOAT)));
-        register(new EntityTypeData<>(EntityType.MANGROVE_BOAT, MangroveBoat.class, CraftMangroveBoat::new, createAndMove(net.minecraft.world.entity.EntityType.MANGROVE_BOAT)));
-        register(new EntityTypeData<>(EntityType.MANGROVE_CHEST_BOAT, MangroveChestBoat.class, CraftMangroveChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.MANGROVE_CHEST_BOAT)));
-        register(new EntityTypeData<>(EntityType.OAK_BOAT, OakBoat.class, CraftOakBoat::new, createAndMove(net.minecraft.world.entity.EntityType.OAK_BOAT)));
-        register(new EntityTypeData<>(EntityType.OAK_CHEST_BOAT, OakChestBoat.class, CraftOakChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.OAK_CHEST_BOAT)));
-        register(new EntityTypeData<>(EntityType.PALE_OAK_BOAT, PaleOakBoat.class, CraftPaleOakBoat::new, createAndMove(net.minecraft.world.entity.EntityType.PALE_OAK_BOAT)));
-        register(new EntityTypeData<>(EntityType.PALE_OAK_CHEST_BOAT, PaleOakChestBoat.class, CraftPaleOakChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.PALE_OAK_CHEST_BOAT)));
-        register(new EntityTypeData<>(EntityType.SPRUCE_BOAT, SpruceBoat.class, CraftSpruceBoat::new, createAndMove(net.minecraft.world.entity.EntityType.SPRUCE_BOAT)));
-        register(new EntityTypeData<>(EntityType.SPRUCE_CHEST_BOAT, SpruceChestBoat.class, CraftSpruceChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.SPRUCE_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.ACACIA_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.ACACIA_BOAT)));
+        register(new EntityTypeData<>(EntityType.ACACIA_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.ACACIA_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.BIRCH_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.BIRCH_BOAT)));
+        register(new EntityTypeData<>(EntityType.BIRCH_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.BIRCH_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.CHERRY_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.CHERRY_BOAT)));
+        register(new EntityTypeData<>(EntityType.CHERRY_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.CHERRY_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.DARK_OAK_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.DARK_OAK_BOAT)));
+        register(new EntityTypeData<>(EntityType.DARK_OAK_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.DARK_OAK_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.JUNGLE_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.JUNGLE_BOAT)));
+        register(new EntityTypeData<>(EntityType.JUNGLE_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.JUNGLE_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.MANGROVE_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.MANGROVE_BOAT)));
+        register(new EntityTypeData<>(EntityType.MANGROVE_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.MANGROVE_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.OAK_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.OAK_BOAT)));
+        register(new EntityTypeData<>(EntityType.OAK_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.OAK_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.PALE_OAK_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.PALE_OAK_BOAT)));
+        register(new EntityTypeData<>(EntityType.PALE_OAK_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.PALE_OAK_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.SPRUCE_BOAT, Boat.class, CraftBoat::new, createAndMove(net.minecraft.world.entity.EntityType.SPRUCE_BOAT)));
+        register(new EntityTypeData<>(EntityType.SPRUCE_CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(net.minecraft.world.entity.EntityType.SPRUCE_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.BAMBOO_RAFT, Raft.class, CraftRaft::new, createAndMove(net.minecraft.world.entity.EntityType.BAMBOO_RAFT)));
+        register(new EntityTypeData<>(EntityType.BAMBOO_CHEST_RAFT, ChestRaft.class, CraftChestRaft::new, createAndMove(net.minecraft.world.entity.EntityType.BAMBOO_CHEST_RAFT)));
 
         // Set pos
         register(new EntityTypeData<>(EntityType.MARKER, Marker.class, CraftMarker::new, createAndSetPos(net.minecraft.world.entity.EntityType.MARKER)));
@@ -496,12 +460,7 @@ public final class CraftEntityTypes {
     }
 
     private static void register(EntityTypeData<?, ?> typeData) {
-        EntityTypeData<?, ?> other = CraftEntityTypes.CLASS_TYPE_DATA.put(typeData.entityClass(), typeData);
-        if (other != null) {
-            Bukkit.getLogger().warning(String.format("Found multiple entity type data for class %s, replacing '%s' with new value '%s'", typeData.entityClass().getName(), other, typeData));
-        }
-
-        other = CraftEntityTypes.ENTITY_TYPE_DATA.put(typeData.entityType(), typeData);
+        EntityTypeData<?, ?> other = CraftEntityTypes.ENTITY_TYPE_DATA.put(typeData.entityType(), typeData);
         if (other != null) {
             Bukkit.getLogger().warning(String.format("Found multiple entity type data for entity type %s, replacing '%s' with new value '%s'", typeData.entityType().getKey(), other, typeData));
         }
@@ -603,10 +562,11 @@ public final class CraftEntityTypes {
         };
     }
 
-    public static <E extends Entity, M extends net.minecraft.world.entity.Entity> EntityTypeData<E, M> getEntityTypeData(EntityType entityType) {
+    public static <E extends Entity, M extends net.minecraft.world.entity.Entity> EntityTypeData<E, M> getEntityTypeData(EntityType<E> entityType) {
         return (EntityTypeData<E, M>) CraftEntityTypes.ENTITY_TYPE_DATA.get(entityType);
     }
 
+    @Deprecated
     public static <E extends Entity, M extends net.minecraft.world.entity.Entity> EntityTypeData<E, M> getEntityTypeData(Class<E> entityClass) {
         return (EntityTypeData<E, M>) CraftEntityTypes.CLASS_TYPE_DATA.get(entityClass);
     }

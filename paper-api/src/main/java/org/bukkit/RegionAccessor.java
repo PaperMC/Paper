@@ -281,44 +281,6 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType type, @Nullable Predicate<? super BlockState> statePredicate);
 
     /**
-     * Creates an entity at the given {@link Location}
-     *
-     * @param location The location to spawn the entity
-     * @param type The entity to spawn
-     * @return Resulting Entity of this method
-     */
-    @NotNull
-    default Entity spawnEntity(@NotNull Location location, @NotNull EntityType type) {
-        return this.spawn(location, type.getEntityClass());
-    }
-
-    /**
-     * Creates a new entity at the given {@link Location}.
-     *
-     * @param loc the location at which the entity will be spawned.
-     * @param type the entity type that determines the entity to spawn.
-     * @param randomizeData whether or not the entity's data should be randomised
-     *                      before spawning. By default entities are randomised
-     *                      before spawning in regards to their equipment, age,
-     *                      attributes, etc.
-     *                      An example of this randomization would be the color of
-     *                      a sheep, random enchantments on the equipment of mobs
-     *                      or even a zombie becoming a chicken jockey.
-     *                      If set to false, the entity will not be randomised
-     *                      before spawning, meaning all their data will remain
-     *                      in their default state and not further modifications
-     *                      to the entity will be made.
-     *                      Notably only entities that extend the
-     *                      {@link org.bukkit.entity.Mob} interface provide
-     *                      randomization logic for their spawn.
-     *                      This parameter is hence useless for any other type
-     *                      of entity.
-     * @return the spawned entity instance.
-     */
-    @NotNull
-    public Entity spawnEntity(@NotNull Location loc, @NotNull EntityType type, boolean randomizeData);
-
-    /**
      * Get a list of all entities in this RegionAccessor
      *
      * @return A List of all Entities currently residing in this world accessor
@@ -365,28 +327,50 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * created in, care should be taken that the entity does not outlive the
      * world instance as this will lead to memory leaks.
      *
-     * @param <T> the class of the {@link Entity} to create
+     * @param <E> the class of the {@link Entity} to create
      * @param location the {@link Location} to create the entity at
      * @param clazz the class of the {@link Entity} to spawn
      * @return an instance of the created {@link Entity}
      * @see #addEntity(Entity)
      * @see Entity#createSnapshot()
+     * @deprecated use {@link #createEntity(Location, EntityType)}
      */
     @NotNull
-    <T extends Entity> T createEntity(@NotNull Location location, @NotNull Class<T> clazz);
+    @Deprecated(since = "1.21.11")
+    <E extends Entity> E createEntity(@NotNull Location location, @NotNull Class<E> clazz);
+
+    /**
+     * Creates an entity of a specific entity type at the given {@link Location} but
+     * does not spawn it in the world.
+     * <p>
+     * <b>Note:</b> The created entity keeps a reference to the world it was
+     * created in, care should be taken that the entity does not outlive the
+     * world instance as this will lead to memory leaks.
+     *
+     * @param <E> the class of the {@link Entity} to create
+     * @param location the {@link Location} to create the entity at
+     * @param type the entity type of the {@link Entity} to spawn
+     * @return an instance of the created {@link Entity}
+     * @see #addEntity(Entity)
+     * @see Entity#createSnapshot()
+     */
+    @NotNull
+    <E extends Entity> E createEntity(@NotNull Location location, @NotNull EntityType<E> type);
 
     /**
      * Spawn an entity of a specific class at the given {@link Location}
      *
      * @param location the {@link Location} to spawn the entity at
      * @param clazz the class of the {@link Entity} to spawn
-     * @param <T> the class of the {@link Entity} to spawn
+     * @param <E> the class of the {@link Entity} to spawn
      * @return an instance of the spawned {@link Entity}
      * @throws IllegalArgumentException if either parameter is null or the
      *     {@link Entity} requested cannot be spawned
+     * @deprecated use {@link #spawnEntity(Location, EntityType)}
      */
     @NotNull
-    default <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz) throws IllegalArgumentException {
+    @Deprecated(since = "1.21.11")
+    default <E extends Entity> E spawn(@NotNull Location location, @NotNull Class<E> clazz) throws IllegalArgumentException {
         return this.spawn(location, clazz, null, CreatureSpawnEvent.SpawnReason.CUSTOM);
     }
 
@@ -401,36 +385,38 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param location the {@link Location} to spawn the entity at
      * @param clazz the class of the {@link Entity} to spawn
      * @param function the function to be run before the entity is spawned.
-     * @param <T> the class of the {@link Entity} to spawn
+     * @param <E> the class of the {@link Entity} to spawn
      * @return an instance of the spawned {@link Entity}
      * @throws IllegalArgumentException if either parameter is null or the
      *     {@link Entity} requested cannot be spawned
+     * @deprecated use {@link #spawnEntity(Location, EntityType, Consumer)}
      */
-    // Paper start
-    default <T extends Entity> @NotNull T spawn(final @NotNull Location location, final @NotNull Class<T> clazz, final @Nullable Consumer<? super T> function) throws IllegalArgumentException {
+    @Deprecated(since = "1.21.11")
+    default <E extends Entity> @NotNull E spawn(final @NotNull Location location, final @NotNull Class<E> clazz, final @Nullable Consumer<? super E> function) throws IllegalArgumentException {
         return this.spawn(location, clazz, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM, function);
     }
 
-    default @NotNull <T extends Entity> T spawn(final @NotNull Location location, final @NotNull Class<T> clazz, final org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason) throws IllegalArgumentException {
+    /**
+     * @deprecated use {@link #spawnEntity(Location, EntityType, CreatureSpawnEvent.SpawnReason)}
+     */
+    @Deprecated(since = "1.21.11")
+    default @NotNull <E extends Entity> E spawn(final @NotNull Location location, final @NotNull Class<E> clazz, final org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason) throws IllegalArgumentException {
         return this.spawn(location, clazz, reason, null);
     }
 
-    default @NotNull <T extends Entity> T spawn(final @NotNull Location location, final @NotNull Class<T> clazz, final org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason, final @Nullable Consumer<? super T> function) throws IllegalArgumentException {
+    /**
+     * @deprecated use {@link #spawnEntity(Location, EntityType, Consumer, CreatureSpawnEvent.SpawnReason)}
+     */
+    @Deprecated(since = "1.21.11")
+    default @NotNull <E extends Entity> E spawn(final @NotNull Location location, final @NotNull Class<E> clazz, final org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason, final @Nullable Consumer<? super E> function) throws IllegalArgumentException {
         return this.spawn(location, clazz, function, reason);
     }
 
-    default @NotNull Entity spawnEntity(final @NotNull Location loc, final @NotNull EntityType type, final org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason) {
-        com.google.common.base.Preconditions.checkArgument(type.getEntityClass() != null, "%s is not a valid EntityType, must have an entity class", type);
-        return this.spawn(loc, type.getEntityClass(), reason, null);
-    }
-
-    default @NotNull Entity spawnEntity(final @NotNull Location loc, final @NotNull EntityType type, final org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason, final @Nullable Consumer<? super Entity> function) {
-        com.google.common.base.Preconditions.checkArgument(type.getEntityClass() != null, "%s is not a valid EntityType, must have an entity class", type);
-        return this.spawn(loc, type.getEntityClass(), reason, function);
-    }
-
-    <T extends Entity> @NotNull T spawn(@NotNull Location location, @NotNull Class<T> clazz, @Nullable Consumer<? super T> function, org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason) throws IllegalArgumentException;
-    // Paper end
+    /**
+     * @deprecated use {@link #spawnEntity(Location, EntityType, CreatureSpawnEvent.SpawnReason, Consumer)}
+     */
+    @Deprecated(since = "1.21.11")
+    <E extends Entity> @NotNull E spawn(@NotNull Location location, @NotNull Class<E> clazz, @Nullable Consumer<? super E> function, org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason) throws IllegalArgumentException;
 
     /**
      * Creates a new entity at the given {@link Location} with the supplied
@@ -446,7 +432,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      *
      * @param location      the location at which the entity will be spawned.
      * @param clazz         the class of the {@link Entity} that is to be spawned.
-     * @param <T>           the generic type of the entity that is being created.
+     * @param <E>           the generic type of the entity that is being created.
      * @param randomizeData whether or not the entity's data should be randomised
      *                      before spawning. By default entities are randomised
      *                      before spawning in regards to their equipment, age,
@@ -466,9 +452,75 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param function      the function to be run before the entity is spawned.
      * @return the spawned entity instance.
      * @throws IllegalArgumentException if either the world or clazz parameter are null.
+     * @deprecated use {@link #spawnEntity(Location, EntityType, boolean, Consumer)}
      */
     @NotNull
-    public <T extends Entity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, boolean randomizeData, @Nullable Consumer<? super T> function) throws IllegalArgumentException;
+    @Deprecated(since = "1.21.11")
+    <E extends Entity> E spawn(@NotNull Location location, @NotNull Class<E> clazz, boolean randomizeData, @Nullable Consumer<? super E> function);
+
+    /**
+     * Creates an entity at the given {@link Location}
+     *
+     * @param location The location to spawn the entity
+     * @param type The entity to spawn
+     * @return Resulting Entity of this method
+     */
+    default <E extends Entity> @NotNull E spawnEntity(@NotNull Location location, @NotNull EntityType<E> type) {
+        return this.spawnEntity(location, type, true);
+    }
+
+    /**
+     * Creates a new entity at the given {@link Location}.
+     *
+     * @param location the location at which the entity will be spawned.
+     * @param type the entity type that determines the entity to spawn.
+     * @param randomizeData whether or not the entity's data should be randomised
+     *                      before spawning. By default entities are randomised
+     *                      before spawning in regards to their equipment, age,
+     *                      attributes, etc.
+     *                      An example of this randomization would be the color of
+     *                      a sheep, random enchantments on the equipment of mobs
+     *                      or even a zombie becoming a chicken jockey.
+     *                      If set to false, the entity will not be randomised
+     *                      before spawning, meaning all their data will remain
+     *                      in their default state and not further modifications
+     *                      to the entity will be made.
+     *                      Notably only entities that extend the
+     *                      {@link org.bukkit.entity.Mob} interface provide
+     *                      randomization logic for their spawn.
+     *                      This parameter is hence useless for any other type
+     *                      of entity.
+     * @return the spawned entity instance.
+     */
+    default <E extends Entity> @NotNull E spawnEntity(final @NotNull Location location, final @NotNull EntityType<E> type, final boolean randomizeData) {
+        return this.spawnEntity(location, type, randomizeData, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM);
+    }
+
+    default <E extends Entity> @NotNull E spawnEntity(final @NotNull Location location, final @NotNull EntityType<E> type, final boolean randomizeData, final @Nullable Consumer<? super E> function) {
+        return this.spawnEntity(location, type, randomizeData, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM, function);
+    }
+
+    default <E extends Entity> @NotNull E spawnEntity(final @NotNull Location location, final @NotNull EntityType<E> type, final boolean randomizeData, final CreatureSpawnEvent.@NotNull SpawnReason reason) {
+        return this.spawnEntity(location, type, randomizeData, reason, null);
+    }
+
+    <E extends Entity> @NotNull E spawnEntity(@NotNull Location location, @NotNull EntityType<E> type, boolean randomizeData, CreatureSpawnEvent.@NotNull SpawnReason reason, @Nullable Consumer<? super E> function);
+
+    default <E extends Entity> @NotNull E spawnEntity(final @NotNull Location location, final @NotNull EntityType<E> type, final @Nullable Consumer<? super E> function) {
+        return this.spawnEntity(location, type, true, function);
+    }
+
+    default <E extends Entity> @NotNull E spawnEntity(final @NotNull Location location, final @NotNull EntityType<E> type, final CreatureSpawnEvent.@NotNull SpawnReason reason) {
+        return this.spawnEntity(location, type, reason, null);
+    }
+
+    default <E extends Entity> @NotNull E spawnEntity(final @NotNull Location location, final @NotNull EntityType<E> type, final @Nullable Consumer<? super E> function, final CreatureSpawnEvent.@NotNull SpawnReason reason) {
+        return this.spawnEntity(location, type, reason, function);
+    }
+
+    default <E extends Entity> @NotNull E spawnEntity(final @NotNull Location location, final @NotNull EntityType<E> type, final CreatureSpawnEvent.@NotNull SpawnReason reason, final @Nullable Consumer<? super E> function) {
+        return this.spawnEntity(location, type, true, reason, function);
+    }
 
     /**
      * Gets the highest non-empty (impassable) coordinate at the given

@@ -109,6 +109,7 @@ import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.generator.structure.CraftGeneratedStructure;
@@ -687,11 +688,32 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         } else {
             arrow = EntityType.ARROW.create(this.world, EntitySpawnReason.COMMAND);
         }
+        if (arrow == null) {
+            throw new UnsupportedOperationException("Entity type " + clazz.getName() + " is not valid for this world");
+        }
 
         arrow.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         arrow.shoot(direction.getX(), direction.getY(), direction.getZ(), speed, spread);
         this.world.addFreshEntity(arrow);
         return (T) arrow.getBukkitEntity();
+    }
+
+    @Override
+    public <E extends AbstractArrow> E spawnArrow(Location location, org.bukkit.entity.EntityType<E> type, Vector direction, float speed, float spread) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(direction != null, "Vector cannot be null");
+        Preconditions.checkArgument(type != null, "Entity type for the arrow cannot be null");
+
+        EntityType<net.minecraft.world.entity.projectile.arrow.AbstractArrow> typed = CraftEntityType.bukkitToMinecraft(type);
+        net.minecraft.world.entity.projectile.arrow.AbstractArrow arrow = typed.create(this.world, EntitySpawnReason.COMMAND);
+        if (arrow == null) {
+            throw new UnsupportedOperationException("Entity type " + type.key().asString() + " is not valid for this world");
+        }
+
+        arrow.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        arrow.shoot(direction.getX(), direction.getY(), direction.getZ(), speed, spread);
+        this.world.addFreshEntity(arrow);
+        return (E) arrow.getBukkitEntity();
     }
 
     @Override
@@ -892,7 +914,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public <T extends LivingEntity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull SpawnReason spawnReason, boolean randomizeData, @Nullable Consumer<? super T> function) throws IllegalArgumentException {
         Preconditions.checkArgument(spawnReason != null, "Spawn reason cannot be null");
-        return this.spawn(location, clazz, function, spawnReason, randomizeData);
+        return this.spawn0(location, clazz, function, spawnReason, randomizeData);
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.banner.PatternType;
+import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.legacy.fieldrename.FieldRenameData;
 import org.bukkit.craftbukkit.legacy.reroute.DoNotReroute;
 import org.bukkit.craftbukkit.legacy.reroute.InjectPluginVersion;
@@ -216,7 +217,7 @@ public class FieldRename {
     @RerouteStatic("org/bukkit/entity/EntityType")
     public static EntityType valueOf_EntityType(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return EntityType.valueOf(FieldRename.convertEntityTypeName(ApiVersion.CURRENT, name));
+        return CraftEntityType.valueOf(FieldRename.convertEntityTypeName(ApiVersion.CURRENT, name));
     }
 
     @RerouteMethodName("fromName")

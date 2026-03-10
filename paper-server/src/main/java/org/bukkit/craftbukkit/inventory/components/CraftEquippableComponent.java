@@ -1,17 +1,18 @@
 package org.bukkit.craftbukkit.inventory.components;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.set.PaperRegistrySets;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.equipment.EquipmentAssets;
 import net.minecraft.world.item.equipment.Equippable;
@@ -151,8 +152,10 @@ public final class CraftEquippableComponent implements EquippableComponent {
     }
 
     @Override
-    public Collection<EntityType> getAllowedEntities() {
-        return this.handle.allowedEntities().map(HolderSet::stream).map((stream) -> stream.map(Holder::value).map(CraftEntityType::minecraftToBukkit).collect(Collectors.toList())).orElse(null);
+    public Collection<EntityType<?>> getAllowedEntities() {
+        return this.handle.allowedEntities()
+            .map((set) -> PaperRegistrySets.convertToApi(RegistryKey.ENTITY_TYPE, set).resolve(Registry.ENTITY_TYPE))
+            .orElse(null);
     }
 
     @Override

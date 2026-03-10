@@ -1,9 +1,10 @@
 package org.bukkit.entity.boat;
 
-import org.bukkit.entity.Boat;
+import org.bukkit.entity.Raft;
 
 /**
  * Represents a bamboo raft.
  */
-public interface BambooRaft extends Boat {
+@Deprecated(since = "1.21.11", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+public interface BambooRaft extends Raft {
 }

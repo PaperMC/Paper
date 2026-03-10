@@ -1,11 +1,12 @@
 package io.papermc.paper.tag;
 
 import java.util.Collection;
+import java.util.Locale;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,12 +31,12 @@ public class EntitySetTag extends BaseTag<EntityType, EntitySetTag> {
     @NotNull
     @Override
     protected Set<EntityType> getAllPossibleValues() {
-        return Stream.of(EntityType.values()).collect(Collectors.toSet());
+        return Registry.ENTITY_TYPE.stream().collect(Collectors.toSet());
     }
 
     @NotNull
     @Override
     protected String getName(@NotNull EntityType value) {
-        return value.name();
+        return value.key().value().toUpperCase(Locale.ROOT); // should be close enough
     }
 }
