@@ -45,14 +45,15 @@ public abstract class CraftParticle<D> implements Keyed {
     private static final Registry<CraftParticle<?>> CRAFT_PARTICLE_REGISTRY = new CraftParticleRegistry(CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE));
 
     public static Particle minecraftToBukkit(net.minecraft.core.particles.ParticleType<?> minecraft) {
-        Preconditions.checkArgument(minecraft != null);
+        /*Preconditions.checkArgument(minecraft != null);
 
         net.minecraft.core.Registry<net.minecraft.core.particles.ParticleType<?>> registry = CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE);
         Particle bukkit = Registry.PARTICLE_TYPE.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().identifier()));
 
         Preconditions.checkArgument(bukkit != null);
 
-        return bukkit;
+        return bukkit;*/
+        throw new UnsupportedOperationException(); // todo
     }
 
     public static net.minecraft.core.particles.ParticleType<?> bukkitToMinecraft(Particle bukkit) {

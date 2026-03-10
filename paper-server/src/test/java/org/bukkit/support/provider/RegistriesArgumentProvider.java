@@ -4,13 +4,16 @@ import com.google.common.collect.Lists;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
+import io.papermc.paper.particle.PaperParticleType;
+import io.papermc.paper.particle.ParticleType;
+import io.papermc.paper.particle.Particles;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
 import io.papermc.paper.world.attribute.EnvironmentalAttributeTypes;
+import io.papermc.paper.world.attribute.PaperEnvironmentalAttributeType;
 import java.util.List;
 import java.util.stream.Stream;
-import io.papermc.paper.world.attribute.PaperEnvironmentalAttributeType;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -154,6 +157,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.DIALOG, Dialog.class, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
         register(Registries.GAME_RULE, GameRule.class, GameRules.class, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
         register(Registries.ENVIRONMENT_ATTRIBUTE, EnvironmentalAttributeType.class, EnvironmentalAttributeTypes.class, PaperEnvironmentalAttributeType.class, EnvironmentAttribute.class);
+        register(Registries.PARTICLE_TYPE, ParticleType.class, Particles.class, PaperParticleType.class, net.minecraft.core.particles.ParticleType.class);
     }
 
     private static <M, B extends Keyed> void register(ResourceKey<? extends Registry<? extends M>> registryKey, Class<B> api, Class<? extends B> impl, Class<M> internal) {

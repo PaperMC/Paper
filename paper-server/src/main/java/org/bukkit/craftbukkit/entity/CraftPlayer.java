@@ -19,7 +19,11 @@ import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
 import io.papermc.paper.math.Position;
+import io.papermc.paper.particle.PaperParticleType;
+import io.papermc.paper.particle.ParticleType;
 import io.papermc.paper.util.MCUtil;
+import io.papermc.paper.util.converter.CodecConverter;
+import io.papermc.paper.util.converter.Converter;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
 import java.io.ByteArrayOutputStream;
@@ -58,6 +62,8 @@ import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.PlayerChatMessage;
@@ -2673,6 +2679,29 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     @Override
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
         ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(CraftParticle.createParticleParam(particle, data), force, false, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count); // Paper - fix x/y/z precision loss
+        this.getHandle().connection.send(packet);
+    }
+
+    @Override
+    public void spawnParticle(ParticleType.NonValued particleType, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, boolean force) {
+        ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket((SimpleParticleType) PaperParticleType.bukkitToMinecraft(particleType), force, false, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count);
+        this.getHandle().connection.send(packet);
+    }
+
+    @Override
+    public <T> void spawnParticle(ParticleType.Valued<T> particleType, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
+        final PaperParticleType<T, ? extends ParticleOptions> type = (PaperParticleType<T, ? extends ParticleOptions>) particleType;
+        final Converter<? extends ParticleOptions, T> converter = type.getConverter();
+        final ParticleOptions particle = converter.toVanilla(data);
+        if (converter instanceof CodecConverter codecConverter) {
+            // todo should be done in the data structure themself
+            // this is only useful for identity but since no particle have direct types it should be removed
+            // especially since some particle like scalable clamp the data themself so plugins have no way to know they are doing something wrong
+            codecConverter.validate(particle, true).ifPresent(message -> {
+                throw new IllegalArgumentException("Failed to encode particle of %s (%s)".formatted(type.getKey().asString(), message));
+            });
+        }
+        ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(particle, force, false, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count);
         this.getHandle().connection.send(packet);
     }
 
