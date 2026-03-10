@@ -1,12 +1,12 @@
 package org.bukkit.craftbukkit.legacy.fieldrename;
 
+import io.papermc.paper.plugin.ApiVersion;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import org.bukkit.NamespacedKey;
-import org.bukkit.craftbukkit.util.ApiVersion;
 
 public record FieldRenameData(RenameData<String> renameData, RenameData<NamespacedKey> keyRenameData) {
 

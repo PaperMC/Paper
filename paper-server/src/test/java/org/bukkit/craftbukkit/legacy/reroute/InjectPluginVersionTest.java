@@ -2,9 +2,9 @@ package org.bukkit.craftbukkit.legacy.reroute;
 
 import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.base.Predicates;
+import io.papermc.paper.plugin.ApiVersion;
 import java.util.List;
 import java.util.Map;
-import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
