@@ -1,0 +1,22 @@
+--- a/net/minecraft/world/item/equipment/Equippable.java
++++ b/net/minecraft/world/item/equipment/Equippable.java
+@@ -129,6 +_,19 @@
+             ItemStack itemBySlot = player.getItemBySlot(this.slot);
+             if ((!EnchantmentHelper.has(itemBySlot, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE) || player.isCreative())
+                 && !ItemStack.isSameItemSameComponents(stack, itemBySlot)) {
++                // Paper start
++                final io.papermc.paper.event.player.PlayerSwapWithEquipmentSlotEvent event = new io.papermc.paper.event.player.PlayerSwapWithEquipmentSlotEvent(
++                    (org.bukkit.entity.Player) player.getBukkitEntity(),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(stack),
++                    org.bukkit.craftbukkit.CraftEquipmentSlot.getSlot(this.slot),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemBySlot)
++                );
++                event.callEvent();
++                if (event.isCancelled()) {
++                    ((org.bukkit.entity.Player) player.getBukkitEntity()).updateInventory();
++                    return InteractionResult.FAIL;
++                }
++                // Paper end
+                 if (!player.level().isClientSide()) {
+                     player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
+                 }
