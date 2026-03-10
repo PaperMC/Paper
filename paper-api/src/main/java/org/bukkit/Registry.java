@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.entity.poi.PoiType;
+import io.papermc.paper.particle.ParticleType;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
@@ -209,9 +210,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     /**
      * Server particles.
      *
-     * @see Particle
+     * @see ParticleType
      */
-    Registry<Particle> PARTICLE_TYPE = registryFor(RegistryKey.PARTICLE_TYPE); // Paper
+    Registry<ParticleType> PARTICLE_TYPE = registryFor(RegistryKey.PARTICLE_TYPE); // Paper
     /**
      * Server potions.
      *
