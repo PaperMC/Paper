@@ -5,6 +5,7 @@ import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PlayerGiveResult;
 import io.papermc.paper.math.Position;
+import io.papermc.paper.particle.ParticleType;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.time.Duration;
@@ -3334,6 +3335,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *              settings
      */
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
+
+    void spawnParticle(ParticleType.NonValued particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, boolean force);
+
+    <T> void spawnParticle(ParticleType.Valued<T> particleType, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
 
     /**
      * Return the player's progression on the specified advancement.

@@ -4,6 +4,8 @@ import io.papermc.generator.utils.ClassHelper;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.particle.ParticleType;
+import io.papermc.paper.particle.Particles;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
@@ -20,6 +22,8 @@ import io.papermc.paper.registry.data.SoundEventRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeTypes;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -34,21 +38,21 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.dialog.Dialogs;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.animal.feline.CatVariants;
 import net.minecraft.world.entity.animal.chicken.ChickenVariants;
 import net.minecraft.world.entity.animal.cow.CowVariants;
-import net.minecraft.world.entity.animal.pig.PigVariants;
-import net.minecraft.world.entity.animal.nautilus.ZombieNautilusVariants;
+import net.minecraft.world.entity.animal.feline.CatVariants;
 import net.minecraft.world.entity.animal.frog.FrogVariants;
+import net.minecraft.world.entity.animal.nautilus.ZombieNautilusVariants;
+import net.minecraft.world.entity.animal.pig.PigVariants;
 import net.minecraft.world.entity.animal.wolf.WolfSoundVariants;
 import net.minecraft.world.entity.animal.wolf.WolfVariants;
 import net.minecraft.world.entity.decoration.painting.PaintingVariants;
@@ -75,7 +79,6 @@ import org.bukkit.GameRule;
 import org.bukkit.JukeboxSong;
 import org.bukkit.Keyed;
 import org.bukkit.MusicInstrument;
-import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
@@ -153,7 +156,8 @@ public final class RegistryEntries {
 
     public static final Set<Class<?>> REGISTRY_CLASS_NAME_BASED_ON_API = Set.of(
         BlockType.class,
-        ItemType.class
+        ItemType.class,
+        EnvironmentalAttributeType.class
     );
 
     public static final List<RegistryEntry<?>> BUILT_IN = List.of(
@@ -170,7 +174,9 @@ public final class RegistryEntries {
         entry(Registries.FLUID, Fluids.class, Fluid.class),
         entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS").apiRegistryBuilder(SoundEventRegistryEntry.Builder.class, "PaperSoundEventRegistryEntry.PaperBuilder", RegistryEntry.RegistryModificationApiSupport.NONE),
         entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of"),
-        entry(Registries.GAME_RULE, GameRules.class, GameRule.class).genericArgCount(1)/*.preload(org.bukkit.GameRules.class)*/ // only preload once the old names are removed
+        entry(Registries.GAME_RULE, GameRules.class, GameRule.class).genericArgCount(1)/*.preload(org.bukkit.GameRules.class)*/, // only preload once the old names are removed
+        entry(Registries.ENVIRONMENT_ATTRIBUTE, EnvironmentAttributes.class, EnvironmentalAttributeType.class, "Paper").genericArgCount(1).preload(EnvironmentalAttributeTypes.class).apiAccessName("of"),
+        entry(Registries.PARTICLE_TYPE, net.minecraft.core.particles.ParticleTypes.class, ParticleType.class, "Paper").preload(Particles.class).apiAccessName("of")
     );
 
     public static final List<RegistryEntry<?>> DATA_DRIVEN = List.of(
@@ -197,7 +203,6 @@ public final class RegistryEntries {
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(
         entry(Registries.ENTITY_TYPE, net.minecraft.world.entity.EntityType.class, EntityType.class),
-        entry(Registries.PARTICLE_TYPE, ParticleTypes.class, Particle.class),
         entry(Registries.POTION, Potions.class, PotionType.class),
         entry(Registries.MEMORY_MODULE_TYPE, MemoryModuleType.class, MemoryKey.class)
     );
