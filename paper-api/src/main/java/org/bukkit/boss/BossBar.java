@@ -6,20 +6,39 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface BossBar {
-
+    // Paper start
     /**
      * Returns the title of this boss bar
      *
      * @return the title of the bar
      */
-    @NotNull
-    String getTitle();
+    net.kyori.adventure.text.@NotNull Component title();
 
     /**
      * Sets the title of this boss bar
      *
      * @param title the title of the bar
      */
+    void title(net.kyori.adventure.text.@Nullable Component title);
+    // Paper end
+
+    /**
+     * Returns the title of this boss bar
+     *
+     * @return the title of the bar
+     * @deprecated in favour of {@link #title()}
+     */
+    @NotNull
+    @Deprecated
+    String getTitle();
+
+    /**
+     * Sets the title of this boss bar
+     *
+     * @param title the title of the bar
+     * @deprecated in favour of {@link #title(net.kyori.adventure.text.Component)}
+     */
+    @Deprecated
     void setTitle(@Nullable String title);
 
     /**
@@ -135,6 +154,7 @@ public interface BossBar {
 
     /**
      * Shows the previously hidden boss bar to all attached players
+     * 
      * @deprecated {@link #setVisible(boolean)}
      */
     @Deprecated(since = "1.9")
@@ -142,6 +162,7 @@ public interface BossBar {
 
     /**
      * Hides this boss bar from all attached players
+     * 
      * @deprecated {@link #setVisible(boolean)}
      */
     @Deprecated(since = "1.9")

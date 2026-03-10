@@ -25,8 +25,13 @@ public class CraftBossBar implements BossBar {
     private Map<BarFlag, FlagContainer> flags;
 
     public CraftBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
+        this(CraftChatMessage.fromString(title, true)[0], color, style, flags);
+    }
+
+    // Paper start - adventure bossbar
+    public CraftBossBar(net.minecraft.network.chat.Component title, BarColor color, BarStyle style, BarFlag... flags) {
         this.handle = new ServerBossEvent(
-                CraftChatMessage.fromString(title, true)[0],
+                title,
                 this.convertColor(color),
                 this.convertStyle(style)
         );
@@ -40,6 +45,7 @@ public class CraftBossBar implements BossBar {
         this.setColor(color);
         this.setStyle(style);
     }
+    // Paper end - adventure
 
     public CraftBossBar(ServerBossEvent bossBattleServer) {
         this.handle = bossBattleServer;
@@ -80,6 +86,19 @@ public class CraftBossBar implements BossBar {
             case NOTCHED_20 -> BarStyle.SEGMENTED_20;
         };
     }
+
+    // Paper start - adventure boss bar
+    @Override
+    public net.kyori.adventure.text.Component title() {
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.handle.name);
+    }
+
+    @Override
+    public void title(final net.kyori.adventure.text.Component title) {
+        this.handle.name = io.papermc.paper.adventure.PaperAdventure.asVanilla(title == null ? net.kyori.adventure.text.Component.empty() : title);
+        this.handle.broadcast(ClientboundBossEventPacket::createUpdateNamePacket);
+    }
+    // Paper end - adventure boss bar
 
     @Override
     public String getTitle() {

@@ -2430,6 +2430,33 @@ public final class CraftServer implements Server {
         return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.palettedContainerFactory(), world);
     }
 
+    // Paper start - adventure bossbar
+    @Override
+    public BossBar createBossBar(final net.kyori.adventure.text.Component title, final BarColor color, final BarStyle style, final BarFlag... flags) {
+        return new CraftBossBar(io.papermc.paper.adventure.PaperAdventure.asVanilla(title == null ? net.kyori.adventure.text.Component.empty() : title), color, style, flags);
+    }
+
+    @Override
+    public KeyedBossBar createBossBar(final NamespacedKey key, final net.kyori.adventure.text.Component title, final BarColor barColor, final BarStyle barStyle, final BarFlag... barFlags) {
+        Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
+        Preconditions.checkArgument(barColor != null, "BarColor key cannot be null");
+        Preconditions.checkArgument(barStyle != null, "BarStyle key cannot be null");
+
+        CustomBossEvent bossBattleCustom = this.getServer().getCustomBossEvents().create(CraftNamespacedKey.toMinecraft(key), io.papermc.paper.adventure.PaperAdventure.asVanilla(title == null ? net.kyori.adventure.text.Component.empty() : title));
+        CraftKeyedBossbar craftKeyedBossbar = new CraftKeyedBossbar(bossBattleCustom);
+        craftKeyedBossbar.setColor(barColor);
+        craftKeyedBossbar.setStyle(barStyle);
+        for (BarFlag flag : barFlags) {
+            if (flag == null) {
+                continue;
+            }
+            craftKeyedBossbar.addFlag(flag);
+        }
+
+        return craftKeyedBossbar;
+    }
+    // Paper end - adventure bossbar
+
     @Override
     public BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
         return new CraftBossBar(title, color, style, flags);

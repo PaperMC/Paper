@@ -2322,6 +2322,7 @@ public final class Bukkit {
         return server.createChunkData(world);
     }
 
+    // Paper start - adventure
     /**
      * Creates a boss bar instance to display to players. The progress
      * defaults to 1.0
@@ -2333,7 +2334,7 @@ public final class Bukkit {
      * @return the created boss bar
      */
     @NotNull
-    public static BossBar createBossBar(@Nullable String title, @NotNull BarColor color, @NotNull BarStyle style, @NotNull BarFlag... flags) {
+    public static BossBar createBossBar(net.kyori.adventure.text.@Nullable Component title, @NotNull BarColor color, @NotNull BarStyle style, @NotNull BarFlag... flags) {
         return server.createBossBar(title, color, style, flags);
     }
 
@@ -2352,6 +2353,45 @@ public final class Bukkit {
      * @return the created boss bar
      */
     @NotNull
+    public static KeyedBossBar createBossBar(@NotNull NamespacedKey key, net.kyori.adventure.text.@Nullable Component title, @NotNull BarColor color, @NotNull BarStyle style, @NotNull BarFlag... flags) {
+        return server.createBossBar(key, title, color, style, flags);
+    }
+    // Paper end - adventure
+
+    /**
+     * Creates a boss bar instance to display to players. The progress
+     * defaults to 1.0
+     *
+     * @param title the title of the boss bar
+     * @param color the color of the boss bar
+     * @param style the style of the boss bar
+     * @param flags an optional list of flags to set on the boss bar
+     * @return the created boss bar
+     * @deprecated in favour of {@link #createBossBar(net.kyori.adventure.text.Component, BarColor, BarStyle, BarFlag...)}
+     */
+    @NotNull
+    @Deprecated // Paper
+    public static BossBar createBossBar(@Nullable String title, @NotNull BarColor color, @NotNull BarStyle style, @NotNull BarFlag... flags) {
+        return server.createBossBar(title, color, style, flags);
+    }
+
+    /**
+     * Creates a boss bar instance to display to players. The progress defaults
+     * to 1.0.
+     * <br>
+     * This instance is added to the persistent storage of the server and will
+     * be editable by commands and restored after restart.
+     *
+     * @param key the key of the boss bar that is used to access the boss bar
+     * @param title the title of the boss bar
+     * @param color the color of the boss bar
+     * @param style the style of the boss bar
+     * @param flags an optional list of flags to set on the boss bar
+     * @return the created boss bar
+     * @deprecated in favour of {@link #createBossBar(NamespacedKey, net.kyori.adventure.text.Component, BarColor, BarStyle, BarFlag...)}
+     */
+    @NotNull
+    @Deprecated // Paper
     public static KeyedBossBar createBossBar(@NotNull NamespacedKey key, @Nullable String title, @NotNull BarColor color, @NotNull BarStyle style, @NotNull BarFlag... flags) {
         return server.createBossBar(key, title, color, style, flags);
     }
