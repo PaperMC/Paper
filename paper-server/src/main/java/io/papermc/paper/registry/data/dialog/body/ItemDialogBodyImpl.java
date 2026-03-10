@@ -1,9 +1,11 @@
 package io.papermc.paper.registry.data.dialog.body;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
+
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public record ItemDialogBodyImpl(
     ItemStack item, @Nullable PlainMessageDialogBody description, boolean showDecorations, boolean showTooltip, int width, int height
@@ -42,16 +44,14 @@ public record ItemDialogBodyImpl(
         }
 
         @Override
-        public ItemDialogBody.Builder width(final int width) {
-            Preconditions.checkArgument(width >= 1 && width <= 256, "Width must be between 1 and 256");
-            this.width = width;
+        public ItemDialogBody.Builder width(final @Range(from = 1, to = 256) int width) {
+            this.width = requireRange(width, "width", 1, 256);
             return this;
         }
 
         @Override
-        public ItemDialogBody.Builder height(final int height) {
-            Preconditions.checkArgument(height >= 1 && height <= 256, "Height must be between 1 and 256");
-            this.height = height;
+        public ItemDialogBody.Builder height(final @Range(from = 1, to = 256) int height) {
+            this.height =  requireRange(height, "height", 1, 256);
             return this;
         }
 

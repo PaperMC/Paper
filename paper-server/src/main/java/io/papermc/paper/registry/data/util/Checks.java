@@ -1,8 +1,10 @@
 package io.papermc.paper.registry.data.util;
 
 import java.util.OptionalInt;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public final class Checks {
 
     public static <T> T asConfigured(final @Nullable T value, final String field) {
@@ -22,27 +24,6 @@ public final class Checks {
     public static <T> T asArgument(final @Nullable T value, final String field) {
         if (value == null) {
             throw new IllegalArgumentException("argument " + field + " cannot be null");
-        }
-        return value;
-    }
-
-    public static int asArgumentRange(final int value, final String field, final int min, final int max) {
-        if (value < min || value > max) {
-            throw new IllegalArgumentException("argument " + field + " must be [" + min + ", " + max + "]");
-        }
-        return value;
-    }
-
-    public static int asArgumentMin(final int value, final String field, final int min) {
-        if (value < min) {
-            throw new IllegalArgumentException("argument " + field + " must be [" + min + ",+inf)");
-        }
-        return value;
-    }
-
-    public static float asArgumentMinExclusive(final float value, final String field, final float min) {
-        if (value <= min) {
-            throw new IllegalArgumentException("argument " + field + " must be (" + min + ",+inf)");
         }
         return value;
     }

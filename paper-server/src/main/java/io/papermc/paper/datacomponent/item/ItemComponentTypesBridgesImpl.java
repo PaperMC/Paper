@@ -23,6 +23,10 @@ import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.map.MapCursor;
 import org.jspecify.annotations.Nullable;
 
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
+import static io.papermc.paper.util.BoundChecker.requirePositive;
+import static io.papermc.paper.util.BoundChecker.requireRange;
+
 public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBridge {
 
     @Override
@@ -196,8 +200,7 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
 
     @Override
     public UseCooldown.Builder useCooldown(final float seconds) {
-        Preconditions.checkArgument(seconds > 0, "seconds must be positive, was %s", seconds);
-        return new PaperUseCooldown.BuilderImpl(seconds);
+        return new PaperUseCooldown.BuilderImpl(requirePositive(seconds, "seconds"));
     }
 
     @Override
@@ -234,11 +237,8 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
 
     @Override
     public PaperOminousBottleAmplifier ominousBottleAmplifier(final int amplifier) {
-        Preconditions.checkArgument(OminousBottleAmplifier.MIN_AMPLIFIER <= amplifier && amplifier <= OminousBottleAmplifier.MAX_AMPLIFIER,
-            "amplifier must be between %s-%s, was %s", OminousBottleAmplifier.MIN_AMPLIFIER, OminousBottleAmplifier.MAX_AMPLIFIER, amplifier
-        );
         return new PaperOminousBottleAmplifier(
-            new OminousBottleAmplifier(amplifier)
+            new OminousBottleAmplifier(requireRange(amplifier, "amplifier", OminousBottleAmplifier.MIN_AMPLIFIER, OminousBottleAmplifier.MAX_AMPLIFIER))
         );
     }
 
@@ -284,9 +284,8 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
 
     @Override
     public KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed) {
-        Preconditions.checkArgument(maxDurationTicks >= 0, "maxDurationTicks must be non-negative");
         return new PaperKineticWeapon.PaperKineticWeaponCondition(new net.minecraft.world.item.component.KineticWeapon.Condition(
-                maxDurationTicks, minSpeed, minRelativeSpeed
+            maxDurationTicks, minSpeed, requireNonNegative(minRelativeSpeed, "minRelativeSpeed")
         ));
     }
 }

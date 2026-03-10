@@ -4,7 +4,11 @@ import com.google.common.base.Preconditions;
 import net.kyori.adventure.text.Component;
 import net.minecraft.commands.functions.StringTemplate;
 import net.minecraft.server.dialog.body.PlainMessage;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
+
+import static io.papermc.paper.util.BoundChecker.requirePositive;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public record NumberRangeDialogInputImpl(
     String key,
@@ -37,9 +41,8 @@ public record NumberRangeDialogInputImpl(
         }
 
         @Override
-        public BuilderImpl width(final int width) {
-            Preconditions.checkArgument(width >= 1 && width <= 1024, "width must be between 1 and 1024");
-            this.width = width;
+        public BuilderImpl width(final @Range(from = 1, to = 1024) int width) {
+            this.width = requireRange(width, "width", 1, 1024);
             return this;
         }
 
@@ -51,17 +54,13 @@ public record NumberRangeDialogInputImpl(
 
         @Override
         public BuilderImpl initial(final @Nullable Float initial) {
-            if (initial != null) {
-                Preconditions.checkArgument(initial >= this.start && initial <= this.end, "initial must be within the range");
-            }
-            this.initial = initial;
+            this.initial = (initial == null ? null : requireRange(initial, "initial", this.start, this.end));
             return this;
         }
 
         @Override
         public BuilderImpl step(final @Nullable Float step) {
-            Preconditions.checkArgument(step == null || step > 0, "step must be null or greater than 0");
-            this.step = step;
+            this.step = (step == null ? null : requirePositive(step, "step"));
             return this;
         }
 

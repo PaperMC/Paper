@@ -1,6 +1,5 @@
 package io.papermc.paper.datacomponent.item;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
@@ -14,8 +13,12 @@ import net.kyori.adventure.util.TriState;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.util.Handleable;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
+
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
+import static io.papermc.paper.util.BoundChecker.requirePositive;
 
 public record PaperItemTool(
     net.minecraft.world.item.component.Tool impl
@@ -57,8 +60,7 @@ public record PaperItemTool(
     record PaperRule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops) implements Rule {
 
         public static PaperRule fromUnsafe(final RegistryKeySet<BlockType> blocks, final @Nullable Float speed, final TriState correctForDrops) {
-            Preconditions.checkArgument(speed == null || speed > 0, "speed must be positive");
-            return new PaperRule(blocks, speed, correctForDrops);
+            return new PaperRule(blocks, (speed == null) ? null : requirePositive(speed, "speed"), correctForDrops);
         }
     }
 
@@ -70,9 +72,8 @@ public record PaperItemTool(
         private boolean canDestroyBlocksInCreative = true;
 
         @Override
-        public Builder damagePerBlock(final int damage) {
-            Preconditions.checkArgument(damage >= 0, "damage must be non-negative, was %s", damage);
-            this.damage = damage;
+        public Builder damagePerBlock(final @NonNegative int damage) {
+            this.damage = requireNonNegative(damage, "damage");
             return this;
         }
 
