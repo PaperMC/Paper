@@ -8,7 +8,7 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private final Holder.Reference<EntityType<?>> builtInRegistryHolder = BuiltInRegistries.ENTITY_TYPE.createIntrusiveHolder(this);
      public static final Codec<EntityType<?>> CODEC = BuiltInRegistries.ENTITY_TYPE.byNameCodec();
-@@ -1290,6 +_,22 @@
+@@ -1290,14 +_,35 @@
          boolean shouldOffsetY,
          boolean shouldOffsetYMore
      ) {
@@ -27,20 +27,25 @@
 +        boolean shouldOffsetYMore,
 +        org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason createSpawnReason
 +    ) {
++        return this.spawn(level, spawnedFrom, owner, pos, spawnReason, shouldOffsetY, shouldOffsetYMore, createSpawnReason, null);
++    }
++
++    public @Nullable T spawn(ServerLevel level, @Nullable ItemStack spawnedFrom, @Nullable LivingEntity owner, BlockPos pos, EntitySpawnReason spawnReason, boolean shouldOffsetY, boolean shouldOffsetYMore, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason createSpawnReason, final @Nullable Consumer<? super T> op) {
 +        // CraftBukkit end
          Consumer<T> consumer;
          if (spawnedFrom != null) {
              consumer = createDefaultStackConfig(level, spawnedFrom, owner);
-@@ -1297,7 +_,7 @@
+         } else {
              consumer = entity -> {};
          }
++        if (op != null) consumer = consumer.andThen(op); // Paper
  
 -        return this.spawn(level, consumer, pos, spawnReason, shouldOffsetY, shouldOffsetYMore);
 +        return this.spawn(level, consumer, pos, spawnReason, shouldOffsetY, shouldOffsetYMore, createSpawnReason); // CraftBukkit
      }
  
      public static <T extends Entity> Consumer<T> createDefaultStackConfig(Level level, ItemStack stack, @Nullable LivingEntity owner) {
-@@ -1314,19 +_,54 @@
+@@ -1314,19 +_,55 @@
  
      public static <T extends Entity> Consumer<T> appendCustomEntityStackConfig(Consumer<T> consumer, Level level, ItemStack stack, @Nullable LivingEntity owner) {
          TypedEntityData<EntityType<?>> typedEntityData = stack.get(DataComponents.ENTITY_DATA);
@@ -89,6 +94,7 @@
          T entity = this.create(level, consumer, pos, spawnReason, shouldOffsetY, shouldOffsetYMore);
          if (entity != null) {
 -            level.addFreshEntityWithPassengers(entity);
++            if (entity.isRemoved()) return null; // Paper - if consumer removed entity, return null
 +            // CraftBukkit start
 +            level.addFreshEntityWithPassengers(entity, creatureSpawnReason);
 +            if (entity.isRemoved()) {
