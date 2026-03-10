@@ -94,6 +94,7 @@ public final class ClassToInterfaceRules {
             PlayerPickBlockEvent.class,
             PlayerPickEntityEvent.class,
             PlayerStopUsingItemEvent.class,
+            PlayerSwapWithEquipmentSlotEvent.class,
             PlayerTrackEntityEvent.class,
             PlayerUntrackEntityEvent.class,
             PrePlayerAttackEntityEvent.class,
