@@ -100,7 +100,7 @@ index 21d50675bfe90c2276890779eb23de58ac915b9a..7be34e37562875313b8e43357921b5fe
      }
  }
 diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed501aad6239 100644
+index 045fe927ddf47191c9e8e3f0febe2cf2aaa90126..d083bb6f45ec2dadd5607d1dd1f6e13da2749b74 100644
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -39,12 +39,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -121,7 +121,7 @@ index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed50
      private volatile boolean suspendFlushingOnServerThread = false;
      // CraftBukkit start
      public final org.bukkit.craftbukkit.CraftServer cserver;
-@@ -61,13 +62,14 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -60,13 +61,14 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      public ServerCommonPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
          this.server = server;
          this.connection = connection;
@@ -137,7 +137,7 @@ index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed50
          // Paper end
      }
  
-@@ -100,13 +102,41 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -99,13 +101,35 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
  
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
@@ -167,25 +167,19 @@ index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed50
 +            if (ka.challengeId() == packet.getId()) {
 +                itr.remove();
 +
-+                if (!this.processedDisconnect) {
-+                    LOGGER.info("Disconnecting {} for sending keepalive response ({}) out-of-order!", this.playerProfile().name(), packet.getId());
-+                    this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, io.papermc.paper.connection.DisconnectionReason.TIMEOUT);
-+                    return;
-+                }
-+                break;
++                LOGGER.info("Disconnecting {} for sending keepalive response ({}) out-of-order!", this.playerProfile().name(), packet.getId());
++                this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, io.papermc.paper.connection.DisconnectionReason.TIMEOUT);
++                return;
 +            }
          }
 +
-+        if (!this.processedDisconnect) {
-+            LOGGER.info("Disconnecting {} for sending keepalive response ({}) without matching challenge!", this.playerProfile().name(), packet.getId());
-+            this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, io.papermc.paper.connection.DisconnectionReason.TIMEOUT);
-+            return;
-+        }
++        LOGGER.info("Disconnecting {} for sending keepalive response ({}) without matching challenge!", this.playerProfile().name(), packet.getId());
++        this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, io.papermc.paper.connection.DisconnectionReason.TIMEOUT);
 +        // Paper end - improve keepalives
      }
  
      @Override
-@@ -233,20 +263,23 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -232,20 +256,23 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      protected void keepConnectionAlive() {
          Profiler.get().push("keepAlive");
          long millis = Util.getMillis();
@@ -204,7 +198,7 @@ index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed50
 -                this.keepAliveChallenge = millis;
 -                this.send(new ClientboundKeepAlivePacket(this.keepAliveChallenge));
 +        // Paper start - improve keepalives
-+        if (this.checkIfClosed(millis) && !this.processedDisconnect) {
++        if (this.checkIfClosed(millis)) {
 +            long currTime = System.nanoTime();
 +
 +            if ((currTime - this.keepAlive.lastKeepAliveTx) >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1L)) {
@@ -223,7 +217,7 @@ index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed50
              }
          }
  
-@@ -427,6 +460,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -424,6 +451,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      }
  
      protected CommonListenerCookie createCookie(ClientInformation clientInformation) {
