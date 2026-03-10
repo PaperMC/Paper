@@ -1,0 +1,22 @@
+--- a/net/minecraft/world/item/enchantment/Enchantment.java
++++ b/net/minecraft/world/item/enchantment/Enchantment.java
+@@ -317,7 +_,18 @@
+         applyEffects(
+             this.getEffects(EnchantmentEffectComponents.POST_PIERCING_ATTACK),
+             entityContext(level, enchantmentLevel, entity, entity.position()),
+-            enchantmentEntityEffect -> enchantmentEntityEffect.apply(level, enchantmentLevel, item, entity, entity.position())
++            // Paper start - EntityLungeEvent
++            enchantmentEntityEffect -> {
++                io.papermc.paper.event.entity.EntityLungeEvent entityLungeEvent = new io.papermc.paper.event.entity.EntityLungeEvent(
++                    entity.asLivingEntity().getBukkitLivingEntity(), enchantmentLevel
++                );
++                if (!entityLungeEvent.callEvent()) {
++                    // event was canceled
++                    return;
++                }
++                enchantmentEntityEffect.apply(level, entityLungeEvent.getLungePower(), item, entity, entity.position());
++            }
++            // Paper end - EntityLungeEvent
+         );
+     }
+ 
