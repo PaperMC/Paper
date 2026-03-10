@@ -38,7 +38,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> implements ItemType.Typed<M>, io.papermc.paper.world.flag.PaperFeatureDependent<Item> {
+public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item, ItemType> implements ItemType.Typed<M>, io.papermc.paper.world.flag.PaperFeatureDependent<Item> {
 
     private final Supplier<CraftItemMetas.ItemMetaData<M>> itemMetaData;
 

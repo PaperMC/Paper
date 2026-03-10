@@ -39,16 +39,17 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.dialog.Dialogs;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.animal.feline.CatVariants;
 import net.minecraft.world.entity.animal.chicken.ChickenVariants;
 import net.minecraft.world.entity.animal.cow.CowVariants;
-import net.minecraft.world.entity.animal.pig.PigVariants;
-import net.minecraft.world.entity.animal.nautilus.ZombieNautilusVariants;
+import net.minecraft.world.entity.animal.feline.CatVariants;
 import net.minecraft.world.entity.animal.frog.FrogVariants;
+import net.minecraft.world.entity.animal.nautilus.ZombieNautilusVariants;
+import net.minecraft.world.entity.animal.pig.PigVariants;
 import net.minecraft.world.entity.animal.wolf.WolfSoundVariants;
 import net.minecraft.world.entity.animal.wolf.WolfVariants;
 import net.minecraft.world.entity.decoration.painting.PaintingVariants;
@@ -178,7 +179,7 @@ public final class RegistryEntries {
         entry(Registries.STRUCTURE, BuiltinStructures.class, Structure.class).delayed(),
         entry(Registries.TRIM_MATERIAL, TrimMaterials.class, TrimMaterial.class).allowDirect().delayed(),
         entry(Registries.TRIM_PATTERN, TrimPatterns.class, TrimPattern.class).allowDirect().delayed(),
-        entry(Registries.DAMAGE_TYPE, DamageTypes.class, DamageType.class).writableApiRegistryBuilder(DamageTypeRegistryEntry.Builder.class, "PaperDamageTypeRegistryEntry.PaperBuilder").delayed(),
+        entry(Registries.DAMAGE_TYPE, DamageTypes.class, DamageType.class).writableApiRegistryBuilder(DamageTypeRegistryEntry.Builder.class, "PaperDamageTypeRegistryEntry.PaperBuilder").unregisteredTags(List.of(DamageTypeTags.BYPASSES_COOLDOWN)).delayed(),
         entry(Registries.WOLF_VARIANT, WolfVariants.class, Wolf.Variant.class).writableApiRegistryBuilder(WolfVariantRegistryEntry.Builder.class, "PaperWolfVariantRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.WOLF_SOUND_VARIANT, WolfSoundVariants.class, Wolf.SoundVariant.class),
         entry(Registries.ENCHANTMENT, Enchantments.class, Enchantment.class).writableApiRegistryBuilder(EnchantmentRegistryEntry.Builder.class, "PaperEnchantmentRegistryEntry.PaperBuilder").serializationUpdater("ENCHANTMENT_RENAME").delayed(),

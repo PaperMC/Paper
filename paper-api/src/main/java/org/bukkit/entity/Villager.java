@@ -1,9 +1,10 @@
 package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryElement;
 import java.util.Locale;
-import java.util.Map; // Paper
-import java.util.UUID; // Paper
+import java.util.Map;
+import java.util.UUID;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
@@ -170,7 +171,7 @@ public interface Villager extends AbstractVillager {
      * Represents Villager type, usually corresponding to what biome they spawn
      * in.
      */
-    interface Type extends OldEnum<Type>, Keyed {
+    interface Type extends RegistryElement<Type>, OldEnum<Type>, Keyed {
 
         // Start generate - VillagerType
         Type DESERT = getType("desert");
@@ -222,7 +223,7 @@ public interface Villager extends AbstractVillager {
      * Represents the various different Villager professions there may be.
      * Villagers have different trading options depending on their profession,
      */
-    interface Profession extends OldEnum<Profession>, Keyed, net.kyori.adventure.translation.Translatable {
+    interface Profession extends RegistryElement<Profession>, OldEnum<Profession>, Keyed, net.kyori.adventure.translation.Translatable {
 
         // Start generate - VillagerProfession
         /**

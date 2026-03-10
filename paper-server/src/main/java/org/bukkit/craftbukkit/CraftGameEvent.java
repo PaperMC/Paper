@@ -1,12 +1,12 @@
 package org.bukkit.craftbukkit;
 
-import io.papermc.paper.util.Holderable;
+import io.papermc.paper.util.HolderableElement;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.GameEvent;
 import org.bukkit.NamespacedKey;
 
-public class CraftGameEvent extends GameEvent implements Holderable<net.minecraft.world.level.gameevent.GameEvent> {
+public class CraftGameEvent extends GameEvent implements HolderableElement<net.minecraft.world.level.gameevent.GameEvent, GameEvent> {
 
     public static GameEvent minecraftHolderToBukkit(Holder<net.minecraft.world.level.gameevent.GameEvent> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.GAME_EVENT);
@@ -39,21 +39,21 @@ public class CraftGameEvent extends GameEvent implements Holderable<net.minecraf
 
     @Override
     public NamespacedKey getKey() {
-        return Holderable.super.getKey();
+        return HolderableElement.super.getKey();
     }
 
     @Override
     public boolean equals(Object other) {
-        return Holderable.super.implEquals(other);
+        return HolderableElement.super.implEquals(other);
     }
 
     @Override
     public int hashCode() {
-        return Holderable.super.implHashCode();
+        return HolderableElement.super.implHashCode();
     }
 
     @Override
     public String toString() {
-        return Holderable.super.implToString();
+        return HolderableElement.super.implToString();
     }
 }

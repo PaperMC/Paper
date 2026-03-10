@@ -34,7 +34,7 @@ public class CraftCow extends CraftAbstractCow implements Cow {
         this.getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
     }
 
-    public static class CraftVariant extends HolderableBase<CowVariant> implements Variant {
+    public static class CraftVariant extends HolderableBase<CowVariant, Variant> implements Variant {
 
         public static Variant minecraftHolderToBukkit(Holder<CowVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.COW_VARIANT);

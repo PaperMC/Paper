@@ -3,6 +3,7 @@ package org.bukkit.block;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
@@ -23,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
  * There may be additional biomes present in the server, for example from a {@link io.papermc.paper.datapack.Datapack}
  * which can be accessed via {@link io.papermc.paper.registry.RegistryAccess#getRegistry(RegistryKey)} and {@link RegistryKey#BIOME}.
  */
-public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
+public interface Biome extends RegistryElement<Biome>, OldEnum<Biome>, Keyed, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
     // Start generate - Biome
     Biome BADLANDS = getBiome("badlands");

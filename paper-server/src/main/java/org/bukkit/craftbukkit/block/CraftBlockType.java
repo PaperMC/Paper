@@ -40,7 +40,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase<Block> implements BlockType.Typed<B>, io.papermc.paper.world.flag.PaperFeatureDependent<Block> { // Paper - feature flag API
+public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase<Block, BlockType> implements BlockType.Typed<B>, io.papermc.paper.world.flag.PaperFeatureDependent<Block> { // Paper - feature flag API
 
 
     public static Material minecraftToBukkit(Block block) {

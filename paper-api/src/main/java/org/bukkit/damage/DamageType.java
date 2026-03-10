@@ -1,6 +1,7 @@
 package org.bukkit.damage;
 
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -17,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @see <a href="https://minecraft.wiki/w/Damage_type">Minecraft Wiki</a>
  */
-public interface DamageType extends Keyed, Translatable {
+public interface DamageType extends RegistryElement<DamageType>, Keyed, Translatable {
 
     // Start generate - DamageType
     DamageType ARROW = getDamageType("arrow");

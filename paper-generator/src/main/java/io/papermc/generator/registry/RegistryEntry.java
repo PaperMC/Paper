@@ -9,13 +9,17 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import javax.lang.model.SourceVersion;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.TagKey;
 import org.bukkit.Keyed;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -42,6 +46,7 @@ public final class RegistryEntry<T> {
     private String apiAccessName = ConstantDescs.INIT_NAME;
     private Optional<String> apiRegistryField = Optional.empty();
     private int genericArgCount = 0;
+    private @Nullable List<TagKey<T>> unregisteredTags;
 
     private @Nullable Map<ResourceKey<T>, String> fieldNames;
 
@@ -111,6 +116,11 @@ public final class RegistryEntry<T> {
         return this;
     }
 
+    public RegistryEntry<T> unregisteredTags(List<TagKey<T>> keys) {
+        this.unregisteredTags = keys;
+        return this;
+    }
+
     public boolean canAllowDirect() {
         return this.allowDirect;
     }
@@ -129,6 +139,23 @@ public final class RegistryEntry<T> {
 
     public @Nullable String fieldRename() {
         return this.fieldRename;
+    }
+
+    public void lookupTagKeys(Consumer<TagKey<T>> callback) {
+        this.registry().listTagIds().forEach(callback);
+
+        if (this.unregisteredTags != null) {
+            this.unregisteredTags.forEach(callback);
+        }
+    }
+
+    public Stream<TagKey<T>> tagKeys() {
+        Stream<TagKey<T>> keys = this.registry().listTagIds();
+
+        if (this.unregisteredTags != null) {
+            keys = Stream.concat(keys, this.unregisteredTags.stream());
+        }
+        return keys;
     }
 
     public @Nullable Class<?> apiRegistryBuilder() {

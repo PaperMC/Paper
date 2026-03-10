@@ -31,11 +31,11 @@ import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
 @NullMarked
-public class GeneratedTagKeyType extends SimpleGenerator {
+public class GeneratedTagKeyType<T> extends SimpleGenerator {
 
-    private final RegistryEntry<?> entry;
+    private final RegistryEntry<T> entry;
 
-    public GeneratedTagKeyType(RegistryEntry<?> entry, String packageName) {
+    public GeneratedTagKeyType(RegistryEntry<T> entry, String packageName) {
         super(entry.keyClassName().concat("TagKeys"), packageName);
         this.entry = entry;
     }
@@ -84,7 +84,7 @@ public class GeneratedTagKeyType extends SimpleGenerator {
         MethodSpec.Builder createMethod = this.createMethod(tagKeyType);
 
         AtomicBoolean allExperimental = new AtomicBoolean(true);
-        this.entry.registry().listTagIds().sorted(Formatting.TAG_ORDER).forEach(tagKey -> {
+        this.entry.tagKeys().sorted(Formatting.TAG_ORDER).forEach(tagKey -> {
             String fieldName = Formatting.formatKeyAsField(tagKey.location().getPath());
             FieldSpec.Builder fieldBuilder = FieldSpec.builder(tagKeyType, fieldName, PUBLIC, STATIC, FINAL)
                 .initializer("$N(key($S))", createMethod.build(), tagKey.location().getPath())
