@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.util.converter.CodecConverter;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -36,6 +36,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @DelegateDeserialization(ItemStack.class)
 public final class CraftItemStack extends ItemStack {
@@ -581,8 +582,14 @@ public final class CraftItemStack extends ItemStack {
         this.setDataInternal((io.papermc.paper.datacomponent.PaperDataComponentType.NonValuedImpl<?, ?>) type, null);
     }
 
-    private <A, V> void setDataInternal(final io.papermc.paper.datacomponent.PaperDataComponentType<A, V> type, final A value) {
-        this.handle.set(type.getHandle(), type.getAdapter().toVanilla(value, type.getHolder()));
+    private <A, V> void setDataInternal(final io.papermc.paper.datacomponent.PaperDataComponentType<A, V> type, final @Nullable A value) {
+        final V v = type.getConverter().toVanilla(value);
+        if (type.getConverter() instanceof CodecConverter<V, A> codecConverter) {
+            codecConverter.validate(v, true).ifPresent(message -> {
+                throw new IllegalArgumentException("Failed to encode data component %s (%s)".formatted(type.getKey().asString(), message));
+            });
+        }
+        this.handle.set(type.getHandle(), v);
     }
 
     @Override
