@@ -1,26 +1,25 @@
-package org.bukkit.event.block;
+package io.papermc.paper.event.entity;
 
 import io.papermc.paper.event.ReceiveGameEvent;
 import org.bukkit.GameEvent;
-import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Called when a block receives a game event and hence might take some action.
+ * Called when an entity receives a game event and hence might take some action.
  * <p>
- * Will be called cancelled if the block's default behavior is to ignore the
+ * Will be called cancelled if the entity's default behavior is to ignore the
  * event.
  */
 @NullMarked
-public class BlockReceiveGameEvent extends BlockEvent implements ReceiveGameEvent {
+public class EntityReceiveGameEvent extends EntityEvent implements ReceiveGameEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
-
     private final GameEvent event;
     private final @Nullable Entity triggerEntity;
     private final @Nullable BlockData triggerBlockData;
@@ -28,27 +27,27 @@ public class BlockReceiveGameEvent extends BlockEvent implements ReceiveGameEven
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public BlockReceiveGameEvent(final GameEvent event, final Block block, final @Nullable Entity triggerEntity, final @Nullable BlockData triggerBlockData) {
-        super(block);
+    public EntityReceiveGameEvent(final Entity target, final GameEvent event, final @Nullable Entity triggerEntity, final @Nullable BlockData triggerBlockData) {
+        super(target);
         this.event = event;
         this.triggerEntity = triggerEntity;
         this.triggerBlockData = triggerBlockData;
     }
 
+    /**
+     * Gets the entity which received the game event, not to be
+     * confused with the entity which may have caused the game event.
+     *
+     * @see #getTriggerEntity()
+     */
+    @Override
+    public Entity getEntity() {
+        return super.getEntity();
+    }
+
     @Override
     public GameEvent getEvent() {
         return this.event;
-    }
-
-    /**
-     * Get the entity which triggered this event, if present.
-     *
-     * @return triggering entity or {@code null}
-     * @deprecated use {@link #getTriggerEntity()}
-     */
-    @Deprecated(since = "1.21.11")
-    public @Nullable Entity getEntity() {
-        return this.getTriggerEntity();
     }
 
     @Override
