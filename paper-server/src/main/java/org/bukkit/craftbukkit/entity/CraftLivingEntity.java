@@ -90,6 +90,7 @@ import org.bukkit.entity.Trident;
 import org.bukkit.entity.WitherSkull;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -145,12 +146,10 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         }
     }
 
-    // Paper start - entity heal API
     @Override
-    public void heal(final double amount, final org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason reason) {
+    public void heal(final double amount, final EntityRegainHealthEvent.RegainReason reason) {
         this.getHandle().heal((float) amount, reason);
     }
-    // Paper end - entity heal API
 
     @Override
     public double getAbsorptionAmount() {
@@ -398,6 +397,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void setBeeStingersInBody(int count) {
         Preconditions.checkArgument(count >= 0, "New bee stinger amount must be >= 0");
         this.getHandle().setStingerCount(count);
+    }
+
+    @Override
+    public void kill(org.bukkit.damage.DamageSource damageSource) {
+        Preconditions.checkState(!this.getHandle().generation, "Cannot kill entity during world generation");
+        Preconditions.checkArgument(damageSource != null, "damageSource cannot be null");
+
+        this.getHandle().setHealth(0);
+        this.getHandle().die(((CraftDamageSource) damageSource).getHandle());
     }
 
     @Override
