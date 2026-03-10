@@ -257,16 +257,16 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile, PlayerH
 
     @Override
     default void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.Builder builder) {
-        if (this.getProperties().isEmpty() && (this.getName() != null) != (this.getId() != null)) {
+        if (this.getProperties().isEmpty()) {
             if (this.getId() != null) {
                 builder.id(this.getId());
-            } else {
+            } else if (this.getName() != null) {
                 builder.name(this.getName());
             }
-            return;
+        } else {
+            builder.id(this.getId())
+                .name(this.getName())
+                .profileProperties(this.getProperties().stream().map(prop -> property(prop.getName(), prop.getValue(), prop.getSignature())).toList());
         }
-        builder.id(this.getId())
-            .name(this.getName())
-            .profileProperties(this.getProperties().stream().map(prop -> property(prop.getName(), prop.getValue(), prop.getSignature())).toList());
     }
 }
