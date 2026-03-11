@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <support@newwindserver.com>
+Date: Fri, 28 Dec 2025 19:17:32 +0200
+Subject: [PATCH] Skip entity tracking out of render range
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index ab88931..38985c1 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1045,6 +1045,9 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+     private void newTrackerTick() {
+         final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup entityLookup = (ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup)((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getEntityLookup();;
+ 
++        // Client entity view distance scale heuristic copied from LevelRenderer.extractVisibleEntities()
++        Entity.setViewScale(Mth.clamp(serverViewDistance / 8.0, 1.0, 2.5) * level.paperConfig().misc.skipTrackingOutOfRenderRangeEntitiesClientDistanceScaling);
++
+         final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.entity.Entity> trackerEntities = entityLookup.trackerEntities;
+         final Entity[] trackerEntitiesRaw = trackerEntities.getRawDataUnchecked();
+         for (int i = 0, len = trackerEntities.size(); i < len; ++i) {
+@@ -1381,6 +1384,13 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                 if (flag && !player.getBukkitEntity().canSee(this.entity.getBukkitEntity())) { // Paper - only consider hits
+                     flag = false;
+                 }
++                if (flag && level.paperConfig().misc.skipTrackingOutOfRenderRangeEntities) {
++                    double vec3_dy = player.getY() - this.entity.getY();
++                    double sqrDistance = d1 + (vec3_dy * vec3_dy);
++                    if (!this.entity.shouldRenderAtSqrDistance(sqrDistance)) {
++                        flag = false;
++                    }
++                }
+                 // CraftBukkit end
+                 if (flag) {
+                     if (this.seenBy.add(player.connection)) {
