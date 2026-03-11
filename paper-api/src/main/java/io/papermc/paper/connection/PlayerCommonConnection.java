@@ -43,4 +43,29 @@ public interface PlayerCommonConnection extends WritablePlayerCookieConnection, 
      * @return the client option value of the player
      */
     <T> T getClientOption(ClientOption<T> type);
+
+    /**
+     * Gets the player's estimated ping in milliseconds.
+     * <p>
+     * In Vanilla this value represents a weighted average of the response time
+     * to application layer ping packets sent. This value does not represent the
+     * network round trip time and as such may have less granularity and be
+     * impacted by other sources. For these reasons it <b>should not</b> be used
+     * for anti-cheat purposes. Its recommended use is only as a
+     * <b>qualitative</b> indicator of connection quality (Vanilla uses it for
+     * this purpose in the tab list).
+     *
+     * @return player ping
+     */
+    int getPing();
+
+    /**
+     * Gets the player's most recent measured ping.
+     * <p>
+     * This differs from {@link #getPing()} as it represents an average of ping over time,
+     * whereas this represents simply the most recent ping.
+     *
+     * @return player's most recent ping
+     */
+    int getLastPing();
 }
