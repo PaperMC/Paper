@@ -13,6 +13,8 @@ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.util.capture.MinecraftCaptureBridge;
+import io.papermc.paper.util.capture.SimpleBlockCapture;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -104,7 +106,6 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.DragonBattle;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
@@ -124,6 +125,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
 import org.bukkit.craftbukkit.util.CraftStructureSearchResult;
+import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
@@ -738,26 +740,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
-        this.world.captureTreeGeneration = true;
-        this.world.captureBlockStates = true;
-        boolean grownTree = this.generateTree(loc, type);
-        this.world.captureBlockStates = false;
-        this.world.captureTreeGeneration = false;
-        if (grownTree) { // Copy block data to delegate
-            for (BlockState blockstate : this.world.capturedBlockStates.values()) {
-                BlockPos position = ((CraftBlockState) blockstate).getPosition();
-                net.minecraft.world.level.block.state.BlockState oldBlock = this.world.getBlockState(position);
-                int flags = ((CraftBlockState) blockstate).getFlags();
-                delegate.setBlockData(blockstate.getX(), blockstate.getY(), blockstate.getZ(), blockstate.getBlockData());
-                net.minecraft.world.level.block.state.BlockState newBlock = this.world.getBlockState(position);
-                this.world.notifyAndUpdatePhysics(position, null, oldBlock, newBlock, newBlock, flags, net.minecraft.world.level.block.Block.UPDATE_LIMIT);
-            }
-            this.world.capturedBlockStates.clear();
-            return true;
-        } else {
-            this.world.capturedBlockStates.clear();
-            return false;
-        }
+       try (SimpleBlockCapture capture = this.world.forkCaptureSession()) {
+           MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
+
+           BlockPos pos = CraftLocation.toBlockPosition(loc);
+           boolean res = this.generateTree(captureTreeGeneration, this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(CraftWorld.rand), type);
+           if (res) {
+               List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(this.world);
+               for (BlockState state : blocks) {
+                   delegate.setBlockData(state.getX(), state.getY(), state.getZ(), state.getBlockData());
+               }
+           }
+
+           return res;
+       }
     }
 
     @Override

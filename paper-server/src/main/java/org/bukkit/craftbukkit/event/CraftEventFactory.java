@@ -6,15 +6,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.block.bed.BedEnterProblem;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
@@ -23,6 +14,19 @@ import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
+import io.papermc.paper.util.capture.GrowthContext;
+import io.papermc.paper.util.capture.MinecraftCaptureBridge;
+import io.papermc.paper.util.capture.PaperCapturingWorldLevel;
+import io.papermc.paper.util.capture.SimpleBlockCapture;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
@@ -45,14 +49,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
-import net.minecraft.world.entity.animal.fish.AbstractFish;
-import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.fish.WaterAnimal;
+import net.minecraft.world.entity.animal.fish.AbstractFish;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Ghast;
-import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.monster.illager.SpellcasterIllager;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.entity.raid.Raid;
@@ -113,6 +112,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.AbstractHorse;
@@ -153,6 +153,7 @@ import org.bukkit.event.block.BlockDispenseLootEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockFadeEvent;
+import org.bukkit.event.block.BlockFertilizeEvent;
 import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.block.BlockGrowEvent;
 import org.bukkit.event.block.BlockIgniteEvent;
@@ -268,6 +269,7 @@ import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
 import org.bukkit.event.world.LootGenerateEvent;
+import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.CraftingRecipe;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
@@ -494,20 +496,20 @@ public class CraftEventFactory {
         return event.getResonatedEntities().stream().map((bukkitEntity) -> ((CraftLivingEntity) bukkitEntity).getHandle());
     }
 
-    public static BlockMultiPlaceEvent callBlockMultiPlaceEvent(ServerLevel level, net.minecraft.world.entity.player.Player player, InteractionHand hand, List<BlockState> blockStates, BlockPos clickedPos) {
+    public static BlockMultiPlaceEvent callBlockMultiPlaceEvent(ServerLevel level, net.minecraft.world.entity.player.Player player, InteractionHand hand, List<BlockState> replacedSnapshots, BlockPos clickedPos) {
         Player cplayer = (Player) player.getBukkitEntity();
         Block clickedBlock = CraftBlock.at(level, clickedPos);
 
         boolean canBuild = true;
-        for (BlockState blockState : blockStates) {
-            if (!CraftEventFactory.canBuild(level, cplayer, blockState.getX(), blockState.getZ())) {
+        for (BlockState snapshot : replacedSnapshots) {
+            if (!CraftEventFactory.canBuild(level, cplayer, snapshot.getX(), snapshot.getZ())) {
                 canBuild = false;
                 break;
             }
         }
 
         EquipmentSlot handSlot = CraftEquipmentSlot.getHand(hand);
-        BlockMultiPlaceEvent event = new BlockMultiPlaceEvent(blockStates, clickedBlock, cplayer.getInventory().getItem(handSlot), cplayer, canBuild, handSlot);
+        BlockMultiPlaceEvent event = new BlockMultiPlaceEvent(replacedSnapshots, clickedBlock, cplayer.getInventory().getItem(handSlot), cplayer, canBuild, handSlot);
         event.callEvent();
 
         return event;
@@ -1291,8 +1293,8 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static boolean handleBlockGrowEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
-        CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
+    public static boolean handleBlockGrowEvent(LevelAccessor level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
+        CraftBlockState snapshot = CraftBlockStates.getBlockState(level, pos);
         snapshot.setData(state);
 
         BlockGrowEvent event = new BlockGrowEvent(snapshot.getBlock(), snapshot);
@@ -2381,6 +2383,54 @@ public class CraftEventFactory {
             }
             return true;
         }
+        return false;
+    }
+
+    // todo block list is sometimes empty for trees in both events
+    public static boolean structureEvent(PaperCapturingWorldLevel level, BlockPos pos, Function<PaperCapturingWorldLevel, Boolean> worldGenCapture, GrowthContext context) {
+        ServerLevel originalLevel = level.getLevel();
+        try (SimpleBlockCapture capture = level.forkCaptureSession()) {
+            MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
+            if (worldGenCapture.apply(captureTreeGeneration)) {
+                Location location = CraftLocation.toBukkit(pos, originalLevel);
+                List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(originalLevel);
+                StructureGrowEvent event = new StructureGrowEvent(location, context.getTreeSpecies(), context.usedBoneMeal(), context.getBukkitPlayer(), blocks);
+                event.setCancelled(context.cancelled);
+
+                if (event.callEvent()) {
+                    capture.finalizePlacement(); // todo block list is mutable
+                    return true;
+                } else {
+                    context.cancelled = true;
+                }
+            } else {
+                capture.finalizePlacement();
+            }
+        }
+
+        return false;
+    }
+
+    // todo cancelling fertilize event doesn't work for azalea
+    public static boolean fertilizeBlock(ServerLevel level, BlockPos pos, Function<PaperCapturingWorldLevel, Boolean> worldGenCapture, GrowthContext context) {
+        try (SimpleBlockCapture capture = level.forkCaptureSession()) {
+            MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
+            if (worldGenCapture.apply(captureTreeGeneration)) {
+                List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(level);
+                BlockFertilizeEvent event = new BlockFertilizeEvent(CraftBlock.at(level, pos), context.getBukkitPlayer(), blocks);
+                event.setCancelled(context.cancelled);
+
+                if (event.callEvent()) {
+                    capture.finalizePlacement(); // todo block list is mutable
+                    return true;
+                } else {
+                    context.cancelled = true;
+                }
+            } else {
+                capture.finalizePlacement();
+            }
+        }
+
         return false;
     }
 }
