@@ -1,6 +1,7 @@
 package org.bukkit.potion;
 
 import java.util.Collection;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -76,4 +77,24 @@ public interface PotionBrewer {
     @NotNull
     @Deprecated(since = "1.20.2", forRemoval = true) // Paper
     public Collection<PotionEffect> getEffects(@NotNull PotionType type, boolean upgraded, boolean extended);
+
+    /**
+     * Adds an ingredient to a potion if applicable.
+     *
+     * @param potion the original potion the ingredient is added to
+     * @param ingredient the ingredient to add to the potion
+     * @return new {@link ItemStack} with added ingredient if applicable
+     * @see #canMixPotion(ItemStack, ItemStack)
+     */
+    @NotNull ItemStack mixPotion(@NotNull ItemStack potion, @NotNull ItemStack ingredient);
+
+    /**
+     * Checks if a potion and ingredient can be mixed.
+     *
+     * @param potion the original potion the ingredient is added to
+     * @param ingredient the ingredient to add to the potion
+     * @return whether potion and ingredient can mix
+     * @see #mixPotion(ItemStack, ItemStack)
+     */
+    boolean canMixPotion(@NotNull ItemStack potion, @NotNull ItemStack ingredient);
 }
