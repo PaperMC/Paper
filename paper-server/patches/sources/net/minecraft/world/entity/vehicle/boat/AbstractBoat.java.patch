@@ -84,14 +84,23 @@
                  this.setDeltaMovement(this.getDeltaMovement().multiply(1.0, 0.0, 1.0));
                  this.lastYd = 0.0;
              }
-@@ -708,12 +_,12 @@
+@@ -708,12 +_,20 @@
      }
  
      @Override
 -    public void remove(Entity.RemovalReason reason) {
 +    public void remove(Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause eventCause) { // CraftBukkit - add Bukkit remove cause
          if (!this.level().isClientSide() && reason.shouldDestroy() && this.isLeashed()) {
-             this.dropLeash();
+-            this.dropLeash();
++            // Paper start - Fire EntityUnleashEvent on boat destruction
++            final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.LEASHED_GONE, true);
++            event.callEvent();
++            if (event.isDropLeash()) {
++                this.dropLeash();
++            } else {
++                this.removeLeash();
++            }
++            // Paper end - Fire EntityUnleashEvent on boat destruction
          }
  
 -        super.remove(reason);
