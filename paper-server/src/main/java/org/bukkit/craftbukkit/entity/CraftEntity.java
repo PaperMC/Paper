@@ -289,9 +289,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean teleport(Location location, TeleportCause cause, TeleportFlag... flags) {
+        Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
         Preconditions.checkArgument(location != null, "location cannot be null");
         Preconditions.checkArgument(location.getWorld() != null, "Target world cannot be null");
-        Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
+        Preconditions.checkArgument(CraftLocation.isInSpawnableBounds(location), "location is out of spawnable bounds");
         location.checkFinite();
 
         return this.teleport0(location, cause, flags);
@@ -1113,9 +1114,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     // Paper start - more teleport API / async chunk API
     @Override
     public CompletableFuture<Boolean> teleportAsync(final Location location, final TeleportCause cause, final TeleportFlag... teleportFlags) {
+        Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
         Preconditions.checkArgument(location != null, "location cannot be null");
         Preconditions.checkArgument(location.getWorld() != null, "Target world cannot be null");
-        Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
+        Preconditions.checkArgument(CraftLocation.isInSpawnableBounds(location), "location is out of spawnable bounds");
         location.checkFinite();
         Location locationClone = location.clone(); // clone so we don't need to worry about mutations after this call.
 
