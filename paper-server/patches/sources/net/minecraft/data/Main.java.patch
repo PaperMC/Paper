@@ -1,0 +1,60 @@
+--- a/net/minecraft/data/Main.java
++++ b/net/minecraft/data/Main.java
+@@ -69,11 +_,12 @@
+         SharedConstants.tryDetectVersion();
+         OptionParser optionParser = new OptionParser();
+         OptionSpec<Void> optionSpec = optionParser.accepts("help", "Show the help menu").forHelp();
+-        OptionSpec<Void> optionSpec1 = optionParser.accepts("server", "Include server generators");
++        OptionSpec<Void> optionSpec1 = optionParser.accepts("server", "Include non-modded server generators"); // Paper - Data generator
+         OptionSpec<Void> optionSpec2 = optionParser.accepts("dev", "Include development tools");
+         OptionSpec<Void> optionSpec3 = optionParser.accepts("reports", "Include data reports");
+         optionParser.accepts("validate", "Validate inputs");
+         OptionSpec<Void> optionSpec4 = optionParser.accepts("all", "Include all generators");
++        OptionSpec<io.papermc.paper.generator.PackType> typeOption = optionParser.accepts("type", "Select the type of packs to generate").withOptionalArg().ofType(io.papermc.paper.generator.PackType.class); // Paper - Data generator
+         OptionSpec<String> optionSpec5 = optionParser.accepts("output", "Output folder").withRequiredArg().defaultsTo("generated");
+         OptionSpec<String> optionSpec6 = optionParser.accepts("input", "Input folder").withRequiredArg();
+         OptionSet optionSet = optionParser.parse(args);
+@@ -85,7 +_,7 @@
+             boolean flag2 = hasOptionSpec || optionSet.has(optionSpec3);
+             Collection<Path> collection = optionSet.valuesOf(optionSpec6).stream().map(string -> Paths.get(string)).toList();
+             DataGenerator dataGenerator = new DataGenerator(path, SharedConstants.getCurrentVersion(), true);
+-            addServerProviders(dataGenerator, collection, flag, flag1, flag2);
++            addServerProviders(dataGenerator, collection, flag, flag1, flag2, typeOption.value(optionSet)); // Paper - Data generator
+             dataGenerator.run();
+             Util.shutdownExecutors();
+         } else {
+@@ -99,7 +_,12 @@
+         return output -> tagProviderFactory.apply(output, lookupProvider);
+     }
+ 
+-    public static void addServerProviders(DataGenerator dataGenerator, Collection<Path> paths, boolean server, boolean dev, boolean reports) {
++    // Paper start - Data generator
++    public static void addServerProviders(DataGenerator dataGenerator, Collection<Path> paths, boolean server, boolean dev, boolean reports, @javax.annotation.Nullable io.papermc.paper.generator.PackType packType) {
++        if (packType != null) {
++            server = packType.requireVanillaProviders;
++        }
++        // Paper end - Data generator
+         DataGenerator.PackGenerator vanillaPack = dataGenerator.getVanillaPack(server);
+         vanillaPack.addProvider(output -> new SnbtToNbt(output, paths).addFilter(new StructureUpdater()));
+         CompletableFuture<HolderLookup.Provider> completableFuture = CompletableFuture.supplyAsync(VanillaRegistries::createLookup, Util.backgroundExecutor());
+@@ -159,5 +_,20 @@
+                 output, Component.translatable("dataPack.minecart_improvements.description"), FeatureFlagSet.of(FeatureFlags.MINECART_IMPROVEMENTS)
+             )
+         );
++        // Paper start - Data generator
++        DataGenerator.PackGenerator paperPack = dataGenerator.getBuiltinDatapack(packType == io.papermc.paper.generator.PackType.PAPER, net.minecraft.resources.Identifier.PAPER_NAMESPACE);
++        paperPack.addProvider(
++            output -> PackMetadataGenerator.forFeaturePack(
++                output, Component.literal("Built-in Paper Datapack")
++            )
++        );
++
++        paperPack.addProvider(
++            output -> new net.minecraft.data.registries.RegistriesDatapackGenerator(output, completableFuture, net.minecraft.resources.Identifier.PAPER_NAMESPACE)
++        );
++        paperPack.addProvider((output) -> new io.papermc.paper.generator.BlockTagsProvider(output, completableFuture, tagsProvider.contentsGetter()));
++        paperPack.addProvider((output) -> new io.papermc.paper.generator.ItemTagsProvider(output, completableFuture, tagsProvider1.contentsGetter()));
++        paperPack.addProvider(bindRegistries(io.papermc.paper.generator.EntityTypeTagsProvider::new, completableFuture));
++        // Paper end - Data generator
+     }
+ }
