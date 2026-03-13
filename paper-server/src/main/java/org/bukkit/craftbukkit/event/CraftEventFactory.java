@@ -2287,6 +2287,28 @@ public class CraftEventFactory {
         return event;
     }
 
+    /**
+     * Calls the {@link io.papermc.paper.event.server.LootTableRollEvent}.
+     *
+     * @param lootTable   the NMS loot table
+     * @param lootContext the NMS loot context
+     * @param loot        the NMS loot
+     * @return the event after it was called
+     */
+    public static io.papermc.paper.event.server.LootTableRollEvent callLootTableRollEvent(final LootTable lootTable, final LootContext lootContext, final List<ItemStack> loot) {
+        final List<org.bukkit.inventory.ItemStack> bukkitItemStacks = loot.stream()
+            .map(CraftItemStack::asBukkitCopy)
+            .toList();
+        final io.papermc.paper.event.server.LootTableRollEvent lootTableRollEvent = new io.papermc.paper.event.server.LootTableRollEvent(
+            lootTable.craftLootTable,
+            CraftLootTable.convertContext(lootContext),
+            bukkitItemStacks
+        );
+
+        lootTableRollEvent.callEvent();
+        return lootTableRollEvent;
+    }
+
     @SuppressWarnings("OptionalAssignedToNull")
     public static Component handleLoginResult(PlayerList.LoginResult result, PlayerConnection paperConnection, Connection connection, GameProfile profile, MinecraftServer server, boolean loginPhase) {
         PlayerConnectionValidateLoginEvent event = new PlayerConnectionValidateLoginEvent(
