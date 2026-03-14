@@ -75,8 +75,10 @@ public class CraftAsyncScheduler extends CraftScheduler {
 
     private synchronized void runTasks(int currentTick) {
         parsePending();
-        while (!this.pending.isEmpty() && this.pending.peek().getNextRun() <= currentTick) {
-            CraftTask task = this.pending.remove();
+        // Paper start - Timing Wheel
+        List<CraftTask> tasks = this.pending.popValid(currentTick);
+        for (CraftTask task : tasks) {
+            // Paper end - Timing Wheel
             if (executeTask(task)) {
                 final long period = task.getPeriod();
                 if (period > 0) {
@@ -84,8 +86,9 @@ public class CraftAsyncScheduler extends CraftScheduler {
                     temp.add(task);
                 }
             }
-            parsePending();
         }
+        parsePending();
+
         this.pending.addAll(temp);
         temp.clear();
     }

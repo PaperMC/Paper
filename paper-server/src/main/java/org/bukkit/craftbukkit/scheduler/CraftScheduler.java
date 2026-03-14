@@ -75,16 +75,7 @@ public class CraftScheduler implements BukkitScheduler {
     /**
      * Main thread logic only
      */
-    final PriorityQueue<CraftTask> pending = new PriorityQueue<CraftTask>(10, // Paper
-            new Comparator<CraftTask>() {
-                @Override
-                public int compare(final CraftTask o1, final CraftTask o2) {
-                    int value = Long.compare(o1.getNextRun(), o2.getNextRun());
-
-                    // If the tasks should run on the same tick they should be run FIFO
-                    return value != 0 ? value : Long.compare(o1.getCreatedAt(), o2.getCreatedAt());
-                }
-            });
+    final io.papermc.paper.util.concurrent.TimingWheel<CraftTask> pending = new io.papermc.paper.util.concurrent.TimingWheel<>(12); // Paper - Timing wheel
     /**
      * Main thread logic only
      */
@@ -459,8 +450,10 @@ public class CraftScheduler implements BukkitScheduler {
         // Paper end
         final List<CraftTask> temp = this.temp;
         this.parsePending();
-        while (this.isReady(this.currentTick)) {
-            final CraftTask task = this.pending.remove();
+        // Paper start - Timing Wheel
+        final List<CraftTask> tasks = this.pending.popValid(this.currentTick);
+        for (CraftTask task : tasks) {
+            // Paper end - Timing Wheel
             if (task.getPeriod() < CraftTask.NO_REPEATING) {
                 if (task.isSync()) {
                     this.runners.remove(task.getTaskId(), task);
@@ -564,7 +557,8 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     private boolean isReady(final int currentTick) {
-        return !this.pending.isEmpty() && this.pending.peek().getNextRun() <= currentTick;
+        // return !this.pending.isEmpty() && this.pending.peek().getNextRun() <= currentTick;
+        return this.pending.isReady(currentTick); // Paper - Timing wheel
     }
 
     @Override
