@@ -2,12 +2,12 @@ package org.bukkit.craftbukkit.scheduler;
 
 import java.util.function.Consumer;
 
+import io.papermc.paper.util.concurrent.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
-// Paper - Timing Wheel
-public class CraftTask implements BukkitTask, Runnable, io.papermc.paper.util.concurrent.ScheduledTask { // Spigot
+public class CraftTask implements BukkitTask, Runnable, ScheduledTask {
 
     private volatile CraftTask next = null;
     public static final int ERROR = 0;
@@ -94,7 +94,7 @@ public class CraftTask implements BukkitTask, Runnable, io.papermc.paper.util.co
         this.period = period;
     }
 
-    public long getNextRun() { // Paper - Timing Wheel
+    public long getNextRun() {
         return this.nextRun;
     }
 

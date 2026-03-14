@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.IntUnaryOperator;
 import java.util.logging.Level;
+import io.papermc.paper.util.concurrent.TimingWheel;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -75,7 +76,7 @@ public class CraftScheduler implements BukkitScheduler {
     /**
      * Main thread logic only
      */
-    final io.papermc.paper.util.concurrent.TimingWheel<CraftTask> pending = new io.papermc.paper.util.concurrent.TimingWheel<>(12); // Paper - Timing wheel
+    final TimingWheel<CraftTask> pending = new TimingWheel<>(12);
     /**
      * Main thread logic only
      */
@@ -450,10 +451,8 @@ public class CraftScheduler implements BukkitScheduler {
         // Paper end
         final List<CraftTask> temp = this.temp;
         this.parsePending();
-        // Paper start - Timing Wheel
         final List<CraftTask> tasks = this.pending.popValid(this.currentTick);
         for (CraftTask task : tasks) {
-            // Paper end - Timing Wheel
             if (task.getPeriod() < CraftTask.NO_REPEATING) {
                 if (task.isSync()) {
                     this.runners.remove(task.getTaskId(), task);
@@ -557,8 +556,7 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     private boolean isReady(final int currentTick) {
-        // return !this.pending.isEmpty() && this.pending.peek().getNextRun() <= currentTick;
-        return this.pending.isReady(currentTick); // Paper - Timing wheel
+        return this.pending.isReady(currentTick);
     }
 
     @Override
