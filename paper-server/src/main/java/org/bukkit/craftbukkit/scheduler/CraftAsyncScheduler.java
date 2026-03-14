@@ -75,10 +75,8 @@ public class CraftAsyncScheduler extends CraftScheduler {
 
     private synchronized void runTasks(int currentTick) {
         parsePending();
-        // Paper start - Timing Wheel
         List<CraftTask> tasks = this.pending.popValid(currentTick);
         for (CraftTask task : tasks) {
-            // Paper end - Timing Wheel
             if (executeTask(task)) {
                 final long period = task.getPeriod();
                 if (period > 0) {
