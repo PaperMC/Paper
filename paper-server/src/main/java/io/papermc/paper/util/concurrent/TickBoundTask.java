@@ -1,5 +1,5 @@
 package io.papermc.paper.util.concurrent;
 
-public interface ScheduledTask {
+public interface TickBoundTask {
     long getNextRun();
 }

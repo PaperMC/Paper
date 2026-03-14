@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 
 /**
@@ -21,7 +20,7 @@ import java.util.function.Predicate;
  * We are using power of 2 for faster operations than modulo.
  *
  */
-public class TimingWheel<T extends ScheduledTask> implements Iterable<T> {
+public class TimingWheel<T extends TickBoundTask> implements Iterable<T> {
     private final int wheelSize;
     private final long mask;
     private final ArrayDeque<T>[] wheel;
