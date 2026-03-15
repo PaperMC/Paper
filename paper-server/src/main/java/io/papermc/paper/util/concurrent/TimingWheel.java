@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Predicate;
@@ -23,16 +24,16 @@ import java.util.function.Predicate;
 public class TimingWheel<T extends TickBoundTask> implements Iterable<T> {
     private final int wheelSize;
     private final long mask;
-    private final ArrayDeque<T>[] wheel;
+    private final LinkedList<T>[] wheel;
 
     @SuppressWarnings("unchecked")
     public TimingWheel(int exponent) {
         this.wheelSize = 1 << exponent;
         this.mask = wheelSize - 1L;
 
-        this.wheel = (ArrayDeque<T>[]) new ArrayDeque[wheelSize];
+        this.wheel = (LinkedList<T>[]) new LinkedList[wheelSize];
         for (int i = 0; i < wheelSize; i++) {
-            wheel[i] = new ArrayDeque<>();
+            wheel[i] = new LinkedList<>();
         }
     }
 
@@ -49,7 +50,7 @@ public class TimingWheel<T extends TickBoundTask> implements Iterable<T> {
 
     public @NotNull List<T> popValid(long currentTick) {
         int slot = (int) (currentTick & mask);
-        ArrayDeque<T> bucket = wheel[slot];
+        LinkedList<T> bucket = wheel[slot];
         if (bucket.isEmpty()) return Collections.emptyList();
 
         Iterator<T> iter = bucket.iterator();
@@ -68,7 +69,7 @@ public class TimingWheel<T extends TickBoundTask> implements Iterable<T> {
 
     public boolean isReady(long currentTick) {
         int slot = (int) (currentTick & mask);
-        ArrayDeque<T> bucket = wheel[slot];
+        LinkedList<T> bucket = wheel[slot];
         if (bucket.isEmpty()) return false;
 
         for (final T task : bucket) {
