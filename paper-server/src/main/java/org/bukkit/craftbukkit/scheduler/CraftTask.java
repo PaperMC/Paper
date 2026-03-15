@@ -82,7 +82,7 @@ public class CraftTask implements BukkitTask, Runnable, TickBoundTask {
         }
     }
 
-    long getCreatedAt() {
+    public long getCreatedAt() {
         return this.createdAt;
     }
 
