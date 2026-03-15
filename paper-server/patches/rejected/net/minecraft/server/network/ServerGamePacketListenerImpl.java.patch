@@ -1,6 +1,14 @@
+From 1297a393931168b81b895cb287186c8c5dd495d8 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 06:37:42 -0700
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index db101bcddada40696cb95143480aef66e84d2153..ee2dab151f08253463082b70c4ded0dd0d54b22d 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -222,6 +_,38 @@
+@@ -222,6 +222,38 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  import org.jspecify.annotations.Nullable;
  import org.slf4j.Logger;
  
@@ -39,7 +47,7 @@
  public class ServerGamePacketListenerImpl
      extends ServerCommonPacketListenerImpl
      implements ServerGamePacketListener,
-@@ -242,7 +_,9 @@
+@@ -242,7 +274,9 @@ public class ServerGamePacketListenerImpl
      private int tickCount;
      private int ackBlockChangesUpTo = -1;
      private final TickThrottler chatSpamThrottler = new TickThrottler(20, 200);
@@ -49,7 +57,7 @@
      private double firstGoodX;
      private double firstGoodY;
      private double firstGoodZ;
-@@ -266,7 +_,23 @@
+@@ -266,7 +300,23 @@ public class ServerGamePacketListenerImpl
      private int receivedMovePacketCount;
      private int knownMovePacketCount;
      private boolean receivedMovementThisTick;
@@ -73,7 +81,7 @@
      private SignedMessageChain.Decoder signedMessageDecoder;
      private final LastSeenMessagesValidator lastSeenMessages = new LastSeenMessagesValidator(20);
      private int nextChatIndex;
-@@ -275,6 +_,9 @@
+@@ -275,6 +325,9 @@ public class ServerGamePacketListenerImpl
      private boolean waitingForSwitchToConfig;
      private boolean waitingForRespawn;
      private int clientLoadedTimeoutTimer;
@@ -83,12 +91,11 @@
  
      public ServerGamePacketListenerImpl(final MinecraftServer server, final Connection connection, final ServerPlayer player, final CommonListenerCookie cookie) {
          super(server, connection, cookie);
-@@ -284,11 +_,26 @@
+@@ -284,11 +337,26 @@ public class ServerGamePacketListenerImpl
          player.connection = this;
          player.getTextFilter().join();
          this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(player.getUUID(), server::enforceSecureProfile);
 -        this.chatMessageChain = new FutureChain(server);
--    }
 +        this.chatMessageChain = new FutureChain(server.chatExecutor); // CraftBukkit - async chat
 +        this.tickEndEvent = new io.papermc.paper.event.packet.ClientTickEndEvent(player.getBukkitEntity()); // Paper - add client tick end event
 +        this.playerGameConnection =  new io.papermc.paper.connection.PaperPlayerGameConnection(this); // Paper
@@ -103,7 +110,7 @@
 +    @Override
 +    public net.kyori.adventure.audience.Audience getAudience() {
 +        return this.getCraftPlayer();
-+    }
+     }
 +    // Paper end - configuration phase API
  
      @Override
@@ -112,7 +119,7 @@
          if (this.ackBlockChangesUpTo > -1) {
              this.send(new ClientboundBlockChangedAckPacket(this.ackBlockChangesUpTo));
              this.ackBlockChangesUpTo = -1;
-@@ -298,11 +_,13 @@
+@@ -298,11 +366,13 @@ public class ServerGamePacketListenerImpl
              this.keepConnectionAlive();
              this.chatSpamThrottler.tick();
              this.dropSpamThrottler.tick();
@@ -127,7 +134,7 @@
              }
          }
      }
-@@ -318,8 +_,8 @@
+@@ -318,8 +388,8 @@ public class ServerGamePacketListenerImpl
          this.knownMovePacketCount = this.receivedMovePacketCount;
          if (this.clientIsFloating && !this.player.isSleeping() && !this.player.isPassenger() && !this.player.isDeadOrDying()) {
              if (++this.aboveGroundTickCount > this.getMaximumFlyingTicks(this.player)) {
@@ -138,7 +145,7 @@
                  return true;
              }
          } else {
-@@ -337,8 +_,8 @@
+@@ -337,8 +407,8 @@ public class ServerGamePacketListenerImpl
              this.vehicleLastGoodZ = this.lastVehicle.getZ();
              if (this.clientVehicleIsFloating && this.lastVehicle.getControllingPassenger() == this.player) {
                  if (++this.aboveGroundVehicleTickCount > this.getMaximumFlyingTicks(this.lastVehicle)) {
@@ -149,7 +156,7 @@
                      return true;
                  }
              } else {
-@@ -351,6 +_,12 @@
+@@ -351,6 +421,12 @@ public class ServerGamePacketListenerImpl
              this.aboveGroundVehicleTickCount = 0;
          }
  
@@ -162,7 +169,7 @@
          return false;
      }
  
-@@ -416,11 +_,37 @@
+@@ -416,11 +492,37 @@ public class ServerGamePacketListenerImpl
      @Override
      public void handlePlayerInput(final ServerboundPlayerInputPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -190,9 +197,8 @@
          if (this.hasClientLoaded()) {
              this.player.resetLastActionTime();
 -            this.player.setShiftKeyDown(packet.input().shift());
--        }
 +            // this.player.setShiftKeyDown(packet.input().shift()); // Paper - move up and only set if event is not cancelled.
-+        }
+         }
 +        // Paper start - Add option to make parrots stay
 +        if (packet.input().shift() && this.player.level().paperConfig().entities.behavior.parrotsAreUnaffectedByPlayerMovement) {
 +            this.player.removeEntitiesOnShoulder();
@@ -202,7 +208,7 @@
      }
  
      private static boolean containsInvalidValues(final double x, final double y, final double z, final float yRot, final float xRot) {
-@@ -439,11 +_,23 @@
+@@ -439,11 +541,23 @@ public class ServerGamePacketListenerImpl
      public void handleMoveVehicle(final ServerboundMoveVehiclePacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          if (containsInvalidValues(packet.position().x(), packet.position().y(), packet.position().z(), packet.yRot(), packet.xRot())) {
@@ -227,7 +233,7 @@
                  double oldX = vehicle.getX();
                  double oldY = vehicle.getY();
                  double oldZ = vehicle.getZ();
-@@ -457,7 +_,52 @@
+@@ -457,7 +571,52 @@ public class ServerGamePacketListenerImpl
                  double zDist = targetZ - this.vehicleFirstGoodZ;
                  double expectedDist = vehicle.getDeltaMovement().lengthSqr();
                  double movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
@@ -281,7 +287,7 @@
                      LOGGER.warn(
                          "{} (vehicle of {}) moved too quickly! {},{},{}", vehicle.getPlainTextName(), this.player.getPlainTextName(), xDist, yDist, zDist
                      );
-@@ -466,9 +_,9 @@
+@@ -466,9 +625,9 @@ public class ServerGamePacketListenerImpl
                  }
  
                  AABB oldAABB = vehicle.getBoundingBox();
@@ -294,7 +300,7 @@
                  boolean vehicleRestsOnSomething = vehicle.verticalCollisionBelow;
                  if (vehicle instanceof LivingEntity livingVehicle && livingVehicle.onClimbable()) {
                      livingVehicle.resetFallDistance();
-@@ -485,7 +_,7 @@
+@@ -485,7 +644,7 @@ public class ServerGamePacketListenerImpl
                  zDist = targetZ - vehicle.getZ();
                  movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
                  boolean fail = false;
@@ -303,7 +309,7 @@
                      fail = true;
                      LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", vehicle.getPlainTextName(), this.player.getPlainTextName(), Math.sqrt(movedDist));
                  }
-@@ -498,6 +_,57 @@
+@@ -498,6 +657,57 @@ public class ServerGamePacketListenerImpl
                  }
  
                  vehicle.absSnapTo(targetX, targetY, targetZ, targetYRot, targetXRot);
@@ -361,7 +367,7 @@
                  this.player.level().getChunkSource().move(this.player);
                  Vec3 clientDeltaMovement = new Vec3(vehicle.getX() - oldX, vehicle.getY() - oldY, vehicle.getZ() - oldZ);
                  this.handlePlayerKnownMovement(clientDeltaMovement);
-@@ -528,7 +_,7 @@
+@@ -528,7 +738,7 @@ public class ServerGamePacketListenerImpl
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          if (packet.getId() == this.awaitingTeleport) {
              if (this.awaitingPositionFromClient == null) {
@@ -370,7 +376,7 @@
                  return;
              }
  
-@@ -545,13 +_,14 @@
+@@ -545,13 +755,14 @@ public class ServerGamePacketListenerImpl
              this.lastGoodZ = this.awaitingPositionFromClient.z;
              this.player.hasChangedDimension();
              this.awaitingPositionFromClient = null;
@@ -386,7 +392,7 @@
      }
  
      @Override
-@@ -572,6 +_,7 @@
+@@ -572,6 +783,7 @@ public class ServerGamePacketListenerImpl
      @Override
      public void handleRecipeBookChangeSettingsPacket(final ServerboundRecipeBookChangeSettingsPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -394,7 +400,7 @@
          this.player.getRecipeBook().setBookSetting(packet.getBookType(), packet.isOpen(), packet.isFiltering());
      }
  
-@@ -587,25 +_,112 @@
+@@ -587,25 +799,112 @@ public class ServerGamePacketListenerImpl
          }
      }
  
@@ -511,7 +517,7 @@
              this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
              BaseCommandBlock commandBlock = null;
-@@ -666,7 +_,7 @@
+@@ -666,7 +965,7 @@ public class ServerGamePacketListenerImpl
      @Override
      public void handleSetCommandMinecart(final ServerboundSetCommandMinecartPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -520,7 +526,7 @@
              this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
              BaseCommandBlock commandBlock = packet.getCommandBlock(this.player.level());
-@@ -702,11 +_,11 @@
+@@ -702,11 +1001,11 @@ public class ServerGamePacketListenerImpl
                  boolean includeData = this.player.hasInfiniteMaterials() && packet.includeData();
                  ItemStack itemStack = blockState.getCloneItemStack(level, pos, includeData);
                  if (!itemStack.isEmpty()) {
@@ -534,7 +540,7 @@
                  }
              }
          }
-@@ -733,7 +_,7 @@
+@@ -733,7 +1032,7 @@ public class ServerGamePacketListenerImpl
          if (entity != null && this.player.isWithinEntityInteractionRange(entity, 3.0)) {
              ItemStack itemStack = entity.getPickResult();
              if (itemStack != null && !itemStack.isEmpty()) {
@@ -543,7 +549,7 @@
              }
  
              if (packet.includeData() && this.player.canUseGameMasterBlocks() && entity instanceof Avatar avatar) {
-@@ -742,22 +_,35 @@
+@@ -742,22 +1041,35 @@ public class ServerGamePacketListenerImpl
          }
      }
  
@@ -584,7 +590,7 @@
          }
      }
  
-@@ -808,7 +_,7 @@
+@@ -808,7 +1120,7 @@ public class ServerGamePacketListenerImpl
  
      private <T> void setGameRuleValue(final GameRules gameRules, final GameRule<T> rule, final String value) {
          rule.deserialize(value).result().ifPresent(parsedValue -> {
@@ -593,7 +599,7 @@
              this.broadcastGameRuleChangeToOperators(rule, (T)parsedValue);
          });
      }
-@@ -967,6 +_,13 @@
+@@ -967,6 +1279,13 @@ public class ServerGamePacketListenerImpl
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          int selection = packet.getItem();
          if (this.player.containerMenu instanceof MerchantMenu menu) {
@@ -607,7 +613,7 @@
              if (!menu.stillValid(this.player)) {
                  LOGGER.debug("Player {} interacted with invalid menu {}", this.player, menu);
                  return;
-@@ -979,6 +_,51 @@
+@@ -979,6 +1298,51 @@ public class ServerGamePacketListenerImpl
  
      @Override
      public void handleEditBook(final ServerboundEditBookPacket packet) {
@@ -659,7 +665,7 @@
          int slot = packet.slot();
          if (Inventory.isHotbarSlot(slot) || slot == 40) {
              List<String> contents = Lists.newArrayList();
-@@ -993,10 +_,14 @@
+@@ -993,10 +1357,14 @@ public class ServerGamePacketListenerImpl
      }
  
      private void updateBookContents(final List<FilteredText> contents, final int slot) {
@@ -675,7 +681,7 @@
          }
      }
  
-@@ -1009,7 +_,8 @@
+@@ -1009,7 +1377,8 @@ public class ServerGamePacketListenerImpl
              writtenBook.set(
                  DataComponents.WRITTEN_BOOK_CONTENT, new WrittenBookContent(this.filterableFromOutgoing(title), this.player.getPlainTextName(), 0, pages, true)
              );
@@ -685,7 +691,7 @@
          }
      }
  
-@@ -1057,10 +_,10 @@
+@@ -1057,10 +1426,10 @@ public class ServerGamePacketListenerImpl
      public void handleMovePlayer(final ServerboundMovePlayerPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          if (containsInvalidValues(packet.getX(0.0), packet.getY(0.0), packet.getZ(0.0), packet.getYRot(0.0F), packet.getXRot(0.0F))) {
@@ -698,7 +704,7 @@
                  if (this.tickCount == 0) {
                      this.resetPosition();
                  }
-@@ -1077,7 +_,15 @@
+@@ -1077,7 +1446,15 @@ public class ServerGamePacketListenerImpl
                          if (this.player.isPassenger()) {
                              this.player.absSnapTo(this.player.getX(), this.player.getY(), this.player.getZ(), targetYRot, targetXRot);
                              this.player.level().getChunkSource().move(this.player);
@@ -714,7 +720,7 @@
                              double startX = this.player.getX();
                              double startY = this.player.getY();
                              double startZ = this.player.getZ();
-@@ -1086,6 +_,16 @@
+@@ -1086,6 +1463,16 @@ public class ServerGamePacketListenerImpl
                              double zDist = targetZ - this.firstGoodZ;
                              double expectedDist = this.player.getDeltaMovement().lengthSqr();
                              double movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
@@ -731,7 +737,7 @@
                              if (this.player.isSleeping()) {
                                  if (movedDist > 1.0) {
                                      this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), targetYRot, targetXRot);
-@@ -1095,7 +_,13 @@
+@@ -1095,7 +1482,13 @@ public class ServerGamePacketListenerImpl
                                  if (level.tickRateManager().runsNormally()) {
                                      this.receivedMovePacketCount++;
                                      int deltaPackets = this.receivedMovePacketCount - this.knownMovePacketCount;
@@ -746,7 +752,7 @@
                                          LOGGER.debug(
                                              "{} is sending move packets too frequently ({} packets since last tick)",
                                              this.player.getPlainTextName(),
-@@ -1103,30 +_,96 @@
+@@ -1103,30 +1496,96 @@ public class ServerGamePacketListenerImpl
                                          );
                                          deltaPackets = 1;
                                      }
@@ -852,7 +858,7 @@
                                  double oyDist = yDist;
                                  xDist = targetX - this.player.getX();
                                  yDist = targetY - this.player.getY();
-@@ -1136,21 +_,101 @@
+@@ -1136,21 +1595,101 @@ public class ServerGamePacketListenerImpl
  
                                  zDist = targetZ - this.player.getZ();
                                  movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
@@ -874,12 +880,6 @@
 +                                        if (event.getLogWarning())
 +                                     // Paper end
                                      LOGGER.warn("{} moved wrongly!", this.player.getPlainTextName());
--                                }
--
--                                if (this.player.noPhysics
--                                    || this.player.isSleeping()
--                                    || (!fail || !level.noCollision(this.player, oldAABB))
--                                        && !this.isEntityCollidingWithAnythingNew(level, this.player, oldAABB, targetX, targetY, targetZ)) {
 +                                    } // Paper
 +                                }
 +
@@ -891,7 +891,7 @@
 +                                    if (event.isAllowed()) {
 +                                        allowMovement = true;
 +                                    }
-+                                }
+                                 }
 +                                if (allowMovement) {
 +                                    // Paper end - Add fail move event
 +                                    // CraftBukkit start - fire PlayerMoveEvent
@@ -937,7 +937,11 @@
 +                                        Location oldTo = to.clone();
 +                                        PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
 +                                        this.cserver.getPluginManager().callEvent(event);
-+
+ 
+-                                if (this.player.noPhysics
+-                                    || this.player.isSleeping()
+-                                    || (!fail || !level.noCollision(this.player, oldAABB))
+-                                        && !this.isEntityCollidingWithAnythingNew(level, this.player, oldAABB, targetX, targetY, targetZ)) {
 +                                        // If the event is cancelled we move the player back to their old location.
 +                                        if (event.isCancelled()) {
 +                                            this.internalTeleport(from);
@@ -963,7 +967,7 @@
                                      this.player.absSnapTo(targetX, targetY, targetZ, targetYRot, targetXRot);
                                      boolean isAutoSpinAttack = this.player.isAutoSpinAttack();
                                      this.clientIsFloating = oyDist >= -0.03125
-@@ -1185,7 +_,7 @@
+@@ -1185,7 +1724,7 @@ public class ServerGamePacketListenerImpl
                                      this.lastGoodY = this.player.getY();
                                      this.lastGoodZ = this.player.getZ();
                                  } else {
@@ -972,7 +976,7 @@
                                      this.player
                                          .doCheckFallDamage(
                                              this.player.getX() - startX, this.player.getY() - startY, this.player.getZ() - startZ, packet.isOnGround()
-@@ -1223,6 +_,7 @@
+@@ -1223,6 +1762,7 @@ public class ServerGamePacketListenerImpl
                      this.player.getXRot()
                  );
              }
@@ -980,7 +984,7 @@
  
              return true;
          } else {
-@@ -1248,10 +_,77 @@
+@@ -1248,10 +1788,77 @@ public class ServerGamePacketListenerImpl
      }
  
      public void teleport(final double x, final double y, final double z, final float yRot, final float xRot) {
@@ -1059,7 +1063,7 @@
          this.awaitingTeleportTime = this.tickCount;
          if (++this.awaitingTeleport == Integer.MAX_VALUE) {
              this.awaitingTeleport = 0;
-@@ -1259,12 +_,20 @@
+@@ -1259,12 +1866,20 @@ public class ServerGamePacketListenerImpl
  
          this.player.teleportSetPosition(destination, relatives);
          this.awaitingPositionFromClient = this.player.position();
@@ -1080,7 +1084,7 @@
          if (this.hasClientLoaded()) {
              BlockPos pos = packet.getPos();
              this.player.resetLastActionTime();
-@@ -1289,32 +_,95 @@
+@@ -1289,32 +1904,95 @@ public class ServerGamePacketListenerImpl
                  case SWAP_ITEM_WITH_OFFHAND:
                      if (!this.player.isSpectator()) {
                          ItemStack swap = this.player.getItemInHand(InteractionHand.OFF_HAND);
@@ -1178,7 +1182,7 @@
                      return;
                  default:
                      throw new IllegalArgumentException("Invalid player action");
-@@ -1332,9 +_,36 @@
+@@ -1332,9 +2010,36 @@ public class ServerGamePacketListenerImpl
          }
      }
  
@@ -1215,7 +1219,7 @@
          if (this.hasClientLoaded()) {
              this.ackBlockChangesUpTo(packet.getSequence());
              ServerLevel level = this.player.level();
-@@ -1343,6 +_,11 @@
+@@ -1343,6 +2048,11 @@ public class ServerGamePacketListenerImpl
              if (itemStack.isItemEnabled(level.enabledFeatures())) {
                  BlockHitResult blockHit = packet.getHitResult();
                  Vec3 location = blockHit.getLocation();
@@ -1227,7 +1231,7 @@
                  BlockPos pos = blockHit.getBlockPos();
                  if (this.player.isWithinBlockInteractionRange(pos, 1.0)) {
                      Vec3 distance = location.subtract(Vec3.atCenterOf(pos));
-@@ -1357,7 +_,8 @@
+@@ -1357,7 +2067,8 @@ public class ServerGamePacketListenerImpl
                          } else if (pos.getY() < minY) {
                              this.player.sendBuildLimitMessage(false, minY);
                          } else {
@@ -1237,7 +1241,7 @@
                                  InteractionResult interactionResult = this.player.gameMode.useItemOn(this.player, level, itemStack, hand, blockHit);
                                  if (interactionResult.consumesAction()) {
                                      CriteriaTriggers.ANY_BLOCK_USE.trigger(this.player, blockHit.getBlockPos(), itemStack);
-@@ -1369,7 +_,7 @@
+@@ -1369,7 +2080,7 @@ public class ServerGamePacketListenerImpl
                                      && wasBlockPlacementAttempt(this.player, itemStack)) {
                                      this.player.sendBuildLimitMessage(true, maxY);
                                  } else if (interactionResult instanceof InteractionResult.Success success
@@ -1246,7 +1250,7 @@
                                      this.player.swing(hand, true);
                                  }
  
-@@ -1383,6 +_,15 @@
+@@ -1383,6 +2094,15 @@ public class ServerGamePacketListenerImpl
                                      && success.swingSource() == InteractionResult.SwingSource.SERVER) {
                                      this.player.swing(hand, true);
                                  }
@@ -1262,7 +1266,7 @@
                              } else {
                                  this.player.sendBuildLimitMessage(true, maxY);
                              }
-@@ -1390,13 +_,8 @@
+@@ -1390,13 +2110,8 @@ public class ServerGamePacketListenerImpl
                              this.send(new ClientboundBlockUpdatePacket(level, pos));
                              this.send(new ClientboundBlockUpdatePacket(level, pos.relative(direction)));
                          }
@@ -1278,7 +1282,7 @@
                      }
                  }
              }
-@@ -1406,6 +_,8 @@
+@@ -1406,6 +2121,8 @@ public class ServerGamePacketListenerImpl
      @Override
      public void handleUseItem(final ServerboundUseItemPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -1287,7 +1291,7 @@
          if (this.hasClientLoaded()) {
              this.ackBlockChangesUpTo(packet.getSequence());
              ServerLevel level = this.player.level();
-@@ -1419,6 +_,54 @@
+@@ -1419,6 +2136,54 @@ public class ServerGamePacketListenerImpl
                      this.player.absSnapRotationTo(targetYRot, targetXRot);
                  }
  
@@ -1342,7 +1346,7 @@
                  if (this.player.gameMode.useItem(this.player, level, itemStack, hand) instanceof InteractionResult.Success success
                      && success.swingSource() == InteractionResult.SwingSource.SERVER) {
                      this.player.swing(hand, true);
-@@ -1434,7 +_,7 @@
+@@ -1434,7 +2199,7 @@ public class ServerGamePacketListenerImpl
              for (ServerLevel level : this.server.getAllLevels()) {
                  Entity entity = packet.getEntity(level);
                  if (entity != null) {
@@ -1351,7 +1355,7 @@
                      return;
                  }
              }
-@@ -1451,24 +_,50 @@
+@@ -1451,24 +2216,50 @@ public class ServerGamePacketListenerImpl
  
      @Override
      public void onDisconnect(final DisconnectionDetails details) {
@@ -1404,7 +1408,7 @@
              throw new IllegalArgumentException("Expected packet sequence nr >= 0");
          } else {
              this.ackBlockChangesUpTo = Math.max(packetSequenceNr, this.ackBlockChangesUpTo);
-@@ -1478,20 +_,38 @@
+@@ -1478,20 +2269,38 @@ public class ServerGamePacketListenerImpl
      @Override
      public void handleSetCarriedItem(final ServerboundSetCarriedItemPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -1443,7 +1447,7 @@
          Optional<LastSeenMessages> unpackedLastSeen = this.unpackAndApplyLastSeen(packet.lastSeenMessages());
          if (!unpackedLastSeen.isEmpty()) {
              this.tryHandleChat(packet.message(), false, () -> {
-@@ -1503,25 +_,45 @@
+@@ -1503,25 +2312,45 @@ public class ServerGamePacketListenerImpl
                      return;
                  }
  
@@ -1497,7 +1501,7 @@
          ParseResults<CommandSourceStack> parsed = this.parseCommand(command);
          if (this.server.enforceSecureProfile() && SignableCommand.hasSignableArguments(parsed)) {
              LOGGER.error(
-@@ -1538,26 +_,55 @@
+@@ -1538,26 +2367,55 @@ public class ServerGamePacketListenerImpl
          Optional<LastSeenMessages> unpackedLastSeen = this.unpackAndApplyLastSeen(packet.lastSeenMessages());
          if (!unpackedLastSeen.isEmpty()) {
              this.tryHandleChat(packet.command(), true, () -> {
@@ -1556,7 +1560,7 @@
      }
  
      private void handleMessageDecodeFailure(final SignedMessageChain.DecodeException e) {
-@@ -1621,14 +_,20 @@
+@@ -1621,14 +2479,20 @@ public class ServerGamePacketListenerImpl
          return commands.parse(command, this.player.createCommandSourceStack());
      }
  
@@ -1581,7 +1585,7 @@
          }
      }
  
-@@ -1640,7 +_,7 @@
+@@ -1640,7 +2504,7 @@ public class ServerGamePacketListenerImpl
                  var10000 = Optional.of(result);
              } catch (LastSeenMessagesValidator.ValidationException var5) {
                  LOGGER.error("Failed to validate message acknowledgements from {}: {}", this.player.getPlainTextName(), var5.getMessage());
@@ -1590,7 +1594,7 @@
                  return Optional.empty();
              }
  
-@@ -1658,22 +_,81 @@
+@@ -1658,22 +2522,81 @@ public class ServerGamePacketListenerImpl
          return false;
      }
  
@@ -1678,7 +1682,7 @@
          }
      }
  
-@@ -1684,7 +_,7 @@
+@@ -1684,7 +2607,7 @@ public class ServerGamePacketListenerImpl
                  this.lastSeenMessages.applyOffset(packet.offset());
              } catch (LastSeenMessagesValidator.ValidationException var5) {
                  LOGGER.error("Failed to validate message acknowledgement offset from {}: {}", this.player.getPlainTextName(), var5.getMessage());
@@ -1687,7 +1691,7 @@
              }
          }
      }
-@@ -1692,7 +_,40 @@
+@@ -1692,7 +2615,40 @@ public class ServerGamePacketListenerImpl
      @Override
      public void handleAnimate(final ServerboundSwingPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -1728,7 +1732,7 @@
          this.player.swing(packet.getHand());
      }
  
-@@ -1700,6 +_,21 @@
+@@ -1700,6 +2656,21 @@ public class ServerGamePacketListenerImpl
      public void handlePlayerCommand(final ServerboundPlayerCommandPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          if (this.hasClientLoaded()) {
@@ -1750,7 +1754,7 @@
              this.player.resetLastActionTime();
              switch (packet.getAction()) {
                  case START_SPRINTING:
-@@ -1744,6 +_,14 @@
+@@ -1744,6 +2715,14 @@ public class ServerGamePacketListenerImpl
      }
  
      public void sendPlayerChatMessage(final PlayerChatMessage message, final ChatType.Bound chatType) {
@@ -1765,7 +1769,7 @@
          this.send(
              new ClientboundPlayerChatPacket(
                  this.nextChatIndex++,
-@@ -1766,9 +_,11 @@
+@@ -1766,9 +2745,11 @@ public class ServerGamePacketListenerImpl
              }
  
              if (trackedCount > 4096) {
@@ -1778,7 +1782,7 @@
      }
  
      public void sendDisguisedChatMessage(final Component content, final ChatType.Bound chatType) {
-@@ -1779,6 +_,17 @@
+@@ -1779,6 +2760,17 @@ public class ServerGamePacketListenerImpl
          return this.connection.getRemoteAddress();
      }
  
@@ -1796,7 +1800,7 @@
      public void switchToConfig() {
          this.waitingForSwitchToConfig = true;
          this.removePlayerFromWorld();
-@@ -1794,48 +_,125 @@
+@@ -1794,48 +2786,125 @@ public class ServerGamePacketListenerImpl
      @Override
      public void handleAttack(final ServerboundAttackPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -1926,7 +1930,7 @@
                          if (this.player.interactOn(target, hand, location) instanceof InteractionResult.Success success) {
                              ItemStack awardedForStack = success.wasItemInteraction() ? usedItemStack : ItemStack.EMPTY;
                              CriteriaTriggers.PLAYER_INTERACTED_WITH_ENTITY.trigger(this.player, awardedForStack, target);
-@@ -1846,6 +_,12 @@
+@@ -1846,6 +2915,12 @@ public class ServerGamePacketListenerImpl
                      }
                  }
              }
@@ -1939,7 +1943,7 @@
          }
      }
  
-@@ -1875,7 +_,7 @@
+@@ -1875,7 +2950,7 @@ public class ServerGamePacketListenerImpl
              case PERFORM_RESPAWN:
                  if (this.player.wonGame) {
                      this.player.wonGame = false;
@@ -1948,7 +1952,7 @@
                      this.resetPosition();
                      this.restartClientLoadTimerAfterRespawn();
                      CriteriaTriggers.CHANGED_DIMENSION.trigger(this.player, Level.END, Level.OVERWORLD);
-@@ -1884,12 +_,12 @@
+@@ -1884,12 +2959,12 @@ public class ServerGamePacketListenerImpl
                          return;
                      }
  
@@ -1964,7 +1968,7 @@
                      }
                  }
                  break;
-@@ -1918,16 +_,27 @@
+@@ -1918,16 +2993,27 @@ public class ServerGamePacketListenerImpl
  
      @Override
      public void handleContainerClose(final ServerboundContainerClosePacket packet) {
@@ -1994,7 +1998,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1943,7 +_,298 @@
+@@ -1943,7 +3029,298 @@ public class ServerGamePacketListenerImpl
                  } else {
                      boolean fullResyncNeeded = packet.stateId() != this.player.containerMenu.getStateId();
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -2294,7 +2298,7 @@
  
                      for (Entry<HashedStack> e : Int2ObjectMaps.fastIterable(packet.changedSlots())) {
                          this.player.containerMenu.setRemoteSlotUnsafe(e.getIntKey(), e.getValue());
-@@ -1956,6 +_,8 @@
+@@ -1956,6 +3333,8 @@ public class ServerGamePacketListenerImpl
                      } else {
                          this.player.containerMenu.broadcastChanges();
                      }
@@ -2303,7 +2307,7 @@
                  }
              }
          }
-@@ -1963,6 +_,14 @@
+@@ -1963,6 +3342,14 @@ public class ServerGamePacketListenerImpl
  
      @Override
      public void handlePlaceRecipe(final ServerboundPlaceRecipePacket packet) {
@@ -2318,7 +2322,7 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          this.player.resetLastActionTime();
          if (!this.player.isSpectator() && this.player.containerMenu.containerId == packet.containerId()) {
-@@ -1979,9 +_,44 @@
+@@ -1979,9 +3366,44 @@ public class ServerGamePacketListenerImpl
                                  return;
                              }
  
@@ -2364,7 +2368,7 @@
                              if (postPlaceAction == RecipeBookMenu.PostPlaceAction.PLACE_GHOST_RECIPE) {
                                  this.send(new ClientboundPlaceGhostRecipePacket(this.player.containerMenu.containerId, displayInfo.display().display()));
                              }
-@@ -1995,6 +_,7 @@
+@@ -1995,6 +3417,7 @@ public class ServerGamePacketListenerImpl
      @Override
      public void handleContainerButtonClick(final ServerboundContainerButtonClickPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -2372,7 +2376,7 @@
          this.player.resetLastActionTime();
          if (this.player.containerMenu.containerId == packet.containerId() && !this.player.isSpectator()) {
              if (!this.player.containerMenu.stillValid(this.player)) {
-@@ -2004,6 +_,7 @@
+@@ -2004,6 +3427,7 @@ public class ServerGamePacketListenerImpl
                  if (clickAccepted) {
                      this.player.containerMenu.broadcastChanges();
                  }
@@ -2380,7 +2384,7 @@
              }
          }
      }
-@@ -2020,10 +_,48 @@
+@@ -2020,10 +3444,48 @@ public class ServerGamePacketListenerImpl
  
              boolean validSlot = packet.slotNum() >= 1 && packet.slotNum() <= 45;
              boolean validData = itemStack.isEmpty() || itemStack.getCount() <= itemStack.getMaxStackSize();
@@ -2429,7 +2433,7 @@
              } else if (drop && validData) {
                  if (this.dropSpamThrottler.isUnderThreshold()) {
                      this.dropSpamThrottler.increment();
-@@ -2037,15 +_,38 @@
+@@ -2037,15 +3499,38 @@ public class ServerGamePacketListenerImpl
  
      @Override
      public void handleSignUpdate(final ServerboundSignUpdatePacket packet) {
@@ -2469,7 +2473,7 @@
              if (!(level.getBlockEntity(pos) instanceof SignBlockEntity sign)) {
                  return;
              }
-@@ -2057,14 +_,32 @@
+@@ -2057,14 +3542,32 @@ public class ServerGamePacketListenerImpl
      @Override
      public void handlePlayerAbilities(final ServerboundPlayerAbilitiesPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -2503,7 +2507,7 @@
          if (this.player.isModelPartShown(PlayerModelPart.HAT) != wasHatShown) {
              this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_HAT, this.player));
          }
-@@ -2080,7 +_,7 @@
+@@ -2080,7 +3583,7 @@ public class ServerGamePacketListenerImpl
                  packet.difficulty().getDisplayName()
              );
          } else {
@@ -2512,7 +2516,7 @@
          }
      }
  
-@@ -2094,7 +_,7 @@
+@@ -2094,7 +3597,7 @@ public class ServerGamePacketListenerImpl
                  packet.mode().getShortDisplayName().getString()
              );
          } else {
@@ -2521,7 +2525,7 @@
          }
      }
  
-@@ -2114,7 +_,7 @@
+@@ -2114,7 +3617,7 @@ public class ServerGamePacketListenerImpl
          ProfilePublicKey.Data newProfileKey = newChatSession.profilePublicKey();
          if (!Objects.equals(oldProfileKey, newProfileKey)) {
              if (oldProfileKey != null && newProfileKey.expiresAt().isBefore(oldProfileKey.expiresAt())) {
@@ -2530,7 +2534,7 @@
              } else {
                  try {
                      SignatureValidator profileKeySignatureValidator = this.server.services().profileKeySignatureValidator();
-@@ -2125,8 +_,8 @@
+@@ -2125,8 +3628,8 @@ public class ServerGamePacketListenerImpl
  
                      this.resetPlayerChatState(newChatSession.validate(this.player.getGameProfile(), profileKeySignatureValidator));
                  } catch (ProfilePublicKey.ValidationException var6) {
@@ -2541,7 +2545,7 @@
                  }
              }
          }
-@@ -2137,11 +_,13 @@
+@@ -2137,11 +3640,13 @@ public class ServerGamePacketListenerImpl
          if (!this.waitingForSwitchToConfig) {
              throw new IllegalStateException("Client acknowledged config, but none was requested");
          } else {
@@ -2556,7 +2560,7 @@
          }
      }
  
-@@ -2159,27 +_,32 @@
+@@ -2159,27 +3664,32 @@ public class ServerGamePacketListenerImpl
  
      private void resetPlayerChatState(final RemoteChatSession chatSession) {
          this.chatSession = chatSession;
@@ -2590,7 +2594,7 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -2211,12 +_,23 @@
+@@ -2211,12 +3721,23 @@ public class ServerGamePacketListenerImpl
      }
  
      public void tickClientLoadTimeout() {
@@ -2616,7 +2620,7 @@
          this.clientLoadedTimeoutTimer = 0;
      }
  
-@@ -2228,4 +_,80 @@
+@@ -2228,4 +3749,80 @@ public class ServerGamePacketListenerImpl
          this.waitingForRespawn = false;
          this.clientLoadedTimeoutTimer = 60;
      }
