@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 
@@ -45,7 +46,24 @@ public class TimingWheel<T extends TickBoundTask> implements Iterable<T> {
         }
 
         int slot = (int) (nextRun & mask);
-        wheel[slot].addLast(task);
+        LinkedList<T> bucket = wheel[slot];
+
+        if (bucket.isEmpty() || bucket.getLast().getCreatedAt() <= task.getCreatedAt()) {
+            bucket.addLast(task); // append if newest
+            return;
+        }
+
+        ListIterator<T> it = bucket.listIterator(bucket.size());
+        while (it.hasPrevious()) {
+            T t = it.previous();
+            if (t.getCreatedAt() <= task.getCreatedAt()) {
+                it.next();
+                it.add(task);
+                return;
+            }
+        }
+
+        bucket.addFirst(task); // oldest goes to front
     }
 
     public void addAll(Collection<? extends T> tasks, int currentTick) {
