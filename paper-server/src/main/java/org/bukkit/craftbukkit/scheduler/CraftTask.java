@@ -98,7 +98,7 @@ public class CraftTask implements BukkitTask, Runnable, TickBoundTask {
         return this.nextRun;
     }
 
-    void setNextRun(long nextRun) {
+    public void setNextRun(long nextRun) {
         this.nextRun = nextRun;
     }
 

@@ -36,18 +36,25 @@ public class TimingWheel<T extends TickBoundTask> implements Iterable<T> {
         }
     }
 
-    public void add(T task) {
-        int slot = (int) (task.getNextRun() & mask);
+    public void add(T task, int currentTick) {
+        long nextRun = task.getNextRun();
+
+        if (nextRun <= currentTick) {
+            nextRun = currentTick;
+            task.setNextRun(nextRun);
+        }
+
+        int slot = (int) (nextRun & mask);
         wheel[slot].addLast(task);
     }
 
-    public void addAll(Collection<? extends T> tasks) {
+    public void addAll(Collection<? extends T> tasks, int currentTick) {
         for (T task : tasks) {
-            this.add(task);
+            this.add(task, currentTick);
         }
     }
 
-    public @NotNull List<T> popValid(long currentTick) {
+    public @NotNull List<T> popValid(int currentTick) {
         int slot = (int) (currentTick & mask);
         LinkedList<T> bucket = wheel[slot];
         if (bucket.isEmpty()) return Collections.emptyList();
@@ -66,7 +73,7 @@ public class TimingWheel<T extends TickBoundTask> implements Iterable<T> {
         return list;
     }
 
-    public boolean isReady(long currentTick) {
+    public boolean isReady(int currentTick) {
         int slot = (int) (currentTick & mask);
         LinkedList<T> bucket = wheel[slot];
         if (bucket.isEmpty()) return false;
