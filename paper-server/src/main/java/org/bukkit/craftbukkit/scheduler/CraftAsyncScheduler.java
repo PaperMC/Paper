@@ -57,7 +57,7 @@ public class CraftAsyncScheduler extends CraftScheduler {
     }
 
     private synchronized void removeTask(int taskId) {
-        parsePending(this.currentTick);
+        parsePending();
         this.pending.removeIf((task) -> {
             if (task.getTaskId() == taskId) {
                 task.cancel0();
@@ -74,7 +74,7 @@ public class CraftAsyncScheduler extends CraftScheduler {
     }
 
     private synchronized void runTasks(int currentTick) {
-        parsePending(this.currentTick);
+        parsePending();
         while (true) {
             List<CraftTask> tasks = this.pending.popValid(currentTick);
             if (tasks.isEmpty()) break;
@@ -89,7 +89,7 @@ public class CraftAsyncScheduler extends CraftScheduler {
                 }
             }
 
-            parsePending(this.currentTick);
+            parsePending();
         }
 
         this.pending.addAll(temp, this.currentTick);
@@ -107,7 +107,7 @@ public class CraftAsyncScheduler extends CraftScheduler {
 
     @Override
     public synchronized void cancelTasks(Plugin plugin) {
-        parsePending(this.currentTick);
+        parsePending();
         for (Iterator<CraftTask> iterator = this.pending.iterator(); iterator.hasNext(); ) {
             CraftTask task = iterator.next();
             if (task.getTaskId() != -1 && (plugin == null || task.getOwner().equals(plugin))) {

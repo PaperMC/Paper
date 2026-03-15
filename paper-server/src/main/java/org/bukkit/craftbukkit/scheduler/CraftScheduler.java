@@ -42,7 +42,7 @@ import org.bukkit.scheduler.BukkitWorker;
  * <li>Async tasks are responsible for removing themselves from runners</li>
  * <li>Sync tasks are only to be removed from runners on the main thread when coupled with a removal from pending and temp.</li>
  * <li>Most of the design in this scheduler relies on queuing special tasks to perform any data changes on the main thread.
- *     When executed from inside a synchronous method, the scheduler will be updated before next execution by virtue of the frequent {@link #parsePending(int)} calls.</li>
+ *     When executed from inside a synchronous method, the scheduler will be updated before next execution by virtue of the frequent {@link #parsePending()} calls.</li>
  * </ul>
  */
 public class CraftScheduler implements BukkitScheduler {
@@ -451,7 +451,7 @@ public class CraftScheduler implements BukkitScheduler {
         // Paper end
         final List<CraftTask> temp = this.temp;
         while (true) {
-            this.parsePending(this.currentTick);
+            this.parsePending();
 
             final List<CraftTask> tasks = this.pending.popValid(this.currentTick);
             if (tasks.isEmpty()) break;
@@ -461,7 +461,7 @@ public class CraftScheduler implements BukkitScheduler {
                     if (task.isSync()) {
                         this.runners.remove(task.getTaskId(), task);
                     }
-                    this.parsePending(this.currentTick);
+                    this.parsePending();
                     continue;
                 }
                 if (task.isSync()) {
@@ -484,7 +484,7 @@ public class CraftScheduler implements BukkitScheduler {
                     } finally {
                         this.currentTask = null;
                     }
-                    this.parsePending(this.currentTick);
+                    this.parsePending();
                 } else {
                     // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(this.currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
                     task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Paper"); // Paper
@@ -539,7 +539,7 @@ public class CraftScheduler implements BukkitScheduler {
         return id;
     }
 
-    void parsePending(int currentTick) { // Paper
+    void parsePending() { // Paper
         CraftTask head = this.head;
         CraftTask task = head.getNext();
         CraftTask lastTask = head;
@@ -547,7 +547,7 @@ public class CraftScheduler implements BukkitScheduler {
             if (task.getTaskId() == -1) {
                 task.run();
             } else if (task.getPeriod() >= CraftTask.NO_REPEATING) {
-                this.pending.add(task, currentTick);
+                this.pending.add(task, this.currentTick);
                 this.runners.put(task.getTaskId(), task);
             }
         }
