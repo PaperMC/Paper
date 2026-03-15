@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,6 +27,8 @@ public class TimingWheel<T extends TickBoundTask> implements Iterable<T> {
     private final long mask;
     private final LinkedList<T>[] wheel;
 
+    private static final Comparator<TickBoundTask> ORDERING = Comparator.comparingLong(TickBoundTask::getCreatedAt);
+
     @SuppressWarnings("unchecked")
     public TimingWheel(int exponent) {
         this.wheelSize = 1 << exponent;
@@ -47,23 +50,7 @@ public class TimingWheel<T extends TickBoundTask> implements Iterable<T> {
 
         int slot = (int) (nextRun & mask);
         LinkedList<T> bucket = wheel[slot];
-
-        if (bucket.isEmpty() || bucket.getLast().getCreatedAt() <= task.getCreatedAt()) {
-            bucket.addLast(task); // append if newest
-            return;
-        }
-
-        ListIterator<T> it = bucket.listIterator(bucket.size());
-        while (it.hasPrevious()) {
-            T t = it.previous();
-            if (t.getCreatedAt() <= task.getCreatedAt()) {
-                it.next();
-                it.add(task);
-                return;
-            }
-        }
-
-        bucket.addFirst(task); // oldest goes to front
+        bucket.add(task);
     }
 
     public void addAll(Collection<? extends T> tasks, int currentTick) {
@@ -88,6 +75,7 @@ public class TimingWheel<T extends TickBoundTask> implements Iterable<T> {
             }
         }
 
+        list.sort(ORDERING);
         return list;
     }
 
