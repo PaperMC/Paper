@@ -1,7 +1,6 @@
 package io.papermc.paper.util.concurrent;
 
 import org.jetbrains.annotations.NotNull;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,7 +38,7 @@ public class TimingWheel<T extends TickBoundTask> implements Iterable<T> {
 
     public void add(T task) {
         int slot = (int) (task.getNextRun() & mask);
-        wheel[slot].add(task);
+        wheel[slot].addLast(task);
     }
 
     public void addAll(Collection<? extends T> tasks) {
