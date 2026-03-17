@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import net.kyori.adventure.key.Key;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
@@ -36,8 +37,8 @@ public abstract class PaperPersistentDataContainerView implements PersistentData
     public abstract CompoundTag toTagCompound();
 
     @Override
-    public <P, C> boolean has(final NamespacedKey key, final PersistentDataType<P, C> type) {
-        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+    public <P, C> boolean has(final Key key, final PersistentDataType<P, C> type) {
+        Preconditions.checkArgument(key != null, "The provided key cannot be null");
         Preconditions.checkArgument(type != null, "The provided type cannot be null");
 
         final Tag value = this.getTag(key.toString());
@@ -49,14 +50,24 @@ public abstract class PaperPersistentDataContainerView implements PersistentData
     }
 
     @Override
-    public boolean has(final NamespacedKey key) {
+    public <P, C> boolean has(final NamespacedKey key, final PersistentDataType<P, C> type) {
+        return has((Key) key, type);
+    }
+
+    @Override
+    public boolean has(final Key key) {
         Preconditions.checkArgument(key != null, "The provided key for the custom value was null"); // Paper
         return this.getTag(key.toString()) != null;
     }
 
     @Override
-    public <P, C> @Nullable C get(final NamespacedKey key, final PersistentDataType<P, C> type) {
-        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+    public boolean has(final NamespacedKey key) {
+        return has((Key) key);
+    }
+
+    @Override
+    public <P, C> @Nullable C get(final Key key, final PersistentDataType<P, C> type) {
+        Preconditions.checkArgument(key != null, "The provided key cannot be null");
         Preconditions.checkArgument(type != null, "The provided type cannot be null");
 
         final Tag value = this.getTag(key.toString());
@@ -68,9 +79,19 @@ public abstract class PaperPersistentDataContainerView implements PersistentData
     }
 
     @Override
-    public <P, C> C getOrDefault(final NamespacedKey key, final PersistentDataType<P, C> type, final C defaultValue) {
+    public <P, C> @Nullable C get(final NamespacedKey key, final PersistentDataType<P, C> type) {
+        return get((Key) key, type);
+    }
+
+    @Override
+    public <P, C> C getOrDefault(final Key key, final PersistentDataType<P, C> type, final C defaultValue) {
         final C c = this.get(key, type);
         return c != null ? c : defaultValue;
+    }
+
+    @Override
+    public <P, C> C getOrDefault(final NamespacedKey key, final PersistentDataType<P, C> type, final C defaultValue) {
+        return getOrDefault((Key) key, type, defaultValue);
     }
 
     @Override

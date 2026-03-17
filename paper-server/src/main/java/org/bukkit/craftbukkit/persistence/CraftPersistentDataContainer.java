@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import net.kyori.adventure.key.Key;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import org.bukkit.NamespacedKey;
@@ -36,12 +37,17 @@ public class CraftPersistentDataContainer extends io.papermc.paper.persistence.P
     }
 
     @Override
-    public <T, Z> void set(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value) {
-        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+    public <T, Z> void set(@NotNull Key key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value) {
+        Preconditions.checkArgument(key != null, "The provided key cannot be null");
         Preconditions.checkArgument(type != null, "The provided type cannot be null");
         Preconditions.checkArgument(value != null, "The provided value cannot be null");
 
         this.customDataTags.put(key.toString(), this.registry.wrap(type, type.toPrimitive(value, this.adapterContext)));
+    }
+
+    @Override
+    public <T, Z> void set(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value) {
+        set((Key) key, type, value);
     }
 
     @NotNull
@@ -60,10 +66,15 @@ public class CraftPersistentDataContainer extends io.papermc.paper.persistence.P
     }
 
     @Override
-    public void remove(@NotNull NamespacedKey key) {
-        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+    public void remove(@NotNull Key key) {
+        Preconditions.checkArgument(key != null, "The provided key cannot be null");
 
         this.customDataTags.remove(key.toString());
+    }
+
+    @Override
+    public void remove(@NotNull NamespacedKey key) {
+        remove((Key) key);
     }
 
     @Override

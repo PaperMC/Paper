@@ -1,9 +1,9 @@
 package org.bukkit.craftbukkit.persistence;
 
 import java.util.Map;
+import net.kyori.adventure.key.Key;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,13 +32,13 @@ public final class DirtyCraftPersistentDataContainer extends CraftPersistentData
     }
 
     @Override
-    public <T, Z> void set(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value) {
+    public <T, Z> void set(@NotNull Key key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value) {
         super.set(key, type, value);
         this.dirty(true);
     }
 
     @Override
-    public void remove(@NotNull NamespacedKey key) {
+    public void remove(@NotNull Key key) {
         super.remove(key);
         this.dirty(true);
     }
