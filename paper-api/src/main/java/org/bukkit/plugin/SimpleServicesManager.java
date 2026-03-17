@@ -94,7 +94,9 @@ public class SimpleServicesManager implements ServicesManager {
                         it.remove();
                     }
                 }
-            } catch (NoSuchElementException e) {}
+            } catch (NoSuchElementException e) {
+                // Outer HashMap iterator can throw after inner list removals invalidate its state
+            }
         }
         for (ServiceUnregisterEvent event : unregisteredEvents) {
             Bukkit.getServer().getPluginManager().callEvent(event);
@@ -135,7 +137,8 @@ public class SimpleServicesManager implements ServicesManager {
                                 unregisteredEvents.add(new ServiceUnregisterEvent(registered));
                             }
                         }
-                    } catch (NoSuchElementException e) { // Why does Java suck
+                    } catch (NoSuchElementException e) {
+                        // it2.remove() can corrupt the inner iterator's state on some list implementations
                     }
 
                     // Get rid of the empty list
@@ -143,7 +146,9 @@ public class SimpleServicesManager implements ServicesManager {
                         it.remove();
                     }
                 }
-            } catch (NoSuchElementException e) {}
+            } catch (NoSuchElementException e) {
+                // Outer HashMap iterator can throw after inner list removals invalidate its state
+            }
         }
         for (ServiceUnregisterEvent event : unregisteredEvents) {
             Bukkit.getServer().getPluginManager().callEvent(event);
@@ -177,7 +182,8 @@ public class SimpleServicesManager implements ServicesManager {
                                 unregisteredEvents.add(new ServiceUnregisterEvent(registered));
                             }
                         }
-                    } catch (NoSuchElementException e) { // Why does Java suck
+                    } catch (NoSuchElementException e) {
+                        // it2.remove() can corrupt the inner iterator's state on some list implementations
                     }
 
                     // Get rid of the empty list
@@ -185,7 +191,9 @@ public class SimpleServicesManager implements ServicesManager {
                         it.remove();
                     }
                 }
-            } catch (NoSuchElementException e) {}
+            } catch (NoSuchElementException e) {
+                // Outer HashMap iterator can throw after inner list removals invalidate its state
+            }
         }
         for (ServiceUnregisterEvent event : unregisteredEvents) {
             Bukkit.getServer().getPluginManager().callEvent(event);

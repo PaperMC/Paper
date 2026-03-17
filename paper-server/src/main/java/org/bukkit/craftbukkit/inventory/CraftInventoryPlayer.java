@@ -164,7 +164,12 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
     public void setHeldItemSlot(int slot) {
         Preconditions.checkArgument(slot >= 0 && slot < Inventory.getSelectionSize(), "Slot (%s) is not between 0 and %s inclusive", slot, Inventory.getSelectionSize() - 1);
         this.getInventory().setSelectedSlot(slot);
-        ((CraftPlayer) this.getHolder()).getHandle().connection.send(new ClientboundSetHeldSlotPacket(slot));
+        // Paper start - Fix NPE when setHeldItemSlot is called on a disconnecting player
+        if (this.getHolder() == null) return;
+        ServerPlayer player = ((CraftPlayer) this.getHolder()).getHandle();
+        if (player.connection == null) return;
+        // Paper end - Fix NPE when setHeldItemSlot is called on a disconnecting player
+        player.connection.send(new ClientboundSetHeldSlotPacket(slot));
     }
 
     @Override
