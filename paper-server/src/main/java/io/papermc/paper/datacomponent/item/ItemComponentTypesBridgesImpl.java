@@ -2,11 +2,9 @@ package io.papermc.paper.datacomponent.item;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.common.base.Preconditions;
-import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
-import io.papermc.paper.registry.tag.TagKey;
 import io.papermc.paper.text.Filtered;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.TriState;
@@ -201,8 +199,8 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
-    public DamageResistant damageResistant(final TagKey<DamageType> types) {
-        return new PaperDamageResistant(new net.minecraft.world.item.component.DamageResistant(PaperRegistries.toNms(types)));
+    public DamageResistant damageResistant(final RegistryKeySet<DamageType> types) {
+        return new PaperDamageResistant(new net.minecraft.world.item.component.DamageResistant(PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, Conversions.global().lookup(), types)));
     }
 
     @Override

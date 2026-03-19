@@ -686,13 +686,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean getRemoveWhenFarAway() {
-        return this.getHandle() instanceof Mob && !((Mob) this.getHandle()).isPersistenceRequired();
+        return this.getHandle() instanceof Mob mob && !mob.isPersistenceRequired();
     }
 
     @Override
     public void setRemoveWhenFarAway(boolean remove) {
-        if (this.getHandle() instanceof Mob) {
-            ((Mob) this.getHandle()).setPersistenceRequired(!remove);
+        if (this.getHandle() instanceof Mob mob) {
+            mob.persistenceRequired = !remove;
         }
     }
 
@@ -703,8 +703,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void setCanPickupItems(boolean pickup) {
-        if (this.getHandle() instanceof Mob) {
-            ((Mob) this.getHandle()).setCanPickUpLoot(pickup);
+        if (this.getHandle() instanceof Mob mob) {
+            mob.setCanPickUpLoot(pickup);
         } else {
             this.getHandle().bukkitPickUpLoot = pickup;
         }

@@ -47,6 +47,7 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.ComponentUtils;
+import net.minecraft.network.chat.ResolutionContext;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
@@ -264,7 +265,8 @@ public final class PaperAdventure {
             css.bypassSelectorPermissions = true;
         }
         try {
-            return asAdventure(ComponentUtils.updateForEntity(css, asVanilla(component), scoreboardSubject == null ? null : ((CraftEntity) scoreboardSubject).getHandle(), 0));
+            final ResolutionContext resoutionContext = ResolutionContext.builder().withSource(css).withEntityOverride(scoreboardSubject == null ? null : ((CraftEntity) scoreboardSubject).getHandle()).build();
+            return asAdventure(ComponentUtils.resolve(resoutionContext, asVanilla(component), 0));
         } catch (final CommandSyntaxException e) {
             throw new IOException(e);
         } finally {

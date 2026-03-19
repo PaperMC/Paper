@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.minecraft.commands.arguments.blocks.BlockStateParser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -51,7 +52,7 @@ import org.jetbrains.annotations.NotNull;
 public class CraftBlockData implements BlockData {
 
     private net.minecraft.world.level.block.state.BlockState state;
-    private Map<Property<?>, Comparable<?>> parsedStates;
+    private Map<Property<?>, Comparable<?>> parsedStates; // TODO - snapshot: not the best representation anymore
 
     protected CraftBlockData() {
         throw new AssertionError("Template Constructor");
@@ -216,7 +217,7 @@ public class CraftBlockData implements BlockData {
 
     @Override
     public String getAsString() {
-        return this.toString(this.state.getValues());
+        return this.toString(this.state.getValues(), this.state.isSingletonState());
     }
 
     @Override
@@ -238,21 +239,35 @@ public class CraftBlockData implements BlockData {
         return "CraftBlockData{" + this.getAsString() + "}";
     }
 
-    // Mimicked from BlockDataAbstract#toString()
-    public String toString(Map<Property<?>, Comparable<?>> states) {
+    // Mimicked from StateHolder#toString()
+    public String toString(Stream<Property.Value<?>> states, boolean singleton) {
         StringBuilder stateString = new StringBuilder(BuiltInRegistries.BLOCK.getKey(this.state.getBlock()).toString());
-
-        if (!states.isEmpty()) {
+        if (!singleton) {
             stateString.append('[');
-            stateString.append(states.entrySet().stream().map(StateHolder.PROPERTY_ENTRY_TO_STRING_FUNCTION).collect(Collectors.joining(",")));
+            stateString.append(states.map(Property.Value::toString).collect(Collectors.joining(",")));
             stateString.append(']');
         }
+        return stateString.toString();
+    }
 
+    public String toString(Map<Property<?>, Comparable<?>> states) {
+        StringBuilder stateString = new StringBuilder(BuiltInRegistries.BLOCK.getKey(this.state.getBlock()).toString());
+        if (!states.isEmpty()) {
+            stateString.append('[');
+            stateString.append(states.entrySet().stream().map(entry -> new Property.Value(entry.getKey(), entry.getValue()).toString()).collect(Collectors.joining(",")));
+            stateString.append(']');
+        }
         return stateString.toString();
     }
 
     public Map<String, String> toStates(boolean hideUnspecified) {
         return (hideUnspecified && this.parsedStates != null) ? CraftBlockData.toStates(this.parsedStates) : CraftBlockData.toStates(this.state.getValues());
+    }
+
+    private static Map<String, String> toStates(Stream<Property.Value<?>> states) {
+        Map<String, String> compound = new HashMap<>();
+        states.forEach(state -> compound.put(state.property().getName(), state.valueName()));
+        return compound;
     }
 
     private static Map<String, String> toStates(Map<Property<?>, Comparable<?>> states) {

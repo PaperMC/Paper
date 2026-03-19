@@ -61,6 +61,7 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.PlayerChatMessage;
+import net.minecraft.network.chat.ResolutionContext;
 import net.minecraft.network.protocol.common.ClientboundClearDialogPacket;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
@@ -116,6 +117,7 @@ import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.clock.ClockNetworkState;
 import net.minecraft.world.clock.ClockState;
 import net.minecraft.world.clock.WorldClock;
 import net.minecraft.world.entity.Entity;
@@ -1543,7 +1545,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         final long playerClockTime = this.getHandle().getPlayerTime();
         final Holder<WorldClock> worldClock = level.dimensionType().defaultClock().get();
         final boolean paused = !this.getHandle().relativeTime || !level.getGameRules().get(GameRules.ADVANCE_TIME) || level.clockManager().isPaused(worldClock);
-        this.getHandle().connection.send(new ClientboundSetTimePacket(gameTime, Map.of(worldClock, new ClockState(playerClockTime, paused))));
+        final ClockNetworkState clockState = new ClockNetworkState(
+            playerClockTime,
+            level.clockManager().partialTick(worldClock),
+            paused ? level.clockManager().rate(worldClock) : 0F
+        );
+        this.getHandle().connection.send(new ClientboundSetTimePacket(gameTime, Map.of(worldClock, clockState)));
     }
 
     @Override
@@ -2981,7 +2988,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
         net.minecraft.world.item.ItemStack bookItem = CraftItemStack.asNMSCopy(book);
         ServerPlayer serverPlayer = this.getHandle();
-        net.minecraft.world.item.component.WrittenBookContent.resolveForItem(bookItem, serverPlayer.createCommandSourceStack(), serverPlayer);
+        net.minecraft.world.item.component.WrittenBookContent.resolveForItem(bookItem, ResolutionContext.create(serverPlayer.createCommandSourceStack()), serverPlayer.registryAccess());
         sendBookOpen(bookItem);
     }
 

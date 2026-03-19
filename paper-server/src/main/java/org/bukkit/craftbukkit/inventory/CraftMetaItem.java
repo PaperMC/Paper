@@ -35,13 +35,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.SequencedSet;
 import java.util.Set;
 import java.util.StringJoiner;
 import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentPatch;
@@ -56,7 +56,6 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.food.FoodProperties;
@@ -94,6 +93,7 @@ import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.configuration.ConfigSerializationUtil;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific;
 import org.bukkit.craftbukkit.inventory.components.CraftCustomModelDataComponent;
@@ -290,7 +290,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     private boolean unbreakable;
     private Boolean enchantmentGlintOverride;
     private boolean glider;
-    private TagKey<net.minecraft.world.damagesource.DamageType> damageResistant;
+    private HolderSet<net.minecraft.world.damagesource.DamageType> damageResistant;
     private Integer maxStackSize;
     private ItemRarity rarity;
     private ItemStack useRemainder;
@@ -687,11 +687,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             this.setGlider(glider);
         }
 
-        String damageResistant = SerializableMeta.getString(map, CraftMetaItem.DAMAGE_RESISTANT.BUKKIT, true);
+        Object damageResistant = SerializableMeta.getObject(Object.class, map, CraftMetaItem.DAMAGE_RESISTANT.BUKKIT, true);
         if (damageResistant != null) {
-            Tag<DamageType> tag = Bukkit.getTag(DamageTypeTags.REGISTRY_DAMAGE_TYPES, NamespacedKey.fromString(damageResistant), DamageType.class);
-            if (tag != null) {
-                this.setDamageResistant(tag);
+            HolderSet<net.minecraft.world.damagesource.DamageType> damageResistantHolderSet = ConfigSerializationUtil.getHolderSet(damageResistant, Registries.DAMAGE_TYPE);
+            if (damageResistantHolderSet != null) {
+                this.damageResistant = damageResistantHolderSet;
             }
         }
 
@@ -1542,12 +1542,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public boolean isFireResistant() {
-        return this.hasDamageResistant() && this.damageResistant == net.minecraft.tags.DamageTypeTags.IS_FIRE;
+        return this.hasDamageResistant() && this.damageResistant.unwrapKey().map(key -> key == net.minecraft.tags.DamageTypeTags.IS_FIRE).orElse(false);
     }
 
     @Override
     public void setFireResistant(boolean fireResistant) {
-        this.damageResistant = net.minecraft.tags.DamageTypeTags.IS_FIRE;
+        this.damageResistant = CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE).get(net.minecraft.tags.DamageTypeTags.IS_FIRE).orElseThrow(IllegalStateException::new);
     }
 
     @Override
@@ -1557,12 +1557,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public Tag<DamageType> getDamageResistant() {
-        return (this.hasDamageResistant()) ? Bukkit.getTag(DamageTypeTags.REGISTRY_DAMAGE_TYPES, CraftNamespacedKey.fromMinecraft(this.damageResistant.location()), DamageType.class) : null;
+        // TODO - snapshot - 26.1 API changes for holder set
+        return this.hasDamageResistant() && this.damageResistant.unwrapKey().isPresent() ? Bukkit.getTag(DamageTypeTags.REGISTRY_DAMAGE_TYPES, CraftNamespacedKey.fromMinecraft(this.damageResistant.unwrapKey().get().location()), DamageType.class) : null;
     }
 
     @Override
     public void setDamageResistant(Tag<DamageType> tag) {
-        this.damageResistant = (tag != null) ? ((CraftDamageTag) tag).getHandle().key() : null;
+        this.damageResistant = (tag != null) ? CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE).get(((CraftDamageTag) tag).getHandle().key()).orElseThrow(IllegalStateException::new) : null;
     }
 
     @Override
@@ -2185,7 +2186,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         if (this.hasDamageResistant()) {
-            builder.put(CraftMetaItem.DAMAGE_RESISTANT.BUKKIT, this.damageResistant.location().toString());
+            ConfigSerializationUtil.setHolderSet(builder, CraftMetaItem.DAMAGE_RESISTANT.BUKKIT, this.damageResistant);
         }
 
         if (this.hasMaxStackSize()) {
