@@ -4,8 +4,6 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
 import io.papermc.paper.registry.set.RegistryKeySet;
-import io.papermc.paper.registry.set.RegistrySet;
-import io.papermc.paper.registry.tag.TagKey;
 import java.util.List;
 import net.kyori.adventure.key.Key;
 import org.bukkit.damage.DamageType;
@@ -70,7 +68,7 @@ public interface BlocksAttacks {
      * @return a damage type tag key, or null if there is no such tag key
      */
     @Contract(pure = true)
-    @Nullable RegistrySet<DamageType> bypassedBy();
+    @Nullable RegistryKeySet<DamageType> bypassedBy();
 
     /**
      * Gets the key sound to play when an attack is successfully blocked.

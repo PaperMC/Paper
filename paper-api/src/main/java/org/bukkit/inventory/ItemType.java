@@ -4,7 +4,6 @@ import com.google.common.collect.Multimap;
 import io.papermc.paper.datacomponent.DataComponentType;
 import java.util.Set;
 import java.util.function.Consumer;
-import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
@@ -43,8 +42,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-
-import static net.kyori.adventure.key.Key.key;
 
 /**
  * Represents an item type.

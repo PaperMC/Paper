@@ -754,23 +754,22 @@
              ItemStack protectionItem = null;
              DeathProtection protection = null;
  
--            for (InteractionHand hand : InteractionHand.values()) {
--                ItemStack itemStack = this.getItemInHand(hand);
 +            // CraftBukkit start
-+            InteractionHand hand = null;
++            InteractionHand usedHand = null;
 +            ItemStack itemStack = ItemStack.EMPTY;
-+            for (InteractionHand interactionHand : InteractionHand.values()) {
-+                itemStack = this.getItemInHand(interactionHand);
+             for (InteractionHand hand : InteractionHand.values()) {
+-                ItemStack itemStack = this.getItemInHand(hand);
++                itemStack = this.getItemInHand(hand);
                  protection = itemStack.get(DataComponents.DEATH_PROTECTION);
                  if (protection != null) {
-+                    hand = interactionHand;
++                    usedHand = hand;
                      protectionItem = itemStack.copy();
 +                    // itemStack.shrink(1);
 +                    break;
 +                }
 +            }
 +
-+            final org.bukkit.inventory.EquipmentSlot handSlot = (hand != null) ? org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand) : null;
++            final org.bukkit.inventory.EquipmentSlot handSlot = (usedHand != null) ? org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(usedHand) : null;
 +            final EntityResurrectEvent event = new EntityResurrectEvent((org.bukkit.entity.LivingEntity) this.getBukkitEntity(), handSlot);
 +            event.setCancelled(protectionItem == null);
 +            this.level().getCraftServer().getPluginManager().callEvent(event);
@@ -794,7 +793,7 @@
 +                }
 +                // Paper end - fix NPE when pre-cancelled EntityResurrectEvent is uncancelled
 +                if (protectionItem != null && this instanceof final ServerPlayer player) {
-+            // CraftBukkit end
++                    // CraftBukkit end
                      player.awardStat(Stats.ITEM_USED.get(protectionItem.getItem()));
                      CriteriaTriggers.USED_TOTEM.trigger(player, protectionItem);
                      protectionItem.causeUseVibration(this, GameEvent.ITEM_INTERACT_FINISH);
@@ -1054,28 +1053,14 @@
                  int absorbValue = (this.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
                  int absorb = 25 - absorbValue;
                  float v = damage * absorb;
-@@ -1915,24 +_,195 @@
+@@ -1915,24 +_,194 @@
          }
      }
  
 -    protected void actuallyHurt(final ServerLevel level, final DamageSource source, float dmg) {
--        if (!this.isInvulnerableTo(level, source)) {
--            dmg = this.getDamageAfterArmorAbsorb(source, dmg);
--            dmg = this.getDamageAfterMagicAbsorb(source, dmg);
--            float var10 = Math.max(dmg - this.getAbsorptionAmount(), 0.0F);
--            this.setAbsorptionAmount(this.getAbsorptionAmount() - (dmg - var10));
--            float absorbedDamage = dmg - var10;
--            if (absorbedDamage > 0.0F && absorbedDamage < 3.4028235E37F && source.getEntity() instanceof ServerPlayer serverPlayer) {
--                serverPlayer.awardStat(Stats.DAMAGE_DEALT_ABSORBED, Math.round(absorbedDamage * 10.0F));
--            }
--
--            if (var10 != 0.0F) {
--                this.getCombatTracker().recordDamage(source, var10);
--                this.setHealth(this.getHealth() - var10);
--                this.setAbsorptionAmount(this.getAbsorptionAmount() - var10);
 +    // CraftBukkit start
-+    private EntityDamageEvent handleEntityDamage(final DamageSource damagesource, float amount, final float invulnerabilityRelatedLastDamage) { // Paper - fix invulnerability reduction in EntityDamageEvent
-+        float originalDamage = amount;
++    private EntityDamageEvent handleEntityDamage(final DamageSource damagesource, float damage, final float invulnerabilityRelatedLastDamage) { // Paper - fix invulnerability reduction in EntityDamageEvent
++        float originalDamage = damage;
 +        // Paper start - fix invulnerability reduction in EntityDamageEvent
 +        final com.google.common.base.Function<Double, Double> invulnerabilityReductionEquation = mod -> {
 +            if (invulnerabilityRelatedLastDamage == 0) return 0D; // no last damage, no reduction
@@ -1086,10 +1071,10 @@
 +            // If last damage is a (float) 3.2D (since the events use doubles), we cannot compare
 +            // the new damage value of this damage instance by upcasting it again to a double as 3.2D != (double) (float) 3.2D.
 +            if (mod.floatValue() < invulnerabilityRelatedLastDamage) return 0D;
-+            return (double)-invulnerabilityRelatedLastDamage;
++            return (double) -invulnerabilityRelatedLastDamage;
 +        };
-+        final float originalInvulnerabilityReduction = invulnerabilityReductionEquation.apply((double)amount).floatValue();
-+        amount += originalInvulnerabilityReduction;
++        final float originalInvulnerabilityReduction = invulnerabilityReductionEquation.apply((double) damage).floatValue();
++        damage += originalInvulnerabilityReduction;
 +        // Paper end - fix invulnerability reduction in EntityDamageEvent
 +
 +        com.google.common.base.Function<Double, Double> freezing = mod -> {
@@ -1098,8 +1083,8 @@
 +            }
 +            return -0.0;
 +        };
-+        float freezingModifier = freezing.apply((double)amount).floatValue();
-+        amount += freezingModifier;
++        float freezingModifier = freezing.apply((double) damage).floatValue();
++        damage += freezingModifier;
 +
 +        com.google.common.base.Function<Double, Double> hardHat = mod -> {
 +            if (damagesource.is(net.minecraft.tags.DamageTypeTags.DAMAGES_HELMET) && !LivingEntity.this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
@@ -1107,135 +1092,143 @@
 +            }
 +            return -0.0;
 +        };
-+        float hardHatModifier = hardHat.apply((double)amount).floatValue();
-+        amount += hardHatModifier;
++        float hardHatModifier = hardHat.apply((double) damage).floatValue();
++        damage += hardHatModifier;
 +
 +        com.google.common.base.Function<Double, Double> blocking = mod -> {
 +            if (!LivingEntity.this.canBlockAttack(damagesource, mod.floatValue())) {
 +                return 0D;
 +            }
-+            return (double)-LivingEntity.this.resolveBlockedDamage(damagesource, mod.floatValue());
++            return (double) -LivingEntity.this.resolveBlockedDamage(damagesource, mod.floatValue());
 +        };
-+        float blockingModifier = blocking.apply((double)amount).floatValue();
-+        amount += blockingModifier;
++        float blockingModifier = blocking.apply((double) damage).floatValue();
++        damage += blockingModifier;
 +
 +        com.google.common.base.Function<Double, Double> armor = mod -> -(mod - LivingEntity.this.getDamageAfterArmorAbsorb(damagesource, mod.floatValue()));
-+        float armorModifier = armor.apply((double)amount).floatValue();
-+        amount += armorModifier;
++        float armorModifier = armor.apply((double) damage).floatValue();
++        damage += armorModifier;
 +
 +        com.google.common.base.Function<Double, Double> resistance = mod -> {
 +            if (!damagesource.is(net.minecraft.tags.DamageTypeTags.BYPASSES_EFFECTS) && LivingEntity.this.hasEffect(net.minecraft.world.effect.MobEffects.RESISTANCE) && !damagesource.is(net.minecraft.tags.DamageTypeTags.BYPASSES_RESISTANCE)) {
-+                int i = (LivingEntity.this.getEffect(net.minecraft.world.effect.MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
-+                int j = 25 - i;
-+                float f1 = mod.floatValue() * (float)j;
++                int absorbValue = (LivingEntity.this.getEffect(net.minecraft.world.effect.MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
++                int absorb = 25 - absorbValue;
++                float v = mod.floatValue() * (float) absorb;
 +
-+                return -(mod - Math.max(f1 / 25.0F, 0.0F));
++                return -(mod - Math.max(v / 25.0F, 0.0F));
 +            }
 +            return -0.0;
 +        };
-+        float resistanceModifier = resistance.apply((double)amount).floatValue();
-+        amount += resistanceModifier;
++        float resistanceModifier = resistance.apply((double) damage).floatValue();
++        damage += resistanceModifier;
 +
 +        com.google.common.base.Function<Double, Double> magic = mod -> -(mod - net.minecraft.world.entity.LivingEntity.this.getDamageAfterMagicAbsorb(damagesource, mod.floatValue()));
-+        float magicModifier = magic.apply((double)amount).floatValue();
-+        amount += magicModifier;
++        float magicModifier = magic.apply((double) damage).floatValue();
++        damage += magicModifier;
 +
 +        com.google.common.base.Function<Double, Double> absorption = mod -> -(Math.max(mod - Math.max(mod - net.minecraft.world.entity.LivingEntity.this.getAbsorptionAmount(), 0.0F), 0.0F));
-+        float absorptionModifier = absorption.apply((double)amount).floatValue();
++        float absorptionModifier = absorption.apply((double) damage).floatValue();
 +
 +        // Paper start - fix invulnerability reduction in EntityDamageEvent
 +        return CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, freezingModifier, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, freezing, hardHat, blocking, armor, resistance, magic, absorption, (damageModifierDoubleMap, damageModifierFunctionMap) -> {
 +            damageModifierFunctionMap.put(DamageModifier.INVULNERABILITY_REDUCTION, invulnerabilityReductionEquation);
-+            damageModifierDoubleMap.put(DamageModifier.INVULNERABILITY_REDUCTION, (double)originalInvulnerabilityReduction);
++            damageModifierDoubleMap.put(DamageModifier.INVULNERABILITY_REDUCTION, (double) originalInvulnerabilityReduction);
 +        });
 +        // Paper end - fix invulnerability reduction in EntityDamageEvent
 +    }
 +
-+    protected boolean actuallyHurt(ServerLevel level, final DamageSource damageSource, float amount, final EntityDamageEvent event) { // void -> boolean, add final
-+        if (!this.isInvulnerableTo(level, damageSource)) {
++    protected boolean actuallyHurt(ServerLevel level, final DamageSource source, float dmg, final EntityDamageEvent event) { // void -> boolean, add final
+         if (!this.isInvulnerableTo(level, source)) {
+-            dmg = this.getDamageAfterArmorAbsorb(source, dmg);
+-            dmg = this.getDamageAfterMagicAbsorb(source, dmg);
+-            float var10 = Math.max(dmg - this.getAbsorptionAmount(), 0.0F);
+-            this.setAbsorptionAmount(this.getAbsorptionAmount() - (dmg - var10));
+-            float absorbedDamage = dmg - var10;
 +            if (event.isCancelled()) {
 +                return false;
 +            }
 +
-+            if (damageSource.getEntity() instanceof net.minecraft.world.entity.player.Player) {
++            if (source.getEntity() instanceof net.minecraft.world.entity.player.Player) {
 +                // Paper start - PlayerAttackEntityCooldownResetEvent
 +                //((net.minecraft.world.entity.player.Player) damagesource.getEntity()).resetOnlyAttackStrengthTicker(); // Moved from Player in order to make the cooldown reset get called after the damage event is fired
-+                if (damageSource.getEntity() instanceof ServerPlayer) {
-+                    ServerPlayer player = (ServerPlayer)damageSource.getEntity();
++                if (source.getEntity() instanceof ServerPlayer player) {
 +                    if (new com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent(player.getBukkitEntity(), this.getBukkitEntity(), player.getAttackStrengthScale(0F)).callEvent()) {
 +                        player.resetOnlyAttackStrengthTicker();
 +                    }
 +                } else {
-+                    ((net.minecraft.world.entity.player.Player)damageSource.getEntity()).resetOnlyAttackStrengthTicker();
++                    ((net.minecraft.world.entity.player.Player)source.getEntity()).resetOnlyAttackStrengthTicker();
 +                }
 +                // Paper end - PlayerAttackEntityCooldownResetEvent
 +            }
 +
 +            // Resistance
 +            if (event.getDamage(DamageModifier.RESISTANCE) < 0) {
-+                float f3 = (float)-event.getDamage(DamageModifier.RESISTANCE);
-+                if (f3 > 0.0F && f3 < 3.4028235E37F) {
++                float damageResisted = (float)-event.getDamage(DamageModifier.RESISTANCE);
++                if (damageResisted > 0.0F && damageResisted < 3.4028235E37F) {
 +                    if (this instanceof ServerPlayer) {
-+                        ((ServerPlayer)this).awardStat(Stats.DAMAGE_RESISTED, Math.round(f3 * 10.0F));
-+                    } else if (damageSource.getEntity() instanceof ServerPlayer) {
-+                        ((ServerPlayer)damageSource.getEntity()).awardStat(Stats.DAMAGE_DEALT_RESISTED, Math.round(f3 * 10.0F));
++                        ((ServerPlayer)this).awardStat(Stats.DAMAGE_RESISTED, Math.round(damageResisted * 10.0F));
++                    } else if (source.getEntity() instanceof ServerPlayer) {
++                        ((ServerPlayer)source.getEntity()).awardStat(Stats.DAMAGE_DEALT_RESISTED, Math.round(damageResisted * 10.0F));
 +                    }
 +                }
 +            }
 +
 +            // Apply damage to helmet
-+            if (damageSource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
++            if (source.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
 +                float helmetDamage = (float)event.getDamage();
 +                helmetDamage += (float)event.getDamage(DamageModifier.INVULNERABILITY_REDUCTION);
 +                helmetDamage += (float)event.getDamage(DamageModifier.BLOCKING);
 +                helmetDamage += (float)event.getDamage(DamageModifier.FREEZING);
-+                this.hurtHelmet(damageSource, helmetDamage);
++                this.hurtHelmet(source, helmetDamage);
 +            }
 +
 +            // Apply damage to armor
-+            if (!damageSource.is(DamageTypeTags.BYPASSES_ARMOR)) {
++            if (!source.is(DamageTypeTags.BYPASSES_ARMOR)) {
 +                float armorDamage = (float)event.getDamage();
 +                armorDamage += (float)event.getDamage(DamageModifier.INVULNERABILITY_REDUCTION);
 +                armorDamage += (float)event.getDamage(DamageModifier.BLOCKING);
 +                armorDamage += (float)event.getDamage(DamageModifier.FREEZING);
 +                armorDamage += (float)event.getDamage(DamageModifier.HARD_HAT);
-+                this.hurtArmor(damageSource, armorDamage);
++                this.hurtArmor(source, armorDamage);
 +            }
 +
 +            // Apply blocking code
 +            if (event.getDamage(DamageModifier.BLOCKING) < 0) {
-+                this.blockingItemEffects(level, damageSource, (float)-event.getDamage(DamageModifier.BLOCKING));
++                this.blockingItemEffects(level, source, (float)-event.getDamage(DamageModifier.BLOCKING));
 +            }
 +
 +            boolean human = this instanceof net.minecraft.world.entity.player.Player;
 +            float originalDamage = (float)event.getDamage();
 +            float absorptionModifier = (float)-event.getDamage(DamageModifier.ABSORPTION);
 +            this.setAbsorptionAmount(Math.max(this.getAbsorptionAmount() - absorptionModifier, 0.0F));
-+            float f1 = absorptionModifier;
++            float absorbedDamage = absorptionModifier;
 +
-+            if (f1 > 0.0F && f1 < 3.4028235E37F && this instanceof Player player) {
-+                player.awardStat(Stats.DAMAGE_ABSORBED, Math.round(f1 * 10.0F));
++            if (absorbedDamage > 0.0F && absorbedDamage < 3.4028235E37F && this instanceof Player player) {
++                player.awardStat(Stats.DAMAGE_ABSORBED, Math.round(absorbedDamage * 10.0F));
 +            }
 +            // CraftBukkit end
-+            if (f1 > 0.0F && f1 < 3.4028235E37F && damageSource.getEntity() instanceof ServerPlayer serverPlayer) {
-+                serverPlayer.awardStat(Stats.DAMAGE_DEALT_ABSORBED, Math.round(f1 * 10.0F));
-+            }
-+
+             if (absorbedDamage > 0.0F && absorbedDamage < 3.4028235E37F && source.getEntity() instanceof ServerPlayer serverPlayer) {
+                 serverPlayer.awardStat(Stats.DAMAGE_DEALT_ABSORBED, Math.round(absorbedDamage * 10.0F));
+             }
+ 
+-            if (var10 != 0.0F) {
+-                this.getCombatTracker().recordDamage(source, var10);
+-                this.setHealth(this.getHealth() - var10);
+-                this.setAbsorptionAmount(this.getAbsorptionAmount() - var10);
 +            // CraftBukkit start
-+            if (amount > 0 || !human) {
++            if (dmg > 0 || !human) {
 +                if (human) {
 +                    // PAIL: Be sure to drag all this code from the EntityHuman subclass each update.
-+                    ((net.minecraft.world.entity.player.Player)this).causeFoodExhaustion(damageSource.getFoodExhaustion(), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
-+                    if (amount < 3.4028235E37F) {
-+                        ((net.minecraft.world.entity.player.Player)this).awardStat(Stats.DAMAGE_TAKEN, Math.round(amount * 10.0F));
++                    ((net.minecraft.world.entity.player.Player)this).causeFoodExhaustion(source.getFoodExhaustion(), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
++                    if (dmg < 3.4028235E37F) {
++                        ((net.minecraft.world.entity.player.Player)this).awardStat(Stats.DAMAGE_TAKEN, Math.round(dmg * 10.0F));
 +                    }
 +                }
 +                // CraftBukkit end
-+                this.getCombatTracker().recordDamage(damageSource, amount);
-+                this.setHealth(this.getHealth() - amount);
++                this.getCombatTracker().recordDamage(source, dmg);
++                this.setHealth(this.getHealth() - dmg);
 +                // CraftBukkit start
 +                if (!human) {
-+                    this.setAbsorptionAmount(this.getAbsorptionAmount() - amount);
++                    this.setAbsorptionAmount(this.getAbsorptionAmount() - dmg);
 +                }
                  this.gameEvent(GameEvent.ENTITY_DAMAGE);
 +                return true;
@@ -1243,15 +1236,15 @@
 +                // Duplicate triggers if blocking
 +                if (event.getDamage(DamageModifier.BLOCKING) < 0) {
 +                    if (this instanceof ServerPlayer) {
-+                        CriteriaTriggers.ENTITY_HURT_PLAYER.trigger((ServerPlayer)this, damageSource, originalDamage, amount, true); // Paper - fix taken/dealt param order
-+                        f1 = (float)-event.getDamage(DamageModifier.BLOCKING);
-+                        if (f1 > 0.0F && f1 < 3.4028235E37F) {
++                        CriteriaTriggers.ENTITY_HURT_PLAYER.trigger((ServerPlayer)this, source, originalDamage, dmg, true); // Paper - fix taken/dealt param order
++                        absorbedDamage = (float)-event.getDamage(DamageModifier.BLOCKING);
++                        if (absorbedDamage > 0.0F && absorbedDamage < 3.4028235E37F) {
 +                            ((ServerPlayer)this).awardStat(Stats.DAMAGE_BLOCKED_BY_SHIELD, Math.round(originalDamage * 10.0F));
 +                        }
 +                    }
 +
-+                    if (damageSource.getEntity() instanceof ServerPlayer) {
-+                        CriteriaTriggers.PLAYER_HURT_ENTITY.trigger((ServerPlayer)damageSource.getEntity(), this, damageSource, originalDamage, amount, true); // Paper - fix taken/dealt param order
++                    if (source.getEntity() instanceof ServerPlayer) {
++                        CriteriaTriggers.PLAYER_HURT_ENTITY.trigger((ServerPlayer)source.getEntity(), this, source, originalDamage, dmg, true); // Paper - fix taken/dealt param order
 +                    }
 +
 +                    return !io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.skipVanillaDamageTickWhenShieldBlocked; // Paper - this should always return true, however expose an unsupported setting to flip this to false to enable "shield stunning".

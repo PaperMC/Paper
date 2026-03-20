@@ -13,7 +13,7 @@
      }
  
 -    public static InteractionResult bindPlayerMobs(final Player player, final Level level, final BlockPos pos) {
-+    public static InteractionResult bindPlayerMobs(final Player player, final Level level, final BlockPos pos, final net.minecraft.world.InteractionHand interactionHand) { // CraftBukkit - Add InteractionHand
++    public static InteractionResult bindPlayerMobs(final Player player, final Level level, final BlockPos pos, final net.minecraft.world.InteractionHand hand) { // CraftBukkit - Add InteractionHand
          List<Leashable> entitiesToLeash = Leashable.leashableInArea(level, Vec3.atCenterOf(pos), l -> l.getLeashHolder() == player);
          if (entitiesToLeash.isEmpty()) {
              return InteractionResult.PASS;
@@ -22,8 +22,8 @@
              LeashFenceKnotEntity activeKnot = existingKnot.orElseGet(() -> LeashFenceKnotEntity.createKnot(level, pos));
 +            // CraftBukkit start - fire HangingPlaceEvent
 +            if (existingKnot.isEmpty()) {
-+                org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(interactionHand);
-+                org.bukkit.event.hanging.HangingPlaceEvent event = new org.bukkit.event.hanging.HangingPlaceEvent((org.bukkit.entity.Hanging) activeKnot.getBukkitEntity(), player != null ? (org.bukkit.entity.Player) player.getBukkitEntity() : null, org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), org.bukkit.block.BlockFace.SELF, hand);
++                org.bukkit.inventory.EquipmentSlot handSlot = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand);
++                org.bukkit.event.hanging.HangingPlaceEvent event = new org.bukkit.event.hanging.HangingPlaceEvent((org.bukkit.entity.Hanging) activeKnot.getBukkitEntity(), player != null ? (org.bukkit.entity.Player) player.getBukkitEntity() : null, org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), org.bukkit.block.BlockFace.SELF, handSlot);
 +                level.getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (event.isCancelled()) {
@@ -36,7 +36,7 @@
  
              for (Leashable leashable : entitiesToLeash) {
 -                if (leashable.canHaveALeashAttachedTo(activeKnot)) {
-+                if (leashable.canHaveALeashAttachedTo(activeKnot) && org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerLeashEntityEvent(leashable, activeKnot, player, interactionHand)) { // Paper - leash event
++                if (leashable.canHaveALeashAttachedTo(activeKnot) && org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerLeashEntityEvent(leashable, activeKnot, player, hand)) { // Paper - leash event
                      leashable.setLeashedTo(activeKnot, true);
                      anyLeashed = true;
                  }

@@ -1108,18 +1108,18 @@
 +            }
 +            // Paper end - per-world game time
              profiler.pop();
-         }
- 
++        }
++
 +        // CraftBukkit start
 +        // Run tasks that are waiting on processing
 +        while (!this.processQueue.isEmpty()) {
 +            this.processQueue.remove().run();
-+        }
-+
-+        this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
+         }
+ 
          profiler.push("levels");
          this.updateEffectiveRespawnData();
  
++        this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
          for (ServerLevel level : this.getAllLevels()) {
 +            level.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
 +            level.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
@@ -1203,9 +1203,9 @@
 -            this.updateMobSpawningFlags();
 -            this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
 +    // Paper start - per level difficulty, WorldDifficultyChangeEvent
-+    public void setDifficulty(final ServerLevel level, final Difficulty difficulty, final @Nullable CommandSourceStack source, final boolean forced) {
++    public void setDifficulty(final ServerLevel level, final Difficulty difficulty, final @Nullable CommandSourceStack source, final boolean ignoreLock) {
 +        net.minecraft.world.level.storage.PrimaryLevelData worldData = level.serverLevelData;
-+        if (forced || !worldData.isDifficultyLocked()) {
++        if (ignoreLock || !worldData.isDifficultyLocked()) {
 +            new io.papermc.paper.event.world.WorldDifficultyChangeEvent(
 +                level.getWorld(), source, org.bukkit.craftbukkit.util.CraftDifficulty.toBukkit(difficulty)
 +            ).callEvent();
@@ -1352,7 +1352,7 @@
          final PackRepository packRepository, final Collection<String> selected, final FeatureFlagSet forcedFeatures, final boolean disableInactive
      ) {
 -        packRepository.setSelected(selected);
-+        packRepository.setSelected(selected, true);
++        packRepository.setSelected(selected, true); // Paper - add pendingReload flag to determine required pack loading - before the initial server load
          enableForcedFeaturePacks(packRepository, forcedFeatures);
          DataPackConfig packConfig = getSelectedPacks(packRepository, disableInactive);
          FeatureFlagSet packRequestedFeatures = packRepository.getRequestedFeatureFlags().join(forcedFeatures);

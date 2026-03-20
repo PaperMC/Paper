@@ -31,8 +31,8 @@
 +        return this.createPath(targets, null, radiusOffset, above, reachRange, maxPathLength);
 +    }
 +
-+    protected @Nullable Path createPath(Set<BlockPos> targets, @Nullable Entity target, int regionOffset, boolean offsetUpward, int reachRange) {
-+        return this.createPath(targets, target, regionOffset, offsetUpward, reachRange, this.getMaxPathLength());
++    protected @Nullable Path createPath(Set<BlockPos> targets, @Nullable Entity target, int radiusOffset, boolean above, int reachRange) {
++        return this.createPath(targets, target, radiusOffset, above, reachRange, this.getMaxPathLength());
 +    }
 +
 +    protected @Nullable Path createPath(Set<BlockPos> targets, @Nullable Entity target, int radiusOffset, boolean above, int reachRange, float maxPathLength) {
@@ -80,16 +80,15 @@
      }
  
      public boolean moveTo(final Entity target, final double speedModifier) {
--        Path newPath = this.createPath(target, 1);
--        return newPath != null && this.moveTo(newPath, speedModifier);
 +        // Paper start - Perf: Optimise pathfinding
 +        if (this.pathfindFailures > 10 && this.path == null && net.minecraft.server.MinecraftServer.currentTick < this.lastFailure + 40) {
 +            return false;
 +        }
 +        // Paper end - Perf: Optimise pathfinding
-+        Path path = this.createPath(target, 1);
+         Path newPath = this.createPath(target, 1);
+-        return newPath != null && this.moveTo(newPath, speedModifier);
 +        // Paper start - Perf: Optimise pathfinding
-+        if (path != null && this.moveTo(path, speedModifier)) {
++        if (newPath != null && this.moveTo(newPath, speedModifier)) {
 +            this.lastFailure = 0;
 +            this.pathfindFailures = 0;
 +            return true;
