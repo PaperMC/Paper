@@ -16,7 +16,7 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..4a2520f554c2ee74faf86d7c93baccf0f391a6b3
 --- /dev/null
 +++ b/io/papermc/paper/util/KeepAlive.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,84 @@
 +package io.papermc.paper.util;
 +
 +public class KeepAlive {
@@ -34,6 +34,14 @@ index 0000000000000000000000000000000000000000..4a2520f554c2ee74faf86d7c93baccf0
 +    public final PingCalculator pingCalculator1m = new PingCalculator(java.util.concurrent.TimeUnit.MINUTES.toNanos(1L));
 +    public final PingCalculator pingCalculator5s = new PingCalculator(java.util.concurrent.TimeUnit.SECONDS.toNanos(5L));
 +
++    public KeepAlive copyForListenerHandoff() {
++        KeepAlive copy = new KeepAlive();
++        copy.lastKeepAliveTx = this.lastKeepAliveTx;
++        copy.pingCalculator1m.copyFrom(this.pingCalculator1m);
++        copy.pingCalculator5s.copyFrom(this.pingCalculator5s);
++        return copy;
++    }
++
 +    public static final class PingCalculator {
 +
 +        private final long intervalNS;
@@ -45,6 +53,15 @@ index 0000000000000000000000000000000000000000..4a2520f554c2ee74faf86d7c93baccf0
 +
 +        public PingCalculator(long intervalNS) {
 +            this.intervalNS = intervalNS;
++        }
++
++        private void copyFrom(PingCalculator other) {
++            for (KeepAliveResponse response : other.responses) {
++                this.responses.add(response);
++            }
++            this.timeSumNS = other.timeSumNS;
++            this.timeSumCount = other.timeSumCount;
++            this.lastAverageNS = other.lastAverageNS;
 +        }
 +
 +        public void update(KeepAliveResponse response) {
@@ -223,11 +240,19 @@ index 079ab378920c0e52ef4e42ef20b37bd389f40870..b8a4b4cc02a2fc6b70f4b840796eed50
              }
          }
  
-@@ -427,6 +460,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -427,6 +460,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      }
  
      protected CommonListenerCookie createCookie(ClientInformation clientInformation) {
 -        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand, this.pluginMessagerChannels); // Paper
-+        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand, this.pluginMessagerChannels, this.keepAlive); // Paper
++        return new CommonListenerCookie(
++            this.playerProfile(),
++            this.latency,
++            clientInformation,
++            this.transferred,
++            this.playerBrand,
++            this.pluginMessagerChannels,
++            this.keepAlive.copyForListenerHandoff()
++        ); // Paper - listener handoff should reset pending keepalive expectations
      }
  }
