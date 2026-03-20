@@ -1,15 +1,16 @@
 --- a/net/minecraft/server/commands/TimeCommand.java
 +++ b/net/minecraft/server/commands/TimeCommand.java
-@@ -170,23 +_,60 @@
+@@ -170,23 +_,61 @@
      }
  
      private static int setTotalTicks(final CommandSourceStack source, final Holder<WorldClock> clock, final int totalTicks) {
 +        // Paper start
 +        // TODO - snapshot - 26.1
 +        for (net.minecraft.server.level.ServerLevel level : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) {
-+            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(level.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, totalTicks - level.clockManager().getTotalTicks(clock));
++            long currentTime = level.clockManager().getTotalTicks(clock);
++            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(level.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, totalTicks - currentTime);
 +            if (event.callEvent()) {
-+                level.clockManager().setTotalTicks(clock, level.clockManager().getTotalTicks(clock) + event.getSkipAmount());
++                level.clockManager().setTotalTicks(clock, currentTime + event.getSkipAmount());
 +            }
 +        }
 +        // Paper end
@@ -43,13 +44,13 @@
 +        // TODO - snapshot - 26.1
 +        boolean foundMarker = false;
 +        for (net.minecraft.server.level.ServerLevel level : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) {
-+            java.util.OptionalLong targetTime = source.getServer().clockManager().getTotalTicksToTimeMarker(clock, timeMarkerId);
++            java.util.OptionalLong targetTime = level.clockManager().getTotalTicksToTimeMarker(clock, timeMarkerId);
 +            if (targetTime.isEmpty()) {
 +                continue;
 +            }
 +
 +            foundMarker = true;
-+            long currentTime = source.getServer().clockManager().getTotalTicks(clock);
++            long currentTime = level.clockManager().getTotalTicks(clock);
 +            long delta = targetTime.getAsLong() - currentTime;
 +            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(level.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, delta);
 +            if (event.callEvent()) {

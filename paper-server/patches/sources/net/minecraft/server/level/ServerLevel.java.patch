@@ -955,21 +955,19 @@
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> tag = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
-@@ -1478,11 +_,37 @@
-     }
+@@ -1479,10 +_,36 @@
  
      @Override
--    public @Nullable MapItemSavedData getMapData(final MapId id) {
+     public @Nullable MapItemSavedData getMapData(final MapId id) {
 -        return this.getServer().getDataStorage().get(MapItemSavedData.type(id));
-+    public @Nullable MapItemSavedData getMapData(final MapId mapId) {
 +        // Paper start - Call missing map initialize event and set id
 +        final SavedDataStorage storage = this.getServer().overworld().getDataStorage();
 +
-+        final Optional<net.minecraft.world.level.saveddata.SavedData> cacheEntry = storage.cache.get(MapItemSavedData.type(mapId));
++        final Optional<net.minecraft.world.level.saveddata.SavedData> cacheEntry = storage.cache.get(MapItemSavedData.type(id));
 +        if (cacheEntry == null) { // Cache did not contain, try to load and may init
-+            final MapItemSavedData mapData = storage.get(MapItemSavedData.type(mapId)); // get populates the cache
++            final MapItemSavedData mapData = storage.get(MapItemSavedData.type(id)); // get populates the cache
 +            if (mapData != null) { // map was read, init it and return
-+                mapData.id = mapId;
++                mapData.id = id;
 +                new org.bukkit.event.server.MapInitializeEvent(mapData.mapView).callEvent();
 +                return mapData;
 +            }
@@ -978,7 +976,7 @@
 +        }
 +        // Cache entry exists, update it with the id ref and return.
 +        if (cacheEntry.orElse(null) instanceof final MapItemSavedData mapItemSavedData) {
-+            mapItemSavedData.id = mapId;
++            mapItemSavedData.id = id;
 +            return mapItemSavedData;
 +        }
 +

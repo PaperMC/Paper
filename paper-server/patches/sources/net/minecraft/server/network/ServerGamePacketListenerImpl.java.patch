@@ -999,14 +999,14 @@
 +        this.teleport(destination, relatives, PlayerTeleportEvent.TeleportCause.UNKNOWN);
 +    }
 +
-+    public boolean teleport(PositionMoveRotation posMoveRotation, Set<Relative> relatives, PlayerTeleportEvent.TeleportCause cause) { // CraftBukkit - Return event status
++    public boolean teleport(PositionMoveRotation destination, Set<Relative> relatives, PlayerTeleportEvent.TeleportCause cause) { // CraftBukkit - Return event status
 +        org.bukkit.entity.Player player = this.getCraftPlayer();
 +        Location from = player.getLocation();
-+        PositionMoveRotation absolutePosition = PositionMoveRotation.calculateAbsolute(PositionMoveRotation.of(this.player), posMoveRotation, relatives);
++        PositionMoveRotation absolutePosition = PositionMoveRotation.calculateAbsolute(PositionMoveRotation.of(this.player), destination, relatives);
 +        Location to = CraftLocation.toBukkit(absolutePosition.position(), this.player.level(), absolutePosition.yRot(), absolutePosition.xRot());
 +        // SPIGOT-5171: Triggered on join
 +        if (from.equals(to)) {
-+            this.internalTeleport(posMoveRotation, relatives);
++            this.internalTeleport(destination, relatives);
 +            return true; // CraftBukkit - Return event status
 +        }
 +
@@ -1023,10 +1023,10 @@
 +        if (event.isCancelled() || !to.equals(event.getTo())) {
 +            relatives = Set.of(); // target pos is absolute
 +            to = event.isCancelled() ? event.getFrom() : event.getTo();
-+            posMoveRotation = new PositionMoveRotation(CraftLocation.toVec3(to), Vec3.ZERO, to.getYaw(), to.getPitch());
++            destination = new PositionMoveRotation(CraftLocation.toVec3(to), Vec3.ZERO, to.getYaw(), to.getPitch());
 +        }
 +
-+        this.internalTeleport(posMoveRotation, relatives);
++        this.internalTeleport(destination, relatives);
 +        return !event.isCancelled(); // CraftBukkit - Return event status
 +    }
 +
@@ -1220,7 +1220,7 @@
                  BlockHitResult blockHit = packet.getHitResult();
                  Vec3 location = blockHit.getLocation();
 +                // Paper start - improve distance check
-+                if (!Double.isFinite(location.x()) || !Double.isFinite(location.y()) || !Double.isFinite(location.z())) {
++                if (!location.isFinite()) {
 +                    return;
 +                }
 +                // Paper end - improve distance check
@@ -1293,25 +1293,15 @@
          if (this.hasClientLoaded()) {
              this.ackBlockChangesUpTo(packet.getSequence());
              ServerLevel level = this.player.level();
-@@ -1421,6 +_,54 @@
+@@ -1421,6 +_,44 @@
                      this.player.absSnapRotationTo(targetYRot, targetXRot);
                  }
  
 +                // CraftBukkit start
 +                // Raytrace to look for 'rogue armswings'
-+                double x = this.player.getX();
-+                double eyeY = this.player.getEyeY();
-+                double z = this.player.getZ();
-+                Vec3 from = new Vec3(x, eyeY, z);
-+
-+                float f3 = Mth.cos(-targetYRot * 0.017453292F - 3.1415927F);
-+                float f4 = Mth.sin(-targetYRot * 0.017453292F - 3.1415927F);
-+                float f5 = -Mth.cos(-targetXRot * 0.017453292F);
-+                float f6 = Mth.sin(-targetXRot * 0.017453292F);
-+                float f7 = f4 * f5;
-+                float f8 = f3 * f5;
-+                double d3 = this.player.blockInteractionRange();
-+                Vec3 to = from.add((double) f7 * d3, (double) f6 * d3, (double) f8 * d3);
++                Vec3 from = this.player.getEyePosition();
++                Vec3 delta = this.player.getViewVector(1.0F).scale(this.player.blockInteractionRange());
++                Vec3 to = from.add(delta);
 +                BlockHitResult hitResult = this.player.level().clip(new net.minecraft.world.level.ClipContext(from, to, net.minecraft.world.level.ClipContext.Block.OUTLINE, net.minecraft.world.level.ClipContext.Fluid.NONE, this.player));
 +
 +                boolean cancelled;
@@ -1693,24 +1683,18 @@
              }
          }
      }
-@@ -1694,7 +_,40 @@
+@@ -1694,7 +_,34 @@
      @Override
      public void handleAnimate(final ServerboundSwingPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
 +        if (this.player.isImmobile()) return; // CraftBukkit
          this.player.resetLastActionTime();
 +        // CraftBukkit start - Raytrace to look for 'rogue armswings'
-+        float f1 = this.player.getXRot();
-+        float f2 = this.player.getYRot();
-+        double d0 = this.player.getX();
-+        double d1 = this.player.getY() + (double) this.player.getEyeHeight();
-+        double d2 = this.player.getZ();
-+        Location origin = new Location(this.player.level().getWorld(), d0, d1, d2, f2, f1);
-+
-+        double d3 = Math.max(this.player.blockInteractionRange(), this.player.entityInteractionRange());
++        Location origin = CraftLocation.toBukkit(this.player.getEyePosition(), this.player.level(), this.player.getYRot(), this.player.getXRot());
++        double maxRange = Math.max(this.player.blockInteractionRange(), this.player.entityInteractionRange()); // todo flawed
 +        // SPIGOT-5607: Only call interact event if no block or entity is being clicked. Use bukkit ray trace method, because it handles blocks and entities at the same time
 +        // SPIGOT-7429: Make sure to call PlayerInteractEvent for spectators and non-pickable entities
-+        org.bukkit.util.RayTraceResult result = this.player.level().getWorld().rayTrace(origin, origin.getDirection(), d3, org.bukkit.FluidCollisionMode.NEVER, false, 0.0, entity -> { // Paper - Call interact event; change raySize from 0.1 to 0.0
++        org.bukkit.util.RayTraceResult result = this.player.level().getWorld().rayTrace(origin, origin.getDirection(), maxRange, org.bukkit.FluidCollisionMode.NEVER, false, 0.0, entity -> { // Paper - Call interact event; change raySize from 0.1 to 0.0
 +            Entity handle = ((CraftEntity) entity).getHandle();
 +            return entity != this.player.getBukkitEntity() && this.player.getBukkitEntity().canSee(entity) && !handle.isSpectator() && handle.isPickable() && !handle.isPassengerOfSameVehicle(this.player);
 +        });

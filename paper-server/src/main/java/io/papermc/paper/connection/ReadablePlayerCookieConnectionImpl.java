@@ -28,10 +28,10 @@ public abstract class ReadablePlayerCookieConnectionImpl implements ReadablePlay
         Preconditions.checkArgument(key != null, "Cookie key cannot be null");
 
         CompletableFuture<byte[]> future = new CompletableFuture<>();
-        Identifier resourceLocation = CraftNamespacedKey.toMinecraft(key);
-        this.requestedCookies.put(resourceLocation, new CookieFuture(resourceLocation, future));
+        Identifier id = CraftNamespacedKey.toMinecraft(key);
+        this.requestedCookies.put(id, new CookieFuture(id, future));
 
-        this.connection.send(new ClientboundCookieRequestPacket(resourceLocation));
+        this.connection.send(new ClientboundCookieRequestPacket(id));
 
         return future;
     }
