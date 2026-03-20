@@ -260,7 +260,7 @@
  
      @Deprecated
      @VisibleForTesting
-@@ -354,11 +_,23 @@
+@@ -354,11 +_,24 @@
          int percentage = this.getGameRules().get(GameRules.PLAYERS_SLEEPING_PERCENTAGE);
          if (this.sleepStatus.areEnoughSleeping(percentage) && this.sleepStatus.areEnoughDeepSleeping(percentage, this.players)) {
              Optional<Holder<WorldClock>> defaultClock = this.dimensionType().defaultClock();
@@ -268,15 +268,16 @@
              if (this.getGameRules().get(GameRules.ADVANCE_TIME) && defaultClock.isPresent()) {
 -                this.server.clockManager().moveToTimeMarker(defaultClock.get(), ClockTimeMarkers.WAKE_UP_FROM_SLEEP);
 +                // Paper start - time skip event
-+                final long deltaTicksUntilDay = this.server.clockManager().getTicksToTimeMarker(defaultClock.get(), ClockTimeMarkers.WAKE_UP_FROM_SLEEP) - this.server.clockManager().getTotalTicks(defaultClock.get());
++                long currentTime = this.server.clockManager().getTotalTicks(defaultClock.get());
++                long delta = this.server.clockManager().getTotalTicksToTimeMarker(defaultClock.get(), ClockTimeMarkers.WAKE_UP_FROM_SLEEP).orElse(0L) - currentTime;
 +                event = new org.bukkit.event.world.TimeSkipEvent(
 +                    this.getWorld(),
 +                    org.bukkit.event.world.TimeSkipEvent.SkipReason.NIGHT_SKIP,
-+                    deltaTicksUntilDay
++                    delta
 +                );
 +
 +                if (event.callEvent()) {
-+                    this.server.clockManager().addTicks(defaultClock.get(), (int) Math.min(event.getSkipAmount(), Integer.MAX_VALUE)); // TODO - snapshot - per world time
++                    this.server.clockManager().setTotalTicks(defaultClock.get(), currentTime + event.getSkipAmount()); // TODO - snapshot - per world time
 +                }
 +                // Paper end - time skip event
              }

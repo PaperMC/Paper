@@ -1548,7 +1548,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         final ClockNetworkState clockState = new ClockNetworkState(
             playerClockTime,
             level.clockManager().partialTick(worldClock),
-            paused ? level.clockManager().rate(worldClock) : 0F
+            paused ? 0.0F : level.clockManager().rate(worldClock)
         );
         this.getHandle().connection.send(new ClientboundSetTimePacket(gameTime, Map.of(worldClock, clockState)));
     }
