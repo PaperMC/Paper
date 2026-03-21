@@ -822,7 +822,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         boolean decompress = UnsafeValues.isGZipCompressedNbt(data);
         var bis = new it.unimi.dsi.fastutil.io.FastByteArrayInputStream(data);
         try (var is = decompress ?
-                new java.io.BufferedInputStream(new java.util.zip.GZIPInputStream(bis)) :  bis) {
+                new java.io.BufferedInputStream(new java.util.zip.GZIPInputStream(bis)) : bis) {
             return readCompoundFromStream(is);
         } catch (IOException e) {
             throw new RuntimeException(e);
