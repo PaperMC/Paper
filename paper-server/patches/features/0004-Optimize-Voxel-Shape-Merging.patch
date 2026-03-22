@@ -1,0 +1,341 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 3 May 2020 22:35:09 -0400
+Subject: [PATCH] Optimize Voxel Shape Merging
+
+This method shows up as super hot in profiler, and also a high "self" time.
+
+Upon analyzing, it appears most usages of this method fall down to the final
+else statement of the nasty ternary.
+
+Upon even further analyzation, it appears then the majority of those have a
+consistent list 1.... One with Infinity head and Tails.
+
+First optimization is to detect these infinite states and immediately return that
+VoxelShapeMergerList so we can avoid testing the rest for most cases.
+
+Break the method into 2 to help the JVM promote inlining of this fast path.
+
+Then it was also noticed that VoxelShapeMergerList constructor is also a hotspot
+with a high self time...
+
+Well, knowing that in most cases our list 1 is actualy the same value, it allows
+us to know that with an infinite list1, the result on the merger is essentially
+list2 as the final values.
+
+This let us analyze the 2 potential states (Infinite with 2 sources or 4 sources)
+and compute a deterministic result for the MergerList values.
+
+Additionally, this lets us avoid even allocating new objects for this too, further
+reducing memory usage.
+
+diff --git a/net/minecraft/world/phys/shapes/IndirectMerger.java b/net/minecraft/world/phys/shapes/IndirectMerger.java
+index 7e525297aaca8c18cf1669ab80040475029ff652..b342e4c0260fc5a64e5943e6342de0703233a99b 100644
+--- a/net/minecraft/world/phys/shapes/IndirectMerger.java
++++ b/net/minecraft/world/phys/shapes/IndirectMerger.java
+@@ -10,12 +10,32 @@ public class IndirectMerger implements IndexMerger {
+     private final int[] firstIndices;
+     private final int[] secondIndices;
+     private final int resultLength;
++    // Paper start
++    private static final int[] INFINITE_B_1 = {1, 1};
++    private static final int[] INFINITE_B_0 = {0, 0};
++    private static final int[] INFINITE_C = {0, 1};
++    // Paper end
+ 
+     public IndirectMerger(final DoubleList first, final DoubleList second, final boolean firstOnlyMatters, final boolean secondOnlyMatters) {
+         double lastValue = Double.NaN;
+         int firstSize = first.size();
+         int secondSize = second.size();
+         int capacity = firstSize + secondSize;
++        // Paper start - optimize common path of infinity doublelist
++        double tail = first.getDouble(firstSize - 1);
++        double head = first.getDouble(0);
++        if (head == Double.NEGATIVE_INFINITY && tail == Double.POSITIVE_INFINITY && !firstOnlyMatters && !secondOnlyMatters && (firstSize == 2 || firstSize == 4)) {
++            this.result = second.toDoubleArray();
++            this.resultLength = second.size();
++            if (firstSize == 2) {
++                this.firstIndices = INFINITE_B_0;
++            } else {
++                this.firstIndices = INFINITE_B_1;
++            }
++            this.secondIndices = INFINITE_C;
++            return;
++        }
++        // Paper end
+         this.result = new double[capacity];
+         this.firstIndices = new int[capacity];
+         this.secondIndices = new int[capacity];
+diff --git a/net/minecraft/world/phys/shapes/Shapes.java b/net/minecraft/world/phys/shapes/Shapes.java
+index b9ed92ee991727efd0e8f9ed6cf302eb364788f2..d99d885537eba5565536bd6385c2526d24c3dc0b 100644
+--- a/net/minecraft/world/phys/shapes/Shapes.java
++++ b/net/minecraft/world/phys/shapes/Shapes.java
+@@ -286,51 +286,72 @@ public final class Shapes {
+     }
+ 
+     @VisibleForTesting
+-    protected static IndexMerger createIndexMerger(
+-        final int cost, final DoubleList first, final DoubleList second, final boolean firstOnlyMatters, final boolean secondOnlyMatters
+-    ) {
++    private static net.minecraft.world.phys.shapes.IndexMerger createIndexMerger( // Paper - private
++        final int cost, final it.unimi.dsi.fastutil.doubles.DoubleList first, final it.unimi.dsi.fastutil.doubles.DoubleList second, final boolean firstOnlyMatters, final boolean secondOnlyMatters
++    ) { // Paper - private
++        // Paper start - fast track the most common scenario
++        // doublelist is usually a DoubleArrayList with Infinite head/tails that falls to the final else clause
++        // This is actually the most common path, so jump to it straight away
++        if (first.getDouble(0) == Double.NEGATIVE_INFINITY && first.getDouble(first.size() - 1) == Double.POSITIVE_INFINITY) {
++            return new net.minecraft.world.phys.shapes.IndirectMerger(first, second, firstOnlyMatters, secondOnlyMatters);
++        }
++        // Split out rest to hopefully inline the above
++        return lessCommonMerge(cost, first, second, firstOnlyMatters, secondOnlyMatters);
++    }
++
++    private static net.minecraft.world.phys.shapes.IndexMerger lessCommonMerge(
++        final int cost, final it.unimi.dsi.fastutil.doubles.DoubleList first, final it.unimi.dsi.fastutil.doubles.DoubleList second, final boolean firstOnlyMatters, final boolean secondOnlyMatters) {
++        // Paper end - fast track the most common scenario
+         int firstSize = first.size() - 1;
+         int secondSize = second.size() - 1;
+-        if (first instanceof CubePointRange && second instanceof CubePointRange) {
++        // Paper note - Rewrite below as optimized order if instead of nasty ternary
++        if (first instanceof net.minecraft.world.phys.shapes.CubePointRange && second instanceof net.minecraft.world.phys.shapes.CubePointRange) {
+             long size = lcm(firstSize, secondSize);
+             if (cost * size <= 256L) {
+-                return new DiscreteCubeMerger(firstSize, secondSize);
++                return new net.minecraft.world.phys.shapes.DiscreteCubeMerger(firstSize, secondSize);
+             }
+         }
+ 
+-        if (first.getDouble(firstSize) < second.getDouble(0) - 1.0E-7) {
+-            return new NonOverlappingMerger(first, second, false);
++        // Paper start - Identical happens more often than Disjoint
++        if (firstSize == secondSize && java.util.Objects.equals(first, second)) {
++            if (first instanceof net.minecraft.world.phys.shapes.IdenticalMerger) {
++                return (net.minecraft.world.phys.shapes.IndexMerger) first;
++            } else if (second instanceof net.minecraft.world.phys.shapes.IdenticalMerger) {
++                return (net.minecraft.world.phys.shapes.IndexMerger) second;
++            }
++            return new net.minecraft.world.phys.shapes.IdenticalMerger(first);
++        } else if (first.getDouble(firstSize) < second.getDouble(0) - 1.0E-7) {
++            // Paper end - Identical happens more often than Disjoint
++            return new net.minecraft.world.phys.shapes.NonOverlappingMerger(first, second, false);
+         } else if (second.getDouble(secondSize) < first.getDouble(0) - 1.0E-7) {
+-            return new NonOverlappingMerger(second, first, true);
++            return new net.minecraft.world.phys.shapes.NonOverlappingMerger(second, first, true);
+         } else {
+-            return (IndexMerger)(firstSize == secondSize && Objects.equals(first, second)
+-                ? new IdenticalMerger(first)
+-                : new IndirectMerger(first, second, firstOnlyMatters, secondOnlyMatters));
++            return new net.minecraft.world.phys.shapes.IndirectMerger(first, second, firstOnlyMatters, secondOnlyMatters); // Paper - Identical happens more often than Disjoint
+         }
+     }
+ 
+-    public static VoxelShape rotate(final VoxelShape shape, final OctahedralGroup rotation) {
++    public static net.minecraft.world.phys.shapes.VoxelShape rotate(final net.minecraft.world.phys.shapes.VoxelShape shape, final com.mojang.math.OctahedralGroup rotation) {
+         return rotate(shape, rotation, BLOCK_CENTER);
+     }
+ 
+-    public static VoxelShape rotate(final VoxelShape shape, final OctahedralGroup rotation, final Vec3 rotationPoint) {
+-        if (rotation == OctahedralGroup.IDENTITY) {
++    public static net.minecraft.world.phys.shapes.VoxelShape rotate(final net.minecraft.world.phys.shapes.VoxelShape shape, final com.mojang.math.OctahedralGroup rotation, final net.minecraft.world.phys.Vec3 rotationPoint) {
++        if (rotation == com.mojang.math.OctahedralGroup.IDENTITY) {
+             return shape;
+         } else {
+-            DiscreteVoxelShape newDiscreteShape = shape.shape.rotate(rotation);
+-            if (shape instanceof CubeVoxelShape && BLOCK_CENTER.equals(rotationPoint)) {
+-                return new CubeVoxelShape(newDiscreteShape);
++            net.minecraft.world.phys.shapes.DiscreteVoxelShape newDiscreteShape = shape.shape.rotate(rotation);
++            if (shape instanceof net.minecraft.world.phys.shapes.CubeVoxelShape && BLOCK_CENTER.equals(rotationPoint)) {
++                return new net.minecraft.world.phys.shapes.CubeVoxelShape(newDiscreteShape);
+             } else {
+-                Direction.Axis newX = rotation.permutation().permuteAxis(Direction.Axis.X);
+-                Direction.Axis newY = rotation.permutation().permuteAxis(Direction.Axis.Y);
+-                Direction.Axis newZ = rotation.permutation().permuteAxis(Direction.Axis.Z);
+-                DoubleList newXs = shape.getCoords(newX);
+-                DoubleList newYs = shape.getCoords(newY);
+-                DoubleList newZs = shape.getCoords(newZ);
+-                boolean flipX = rotation.inverts(Direction.Axis.X);
+-                boolean flipY = rotation.inverts(Direction.Axis.Y);
+-                boolean flipZ = rotation.inverts(Direction.Axis.Z);
+-                return new ArrayVoxelShape(
++                net.minecraft.core.Direction.Axis newX = rotation.permutation().permuteAxis(net.minecraft.core.Direction.Axis.X);
++                net.minecraft.core.Direction.Axis newY = rotation.permutation().permuteAxis(net.minecraft.core.Direction.Axis.Y);
++                net.minecraft.core.Direction.Axis newZ = rotation.permutation().permuteAxis(net.minecraft.core.Direction.Axis.Z);
++                it.unimi.dsi.fastutil.doubles.DoubleList newXs = shape.getCoords(newX);
++                it.unimi.dsi.fastutil.doubles.DoubleList newYs = shape.getCoords(newY);
++                it.unimi.dsi.fastutil.doubles.DoubleList newZs = shape.getCoords(newZ);
++                boolean flipX = rotation.inverts(net.minecraft.core.Direction.Axis.X);
++                boolean flipY = rotation.inverts(net.minecraft.core.Direction.Axis.Y);
++                boolean flipZ = rotation.inverts(net.minecraft.core.Direction.Axis.Z);
++                return new net.minecraft.world.phys.shapes.ArrayVoxelShape(
+                     newDiscreteShape,
+                     flipAxisIfNeeded(newXs, flipX, rotationPoint.get(newX), rotationPoint.x),
+                     flipAxisIfNeeded(newYs, flipY, rotationPoint.get(newY), rotationPoint.y),
+@@ -340,13 +361,13 @@ public final class Shapes {
+         }
+     }
+ 
+-    @VisibleForTesting
+-    static DoubleList flipAxisIfNeeded(final DoubleList newAxis, final boolean flip, final double newRelative, final double oldRelative) {
++    @com.google.common.annotations.VisibleForTesting
++    static it.unimi.dsi.fastutil.doubles.DoubleList flipAxisIfNeeded(final it.unimi.dsi.fastutil.doubles.DoubleList newAxis, final boolean flip, final double newRelative, final double oldRelative) {
+         if (!flip && newRelative == oldRelative) {
+             return newAxis;
+         } else {
+             int size = newAxis.size();
+-            DoubleList newList = new DoubleArrayList(size);
++            it.unimi.dsi.fastutil.doubles.DoubleList newList = new it.unimi.dsi.fastutil.doubles.DoubleArrayList(size);
+             if (flip) {
+                 for (int i = size - 1; i >= 0; i--) {
+                     newList.add(-(newAxis.getDouble(i) - newRelative) + oldRelative);
+@@ -361,97 +382,97 @@ public final class Shapes {
+         }
+     }
+ 
+-    public static boolean equal(final VoxelShape first, final VoxelShape second) {
+-        return !joinIsNotEmpty(first, second, BooleanOp.NOT_SAME);
++    public static boolean equal(final net.minecraft.world.phys.shapes.VoxelShape first, final net.minecraft.world.phys.shapes.VoxelShape second) {
++        return !joinIsNotEmpty(first, second, net.minecraft.world.phys.shapes.BooleanOp.NOT_SAME);
+     }
+ 
+-    public static Map<Direction.Axis, VoxelShape> rotateHorizontalAxis(final VoxelShape zAxis) {
++    public static java.util.Map<net.minecraft.core.Direction.Axis, net.minecraft.world.phys.shapes.VoxelShape> rotateHorizontalAxis(final net.minecraft.world.phys.shapes.VoxelShape zAxis) {
+         return rotateHorizontalAxis(zAxis, BLOCK_CENTER);
+     }
+ 
+-    public static Map<Direction.Axis, VoxelShape> rotateHorizontalAxis(final VoxelShape zAxis, final Vec3 rotationCenter) {
+-        return Maps.newEnumMap(Map.of(Direction.Axis.Z, zAxis, Direction.Axis.X, rotate(zAxis, OctahedralGroup.BLOCK_ROT_Y_90, rotationCenter)));
++    public static java.util.Map<net.minecraft.core.Direction.Axis, net.minecraft.world.phys.shapes.VoxelShape> rotateHorizontalAxis(final net.minecraft.world.phys.shapes.VoxelShape zAxis, final net.minecraft.world.phys.Vec3 rotationCenter) {
++        return com.google.common.collect.Maps.newEnumMap(java.util.Map.of(net.minecraft.core.Direction.Axis.Z, zAxis, net.minecraft.core.Direction.Axis.X, rotate(zAxis, com.mojang.math.OctahedralGroup.BLOCK_ROT_Y_90, rotationCenter)));
+     }
+ 
+-    public static Map<Direction.Axis, VoxelShape> rotateAllAxis(final VoxelShape north) {
++    public static java.util.Map<net.minecraft.core.Direction.Axis, net.minecraft.world.phys.shapes.VoxelShape> rotateAllAxis(final net.minecraft.world.phys.shapes.VoxelShape north) {
+         return rotateAllAxis(north, BLOCK_CENTER);
+     }
+ 
+-    public static Map<Direction.Axis, VoxelShape> rotateAllAxis(final VoxelShape north, final Vec3 rotationCenter) {
+-        return Maps.newEnumMap(
+-            Map.of(
+-                Direction.Axis.Z,
++    public static java.util.Map<net.minecraft.core.Direction.Axis, net.minecraft.world.phys.shapes.VoxelShape> rotateAllAxis(final net.minecraft.world.phys.shapes.VoxelShape north, final net.minecraft.world.phys.Vec3 rotationCenter) {
++        return com.google.common.collect.Maps.newEnumMap(
++            java.util.Map.of(
++                net.minecraft.core.Direction.Axis.Z,
+                 north,
+-                Direction.Axis.X,
+-                rotate(north, OctahedralGroup.BLOCK_ROT_Y_90, rotationCenter),
+-                Direction.Axis.Y,
+-                rotate(north, OctahedralGroup.BLOCK_ROT_X_90, rotationCenter)
++                net.minecraft.core.Direction.Axis.X,
++                rotate(north, com.mojang.math.OctahedralGroup.BLOCK_ROT_Y_90, rotationCenter),
++                net.minecraft.core.Direction.Axis.Y,
++                rotate(north, com.mojang.math.OctahedralGroup.BLOCK_ROT_X_90, rotationCenter)
+             )
+         );
+     }
+ 
+-    public static Map<Direction, VoxelShape> rotateHorizontal(final VoxelShape north) {
+-        return rotateHorizontal(north, OctahedralGroup.IDENTITY, BLOCK_CENTER);
++    public static java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> rotateHorizontal(final net.minecraft.world.phys.shapes.VoxelShape north) {
++        return rotateHorizontal(north, com.mojang.math.OctahedralGroup.IDENTITY, BLOCK_CENTER);
+     }
+ 
+-    public static Map<Direction, VoxelShape> rotateHorizontal(final VoxelShape north, final OctahedralGroup initial) {
++    public static java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> rotateHorizontal(final net.minecraft.world.phys.shapes.VoxelShape north, final com.mojang.math.OctahedralGroup initial) {
+         return rotateHorizontal(north, initial, BLOCK_CENTER);
+     }
+ 
+-    public static Map<Direction, VoxelShape> rotateHorizontal(final VoxelShape north, final OctahedralGroup initial, final Vec3 rotationCenter) {
+-        return Maps.newEnumMap(
+-            Map.of(
+-                Direction.NORTH,
++    public static java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> rotateHorizontal(final net.minecraft.world.phys.shapes.VoxelShape north, final com.mojang.math.OctahedralGroup initial, final net.minecraft.world.phys.Vec3 rotationCenter) {
++        return com.google.common.collect.Maps.newEnumMap(
++            java.util.Map.of(
++                net.minecraft.core.Direction.NORTH,
+                 rotate(north, initial),
+-                Direction.EAST,
+-                rotate(north, OctahedralGroup.BLOCK_ROT_Y_90.compose(initial), rotationCenter),
+-                Direction.SOUTH,
+-                rotate(north, OctahedralGroup.BLOCK_ROT_Y_180.compose(initial), rotationCenter),
+-                Direction.WEST,
+-                rotate(north, OctahedralGroup.BLOCK_ROT_Y_270.compose(initial), rotationCenter)
++                net.minecraft.core.Direction.EAST,
++                rotate(north, com.mojang.math.OctahedralGroup.BLOCK_ROT_Y_90.compose(initial), rotationCenter),
++                net.minecraft.core.Direction.SOUTH,
++                rotate(north, com.mojang.math.OctahedralGroup.BLOCK_ROT_Y_180.compose(initial), rotationCenter),
++                net.minecraft.core.Direction.WEST,
++                rotate(north, com.mojang.math.OctahedralGroup.BLOCK_ROT_Y_270.compose(initial), rotationCenter)
+             )
+         );
+     }
+ 
+-    public static Map<Direction, VoxelShape> rotateAll(final VoxelShape north) {
+-        return rotateAll(north, OctahedralGroup.IDENTITY, BLOCK_CENTER);
++    public static java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> rotateAll(final net.minecraft.world.phys.shapes.VoxelShape north) {
++        return rotateAll(north, com.mojang.math.OctahedralGroup.IDENTITY, BLOCK_CENTER);
+     }
+ 
+-    public static Map<Direction, VoxelShape> rotateAll(final VoxelShape north, final Vec3 rotationCenter) {
+-        return rotateAll(north, OctahedralGroup.IDENTITY, rotationCenter);
++    public static java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> rotateAll(final net.minecraft.world.phys.shapes.VoxelShape north, final net.minecraft.world.phys.Vec3 rotationCenter) {
++        return rotateAll(north, com.mojang.math.OctahedralGroup.IDENTITY, rotationCenter);
+     }
+ 
+-    public static Map<Direction, VoxelShape> rotateAll(final VoxelShape north, final OctahedralGroup initial, final Vec3 rotationCenter) {
+-        return Maps.newEnumMap(
+-            Map.of(
+-                Direction.NORTH,
++    public static java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> rotateAll(final net.minecraft.world.phys.shapes.VoxelShape north, final com.mojang.math.OctahedralGroup initial, final net.minecraft.world.phys.Vec3 rotationCenter) {
++        return com.google.common.collect.Maps.newEnumMap(
++            java.util.Map.of(
++                net.minecraft.core.Direction.NORTH,
+                 rotate(north, initial),
+-                Direction.EAST,
+-                rotate(north, OctahedralGroup.BLOCK_ROT_Y_90.compose(initial), rotationCenter),
+-                Direction.SOUTH,
+-                rotate(north, OctahedralGroup.BLOCK_ROT_Y_180.compose(initial), rotationCenter),
+-                Direction.WEST,
+-                rotate(north, OctahedralGroup.BLOCK_ROT_Y_270.compose(initial), rotationCenter),
+-                Direction.UP,
+-                rotate(north, OctahedralGroup.BLOCK_ROT_X_270.compose(initial), rotationCenter),
+-                Direction.DOWN,
+-                rotate(north, OctahedralGroup.BLOCK_ROT_X_90.compose(initial), rotationCenter)
++                net.minecraft.core.Direction.EAST,
++                rotate(north, com.mojang.math.OctahedralGroup.BLOCK_ROT_Y_90.compose(initial), rotationCenter),
++                net.minecraft.core.Direction.SOUTH,
++                rotate(north, com.mojang.math.OctahedralGroup.BLOCK_ROT_Y_180.compose(initial), rotationCenter),
++                net.minecraft.core.Direction.WEST,
++                rotate(north, com.mojang.math.OctahedralGroup.BLOCK_ROT_Y_270.compose(initial), rotationCenter),
++                net.minecraft.core.Direction.UP,
++                rotate(north, com.mojang.math.OctahedralGroup.BLOCK_ROT_X_270.compose(initial), rotationCenter),
++                net.minecraft.core.Direction.DOWN,
++                rotate(north, com.mojang.math.OctahedralGroup.BLOCK_ROT_X_90.compose(initial), rotationCenter)
+             )
+         );
+     }
+ 
+-    public static Map<AttachFace, Map<Direction, VoxelShape>> rotateAttachFace(final VoxelShape north) {
+-        return rotateAttachFace(north, OctahedralGroup.IDENTITY);
++    public static java.util.Map<net.minecraft.world.level.block.state.properties.AttachFace, java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape>> rotateAttachFace(final net.minecraft.world.phys.shapes.VoxelShape north) {
++        return rotateAttachFace(north, com.mojang.math.OctahedralGroup.IDENTITY);
+     }
+ 
+-    public static Map<AttachFace, Map<Direction, VoxelShape>> rotateAttachFace(final VoxelShape north, final OctahedralGroup initial) {
+-        return Map.of(
+-            AttachFace.WALL,
++    public static java.util.Map<net.minecraft.world.level.block.state.properties.AttachFace, java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape>> rotateAttachFace(final net.minecraft.world.phys.shapes.VoxelShape north, final com.mojang.math.OctahedralGroup initial) {
++        return java.util.Map.of(
++            net.minecraft.world.level.block.state.properties.AttachFace.WALL,
+             rotateHorizontal(north, initial),
+-            AttachFace.FLOOR,
+-            rotateHorizontal(north, OctahedralGroup.BLOCK_ROT_X_270.compose(initial)),
+-            AttachFace.CEILING,
+-            rotateHorizontal(north, OctahedralGroup.BLOCK_ROT_Y_180.compose(OctahedralGroup.BLOCK_ROT_X_90).compose(initial))
++            net.minecraft.world.level.block.state.properties.AttachFace.FLOOR,
++            rotateHorizontal(north, com.mojang.math.OctahedralGroup.BLOCK_ROT_X_270.compose(initial)),
++            net.minecraft.world.level.block.state.properties.AttachFace.CEILING,
++            rotateHorizontal(north, com.mojang.math.OctahedralGroup.BLOCK_ROT_Y_180.compose(com.mojang.math.OctahedralGroup.BLOCK_ROT_X_90).compose(initial))
+         );
+     }
+ 
