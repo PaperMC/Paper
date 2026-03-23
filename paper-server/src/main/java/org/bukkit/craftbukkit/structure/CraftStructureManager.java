@@ -59,10 +59,8 @@ public class CraftStructureManager implements StructureManager {
     public Structure loadStructure(NamespacedKey structureKey, boolean register) {
         Identifier minecraftKey = this.createAndValidateMinecraftStructureKey(structureKey);
 
-        Optional<StructureTemplate> structure = this.structureManager.structureRepository.get(minecraftKey);
-        structure = structure == null ? Optional.empty() : structure;
-        structure = structure.isPresent() ? structure : this.structureManager.tryLoad(minecraftKey);
-        structure = structure.isPresent() ? structure : this.structureManager.tryLoad(minecraftKey);
+        Optional<StructureTemplate> structure = this.structureManager.structureRepository.getOrDefault(minecraftKey, Optional.empty())
+            .or(() -> this.structureManager.tryLoad(minecraftKey));
 
         if (register) {
             this.structureManager.structureRepository.put(minecraftKey, structure);
