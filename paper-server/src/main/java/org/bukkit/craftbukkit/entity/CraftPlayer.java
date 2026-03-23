@@ -2043,6 +2043,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         for (net.minecraft.world.effect.MobEffectInstance mobEffect : handle.getActiveEffects()) {
             connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket(handle.getId(), mobEffect, false));
         }
+        sendHealthUpdate();
     }
     // Paper end
 
