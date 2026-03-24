@@ -7,7 +7,7 @@ Co-authored-by: Bjarne Koll <git@lynxplay.dev>
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/net/minecraft/world/entity/ai/behavior/GateBehavior.java b/net/minecraft/world/entity/ai/behavior/GateBehavior.java
-index 135d932a31a557ff06643fb563262423d48cd540..7ad39946b60686f98c5b3845990830c22e2c1dac 100644
+index 135d932a31a557ff06643fb563262423d48cd540..9fb025b05cacc901d72d93c16cf2b7e48d4dd9a6 100644
 --- a/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 +++ b/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 @@ -69,7 +69,7 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
@@ -55,7 +55,7 @@ index 135d932a31a557ff06643fb563262423d48cd540..7ad39946b60686f98c5b3845990830c2
      }
  
      @Override
-@@ -118,24 +132,34 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+@@ -118,24 +132,36 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
  
      public static enum RunningPolicy {
          RUN_ONE {
@@ -91,10 +91,10 @@ index 135d932a31a557ff06643fb563262423d48cd540..7ad39946b60686f98c5b3845990830c2
              }
          };
  
--        public abstract <E extends LivingEntity> void apply(
+         public abstract <E extends LivingEntity> void apply(
 -            final Stream<BehaviorControl<? super E>> behaviors, final ServerLevel level, final E body, final long timestamp
--        );
-+        public abstract <E extends LivingEntity> void apply(ShufflingList<BehaviorControl<? super E>> behaviors, ServerLevel level, E owner, long gameTime); // Paper - Perf: Remove streams from hot code
++            final ShufflingList<BehaviorControl<? super E>> behaviors, final ServerLevel level, final E body, final long timestamp // Paper - Perf: Remove streams from hot code
+         );
      }
  }
 diff --git a/net/minecraft/world/entity/ai/gossip/GossipContainer.java b/net/minecraft/world/entity/ai/gossip/GossipContainer.java
@@ -160,7 +160,7 @@ index d6fcd4f15694e5088de22042c0e4971f3ee3b2a1..45e05fb6de45366bdb3096a3907030c2
  
          public Stream<GossipContainer.GossipEntry> unpack(final UUID target) {
 diff --git a/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java b/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
-index e08da5b08dca5849fe0fd6d0ed237fbd36881e15..c1331a5a6f825760ddde64e7dc804b6e7afbed13 100644
+index e08da5b08dca5849fe0fd6d0ed237fbd36881e15..8aeea55380462421cde43afb4b2fb0ce44b65195 100644
 --- a/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
 +++ b/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
 @@ -24,13 +24,17 @@ public class NearestItemSensor extends Sensor<Mob> {
@@ -178,9 +178,9 @@ index e08da5b08dca5849fe0fd6d0ed237fbd36881e15..c1331a5a6f825760ddde64e7dc804b6e
 -        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, nearestVisibleLovedItem);
 +        // Paper start - Perf: remove streams from hot code
 +        ItemEntity nearest = null;
-+        for (final ItemEntity itemEntity : items) {
-+            if (body.hasLineOfSight(itemEntity)) { // Paper - Perf: Move predicate into getEntities
-+                nearest = itemEntity;
++        for (final ItemEntity item : items) {
++            if (body.hasLineOfSight(item)) { // Paper - Perf: Move predicate into getEntities
++                nearest = item;
 +                break;
 +            }
 +        }

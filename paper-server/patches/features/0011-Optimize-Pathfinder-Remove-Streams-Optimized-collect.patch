@@ -16,7 +16,7 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/net/minecraft/world/level/pathfinder/PathFinder.java b/net/minecraft/world/level/pathfinder/PathFinder.java
-index bb36ebf3a57cf1de98506a6391d3273b0f8e0f76..e70db83d8a9097b6d8a10490b4af4bb277d67447 100644
+index bb36ebf3a57cf1de98506a6391d3273b0f8e0f76..33865f3bad8d686b5fa193e4cff5ccbf1fc6b733 100644
 --- a/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/net/minecraft/world/level/pathfinder/PathFinder.java
 @@ -54,8 +54,12 @@ public class PathFinder {
@@ -34,7 +34,7 @@ index bb36ebf3a57cf1de98506a6391d3273b0f8e0f76..e70db83d8a9097b6d8a10490b4af4bb2
              Path path = this.findPath(from, tos, maxPathLength, reachRange, maxVisitedNodesMultiplier);
              this.nodeEvaluator.done();
              return path;
-@@ -63,21 +67,21 @@ public class PathFinder {
+@@ -63,12 +67,12 @@ public class PathFinder {
      }
  
      private @Nullable Path findPath(
@@ -47,11 +47,9 @@ index bb36ebf3a57cf1de98506a6391d3273b0f8e0f76..e70db83d8a9097b6d8a10490b4af4bb2
 -        Set<Target> targets = targetMap.keySet();
 +        //Set<Target> targets = targetMap.keySet(); // Paper - unused
          from.g = 0.0F;
--        from.h = this.getBestH(from, targets);
-+        from.h = this.getBestH(from, targets); // Paper - optimize collection
+         from.h = this.getBestH(from, targets);
          from.f = from.h;
-         this.openSet.clear();
-         this.openSet.insert(from);
+@@ -77,7 +81,7 @@ public class PathFinder {
          boolean captureDebug = this.captureDebug.getAsBoolean();
          Set<Node> closedSet = captureDebug ? new HashSet<>() : Set.of();
          int count = 0;
@@ -106,7 +104,7 @@ index bb36ebf3a57cf1de98506a6391d3273b0f8e0f76..e70db83d8a9097b6d8a10490b4af4bb2
 -            Path path = optPath.get();
 -            if (captureDebug) {
 -                path.setDebug(this.openSet.getHeap(), closedSet.toArray(Node[]::new), targets);
-+        if(captureDebug && best != null) {
++        if (captureDebug && best != null) {
 +            Set<Target> set = Sets.newHashSet();
 +            for(Map.Entry<Target, BlockPos> entry : targets) {
 +                set.add(entry.getKey());

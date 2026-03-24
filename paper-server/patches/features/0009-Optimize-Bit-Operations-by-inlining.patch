@@ -7,7 +7,7 @@ Inline bit operations and reduce instruction count to make these hot
 operations faster
 
 diff --git a/net/minecraft/core/BlockPos.java b/net/minecraft/core/BlockPos.java
-index 0eef9e01cbfc7e968379f5d8526bcabb00446224..12a458fb59ac21124f747276f283645c4361d472 100644
+index 0eef9e01cbfc7e968379f5d8526bcabb00446224..f397aa6fe43a906ffb92d65331831d5ef5c7cb2a 100644
 --- a/net/minecraft/core/BlockPos.java
 +++ b/net/minecraft/core/BlockPos.java
 @@ -48,15 +48,17 @@ public class BlockPos extends Vec3i {
@@ -79,12 +79,12 @@ index 0eef9e01cbfc7e968379f5d8526bcabb00446224..12a458fb59ac21124f747276f283645c
 -        node |= (x & PACKED_X_MASK) << X_OFFSET;
 -        node |= (y & PACKED_Y_MASK) << 0;
 -        return node | (z & PACKED_Z_MASK) << Z_OFFSET;
-+        return ((x & 67108863L) << 38) | ((y &  4095L)) | ((z & 67108863L) << 12); // Paper - inline constants and simplify
++        return ((x & 67108863L) << 38) | ((y & 4095L)) | ((z & 67108863L) << 12); // Paper - inline constants and simplify
      }
  
      public static long getFlatIndex(final long neighborBlockNode) {
 diff --git a/net/minecraft/core/SectionPos.java b/net/minecraft/core/SectionPos.java
-index e6595167980d93772088f63ba6dd0423489d90c4..99d4ad685acbedb0e8e207ebb0bcbe3e8e158048 100644
+index e6595167980d93772088f63ba6dd0423489d90c4..96439461ea272b9f5101365a094f8eec1e28d582 100644
 --- a/net/minecraft/core/SectionPos.java
 +++ b/net/minecraft/core/SectionPos.java
 @@ -42,7 +42,7 @@ public class SectionPos extends Vec3i {
@@ -158,20 +158,18 @@ index e6595167980d93772088f63ba6dd0423489d90c4..99d4ad685acbedb0e8e207ebb0bcbe3e
      }
  
      public int maxBlockX() {
-@@ -181,9 +186,9 @@ public class SectionPos extends Vec3i {
+@@ -181,9 +186,7 @@ public class SectionPos extends Vec3i {
      }
  
      public static long blockToSection(final long blockNode) {
 -        return asLong(
 -            blockToSectionCoord(BlockPos.getX(blockNode)), blockToSectionCoord(BlockPos.getY(blockNode)), blockToSectionCoord(BlockPos.getZ(blockNode))
 -        );
-+        return (((long) (int) (blockNode >> 42) & 4194303L) << 42)
-+            | (((long) (int) ((blockNode << 52) >> 56) & 1048575L))
-+            | (((long) (int) ((blockNode << 26) >> 42) & 4194303L) << 20); // Paper - Simplify to reduce instruction count
++        return (((long) (int) (blockNode >> 42) & 4194303L) << 42) | (((long) (int) ((blockNode << 52) >> 56) & 1048575L)) | (((long) (int) ((blockNode << 26) >> 42) & 4194303L) << 20); // Paper - Simplify to reduce instruction count
      }
  
      public static long getZeroNode(final int x, final int z) {
-@@ -215,15 +220,17 @@ public class SectionPos extends Vec3i {
+@@ -215,15 +218,17 @@ public class SectionPos extends Vec3i {
          return asLong(blockToSectionCoord(pos.getX()), blockToSectionCoord(pos.getY()), blockToSectionCoord(pos.getZ()));
      }
  
@@ -194,7 +192,7 @@ index e6595167980d93772088f63ba6dd0423489d90c4..99d4ad685acbedb0e8e207ebb0bcbe3e
      }
  
      @Override
-@@ -236,10 +243,7 @@ public class SectionPos extends Vec3i {
+@@ -236,10 +241,7 @@ public class SectionPos extends Vec3i {
      }
  
      public static Stream<SectionPos> cube(final SectionPos center, final int radius) {

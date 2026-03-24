@@ -1257,7 +1257,7 @@
                                      this.player.swing(hand, true);
                                  }
 +                            // Paper start - Fix inventory desync; MC-99075
-+                            // From serverLevel.mayInteract(this.player, blockPos)
++                            // From level.mayInteract(this.player, pos)
 +                            } else if (this.server.isUnderSpawnProtection(level, pos, player)) {
 +                                if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(this.player, level.getBlockState(pos), itemStack)) {
 +                                    this.player.containerMenu.sendAllDataToRemote();
@@ -1447,11 +1447,11 @@
 -                Component decorated = this.server.getChatDecorator().decorate(this.player, signedMessage.decoratedContent());
 -                this.chatMessageChain.append(filteredFuture, filtered -> {
 -                    PlayerChatMessage filteredMessage = signedMessage.withUnsignedContent(decorated).filter(filtered.mask());
-+                CompletableFuture<FilteredText> completableFuture = this.filterTextPacket(signedMessage.signedContent()).thenApplyAsync(java.util.function.Function.identity(), this.server.chatExecutor); // CraftBukkit - async chat
-+                CompletableFuture<Component> componentFuture = this.server.getChatDecorator().decorate(this.player, null, signedMessage.decoratedContent()); // Paper - Adventure
++                CompletableFuture<FilteredText> filteredFuture = this.filterTextPacket(signedMessage.signedContent()).thenApplyAsync(java.util.function.Function.identity(), this.server.chatExecutor); // CraftBukkit - async chat
++                CompletableFuture<Component> decoratedFuture = this.server.getChatDecorator().decorate(this.player, null, signedMessage.decoratedContent()); // Paper - Adventure
 +
-+                this.chatMessageChain.append(CompletableFuture.allOf(completableFuture, componentFuture), ($) -> { // Paper - Adventure
-+                    PlayerChatMessage filteredMessage = signedMessage.withUnsignedContent(componentFuture.join()).filter(completableFuture.join().mask()); // Paper - Adventure
++                this.chatMessageChain.append(CompletableFuture.allOf(filteredFuture, decoratedFuture), ($) -> { // Paper - Adventure
++                    PlayerChatMessage filteredMessage = signedMessage.withUnsignedContent(decoratedFuture.join()).filter(filteredFuture.join().mask()); // Paper - Adventure
                      this.broadcastChatMessage(filteredMessage);
                  });
 -            });
@@ -1557,21 +1557,21 @@
      }
  
 -    private void tryHandleChat(final String message, final boolean isCommand, final Runnable chatHandler) {
-+    private void tryHandleChat(String message, boolean bypassHiddenChat, Runnable handler, boolean sync) { // CraftBukkit
++    private void tryHandleChat(final String message, final boolean isCommand, final Runnable chatHandler, final boolean sync) { // CraftBukkit
          if (isChatMessageIllegal(message)) {
 -            this.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"));
 -        } else if (!isCommand && this.player.getChatVisibility() == ChatVisiblity.HIDDEN) {
 +            this.disconnectAsync(Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper - add proper async disconnect
-+        } else if (this.player.isRemoved() || (!bypassHiddenChat && this.player.getChatVisibility() == ChatVisiblity.HIDDEN)) { // CraftBukkit - dead men tell no tales
++        } else if (this.player.isRemoved() || (!isCommand && this.player.getChatVisibility() == ChatVisiblity.HIDDEN)) { // CraftBukkit - dead men tell no tales
              this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
          } else {
              this.player.resetLastActionTime();
 -            this.server.execute(chatHandler);
 +            // CraftBukkit start
 +            if (sync) {
-+                this.server.execute(handler);
++                this.server.execute(chatHandler);
 +            } else {
-+                handler.run();
++                chatHandler.run();
 +            }
 +            // CraftBukkit end
          }
@@ -1821,7 +1821,7 @@
                  }
              }
 +            // Paper start - PlayerUseUnknownEntityEvent
-+            else {
++            else if (target == null) {
 +                CraftEventFactory.callPlayerUseUnknownEntityEvent(ServerGamePacketListenerImpl.this.player, packet.entityId(), true, net.minecraft.world.InteractionHand.MAIN_HAND, null);
 +            }
 +            // Paper end - PlayerUseUnknownEntityEvent
@@ -1911,7 +1911,7 @@
                  }
              }
 +            // Paper start - PlayerUseUnknownEntityEvent
-+            else {
++            else if (target == null) {
 +                CraftEventFactory.callPlayerUseUnknownEntityEvent(ServerGamePacketListenerImpl.this.player, packet.entityId(), false, packet.hand(), packet.location());
 +            }
 +            // Paper end - PlayerUseUnknownEntityEvent
@@ -1919,6 +1919,15 @@
          }
      }
  
+@@ -1859,7 +_,7 @@
+             ServerLevel level = this.player.level();
+             Entity target = level.getEntityOrPart(packet.entityId());
+             if (target != null && level.getWorldBorder().isWithinBounds(target.blockPosition())) {
+-                if (this.player.isWithinEntityInteractionRange(target.getBoundingBox(), 3.0)) {
++                if (this.player.isWithinEntityInteractionRange(target.getBoundingBox(), io.papermc.paper.configuration.GlobalConfiguration.get().misc.clientInteractionLeniencyDistance.or(3.0))) { // Paper - configurable lenience
+                     if (target.isPickable()) {
+                         this.player.setCamera(target);
+                     }
 @@ -1877,7 +_,7 @@
              case PERFORM_RESPAWN:
                  if (this.player.wonGame) {

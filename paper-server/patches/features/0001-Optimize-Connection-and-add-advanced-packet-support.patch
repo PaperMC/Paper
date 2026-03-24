@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Aikar <aikar@aikar.co>
 Date: Wed, 6 May 2020 04:53:35 -0400
-Subject: [PATCH] Optimize Network Manager and add advanced packet support
+Subject: [PATCH] Optimize Connection and add advanced packet support
 
 Adds ability for 1 packet to bundle other packets to follow it
 Adds ability for a packet to delay sending more packets until a state is ready.
@@ -28,7 +28,7 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf, sandtechnology
 
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index 6fb9eb8078e934d3d610ec58f58e0a47bc3437b8..8e6d1cc768edff5ed555dea7843156113558954a 100644
+index 6fb9eb8078e934d3d610ec58f58e0a47bc3437b8..d65a8f0cc7386270471338454d35c52bdbcd8e82 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
 @@ -65,7 +65,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -102,12 +102,10 @@ index 6fb9eb8078e934d3d610ec58f58e0a47bc3437b8..8e6d1cc768edff5ed555dea784315611
          }
      }
  
-@@ -419,22 +450,42 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-         }
+@@ -420,21 +451,41 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
--    private void doSendPacket(final Packet<?> packet, final @Nullable ChannelFutureListener listener, final boolean flush) {
-+    private void doSendPacket(final Packet<?> packet, @Nullable final ChannelFutureListener listener, final boolean flush) {
+     private void doSendPacket(final Packet<?> packet, final @Nullable ChannelFutureListener listener, final boolean flush) {
 +        // Paper start - Optimize network
 +        final net.minecraft.server.level.ServerPlayer player = this.getPlayer();
 +        if (!this.isConnected()) {
@@ -115,24 +113,23 @@ index 6fb9eb8078e934d3d610ec58f58e0a47bc3437b8..8e6d1cc768edff5ed555dea784315611
 +            return;
 +        }
 +        try {
-+        final ChannelFuture channelFuture;
++        final ChannelFuture future;
 +        // Paper end - Optimize network
          if (listener != null) {
 -            ChannelFuture future = flush ? this.channel.writeAndFlush(packet) : this.channel.write(packet);
--            future.addListener(listener);
-+            channelFuture = flush ? this.channel.writeAndFlush(packet) : this.channel.write(packet); // Paper - Optimize network
-+            channelFuture.addListener(listener);
++            future = flush ? this.channel.writeAndFlush(packet) : this.channel.write(packet); // Paper - Optimize network
+             future.addListener(listener);
          } else if (flush) {
 -            this.channel.writeAndFlush(packet, this.channel.voidPromise());
-+            channelFuture = this.channel.writeAndFlush(packet, this.channel.voidPromise()); // Paper - Optimize network
++            future = this.channel.writeAndFlush(packet, this.channel.voidPromise()); // Paper - Optimize network
          } else {
 -            this.channel.write(packet, this.channel.voidPromise());
-+            channelFuture = this.channel.write(packet, this.channel.voidPromise()); // Paper - Optimize network
++            future = this.channel.write(packet, this.channel.voidPromise()); // Paper - Optimize network
 +        }
 +
 +        // Paper start - Optimize network
 +        if (packet.hasFinishListener()) {
-+            channelFuture.addListener((ChannelFutureListener) future -> packet.onPacketDispatchFinish(player, future));
++            future.addListener((ChannelFutureListener) f -> packet.onPacketDispatchFinish(player, f));
 +        }
 +        } catch (final Exception e) {
 +            LOGGER.error("NetworkException: {}", player, e);
@@ -282,8 +279,8 @@ index 6fb9eb8078e934d3d610ec58f58e0a47bc3437b8..8e6d1cc768edff5ed555dea784315611
 +            }
 +        }
 +
-+        private static boolean canSendImmediate(final Connection networkManager, final net.minecraft.network.protocol.Packet<?> packet) {
-+            return networkManager.isPending || networkManager.packetListener.protocol() != ConnectionProtocol.PLAY ||
++        private static boolean canSendImmediate(final Connection connection, final net.minecraft.network.protocol.Packet<?> packet) {
++            return connection.isPending || connection.packetListener.protocol() != ConnectionProtocol.PLAY ||
 +                packet instanceof net.minecraft.network.protocol.common.ClientboundKeepAlivePacket ||
 +                packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerChatPacket ||
 +                packet instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket ||
@@ -375,7 +372,7 @@ index 1480d0db90f5797e3dee19503e52d1e783493ac3..f6cfce2ce30a426cd57a89f3f8ccf144
 +    // Paper end
  }
 diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
-index d59f367a2a93a30b7cd28d3ac0252ca74bf94b28..ea7512ac3866d4d02502a78c32e35ebc186b3838 100644
+index e72bd8239eed69be774373b49cdb05fbf0799030..22276be80b8729884c797b96c93bf0965ca9eed1 100644
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
 @@ -51,11 +51,13 @@ public class ServerConnectionListener {
