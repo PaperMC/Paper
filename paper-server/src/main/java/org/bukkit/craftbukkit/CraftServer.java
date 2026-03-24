@@ -110,6 +110,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.minecraft.world.level.storage.LevelDataAndDimensions;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.PlayerDataStorage;
 import net.minecraft.world.level.storage.PrimaryLevelData;
@@ -1285,7 +1286,7 @@ public final class CraftServer implements Server {
             dimensionKey = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
         }
 
-        final SavedDataStorage savedDataStorage = new SavedDataStorage(levelStorageAccess.getDimensionPath(dimensionKey).resolve("data"), this.console.getFixerUpper(), this.console.registryAccess());
+        final SavedDataStorage savedDataStorage = new SavedDataStorage(levelStorageAccess.getLevelPath(LevelResource.DATA), this.console.getFixerUpper(), this.console.registryAccess());
         savedDataStorage.set(WorldGenSettings.TYPE, worldDataAndGenSettings.genSettings());
         List<CustomSpawner> list = ImmutableList.of(
             new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(savedDataStorage)
@@ -2187,7 +2188,7 @@ public final class CraftServer implements Server {
 
     @Override
     public File getWorldContainer() {
-        return this.getServer().storageSource.getDimensionPath(net.minecraft.world.level.Level.OVERWORLD).getParent().toFile();
+        return this.getServer().storageSource.getLevelDirectory().path().getParent().toFile();
     }
 
     @Override

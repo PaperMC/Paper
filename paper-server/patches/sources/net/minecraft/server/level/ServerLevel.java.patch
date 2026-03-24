@@ -9,7 +9,7 @@
      private final EntityTickList entityTickList = new EntityTickList();
      private final ServerWaypointManager waypointManager;
      private EnvironmentAttributeSystem environmentAttributes;
-@@ -221,24 +_,181 @@
+@@ -221,24 +_,183 @@
      private final boolean tickTime;
      private final LevelDebugSynchronizers debugSynchronizers = new LevelDebugSynchronizers(this);
  
@@ -17,6 +17,7 @@
 +    public final LevelStorageSource.LevelStorageAccess levelStorageAccess;
 +    public final UUID uuid;
 +    public final net.minecraft.server.level.progress.LevelLoadListener levelLoadListener;
++    private final SavedDataStorage savedDataStorage; // Paper - save per-world data in level storage
 +    private final net.minecraft.world.level.gamerules.GameRules gameRules;
 +    private final WeatherData weatherData;
 +    public final net.minecraft.world.level.timers.TimerQueue<net.minecraft.server.MinecraftServer> scheduledEvents;
@@ -161,6 +162,7 @@
 +        final GameRules gameRules = new GameRules(levelData.enabledFeatures(), savedDataStorage.computeIfAbsent(net.minecraft.world.level.gamerules.GameRuleMap.TYPE));
 +        this.gameRules = gameRules;
 +        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorage.levelDirectory.path(), levelData.getLevelName(), dimension.identifier(), spigotConfig, server.registryAccess(), gameRules))); // Paper - create paper world configs
++        this.savedDataStorage = savedDataStorage; // Paper - save per-world data in level storage
 +        this.weatherData = savedDataStorage.computeIfAbsent(WeatherData.TYPE);
 +        this.weatherData.setLevel(this);
 +        this.levelStorageAccess = levelStorage;
@@ -193,7 +195,7 @@
          boolean syncWrites = server.forceSynchronousWrites();
          DataFixer fixerUpper = server.getFixerUpper();
          EntityPersistentStorage<Entity> entityStorage = new EntityStorage(
-@@ -260,16 +_,17 @@
+@@ -260,8 +_,8 @@
              server.getStructureManager(),
              executor,
              generator,
@@ -204,8 +206,7 @@
              syncWrites,
              this.entityManager::updateChunkStatus,
              () -> server.overworld().getDataStorage()
-+            , savedDataStorage // Paper - pass SavedDataStorage
-         );
+@@ -269,7 +_,7 @@
          this.chunkSource.getGeneratorState().ensureStructuresGenerated();
          this.portalForcer = new PortalForcer(this);
          if (this.canHaveWeather()) {
@@ -552,7 +553,7 @@
              if (progressListener != null) {
                  progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
              }
-@@ -883,9 +_,15 @@
+@@ -883,9 +_,21 @@
                  this.entityManager.autoSave();
              }
          }
@@ -564,7 +565,13 @@
      }
  
      private void saveLevelData(final boolean sync) {
-+        // TODO - snapshot - save dragon fight?
++        // Paper start - save per-world data in level storage
++        if (sync) {
++            this.savedDataStorage.saveAndJoin();
++        } else {
++            this.savedDataStorage.scheduleSave();
++        }
++        // Paper end - save per-world data in level storage
          SavedDataStorage savedDataStorage = this.getChunkSource().getDataStorage();
          if (sync) {
              savedDataStorage.saveAndJoin();
@@ -1058,6 +1065,14 @@
          return this.entityManager.getEntityGetter();
      }
  
+@@ -1785,6 +_,7 @@
+     public void close() throws IOException {
+         super.close();
+         this.entityManager.close();
++        this.savedDataStorage.close(); // Paper - save per-world data in level storage
+     }
+ 
+     @Override
 @@ -1841,8 +_,30 @@
      }
  
