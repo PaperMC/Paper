@@ -5,7 +5,7 @@ Subject: [PATCH] optimize dirt and snow spreading
 
 
 diff --git a/net/minecraft/world/level/block/SpreadingSnowyBlock.java b/net/minecraft/world/level/block/SpreadingSnowyBlock.java
-index f9cf473ec2b51d82e01ba020196cc2bc92d345b4..f868b1ccfa0e373c47344d000f26fbe8507c3510 100644
+index 6695d7f76daf45ed3e73c4984326b8b59e5a76cc..f868b1ccfa0e373c47344d000f26fbe8507c3510 100644
 --- a/net/minecraft/world/level/block/SpreadingSnowyBlock.java
 +++ b/net/minecraft/world/level/block/SpreadingSnowyBlock.java
 @@ -27,8 +27,13 @@ public abstract class SpreadingSnowyBlock extends SnowyBlock {
@@ -39,7 +39,7 @@ index f9cf473ec2b51d82e01ba020196cc2bc92d345b4..f868b1ccfa0e373c47344d000f26fbe8
      }
  
      @Override
-@@ -50,9 +61,16 @@ public abstract class SpreadingSnowyBlock extends SnowyBlock {
+@@ -50,7 +61,14 @@ public abstract class SpreadingSnowyBlock extends SnowyBlock {
          Registry<Block> blocks = level.registryAccess().lookupOrThrow(Registries.BLOCK);
          Optional<Block> baseBlock = blocks.getOptional(this.baseBlock);
          if (!baseBlock.isEmpty()) {
@@ -53,11 +53,8 @@ index f9cf473ec2b51d82e01ba020196cc2bc92d345b4..f868b1ccfa0e373c47344d000f26fbe8
 +            if (!canStayAlive(cachedChunk, state, pos)) {
 +                // Paper end - Perf: optimize dirt and snow spreading
                  // CraftBukkit start
--                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {
-+                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, baseBlock.get().defaultBlockState()).isCancelled()) {
+                 if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, baseBlock.get().defaultBlockState()).isCancelled()) {
                      return;
-                 }
-                 // CraftBukkit end
 @@ -63,8 +81,20 @@ public abstract class SpreadingSnowyBlock extends SnowyBlock {
  
                      for (int i = 0; i < 4; i++) {
