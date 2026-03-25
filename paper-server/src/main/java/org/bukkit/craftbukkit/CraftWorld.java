@@ -73,7 +73,6 @@ import net.minecraft.world.level.chunk.ImposterProtoChunk;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.gamerules.GameRule;
-import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.LevelResource;
@@ -88,6 +87,7 @@ import org.bukkit.ChunkSnapshot;
 import org.bukkit.Difficulty;
 import org.bukkit.Effect;
 import org.bukkit.FluidCollisionMode;
+import org.bukkit.GameRules;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
@@ -1245,7 +1245,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void setPVP(boolean pvp) {
-        this.world.getGameRules().set(GameRules.PVP, pvp, this.world);
+        this.setGameRule(GameRules.PVP, pvp);
     }
 
     @Override
