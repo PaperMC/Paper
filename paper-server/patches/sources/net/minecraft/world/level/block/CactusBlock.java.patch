@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/CactusBlock.java
 +++ b/net/minecraft/world/level/block/CactusBlock.java
-@@ -58,18 +_,22 @@
+@@ -58,18 +_,18 @@
              int age = state.getValue(AGE);
  
              while (level.getBlockState(pos.below(height)).is(this)) {
@@ -14,16 +14,13 @@
 -                double chanceToGrowFlower = height >= 3 ? 0.25 : 0.1;
 +                double chanceToGrowFlower = height >= level.paperConfig().maxGrowthHeight.cactus ? 0.25 : 0.1; // Paper - Configurable cactus/bamboo/reed growth height
                  if (random.nextDouble() <= chanceToGrowFlower) {
-                     level.setBlockAndUpdate(above, Blocks.CACTUS_FLOWER.defaultBlockState());
+-                    level.setBlockAndUpdate(above, Blocks.CACTUS_FLOWER.defaultBlockState());
++                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, above, Blocks.CACTUS_FLOWER.defaultBlockState(), Block.UPDATE_ALL); // Paper - block grow event
                  }
 -            } else if (age == 15 && height < 3) {
 -                level.setBlockAndUpdate(above, this.defaultBlockState());
 +            } else if (age == 15 && height < level.paperConfig().maxGrowthHeight.cactus) { // Paper - Configurable cactus/bamboo/reed growth height
-+                // Paper start
-+                if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, above, this.defaultBlockState(), Block.UPDATE_ALL)) {
-+                    return;
-+                }
-+                // Paper end
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, above, this.defaultBlockState(), Block.UPDATE_ALL)) return; // Paper - block grow event
                  BlockState aboveBlock = state.setValue(AGE, 0);
                  level.setBlock(pos, aboveBlock, Block.UPDATE_NONE);
                  level.neighborChanged(aboveBlock, above, this, null, false);
