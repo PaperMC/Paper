@@ -13,6 +13,7 @@ import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.worldupdate.UpgradeProgress;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.storage.LevelDataAndDimensions;
 import net.minecraft.world.level.storage.LevelStorageSource;
@@ -25,6 +26,7 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Locale;
 
 public record PaperWorldLoader(MinecraftServer server, String levelId) {
@@ -67,14 +69,54 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
         return new WorldLoadingInfo(dimension, name, worldType, stemKey, enabled);
     }
 
+    static Path getTargetWorldFolder(final Path root, final ResourceKey<LevelStem> stemKey) {
+        return DimensionType.getStorageFolder(Registries.levelStemToLevel(stemKey), root);
+    }
+
+    // A data-only dimensions/... folder is not enough to consider a split world container migrated.
+    // File-fixers can create dimension-scoped saved data before the actual chunk payload
+    // (`region`, `entities`, `poi`) has been moved into the split world container.
+    static boolean hasWorldPayload(final Path root) {
+        return java.nio.file.Files.isDirectory(root.resolve("region"))
+            || java.nio.file.Files.isDirectory(root.resolve("entities"))
+            || java.nio.file.Files.isDirectory(root.resolve("poi"));
+    }
+
+    static boolean hasExistingWorldPayload(final Path root, final ResourceKey<LevelStem> stemKey) {
+        final Path targetWorld = getTargetWorldFolder(root, stemKey);
+        if (hasWorldPayload(targetWorld)) {
+            return true;
+        }
+
+        final Path legacyWorld = LevelStorageSource.getStorageFolder(root, stemKey);
+        return !legacyWorld.equals(targetWorld) && hasWorldPayload(legacyWorld);
+    }
+
+    static Path findSourceWorldFolder(final Path root, final ResourceKey<LevelStem> stemKey) {
+        final Path targetWorld = getTargetWorldFolder(root, stemKey);
+        if (java.nio.file.Files.isDirectory(targetWorld)) {
+            return targetWorld;
+        }
+        // Fallback to legacy if we can't find the new world folder structure
+        return LevelStorageSource.getStorageFolder(root, stemKey);
+    }
+
     private void migrateWorldFolder(final WorldLoadingInfo info) {
         // Migration of old CB world folders...
         if (info.dimension() == 0) {
             return;
         }
 
-        File newWorld = LevelStorageSource.getStorageFolder(new File(info.name()).toPath(), info.stemKey()).toFile();
-        File oldWorld = LevelStorageSource.getStorageFolder(new File(this.levelId).toPath(), info.stemKey()).toFile();
+        final Path newRootPath = new File(info.name()).toPath();
+        // Check if we are already migrated to the new folder path
+        if (hasExistingWorldPayload(newRootPath, info.stemKey())) {
+            return;
+        }
+
+        final Path newWorldPath = getTargetWorldFolder(newRootPath, info.stemKey());
+        final Path oldWorldPath = findSourceWorldFolder(new File(this.levelId).toPath(), info.stemKey());
+        File newWorld = newWorldPath.toFile();
+        File oldWorld = oldWorldPath.toFile();
         File oldLevelDat = new File(new File(this.levelId), "level.dat"); // The data folders exist on first run as they are created in the PersistentCollection constructor above, but the level.dat won't
 
         if (!newWorld.isDirectory() && oldWorld.isDirectory() && oldLevelDat.isFile()) {
