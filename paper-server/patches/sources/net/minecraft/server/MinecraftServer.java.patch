@@ -75,7 +75,7 @@
          if (Runtime.getRuntime().availableProcessors() > 4) {
              thread.setPriority(8);
          }
-@@ -309,7 +_,109 @@
+@@ -309,7 +_,124 @@
          return server;
      }
  
@@ -116,6 +116,21 @@
 +    private long currentTickStart;
 +    private long scheduledTickStart;
 +    private long taskExecutionTime;
++    /**
++     * The tickCount field is not incremented exactly where and when we want for our
++     * usage here.
++     * <p></p>
++     * There are two problems we need to fix:
++     * <ol>
++     *     <li>The tickCount field is not incremented when paused through integrated server.</li>
++     *     <li>The tickCount field is incremented after draining tasks (during server tick).</li>
++     * </ol>
++     * Our goal with the tick count here is to prevent executing tasks scheduled after the start
++     * of the current tick, which is marked by the task draining.
++     *
++     * @see #runAllTasksAtTickStart
++     */
++    private final java.util.concurrent.atomic.AtomicInteger tickTaskTickCount = new java.util.concurrent.atomic.AtomicInteger();
 +    private final Object statsLock = new Object();
 +    private @Nullable double[] tps;
 +    private ca.spottedleaf.moonrise.common.time.TickData.@Nullable MSPTData msptData5s;
@@ -562,7 +577,7 @@
          if (flush) {
              this.savedDataStorage.saveAndJoin();
          } else {
-@@ -649,19 +_,48 @@
+@@ -649,19 +_,49 @@
          this.stopServer();
      }
  
@@ -578,6 +593,7 @@
 +    // CraftBukkit end
 +
      protected void stopServer() {
++        if (Thread.currentThread() == this.serverThread) this.executeAllRecentInternalTasks(); // Paper - execute tasks on stop
 +        // CraftBukkit start - prevent double stopping on multiple threads
 +        synchronized (this.stopLock) {
 +            if (this.hasStopped) return;
@@ -648,7 +664,7 @@
          this.running = false;
          if (wait) {
              try {
-@@ -729,6 +_,118 @@
+@@ -729,6 +_,122 @@
          }
      }
  
@@ -699,8 +715,13 @@
 +        profiler.push("moonrise:run_all_tasks");
 +
 +        profiler.push("moonrise:run_all_server");
-+        // avoid calling MinecraftServer#pollTask - we just want to execute queued tasks
-+        while (super.pollTask()) {
++        // avoid calling pollTask - we just want to execute queued tasks
++        final int currentTick = this.tickTaskTickCount.incrementAndGet();
++        final java.util.function.Predicate<net.minecraft.server.TickTask> taskPredicate = (final TickTask task) -> {
++            // only run tasks scheduled before the current tick - which we incremented above
++            return currentTick - task.getTick() > 0; // currentTick > tick accounting for overflow
++        };
++        while (this.runTaskIf(taskPredicate)) {
 +            // execute small amounts of other tasks just in case the number of tasks we are
 +            // draining is large - chunk system and packet processing may be latency sensitive
 +
@@ -737,7 +758,6 @@
 +                }
 +
 +                // execute tasks while there are tasks and there is time left
-+                // note: we do not need to bypass the task execution check here (like managedBlock) since it checks time
 +                while (this.pollTask() && (Util.getNanos() - deadline < 0L));
 +
 +                final long now = Util.getNanos();
@@ -836,7 +856,7 @@
 +                    );
 +
 +                    // adjust ticksBehind so that it is not greater-than catchup
-+                    if (ticksBehind > catchup) {
++                    if (ticksBehind - catchup > 0L) {
 +                        final long difference = ticksBehind - catchup;
 +                        this.tickSchedule.advanceBy(difference, thisTickNanos);
                      }
@@ -912,11 +932,12 @@
          } finally {
              this.waitingForNextTick = false;
          }
-@@ -892,18 +_,24 @@
+@@ -892,18 +_,38 @@
      }
  
      @Override
 -    public TickTask wrapRunnable(final Runnable runnable) {
+-        return new TickTask(this.tickCount, runnable);
 +    // Paper start - anything that does try to post to main during watchdog crash, run on watchdog
 +    public TickTask wrapRunnable(Runnable runnable) {
 +        if (this.hasStopped && Thread.currentThread().equals(this.shutdownThread)) {
@@ -924,13 +945,27 @@
 +            runnable = () -> {};
 +        }
 +        // Paper end - anything that does try to post to main during watchdog crash, run on watchdog
-         return new TickTask(this.tickCount, runnable);
++        return new TickTask(this.tickTaskTickCount.get(), runnable); // Paper - use different tick field for tick tasks (see #shouldRun)
      }
  
      @Override
      protected boolean shouldRun(final TickTask task) {
 -        return task.getTick() + 3 < this.tickCount || this.haveTime();
-+        return task.getTick() + 1 < this.tickCount || this.haveTime(); // Paper - improve tick loop - do not stall queued tasks
++        // Paper start - improve tick loop - do not stall queued tasks
++        // note: make this overflow safe as well
++        return this.tickTaskTickCount.getPlain() - task.getTick() > 0 ||
++            /*
++             * Ensure that we execute any task as long as we are waiting for the next tick.
++             * The Vanilla server will use managedBlock when awaiting the next tick, but
++             * we do not. The Vanilla managedBlock function will bypass task execution
++             * checks, and in order to ensure we execute tasks like Vanilla we need to also
++             * bypass task execution checks.
++             * This fixes {@link #recordTaskExecutionTimeWhileWaiting} not executing tasks
++             * that it should be executing.
++             */
++            this.waitingForNextTick ||
++            this.haveTime();
++        // Paper end - improve tick loop - do not stall queued tasks
      }
  
      @Override
