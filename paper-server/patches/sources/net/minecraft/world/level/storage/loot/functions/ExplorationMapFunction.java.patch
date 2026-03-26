@@ -1,22 +1,30 @@
 --- a/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
 +++ b/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
-@@ -83,9 +_,17 @@
+@@ -83,9 +_,25 @@
              Vec3 lootPos = context.getOptionalParameter(LootContextParams.ORIGIN);
              if (lootPos != null) {
                  ServerLevel level = context.getLevel();
 +                // Paper start - Configurable cartographer treasure maps
++                // Simple heuristic for determining if this function is running in the context of a villager selecting
++                // an item for its offers. Technically other callers could satisfiy this but this minimises the diff and
++                // works for all plain vanilla usecases.
++                final boolean runningForVillagerTrade = context.hasParameter(LootContextParams.ADDITIONAL_COST_COMPONENT_ALLOWED)
++                    && context.getOptionalParameter(LootContextParams.THIS_ENTITY) instanceof net.minecraft.world.entity.npc.villager.AbstractVillager;
 +                if (!level.paperConfig().environment.treasureMaps.enabled) {
 +                    /*
 +                     * NOTE: I fear users will just get a plain map as their "treasure"
 +                     * This is preferable to disrespecting the config.
 +                     */
-+                    return itemStack;
++                    return runningForVillagerTrade ? net.minecraft.world.item.ItemStack.EMPTY : itemStack;
 +                }
++                final boolean shouldSkipKnownStructures = runningForVillagerTrade
++                    ? !level.paperConfig().environment.treasureMaps.findAlreadyDiscoveredVillager
++                    : !level.paperConfig().environment.treasureMaps.findAlreadyDiscoveredLootTable.or(!this.skipKnownStructures);
 +                // Paper end - Configurable cartographer treasure maps
                  BlockPos nearestMapStructure = level.findNearestMapStructure(
 -                    this.destination, BlockPos.containing(lootPos), this.searchRadius, this.skipKnownStructures
 -                );
-+                    this.destination, BlockPos.containing(lootPos), this.searchRadius, !level.paperConfig().environment.treasureMaps.findAlreadyDiscoveredLootTable.or(!this.skipKnownStructures)); // Paper - Configurable cartographer treasure maps
++                    this.destination, BlockPos.containing(lootPos), this.searchRadius, shouldSkipKnownStructures); // Paper - Configurable cartographer treasure maps
                  if (nearestMapStructure != null) {
                      ItemStack map = MapItem.create(level, nearestMapStructure.getX(), nearestMapStructure.getZ(), this.zoom, true, true);
                      MapItem.renderBiomePreviewMap(level, map);
