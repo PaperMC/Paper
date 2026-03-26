@@ -280,6 +280,7 @@ fun TaskContainer.registerRunTask(
         systemProperty("disable.watchdog", true)
     }
     systemProperty("io.papermc.paper.suppress.sout.nags", true)
+    systemProperty("paper.maxChatCommandInputSize", 32767)
 
     val memoryGb = providers.gradleProperty("paper.runMemoryGb").getOrElse("2")
     minHeapSize = "${memoryGb}G"
