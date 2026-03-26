@@ -46,8 +46,8 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
 
         CraftWorld world = (CraftWorld) this.getWorld();
 
-        ChestBlock block = this.data.getBlock() instanceof ChestBlock chestBlock ? chestBlock : (ChestBlock) Blocks.CHEST;
-        MenuProvider provider = block.getMenuProvider(this.data, world.getHandle(), this.getPosition(), true);
+        ChestBlock block = this.block.getBlock() instanceof ChestBlock chestBlock ? chestBlock : (ChestBlock) Blocks.CHEST;
+        MenuProvider provider = block.getMenuProvider(this.block, world.getHandle(), this.getPosition(), true);
 
         if (provider instanceof ChestBlock.DoubleInventory) {
             inventory = new CraftInventoryDoubleChest((ChestBlock.DoubleInventory) provider);
@@ -109,14 +109,14 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
         if (ChestBlock.isChestBlockedAt(world, getPosition())) {
             return true;
         }
-        if (ChestBlock.getBlockType(this.data) == net.minecraft.world.level.block.DoubleBlockCombiner.BlockType.SINGLE) {
+        if (ChestBlock.getBlockType(this.block) == net.minecraft.world.level.block.DoubleBlockCombiner.BlockType.SINGLE) {
             return false;
         }
-        net.minecraft.core.Direction direction = ChestBlock.getConnectedDirection(this.data);
+        net.minecraft.core.Direction direction = ChestBlock.getConnectedDirection(this.block);
         net.minecraft.core.BlockPos neighbourBlockPos = getPosition().relative(direction);
         BlockState neighbourBlockState = world.getBlockStateIfLoaded(neighbourBlockPos);
         return neighbourBlockState != null
-            && neighbourBlockState.is(this.data.getBlock())
+            && neighbourBlockState.is(this.block.getBlock())
             && ChestBlock.getBlockType(neighbourBlockState) != net.minecraft.world.level.block.DoubleBlockCombiner.BlockType.SINGLE
             && ChestBlock.getConnectedDirection(neighbourBlockState) == direction.getOpposite()
             && ChestBlock.isChestBlockedAt(world, neighbourBlockPos);

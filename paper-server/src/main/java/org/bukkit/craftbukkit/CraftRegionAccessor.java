@@ -100,7 +100,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public BlockData getBlockData(int x, int y, int z) {
-        return CraftBlockData.fromData(this.getData(x, y, z));
+        return this.getData(x, y, z).asBlockData();
     }
 
     @Override

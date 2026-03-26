@@ -1,9 +1,5 @@
 package org.bukkit;
 
-import static org.bukkit.support.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
-
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CakeBlock;
@@ -17,12 +13,22 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.Test;
 
+import static org.bukkit.support.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @VanillaFeature
 public class BlockDataTest {
 
     @Test
     public void testParsing() {
-        BlockData cakeTest = CraftBlockData.fromData(Blocks.CAKE.defaultBlockState().setValue(CakeBlock.BITES, 3));
+        BlockData cakeTest = Blocks.CAKE.defaultBlockState().setValue(CakeBlock.BITES, 3).asBlockData();
 
         BlockData materialString = CraftBlockData.newData(BlockType.CAKE, "[bites=3]");
         assertThat(materialString, is(cakeTest));
@@ -54,7 +60,7 @@ public class BlockDataTest {
 
     @Test
     public void testMistake() {
-        BlockData cakeTest = CraftBlockData.fromData(Blocks.CAKE.defaultBlockState().setValue(CakeBlock.BITES, 3));
+        BlockData cakeTest = Blocks.CAKE.defaultBlockState().setValue(CakeBlock.BITES, 3).asBlockData();
 
         assertThrows(IllegalArgumentException.class, () -> CraftBlockData.newData(BlockType.CAKE, cakeTest.toString()));
     }
@@ -66,7 +72,7 @@ public class BlockDataTest {
 
     @Test
     public void testClone() {
-        Cake cakeTest = (Cake) CraftBlockData.fromData(Blocks.CAKE.defaultBlockState().setValue(CakeBlock.BITES, 3));
+        Cake cakeTest = (Cake) Blocks.CAKE.defaultBlockState().setValue(CakeBlock.BITES, 3).asBlockData();
         Cake clone = (Cake) cakeTest.clone();
 
         assertNotSame(cakeTest, clone, "Clone did not return new object");
@@ -113,7 +119,7 @@ public class BlockDataTest {
     @Test
     public void testCannotMerge1() {
         Chest one = (Chest) CraftBlockData.newData(null, "minecraft:chest[facing=east,waterlogged=true]");
-        Chest two = (Chest) CraftBlockData.fromData(Blocks.CHEST.defaultBlockState());
+        Chest two = (Chest) Blocks.CHEST.defaultBlockState().asBlockData();
 
         assertThrows(IllegalArgumentException.class, () -> one.merge(two));
     }
@@ -145,7 +151,7 @@ public class BlockDataTest {
         assertFalse(CraftBlockData.newData(null, "minecraft:trapped_chest[facing=east,waterlogged=false]").matches(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]")));
         assertTrue(CraftBlockData.newData(null, "minecraft:chest[facing=east,waterlogged=true]").matches(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true,facing=east]")));
 
-        Chest one = (Chest) CraftBlockData.fromData(Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.EAST));
+        Chest one = (Chest) Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.EAST).asBlockData();
         Chest two = (Chest) CraftBlockData.newData(null, "minecraft:chest[waterlogged=false]");
 
         assertTrue(one.matches(two));
@@ -163,7 +169,7 @@ public class BlockDataTest {
 
     @Test
     public void testGetAsString2() {
-        Chest data = (Chest) CraftBlockData.fromData(Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.EAST));
+        Chest data = (Chest) Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.EAST).asBlockData();
 
         assertThat(data.getAsString(true), is("minecraft:chest[facing=east,type=single,waterlogged=false]"));
         assertThat(data.getAsString(false), is("minecraft:chest[facing=east,type=single,waterlogged=false]"));

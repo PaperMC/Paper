@@ -1,16 +1,10 @@
 --- a/net/minecraft/world/item/BlockItem.java
 +++ b/net/minecraft/world/item/BlockItem.java
-@@ -56,6 +_,13 @@
+@@ -56,6 +_,7 @@
                  return InteractionResult.FAIL;
              } else {
                  BlockState placementState = this.getPlacementState(updatedPlaceContext);
-+                // CraftBukkit start - special case for handling block placement with water lilies and snow buckets
-+                org.bukkit.block.BlockState bukkitState = null;
-+                if (this instanceof PlaceOnWaterBlockItem || this instanceof SolidBucketItem) {
-+                    bukkitState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(updatedPlaceContext.getLevel(), updatedPlaceContext.getClickedPos());
-+                }
-+                final org.bukkit.block.BlockState oldBukkitState = bukkitState != null ? bukkitState : org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(updatedPlaceContext.getLevel(), updatedPlaceContext.getClickedPos()); // Paper - Reset placed block on exception
-+                // CraftBukkit end
++                final org.bukkit.block.BlockState previousState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(updatedPlaceContext.getLevel(), updatedPlaceContext.getClickedPos()); // Paper - Reset placed block on exception
                  if (placementState == null) {
                      return InteractionResult.FAIL;
                  } else if (!this.placeBlock(updatedPlaceContext, placementState)) {
@@ -23,21 +17,21 @@
                          this.updateCustomBlockEntityTag(pos, level, player, itemStack, placedState);
                          updateBlockEntityComponents(level, pos, itemStack);
 +                        } catch (Exception ex) {
-+                            ((org.bukkit.craftbukkit.block.CraftBlockState) oldBukkitState).revertPlace();
++                            ((org.bukkit.craftbukkit.block.CraftBlockState) previousState).revertPlace();
 +                            if (player instanceof ServerPlayer serverPlayer) {
-+                                org.apache.logging.log4j.LogManager.getLogger().error("Player {} tried placing invalid block", player.getScoreboardName(), ex);
-+                                serverPlayer.getBukkitEntity().kickPlayer("Packet processing error");
++                                net.minecraft.server.MinecraftServer.LOGGER.warn("Player {} tried placing invalid block", player.getScoreboardName(), ex);
++                                serverPlayer.connection.disconnect(net.minecraft.network.chat.Component.literal("Packet processing error"));
 +                                return InteractionResult.FAIL;
 +                            }
 +                            throw ex; // Rethrow exception if not placed by a player
 +                        }
 +                        // Paper end - Reset placed block on exception
                          placedState.getBlock().setPlacedBy(level, pos, placedState, player, itemStack);
-+                        // CraftBukkit start
-+                        if (bukkitState != null) {
-+                            org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent((net.minecraft.server.level.ServerLevel) level, player, updatedPlaceContext.getHand(), bukkitState, pos);
-+                            if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
-+                                ((org.bukkit.craftbukkit.block.CraftBlockState) bukkitState).revertPlace();
++                        // CraftBukkit start - special case for handling block placement with water lilies, frog spawn and snow buckets
++                        if (player != null && (this instanceof PlaceOnWaterBlockItem || this instanceof SolidBucketItem)) {
++                            org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent((net.minecraft.server.level.ServerLevel) level, player, updatedPlaceContext.getHand(), previousState, pos);
++                            if (placeEvent.isCancelled() || !placeEvent.canBuild()) {
++                                ((org.bukkit.craftbukkit.block.CraftBlockState) previousState).revertPlace();
 +
 +                                player.containerMenu.forceHeldSlot(updatedPlaceContext.getHand());
 +                                return InteractionResult.FAIL;
@@ -75,7 +69,7 @@
 +
 +        org.bukkit.event.block.BlockCanBuildEvent event = new org.bukkit.event.block.BlockCanBuildEvent(
 +            org.bukkit.craftbukkit.block.CraftBlock.at(world, context.getClickedPos()), bukkitPlayer,
-+            org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(stateForPlacement), canBuild, org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(context.getHand())
++            stateForPlacement.asBlockData(), canBuild, org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(context.getHand())
 +        );
 +        world.getCraftServer().getPluginManager().callEvent(event);
 +

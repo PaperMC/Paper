@@ -248,7 +248,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public BlockData fromLegacy(Material material, byte data) {
-        return CraftBlockData.fromData(CraftMagicNumbers.getBlock(material, data));
+        return CraftMagicNumbers.getBlock(material, data).asBlockData();
     }
 
     @Override

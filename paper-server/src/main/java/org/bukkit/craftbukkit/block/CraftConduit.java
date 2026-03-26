@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.block;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import net.minecraft.Optionull;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.level.block.entity.ConduitBlockEntity;
@@ -104,7 +103,7 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
         ConduitBlockEntity.updateAndAttackTarget(
             conduit.getLevel().getMinecraftWorld(),
             this.getPosition(),
-            this.data,
+            this.block,
             conduit,
             conduit.effectBlocks.size() >= ConduitBlockEntity.MIN_KILL_SIZE,
             false

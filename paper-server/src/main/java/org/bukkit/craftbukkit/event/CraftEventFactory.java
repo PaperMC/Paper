@@ -6,15 +6,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.block.bed.BedEnterProblem;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
@@ -23,6 +14,14 @@ import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
@@ -45,14 +44,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
-import net.minecraft.world.entity.animal.fish.AbstractFish;
-import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.fish.WaterAnimal;
+import net.minecraft.world.entity.animal.fish.AbstractFish;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Ghast;
-import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.monster.illager.SpellcasterIllager;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.entity.raid.Raid;
@@ -103,7 +97,6 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
@@ -513,16 +506,16 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static BlockPlaceEvent callBlockPlaceEvent(ServerLevel level, net.minecraft.world.entity.player.Player player, InteractionHand hand, BlockState replacedSnapshot, BlockPos clickedPos) {
+    public static BlockPlaceEvent callBlockPlaceEvent(ServerLevel level, net.minecraft.world.entity.player.Player player, InteractionHand hand, BlockState replacedState, BlockPos clickedPos) {
         Player cplayer = (Player) player.getBukkitEntity();
 
         Block clickedBlock = CraftBlock.at(level, clickedPos);
-        Block placedBlock = replacedSnapshot.getBlock();
+        Block placedBlock = replacedState.getBlock();
 
         boolean canBuild = CraftEventFactory.canBuild(level, cplayer, placedBlock.getX(), placedBlock.getZ());
 
         EquipmentSlot handSlot = CraftEquipmentSlot.getHand(hand);
-        BlockPlaceEvent event = new BlockPlaceEvent(placedBlock, replacedSnapshot, clickedBlock, cplayer.getInventory().getItem(handSlot), cplayer, canBuild, handSlot);
+        BlockPlaceEvent event = new BlockPlaceEvent(placedBlock, replacedState, clickedBlock, cplayer.getInventory().getItem(handSlot), cplayer, canBuild, handSlot);
         event.callEvent();
 
         return event;
@@ -918,7 +911,7 @@ public class CraftEventFactory {
 
     public static BlockFadeEvent callBlockFadeEvent(LevelAccessor world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
-        snapshot.setData(state);
+        snapshot.setBlock(state);
 
         BlockFadeEvent event = new BlockFadeEvent(snapshot.getBlock(), snapshot);
         Bukkit.getPluginManager().callEvent(event);
@@ -927,7 +920,7 @@ public class CraftEventFactory {
 
     public static boolean handleMoistureChangeEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
-        snapshot.setData(state);
+        snapshot.setBlock(state);
 
         MoistureChangeEvent event = new MoistureChangeEvent(snapshot.getBlock(), snapshot);
         if (event.callEvent()) {
@@ -951,7 +944,7 @@ public class CraftEventFactory {
         }
 
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, target);
-        snapshot.setData(state);
+        snapshot.setBlock(state);
 
         BlockSpreadEvent event = new BlockSpreadEvent(snapshot.getBlock(), CraftBlock.at(world, CraftEventFactory.sourceBlockOverride != null ? CraftEventFactory.sourceBlockOverride : source), snapshot);
         if (event.callEvent()) {
@@ -1293,7 +1286,7 @@ public class CraftEventFactory {
 
     public static boolean handleBlockGrowEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
-        snapshot.setData(state);
+        snapshot.setBlock(state);
 
         BlockGrowEvent event = new BlockGrowEvent(snapshot.getBlock(), snapshot);
         if (event.callEvent()) {
@@ -1305,7 +1298,7 @@ public class CraftEventFactory {
     }
 
     public static FluidLevelChangeEvent callFluidLevelChangeEvent(Level world, BlockPos block, net.minecraft.world.level.block.state.BlockState newData) {
-        FluidLevelChangeEvent event = new FluidLevelChangeEvent(CraftBlock.at(world, block), CraftBlockData.fromData(newData));
+        FluidLevelChangeEvent event = new FluidLevelChangeEvent(CraftBlock.at(world, block), newData.asBlockData());
         world.getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
@@ -1347,7 +1340,7 @@ public class CraftEventFactory {
     public static boolean callEntityChangeBlockEvent(Entity entity, BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, boolean cancelled) {
         Block block = CraftBlock.at(entity.level(), pos);
 
-        EntityChangeBlockEvent event = new EntityChangeBlockEvent(entity.getBukkitEntity(), block, CraftBlockData.fromData(newState));
+        EntityChangeBlockEvent event = new EntityChangeBlockEvent(entity.getBukkitEntity(), block, newState.asBlockData());
         event.setCancelled(cancelled);
         event.getEntity().getServer().getPluginManager().callEvent(event);
         return !event.isCancelled();
@@ -1371,11 +1364,11 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static EntityBreakDoorEvent callEntityBreakDoorEvent(Entity entity, BlockPos pos, net.minecraft.world.level.block.state.BlockState newState) { // Paper
+    public static EntityBreakDoorEvent callEntityBreakDoorEvent(Entity entity, BlockPos pos, net.minecraft.world.level.block.state.BlockState newState) {
         org.bukkit.entity.Entity entity1 = entity.getBukkitEntity();
         Block block = CraftBlock.at(entity.level(), pos);
 
-        EntityBreakDoorEvent event = new EntityBreakDoorEvent((LivingEntity) entity1, block, newState.createCraftBlockData()); // Paper
+        EntityBreakDoorEvent event = new EntityBreakDoorEvent((LivingEntity) entity1, block, newState.asBlockData());
         entity1.getServer().getPluginManager().callEvent(event);
 
         return event;
@@ -1921,7 +1914,7 @@ public class CraftEventFactory {
 
     public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags, @Nullable Entity entity, boolean checkSetResult) {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
-        snapshot.setData(state);
+        snapshot.setBlock(state);
 
         BlockFormEvent event = (entity == null) ? new BlockFormEvent(snapshot.getBlock(), snapshot) : new EntityBlockFormEvent(entity.getBukkitEntity(), snapshot.getBlock(), snapshot);
         if (event.callEvent()) {

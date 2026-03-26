@@ -107,7 +107,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
 
     @Override
     public BlockData getBlockData(int x, int y, int z) {
-        return CraftBlockData.fromData(this.getTypeId(x, y, z));
+        return this.getTypeId(x, y, z).asBlockData();
     }
 
     public void setRegion(int xMin, int yMin, int zMin, int xMax, int yMax, int zMax, BlockState type) {

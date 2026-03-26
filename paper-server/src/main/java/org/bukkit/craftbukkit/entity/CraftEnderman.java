@@ -37,7 +37,7 @@ public class CraftEnderman extends CraftMonster implements Enderman {
     @Override
     public BlockData getCarriedBlock() {
         BlockState blockData = this.getHandle().getCarriedBlock();
-        return (blockData == null) ? null : CraftBlockData.fromData(blockData);
+        return (blockData == null) ? null : blockData.asBlockData();
     }
 
     @Override

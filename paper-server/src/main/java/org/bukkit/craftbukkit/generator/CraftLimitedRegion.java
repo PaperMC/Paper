@@ -29,6 +29,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftRegionAccessor;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.generator.LimitedRegion;
@@ -274,8 +275,8 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     @Override
     public void setBlockState(int x, int y, int z, BlockState state) {
         BlockPos pos = new BlockPos(x, y, z);
-        if (!state.getBlockData().matches(getHandle().getBlockState(pos).createCraftBlockData())) {
-            throw new IllegalArgumentException("BlockData does not match! Expected " + state.getBlockData().getAsString(false) + ", got " + getHandle().getBlockState(pos).createCraftBlockData().getAsString(false));
+        if (!state.getBlockData().matches(getHandle().getBlockState(pos).asBlockData())) {
+            throw new IllegalArgumentException("BlockData does not match! Expected " + state.getBlockData().getAsString(false) + ", got " + getHandle().getBlockState(pos).asBlockData().getAsString(false));
         }
 
         try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(

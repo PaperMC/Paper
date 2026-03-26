@@ -92,7 +92,7 @@
                          } else {
                              hitWall = true;
                          }
-@@ -445,6 +_,58 @@
+@@ -445,6 +_,59 @@
              }
          }
  
@@ -113,35 +113,36 @@
 +                this.level().removeBlock(new BlockPos(block.getX(), block.getY(), block.getZ()), false);
 +            }
 +        } else {
-+            for (org.bukkit.block.Block block : event.blockList()) {
-+                org.bukkit.Material blockType = block.getType();
++            for (org.bukkit.block.Block b : event.blockList()) {
++                org.bukkit.Material blockType = b.getType();
 +                if (blockType.isAir()) {
 +                    continue;
 +                }
 +
-+                org.bukkit.craftbukkit.block.CraftBlock craftBlock = ((org.bukkit.craftbukkit.block.CraftBlock) block);
++                org.bukkit.craftbukkit.block.CraftBlock craftBlock = ((org.bukkit.craftbukkit.block.CraftBlock) b);
 +                BlockPos pos = craftBlock.getPosition();
++                net.minecraft.world.level.block.state.BlockState state = craftBlock.getBlockState();
++                net.minecraft.world.level.block.Block block = state.getBlock();
 +
-+                net.minecraft.world.level.block.Block nmsBlock = craftBlock.getNMS().getBlock();
-+                if (nmsBlock.dropFromExplosion(this.explosionSource)) {
-+                    net.minecraft.world.level.block.entity.BlockEntity blockEntity = craftBlock.getNMS().hasBlockEntity() ? this.level().getBlockEntity(pos) : null;
++                if (block.dropFromExplosion(this.explosionSource)) {
++                    net.minecraft.world.level.block.entity.BlockEntity blockEntity = state.hasBlockEntity() ? this.level().getBlockEntity(pos) : null;
 +                    net.minecraft.world.level.storage.loot.LootParams.Builder builder = new net.minecraft.world.level.storage.loot.LootParams.Builder((ServerLevel) this.level())
 +                        .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
 +                        .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.TOOL, net.minecraft.world.item.ItemStack.EMPTY)
 +                        .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.EXPLOSION_RADIUS, 1.0F / event.getYield())
 +                        .withOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY, blockEntity);
 +
-+                    craftBlock.getNMS().getDrops(builder).forEach((stack) -> {
-+                        net.minecraft.world.level.block.Block.popResource(this.level(), pos, stack);
++                    state.getDrops(builder).forEach((item) -> {
++                        net.minecraft.world.level.block.Block.popResource(this.level(), pos, item);
 +                    });
-+                    craftBlock.getNMS().spawnAfterBreak((ServerLevel) this.level(), pos, net.minecraft.world.item.ItemStack.EMPTY, false);
++                    state.spawnAfterBreak((ServerLevel) this.level(), pos, net.minecraft.world.item.ItemStack.EMPTY, false);
 +                }
 +                // Paper start - TNTPrimeEvent
 +                org.bukkit.block.Block tntBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this.level(), pos);
 +                if (!new com.destroystokyo.paper.event.block.TNTPrimeEvent(tntBlock, com.destroystokyo.paper.event.block.TNTPrimeEvent.PrimeReason.EXPLOSION, explosionSource.getIndirectSourceEntity().getBukkitEntity()).callEvent())
 +                    continue;
 +                // Paper end - TNTPrimeEvent
-+                nmsBlock.wasExploded((ServerLevel) this.level(), pos, this.explosionSource);
++                block.wasExploded((ServerLevel) this.level(), pos, this.explosionSource);
 +
 +                this.level().removeBlock(pos, false);
 +            }

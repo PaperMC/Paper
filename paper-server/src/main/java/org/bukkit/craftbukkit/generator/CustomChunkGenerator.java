@@ -213,7 +213,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                 int tx = pos.getX();
                 int ty = pos.getY();
                 int tz = pos.getZ();
-                BlockState block = craftData.getTypeId(tx, ty, tz);
+                BlockState block = craftData.getBlockState(tx, ty, tz);
 
                 if (block.hasBlockEntity()) {
                     BlockEntity blockEntity = ((EntityBlock) block.getBlock()).newBlockEntity(new BlockPos((x << 4) + tx, ty, (z << 4) + tz), block);

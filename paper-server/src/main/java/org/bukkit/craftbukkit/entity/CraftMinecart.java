@@ -102,8 +102,7 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
 
     @Override
     public BlockData getDisplayBlockData() {
-        BlockState state = this.getHandle().getDisplayBlockState();
-        return CraftBlockData.fromData(state);
+        return this.getHandle().getDisplayBlockState().asBlockData();
     }
 
     @Override

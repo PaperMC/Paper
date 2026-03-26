@@ -240,7 +240,7 @@ public final class Rewriters {
 
     private static void bootstrapServer(PatternSourceSetRewriter sourceSet) {
         sourceSet
-            .register("CraftBlockData#MAP", Types.CRAFT_BLOCK_DATA, new CraftBlockDataMapping())
+            .register("CraftBlockData#INSTANCE_CREATOR", Types.CRAFT_BLOCK_DATA, new CraftBlockDataMapping())
             .register("CraftBlockEntityStates", Types.CRAFT_BLOCK_STATES, new CraftBlockEntityStateMapping())
             .register(Types.CRAFT_STATISTIC, composite(
                 holder("CraftStatisticCustom", new StatisticRewriter.CraftCustom()),

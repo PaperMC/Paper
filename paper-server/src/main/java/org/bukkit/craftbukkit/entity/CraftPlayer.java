@@ -118,7 +118,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.clock.ClockNetworkState;
-import net.minecraft.world.clock.ClockState;
 import net.minecraft.world.clock.WorldClock;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -781,7 +780,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         if (instrumentSound == null) return;
 
         // Paper start - use correct pitch (modeled off of NoteBlock)
-        final net.minecraft.world.level.block.state.properties.NoteBlockInstrument noteBlockInstrument = CraftBlockData.toNMS(instrument, net.minecraft.world.level.block.state.properties.NoteBlockInstrument.class);
+        final net.minecraft.world.level.block.state.properties.NoteBlockInstrument noteBlockInstrument = CraftBlockData.toVanilla(instrument, net.minecraft.world.level.block.state.properties.NoteBlockInstrument.class);
         final float pitch = noteBlockInstrument.isTunable() ? note.getPitch() : 1.0f;
         // Paper end
         this.getHandle().connection.send(new ClientboundSoundPacket(CraftSound.bukkitToMinecraftHolder(instrumentSound), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, pitch, this.getHandle().getRandom().nextLong()));

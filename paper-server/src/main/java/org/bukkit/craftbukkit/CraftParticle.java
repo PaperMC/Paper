@@ -82,7 +82,7 @@ public abstract class CraftParticle<D> implements Keyed {
 
     public static <T> T convertLegacy(T object) {
         if (object instanceof MaterialData mat) {
-            return (T) CraftBlockData.fromData(CraftMagicNumbers.getBlock(mat));
+            return (T) CraftMagicNumbers.getBlock(mat).asBlockData();
         }
 
         return object;

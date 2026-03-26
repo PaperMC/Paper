@@ -250,7 +250,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
         return this.wrap(SwizzleArgument.swizzle(), (result) -> {
             final EnumSet<Axis> bukkitAxes = EnumSet.noneOf(Axis.class);
             for (final Direction.Axis nmsAxis : result) {
-                bukkitAxes.add(CraftBlockData.toBukkit(nmsAxis, Axis.class));
+                bukkitAxes.add(CraftBlockData.fromVanilla(nmsAxis, Axis.class));
             }
             return new AxisSetImpl(bukkitAxes);
         });
