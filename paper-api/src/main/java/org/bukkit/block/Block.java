@@ -440,7 +440,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * <p>
      * Equivalent to:
      * {@snippet lang="java" :
-     *     getBlockPower(BlockFace.SELF);
+     * getBlockPower(BlockFace.SELF);
      * }
      *
      * @return The power level.
