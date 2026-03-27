@@ -17,7 +17,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
+public class TransformerLevelAccessor extends DelegatedLevelAccessor {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -51,23 +51,23 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
         return super.addFreshEntity(entity, reason);
     }
 
-    public boolean setCraftBlock(BlockPos position, CraftBlockState craftBlockState, @Block.UpdateFlags int flags, int recursionLeft) {
+    public boolean setCraftBlock(BlockPos pos, CraftBlockState craftBlockState, @Block.UpdateFlags int updateFlags, int updateLimit) {
         craftBlockState = this.structureTransformer.transformCraftState(craftBlockState);
         // This code is based on the method 'net.minecraft.world.level.levelgen.structure.StructurePiece#placeBlock'
         // It ensures that any kind of block is updated correctly upon placing it
         BlockState snapshot = craftBlockState.getHandle();
-        boolean result = super.setBlock(position, snapshot, flags, recursionLeft);
-        FluidState fluidState = this.getFluidState(position);
+        boolean result = super.setBlock(pos, snapshot, updateFlags, updateLimit);
+        FluidState fluidState = this.getFluidState(pos);
         if (!fluidState.isEmpty()) {
-            this.scheduleTick(position, fluidState.getType(), 0);
+            this.scheduleTick(pos, fluidState.getType(), 0);
         }
         if (StructurePiece.SHAPE_CHECK_BLOCKS.contains(snapshot.getBlock())) {
-            this.getChunk(position).markPosForPostprocessing(position);
+            this.getChunk(pos).markPosForPostprocessing(pos);
         }
-        BlockEntity blockEntity = this.getBlockEntity(position);
+        BlockEntity blockEntity = this.getBlockEntity(pos);
         if (blockEntity != null && craftBlockState instanceof CraftBlockEntityState<?> craftEntityState) {
             try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
-                () -> "TransformerGeneratorAccess@" + position.toShortString(), LOGGER
+                () -> "TransformerLevelAccessor@" + pos.toShortString(), LOGGER
             )) {
                 blockEntity.loadWithComponents(TagValueInput.create(
                     problemReporter, this.registryAccess(), craftEntityState.getSnapshotNBT()
@@ -77,20 +77,20 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
         return result;
     }
 
-    public boolean setCraftBlock(BlockPos pos, CraftBlockState craftBlockState, @Block.UpdateFlags int flags) {
-        return this.setCraftBlock(pos, craftBlockState, flags, Block.UPDATE_LIMIT);
+    public boolean setCraftBlock(BlockPos pos, CraftBlockState craftBlockState, @Block.UpdateFlags int updateFlags) {
+        return this.setCraftBlock(pos, craftBlockState, updateFlags, Block.UPDATE_LIMIT);
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
+    public boolean setBlock(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags, int updateLimit) {
         if (this.canTransformBlocks()) {
-            return this.setCraftBlock(pos, (CraftBlockState) CraftBlockStates.getBlockState(this, pos, state, null), flags, recursionLeft);
+            return this.setCraftBlock(pos, (CraftBlockState) CraftBlockStates.getBlockState(this, pos, blockState, null), updateFlags, updateLimit);
         }
-        return super.setBlock(pos, state, flags, recursionLeft);
+        return super.setBlock(pos, blockState, updateFlags, updateLimit);
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
-        return this.setBlock(pos, state, flags, Block.UPDATE_LIMIT);
+    public boolean setBlock(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags) {
+        return this.setBlock(pos, blockState, updateFlags, Block.UPDATE_LIMIT);
     }
 }

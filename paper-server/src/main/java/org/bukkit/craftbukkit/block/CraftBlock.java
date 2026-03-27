@@ -374,9 +374,9 @@ public class CraftBlock implements Block {
             return true;
         }
 
-        BlockState state = this.level.getBlockState(this.position.relative(direction));
-        if (state.hasProperty(RedStoneWireBlock.POWER)) {
-            return state.getValue(RedStoneWireBlock.POWER) > Redstone.SIGNAL_MIN;
+        BlockState neighborState = this.level.getBlockState(this.position.relative(direction));
+        if (neighborState.hasProperty(RedStoneWireBlock.POWER)) {
+            return neighborState.getValue(RedStoneWireBlock.POWER) > Redstone.SIGNAL_MIN;
         }
 
         return false;
@@ -384,11 +384,11 @@ public class CraftBlock implements Block {
 
     @Override
     public int getBlockPower(BlockFace face) {
-        Preconditions.checkArgument(face != null, face + " cannot be null");
+        Preconditions.checkArgument(face != null, "face cannot be null");
 
         net.minecraft.world.level.Level level = this.level.getMinecraftWorld();
         boolean searchSelfIncluded = face == BlockFace.SELF;
-        var onlyFace = blockFaceToNotch(face);
+        Direction onlyFace = blockFaceToNotch(face);
 
         int power = Redstone.SIGNAL_NONE;
         for (Direction direction : SignalGetter.DIRECTIONS) {
@@ -491,7 +491,7 @@ public class CraftBlock implements Block {
         }
 
         if ((result && triggerEffect) || (forceEffect && !state.isAir())) {
-            if (state.getBlock() instanceof net.minecraft.world.level.block.BaseFireBlock) {
+            if (block instanceof net.minecraft.world.level.block.BaseFireBlock) {
                 this.level.levelEvent(LevelEvent.SOUND_EXTINGUISH_FIRE, this.position, 0);
             } else {
                 this.level.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, this.position, net.minecraft.world.level.block.Block.getId(state));
@@ -626,7 +626,7 @@ public class CraftBlock implements Block {
         Preconditions.checkArgument(direction.lengthSquared() > 0, "Direction's magnitude (%s) must be greater than 0", direction.lengthSquared());
 
         Preconditions.checkArgument(fluidCollisionMode != null, "FluidCollisionMode cannot be null");
-        if (maxDistance < 0.0D) {
+        if (maxDistance < 0.0) {
             return null;
         }
 
@@ -676,7 +676,7 @@ public class CraftBlock implements Block {
 
     @Override
     public com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup() {
-        return new com.destroystokyo.paper.block.CraftBlockSoundGroup(getBlockState().getBlock().defaultBlockState().getSoundType());
+        return new com.destroystokyo.paper.block.CraftBlockSoundGroup(this.getBlockState().getSoundType());
     }
 
     @Override

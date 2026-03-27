@@ -485,7 +485,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
         net.minecraft.world.phys.Vec3 start = new net.minecraft.world.phys.Vec3(from.getX(), from.getY(), from.getZ());
         net.minecraft.world.phys.Vec3 end = new net.minecraft.world.phys.Vec3(to.getX(), to.getY(), to.getZ());
-        if (end.distanceToSqr(start) > Mth.square(128D)) {
+        if (end.distanceToSqr(start) > Mth.square(128.0)) {
             return false; // Return early if the distance is greater than 128 blocks
         }
 

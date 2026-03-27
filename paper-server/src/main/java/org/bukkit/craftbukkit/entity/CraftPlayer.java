@@ -379,7 +379,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     @Override
     public double getEyeHeight(boolean ignorePose) {
         if (ignorePose) {
-            return 1.62D;
+            return 1.62;
         } else {
             return this.getEyeHeight();
         }

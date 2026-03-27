@@ -169,7 +169,7 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
     @SuppressWarnings("unchecked")
     @Override
     public B createBlockData(final @Nullable String data) {
-        return (B) CraftBlockData.newData(this, data);
+        return (B) CraftBlockData.fromString(this, data);
     }
 
     @Override

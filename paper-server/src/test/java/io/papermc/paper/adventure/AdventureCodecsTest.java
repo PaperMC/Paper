@@ -406,7 +406,7 @@ class AdventureCodecsTest {
 
     static List<Component> testBlockNbts() {
         return List.of(
-            blockNBT().nbtPath("abc").localPos(1.23d, 2.0d, 3.89d).build(),
+            blockNBT().nbtPath("abc").localPos(1.23, 2.0, 3.89).build(),
             blockNBT().nbtPath("xyz").absoluteWorldPos(4, 5, 6).interpret(true).build(),
             blockNBT().nbtPath("eeee").relativeWorldPos(7, 83, 900)
                 .separator(text(';'))

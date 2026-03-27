@@ -28,7 +28,6 @@ import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ClipBlockStateContext;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.Biome;
@@ -59,7 +58,7 @@ import net.minecraft.world.ticks.TickPriority;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
+public abstract class DelegatedLevelAccessor implements WorldGenLevel {
 
     private WorldGenLevel delegate;
 
@@ -82,8 +81,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void setCurrentlyGenerating(Supplier<String> structureName) {
-        this.delegate.setCurrentlyGenerating(structureName);
+    public void setCurrentlyGenerating(Supplier<String> currentlyGenerating) {
+        this.delegate.setCurrentlyGenerating(currentlyGenerating);
     }
 
     @Override
@@ -107,13 +106,13 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void scheduleTick(BlockPos pos, Block block, int delay, TickPriority priority) {
-        this.delegate.scheduleTick(pos, block, delay, priority);
+    public void scheduleTick(BlockPos pos, Block type, int tickDelay, TickPriority priority) {
+        this.delegate.scheduleTick(pos, type, tickDelay, priority);
     }
 
     @Override
-    public void scheduleTick(BlockPos pos, Block block, int delay) {
-        this.delegate.scheduleTick(pos, block, delay);
+    public void scheduleTick(BlockPos pos, Block type, int tickDelay) {
+        this.delegate.scheduleTick(pos, type, tickDelay);
     }
 
     @Override
@@ -122,13 +121,13 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void scheduleTick(BlockPos pos, Fluid fluid, int delay, TickPriority priority) {
-        this.delegate.scheduleTick(pos, fluid, delay, priority);
+    public void scheduleTick(BlockPos pos, Fluid type, int tickDelay, TickPriority priority) {
+        this.delegate.scheduleTick(pos, type, tickDelay, priority);
     }
 
     @Override
-    public void scheduleTick(BlockPos pos, Fluid fluid, int delay) {
-        this.delegate.scheduleTick(pos, fluid, delay);
+    public void scheduleTick(BlockPos pos, Fluid type, int tickDelay) {
+        this.delegate.scheduleTick(pos, type, tickDelay);
     }
 
     @Override
@@ -167,58 +166,58 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void updateNeighborsAt(BlockPos pos, Block block) {
-        this.delegate.updateNeighborsAt(pos, block);
+    public void updateNeighborsAt(BlockPos pos, Block sourceBlock) {
+        this.delegate.updateNeighborsAt(pos, sourceBlock);
     }
 
     @Override
-    public void neighborShapeChanged(Direction direction, BlockPos pos, BlockPos neighborPos, BlockState neighborState, @Block.UpdateFlags int flags, int recursionLeft) {
-        this.delegate.neighborShapeChanged(direction, pos, neighborPos, neighborState, flags, recursionLeft);
+    public void neighborShapeChanged(Direction direction, BlockPos pos, BlockPos neighborPos, BlockState neighborState, @Block.UpdateFlags int updateFlags, int updateLimit) {
+        this.delegate.neighborShapeChanged(direction, pos, neighborPos, neighborState, updateFlags, updateLimit);
     }
 
     @Override
-    public void playSound(@Nullable final Entity entity, final BlockPos pos, final SoundEvent sound, final SoundSource source, final float volume, final float pitch) {
-        this.delegate.playSound(entity, pos, sound, source, volume, pitch);
+    public void playSound(@Nullable final Entity except, final BlockPos pos, final SoundEvent sound, final SoundSource source, final float volume, final float pitch) {
+        this.delegate.playSound(except, pos, sound, source, volume, pitch);
     }
 
     @Override
-    public void addParticle(ParticleOptions parameters, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
-        this.delegate.addParticle(parameters, x, y, z, velocityX, velocityY, velocityZ);
+    public void addParticle(ParticleOptions particle, double x, double y, double z, double xd, double yd, double zd) {
+        this.delegate.addParticle(particle, x, y, z, xd, yd, zd);
     }
 
     @Override
-    public void levelEvent(Entity entity, int eventId, BlockPos pos, int data) {
-        this.delegate.levelEvent(entity, eventId, pos, data);
+    public void levelEvent(Entity source, int type, BlockPos pos, int data) {
+        this.delegate.levelEvent(source, type, pos, data);
     }
 
     @Override
-    public void levelEvent(int eventId, BlockPos pos, int data) {
-        this.delegate.levelEvent(eventId, pos, data);
+    public void levelEvent(int type, BlockPos pos, int data) {
+        this.delegate.levelEvent(type, pos, data);
     }
 
     @Override
-    public void gameEvent(Holder<GameEvent> gameEvent, Vec3 pos, GameEvent.Context context) {
+    public void gameEvent(Holder<GameEvent> gameEvent, Vec3 position, GameEvent.Context context) {
+        this.delegate.gameEvent(gameEvent, position, context);
+    }
+
+    @Override
+    public void gameEvent(Entity sourceEntity, Holder<GameEvent> gameEvent, Vec3 pos) {
+        this.delegate.gameEvent(sourceEntity, gameEvent, pos);
+    }
+
+    @Override
+    public void gameEvent(Entity sourceEntity, Holder<GameEvent> gameEvent, BlockPos pos) {
+        this.delegate.gameEvent(sourceEntity, gameEvent, pos);
+    }
+
+    @Override
+    public void gameEvent(Holder<GameEvent> gameEvent, BlockPos pos, GameEvent.Context context) {
         this.delegate.gameEvent(gameEvent, pos, context);
     }
 
     @Override
-    public void gameEvent(Entity entity, Holder<GameEvent> gameEvent, Vec3 pos) {
-        this.delegate.gameEvent(entity, gameEvent, pos);
-    }
-
-    @Override
-    public void gameEvent(Entity entity, Holder<GameEvent> gameEvent, BlockPos pos) {
-        this.delegate.gameEvent(entity, gameEvent, pos);
-    }
-
-    @Override
-    public void gameEvent(Holder<GameEvent> gameEvent, BlockPos pos, GameEvent.Context emitter) {
-        this.delegate.gameEvent(gameEvent, pos, emitter);
-    }
-
-    @Override
-    public void gameEvent(ResourceKey<GameEvent> gameEvent, BlockPos pos, GameEvent.Context emitter) {
-        this.delegate.gameEvent(gameEvent, pos, emitter);
+    public void gameEvent(ResourceKey<GameEvent> gameEvent, BlockPos pos, GameEvent.Context context) {
+        this.delegate.gameEvent(gameEvent, pos, context);
     }
 
     @Override
@@ -227,28 +226,28 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public List<VoxelShape> getEntityCollisions(Entity entity, AABB box) {
-        return this.delegate.getEntityCollisions(entity, box);
+    public List<VoxelShape> getEntityCollisions(Entity source, AABB testArea) {
+        return this.delegate.getEntityCollisions(source, testArea);
     }
 
     @Override
-    public boolean isUnobstructed(Entity except, VoxelShape shape) {
-        return this.delegate.isUnobstructed(except, shape);
+    public boolean isUnobstructed(Entity source, VoxelShape shape) {
+        return this.delegate.isUnobstructed(source, shape);
     }
 
     @Override
-    public BlockPos getHeightmapPos(Heightmap.Types heightmap, BlockPos pos) {
-        return this.delegate.getHeightmapPos(heightmap, pos);
+    public BlockPos getHeightmapPos(Heightmap.Types type, BlockPos pos) {
+        return this.delegate.getHeightmapPos(type, pos);
     }
 
     @Override
-    public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
-        return this.delegate.getChunk(chunkX, chunkZ, leastStatus, create);
+    public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus targetStatus, boolean loadOrGenerate) {
+        return this.delegate.getChunk(chunkX, chunkZ, targetStatus, loadOrGenerate);
     }
 
     @Override
-    public int getHeight(Heightmap.Types heightmap, int x, int z) {
-        return this.delegate.getHeight(heightmap, x, z);
+    public int getHeight(Heightmap.Types type, int x, int z) {
+        return this.delegate.getHeight(type, x, z);
     }
 
     @Override
@@ -273,13 +272,13 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
 
 
     @Override
-    public Holder<Biome> getNoiseBiome(int biomeX, int biomeY, int biomeZ) {
-        return this.delegate.getNoiseBiome(biomeX, biomeY, biomeZ);
+    public Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ) {
+        return this.delegate.getNoiseBiome(quartX, quartY, quartZ);
     }
 
     @Override
-    public Holder<Biome> getUncachedNoiseBiome(int biomeX, int biomeY, int biomeZ) {
-        return this.delegate.getUncachedNoiseBiome(biomeX, biomeY, biomeZ);
+    public Holder<Biome> getUncachedNoiseBiome(int quartX, int quartY, int quartZ) {
+        return this.delegate.getUncachedNoiseBiome(quartX, quartY, quartZ);
     }
 
     @Override
@@ -338,8 +337,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus chunkStatus) {
-        return this.delegate.getChunk(chunkX, chunkZ, chunkStatus);
+    public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus status) {
+        return this.delegate.getChunk(chunkX, chunkZ, status);
     }
 
     @Override
@@ -363,13 +362,13 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public int getMaxLocalRawBrightness(BlockPos pos, int ambientDarkness) {
-        return this.delegate.getMaxLocalRawBrightness(pos, ambientDarkness);
+    public int getMaxLocalRawBrightness(BlockPos pos, int skyDarkening) {
+        return this.delegate.getMaxLocalRawBrightness(pos, skyDarkening);
     }
 
     @Override
-    public boolean hasChunkAt(int x, int z) {
-        return this.delegate.hasChunkAt(x, z);
+    public boolean hasChunkAt(int blockX, int blockZ) {
+        return this.delegate.hasChunkAt(blockX, blockZ);
     }
 
     @Override
@@ -378,18 +377,18 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean hasChunksAt(BlockPos from, BlockPos to) {
-        return this.delegate.hasChunksAt(from, to);
+    public boolean hasChunksAt(BlockPos pos0, BlockPos pos1) {
+        return this.delegate.hasChunksAt(pos0, pos1);
     }
 
     @Override
-    public boolean hasChunksAt(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
-        return this.delegate.hasChunksAt(minX, minY, minZ, maxX, maxY, maxZ);
+    public boolean hasChunksAt(int x0, int y0, int z0, int x1, int y1, int z1) {
+        return this.delegate.hasChunksAt(x0, y0, z0, x1, y1, z1);
     }
 
     @Override
-    public boolean hasChunksAt(int minX, int minZ, int maxX, int maxZ) {
-        return this.delegate.hasChunksAt(minX, minZ, maxX, maxZ);
+    public boolean hasChunksAt(int x0, int z0, int x1, int z1) {
+        return this.delegate.hasChunksAt(x0, z0, x1, z1);
     }
 
     @Override
@@ -408,8 +407,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public <T> HolderLookup<T> holderLookup(ResourceKey<? extends Registry<? extends T>> registryKey) {
-        return this.delegate.holderLookup(registryKey);
+    public <T> HolderLookup<T> holderLookup(ResourceKey<? extends Registry<? extends T>> key) {
+        return this.delegate.holderLookup(key);
     }
 
 
@@ -419,13 +418,13 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public int getBrightness(LightLayer type, BlockPos pos) {
-        return this.delegate.getBrightness(type, pos);
+    public int getBrightness(LightLayer layer, BlockPos pos) {
+        return this.delegate.getBrightness(layer, pos);
     }
 
     @Override
-    public int getRawBrightness(BlockPos pos, int ambientDarkness) {
-        return this.delegate.getRawBrightness(pos, ambientDarkness);
+    public int getRawBrightness(BlockPos pos, int darkening) {
+        return this.delegate.getRawBrightness(pos, darkening);
     }
 
     @Override
@@ -444,68 +443,68 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean isUnobstructed(Entity entity) {
-        return this.delegate.isUnobstructed(entity);
+    public boolean isUnobstructed(Entity ignore) {
+        return this.delegate.isUnobstructed(ignore);
     }
 
     @Override
-    public boolean noCollision(AABB collisionBox) {
-        return this.delegate.noCollision(collisionBox);
+    public boolean noCollision(AABB aabb) {
+        return this.delegate.noCollision(aabb);
     }
 
     @Override
-    public boolean noCollision(Entity entity) {
-        return this.delegate.noCollision(entity);
+    public boolean noCollision(Entity source) {
+        return this.delegate.noCollision(source);
     }
 
     @Override
-    public boolean noCollision(Entity entity, AABB collisionBox) {
-        return this.delegate.noCollision(entity, collisionBox);
+    public boolean noCollision(Entity entity, AABB aabb) {
+        return this.delegate.noCollision(entity, aabb);
     }
 
     @Override
-    public boolean noCollision(Entity entity, AABB collisionBox, boolean checkFluid) {
-        return this.delegate.noCollision(entity, collisionBox, checkFluid);
+    public boolean noCollision(Entity entity, AABB aabb, boolean alwaysCollideWithFluids) {
+        return this.delegate.noCollision(entity, aabb, alwaysCollideWithFluids);
     }
 
     @Override
-    public boolean noBlockCollision(Entity entity, AABB collisionBox) {
-        return this.delegate.noBlockCollision(entity, collisionBox);
+    public boolean noBlockCollision(Entity entity, AABB aabb) {
+        return this.delegate.noBlockCollision(entity, aabb);
     }
 
     @Override
-    public Iterable<VoxelShape> getCollisions(Entity entity, AABB collisionBox) {
-        return this.delegate.getCollisions(entity, collisionBox);
+    public Iterable<VoxelShape> getCollisions(Entity source, AABB box) {
+        return this.delegate.getCollisions(source, box);
     }
 
     @Override
-    public Iterable<VoxelShape> getBlockCollisions(Entity entity, AABB collisionBox) {
-        return this.delegate.getBlockCollisions(entity, collisionBox);
+    public Iterable<VoxelShape> getBlockCollisions(Entity source, AABB box) {
+        return this.delegate.getBlockCollisions(source, box);
     }
 
     @Override
-    public Iterable<VoxelShape> getBlockAndLiquidCollisions(Entity entity, AABB collisionBox) {
-        return this.delegate.getBlockAndLiquidCollisions(entity, collisionBox);
+    public Iterable<VoxelShape> getBlockAndLiquidCollisions(Entity source, AABB box) {
+        return this.delegate.getBlockAndLiquidCollisions(source, box);
     }
 
     @Override
-    public BlockHitResult clipIncludingBorder(ClipContext clipContext) {
-        return this.delegate.clipIncludingBorder(clipContext);
+    public BlockHitResult clipIncludingBorder(ClipContext c) {
+        return this.delegate.clipIncludingBorder(c);
     }
 
     @Override
-    public boolean collidesWithSuffocatingBlock(Entity entity, AABB box) {
-        return this.delegate.collidesWithSuffocatingBlock(entity, box);
+    public boolean collidesWithSuffocatingBlock(Entity source, AABB box) {
+        return this.delegate.collidesWithSuffocatingBlock(source, box);
     }
 
     @Override
-    public Optional<BlockPos> findSupportingBlock(Entity entity, AABB box) {
-        return this.delegate.findSupportingBlock(entity, box);
+    public Optional<BlockPos> findSupportingBlock(Entity source, AABB box) {
+        return this.delegate.findSupportingBlock(source, box);
     }
 
     @Override
-    public Optional<Vec3> findFreePosition(Entity entity, VoxelShape shape, Vec3 pos, double x, double y, double z) {
-        return this.delegate.findFreePosition(entity, shape, pos, x, y, z);
+    public Optional<Vec3> findFreePosition(Entity source, VoxelShape allowedCenters, Vec3 preferredCenter, double sizeX, double sizeY, double sizeZ) {
+        return this.delegate.findFreePosition(source, allowedCenters, preferredCenter, sizeX, sizeY, sizeZ);
     }
 
     @Override
@@ -519,8 +518,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public int getControlInputSignal(BlockPos pos, Direction direction, boolean diodesOnly) {
-        return this.delegate.getControlInputSignal(pos, direction, diodesOnly);
+    public int getControlInputSignal(BlockPos pos, Direction direction, boolean onlyDiodes) {
+        return this.delegate.getControlInputSignal(pos, direction, onlyDiodes);
     }
 
     @Override
@@ -534,8 +533,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean hasNeighborSignal(BlockPos pos) {
-        return this.delegate.hasNeighborSignal(pos);
+    public boolean hasNeighborSignal(BlockPos blockPos) {
+        return this.delegate.hasNeighborSignal(blockPos);
     }
 
     @Override
@@ -564,13 +563,13 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public Stream<BlockState> getBlockStates(AABB area) {
-        return this.delegate.getBlockStates(area);
+    public Stream<BlockState> getBlockStates(AABB box) {
+        return this.delegate.getBlockStates(box);
     }
 
     @Override
-    public BlockHitResult isBlockInLine(ClipBlockStateContext context) {
-        return this.delegate.isBlockInLine(context);
+    public BlockHitResult isBlockInLine(ClipBlockStateContext c) {
+        return this.delegate.isBlockInLine(c);
     }
 
     @Override
@@ -579,18 +578,18 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public BlockHitResult clip(ClipContext context) {
-        return this.delegate.clip(context);
+    public BlockHitResult clip(ClipContext c) {
+        return this.delegate.clip(c);
     }
 
     @Override
-    public BlockHitResult clipWithInteractionOverride(Vec3 startVec, Vec3 endVec, BlockPos pos, VoxelShape shape, BlockState state) {
-        return this.delegate.clipWithInteractionOverride(startVec, endVec, pos, shape, state);
+    public BlockHitResult clipWithInteractionOverride(Vec3 from, Vec3 to, BlockPos pos, VoxelShape blockShape, BlockState blockState) {
+        return this.delegate.clipWithInteractionOverride(from, to, pos, blockShape, blockState);
     }
 
     @Override
-    public double getBlockFloorHeight(VoxelShape shape, Supplier<VoxelShape> belowShapeSupplier) {
-        return this.delegate.getBlockFloorHeight(shape, belowShapeSupplier);
+    public double getBlockFloorHeight(VoxelShape blockShape, Supplier<VoxelShape> belowBlockShape) {
+        return this.delegate.getBlockFloorHeight(blockShape, belowBlockShape);
     }
 
     @Override
@@ -599,18 +598,18 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public List<Entity> getEntities(Entity except, AABB area, Predicate<? super Entity> predicate) {
-        return this.delegate.getEntities(except, area, predicate);
+    public List<Entity> getEntities(Entity except, AABB bb, Predicate<? super Entity> selector) {
+        return this.delegate.getEntities(except, bb, selector);
     }
 
     @Override
-    public <T extends Entity> List<T> getEntities(EntityTypeTest<Entity, T> entityTypeTest, AABB bounds, Predicate<? super T> predicate) {
-        return this.delegate.getEntities(entityTypeTest, bounds, predicate);
+    public <T extends Entity> List<T> getEntities(EntityTypeTest<Entity, T> type, AABB bb, Predicate<? super T> selector) {
+        return this.delegate.getEntities(type, bb, selector);
     }
 
     @Override
-    public <T extends Entity> List<T> getEntitiesOfClass(Class<T> entityClass, AABB area, Predicate<? super T> filter) {
-        return this.delegate.getEntitiesOfClass(entityClass, area, filter);
+    public <T extends Entity> List<T> getEntitiesOfClass(Class<T> baseClass, AABB bb, Predicate<? super T> selector) {
+        return this.delegate.getEntitiesOfClass(baseClass, bb, selector);
     }
 
     @Override
@@ -619,33 +618,33 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public List<Entity> getEntities(Entity except, AABB area) {
-        return this.delegate.getEntities(except, area);
+    public List<Entity> getEntities(Entity except, AABB bb) {
+        return this.delegate.getEntities(except, bb);
     }
 
     @Override
-    public <T extends Entity> List<T> getEntitiesOfClass(Class<T> entityClass, AABB area) {
-        return this.delegate.getEntitiesOfClass(entityClass, area);
+    public <T extends Entity> List<T> getEntitiesOfClass(Class<T> baseClass, AABB bb) {
+        return this.delegate.getEntitiesOfClass(baseClass, bb);
     }
 
     @Override
-    public Player getNearestPlayer(double x, double y, double z, double maxDistance, Predicate<Entity> targetPredicate) {
-        return this.delegate.getNearestPlayer(x, y, z, maxDistance, targetPredicate);
+    public Player getNearestPlayer(double x, double y, double z, double range, Predicate<Entity> predicate) {
+        return this.delegate.getNearestPlayer(x, y, z, range, predicate);
     }
 
     @Override
-    public Player getNearestPlayer(Entity entity, double maxDistance) {
-        return this.delegate.getNearestPlayer(entity, maxDistance);
+    public Player getNearestPlayer(Entity source, double maxDist) {
+        return this.delegate.getNearestPlayer(source, maxDist);
     }
 
     @Override
-    public Player getNearestPlayer(double x, double y, double z, double maxDistance, boolean ignoreCreative) {
-        return this.delegate.getNearestPlayer(x, y, z, maxDistance, ignoreCreative);
+    public Player getNearestPlayer(double x, double y, double z, double maxDist, boolean filterOutCreative) {
+        return this.delegate.getNearestPlayer(x, y, z, maxDist, filterOutCreative);
     }
 
     @Override
-    public boolean hasNearbyAlivePlayer(double x, double y, double z, double distance) {
-        return this.delegate.hasNearbyAlivePlayer(x, y, z, distance);
+    public boolean hasNearbyAlivePlayer(double x, double y, double z, double range) {
+        return this.delegate.hasNearbyAlivePlayer(x, y, z, range);
     }
 
     @Override
@@ -654,33 +653,33 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
-        return this.delegate.setBlock(pos, state, flags, recursionLeft);
+    public boolean setBlock(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags, int updateLimit) {
+        return this.delegate.setBlock(pos, blockState, updateFlags, updateLimit);
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
-        return this.delegate.setBlock(pos, state, flags);
+    public boolean setBlock(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags) {
+        return this.delegate.setBlock(pos, blockState, updateFlags);
     }
 
     @Override
-    public boolean removeBlock(BlockPos pos, boolean isMoving) {
-        return this.delegate.removeBlock(pos, isMoving);
+    public boolean removeBlock(BlockPos pos, boolean movedByPiston) {
+        return this.delegate.removeBlock(pos, movedByPiston);
     }
 
     @Override
-    public boolean destroyBlock(BlockPos pos, boolean dropBlock) {
-        return this.delegate.destroyBlock(pos, dropBlock);
+    public boolean destroyBlock(BlockPos pos, boolean dropResources) {
+        return this.delegate.destroyBlock(pos, dropResources);
     }
 
     @Override
-    public boolean destroyBlock(BlockPos pos, boolean dropBlock, Entity entity) {
-        return this.delegate.destroyBlock(pos, dropBlock, entity);
+    public boolean destroyBlock(BlockPos pos, boolean dropResources, Entity breaker) {
+        return this.delegate.destroyBlock(pos, dropResources, breaker);
     }
 
     @Override
-    public boolean destroyBlock(BlockPos pos, boolean dropBlock, Entity entity, int recursionLeft) {
-        return this.delegate.destroyBlock(pos, dropBlock, entity, recursionLeft);
+    public boolean destroyBlock(BlockPos pos, boolean dropResources, Entity breaker, int updateLimit) {
+        return this.delegate.destroyBlock(pos, dropResources, breaker, updateLimit);
     }
 
     @Override
@@ -714,8 +713,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean isInsideBuildHeight(int y) {
-        return this.delegate.isInsideBuildHeight(y);
+    public boolean isInsideBuildHeight(int blockY) {
+        return this.delegate.isInsideBuildHeight(blockY);
     }
 
     @Override
@@ -724,18 +723,18 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean isOutsideBuildHeight(int y) {
-        return this.delegate.isOutsideBuildHeight(y);
+    public boolean isOutsideBuildHeight(int blockY) {
+        return this.delegate.isOutsideBuildHeight(blockY);
     }
 
     @Override
-    public int getSectionIndex(int y) {
-        return this.delegate.getSectionIndex(y);
+    public int getSectionIndex(int blockY) {
+        return this.delegate.getSectionIndex(blockY);
     }
 
     @Override
-    public int getSectionIndexFromSectionY(int sectionIndex) {
-        return this.delegate.getSectionIndexFromSectionY(sectionIndex);
+    public int getSectionIndexFromSectionY(int sectionY) {
+        return this.delegate.getSectionIndexFromSectionY(sectionY);
     }
 
     @Override
@@ -744,8 +743,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean isStateAtPosition(BlockPos pos, Predicate<BlockState> state) {
-        return this.delegate.isStateAtPosition(pos, state);
+    public boolean isStateAtPosition(BlockPos pos, Predicate<BlockState> predicate) {
+        return this.delegate.isStateAtPosition(pos, predicate);
     }
 
     @Override

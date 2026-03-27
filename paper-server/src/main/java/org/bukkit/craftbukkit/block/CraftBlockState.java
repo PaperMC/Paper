@@ -53,17 +53,17 @@ public class CraftBlockState implements BlockState {
     }
 
     // Creates an unplaced copy of the given CraftBlockState at the given location
-    protected CraftBlockState(CraftBlockState block, @Nullable Location location) {
+    protected CraftBlockState(CraftBlockState from, @Nullable Location location) {
         if (location == null) {
             this.world = null;
-            this.position = block.getPosition().immutable();
+            this.position = from.getPosition().immutable();
         } else {
             this.world = (CraftWorld) location.getWorld();
             this.position = CraftLocation.toBlockPosition(location);
         }
-        this.block = block.block;
-        this.capturedFlags = block.capturedFlags;
-        this.setWorldHandle(block.getWorldHandle());
+        this.block = from.block;
+        this.capturedFlags = from.capturedFlags;
+        this.setWorldHandle(from.getWorldHandle());
     }
 
     public void setWorldHandle(LevelAccessor level) {
@@ -74,21 +74,21 @@ public class CraftBlockState implements BlockState {
         }
     }
 
-    // Returns null if weakWorld is not available and the BlockState is not placed.
-    // If this returns a World instead of only a GeneratorAccess, this implies that this BlockState is placed.
+    // Returns null if weakLevel is not available and the BlockState is not placed.
+    // If this returns a Level instead of only a LevelAccessor, this implies that this BlockState is placed.
     @Nullable
     public LevelAccessor getWorldHandle() {
         if (this.weakLevel == null) {
             return this.isPlaced() ? this.world.getHandle() : null;
         }
 
-        LevelAccessor weakLevel = this.weakLevel.get();
-        if (weakLevel == null) {
+        LevelAccessor level = this.weakLevel.get();
+        if (level == null) {
             this.weakLevel = null;
             return this.isPlaced() ? this.world.getHandle() : null;
         }
 
-        return weakLevel;
+        return level;
     }
 
     protected final boolean isWorldGeneration() {

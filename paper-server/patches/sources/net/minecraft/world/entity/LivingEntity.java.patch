@@ -495,7 +495,7 @@
 +            org.bukkit.craftbukkit.entity.CraftPlayer player = ((ServerPlayer) this).getBukkitEntity();
 +            // Squeeze
 +            if (health < 0.0F) {
-+                player.setRealHealth(0.0D);
++                player.setRealHealth(0.0);
 +            } else if (health > player.getMaxHealth()) {
 +                player.setRealHealth(player.getMaxHealth());
 +            } else {
@@ -657,7 +657,7 @@
 +                        if (!dryRun) { // Paper
                          blocksAttacks.hurtBlockingItem(this.level(), blockingWith, this, this.getUsedItemHand(), damageBlocked);
 -                        if (damageBlocked > 0.0F && !source.is(DamageTypeTags.IS_PROJECTILE) && source.getDirectEntity() instanceof LivingEntity livingEntity) {
-+                        if (damageBlocked > 0.0F && !source.is(DamageTypeTags.IS_PROJECTILE) && source.getDirectEntity() instanceof LivingEntity livingEntity && livingEntity.distanceToSqr(this) <= Mth.square(200.0D)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
++                        if (damageBlocked > 0.0F && !source.is(DamageTypeTags.IS_PROJECTILE) && source.getDirectEntity() instanceof LivingEntity livingEntity && livingEntity.distanceToSqr(this) <= Mth.square(200.0)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
                              this.blockUsingItem(level, livingEntity);
                          }
 +                        } // Paper
@@ -715,7 +715,7 @@
 +        if (blocksAttacks == null) return;
 +
 +        blocksAttacks.hurtBlockingItem(this.level(), itemBlockingWith, this, this.getUsedItemHand(), f);
-+        if (f > 0.0F && !damageSource.is(DamageTypeTags.IS_PROJECTILE) && damageSource.getDirectEntity() instanceof LivingEntity livingEntity && livingEntity.distanceToSqr(this) <= Mth.square(200.0D)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
++        if (f > 0.0F && !damageSource.is(DamageTypeTags.IS_PROJECTILE) && damageSource.getDirectEntity() instanceof LivingEntity livingEntity && livingEntity.distanceToSqr(this) <= Mth.square(200.0)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
 +            this.blockUsingItem(level, livingEntity);
 +        }
 +    }
@@ -1063,14 +1063,14 @@
 +        float originalDamage = damage;
 +        // Paper start - fix invulnerability reduction in EntityDamageEvent
 +        final com.google.common.base.Function<Double, Double> invulnerabilityReductionEquation = mod -> {
-+            if (invulnerabilityRelatedLastDamage == 0) return 0D; // no last damage, no reduction
++            if (invulnerabilityRelatedLastDamage == 0) return 0.0; // no last damage, no reduction
 +            // last damage existed, this means the reduction *technically* is (new damage - last damage).
 +            // If the event damage was changed to something less than invul damage, hard lock it at 0.
 +            //
 +            // Cast the passed in double down to a float as double -> float -> double is lossy.
-+            // If last damage is a (float) 3.2D (since the events use doubles), we cannot compare
-+            // the new damage value of this damage instance by upcasting it again to a double as 3.2D != (double) (float) 3.2D.
-+            if (mod.floatValue() < invulnerabilityRelatedLastDamage) return 0D;
++            // If last damage is a (float) 3.2 (since the events use doubles), we cannot compare
++            // the new damage value of this damage instance by upcasting it again to a double as 3.2 != (double) (float) 3.2.
++            if (mod.floatValue() < invulnerabilityRelatedLastDamage) return 0.0;
 +            return (double) -invulnerabilityRelatedLastDamage;
 +        };
 +        final float originalInvulnerabilityReduction = invulnerabilityReductionEquation.apply((double) damage).floatValue();
@@ -1628,7 +1628,7 @@
              Vec3 to = new Vec3(target.getX(), eyeHeight, target.getZ());
 -            return !(to.distanceTo(from) > 128.0)
 +            // Paper - diff on change - used in CraftLivingEntity#hasLineOfSight(Location) and CraftWorld#lineOfSightExists
-+            return !(to.distanceToSqr(from) > 128.0D * 128.0D) // Paper - Perf: Use distance squared
++            return !(to.distanceToSqr(from) > Mth.square(128.0)) // Paper - Perf: Use distance squared
                  && this.level().clip(new ClipContext(from, to, blockCollidingContext, fluidCollidingContext, this)).getType() == HitResult.Type.MISS;
          }
      }
@@ -1833,9 +1833,9 @@
 +        Vec3 direction = this.getLookAngle();
 +        Vec3 end = start.add(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance);
 +
-+        List<Entity> entityList = this.level().getEntities(this, getBoundingBox().expandTowards(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance).inflate(1.0D, 1.0D, 1.0D), EntitySelector.NO_SPECTATORS.and(Entity::isPickable));
++        List<Entity> entityList = this.level().getEntities(this, getBoundingBox().expandTowards(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance).inflate(1.0), EntitySelector.NO_SPECTATORS.and(Entity::isPickable));
 +
-+        double distance = 0.0D;
++        double distance = 0.0;
 +        net.minecraft.world.phys.EntityHitResult result = null;
 +
 +        for (Entity entity : entityList) {
@@ -1846,7 +1846,7 @@
 +            if (rayTraceResult.isPresent()) {
 +                Vec3 rayTrace = rayTraceResult.get();
 +                double distanceTo = start.distanceToSqr(rayTrace);
-+                if (distanceTo < distance || distance == 0.0D) {
++                if (distanceTo < distance || distance == 0.0) {
 +                    result = new net.minecraft.world.phys.EntityHitResult(entity, rayTrace);
 +                    distance = distanceTo;
 +                }

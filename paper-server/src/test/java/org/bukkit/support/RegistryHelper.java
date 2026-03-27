@@ -2,7 +2,6 @@ package org.bukkit.support;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
@@ -29,7 +28,6 @@ import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.DataPackConfig;
 import net.minecraft.world.level.WorldDataConfiguration;
-import net.minecraft.world.level.chunk.PalettedContainerFactory;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 
@@ -56,8 +54,7 @@ public final class RegistryHelper {
 
     public record SetupContext(
         ReloadableServerResources datapack,
-        RegistryAccess registries,
-        Supplier<PalettedContainerFactory> palettedContainerFactory
+        RegistryAccess registries
     ) {
     }
 
@@ -109,8 +106,7 @@ public final class RegistryHelper {
         RegistryAccess registryAccess = registries.access();
         setupContext = new SetupContext(
             datapack,
-            registryAccess,
-            () -> PalettedContainerFactory.create(registryAccess)
+            registryAccess
         );
     }
 
@@ -138,7 +134,7 @@ public final class RegistryHelper {
 
     private static final Pattern ILLEGAL_FIELD_CHARACTERS = Pattern.compile("[.-/]");
 
-    public static String formatKeyAsField(String path) {
+    private static String formatKeyAsField(String path) {
         return ILLEGAL_FIELD_CHARACTERS.matcher(path.toUpperCase(Locale.ENGLISH)).replaceAll("_");
     }
 }

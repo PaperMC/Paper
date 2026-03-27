@@ -29,7 +29,6 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftRegionAccessor;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.generator.LimitedRegion;
@@ -40,7 +39,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private final WeakReference<WorldGenLevel> weakAccess;
+    private final WeakReference<WorldGenLevel> weakLevel;
     private final int centerChunkX;
     private final int centerChunkZ;
     // Buffer is one chunk (16 blocks), can be seen in ChunkStatus#q
@@ -56,12 +55,12 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     // Prevents crash for chunks which are converting from 1.17 to 1.18
     private final List<net.minecraft.world.entity.Entity> outsideEntities = new ArrayList<>();
 
-    public CraftLimitedRegion(WorldGenLevel access, ChunkPos center) {
-        this.weakAccess = new WeakReference<>(access);
+    public CraftLimitedRegion(WorldGenLevel level, ChunkPos center) {
+        this.weakLevel = new WeakReference<>(level);
         this.centerChunkX = center.x();
         this.centerChunkZ = center.z();
 
-        World world = access.getMinecraftWorld().getWorld();
+        World world = level.getMinecraftWorld().getWorld();
         int xCenter = this.centerChunkX << 4;
         int zCenter = this.centerChunkZ << 4;
         int xMin = xCenter - this.getBuffer();
@@ -73,9 +72,8 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     }
 
     public WorldGenLevel getHandle() {
-        WorldGenLevel handle = this.weakAccess.get();
-
-        Preconditions.checkState(handle != null, "GeneratorAccessSeed no longer present, are you using it in a different tick?");
+        WorldGenLevel handle = this.weakLevel.get();
+        Preconditions.checkState(handle != null, "WorldGenLevel no longer present, are you using it in a different tick?");
 
         return handle;
     }
@@ -133,7 +131,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     }
 
     public void breakLink() {
-        this.weakAccess.clear();
+        this.weakLevel.clear();
     }
 
     @Override

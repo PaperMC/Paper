@@ -42,7 +42,7 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
 
     @Override
     public void setMaxSpeed(double speed) {
-        if (speed >= 0D) {
+        if (speed >= 0) {
             this.getHandle().maxSpeed = speed;
         }
     }

@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.util;
 import java.util.List;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.particles.ParticleOptions;
@@ -42,11 +41,11 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.BlackholeTickAccess;
 import net.minecraft.world.ticks.LevelTickAccess;
 
-public class DummyGeneratorAccess implements WorldGenLevel {
+public class DummyLevelAccessor implements WorldGenLevel {
 
-    public static final WorldGenLevel INSTANCE = new DummyGeneratorAccess();
+    public static final WorldGenLevel INSTANCE = new DummyLevelAccessor();
 
-    protected DummyGeneratorAccess() {
+    protected DummyLevelAccessor() {
     }
 
     @Override
@@ -70,7 +69,7 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void scheduleTick(BlockPos pos, Block block, int delay) {
+    public void scheduleTick(BlockPos pos, Block type, int tickDelay) {
         // Used by ComposterBlock
     }
 
@@ -105,32 +104,32 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void playSound(Entity source, BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch) {
+    public void playSound(Entity except, BlockPos pos, SoundEvent sound, SoundSource source, float volume, float pitch) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public void addParticle(ParticleOptions parameters, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
+    public void addParticle(ParticleOptions particle, double x, double y, double z, double xd, double yd, double zd) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public void levelEvent(Entity entity, int eventId, BlockPos pos, int data) {
+    public void levelEvent(Entity source, int type, BlockPos pos, int data) {
         // Used by PowderSnowBlock.pickupBlock
     }
 
     @Override
-    public void gameEvent(Holder<GameEvent> event, Vec3 emitterPos, GameEvent.Context emitter) {
+    public void gameEvent(Holder<GameEvent> gameEvent, Vec3 position, GameEvent.Context context) {
         // Used by ComposterBlock
     }
 
     @Override
-    public List<Entity> getEntities(Entity except, AABB box, Predicate<? super Entity> predicate) {
+    public List<Entity> getEntities(Entity except, AABB bb, Predicate<? super Entity> selector) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public <T extends Entity> List<T> getEntities(EntityTypeTest<Entity, T> filter, AABB box, Predicate<? super T> predicate) {
+    public <T extends Entity> List<T> getEntities(EntityTypeTest<Entity, T> type, AABB bb, Predicate<? super T> selector) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -140,12 +139,12 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
+    public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus targetStatus, boolean loadOrGenerate) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public int getHeight(Heightmap.Types heightmap, int x, int z) {
+    public int getHeight(Heightmap.Types type, int x, int z) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -160,7 +159,7 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public Holder<Biome> getUncachedNoiseBiome(int biomeX, int biomeY, int biomeZ) {
+    public Holder<Biome> getUncachedNoiseBiome(int quartX, int quartY, int quartZ) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -235,36 +234,36 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean isStateAtPosition(BlockPos pos, Predicate<BlockState> state) {
+    public boolean isStateAtPosition(BlockPos pos, Predicate<BlockState> predicate) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public boolean isFluidAtPosition(BlockPos pos, Predicate<FluidState> state) {
+    public boolean isFluidAtPosition(BlockPos pos, Predicate<FluidState> predicate) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
+    public boolean setBlock(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags, int updateLimit) {
         return false;
     }
 
     @Override
-    public boolean removeBlock(BlockPos pos, boolean move) {
+    public boolean removeBlock(BlockPos pos, boolean movedByPiston) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public boolean destroyBlock(BlockPos pos, boolean drop, Entity breakingEntity, int recursionLeft) {
+    public boolean destroyBlock(BlockPos pos, boolean dropResources, Entity breaker, int updateLimit) {
         return false; // SPIGOT-6515
     }
 
     @Override
-    public void scheduleTick(BlockPos pos, Fluid fluid, int delay) {}
+    public void scheduleTick(BlockPos pos, Fluid type, int tickDelay) {}
 
     @Override
-    public void scheduleTick(BlockPos pos, Block block, int delay, net.minecraft.world.ticks.TickPriority priority) {}
+    public void scheduleTick(BlockPos pos, Block type, int tickDelay, net.minecraft.world.ticks.TickPriority priority) {}
 
     @Override
-    public void scheduleTick(BlockPos pos, Fluid fluid, int delay, net.minecraft.world.ticks.TickPriority priority) {}
+    public void scheduleTick(BlockPos pos, Fluid type, int tickDelay, net.minecraft.world.ticks.TickPriority priority) {}
 }

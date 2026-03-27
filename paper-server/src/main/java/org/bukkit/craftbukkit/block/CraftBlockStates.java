@@ -200,7 +200,7 @@ public final class CraftBlockStates {
         CraftBlockEntityState.DISABLE_SNAPSHOT = !useSnapshot;
         try {
             CraftBlockState blockState = CraftBlockStates.getBlockState(world, pos, state, blockEntity);
-            blockState.setWorldHandle(craftBlock.getLevel()); // Inject the block's generator access
+            blockState.setWorldHandle(craftBlock.getLevel()); // Inject the block's level accessor
             return blockState;
         } finally {
             CraftBlockEntityState.DISABLE_SNAPSHOT = prev;
@@ -218,8 +218,8 @@ public final class CraftBlockStates {
 
     public static BlockState getBlockState(RegistryAccess registry, BlockPos pos, Material material, @Nullable CompoundTag blockEntityTag) {
         Preconditions.checkNotNull(material, "material is null");
-        net.minecraft.world.level.block.state.BlockState blockData = CraftBlockType.bukkitToMinecraft(material).defaultBlockState();
-        return CraftBlockStates.getBlockState(registry, pos, blockData, blockEntityTag);
+        net.minecraft.world.level.block.state.BlockState state = CraftBlockType.bukkitToMinecraft(material).defaultBlockState();
+        return CraftBlockStates.getBlockState(registry, pos, state, blockEntityTag);
     }
 
     @Deprecated

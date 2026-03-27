@@ -439,7 +439,9 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Returns the redstone power being provided to this block.
      * <p>
      * Equivalent to:
-     * {@snippet lang=java : getBlockPower(BlockFace.SELF); }
+     * {@snippet lang="java" :
+     *     getBlockPower(BlockFace.SELF);
+     * }
      *
      * @return The power level.
      */

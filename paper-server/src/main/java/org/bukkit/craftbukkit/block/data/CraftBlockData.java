@@ -50,15 +50,12 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.block.CraftBlockSupport;
-import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftVoxelShape;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 public class CraftBlockData implements BlockData {
@@ -83,7 +80,7 @@ public class CraftBlockData implements BlockData {
     public BlockData merge(BlockData data) {
         CraftBlockData craft = (CraftBlockData) data;
         Preconditions.checkArgument(craft.parsedStates != null, "Block data not created via string parsing");
-        Preconditions.checkArgument(this.state.getBlock() == craft.state.getBlock(), "States have different types (got %s, expected %s)", this.state.getBlock(), craft.state.getBlock());
+        Preconditions.checkArgument(this.state.getBlock() == craft.state.getBlock(), "States have different types (got %s, expected %s)", craft.state.getBlock(), this.state.getBlock());
 
         CraftBlockData clone = (CraftBlockData) this.clone();
         clone.parsedStates = null;
@@ -97,6 +94,10 @@ public class CraftBlockData implements BlockData {
 
     private static <T extends Comparable<T>> BlockState setValue(final BlockState state, final Property.Value<T> propertyValue) {
         return state.setValue(propertyValue.property(), propertyValue.value());
+    }
+
+    private <T extends Comparable<T>> BlockState copyProperty(BlockState source, BlockState target, Property<T> property) {
+        return target.setValue(property, source.getValue(property));
     }
 
     @Override
@@ -122,7 +123,7 @@ public class CraftBlockData implements BlockData {
 
     private static final ClassValue<Enum<?>[]> ENUM_VALUES = new ClassValue<>() {
         @Override
-        protected Enum<?>[] computeValue(@NonNull final Class<?> klass) {
+        protected Enum<?>[] computeValue(final Class<?> klass) {
             return (Enum<?>[]) klass.getEnumConstants();
         }
     };
@@ -441,7 +442,7 @@ public class CraftBlockData implements BlockData {
         Preconditions.checkState(INSTANCE_CREATOR.put(blockClass, newInstance) == null, "Duplicate mapping %s->%s", blockClass, newInstance);
     }
 
-    private static final Map<String, CraftBlockData> STRING_DATA_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, CraftBlockData> ENCODER_CACHE = new ConcurrentHashMap<>();
 
     static {
         // cache all the default states at startup, will not cache ones with the custom states inside of the
@@ -450,38 +451,28 @@ public class CraftBlockData implements BlockData {
     }
 
     public static void reloadCache() {
-        STRING_DATA_CACHE.clear();
+        ENCODER_CACHE.clear();
         Block.BLOCK_STATE_REGISTRY.forEach(state -> {
             CraftBlockData data = state.asBlockData();
-            STRING_DATA_CACHE.put(data.getAsString(), data);
+            ENCODER_CACHE.put(data.getAsString(), data);
         });
     }
 
-    public static CraftBlockData newData(@Nullable BlockType blockType, @Nullable String data) {
-        StringBuilder prefixedData = new StringBuilder();
+    public static CraftBlockData fromString(@Nullable BlockType blockType, @Nullable String data) {
+        StringBuilder serializedData = new StringBuilder();
         if (blockType != null) {
-            prefixedData.append(blockType.key().asString());
+            serializedData.append(blockType.key().asString());
         }
 
         if (data != null) {
-            prefixedData.append(data);
+            serializedData.append(data);
         }
 
-        CraftBlockData cached = STRING_DATA_CACHE.computeIfAbsent(prefixedData.toString(), d -> createNewData(null, d));
+        CraftBlockData cached = ENCODER_CACHE.computeIfAbsent(serializedData.toString(), CraftBlockData::parseData);
         return (CraftBlockData) cached.clone();
     }
 
-    private static CraftBlockData createNewData(@Nullable BlockType blockType, @Nullable String serializedData) {
-        if (serializedData == null) {
-            assert blockType != null; // blockType is expected to be not null if data is not provided
-            return CraftBlockType.bukkitToMinecraftNew(blockType).defaultBlockState().asBlockData();
-        }
-
-        // blockType provided, force that type in
-        if (blockType != null) {
-            serializedData = blockType.key().asString() + serializedData;
-        }
-
+    private static CraftBlockData parseData(String serializedData) {
         final BlockStateParser.BlockResult result;
         try {
             StringReader reader = new StringReader(serializedData);
@@ -619,11 +610,6 @@ public class CraftBlockData implements BlockData {
         other.state = otherState;
     }
 
-    private <T extends Comparable<T>> BlockState copyProperty(BlockState source, BlockState target, Property<T> property) {
-        return target.setValue(property, source.getValue(property));
-    }
-
-    @NotNull
     @Override
     public org.bukkit.block.BlockState createBlockState() {
         return CraftBlockStates.getBlockState(this.state, null);
@@ -646,7 +632,7 @@ public class CraftBlockData implements BlockData {
                     switch (attributeModifier.operation()) {
                         case ADD_VALUE -> modifiedBaseValue.add(attributeModifier.amount());
                         case ADD_MULTIPLIED_BASE -> baseValMul.add(attributeModifier.amount());
-                        case ADD_MULTIPLIED_TOTAL -> totalValMul.setValue(totalValMul.doubleValue() * (1.0D + attributeModifier.amount()));
+                        case ADD_MULTIPLIED_TOTAL -> totalValMul.setValue(totalValMul.doubleValue() * (1.0 + attributeModifier.amount()));
                     }
                 }
             );

@@ -909,8 +909,8 @@ public class CraftEventFactory {
     }
     // Paper end - Fix potions splash events
 
-    public static BlockFadeEvent callBlockFadeEvent(LevelAccessor world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-        CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
+    public static BlockFadeEvent callBlockFadeEvent(LevelAccessor level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+        CraftBlockState snapshot = CraftBlockStates.getBlockState(level, pos);
         snapshot.setBlock(state);
 
         BlockFadeEvent event = new BlockFadeEvent(snapshot.getBlock(), snapshot);
@@ -932,21 +932,21 @@ public class CraftEventFactory {
 
     public static BlockPos sourceBlockOverride = null; // SPIGOT-7068: Add source block override, not the most elegant way but better than passing down a BlockPos up to five methods deep.
 
-    public static boolean handleBlockSpreadEvent(LevelAccessor world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
-        return handleBlockSpreadEvent(world, source, target, state, flags, false);
+    public static boolean handleBlockSpreadEvent(LevelAccessor level, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
+        return handleBlockSpreadEvent(level, source, target, state, flags, false);
     }
 
-    public static boolean handleBlockSpreadEvent(LevelAccessor world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags, boolean checkSetResult) {
+    public static boolean handleBlockSpreadEvent(LevelAccessor level, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags, boolean checkSetResult) {
         // Suppress during worldgen
-        if (!(world instanceof Level)) {
-            boolean result = world.setBlock(target, state, flags);
+        if (!(level instanceof Level)) {
+            boolean result = level.setBlock(target, state, flags);
             return !checkSetResult || result;
         }
 
-        CraftBlockState snapshot = CraftBlockStates.getBlockState(world, target);
+        CraftBlockState snapshot = CraftBlockStates.getBlockState(level, target);
         snapshot.setBlock(state);
 
-        BlockSpreadEvent event = new BlockSpreadEvent(snapshot.getBlock(), CraftBlock.at(world, CraftEventFactory.sourceBlockOverride != null ? CraftEventFactory.sourceBlockOverride : source), snapshot);
+        BlockSpreadEvent event = new BlockSpreadEvent(snapshot.getBlock(), CraftBlock.at(level, CraftEventFactory.sourceBlockOverride != null ? CraftEventFactory.sourceBlockOverride : source), snapshot);
         if (event.callEvent()) {
             boolean result = snapshot.place(flags);
             return !checkSetResult || result;
@@ -1516,7 +1516,7 @@ public class CraftEventFactory {
     }
 
     public static NotePlayEvent callNotePlayEvent(Level world, BlockPos pos, NoteBlockInstrument instrument, int note) {
-        NotePlayEvent event = new NotePlayEvent(CraftBlock.at(world, pos), org.bukkit.Instrument.getByType((byte) instrument.ordinal()), new org.bukkit.Note(note));
+        NotePlayEvent event = new NotePlayEvent(CraftBlock.at(world, pos), org.bukkit.Instrument.values()[instrument.ordinal()], new org.bukkit.Note(note));
         world.getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
@@ -1863,11 +1863,11 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static BlockPhysicsEvent callBlockPhysicsEvent(LevelAccessor world, BlockPos pos) {
-        org.bukkit.block.Block block = CraftBlock.at(world, pos);
+    public static BlockPhysicsEvent callBlockPhysicsEvent(LevelAccessor level, BlockPos pos) {
+        org.bukkit.block.Block block = CraftBlock.at(level, pos);
         BlockPhysicsEvent event = new BlockPhysicsEvent(block, block.getBlockData());
         // Suppress during worldgen
-        if (world instanceof Level) {
+        if (level instanceof Level) {
             event.callEvent();
         }
         return event;

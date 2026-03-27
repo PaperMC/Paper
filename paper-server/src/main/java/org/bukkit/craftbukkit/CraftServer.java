@@ -95,7 +95,6 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.RepairItemRecipe;
 import net.minecraft.world.level.CustomSpawner;
-import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -2555,7 +2554,7 @@ public final class CraftServer implements Server {
             Preconditions.checkArgument(type != null, "Provided material must be a block");
         }
 
-        return CraftBlockData.newData(type, data);
+        return CraftBlockData.fromString(type, data);
     }
 
     @Override

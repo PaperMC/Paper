@@ -35,7 +35,7 @@ import org.bukkit.craftbukkit.util.CraftBlockVector;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftStructureTransformer;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
-import org.bukkit.craftbukkit.util.TransformerGeneratorAccess;
+import org.bukkit.craftbukkit.util.TransformerLevelAccessor;
 import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.structure.Palette;
@@ -100,12 +100,12 @@ public class CraftStructure implements Structure {
         BlockPos pos = CraftBlockVector.toBlockPosition(location);
         WorldGenLevel handle = ((CraftRegionAccessor) regionAccessor).getHandle();
 
-        TransformerGeneratorAccess access = new TransformerGeneratorAccess();
-        access.setDelegate(handle);
-        access.setStructureTransformer(new CraftStructureTransformer(handle, ChunkPos.containing(pos), blockTransformers, entityTransformers));
+        TransformerLevelAccessor accessor = new TransformerLevelAccessor();
+        accessor.setDelegate(handle);
+        accessor.setStructureTransformer(new CraftStructureTransformer(handle, ChunkPos.containing(pos), blockTransformers, entityTransformers));
 
-        this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, Block.UPDATE_CLIENTS);
-        access.getStructureTransformer().discard();
+        this.structure.placeInWorld(accessor, pos, pos, definedstructureinfo, randomSource, Block.UPDATE_CLIENTS);
+        accessor.getStructureTransformer().discard();
     }
 
     @Override

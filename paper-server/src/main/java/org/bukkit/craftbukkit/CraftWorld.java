@@ -664,9 +664,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(item != null, "ItemStack cannot be null");
 
-        double xs = Mth.nextDouble(this.world.getRandom(), -0.25D, 0.25D);
-        double ys = Mth.nextDouble(this.world.getRandom(), -0.25D, 0.25D) - ((double) EntityType.ITEM.getHeight() / 2.0D);
-        double zs = Mth.nextDouble(this.world.getRandom(), -0.25D, 0.25D);
+        double xs = Mth.nextDouble(this.world.getRandom(), -0.25, 0.25);
+        double ys = Mth.nextDouble(this.world.getRandom(), -0.25, 0.25) - ((double) EntityType.ITEM.getHeight() / 2.0);
+        double zs = Mth.nextDouble(this.world.getRandom(), -0.25, 0.25);
         location = location.clone().add(xs, ys, zs);
         return this.dropItem(location, item, function);
     }
@@ -990,7 +990,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         Preconditions.checkArgument(direction.lengthSquared() > 0, "Direction's magnitude (%s) need to be greater than 0", direction.lengthSquared());
 
-        if (maxDistance < 0.0D) {
+        if (maxDistance < 0.0) {
             return null;
         }
 
@@ -1038,7 +1038,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(fluidCollisionMode != null, "FluidCollisionMode cannot be null");
         Preconditions.checkArgument(blockCollisionMode != null, "BlockCollisionMode cannot be null");
 
-        if (maxDistance < 0.0D) {
+        if (maxDistance < 0.0) {
             return null;
         }
 
@@ -1566,7 +1566,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         double z = loc.getZ();
 
         ClientboundSoundPacket packet = new ClientboundSoundPacket(Holder.direct(SoundEvent.createVariableRangeEvent(Identifier.parse(sound))), SoundSource.valueOf(category.name()), x, y, z, volume, pitch, seed);
-        this.world.getServer().getPlayerList().broadcast(null, x, y, z, volume > 1.0F ? 16.0F * volume : 16.0D, this.world.dimension(), packet);
+        this.world.getServer().getPlayerList().broadcast(null, x, y, z, volume > 1.0F ? 16.0F * volume : 16.0, this.world.dimension(), packet);
     }
 
     @Override

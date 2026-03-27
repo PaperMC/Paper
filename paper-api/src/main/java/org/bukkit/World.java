@@ -1809,7 +1809,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Nullable
     default RayTraceResult rayTraceEntities(@NotNull Location start, @NotNull Vector direction, double maxDistance, @Nullable Predicate<? super Entity> filter) {
-        return this.rayTraceEntities(start, direction, maxDistance, 0.0D, filter);
+        return this.rayTraceEntities(start, direction, maxDistance, 0.0, filter);
     }
 
     /**
