@@ -443,26 +443,26 @@
          }
  
 -        Iterator<TickingBlockEntity> iterator = this.blockEntityTickers.iterator();
++        // Paper - Fix MC-117075 use removeAll - remove iterator in favour of indexed for loop, ensuring compile error if something uses iter incorrectly
          boolean tickBlockEntities = this.tickRateManager().runsNormally();
  
 -        while (iterator.hasNext()) {
 -            TickingBlockEntity ticker = iterator.next();
-+        // Paper start - Fix MC-117075; use removeAll
-+        final java.util.Set<@Nullable TickingBlockEntity> toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>();
++        // Paper start - Fix MC-117075 use removeAll
++        final it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<@Nullable TickingBlockEntity> toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>();
 +        toRemove.add(null);
-+
-+        for (final TickingBlockEntity ticker : this.pendingBlockEntityTickers) {
++        for (int tickerIndex = 0; tickerIndex < this.blockEntityTickers.size(); tickerIndex++) {
++            final TickingBlockEntity ticker = this.blockEntityTickers.get(tickerIndex);
++        // Paper end - Fix MC-117075 use removeAll
              if (ticker.isRemoved()) {
 -                iterator.remove();
-+                toRemove.add(ticker);
++                toRemove.add(ticker); // Paper - Fix MC-117075 use removeAll
              } else if (tickBlockEntities && this.shouldTickBlocksAt(ticker.getPos())) {
                  ticker.tick();
              }
          }
  
-+        this.blockEntityTickers.removeAll(toRemove);
-+        // Paper end - Fix MC-117075; use removeAll
-+
++        this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075 use removeAll
          this.tickingBlockEntities = false;
 +        this.spigotConfig.currentPrimedTnt = 0; // Spigot
      }
