@@ -23,7 +23,7 @@ public interface DamageResistant {
     /**
      * The types that this damage type is invincible to.
      *
-     * @return the key of the tag holding the respective damage types.
+     * @return the registry key set holding the respective damage types.
      */
     @Contract(value = "-> new", pure = true)
     RegistryKeySet<DamageType> types();

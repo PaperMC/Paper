@@ -106,7 +106,7 @@ public record PaperBlocksAttacks(
         }
 
         @Override
-        public Builder bypassedBy(@Nullable final RegistryKeySet<DamageType> bypassedBy) {
+        public Builder bypassedBy(final @Nullable RegistryKeySet<DamageType> bypassedBy) {
             this.bypassedBy = bypassedBy;
             return this;
         }
