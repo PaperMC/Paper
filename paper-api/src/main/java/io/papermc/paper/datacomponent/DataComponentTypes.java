@@ -45,7 +45,7 @@ import io.papermc.paper.datacomponent.item.Weapon;
 import io.papermc.paper.datacomponent.item.WritableBookContent;
 import io.papermc.paper.datacomponent.item.WrittenBookContent;
 import io.papermc.paper.item.MapPostProcessing;
-import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
@@ -307,7 +307,7 @@ public final class DataComponentTypes {
      */
     public static final DataComponentType.Valued<OminousBottleAmplifier> OMINOUS_BOTTLE_AMPLIFIER = valued("ominous_bottle_amplifier");
     public static final DataComponentType.Valued<JukeboxPlayable> JUKEBOX_PLAYABLE = valued("jukebox_playable");
-    public static final DataComponentType.Valued<TagKey<PatternType>> PROVIDES_BANNER_PATTERNS = valued("provides_banner_patterns");
+    public static final DataComponentType.Valued<RegistryKeySet<PatternType>> PROVIDES_BANNER_PATTERNS = valued("provides_banner_patterns");
     /**
      * List of recipes that should be unlocked when using the Knowledge Book item.
      */
