@@ -240,10 +240,10 @@
 +    // Paper start
 +    // This method should only be used if the data of an entity could have become desynced
 +    // due to interactions on the client.
-+    public void resendPossiblyDesyncedEntityData(net.minecraft.server.level.ServerPlayer player) {
++    public void resendPossiblyDesyncedEntityData(ServerPlayer player) {
 +        if (player.getBukkitEntity().canSee(this.getBukkitEntity())) {
-+            ServerLevel world = (net.minecraft.server.level.ServerLevel)this.level();
-+            net.minecraft.server.level.ChunkMap.TrackedEntity tracker = world == null ? null : world.getChunkSource().chunkMap.entityMap.get(this.getId());
++            ServerLevel level = (net.minecraft.server.level.ServerLevel) this.level();
++            net.minecraft.server.level.ChunkMap.TrackedEntity tracker = level == null ? null : level.getChunkSource().chunkMap.entityMap.get(this.getId());
 +            if (tracker == null) {
 +                return;
 +            }
@@ -254,16 +254,16 @@
 +        }
 +    }
 +
-+    // This method allows you to specifically resend certain data accessor keys to the client
-+    public void resendPossiblyDesyncedDataValues(List<EntityDataAccessor<?>> keys, ServerPlayer to) {
++    // This method allows you to specifically resend certain data accessors to the client
++    public void resendPossiblyDesyncedDataValues(List<EntityDataAccessor<?>> accessors, ServerPlayer to) {
 +        if (!to.getBukkitEntity().canSee(this.getBukkitEntity())) {
 +            return;
 +        }
 +
-+        final List<SynchedEntityData.DataValue<?>> values = new java.util.ArrayList<>(keys.size());
-+        for (final EntityDataAccessor<?> key : keys) {
-+            final SynchedEntityData.DataItem<?> synchedValue = this.entityData.getItem(key);
-+            values.add(synchedValue.value());
++        final List<SynchedEntityData.DataValue<?>> values = new ArrayList<>(accessors.size());
++        for (final EntityDataAccessor<?> accessor : accessors) {
++            final SynchedEntityData.DataItem<?> item = this.entityData.getItem(accessor);
++            values.add(item.value());
 +        }
 +
 +        to.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(this.id, values));
@@ -1329,7 +1329,7 @@
      }
  
      public int getAirSupply() {
-@@ -2732,10 +_,22 @@
+@@ -2732,10 +_,24 @@
      }
  
      public void setAirSupply(final int supply) {
@@ -1341,7 +1341,9 @@
 +            event.getEntity().getServer().getPluginManager().callEvent(event);
 +        }
 +        if (event.isCancelled() && this.getAirSupply() != supply) {
-+            this.entityData.markDirty(DATA_AIR_SUPPLY_ID);
++            if (this instanceof ServerPlayer player) {
++                this.resendPossiblyDesyncedDataValues(java.util.List.of(DATA_AIR_SUPPLY_ID), player); // todo is that even needed?
++            }
 +            return;
 +        }
 +        this.entityData.set(DATA_AIR_SUPPLY_ID, event.getAmount());
