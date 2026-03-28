@@ -584,12 +584,21 @@
          }
      }
  
+@@ -790,7 +_,7 @@
+     @Override
+     public void handleSetGameRule(final ServerboundSetGameRulePacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
+-        if (!this.player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
++        if (!this.player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER) && !this.player.getBukkitEntity().hasPermission("minecraft.command.gamerule")) { // Paper - add permission check
+             LOGGER.warn("Player {} tried to set game rule values without required permissions", this.player.getGameProfile().name());
+         } else {
+             GameRules gameRules = this.player.level().getGameRules();
 @@ -808,7 +_,7 @@
  
      private <T> void setGameRuleValue(final GameRules gameRules, final GameRule<T> rule, final String value) {
          rule.deserialize(value).result().ifPresent(parsedValue -> {
 -            gameRules.set(rule, (T)parsedValue, this.server);
-+            gameRules.set(rule, (T)parsedValue, this.player.level()); // Paper - per-world game rules
++            parsedValue = org.bukkit.craftbukkit.event.CraftEventFactory.handleGameRuleSet(rule, parsedValue, this.player.level(), this.player.getBukkitEntity()).value(); // Paper - per-world game rules and event
              this.broadcastGameRuleChangeToOperators(rule, (T)parsedValue);
          });
      }
@@ -1953,6 +1962,15 @@
                      }
                  }
                  break;
+@@ -1904,7 +_,7 @@
+     }
+ 
+     private void sendGameRuleValues() {
+-        if (!this.player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
++        if (!this.player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER) && !this.player.getBukkitEntity().hasPermission("minecraft.command.gamerule")) { // Paper - add permission check
+             LOGGER.warn("Player {} tried to request game rule values without required permissions", this.player.getGameProfile().name());
+         } else {
+             GameRules gameRules = this.player.level().getGameRules();
 @@ -1920,16 +_,27 @@
  
      @Override
