@@ -1358,6 +1358,16 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static EntityTargetEvent.TargetReason getForgotTargetReason(Mob body, net.minecraft.world.entity.@Nullable LivingEntity previousTarget, boolean wasInvalid) {
+        if (previousTarget != null && !previousTarget.isAlive()) {
+            return EntityTargetEvent.TargetReason.TARGET_DIED;
+        } else if (wasInvalid || (previousTarget != null && !body.canAttack(previousTarget))) {
+            return EntityTargetEvent.TargetReason.TARGET_INVALID;
+        } else {
+            return EntityTargetEvent.TargetReason.FORGOT_TARGET;
+        }
+    }
+
     public static EntityTargetLivingEntityEvent callEntityTargetLivingEvent(Entity entity, net.minecraft.world.entity.LivingEntity target, EntityTargetEvent.TargetReason reason) {
         EntityTargetLivingEntityEvent event = new EntityTargetLivingEntityEvent(entity.getBukkitEntity(), (target == null) ? null : (LivingEntity) target.getBukkitEntity(), reason);
         entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);

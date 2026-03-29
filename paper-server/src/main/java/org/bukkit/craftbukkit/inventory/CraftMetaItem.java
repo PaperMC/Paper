@@ -1576,7 +1576,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void setDamageResistant(Tag<DamageType> tag) {
-        this.damageResistant = (tag != null) ? CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE).get(((CraftDamageTag) tag).getHandle().key()).orElseThrow(IllegalStateException::new) : null;
+        this.damageResistant = (tag != null) ? CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE).getOrThrow(((CraftDamageTag) tag).getHandle().key()) : null;
     }
 
     @Override
