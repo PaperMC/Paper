@@ -1,6 +1,8 @@
 package com.destroystokyo.paper.network;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import javax.annotation.Nullable;
 import net.minecraft.network.Connection;
@@ -14,8 +16,14 @@ public class PaperNetworkClient implements NetworkClient {
     }
 
     @Override
+    public SocketAddress getSocketAddress() {
+        return this.connection.getRemoteAddress();
+    }
+
+    @Override
     public InetSocketAddress getAddress() {
-        return (InetSocketAddress) this.connection.getRemoteAddress();
+        if (this.connection.getRemoteAddress() instanceof InetSocketAddress inet) return inet;
+        return new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
     }
 
     @Override
