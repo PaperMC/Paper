@@ -111,6 +111,24 @@ public class CraftContainer extends AbstractContainerMenu {
     public static net.minecraft.world.inventory.MenuType getNotchInventoryType(Inventory inventory) {
         final InventoryType type = inventory.getType();
         switch (type) {
+            case SHULKER_BOX:
+                if (inventory.getSize() == 27) {
+                    return net.minecraft.world.inventory.MenuType.SHULKER_BOX;
+                }
+                switch (inventory.getSize()) {
+                    case 9:
+                        return net.minecraft.world.inventory.MenuType.GENERIC_9x1;
+                    case 18:
+                        return net.minecraft.world.inventory.MenuType.GENERIC_9x2;
+                    case 36:
+                        return net.minecraft.world.inventory.MenuType.GENERIC_9x4;
+                    case 45:
+                        return net.minecraft.world.inventory.MenuType.GENERIC_9x5;
+                    case 54:
+                        return net.minecraft.world.inventory.MenuType.GENERIC_9x6;
+                    default:
+                        throw new IllegalArgumentException("Unsupported shulker inventory size " + inventory.getSize());
+                }
             case CHEST:
             case ENDER_CHEST:
             case BARREL:
@@ -178,7 +196,11 @@ public class CraftContainer extends AbstractContainerMenu {
                 this.delegate = new BeaconMenu(windowId, bottom);
                 break;
             case SHULKER_BOX:
-                this.delegate = new ShulkerBoxMenu(windowId, bottom, top);
+                if (top.getContainerSize() == 27) {
+                    this.delegate = new ShulkerBoxMenu(windowId, bottom, top);
+                } else {
+                    this.delegate = new ChestMenu(CraftContainer.getNotchInventoryType(view.getTopInventory()), windowId, bottom, top, top.getContainerSize() / 9);
+                }
                 break;
             case BLAST_FURNACE:
                 this.delegate = new BlastFurnaceMenu(windowId, bottom, top, new SimpleContainerData(4));

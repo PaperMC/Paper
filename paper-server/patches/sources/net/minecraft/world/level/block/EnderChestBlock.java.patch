@@ -1,6 +1,13 @@
 --- a/net/minecraft/world/level/block/EnderChestBlock.java
 +++ b/net/minecraft/world/level/block/EnderChestBlock.java
-@@ -78,16 +_,17 @@
+@@ -13,6 +_,6 @@
+ import net.minecraft.world.entity.monster.piglin.PiglinAi;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.inventory.ChestMenu;
+ import net.minecraft.world.inventory.PlayerEnderChestContainer;
+ import net.minecraft.world.item.context.BlockPlaceContext;
+ import net.minecraft.world.level.BlockGetter;
+@@ -78,16 +_,28 @@
          PlayerEnderChestContainer enderChestInventory = player.getEnderChestInventory();
          if (enderChestInventory != null && level.getBlockEntity(pos) instanceof EnderChestBlockEntity enderChestBlockEntity) {
              BlockPos blockPos = pos.above();
@@ -19,7 +26,20 @@
 +                enderChestInventory.setActiveChest(enderChestBlockEntity); // Needs to happen before ChestMenu.threeRows as it is required for opening animations
 +                if (level instanceof ServerLevel serverLevel && player.openMenu(
 +                    new SimpleMenuProvider(
-+                        (containerId, playerInventory, player1) -> ChestMenu.threeRows(containerId, playerInventory, enderChestInventory), CONTAINER_TITLE
++                        (containerId, playerInventory, player1) -> {
++                            final int rows = Math.clamp(enderChestInventory.getContainerSize() / 9, 1, 6);
++                            // Paper start - configurable ender chest slot count
++                            final net.minecraft.world.inventory.MenuType<?> menuType = switch (rows) {
++                                case 1 -> net.minecraft.world.inventory.MenuType.GENERIC_9x1;
++                                case 2 -> net.minecraft.world.inventory.MenuType.GENERIC_9x2;
++                                case 3 -> net.minecraft.world.inventory.MenuType.GENERIC_9x3;
++                                case 4 -> net.minecraft.world.inventory.MenuType.GENERIC_9x4;
++                                case 5 -> net.minecraft.world.inventory.MenuType.GENERIC_9x5;
++                                default -> net.minecraft.world.inventory.MenuType.GENERIC_9x6;
++                            };
++                            return new ChestMenu(menuType, containerId, playerInventory, enderChestInventory, rows);
++                            // Paper end - configurable ender chest slot count
++                        }, CONTAINER_TITLE
 +                    )
 +                ).isPresent()) {
 +                // Paper end - Fix InventoryOpenEvent cancellation - moved up;

@@ -1,6 +1,17 @@
 --- a/net/minecraft/world/level/block/entity/ShulkerBoxBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/ShulkerBoxBlockEntity.java
-@@ -49,6 +_,42 @@
+@@ -40,15 +40,51 @@ public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity impl
+     public static final int OPENING_TICK_LENGTH = 10;
+     public static final float MAX_LID_HEIGHT = 0.5F;
+     public static final float MAX_LID_ROTATION = 270.0F;
+-    private static final int[] SLOTS = IntStream.range(0, 27).toArray();
++    private static final int[] SLOTS = IntStream.range(0, io.papermc.paper.configuration.GlobalConfiguration.get().misc.shulkerBoxSlotCount).toArray(); // Paper - configurable shulker box slot count
+     private static final Component DEFAULT_NAME = Component.translatable("container.shulkerBox");
+-    private NonNullList<ItemStack> itemStacks = NonNullList.withSize(27, ItemStack.EMPTY);
++    private NonNullList<ItemStack> itemStacks = NonNullList.withSize(io.papermc.paper.configuration.GlobalConfiguration.get().misc.shulkerBoxSlotCount, ItemStack.EMPTY); // Paper - configurable shulker box slot count
+     public int openCount;
+     private ShulkerBoxBlockEntity.AnimationStatus animationStatus = ShulkerBoxBlockEntity.AnimationStatus.CLOSED;
+     private float progress;
      private float progressOld;
      private final @Nullable DyeColor color;
  
@@ -43,7 +54,7 @@
      public ShulkerBoxBlockEntity(@Nullable DyeColor color, BlockPos pos, BlockState blockState) {
          super(BlockEntityType.SHULKER_BOX, pos, blockState);
          this.color = color;
-@@ -171,6 +_,7 @@
+@@ -171,6 +207,7 @@ public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity impl
              }
  
              this.openCount++;
@@ -51,7 +62,7 @@
              this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, this.openCount);
              if (this.openCount == 1) {
                  this.level.gameEvent(user.getLivingEntity(), GameEvent.CONTAINER_OPEN, this.worldPosition);
-@@ -184,6 +_,7 @@
+@@ -184,6 +221,7 @@ public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity impl
      public void stopOpen(ContainerUser user) {
          if (!this.remove && !user.getLivingEntity().isSpectator()) {
              this.openCount--;
@@ -59,3 +70,36 @@
              this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, this.openCount);
              if (this.openCount <= 0) {
                  this.level.gameEvent(user.getLivingEntity(), GameEvent.CONTAINER_CLOSE, this.worldPosition);
+@@ -231,7 +269,7 @@ public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity impl
+ 
+     @Override
+     public int[] getSlotsForFace(Direction side) {
+-        return SLOTS;
++        // Paper - configurable shulker box slot count
++        return this.getContainerSize() == SLOTS.length ? SLOTS : IntStream.range(0, this.getContainerSize()).toArray();
+     }
+ 
+     @Override
+@@ -254,7 +292,19 @@ public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity impl
+ 
+     @Override
+     protected AbstractContainerMenu createMenu(int id, Inventory player) {
+-        return new ShulkerBoxMenu(id, player, this);
++        // Paper start - configurable shulker box slot count
++        final int rows = Math.clamp(this.getContainerSize() / 9, 1, 6);
++        if (rows == 3) {
++            return new ShulkerBoxMenu(id, player, this);
++        }
++        final net.minecraft.world.inventory.MenuType<?> menuType = switch (rows) {
++            case 1 -> net.minecraft.world.inventory.MenuType.GENERIC_9x1;
++            case 2 -> net.minecraft.world.inventory.MenuType.GENERIC_9x2;
++            case 3 -> net.minecraft.world.inventory.MenuType.GENERIC_9x3;
++            case 4 -> net.minecraft.world.inventory.MenuType.GENERIC_9x4;
++            case 5 -> net.minecraft.world.inventory.MenuType.GENERIC_9x5;
++            default -> net.minecraft.world.inventory.MenuType.GENERIC_9x6;
++        };
++        return new net.minecraft.world.inventory.ChestMenu(menuType, id, player, this, rows);
++        // Paper end - configurable shulker box slot count
+     }
+ 
+     public boolean isClosed() {

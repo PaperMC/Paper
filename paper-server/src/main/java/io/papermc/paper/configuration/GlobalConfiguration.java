@@ -350,6 +350,25 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean enableNether = true;
         @Comment("Keeps Paper's fix for MC-159283 enabled. Disable to use vanilla End ring terrain.")
         public boolean fixFarEndTerrainGeneration = true;
+        @Comment("Number of ender chest slots. Supports 9-54 slots and is normalized to a multiple of 9.")
+        public int enderChestSlotCount = 27;
+        @Comment("Number of shulker box slots. Supports 9-54 slots and is normalized to a multiple of 9.")
+        public int shulkerBoxSlotCount = 27;
+
+        @PostProcess
+        private void postProcess() {
+            this.enderChestSlotCount = this.normalizeContainerSlotCount(this.enderChestSlotCount, "misc.ender-chest-slot-count");
+            this.shulkerBoxSlotCount = this.normalizeContainerSlotCount(this.shulkerBoxSlotCount, "misc.shulker-box-slot-count");
+        }
+
+        private int normalizeContainerSlotCount(final int configured, final String key) {
+            final int clamped = Math.clamp(configured, 9, 54);
+            final int normalized = Math.clamp(((clamped + 4) / 9) * 9, 9, 54);
+            if (configured != normalized) {
+                LOGGER.warn("Invalid {} value '{}', using '{}'. Valid values are multiples of 9 between 9 and 54.", key, configured, normalized);
+            }
+            return normalized;
+        }
     }
 
     public BlockUpdates blockUpdates;
