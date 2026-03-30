@@ -7,6 +7,7 @@ import io.papermc.paper.entity.PlayerGiveResult;
 import io.papermc.paper.math.Position;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -269,7 +270,17 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return the player's address
      */
     @Nullable
-    public InetSocketAddress getAddress();
+    SocketAddress getSocketAddress();
+
+    /**
+     * Returns an instance of {@link InetSocketAddress} associated with the
+     * player's socket address.
+     *
+     * @return the player's {@link InetSocketAddress}, or the loopback address
+     * if the player is connecting through a Unix socket
+     */
+    @Nullable
+    InetSocketAddress getAddress();
 
     // Paper start - Add API to get player's proxy address
     /**
