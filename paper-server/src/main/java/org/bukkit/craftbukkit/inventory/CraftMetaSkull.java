@@ -50,12 +50,12 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         this.noteBlockSound = skullMeta.noteBlockSound;
     }
 
-    CraftMetaSkull(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaSkull(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaSkull.SKULL_PROFILE).ifPresent(this::setProfile);
+        getOrEmpty(patch, CraftMetaSkull.SKULL_PROFILE).ifPresent(this::setProfile);
 
-        getOrEmpty(tag, CraftMetaSkull.NOTE_BLOCK_SOUND).ifPresent((noteBlockSound) -> this.noteBlockSound = noteBlockSound);
+        getOrEmpty(patch, CraftMetaSkull.NOTE_BLOCK_SOUND).ifPresent((noteBlockSound) -> this.noteBlockSound = noteBlockSound);
     }
 
     CraftMetaSkull(Map<String, Object> map) {

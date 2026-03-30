@@ -4107,7 +4107,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @Nullable Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
     // Paper end
 
-
     /**
      * Spawns the particle (the number of times specified by count)
      * at the target location. The position of each particle will be

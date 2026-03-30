@@ -30,10 +30,10 @@ public class CraftMetaKnowledgeBook extends CraftMetaItem implements KnowledgeBo
         }
     }
 
-    CraftMetaKnowledgeBook(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaKnowledgeBook(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaKnowledgeBook.BOOK_RECIPES).ifPresent((recipes) -> {
+        getOrEmpty(patch, CraftMetaKnowledgeBook.BOOK_RECIPES).ifPresent((recipes) -> {
             for (ResourceKey<?> recipe : recipes) {
                 this.addRecipe(CraftNamespacedKey.fromMinecraft(recipe.identifier()));
             }

@@ -44,6 +44,6 @@ public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
             data.add(this.toNMS(i, true));
         }
 
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.ShapelessRecipe(new net.minecraft.world.item.crafting.Recipe.CommonInfo(true), new net.minecraft.world.item.crafting.CraftingRecipe.CraftingBookInfo(CraftRecipe.getCategory(this.getCategory()), this.getGroup()), net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(CraftItemStack.asNMSCopy(this.getResult())), data)));
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.ShapelessRecipe(new net.minecraft.world.item.crafting.Recipe.CommonInfo(true), new net.minecraft.world.item.crafting.CraftingRecipe.CraftingBookInfo(CraftRecipe.getCategory(this.getCategory()), this.getGroup()), CraftItemStack.asTemplate(this.getResult()), data)));
     }
 }

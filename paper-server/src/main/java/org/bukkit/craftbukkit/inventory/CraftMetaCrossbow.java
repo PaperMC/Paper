@@ -33,11 +33,11 @@ public class CraftMetaCrossbow extends CraftMetaItem implements CrossbowMeta {
         }
     }
 
-    CraftMetaCrossbow(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaCrossbow(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaCrossbow.CHARGED_PROJECTILES).ifPresent((p) -> {
-            List<net.minecraft.world.item.ItemStack> items = p.itemCopies();
+        getOrEmpty(patch, CraftMetaCrossbow.CHARGED_PROJECTILES).ifPresent((chargedProjectiles) -> {
+            List<net.minecraft.world.item.ItemStack> items = chargedProjectiles.itemCopies();
             if (items.isEmpty()) {
                 return;
             }

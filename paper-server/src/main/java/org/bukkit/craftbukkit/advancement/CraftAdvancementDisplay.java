@@ -31,7 +31,7 @@ public class CraftAdvancementDisplay implements org.bukkit.advancement.Advanceme
 
     @Override
     public ItemStack getIcon() {
-        return CraftItemStack.asBukkitCopy(this.handle.getIcon().create());
+        return CraftItemStack.asBukkitCopy(this.handle.getIcon());
     }
 
     @Override

@@ -14,7 +14,7 @@ import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JavaOps;
 import com.mojang.serialization.JsonOps;
 import io.papermc.paper.adventure.AdventureCodecs;
-import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.File;
 import java.io.IOException;
@@ -25,15 +25,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
-import io.papermc.paper.entity.EntitySerializationFlag;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
-import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.item.ItemParser;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -61,7 +61,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.UnsafeValues;
 import org.bukkit.World;
 import org.bukkit.advancement.Advancement;
@@ -72,7 +71,6 @@ import org.bukkit.configuration.MemorySection;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.damage.CraftDamageSourceBuilder;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -286,18 +284,19 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public ItemStack modifyItemStack(ItemStack stack, String arguments) {
-        net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(stack);
+    public ItemStack modifyItemStack(ItemStack item, String components) {
+        net.minecraft.world.item.ItemStack stack = CraftItemStack.unwrap(item); // mutation is expected as old behavior
 
         try {
-            nmsStack.applyComponents(new ItemParser(Commands.createValidationContext(CraftRegistry.getMinecraftRegistry())).parse(new StringReader(arguments)).components());
+            StringReader reader = new StringReader(item.getType().key().asString() + components);
+            stack.applyComponents(new ItemParser(CraftRegistry.getMinecraftRegistry()).parse(reader).components());
+            if (reader.canRead()) {
+                throw new IllegalArgumentException("Trailing input found when parsing components: " + reader.getRemaining());
+            }
         } catch (CommandSyntaxException ex) {
-            com.mojang.logging.LogUtils.getClassLogger().error("Exception modifying ItemStack", new Throwable(ex)); // Paper - show stack trace
+            throw new IllegalArgumentException("Could not parse components: " + components, ex);
         }
-
-        stack.setItemMeta(CraftItemStack.getItemMeta(nmsStack));
-
-        return stack;
+        return item;
     }
 
     private static File getBukkitDataPackFolder() {
@@ -848,8 +847,8 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public org.bukkit.Color getSpawnEggLayerColor(final EntityType entityType, final int layer) {
-        final net.minecraft.world.entity.EntityType<?> nmsType = org.bukkit.craftbukkit.entity.CraftEntityType.bukkitToMinecraft(entityType);
-        final var eggItem = net.minecraft.world.item.SpawnEggItem.byId(nmsType);
+        final net.minecraft.world.entity.EntityType<?> type = org.bukkit.craftbukkit.entity.CraftEntityType.bukkitToMinecraft(entityType);
+        final Optional<Holder<Item>> eggItem = net.minecraft.world.item.SpawnEggItem.byId(type);
         if (eggItem.isPresent()) {
             throw new UnsupportedOperationException();
         }
@@ -874,6 +873,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         return CraftItemStack.asBukkitCopy(net.minecraft.network.chat.HoverEvent.ShowItem.CODEC.codec()
             .parse(ops, encoded).getOrThrow(IllegalStateException::new)
-            .item().create());
+            .item());
     }
 }

@@ -132,7 +132,7 @@ public abstract class CraftParticle<D> implements Keyed {
             BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> itemStackFunction = (name, particle) -> new CraftParticle<>(name, particle, ItemStack.class) {
                 @Override
                 public ParticleOptions createParticleParam(ItemStack data) {
-                    return new ItemParticleOption((net.minecraft.core.particles.ParticleType<ItemParticleOption>) this.getHandle(), net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(CraftItemStack.asNMSCopy(data)));
+                    return new ItemParticleOption((net.minecraft.core.particles.ParticleType<ItemParticleOption>) this.getHandle(), CraftItemStack.asTemplate(data));
                 }
             };
 

@@ -61,11 +61,11 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
         }
     }
 
-    CraftMetaBook(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaBook(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaBook.BOOK_CONTENT).ifPresent((writable) -> {
-            List<Filterable<String>> pages = writable.pages();
+        getOrEmpty(patch, CraftMetaBook.BOOK_CONTENT).ifPresent((bookContent) -> {
+            List<Filterable<String>> pages = bookContent.pages();
             this.pages = new ArrayList<>(pages.size());
 
             // Note: We explicitly check for and truncate oversized books and pages,

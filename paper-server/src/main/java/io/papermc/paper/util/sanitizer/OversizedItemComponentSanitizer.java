@@ -11,7 +11,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BundleContents;
@@ -60,12 +59,12 @@ public final class OversizedItemComponentSanitizer {
             return projectiles;
         }
 
-        return ChargedProjectiles.of(ItemStackTemplate.fromNonEmptyStack(new ItemStack(
+        return ChargedProjectiles.of(new ItemStackTemplate(
             projectiles.contains(Items.FIREWORK_ROCKET)
                 ? Items.FIREWORK_ROCKET
                 : Items.ARROW
-        )));
-    }
+        ));
+     }
 
     private static ItemContainerContents sanitizeItemContainerContents(final ItemContainerContents contents) {
         if (GlobalConfiguration.get().unsupportedSettings.oversizedItemComponentSanitizer.dontSanitize().contains(DataComponents.CONTAINER)) {
@@ -89,13 +88,13 @@ public final class OversizedItemComponentSanitizer {
         int sizeUsed = Mth.mulAndTruncate(contents.weight().getOrThrow(), 64);
         // Early out, *most* bundles should not be overfilled above a weight of one.
         if (sizeUsed <= 64) {
-            return new BundleContents(List.of(ItemStackTemplate.fromNonEmptyStack(new ItemStack(Items.PAPER, Math.max(1, sizeUsed)))));
+            return new BundleContents(List.of(new ItemStackTemplate(Items.PAPER, Math.max(1, sizeUsed))));
         }
 
         final List<ItemStackTemplate> sanitizedRepresentation = new ObjectArrayList<>(sizeUsed / 64 + 1);
         while (sizeUsed > 0) {
             final int stackCount = Math.min(64, sizeUsed);
-            sanitizedRepresentation.add(ItemStackTemplate.fromNonEmptyStack(new ItemStack(Items.PAPER, stackCount)));
+            sanitizedRepresentation.add(new ItemStackTemplate(Items.PAPER, stackCount));
             sizeUsed -= stackCount;
         }
         // Now we add a single fake item that uses the same amount of slots as all other items.

@@ -13,6 +13,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.block.ComposterBlock;
 import net.minecraft.world.level.block.entity.FuelValues;
@@ -58,6 +59,14 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
+    public static ItemType minecraftHolderToBukkitNew(Holder<Item> minecraft) {
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.ITEM);
+    }
+
+    public static Holder<Item> bukkitToMinecraftHolderNew(ItemType bukkit) {
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
+    }
+
     public CraftItemType(final Holder<Item> holder) {
         super(holder);
         this.itemMetaData = Suppliers.memoize(() -> CraftItemMetas.getItemMetaData(this));
@@ -101,8 +110,8 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
         return mirror;
     }
 
-    public M getItemMeta(net.minecraft.world.item.ItemStack itemStack, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        return this.itemMetaData.get().fromItemStack().apply(itemStack, extraHandledDcts);
+    public M getItemMeta(net.minecraft.world.item.ItemStack itemStack, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        return this.itemMetaData.get().fromItemStack().apply(itemStack, extraHandledComponents);
     }
 
     public M getItemMeta(ItemMeta itemMeta) {
@@ -181,8 +190,8 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public @Nullable ItemType getCraftingRemainingItem() {
-        net.minecraft.world.item.ItemStack expectedItem = this.getHandle().getCraftingRemainder().create();
-        return expectedItem.isEmpty() ? null : CraftItemType.minecraftToBukkitNew(expectedItem.getItem());
+        ItemStackTemplate craftingRemainder = this.getHandle().getCraftingRemainder();
+        return craftingRemainder == null ? null : CraftItemType.minecraftHolderToBukkitNew(craftingRemainder.item());
     }
 
     @Override

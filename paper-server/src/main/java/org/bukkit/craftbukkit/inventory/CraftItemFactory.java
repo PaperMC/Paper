@@ -3,8 +3,8 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import java.util.Optional;
 import io.papermc.paper.registry.data.util.Conversions;
+import java.util.Optional;
 import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryAccess;
@@ -153,9 +153,11 @@ public final class CraftItemFactory implements ItemFactory {
     public ItemStack createItemStack(String input) throws IllegalArgumentException {
         try {
             StringReader reader = new StringReader(input);
-            net.minecraft.commands.arguments.item.ItemInput arg = new ItemParser(CraftRegistry.getMinecraftRegistry()).parse(reader);
-            Preconditions.checkArgument(!reader.canRead(), "Trailing input found when parsing ItemStack: %s", input);
-            return CraftItemStack.asCraftMirror(arg.createItemStack(1));
+            net.minecraft.commands.arguments.item.ItemInput in = new ItemParser(CraftRegistry.getMinecraftRegistry()).parse(reader);
+            if (reader.canRead()) {
+                throw new IllegalArgumentException("Trailing input found when parsing ItemStack: " + reader.getRemaining());
+            }
+            return CraftItemStack.asCraftMirror(in.createItemStack(1));
         } catch (CommandSyntaxException ex) {
             throw new IllegalArgumentException("Could not parse ItemStack: " + input, ex);
         }
@@ -167,26 +169,26 @@ public final class CraftItemFactory implements ItemFactory {
             return null;
         }
         net.minecraft.world.entity.EntityType<?> nmsType = CraftEntityType.bukkitToMinecraft(type);
-        return SpawnEggItem.byId(nmsType).map(net.minecraft.core.Holder::value).map(CraftItemType::minecraftToBukkit).orElse(null);
+        return SpawnEggItem.byId(nmsType).map(item -> CraftItemType.minecraftHolderToBukkitNew(item).asMaterial()).orElse(null);
     }
 
     @Override
     public ItemStack enchantItem(Entity entity, ItemStack itemStack, int level, boolean allowTreasures) {
         Preconditions.checkArgument(entity != null, "The entity must not be null");
 
-        return CraftItemFactory.enchantItem(((CraftEntity) entity).getHandle().getRandom(), itemStack, level, allowTreasures);
+        return enchantItem(((CraftEntity) entity).getHandle().getRandom(), itemStack, level, allowTreasures);
     }
 
     @Override
     public ItemStack enchantItem(final World world, final ItemStack itemStack, final int level, final boolean allowTreasures) {
         Preconditions.checkArgument(world != null, "The world must not be null");
 
-        return CraftItemFactory.enchantItem(((CraftWorld) world).getHandle().getRandom(), itemStack, level, allowTreasures);
+        return enchantItem(((CraftWorld) world).getHandle().getRandom(), itemStack, level, allowTreasures);
     }
 
     @Override
     public ItemStack enchantItem(final ItemStack itemStack, final int level, final boolean allowTreasures) {
-        return CraftItemFactory.enchantItem(CraftItemFactory.randomSource, itemStack, level, allowTreasures);
+        return enchantItem(CraftItemFactory.randomSource, itemStack, level, allowTreasures);
     }
 
     private static ItemStack enchantItem(RandomSource source, ItemStack itemStack, int level, boolean allowTreasures) {

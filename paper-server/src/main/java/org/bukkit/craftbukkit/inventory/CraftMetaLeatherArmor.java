@@ -29,10 +29,10 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
         this.color = leatherMeta.color;
     }
 
-    CraftMetaLeatherArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
-        getOrEmpty(tag, CraftMetaLeatherArmor.COLOR).ifPresent((dyedItemColor) -> {
-            this.color = dyedItemColor.rgb();
+    CraftMetaLeatherArmor(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
+        getOrEmpty(patch, CraftMetaLeatherArmor.COLOR).ifPresent((itemColor) -> {
+            this.color = itemColor.rgb();
         });
     }
 

@@ -75,16 +75,16 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
         }
     }
 
-    CraftMetaBookSigned(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaBookSigned(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaBookSigned.BOOK_CONTENT).ifPresent((written) -> {
-            this.title = written.title().raw();
-            this.author = written.author();
-            this.resolved = written.resolved();
-            this.generation = written.generation();
+        getOrEmpty(patch, CraftMetaBookSigned.BOOK_CONTENT).ifPresent((bookContent) -> {
+            this.title = bookContent.title().raw();
+            this.author = bookContent.author();
+            this.resolved = bookContent.resolved();
+            this.generation = bookContent.generation();
 
-            List<Filterable<Component>> pages = written.pages();
+            List<Filterable<Component>> pages = bookContent.pages();
             this.pages = new ArrayList<>(pages.size());
             for (Filterable<Component> page : pages) {
                 this.pages.add(page.raw());

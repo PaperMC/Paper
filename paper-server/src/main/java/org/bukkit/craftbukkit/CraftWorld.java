@@ -35,6 +35,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.core.QuartPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -908,12 +909,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> bb) {
+    public void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biome) {
         BlockPos pos = new BlockPos(x, 0, z);
         if (this.world.hasChunkAt(pos)) {
             net.minecraft.world.level.chunk.LevelChunk chunk = this.world.getChunkAt(pos);
 
-            chunk.setBiome(x >> 2, y >> 2, z >> 2, bb);
+            chunk.setNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z), biome);
             chunk.markUnsaved(); // SPIGOT-2890
         }
     }
@@ -921,12 +922,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public double getTemperature(int x, int y, int z) {
         BlockPos pos = new BlockPos(x, y, z);
-        return this.world.getNoiseBiome(x >> 2, y >> 2, z >> 2).value().getTemperature(pos, this.world.getSeaLevel());
+        return this.world.getNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z)).value().getTemperature(pos, this.world.getSeaLevel());
     }
 
     @Override
     public double getHumidity(int x, int y, int z) {
-        return this.world.getNoiseBiome(x >> 2, y >> 2, z >> 2).value().climateSettings.downfall();
+        return this.world.getNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z)).value().climateSettings.downfall();
     }
 
     @Override

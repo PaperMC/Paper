@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -24,7 +23,6 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
-import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.RegionAccessor;
@@ -82,11 +80,10 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     @Override
     public void setBiome(int x, int y, int z, Biome biome) {
         Preconditions.checkArgument(biome != Biome.CUSTOM, "Cannot set the biome to %s", biome);
-        Holder<net.minecraft.world.level.biome.Biome> biomeBase = CraftBiome.bukkitToMinecraftHolder(biome);
-        this.setBiome(x, y, z, biomeBase);
+        this.setBiome(x, y, z, CraftBiome.bukkitToMinecraftHolder(biome));
     }
 
-    public abstract void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biomeBase);
+    public abstract void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biome);
 
     @Override
     public BlockState getBlockState(int x, int y, int z) {

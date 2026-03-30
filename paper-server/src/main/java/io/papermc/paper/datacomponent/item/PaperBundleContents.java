@@ -29,7 +29,7 @@ public record PaperBundleContents(
         public BundleContents.Builder add(final ItemStack stack) {
             Preconditions.checkArgument(stack != null, "stack cannot be null");
             Preconditions.checkArgument(!stack.isEmpty(), "stack cannot be empty");
-            this.items.add(net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(CraftItemStack.asNMSCopy(stack)));
+            this.items.add(CraftItemStack.asTemplate(stack));
             return this;
         }
 

@@ -13,4 +13,14 @@ public class CraftCamelHusk extends CraftCamel implements org.bukkit.entity.Came
     public CamelHusk getHandle() {
         return (CamelHusk) this.entity;
     }
+
+    @Override
+    public void setBaby() {
+        throw new UnsupportedOperationException("Cannot make a baby camel husk anymore");
+    }
+
+    @Override
+    public boolean isAdult() {
+        return true;
+    }
 }

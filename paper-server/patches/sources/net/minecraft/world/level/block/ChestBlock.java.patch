@@ -5,7 +5,7 @@
          public Optional<MenuProvider> acceptDouble(final ChestBlockEntity first, final ChestBlockEntity second) {
              final Container container = new CompoundContainer(first, second);
 -            return Optional.of(new MenuProvider() {
-+            return Optional.of(DoubleInventory.wrap(new MenuProvider() { // CraftBukkit - wrap for identification
++            return Optional.of(org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest.Provider.wrap(new MenuProvider() { // CraftBukkit - wrap for identification
                  {
                      Objects.requireNonNull(container);
                  }
@@ -22,41 +22,6 @@
          }
  
          @Override
-@@ -139,6 +_,34 @@
-         }
-     };
- 
-+    // CraftBukkit start
-+    public static class DoubleInventory implements MenuProvider {
-+
-+        private final MenuProvider delegate;
-+        public final CompoundContainer container; // expose to api
-+
-+        private DoubleInventory(MenuProvider delegate, CompoundContainer container) {
-+            this.delegate = delegate;
-+            this.container = container;
-+        }
-+
-+        public static DoubleInventory wrap(MenuProvider delegate, CompoundContainer container) {
-+            return new DoubleInventory(delegate, container);
-+        }
-+
-+        @Nullable
-+        @Override
-+        public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory, Player player) {
-+            return this.delegate.createMenu(syncId, playerInventory, player);
-+        }
-+
-+        @Override
-+        public Component getDisplayName() {
-+            return this.delegate.getDisplayName();
-+        }
-+    }
-+    // CraftBukkit end
-+
-     @Override
-     public MapCodec<? extends ChestBlock> codec() {
-         return CODEC;
 @@ -268,8 +_,7 @@
      ) {
          if (level instanceof ServerLevel serverLevel) {

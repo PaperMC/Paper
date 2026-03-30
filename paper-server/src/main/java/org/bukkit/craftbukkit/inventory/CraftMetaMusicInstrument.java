@@ -25,11 +25,11 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
         }
     }
 
-    CraftMetaMusicInstrument(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
-        super(tag, extraHandledDcts); // Paper
+    CraftMetaMusicInstrument(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) { // Paper
+        super(patch, extraHandledComponents); // Paper
 
-        getOrEmpty(tag, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT).ifPresent((en) -> {
-            this.instrument = CraftMusicInstrument.minecraftHolderToBukkit(en.instrument());
+        getOrEmpty(patch, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT).ifPresent((instrumentComponent) -> {
+            this.instrument = CraftMusicInstrument.minecraftHolderToBukkit(instrumentComponent.instrument());
         });
     }
 

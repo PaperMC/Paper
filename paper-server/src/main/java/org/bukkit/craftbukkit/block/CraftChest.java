@@ -53,8 +53,8 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
         ChestBlock block = this.block.getBlock() instanceof ChestBlock chestBlock ? chestBlock : (ChestBlock) Blocks.CHEST;
         MenuProvider provider = block.getMenuProvider(this.block, world.getHandle(), this.getPosition(), true);
 
-        if (provider instanceof ChestBlock.DoubleInventory doubleInventory) {
-            inventory = new CraftInventoryDoubleChest(doubleInventory);
+        if (provider instanceof CraftInventoryDoubleChest.Provider doubleChestProvider) {
+            inventory = new CraftInventoryDoubleChest(doubleChestProvider);
         }
         return inventory;
     }

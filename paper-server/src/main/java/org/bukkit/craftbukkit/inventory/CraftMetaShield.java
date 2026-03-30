@@ -48,16 +48,16 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
         }
     }
 
-    CraftMetaShield(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper - improve checking handled tags in item meta
-        super(tag, extraHandledDcts); // Paper - improve checking handled tags in item meta
+    CraftMetaShield(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) { // Paper - improve checking handled tags in item meta
+        super(patch, extraHandledComponents); // Paper - improve checking handled tags in item meta
 
-        getOrEmpty(tag, CraftMetaShield.BASE_COLOR).ifPresent((color) -> {
+        getOrEmpty(patch, CraftMetaShield.BASE_COLOR).ifPresent((color) -> {
             this.baseColor = DyeColor.getByWoolData((byte) color.getId());
         });
 
-        getOrEmpty(tag, CraftMetaBanner.PATTERNS).ifPresent((entityTag) -> {
-            List<BannerPatternLayers.Layer> patterns = entityTag.layers();
-            for (int i = 0; i < Math.min(patterns.size(), 20); i++) {
+        getOrEmpty(patch, CraftMetaBanner.PATTERNS).ifPresent((bannerPattern) -> {
+            List<BannerPatternLayers.Layer> patterns = bannerPattern.layers();
+            for (int i = 0; i < Math.min(patterns.size(), CraftMetaBanner.ARBITRARY_LIMIT); i++) {
                 BannerPatternLayers.Layer p = patterns.get(i);
                 DyeColor color = DyeColor.getByWoolData((byte) p.color().getId());
                 PatternType pattern = CraftRegistry.unwrapAndConvertHolder(io.papermc.paper.registry.RegistryKey.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not being correct
@@ -283,7 +283,6 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
             case GREEN -> Material.GREEN_BANNER;
             case RED -> Material.RED_BANNER;
             case BLACK -> Material.BLACK_BANNER;
-            default -> throw new IllegalArgumentException("Unknown banner colour");
         };
     }
 }

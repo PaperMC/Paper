@@ -1,8 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.core.Holder;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -27,7 +25,6 @@ public class CraftTransmuteRecipe extends TransmuteRecipe implements CraftRecipe
 
     @Override
     public void addToCraftingManager() {
-        final ItemStack unwrappedInternalStack = CraftItemStack.unwrap(this.getResult());
         MinecraftServer.getServer().getRecipeManager().addRecipe(
             new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()),
                 new net.minecraft.world.item.crafting.TransmuteRecipe(
@@ -36,8 +33,8 @@ public class CraftTransmuteRecipe extends TransmuteRecipe implements CraftRecipe
                     this.toNMS(this.getInput(), true),
                     this.toNMS(this.getMaterial(), true),
                     net.minecraft.world.item.crafting.TransmuteRecipe.DEFAULT_MATERIAL_COUNT,
-                    new net.minecraft.world.item.ItemStackTemplate(unwrappedInternalStack.typeHolder(), unwrappedInternalStack.getCount(), unwrappedInternalStack.getComponentsPatch())
-                    , false
+                    CraftItemStack.asTemplate(this.getResult()),
+                    false
                 )
             )
         );

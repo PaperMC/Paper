@@ -1,15 +1,17 @@
 package org.bukkit.craftbukkit.generator;
 
 import com.google.common.base.Preconditions;
+import com.mojang.logging.LogUtils;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -180,10 +182,10 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     // Paper end
 
     @Override
-    public void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biomeBase) {
+    public void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biome) {
         Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
-        ChunkAccess chunk = this.getHandle().getChunk(x >> 4, z >> 4, ChunkStatus.EMPTY);
-        chunk.setBiome(x >> 2, y >> 2, z >> 2, biomeBase);
+        ChunkAccess chunk = this.getHandle().getChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z), ChunkStatus.EMPTY);
+        chunk.setNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z), biome);
     }
 
     @Override

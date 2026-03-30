@@ -15,6 +15,6 @@ public record PaperUseRemainder(
 
     @Override
     public ItemStack transformInto() {
-        return CraftItemStack.asBukkitCopy(this.impl.convertInto().create());
+        return CraftItemStack.asBukkitCopy(this.impl.convertInto());
     }
 }

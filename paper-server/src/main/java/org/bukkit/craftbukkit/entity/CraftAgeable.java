@@ -53,7 +53,6 @@ public class CraftAgeable extends CraftCreature implements Ageable {
         return this.getAge() >= 0;
     }
 
-
     @Override
     public boolean canBreed() {
         return this.getAge() == 0;

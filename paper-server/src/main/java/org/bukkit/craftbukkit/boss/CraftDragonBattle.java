@@ -1,17 +1,19 @@
 package org.bukkit.craftbukkit.boss;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import io.papermc.paper.math.Position;
+import io.papermc.paper.util.MCUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.level.block.state.pattern.BlockPattern;
 import net.minecraft.world.level.dimension.end.DragonRespawnStage;
 import net.minecraft.world.level.dimension.end.EnderDragonFight;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.boss.BossBar;
 import org.bukkit.boss.DragonBattle;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -74,27 +76,27 @@ public class CraftDragonBattle implements DragonBattle {
     }
 
     @Override
-    public boolean initiateRespawn(Collection<EnderCrystal> list) {
+    public boolean initiateRespawn(Collection<EnderCrystal> crystals) { // todo doesn't seems to work without crystals
         if (this.hasBeenPreviouslyKilled() && this.getRespawnPhase() == RespawnPhase.NONE) {
-            // Copy from EndDragonFight#tryRespawn for generate exit portal if not exists
+            // Copy from EnderDragonFight#tryRespawn for generate exit portal if not exists
             if (this.handle.exitPortalLocation == null) {
-                BlockPattern.BlockPatternMatch patternMatch = this.handle.findExitPortal();
-                if (patternMatch == null) {
+                BlockPattern.BlockPatternMatch match = this.handle.findExitPortal();
+                if (match == null) {
                     this.handle.spawnExitPortal(true);
                 }
             }
 
-            list = (list != null) ? new ArrayList<>(list) : Collections.emptyList();
-            list.removeIf(enderCrystal -> {
-                if (enderCrystal == null) {
+            List<EnderCrystal> filteredCrystals = crystals != null ? new ArrayList<>(crystals) : new ArrayList<>();
+            filteredCrystals.removeIf(crystal -> {
+                if (crystal == null) {
                     return true;
                 }
-
-                World world = enderCrystal.getWorld();
-                return !((CraftWorld) world).getHandle().equals(this.handle.level);
+                return !((CraftWorld) crystal.getWorld()).getHandle().equals(this.handle.level);
             });
 
-            return this.handle.respawnDragon(list.stream().map(enderCrystal -> ((CraftEnderCrystal) enderCrystal).getHandle()).collect(Collectors.toList()));
+            return this.handle.respawnDragon(
+                Lists.transform(filteredCrystals, crystal -> ((CraftEnderCrystal) crystal).getHandle())
+            );
         }
         return false;
     }
@@ -146,36 +148,36 @@ public class CraftDragonBattle implements DragonBattle {
 
     @Override
     public boolean spawnNewGateway() {
-        return this.handle.spawnNewGatewayIfPossible();
+        return this.handle.spawnNewGateway();
     }
 
     @Override
-    public void spawnNewGateway(final io.papermc.paper.math.Position position) {
-        this.handle.spawnNewGateway(io.papermc.paper.util.MCUtil.toBlockPos(position));
+    public void spawnNewGateway(final Position position) {
+        this.handle.spawnNewGateway(MCUtil.toBlockPos(position));
     }
 
     @Override
-    public List<org.bukkit.entity.EnderCrystal> getRespawnCrystals() {
-        if (this.handle.respawnCrystals == null) {
+    public List<EnderCrystal> getRespawnCrystals() {
+        if (this.handle.respawnCrystals.isEmpty()) {
             return Collections.emptyList();
         }
 
-        final List<EnderCrystal> enderCrystals = new ArrayList<>();
-        for (final net.minecraft.world.entity.EntityReference<net.minecraft.world.entity.boss.enderdragon.EndCrystal> ref : this.handle.respawnCrystals) {
-            final net.minecraft.world.entity.boss.enderdragon.EndCrystal endCrystal = ref.getEntity(this.handle.level, net.minecraft.world.entity.boss.enderdragon.EndCrystal.class);
-            if (endCrystal != null && !endCrystal.isRemoved() && endCrystal.isAlive() && endCrystal.valid) {
-                enderCrystals.add(((EnderCrystal) endCrystal.getBukkitEntity()));
+        final List<EnderCrystal> crystals = new ArrayList<>();
+        for (final net.minecraft.world.entity.EntityReference<EndCrystal> ref : this.handle.respawnCrystals) {
+            final EndCrystal crystal = ref.getEntity(this.handle.level, EndCrystal.class);
+            if (crystal != null && !crystal.isRemoved() && crystal.isAlive() && crystal.valid) {
+                crystals.add(((EnderCrystal) crystal.getBukkitEntity()));
             }
         }
-        return Collections.unmodifiableList(enderCrystals);
+        return Collections.unmodifiableList(crystals);
     }
 
     @Override
     public List<EnderCrystal> getHealingCrystals() {
         final List<EnderCrystal> enderCrystals = new ArrayList<>();
-        for (final net.minecraft.world.entity.boss.enderdragon.EndCrystal endCrystal : this.handle.getSpikeCrystals()) {
-            if (!endCrystal.isRemoved() && endCrystal.isAlive() && endCrystal.valid) {
-                enderCrystals.add(((EnderCrystal) endCrystal.getBukkitEntity()));
+        for (final EndCrystal crystal : this.handle.getSpikeCrystals()) {
+            if (!crystal.isRemoved() && crystal.isAlive() && crystal.valid) {
+                enderCrystals.add(((EnderCrystal) crystal.getBukkitEntity()));
             }
         }
         return Collections.unmodifiableList(enderCrystals);

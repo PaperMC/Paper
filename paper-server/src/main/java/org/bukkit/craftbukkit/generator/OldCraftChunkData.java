@@ -36,10 +36,10 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
     }
 
     public OldCraftChunkData(int minHeight, int maxHeight, PalettedContainerFactory palettedContainerFactory, org.bukkit.World world) {
-        this.world = world;
         this.minHeight = minHeight;
         this.maxHeight = maxHeight;
         this.palettedContainerFactory = palettedContainerFactory;
+        this.world = world;
         this.sections = new LevelChunkSection[(((maxHeight - 1) >> 4) + 1) - (minHeight >> 4)];
     }
 
