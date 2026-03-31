@@ -94,11 +94,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     private CraftMagicNumbers() {}
 
-    @Override
-    public net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer() {
-        return io.papermc.paper.adventure.PaperAdventure.PLAIN;
-    }
-
     public static BlockState getBlock(MaterialData material) {
         return CraftMagicNumbers.getBlock(material.getItemType(), material.getData());
     }

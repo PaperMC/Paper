@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import net.kyori.adventure.inventory.Book;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
@@ -21,6 +23,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.inventory.meta.BookMeta;
+import org.jetbrains.annotations.NotNull;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
@@ -358,6 +361,11 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
         return builder;
     }
 
+    @Override
+    public @NotNull Book asBook() {
+        return Book.book(net.kyori.adventure.text.Component.empty(), net.kyori.adventure.text.Component.empty(), this.getPages().stream().map(net.kyori.adventure.text.Component::text).collect(Collectors.toList()));
+    }
+
     // Spigot start
     private BookMeta.Spigot spigot = new SpigotMeta();
     private class SpigotMeta extends BookMeta.Spigot {
@@ -449,39 +457,6 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
     public static final net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.builder()
         .character(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.SECTION_CHAR)
         .build();
-    private CraftMetaBookSigned(net.kyori.adventure.text.Component title, net.kyori.adventure.text.Component author, java.util.List<net.kyori.adventure.text.Component> pages) {
-        super((org.bukkit.craftbukkit.inventory.CraftMetaItem) org.bukkit.Bukkit.getItemFactory().getItemMeta(Material.WRITABLE_BOOK));
-        this.title = title == null ? null : LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.serialize(title);
-        this.author = author == null ? null : LEGACY_DOWNSAMPLING_COMPONENT_SERIALIZER.serialize(author);
-        this.pages = io.papermc.paper.adventure.PaperAdventure.asVanilla(pages);
-    }
-
-    static final class CraftMetaBookSignedBuilder extends CraftMetaBook.CraftMetaBookBuilder {
-        private net.kyori.adventure.text.Component title;
-        private net.kyori.adventure.text.Component author;
-
-        @Override
-        public org.bukkit.inventory.meta.BookMeta.BookMetaBuilder title(final net.kyori.adventure.text.Component title) {
-            this.title = title;
-            return this;
-        }
-
-        @Override
-        public org.bukkit.inventory.meta.BookMeta.BookMetaBuilder author(final net.kyori.adventure.text.Component author) {
-            this.author = author;
-            return this;
-        }
-
-        @Override
-        public org.bukkit.inventory.meta.BookMeta build() {
-            return new CraftMetaBookSigned(this.title, this.author, this.pages);
-        }
-    }
-
-    @Override
-    public BookMetaBuilder toBuilder() {
-        return new CraftMetaBookSignedBuilder();
-    }
 
     @Override
     public net.kyori.adventure.text.Component title() {

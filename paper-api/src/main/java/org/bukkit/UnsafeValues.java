@@ -242,5 +242,4 @@ public interface UnsafeValues {
      */
     @NotNull ItemStack deserializeItemHover(HoverEvent.@NotNull ShowItem itemHover);
 
-    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
 }

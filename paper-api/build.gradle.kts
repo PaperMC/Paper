@@ -12,21 +12,22 @@ java {
 }
 
 val annotationsVersion = "26.0.2"
-val adventureVersion = "4.26.1"
+val adventureVersion = "5.1.1"
 val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
 val slf4jVersion = "2.0.17"
 val log4jVersion = "2.26.0"
 
-val apiAndDocs: Configuration by configurations.creating {
+val apiAndDocs: Configuration by configurations.creating
+configurations.api {
+    extendsFrom(apiAndDocs)
+}
+val javadocSourcepath: Configuration by configurations.creating {
     attributes {
         attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
         attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
         attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.SOURCES))
         attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
     }
-}
-configurations.api {
-    extendsFrom(apiAndDocs)
 }
 
 // Configure mockito agent that is needed in newer Java versions
@@ -60,6 +61,7 @@ dependencies {
 
     apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
     apiAndDocs("net.kyori:adventure-api")
+    apiAndDocs("net.kyori:adventure-key")
     apiAndDocs("net.kyori:adventure-text-minimessage")
     apiAndDocs("net.kyori:adventure-text-serializer-gson")
     apiAndDocs("net.kyori:adventure-text-serializer-legacy")
@@ -74,12 +76,13 @@ dependencies {
     val annotations = "org.jetbrains:annotations:$annotationsVersion"
     compileOnly(annotations)
     testCompileOnly(annotations)
+    javadocSourcepath(annotations) // For adventure-api module requirements
 
     val checkerQual = "org.checkerframework:checker-qual:3.49.2"
     compileOnlyApi(checkerQual)
     testCompileOnly(checkerQual)
 
-    api("org.jspecify:jspecify:1.0.0")
+    apiAndDocs("org.jspecify:jspecify:1.0.0")
 
     // Test dependencies
     testImplementation("org.apache.commons:commons-lang3:3.20.0")
@@ -193,13 +196,7 @@ tasks.withType<Javadoc>().configureEach {
         "https://www.javadocs.dev/org.joml/joml/1.10.8/",
         "https://www.javadocs.dev/com.google.code.gson/gson/2.14.0",
         "https://jspecify.dev/docs/api/",
-        "https://jd.advntr.dev/api/$adventureVersion/",
-        "https://jd.advntr.dev/key/$adventureVersion/",
-        "https://jd.advntr.dev/text-minimessage/$adventureVersion/",
-        "https://jd.advntr.dev/text-serializer-gson/$adventureVersion/",
-        "https://jd.advntr.dev/text-serializer-legacy/$adventureVersion/",
-        "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
-        "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
+        "https://jd.papermc.io/adventure/$adventureVersion/",
         "https://www.javadocs.dev/org.slf4j/slf4j-api/$slf4jVersion/",
         "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/",
         "https://www.javadocs.dev/org.apache.maven.resolver/maven-resolver-api/1.7.3",
@@ -207,12 +204,12 @@ tasks.withType<Javadoc>().configureEach {
     options.tags("apiNote:a:API Note:")
     options.tags("implNote:a:Implementation Note:")
 
-    inputs.files(apiAndDocs).ignoreEmptyDirectories().withPropertyName(apiAndDocs.name + "-configuration")
-    val apiAndDocsElements = apiAndDocs.elements
+    inputs.files(javadocSourcepath).ignoreEmptyDirectories().withPropertyName(javadocSourcepath.name + "-configuration")
+    val javadocSourcepathElements = javadocSourcepath.elements
     doFirst {
         options.addStringOption(
             "sourcepath",
-            apiAndDocsElements.get().map { it.asFile }.joinToString(separator = File.pathSeparator, transform = File::getPath)
+            javadocSourcepathElements.get().map { it.asFile }.joinToString(separator = File.pathSeparator, transform = File::getPath)
         )
     }
 
