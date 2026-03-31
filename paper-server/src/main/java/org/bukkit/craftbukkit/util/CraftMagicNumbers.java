@@ -120,11 +120,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer() {
-        return io.papermc.paper.adventure.PaperAdventure.PLAIN;
-    }
-
-    @Override
     public net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainTextSerializer() {
         return net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText();
     }

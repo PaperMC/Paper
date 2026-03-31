@@ -1,8 +1,13 @@
 package org.bukkit.inventory.meta;
 
 import java.util.List;
+import java.util.Objects;
+import net.kyori.adventure.inventory.Book;
+import net.kyori.adventure.inventory.BookLike;
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Material;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,11 +19,8 @@ import org.jetbrains.annotations.Nullable;
  * {@link org.bukkit.inventory.ItemStack#getType()}. {@code instanceof} on
  * the meta instance is not sufficient due to unusual inheritance
  * with relation to {@link WritableBookMeta}.
- * <p>
- * <b>Warning:</b> in an upcoming version of Paper, this interface will no
- * longer extend Adventure's {@link net.kyori.adventure.inventory.Book}.
  */
-public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventory.Book { // Paper - adventure
+public interface BookMeta extends WritableBookMeta, BookLike { // Paper - adventure
 
     /**
      * Represents the generation (or level of copying) of a written book
@@ -177,7 +179,6 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      *
      * @return the title of the book
      */
-    @Override
     net.kyori.adventure.text.@Nullable Component title();
 
     /**
@@ -188,8 +189,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      * @param title the title to set
      * @return the same {@link BookMeta} instance
      */
-    @org.jetbrains.annotations.Contract(value = "_ -> this", pure = false)
-    @Override
+    @org.jetbrains.annotations.Contract(value = "_ -> this")
     @NotNull BookMeta title(net.kyori.adventure.text.@Nullable Component title);
 
     /**
@@ -200,7 +200,6 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      *
      * @return the author of the book
      */
-    @Override
     net.kyori.adventure.text.@Nullable Component author();
 
     /**
@@ -209,8 +208,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      * @param author the author to set
      * @return the same {@link BookMeta} instance
      */
-    @org.jetbrains.annotations.Contract(value = "_ -> this", pure = false)
-    @Override
+    @org.jetbrains.annotations.Contract(value = "_ -> this")
     @NotNull BookMeta author(net.kyori.adventure.text.@Nullable Component author);
 
 
@@ -247,59 +245,38 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
     void addPages(net.kyori.adventure.text.@NotNull Component @NotNull ... pages);
 
     /**
-     * @deprecated BookMeta is mutable, there is no need for a builder.
-     */
-    @Deprecated(forRemoval = true, since = "1.21.11")
-    interface BookMetaBuilder extends net.kyori.adventure.inventory.Book.Builder {
-        /**
-         * @deprecated BookMeta is mutable, there is no need for a builder.
-         */
-        @Deprecated(forRemoval = true, since = "1.21.11")
-        @Override
-        @NotNull BookMetaBuilder title(net.kyori.adventure.text.@Nullable Component title);
-
-        /**
-         * @deprecated BookMeta is mutable, there is no need for a builder.
-         */
-        @Deprecated(forRemoval = true, since = "1.21.11")
-        @Override
-        @NotNull BookMetaBuilder author(net.kyori.adventure.text.@Nullable Component author);
-
-        /**
-         * @deprecated BookMeta is mutable, there is no need for a builder.
-         */
-        @Deprecated(forRemoval = true, since = "1.21.11")
-        @Override
-        @NotNull BookMetaBuilder addPage(net.kyori.adventure.text.@NotNull Component page);
-
-        /**
-         * @deprecated BookMeta is mutable, there is no need for a builder.
-         */
-        @Deprecated(forRemoval = true, since = "1.21.11")
-        @Override
-        @NotNull BookMetaBuilder pages(net.kyori.adventure.text.@NotNull Component @NotNull ... pages);
-
-        /**
-         * @deprecated BookMeta is mutable, there is no need for a builder.
-         */
-        @Deprecated(forRemoval = true, since = "1.21.11")
-        @Override
-        @NotNull BookMetaBuilder pages(java.util.@NotNull Collection<net.kyori.adventure.text.Component> pages);
-
-        /**
-         * @deprecated BookMeta is mutable, there is no need for a builder.
-         */
-        @Deprecated(forRemoval = true, since = "1.21.11")
-        @Override
-        @NotNull BookMeta build();
-    }
+    * Gets the list of pages.
+    *
+    * <p>The returned collection will be unmodifiable.</p>
+    *
+    * @return the list of pages
+    */
+    @NotNull List<Component> pages();
 
     /**
-     * @deprecated BookMeta is mutable, there is no need for a builder.
+     * Sets the pages of the book.
+     *
+     * @param pages the pages to set
+     * @return this book instance
      */
-    @Deprecated(forRemoval = true, since = "1.21.11")
+    @Contract(value = "_ -> this")
+    @NotNull BookMeta pages(final @NotNull List<Component> pages);
+
+    /**
+     * Sets the pages of the book.
+    *
+    * @param pages the pages to set
+    * @return this book instance
+    */
+    @Contract(value = "_ -> this")
+    default @NotNull BookMeta pages(final @NotNull Component @NotNull... pages) {
+        return this.pages(List.of(pages));
+    }
+
     @Override
-    @NotNull BookMetaBuilder toBuilder();
+    default Book asBook() {
+        return Book.book(Objects.requireNonNullElseGet(this.title(), Component::empty), Objects.requireNonNullElseGet(this.author(), Component::empty), this.pages());
+    }
     // Paper end
 
     // Spigot start

@@ -87,7 +87,7 @@ public class CraftConsoleCommandSender extends ServerCommandSender implements Co
     }
 
     @Override
-    public void sendMessage(final net.kyori.adventure.identity.Identity identity, final net.kyori.adventure.text.Component message, final net.kyori.adventure.audience.MessageType type) {
+    public void sendMessage(final net.kyori.adventure.text.Component message) {
         this.sendRawMessage(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(message));
     }
 
