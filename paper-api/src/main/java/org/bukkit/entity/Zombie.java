@@ -20,11 +20,11 @@ public interface Zombie extends Monster, Ageable {
     /**
      * Sets whether the zombie is a baby
      *
-     * @param flag Whether the zombie is a baby
+     * @param baby Whether the zombie is a baby
      * @deprecated see {@link Ageable#setBaby()} and {@link Ageable#setAdult()}
      */
     @Deprecated(since = "1.16.2")
-    public void setBaby(boolean flag);
+    public void setBaby(boolean baby);
 
     /**
      * Gets whether the zombie is a villager
@@ -173,5 +173,7 @@ public interface Zombie extends Monster, Ageable {
      * @deprecated Since 1.21.2 all zombie types can break doors if instructed as MC-137053 was fixed.
      */
     @Deprecated(since = "1.21.2", forRemoval = true)
-    boolean supportsBreakingDoors();
+    default boolean supportsBreakingDoors() {
+        return true; // All zombies are now capable of breaking doors, see https://bugs.mojang.com/browse/MC-137053
+    }
 }

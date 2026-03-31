@@ -193,7 +193,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(location.getWorld() != null, "Location needs to be in a world");
         Preconditions.checkArgument(location.getWorld().equals(this.getWorld()), "Cannot sleep across worlds");
 
-        BlockPos pos = CraftLocation.toBlockPosition(location);
+        BlockPos pos = CraftLocation.toBlockPos(location);
         BlockState state = this.getHandle().level().getBlockState(pos);
         if (!(state.getBlock() instanceof BedBlock)) {
             return false;
@@ -398,7 +398,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                 return null;
             }
         }
-        this.getHandle().openMenu(Blocks.CRAFTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), CraftLocation.toBlockPosition(location)));
+        this.getHandle().openMenu(Blocks.CRAFTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), CraftLocation.toBlockPos(location)));
         if (force) {
             this.getHandle().containerMenu.checkReachable = false;
         }
@@ -418,7 +418,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
 
         // If there isn't an enchant table we can force create one, won't be very useful though.
-        BlockPos pos = CraftLocation.toBlockPosition(location);
+        BlockPos pos = CraftLocation.toBlockPos(location);
         // Paper start
         MenuProvider menuProvider = Blocks.ENCHANTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), pos);
         if (menuProvider == null) {

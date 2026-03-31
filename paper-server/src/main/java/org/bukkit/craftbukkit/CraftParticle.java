@@ -158,7 +158,7 @@ public abstract class CraftParticle<D> implements Keyed {
                     PositionSource source;
                     if (data.getDestination() instanceof Vibration.Destination.BlockDestination) {
                         Location destination = ((Vibration.Destination.BlockDestination) data.getDestination()).getLocation();
-                        source = new BlockPositionSource(CraftLocation.toBlockPosition(destination));
+                        source = new BlockPositionSource(CraftLocation.toBlockPos(destination));
                     } else if (data.getDestination() instanceof Vibration.Destination.EntityDestination) {
                         Entity destination = ((CraftEntity) ((Vibration.Destination.EntityDestination) data.getDestination()).getEntity()).getHandle();
                         source = new EntityPositionSource(destination, destination.getEyeHeight());

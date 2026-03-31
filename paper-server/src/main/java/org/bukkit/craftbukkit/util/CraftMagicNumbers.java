@@ -271,7 +271,8 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     /**
      * @deprecated in favor of {@link io.papermc.paper.ServerBuildInfo#minecraftVersionId()}
-     * Paper has used Mojang mappings since 1.20.5, and this method no longer returns a useful value.
+     * Paper has used Mojang mappings since 1.20.5 and now in 26.1 the server is not obfuscated anymore,
+     * so this method no longer returns a useful value.
      */
     @Deprecated(forRemoval = true, since = "1.21.6")
     public String getMappingsVersion() {
@@ -285,8 +286,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public ItemStack modifyItemStack(ItemStack item, String components) {
-        net.minecraft.world.item.ItemStack stack = CraftItemStack.unwrap(item); // mutation is expected as old behavior
+        if (item.isEmpty()) {
+            return item;
+        }
 
+        net.minecraft.world.item.ItemStack stack = CraftItemStack.unwrap(item); // mutation is expected as old behavior
         try {
             StringReader reader = new StringReader(item.getType().key().asString() + components);
             stack.applyComponents(new ItemParser(CraftRegistry.getMinecraftRegistry()).parse(reader).components());

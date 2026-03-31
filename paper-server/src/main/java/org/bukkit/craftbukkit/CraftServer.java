@@ -1586,11 +1586,10 @@ public final class CraftServer implements Server {
         Optional<RecipeHolder<CraftingRecipe>> recipe = this.getNMSRecipe(craftingMatrix, craftingContainer, craftWorld);
 
         // Generate the resulting ItemStack from the Crafting Matrix
-        final ItemStack result = recipe.map(
-            holder -> {
-                return CraftItemStack.asBukkitCopy(holder.value().assemble(craftingContainer.asCraftInput()));
-            })
-            .orElseGet(ItemStack::empty);
+        final ItemStack result = recipe.map(holder -> {
+            return CraftItemStack.asBukkitCopy(holder.value().assemble(craftingContainer.asCraftInput()));
+        }).orElseGet(ItemStack::empty);
+
         return this.createItemCraftResult(recipe, result, craftingContainer);
     }
 
@@ -1858,7 +1857,7 @@ public final class CraftServer implements Server {
         if (structureLocation == null) {
             throw new IllegalStateException("Could not find a structure for " + structureType);
         }
-        BlockPos structurePos = CraftLocation.toBlockPosition(structureLocation);
+        BlockPos structurePos = CraftLocation.toBlockPos(structureLocation);
 
         // Create map with trackingPosition = true, unlimitedTracking = true
         net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePos.getX(), structurePos.getZ(), MapView.Scale.NORMAL.getValue(), true, true);

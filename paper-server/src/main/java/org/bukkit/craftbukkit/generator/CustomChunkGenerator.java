@@ -84,8 +84,9 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
         @Override
         public void setBiome(int x, int y, int z, Biome biome) {
-            Preconditions.checkArgument(biome != Biome.CUSTOM, "Cannot set the biome to %s", biome);
-            this.chunk.setNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z), CraftBiome.bukkitToMinecraftHolder(biome));
+            Holder<net.minecraft.world.level.biome.Biome> b = CraftBiome.bukkitToMinecraftHolder(biome);
+            Preconditions.checkArgument(b != null, "Cannot set the biome to %s", biome);
+            this.chunk.setNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(y), QuartPos.fromBlock(z), b);
         }
     }
 

@@ -45,16 +45,12 @@ import io.papermc.paper.datacomponent.item.PaperUseRemainder;
 import io.papermc.paper.datacomponent.item.PaperWeapon;
 import io.papermc.paper.datacomponent.item.PaperWritableBookContent;
 import io.papermc.paper.datacomponent.item.PaperWrittenBookContent;
-import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.util.Conversions;
-import io.papermc.paper.registry.keys.BannerPatternKeys;
 import io.papermc.paper.registry.set.PaperRegistrySets;
-import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -64,9 +60,7 @@ import net.minecraft.util.Unit;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.component.InstrumentComponent;
 import net.minecraft.world.item.component.MapPostProcessing;
-import net.minecraft.world.level.block.entity.BannerPattern;
 import org.bukkit.DyeColor;
-import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
 import org.bukkit.craftbukkit.damage.CraftDamageType;
@@ -95,11 +89,11 @@ import static io.papermc.paper.util.MCUtil.transformUnmodifiable;
 
 public final class DataComponentAdapters {
 
-    static final Function<Unit, Void> UNIT_TO_API_CONVERTER = $ -> {
+    static final Function<Unit, Void> UNIT_TO_API_CONVERTER = _ -> {
         throw new UnsupportedOperationException("Cannot convert the Unit type to an API value");
     };
 
-    static final Function UNIMPLEMENTED_TO_API_CONVERTER = $ -> {
+    static final Function UNIMPLEMENTED_TO_API_CONVERTER = _ -> {
         throw new UnsupportedOperationException("Cannot convert the an unimplemented type to an API value");
     };
 

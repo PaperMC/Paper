@@ -63,8 +63,8 @@ public final class PaperDialogCodecs {
         return registry.freeze();
     });
     private static final Function<DialogAction, MapCodec<? extends DialogAction>> GET_DIALOG_ACTION_TYPE = dialogAction -> switch (dialogAction) {
-        case DialogAction.CommandTemplateAction $ -> COMMAND_TEMPLATE_ACTION_CODEC;
-        case DialogAction.CustomClickAction $ -> CUSTOM_ALL_ACTION_CODEC;
+        case DialogAction.CommandTemplateAction _ -> COMMAND_TEMPLATE_ACTION_CODEC;
+        case DialogAction.CustomClickAction _ -> CUSTOM_ALL_ACTION_CODEC;
         case DialogAction.StaticAction action -> STATIC_ACTION_CODECS.get(AdventureCodecs.GET_CLICK_EVENT_TYPE.apply(action.value()));
     };
     private static final Codec<DialogAction> DIALOG_ACTION_CODEC = DIALOG_ACTION_TYPES.byNameCodec().dispatch(GET_DIALOG_ACTION_TYPE, Function.identity());
@@ -100,8 +100,8 @@ public final class PaperDialogCodecs {
         return registry.freeze();
     });
     private static final Function<DialogBody, MapCodec<? extends DialogBody>> GET_DIALOG_BODY_TYPE = dialogAction -> switch (dialogAction) {
-        case PlainMessageDialogBody $ -> PLAIN_MESSAGE_BODY_CODEC;
-        case ItemDialogBody $ -> ITEM_BODY_CODEC;
+        case PlainMessageDialogBody _ -> PLAIN_MESSAGE_BODY_CODEC;
+        case ItemDialogBody _ -> ITEM_BODY_CODEC;
     };
     private static final Codec<DialogBody> DIALOG_BODY_CODEC = DIALOG_BODY_TYPES.byNameCodec().dispatch(GET_DIALOG_BODY_TYPE, Function.identity());
     private static final Codec<List<DialogBody>> DIALOG_BODY_LIST_CODEC = ExtraCodecs.compactListCodec(DIALOG_BODY_CODEC);
@@ -163,10 +163,10 @@ public final class PaperDialogCodecs {
         return registry.freeze();
     });
     private static final Function<DialogInput, MapCodec<? extends DialogInput>> GET_DIALOG_INPUT_TYPE_TYPE = dialogAction -> switch (dialogAction) {
-        case TextDialogInput $ -> TEXT_DIALOG_INPUT_TYPE_MAP_CODEC;
-        case SingleOptionDialogInput $ -> SINGLE_OPTION_DIALOG_INPUT_TYPE_MAP_CODEC;
-        case NumberRangeDialogInput $ -> NUMBER_RANGE_INPUT_MAP_CODEC;
-        case BooleanDialogInput $ -> BOOLEAN_DIALOG_INPUT_TYPE_MAP_CODEC;
+        case TextDialogInput _ -> TEXT_DIALOG_INPUT_TYPE_MAP_CODEC;
+        case SingleOptionDialogInput _ -> SINGLE_OPTION_DIALOG_INPUT_TYPE_MAP_CODEC;
+        case NumberRangeDialogInput _ -> NUMBER_RANGE_INPUT_MAP_CODEC;
+        case BooleanDialogInput _ -> BOOLEAN_DIALOG_INPUT_TYPE_MAP_CODEC;
     };
     private static final Codec<DialogInput> DIALOG_INPUT_CODEC = DIALOG_INPUT_TYPES.byNameCodec().dispatchMap(GET_DIALOG_INPUT_TYPE_TYPE, Function.identity()).codec();
 

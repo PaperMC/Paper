@@ -534,16 +534,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             this.canBreakPredicates = List.copyOf(canBreak.predicates);
         });
 
-        // Paper start - improve checking handled data component types
         Set<DataComponentType<?>> handledComponents = getTopLevelHandledComponents(this.getClass());
         if (extraHandledComponents != null) {
             extraHandledComponents.addAll(handledComponents);
             handledComponents = extraHandledComponents;
         }
-        // Paper end - improve checking handled data component types
         Set<Map.Entry<DataComponentType<?>, Optional<?>>> keys = patch.entrySet();
         for (Map.Entry<DataComponentType<?>, Optional<?>> key : keys) {
-            if (!handledComponents.contains(key.getKey())) { // Paper - improve checking handled data component types
+            if (!handledComponents.contains(key.getKey())) {
                 key.getValue().ifPresent((value) -> {
                     this.unhandledTags.set((DataComponentType) key.getKey(), value);
                 });
@@ -1576,12 +1574,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     @Override
-    public RegistryKeySet<DamageType> getDamageResistance() {
+    public RegistryKeySet<DamageType> getDamageResistantTypes() {
         return this.damageResistantTypes == null ? null : PaperRegistrySets.convertToApi(RegistryKey.DAMAGE_TYPE, this.damageResistantTypes);
     }
 
     @Override
-    public void setDamageResistance(RegistryKeySet<DamageType> types) {
+    public void setDamageResistantTypes(RegistryKeySet<DamageType> types) {
         if (types == null) {
             this.damageResistantTypes = null;
         } else {
@@ -2421,7 +2419,6 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.version = version;
     }
 
-    // Paper start - improve checking handled tags
     @org.jetbrains.annotations.VisibleForTesting
     public static final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> HANDLED_DCTS_PER_TYPE = new HashMap<>();
     protected static final Set<DataComponentType<?>> DEFAULT_HANDLED_DCTS = Set.of(
@@ -2496,7 +2493,6 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             return HANDLED_DCTS_PER_TYPE.getOrDefault(clazz, DEFAULT_HANDLED_DCTS);
         }
     }
-    // Paper end - improve checking handled data component types
 
     protected static <T> Optional<? extends T> getOrEmpty(DataComponentPatch patch, ItemMetaKeyType<T> type) {
         return getOrEmpty(patch, type.TYPE);

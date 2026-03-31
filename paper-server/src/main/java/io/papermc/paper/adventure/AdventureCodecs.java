@@ -49,6 +49,7 @@ import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import net.kyori.adventure.text.object.SpriteObjectContents;
 import net.kyori.adventure.util.Index;
 import net.minecraft.commands.arguments.selector.EntitySelector;
+import net.minecraft.core.Holder;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -200,9 +201,9 @@ public final class AdventureCodecs {
         @Subst("key") final String typeKey = internal.item().typeHolder().unwrapKey().orElseThrow().identifier().toString();
         return HoverEvent.showItem(Key.key(typeKey), internal.item().count(), PaperAdventure.asAdventure(internal.item().components()));
     }, adventure -> {
-        final Item itemType = BuiltInRegistries.ITEM.getValue(PaperAdventure.asVanilla(adventure.value().item()));
+        final Holder<Item> itemType = BuiltInRegistries.ITEM.get(PaperAdventure.asVanilla(adventure.value().item())).orElseThrow();
         final Map<Key, DataComponentValue> dataComponentsMap = adventure.value().dataComponents();
-        return new net.minecraft.network.chat.HoverEvent.ShowItem(new ItemStackTemplate(BuiltInRegistries.ITEM.wrapAsHolder(itemType), adventure.value().count(), PaperAdventure.asVanilla(dataComponentsMap)));
+        return new net.minecraft.network.chat.HoverEvent.ShowItem(new ItemStackTemplate(itemType, adventure.value().count(), PaperAdventure.asVanilla(dataComponentsMap)));
     });
 
     static final HoverEventType<HoverEvent.ShowEntity> SHOW_ENTITY_HOVER_EVENT_TYPE = new HoverEventType<>(SHOW_ENTITY_CODEC, "show_entity");

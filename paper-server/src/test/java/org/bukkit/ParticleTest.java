@@ -158,10 +158,10 @@ public class ParticleTest {
     }
 
     private <T extends ParticleOptions> void testItemStack(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
-        ItemStack itemStack = ItemStack.of(Material.STONE);
-        ItemParticleOption param = this.createAndTest(bukkit, minecraft, itemStack, ItemParticleOption.class);
+        ItemStack item = ItemStack.of(Material.STONE);
+        ItemParticleOption param = this.createAndTest(bukkit, minecraft, item, ItemParticleOption.class);
 
-        assertEquals(itemStack, CraftItemStack.asBukkitCopy(param.getItem()), String.format("""
+        assertEquals(CraftItemStack.asTemplate(item), param.getItem(), String.format("""
                 ItemStack for particle %s do not match.
                 Did something change in the implementation or minecraft?
                 """, bukkit.getKey()));

@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.world.entity.animal.camel.CamelHusk;
-import net.minecraft.world.entity.animal.nautilus.ZombieNautilus;
 import org.bukkit.craftbukkit.CraftServer;
 
 public class CraftCamelHusk extends CraftCamel implements org.bukkit.entity.CamelHusk {
@@ -12,15 +11,5 @@ public class CraftCamelHusk extends CraftCamel implements org.bukkit.entity.Came
     @Override
     public CamelHusk getHandle() {
         return (CamelHusk) this.entity;
-    }
-
-    @Override
-    public void setBaby() {
-        throw new UnsupportedOperationException("Cannot make a baby camel husk anymore");
-    }
-
-    @Override
-    public boolean isAdult() {
-        return true;
     }
 }

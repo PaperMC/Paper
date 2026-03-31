@@ -124,7 +124,7 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
         } else {
             GlobalPos pos = GlobalPos.of(
                 ((CraftWorld) lodestone.getWorld()).getHandle().dimension(),
-                CraftLocation.toBlockPosition(lodestone)
+                CraftLocation.toBlockPos(lodestone)
             );
             boolean tracked = this.tracker == null || this.tracker.tracked();
             this.tracker = new LodestoneTracker(Optional.of(pos), tracked);

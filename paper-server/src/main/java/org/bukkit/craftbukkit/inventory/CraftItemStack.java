@@ -90,8 +90,8 @@ public final class CraftItemStack extends ItemStack {
         // Paper end - re-implement after delegating all api ItemStack calls to CraftItemStack
     }
 
-    public static net.minecraft.world.item.ItemStack getOrCloneOnMutation(ItemStack old, ItemStack newInstance) {
-        return old == newInstance ? unwrap(old) : asNMSCopy(newInstance);
+    public static net.minecraft.world.item.ItemStack getOrCloneOnMutation(ItemStack initial, ItemStack current) {
+        return initial == current ? unwrap(initial) : asNMSCopy(current);
     }
     // Paper end - MC Utils
 
@@ -140,8 +140,6 @@ public final class CraftItemStack extends ItemStack {
     }
 
     public static ItemStack asBukkitCopy(net.minecraft.world.item.ItemStackTemplate original) {
-        // no such thing as a "strictly-Bukkit stack" anymore
-        // we copy the stack since it should be a complete copy not a mirror
         return asBukkitCopy(original.create());
     }
 
@@ -180,9 +178,6 @@ public final class CraftItemStack extends ItemStack {
 
     public net.minecraft.world.item.ItemStack handle;
 
-    /**
-     * Mirror
-     */
     private CraftItemStack(net.minecraft.world.item.ItemStack item) {
         this.handle = item;
     }

@@ -144,7 +144,7 @@ public final class BytecodeModifyingURLClassLoader extends URLClassLoader {
         Manifest man = null;
         if (url.getProtocol().equals("jar")) {
             try {
-                final Object computedManifest = this.manifests.computeIfAbsent(jarName(url), $ -> {
+                final Object computedManifest = this.manifests.computeIfAbsent(jarName(url), _ -> {
                     try {
                         final Manifest m = ((JarURLConnection) url.openConnection()).getManifest();
                         return requireNonNullElse(m, MISSING_MANIFEST);

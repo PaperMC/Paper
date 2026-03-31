@@ -36,10 +36,6 @@ public abstract class ReadablePlayerCookieConnectionImpl implements ReadablePlay
         return future;
     }
 
-    public boolean canStoreCookie() {
-        return true;
-    }
-
     public boolean handleCookieResponse(ServerboundCookieResponsePacket packet) {
         CookieFuture future = this.requestedCookies.get(packet.key());
         if (future != null) {

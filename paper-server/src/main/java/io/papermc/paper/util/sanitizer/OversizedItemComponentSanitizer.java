@@ -59,12 +59,8 @@ public final class OversizedItemComponentSanitizer {
             return projectiles;
         }
 
-        return ChargedProjectiles.of(new ItemStackTemplate(
-            projectiles.contains(Items.FIREWORK_ROCKET)
-                ? Items.FIREWORK_ROCKET
-                : Items.ARROW
-        ));
-     }
+        return ChargedProjectiles.of(new ItemStackTemplate(projectiles.contains(Items.FIREWORK_ROCKET) ? Items.FIREWORK_ROCKET : Items.ARROW));
+    }
 
     private static ItemContainerContents sanitizeItemContainerContents(final ItemContainerContents contents) {
         if (GlobalConfiguration.get().unsupportedSettings.oversizedItemComponentSanitizer.dontSanitize().contains(DataComponents.CONTAINER)) {

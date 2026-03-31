@@ -59,7 +59,7 @@ public class CraftBlockState implements BlockState {
             this.position = from.getPosition().immutable();
         } else {
             this.world = (CraftWorld) location.getWorld();
-            this.position = CraftLocation.toBlockPosition(location);
+            this.position = CraftLocation.toBlockPos(location);
         }
         this.block = from.block;
         this.capturedFlags = from.capturedFlags;

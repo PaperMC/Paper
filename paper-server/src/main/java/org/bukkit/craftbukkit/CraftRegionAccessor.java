@@ -79,8 +79,9 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public void setBiome(int x, int y, int z, Biome biome) {
-        Preconditions.checkArgument(biome != Biome.CUSTOM, "Cannot set the biome to %s", biome);
-        this.setBiome(x, y, z, CraftBiome.bukkitToMinecraftHolder(biome));
+        Holder<net.minecraft.world.level.biome.Biome> b = CraftBiome.bukkitToMinecraftHolder(biome);
+        Preconditions.checkArgument(b != null, "Cannot set the biome to %s", biome);
+        this.setBiome(x, y, z, b);
     }
 
     public abstract void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biome);
@@ -140,7 +141,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public boolean generateTree(Location location, Random random, TreeType treeType) {
-        BlockPos pos = CraftLocation.toBlockPosition(location);
+        BlockPos pos = CraftLocation.toBlockPos(location);
         return this.generateTree(this.getHandle(), this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
     }
 
@@ -154,10 +155,10 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public boolean generateTree(Location location, Random random, TreeType treeType, Predicate<? super BlockState> predicate) {
-        BlockPos pos = CraftLocation.toBlockPosition(location);
+        BlockPos pos = CraftLocation.toBlockPos(location);
         BlockStateListPopulator populator = new BlockStateListPopulator(this.getHandle());
         boolean result = this.generateTree(populator, this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
-        populator.placeSomeBlocks(predicate == null ? ($ -> true) : predicate);
+        populator.placeSomeBlocks(predicate == null ? (_ -> true) : predicate);
         return result;
     }
 

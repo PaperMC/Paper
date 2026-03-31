@@ -113,10 +113,10 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         IntList colors = CraftMetaFirework.addColors(effect.getColors());
         IntList fadeColors = CraftMetaFirework.addColors(effect.getFadeColors());
 
-        return new FireworkExplosion(CraftMetaFirework.getNBT(effect.getType()), colors, fadeColors, effect.hasTrail(), effect.hasFlicker());
+        return new FireworkExplosion(CraftMetaFirework.getShape(effect.getType()), colors, fadeColors, effect.hasTrail(), effect.hasFlicker());
     }
 
-    public static FireworkExplosion.Shape getNBT(Type type) {
+    public static FireworkExplosion.Shape getShape(Type type) {
         return switch (type) {
             case BALL -> FireworkExplosion.Shape.SMALL_BALL;
             case BALL_LARGE -> FireworkExplosion.Shape.LARGE_BALL;
@@ -126,8 +126,8 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         };
     }
 
-    static Type getEffectType(FireworkExplosion.Shape nbt) {
-        return switch (nbt) {
+    static Type getEffectType(FireworkExplosion.Shape shape) {
+        return switch (shape) {
             case SMALL_BALL -> Type.BALL;
             case LARGE_BALL -> Type.BALL_LARGE;
             case STAR -> Type.STAR;

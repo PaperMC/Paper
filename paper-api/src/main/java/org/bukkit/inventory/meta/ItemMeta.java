@@ -635,7 +635,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * or lava.
      *
      * @return fire_resistant
-     * @deprecated use {@link #getDamageResistance()} and check if it matches any {@link DamageTypeTagKeys#IS_FIRE fire damage type}
+     * @deprecated use {@link #getDamageResistantTypes()} and check if it matches any {@link DamageTypeTagKeys#IS_FIRE fire damage type}
      */
     @Deprecated(since = "1.21.2")
     boolean isFireResistant();
@@ -645,7 +645,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * or lava.
      *
      * @param fireResistant fire_resistant
-     * @deprecated use {@link #setDamageResistance(RegistryKeySet)} with {@link DamageTypeTagKeys#IS_FIRE}
+     * @deprecated use {@link #setDamageResistantTypes(RegistryKeySet)} with {@link DamageTypeTagKeys#IS_FIRE}
      */
     @Deprecated(since = "1.21.2")
     void setFireResistant(boolean fireResistant);
@@ -662,7 +662,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * form.
      *
      * @return damage type tag
-     * @deprecated use {@link #getDamageResistance()}
+     * @deprecated use {@link #getDamageResistantTypes()}
      */
     @Nullable
     @Deprecated(since = "26.1")
@@ -673,7 +673,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * form.
      *
      * @param tag the tag, or null to clear
-     * @deprecated use {@link #setDamageResistance(RegistryKeySet)}
+     * @deprecated use {@link #setDamageResistantTypes(RegistryKeySet)}
      */
     @Deprecated(since = "26.1")
     void setDamageResistant(@Nullable Tag<DamageType> tag);
@@ -684,7 +684,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return the registry key set holding the respective damage types.
      */
-    @Nullable RegistryKeySet<DamageType> getDamageResistance();
+    @Nullable RegistryKeySet<DamageType> getDamageResistantTypes();
 
     /**
      * Sets the type of damage this item will be resistant to when in entity
@@ -692,7 +692,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param types the registry key set, or null to clear
      */
-    void setDamageResistance(@Nullable RegistryKeySet<DamageType> types);
+    void setDamageResistantTypes(@Nullable RegistryKeySet<DamageType> types);
 
     /**
      * Gets if the max_stack_size is set.

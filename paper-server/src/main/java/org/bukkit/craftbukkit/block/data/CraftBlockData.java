@@ -553,7 +553,7 @@ public class CraftBlockData implements BlockData {
         CraftWorld world = (CraftWorld) location.getWorld();
         Preconditions.checkArgument(world != null, "location must not have a null world");
 
-        BlockPos position = CraftLocation.toBlockPosition(location);
+        BlockPos position = CraftLocation.toBlockPos(location);
         return this.state.canSurvive(world.getHandle(), position);
     }
 
@@ -572,7 +572,7 @@ public class CraftBlockData implements BlockData {
         CraftWorld world = (CraftWorld) location.getWorld();
         Preconditions.checkArgument(world != null, "location must not have a null world");
 
-        BlockPos position = CraftLocation.toBlockPosition(location);
+        BlockPos position = CraftLocation.toBlockPos(location);
         VoxelShape shape = this.state.getCollisionShape(world.getHandle(), position);
         return new CraftVoxelShape(shape);
     }

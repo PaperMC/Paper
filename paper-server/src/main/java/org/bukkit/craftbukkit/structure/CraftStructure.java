@@ -128,7 +128,7 @@ public class CraftStructure implements Structure {
         Preconditions.checkArgument(size != null, "BlockVector size cannot be null");
         Preconditions.checkArgument(size.getBlockX() >= 1 && size.getBlockY() >= 1 && size.getBlockZ() >= 1, "Size must be at least 1x1x1 but was %sx%sx%s", size.getBlockX(), size.getBlockY(), size.getBlockZ());
 
-        this.structure.fillFromWorld(((CraftWorld) world).getHandle(), CraftLocation.toBlockPosition(origin), CraftBlockVector.toBlockPosition(size), includeEntities, List.of(Blocks.STRUCTURE_VOID));
+        this.structure.fillFromWorld(((CraftWorld) world).getHandle(), CraftLocation.toBlockPos(origin), CraftBlockVector.toBlockPosition(size), includeEntities, List.of(Blocks.STRUCTURE_VOID));
     }
 
     @Override

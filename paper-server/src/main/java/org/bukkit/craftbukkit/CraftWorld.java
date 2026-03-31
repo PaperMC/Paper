@@ -634,8 +634,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public Collection<Chunk> getForceLoadedChunks() {
         Set<Chunk> chunks = new HashSet<>();
 
-        for (long coord : this.getHandle().getForceLoadedChunks()) {
-            chunks.add(new CraftChunk(this.getHandle(), ChunkPos.getX(coord), ChunkPos.getZ(coord)));
+        for (long pos : this.getHandle().getForceLoadedChunks()) {
+            chunks.add(new CraftChunk(this.getHandle(), ChunkPos.getX(pos), ChunkPos.getZ(pos)));
         }
 
         return Collections.unmodifiableCollection(chunks);
@@ -719,7 +719,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper start - Add methods to find targets for lightning strikes
     @Override
     public Location findLightningRod(Location location) {
-        return this.world.findLightningRod(CraftLocation.toBlockPosition(location))
+        return this.world.findLightningRod(CraftLocation.toBlockPos(location))
             .map(blockPos -> CraftLocation.toBukkit(blockPos, this.world)
                 // get the actual rod pos
                 .subtract(0, 1, 0))
@@ -728,7 +728,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Location findLightningTarget(Location location) {
-        final BlockPos pos = this.world.findLightningTargetAround(CraftLocation.toBlockPosition(location), true);
+        final BlockPos pos = this.world.findLightningTargetAround(CraftLocation.toBlockPos(location), true);
         return pos == null ? null : CraftLocation.toBukkit(pos, this.world);
     }
     // Paper end - Add methods to find targets for lightning strikes
@@ -1269,7 +1269,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(location.getWorld() != null, "World of Location cannot be null");
         int packetData = effect.getId();
-        ClientboundLevelEventPacket packet = new ClientboundLevelEventPacket(packetData, CraftLocation.toBlockPosition(location), data, false);
+        ClientboundLevelEventPacket packet = new ClientboundLevelEventPacket(packetData, CraftLocation.toBlockPos(location), data, false);
         int distance;
         radius *= radius;
 
@@ -1844,7 +1844,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Pair<BlockPos, Holder<net.minecraft.world.level.levelgen.structure.Structure>> found = this.getHandle().getChunkSource().getGenerator().findNearestMapStructure(
             this.getHandle(),
             HolderSet.direct(CraftStructure::bukkitToMinecraftHolder, structures),
-            CraftLocation.toBlockPosition(origin),
+            CraftLocation.toBlockPos(origin),
             radius,
             findUnexplored
         );
@@ -1879,7 +1879,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public BiomeSearchResult locateNearestBiome(Location origin, int radius, int horizontalInterval, int verticalInterval, Biome... biomes) {
-        BlockPos originPos = CraftLocation.toBlockPosition(origin);
+        BlockPos originPos = CraftLocation.toBlockPos(origin);
         Set<Holder<net.minecraft.world.level.biome.Biome>> holders = new HashSet<>();
 
         for (Biome biome : biomes) {
@@ -1902,7 +1902,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(radius >= 0, "Radius value (%s) cannot be negative", radius);
 
         Raids persistentRaid = this.world.getRaids();
-        net.minecraft.world.entity.raid.Raid raid = persistentRaid.getNearbyRaid(CraftLocation.toBlockPosition(location), radius * radius);
+        net.minecraft.world.entity.raid.Raid raid = persistentRaid.getNearbyRaid(CraftLocation.toBlockPos(location), radius * radius);
         return (raid == null) ? null : new CraftRaid(raid, this.world);
     }
 

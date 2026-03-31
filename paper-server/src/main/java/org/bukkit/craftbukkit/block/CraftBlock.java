@@ -432,14 +432,17 @@ public class CraftBlock implements Block {
     public boolean isBuildable() {
         return this.getBlockState().isSolid(); // This is in fact isSolid, despite the fact that isSolid below returns blocksMotion
     }
+
     @Override
     public boolean isBurnable() {
         return this.getBlockState().ignitedByLava();
     }
+
     @Override
     public boolean isReplaceable() {
         return this.getBlockState().canBeReplaced();
     }
+
     @Override
     public boolean isSolid() {
         return this.getBlockState().blocksMotion();
@@ -689,6 +692,7 @@ public class CraftBlock implements Block {
         return this.getBlockState().getBlock().getDescriptionId();
     }
 
+    @Override
     public boolean isValidTool(ItemStack tool) {
         return !this.getDrops(tool).isEmpty();
     }
@@ -698,7 +702,6 @@ public class CraftBlock implements Block {
         final ServerLevel level = this.level.getMinecraftWorld();
         this.getBlockState().tick(level, this.position, level.getRandom());
     }
-
 
     @Override
     public void fluidTick() {
