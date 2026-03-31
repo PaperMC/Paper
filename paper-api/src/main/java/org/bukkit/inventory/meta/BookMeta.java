@@ -1,9 +1,6 @@
 package org.bukkit.inventory.meta;
 
 import java.util.List;
-import java.util.Objects;
-import net.kyori.adventure.inventory.Book;
-import net.kyori.adventure.inventory.BookLike;
 import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Material;
@@ -20,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * the meta instance is not sufficient due to unusual inheritance
  * with relation to {@link WritableBookMeta}.
  */
-public interface BookMeta extends WritableBookMeta, BookLike { // Paper - adventure
+public interface BookMeta extends WritableBookMeta {
 
     /**
      * Represents the generation (or level of copying) of a written book
@@ -271,11 +268,6 @@ public interface BookMeta extends WritableBookMeta, BookLike { // Paper - advent
     @Contract(value = "_ -> this")
     default @NotNull BookMeta pages(final @NotNull Component @NotNull... pages) {
         return this.pages(List.of(pages));
-    }
-
-    @Override
-    default Book asBook() {
-        return Book.book(Objects.requireNonNullElseGet(this.title(), Component::empty), Objects.requireNonNullElseGet(this.author(), Component::empty), this.pages());
     }
     // Paper end
 

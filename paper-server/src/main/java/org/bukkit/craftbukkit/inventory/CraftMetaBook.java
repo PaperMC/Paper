@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import net.kyori.adventure.inventory.Book;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -20,6 +22,7 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.WritableBookMeta;
+import org.jetbrains.annotations.NotNull;
 
 // Spigot start
 import java.util.AbstractList;
@@ -364,6 +367,11 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
         }
 
         return builder;
+    }
+
+    @Override
+    public @NotNull Book asBook() {
+        return Book.book(net.kyori.adventure.text.Component.empty(), net.kyori.adventure.text.Component.empty(), this.getPages().stream().map(net.kyori.adventure.text.Component::text).collect(Collectors.toList()));
     }
 
     // Spigot start

@@ -6,7 +6,10 @@ import io.papermc.paper.text.Filtered;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import net.kyori.adventure.inventory.Book;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -53,6 +56,19 @@ public record PaperWrittenBookContent(
     @Override
     public boolean resolved() {
         return this.impl.resolved();
+    }
+
+    @Override
+    public Book asBook() {
+        final Filtered<String> title = this.title();
+        return Book.book(
+            Component.text(Objects.requireNonNull(title.filtered(), title::raw)),
+            Component.text(this.author()),
+            this.pages()
+                .stream()
+                .map(filtered -> Objects.requireNonNullElseGet(filtered.filtered(), filtered::raw))
+                .collect(Collectors.toList())
+        );
     }
 
     static final class BuilderImpl implements WrittenBookContent.Builder {
