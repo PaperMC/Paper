@@ -22,7 +22,6 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.WritableBookMeta;
-// Spigot end
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBookMeta {

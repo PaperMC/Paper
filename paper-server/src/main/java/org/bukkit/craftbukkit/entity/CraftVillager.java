@@ -75,7 +75,11 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public void setVillagerLevel(int level) {
-        Preconditions.checkArgument(1 <= level && level <= 5, "level (%s) must be between [1, 5]", level);
+        Preconditions.checkArgument(
+            VillagerData.MIN_VILLAGER_LEVEL <= level && level <= VillagerData.MAX_VILLAGER_LEVEL,
+            "level (%s) must be between [%s, %s]",
+            level, VillagerData.MIN_VILLAGER_LEVEL, VillagerData.MAX_VILLAGER_LEVEL
+        );
 
         this.getHandle().setVillagerData(this.getHandle().getVillagerData().withLevel(level));
     }

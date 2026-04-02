@@ -60,7 +60,7 @@ public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe {
             pattern,
             CraftItemStack.asTemplate(this.getResult())
         );
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()),recipe));
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe));
     }
 
     private static String[] replaceUndefinedIngredientsWithEmpty(String[] shape, Map<Character, org.bukkit.inventory.RecipeChoice> ingredients) {
