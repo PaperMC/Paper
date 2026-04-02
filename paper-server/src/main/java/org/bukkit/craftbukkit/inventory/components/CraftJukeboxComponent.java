@@ -5,7 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.JukeboxPlayable;
 import org.bukkit.JukeboxSong;

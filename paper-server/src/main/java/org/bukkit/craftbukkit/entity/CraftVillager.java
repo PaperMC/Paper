@@ -14,6 +14,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.gossip.GossipContainer;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.npc.villager.VillagerData;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.level.block.BedBlock;
@@ -91,18 +92,15 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         this.getHandle().setVillagerXp(experience);
     }
 
-    // Paper start
     @Override
     public boolean increaseLevel(int amount) {
         Preconditions.checkArgument(amount > 0, "Level earned must be positive");
-        int supposedFinalLevel = this.getVillagerLevel() + amount;
-        Preconditions.checkArgument(net.minecraft.world.entity.npc.villager.VillagerData.MIN_VILLAGER_LEVEL <= supposedFinalLevel && supposedFinalLevel <= net.minecraft.world.entity.npc.villager.VillagerData.MAX_VILLAGER_LEVEL,
-            "Final level reached after the donation (%d) must be between [%d, %d]".formatted(supposedFinalLevel, net.minecraft.world.entity.npc.villager.VillagerData.MIN_VILLAGER_LEVEL, net.minecraft.world.entity.npc.villager.VillagerData.MAX_VILLAGER_LEVEL));
-
-        if (this.getHandle().getVillagerData().profession().value().getTrades(this.getVillagerLevel()) == null) {
-            this.getHandle().setVillagerData(this.getHandle().getVillagerData().withLevel(supposedFinalLevel));
+        int currentLevel = this.getVillagerLevel();
+        int newLevel = Math.clamp(currentLevel + amount, VillagerData.MIN_VILLAGER_LEVEL, VillagerData.MAX_VILLAGER_LEVEL);
+        if (currentLevel == newLevel) {
             return false;
         }
+        amount = newLevel - currentLevel;
 
         while (amount > 0) {
             this.getHandle().increaseMerchantCareer((ServerLevel) this.getHandle().level());
@@ -114,7 +112,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     @Override
     public boolean addTrades(int amount) {
         Preconditions.checkArgument(amount > 0, "Number of trades unlocked must be positive");
-        return this.getHandle().updateTrades(amount);
+        return this.getHandle().updateTrades((ServerLevel) this.getHandle().level(), amount);
     }
 
     @Override
@@ -126,7 +124,6 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     public void setRestocksToday(int restocksToday) {
         getHandle().numberOfRestocksToday = restocksToday;
     }
-    // Paper end
 
     @Override
     public boolean sleep(Location location) {

@@ -1482,7 +1482,7 @@ public final class CraftServer implements Server {
                 return false;
             }
         }
-        toAdd.addToCraftingManager();
+        toAdd.addToRecipeManager();
         // Paper start - API for updating recipes on clients
         if (true || resendRecipes) { // Always needs to be resent now... TODO
             this.playerList.reloadRecipes();
@@ -1514,7 +1514,7 @@ public final class CraftServer implements Server {
     public Recipe getRecipe(NamespacedKey recipeKey) {
         Preconditions.checkArgument(recipeKey != null, "NamespacedKey recipeKey cannot be null");
 
-        return this.getServer().getRecipeManager().byKey(CraftRecipe.toMinecraft(recipeKey)).map(RecipeHolder::toBukkitRecipe).orElse(null);
+        return this.getServer().getRecipeManager().byKey(CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey)).map(RecipeHolder::toBukkitRecipe).orElse(null);
     }
 
     private CraftingContainer createCraftingContainer() {
@@ -1664,7 +1664,7 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
 
         // Paper start - resend recipes on successful removal
-        final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftRecipe.toMinecraft(recipeKey);
+        final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
         final boolean removed = this.getServer().getRecipeManager().removeRecipe(id);
         if (removed/* && resendRecipes*/) { // TODO Always need to resend them rn - deprecate this method?
             this.playerList.reloadRecipes();

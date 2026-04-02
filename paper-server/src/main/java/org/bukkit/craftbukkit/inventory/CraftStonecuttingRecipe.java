@@ -1,8 +1,11 @@
 package org.bukkit.craftbukkit.inventory;
 
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.StonecutterRecipe;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.StonecuttingRecipe;
@@ -13,18 +16,19 @@ public class CraftStonecuttingRecipe extends StonecuttingRecipe implements Craft
     }
 
     public static CraftStonecuttingRecipe fromBukkitRecipe(StonecuttingRecipe recipe) {
-        if (recipe instanceof CraftStonecuttingRecipe) {
-            return (CraftStonecuttingRecipe) recipe;
+        if (recipe instanceof CraftStonecuttingRecipe stonecuttingRecipe) {
+            return stonecuttingRecipe;
         }
-        CraftStonecuttingRecipe ret = new CraftStonecuttingRecipe(recipe.getKey(), recipe.getResult(), recipe.getInputChoice());
-        ret.setGroup(recipe.getGroup());
-        return ret;
+        return new CraftStonecuttingRecipe(recipe.getKey(), recipe.getResult(), recipe.getInputChoice());
     }
 
     @Override
-    public void addToCraftingManager() {
-        ItemStack result = this.getResult();
-
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.StonecutterRecipe(new net.minecraft.world.item.crafting.Recipe.CommonInfo(true), this.toNMS(this.getInputChoice(), true), CraftItemStack.asTemplate(result))));
+    public void addToRecipeManager() {
+        StonecutterRecipe recipe = new net.minecraft.world.item.crafting.StonecutterRecipe(
+            new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
+            CraftRecipe.toIngredient(this.getInputChoice(), true),
+            CraftItemStack.asTemplate(this.getResult())
+        );
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe));
     }
 }
