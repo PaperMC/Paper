@@ -58,8 +58,8 @@ public class CraftAllay extends CraftCreature implements org.bukkit.entity.Allay
 
     @Override
     public void startDancing(Location location) {
-        Preconditions.checkArgument(location != null, "Location cannot be null");
-        Preconditions.checkArgument(location.getBlock().getType().equals(Material.JUKEBOX), "The Block in the Location need to be a JukeBox");
+        Preconditions.checkArgument(location != null, "location cannot be null");
+        Preconditions.checkArgument(location.getBlock().getType() == Material.JUKEBOX, "The Block at the location needs to be a jukebox");
         this.getHandle().setJukeboxPlaying(CraftLocation.toBlockPos(location), true);
     }
 
@@ -73,17 +73,17 @@ public class CraftAllay extends CraftCreature implements org.bukkit.entity.Allay
     public void stopDancing() {
         this.getHandle().forceDancing = false;
         this.getHandle().jukeboxPos = null;
-        this.getHandle().setDancing(false); // Paper - Directly modify set dancing to avoid NPE
+        this.getHandle().setDancing(false);
     }
 
     @Override
     public org.bukkit.entity.Allay duplicateAllay() {
-        Allay nmsAllay = this.getHandle().duplicateAllay();
-        return (nmsAllay != null) ? (org.bukkit.entity.Allay) nmsAllay.getBukkitEntity() : null;
+        Allay allay = this.getHandle().duplicateAllay();
+        return (allay != null) ? (org.bukkit.entity.Allay) allay.getBukkitEntity() : null;
     }
 
     public Location getJukebox() {
-        BlockPos nmsJukeboxPos = this.getHandle().jukeboxPos;
-        return (nmsJukeboxPos != null) ? CraftLocation.toBukkit(nmsJukeboxPos, this.getWorld()) : null;
+        BlockPos jukeboxPos = this.getHandle().jukeboxPos;
+        return (jukeboxPos != null) ? CraftLocation.toBukkit(jukeboxPos, this.getWorld()) : null;
     }
 }

@@ -98,7 +98,7 @@ index 135d932a31a557ff06643fb563262423d48cd540..9fb025b05cacc901d72d93c16cf2b7e4
      }
  }
 diff --git a/net/minecraft/world/entity/ai/gossip/GossipContainer.java b/net/minecraft/world/entity/ai/gossip/GossipContainer.java
-index d6fcd4f15694e5088de22042c0e4971f3ee3b2a1..45e05fb6de45366bdb3096a3907030c2f6f04f70 100644
+index 75233df622242db6c23f7a1a5812bf25942bca41..70f4e2fa256a4697dcc7f5b0abbca5da37f0a439 100644
 --- a/net/minecraft/world/entity/ai/gossip/GossipContainer.java
 +++ b/net/minecraft/world/entity/ai/gossip/GossipContainer.java
 @@ -28,7 +28,7 @@ import net.minecraft.util.VisibleForDebug;
@@ -106,7 +106,7 @@ index d6fcd4f15694e5088de22042c0e4971f3ee3b2a1..45e05fb6de45366bdb3096a3907030c2
      public static final Codec<GossipContainer> CODEC = GossipContainer.GossipEntry.CODEC
          .listOf()
 -        .xmap(GossipContainer::new, container -> container.unpack().toList());
-+        .xmap(GossipContainer::new, container -> container.decompress()); // Paper - Perf: Remove streams from hot code
++        .xmap(GossipContainer::new, GossipContainer::decompress); // Paper - Perf: Remove streams from hot code
      public static final int DISCARD_THRESHOLD = 2;
      public final Map<UUID, GossipContainer.EntityGossips> gossips = new HashMap<>();
  
@@ -141,7 +141,7 @@ index d6fcd4f15694e5088de22042c0e4971f3ee3b2a1..45e05fb6de45366bdb3096a3907030c2
 -            return this.entries.object2IntEntrySet().stream().filter(e -> types.test(e.getKey())).mapToInt(e -> e.getIntValue() * e.getKey().weight).sum();
 +            // Paper start - Perf: Remove streams from hot code
 +            int weight = 0;
-+            for (Object2IntMap.Entry<GossipType> entry : entries.object2IntEntrySet()) {
++            for (Object2IntMap.Entry<GossipType> entry : this.entries.object2IntEntrySet()) {
 +                if (types.test(entry.getKey())) {
 +                    weight += entry.getIntValue() * entry.getKey().weight;
 +                }
@@ -149,12 +149,12 @@ index d6fcd4f15694e5088de22042c0e4971f3ee3b2a1..45e05fb6de45366bdb3096a3907030c2
 +            return weight;
 +        }
 +
-+        public List<GossipContainer.GossipEntry> decompress(final UUID uuid) {
-+            List<GossipContainer.GossipEntry> list = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
-+            for (Object2IntMap.Entry<GossipType> entry : entries.object2IntEntrySet()) {
-+                list.add(new GossipContainer.GossipEntry(uuid, entry.getKey(), entry.getIntValue()));
++        public List<GossipContainer.GossipEntry> decompress(final UUID target) {
++            List<GossipContainer.GossipEntry> entries = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
++            for (Object2IntMap.Entry<GossipType> entry : this.entries.object2IntEntrySet()) {
++                entries.add(new GossipContainer.GossipEntry(target, entry.getKey(), entry.getIntValue()));
 +            }
-+            return list;
++            return entries;
 +            // Paper end - Perf: Remove streams from hot code
          }
  
