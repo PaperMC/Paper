@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 @NullMarked
 public final class WorldFolderMigration {
     private static final Logger LOGGER = LogUtils.getClassLogger();
-    private static final boolean DISABLE_MIGRATION_DELAY = Boolean.getBoolean("Paper.DisableMigrationDelay");
+    private static final boolean DISABLE_MIGRATION_DELAY = Boolean.getBoolean("paper.disableMigrationDelay");
     private static boolean startupMigrationWarningShown;
 
     private WorldFolderMigration() {
