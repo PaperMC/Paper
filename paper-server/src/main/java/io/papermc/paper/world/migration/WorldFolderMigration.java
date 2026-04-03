@@ -65,8 +65,11 @@ public final class WorldFolderMigration {
             return;
         }
         startupMigrationWarningShown = true;
+        LOGGER.warn("===================== ! ALERT ! =====================");
         LOGGER.warn("World storage migration is required during startup.");
-        LOGGER.warn("Interrupt the server now if you do not have a backup. Continuing in 30 seconds...");
+        LOGGER.warn("If you do not have a backup: interrupt the server now. Use Ctrl+C, your panel kill function, etc.");
+        LOGGER.warn("=====================================================");
+        LOGGER.warn("Continuing in 30 seconds...");
         if (DISABLE_MIGRATION_DELAY) {
             LOGGER.warn("Migration delay disabled by system property.");
         } else {
