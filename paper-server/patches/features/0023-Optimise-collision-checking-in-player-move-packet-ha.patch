@@ -6,46 +6,40 @@ Subject: [PATCH] Optimise collision checking in player move packet handling
 Move collision logic to just the hasNewCollision call instead of getCubes + hasNewCollision
 
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 214613e9422606b7b1f37716fc060db63c38849a..e158d614abed8d16e80192c0c9abd8537c92b9dc 100644
+index 35ea8a6c059d5afbe9f0d101b95bbb8c9f280e88..500f4c924dd29722370fcd59b4f1d930966f2b2a 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -624,6 +624,7 @@ public class ServerGamePacketListenerImpl
+@@ -634,6 +634,7 @@ public class ServerGamePacketListenerImpl
                  }
  
-                 rootVehicle.move(MoverType.PLAYER, new Vec3(d3, d4, d5));
-+                final boolean didCollide = toX != rootVehicle.getX() || toY != rootVehicle.getY() || toZ != rootVehicle.getZ(); // Paper - needed here as the difference in Y can be reset - also note: this is only a guess at whether collisions took place, floating point errors can make this true when it shouldn't be...
-                 double verticalDelta = d4;
-                 d3 = d - rootVehicle.getX();
-                 d4 = d1 - rootVehicle.getY();
-@@ -635,12 +636,21 @@ public class ServerGamePacketListenerImpl
-                 d7 = d3 * d3 + d4 * d4 + d5 * d5;
-                 boolean flag1 = false;
-                 if (d7 > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
--                    flag1 = true;
-+                    flag1 = true; // Paper - diff on change, this should be moved wrongly
-                     LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", rootVehicle.getPlainTextName(), this.player.getPlainTextName(), Math.sqrt(d7));
+                 vehicle.move(MoverType.PLAYER, new Vec3(xDist, yDist, zDist));
++                final boolean didCollide = targetX != vehicle.getX() || targetY != vehicle.getY() || targetZ != vehicle.getZ(); // Paper - needed here as the difference in Y can be reset - also note: this is only a guess at whether collisions took place, floating point errors can make this true when it shouldn't be...
+                 double oyDist = yDist;
+                 xDist = targetX - vehicle.getX();
+                 yDist = targetY - vehicle.getY();
+@@ -649,7 +650,17 @@ public class ServerGamePacketListenerImpl
+                     LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", vehicle.getPlainTextName(), this.player.getPlainTextName(), Math.sqrt(movedDist));
                  }
  
--                if (flag1 && serverLevel.noCollision(rootVehicle, boundingBox)
--                    || this.isEntityCollidingWithAnythingNew(serverLevel, rootVehicle, boundingBox, d, d1, d2)) {
+-                if (fail && level.noCollision(vehicle, oldAABB) || this.isEntityCollidingWithAnythingNew(level, vehicle, oldAABB, targetX, targetY, targetZ)) {
 +                // Paper start - optimise out extra getCubes
-+                boolean teleportBack = flag1;
++                boolean teleportBack = fail;
 +                if (!teleportBack) {
 +                    // note: only call after setLocation, or else getBoundingBox is wrong
-+                    final AABB newBox = rootVehicle.getBoundingBox();
-+                    if (didCollide || !boundingBox.equals(newBox)) {
-+                        teleportBack = this.hasNewCollision(serverLevel, rootVehicle, boundingBox, newBox);
++                    final AABB newBox = vehicle.getBoundingBox();
++                    if (didCollide || !oldAABB.equals(newBox)) {
++                        teleportBack = this.hasNewCollision(level, vehicle, oldAABB, newBox);
 +                    } // else: no collision at all detected, why do we care?
 +                }
 +                if (teleportBack) {
 +                // Paper end - optimise out extra getCubes
-                     rootVehicle.absSnapTo(x, y, z, f, f1);
-                     this.send(ClientboundMoveVehiclePacket.fromEntity(rootVehicle));
-                     rootVehicle.removeLatestMovementRecording();
-@@ -719,9 +729,32 @@ public class ServerGamePacketListenerImpl
+                     vehicle.absSnapTo(oldX, oldY, oldZ, targetYRot, targetXRot);
+                     this.send(ClientboundMoveVehiclePacket.fromEntity(vehicle));
+                     vehicle.removeLatestMovementRecording();
+@@ -728,9 +739,32 @@ public class ServerGamePacketListenerImpl
      }
  
-     private boolean noBlocksAround(Entity entity) {
+     private boolean noBlocksAround(final Entity entity) {
 -        return entity.level()
 -            .getBlockStates(entity.getBoundingBox().inflate(0.0625).expandTowards(0.0, -0.55, 0.0))
 -            .allMatch(BlockBehaviour.BlockStateBase::isAir);
@@ -78,43 +72,43 @@ index 214613e9422606b7b1f37716fc060db63c38849a..e158d614abed8d16e80192c0c9abd853
      }
  
      @Override
-@@ -1503,7 +1536,7 @@ public class ServerGamePacketListenerImpl
+@@ -1542,7 +1576,7 @@ public class ServerGamePacketListenerImpl
                                      }
                                  }
  
--                                AABB boundingBox = this.player.getBoundingBox();
-+                                AABB boundingBox = this.player.getBoundingBox(); // Paper - diff on change, should be old AABB
-                                 d3 = d - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
-                                 d4 = d1 - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
-                                 d5 = d2 - this.lastGoodZ; // Paper - diff on change, used for checking large move vectors above
-@@ -1542,6 +1575,7 @@ public class ServerGamePacketListenerImpl
-                                 boolean flag1 = this.player.verticalCollisionBelow;
-                                 this.player.move(MoverType.PLAYER, new Vec3(d3, d4, d5));
+-                                AABB oldAABB = this.player.getBoundingBox();
++                                AABB oldAABB = this.player.getBoundingBox(); // Paper - diff on change, should be old AABB
+                                 xDist = targetX - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
+                                 yDist = targetY - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
+                                 zDist = targetZ - this.lastGoodZ; // Paper - diff on change, used for checking large move vectors above
+@@ -1581,6 +1615,7 @@ public class ServerGamePacketListenerImpl
+                                 boolean playerStandsOnSomething = this.player.verticalCollisionBelow;
+                                 this.player.move(MoverType.PLAYER, new Vec3(xDist, yDist, zDist));
                                  this.player.onGround = packet.isOnGround(); // CraftBukkit - SPIGOT-5810, SPIGOT-5835, SPIGOT-6828: reset by this.player.move
-+                                final boolean didCollide = toX != this.player.getX() || toY != this.player.getY() || toZ != this.player.getZ(); // Paper - needed here as the difference in Y can be reset - also note: this is only a guess at whether collisions took place, floating point errors can make this true when it shouldn't be...
++                                final boolean didCollide = targetX != this.player.getX() || targetY != this.player.getY() || targetZ != this.player.getZ(); // Paper - needed here as the difference in Y can be reset - also note: this is only a guess at whether collisions took place, floating point errors can make this true when it shouldn't be...
                                  // Paper start - prevent position desync
                                  if (this.awaitingPositionFromClient != null) {
                                      return; // ... thanks Mojang for letting move calls teleport across dimensions.
-@@ -1575,7 +1609,17 @@ public class ServerGamePacketListenerImpl
+@@ -1614,7 +1649,17 @@ public class ServerGamePacketListenerImpl
                                  }
  
                                  // Paper start - Add fail move event
--                                boolean allowMovement = this.player.noPhysics || this.player.isSleeping() || (!movedWrongly || !serverLevel.noCollision(this.player, boundingBox)) && !this.isEntityCollidingWithAnythingNew(serverLevel, this.player, boundingBox, d, d1, d2);
+-                                boolean allowMovement = this.player.noPhysics || this.player.isSleeping() || (!movedWrongly || !level.noCollision(this.player, oldAABB)) && !this.isEntityCollidingWithAnythingNew(level, this.player, oldAABB, targetX, targetY, targetZ);
 +                                // Paper start - optimise out extra getCubes
 +                                boolean allowMovement = this.player.noPhysics || this.player.isSleeping() || !movedWrongly;
-+                                this.player.absSnapTo(d, d1, d2, f, f1); // prevent desync by tping to the set position, dropped for unknown reasons by mojang
++                                this.player.absSnapTo(targetX, targetY, targetZ, targetYRot, targetXRot); // prevent desync by tping to the set position, dropped for unknown reasons by mojang
 +                                if (!this.player.noPhysics && !this.player.isSleeping() && allowMovement) {
 +                                    final AABB newBox = this.player.getBoundingBox();
-+                                    if (didCollide || !boundingBox.equals(newBox)) {
++                                    if (didCollide || !oldAABB.equals(newBox)) {
 +                                        // note: only call after setLocation, or else getBoundingBox is wrong
-+                                        allowMovement = !this.hasNewCollision(serverLevel, this.player, boundingBox, newBox);
++                                        allowMovement = !this.hasNewCollision(level, this.player, oldAABB, newBox);
 +                                    } // else: no collision at all detected, why do we care?
 +                                }
 +                                // Paper end - optimise out extra getCubes
                                  if (!allowMovement) {
                                      io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
-                                             toX, toY, toZ, toYaw, toPitch, false);
-@@ -1710,7 +1754,7 @@ public class ServerGamePacketListenerImpl
+                                             targetX, targetY, targetZ, targetYRot, targetXRot, false);
+@@ -1752,7 +1797,7 @@ public class ServerGamePacketListenerImpl
  
      private boolean updateAwaitingTeleport() {
          if (this.awaitingPositionFromClient != null) {
@@ -123,7 +117,7 @@ index 214613e9422606b7b1f37716fc060db63c38849a..e158d614abed8d16e80192c0c9abd853
                  this.awaitingTeleportTime = this.tickCount;
                  this.teleport(
                      this.awaitingPositionFromClient.x,
-@@ -1729,6 +1773,34 @@ public class ServerGamePacketListenerImpl
+@@ -1771,6 +1816,34 @@ public class ServerGamePacketListenerImpl
          }
      }
  
@@ -155,6 +149,6 @@ index 214613e9422606b7b1f37716fc060db63c38849a..e158d614abed8d16e80192c0c9abd853
 +    }
 +    // Paper end - optimise out extra getCubes
 +
-     private boolean isEntityCollidingWithAnythingNew(LevelReader level, Entity entity, AABB box, double x, double y, double z) {
-         AABB aabb = entity.getBoundingBox().move(x - entity.getX(), y - entity.getY(), z - entity.getZ());
-         Iterable<VoxelShape> preMoveCollisions = level.getPreMoveCollisions(entity, aabb.deflate(1.0E-5F), box.getBottomCenter());
+     private boolean isEntityCollidingWithAnythingNew(
+         final LevelReader level, final Entity entity, final AABB oldAABB, final double newX, final double newY, final double newZ
+     ) {
