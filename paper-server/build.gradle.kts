@@ -321,7 +321,7 @@ fill {
     version(paperweight.minecraftVersion)
 
     build {
-        channel = BuildChannel.STABLE
+        channel = providers.gradleProperty("channel").map { BuildChannel.valueOf(it.uppercase()) }
 
         downloads {
             register("server:default") {
