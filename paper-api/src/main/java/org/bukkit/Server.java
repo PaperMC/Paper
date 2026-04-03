@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -1565,7 +1566,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     @NotNull
     public ConsoleCommandSender getConsoleSender();
 
-    // Paper start
     /**
      * Creates a special {@link CommandSender} which redirects command feedback (in the form of chat messages) to the
      * specified listener. The returned sender will have the same effective permissions as {@link #getConsoleSender()}.
@@ -1575,15 +1575,30 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     @NotNull
     public CommandSender createCommandSender(final @NotNull java.util.function.Consumer<? super net.kyori.adventure.text.Component> feedback);
-    // Paper end
 
     /**
-     * Gets the folder that contains all the various {@link World}s.
+     * Gets the folder that contains {@link #getLevelDirectory()}.
      *
-     * @return folder that contains all worlds
+     * <p>This is usually the server's current working directory
+     * but can be overridden using command line flags (i.e. {@code --universe} or {@code --world-container}).</p>
+     *
+     * @return folder that contains the level directory
      */
+    @ApiStatus.Obsolete
     @NotNull
     public File getWorldContainer();
+
+    /**
+     * Gets the level directory.
+     *
+     * <p>This is the {@code ./world} directory in a fresh default server. Contains player data, dimensions, datapacks,
+     * and other world data.</p>
+     *
+     * @return the level directory
+     */
+    @ApiStatus.Experimental
+    @NotNull
+    Path getLevelDirectory();
 
     /**
      * Gets every player that has ever played on this server.
