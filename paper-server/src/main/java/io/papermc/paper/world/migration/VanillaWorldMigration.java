@@ -13,11 +13,14 @@ import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gamerules.GameRuleMap;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
+import net.minecraft.world.level.saveddata.SavedDataType;
+import net.minecraft.world.level.saveddata.WanderingTraderData;
 import net.minecraft.world.level.saveddata.WeatherData;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.PrimaryLevelData;
 import net.minecraft.world.level.storage.SavedDataStorage;
+import net.minecraft.world.level.timers.TimerQueue;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -42,19 +45,42 @@ final class VanillaWorldMigration {
             WorldMigrationSupport.migratePaperWorldConfig(context.baseRoot(), context.targetDimensionPath());
         }
 
-        copyRootSavedData(context);
+        migrateSavedData(context);
         createLevelOverrides(context, levelDataResult.dataTag());
         migrateLegacyPdc(context, levelDataResult.dataTag());
 
         LOGGER.info("Completed Vanilla import for world '{}' ({})", context.worldName(), context.dimensionKey().identifier());
     }
 
-    private static void copyRootSavedData(final WorldMigrationContext context) throws IOException {
-        final List<Path> sourceDataRoots = List.of(context.baseRoot().resolve(LevelResource.DATA.id()));
+    private static void migrateSavedData(final WorldMigrationContext context) throws IOException {
+        final List<Path> sourceDataRoots = List.of(
+            context.rootAccess().getDimensionPath(Level.OVERWORLD).resolve(LevelResource.DATA.id()),
+            context.baseRoot().resolve(LevelResource.DATA.id())
+        );
 
         WorldMigrationSupport.copySavedDataIfPresent(sourceDataRoots, context.targetDataRoot(), WorldGenSettings.TYPE, false);
         WorldMigrationSupport.copySavedDataIfPresent(sourceDataRoots, context.targetDataRoot(), GameRuleMap.TYPE, false);
         WorldMigrationSupport.copySavedDataIfPresent(sourceDataRoots, context.targetDataRoot(), WeatherData.TYPE, false);
+        if (context.dimensionKey() == Level.OVERWORLD) {
+            WorldMigrationSupport.copySavedDataIfPresent(sourceDataRoots, context.targetDataRoot(), TimerQueue.TYPE, false);
+            WorldMigrationSupport.copySavedDataIfPresent(sourceDataRoots, context.targetDataRoot(), WanderingTraderData.TYPE, false);
+
+            deleteLegacyRootCopyIfMigrated(context, WorldGenSettings.TYPE);
+            deleteLegacyRootCopyIfMigrated(context, GameRuleMap.TYPE);
+            deleteLegacyRootCopyIfMigrated(context, WeatherData.TYPE);
+            deleteLegacyRootCopyIfMigrated(context, TimerQueue.TYPE);
+            deleteLegacyRootCopyIfMigrated(context, WanderingTraderData.TYPE);
+        }
+    }
+
+    private static void deleteLegacyRootCopyIfMigrated(final WorldMigrationContext context, final SavedDataType<?> type) throws IOException {
+        final Path target = WorldMigrationSupport.savedDataPath(context.targetDataRoot(), type);
+        if (!Files.isRegularFile(target)) {
+            return;
+        }
+
+        final Path rootSource = WorldMigrationSupport.savedDataPath(context.baseRoot().resolve(LevelResource.DATA.id()), type);
+        Files.deleteIfExists(rootSource);
     }
 
     private static void createLevelOverrides(
