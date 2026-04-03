@@ -57,6 +57,9 @@ final class LegacyCraftBukkitWorldMigration {
         if (!Files.isDirectory(sourceRoot)) {
             return;
         }
+        if (!Files.isRegularFile(sourceRoot.resolve(LevelResource.LEVEL_DATA_FILE.id())) && !Files.isRegularFile(sourceRoot.resolve(LevelResource.OLD_LEVEL_DATA_FILE.id()))) {
+            return;
+        }
         migrate(context);
     }
 
