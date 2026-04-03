@@ -55,7 +55,7 @@ index a6f9435a8e2a6c8cc05bd3873cb6fc0ec98973b8..d44fd9eea0ccb09c894d6431ede8a4c2
          this.used.set(position, position + size);
      }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index fc712f9dbc893a6dee8ccecc54d0af07659dee62..7e532486c075b31c59159ead3f170eaa26d5c81c 100644
+index fc712f9dbc893a6dee8ccecc54d0af07659dee62..b4a59b855b45018853e8122a5829a48ebd220a5f 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -47,6 +47,363 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
@@ -426,7 +426,7 @@ index fc712f9dbc893a6dee8ccecc54d0af07659dee62..7e532486c075b31c59159ead3f170eaa
              throw new IllegalArgumentException("Expected directory, got " + externalFileDir.toAbsolutePath());
          } else {
              this.externalFileDir = externalFileDir;
-+            this.canRecalcHeader = RegionFileStorage.isChunkDataFolder(this.externalFileDir); // Paper - add can recalc flag
++            this.canRecalcHeader = info.dfuType()[0] == net.minecraft.util.datafix.DataFixTypes.CHUNK; // Paper - add can recalc flag
              this.offsets = this.header.asIntBuffer();
              this.offsets.limit(1024);
              this.header.position(4096);
@@ -637,19 +637,15 @@ index fc712f9dbc893a6dee8ccecc54d0af07659dee62..7e532486c075b31c59159ead3f170eaa
          return stub;
      }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 5fa64ff30b8252f139ca7f77c14352c384c8c0e5..ce71ff93817341a75d636dd2418ab162dab1cbde 100644
+index 5fa64ff30b8252f139ca7f77c14352c384c8c0e5..eae4963b6d18c5f92871477b93f81c2c79331cd9 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -24,6 +24,36 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -24,6 +24,32 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
      private final Path folder;
      private final boolean sync;
  
 +    // Paper start - recalculate region file headers
 +    private final boolean isChunkData;
-+
-+    public static boolean isChunkDataFolder(Path path) {
-+        return path.toFile().getName().equalsIgnoreCase("region");
-+    }
 +
 +    @Nullable
 +    public static ChunkPos getRegionFileCoordinates(Path file) {
@@ -677,7 +673,7 @@ index 5fa64ff30b8252f139ca7f77c14352c384c8c0e5..ce71ff93817341a75d636dd2418ab162
      // Paper start - rewrite chunk system
      private static final int REGION_SHIFT = 5;
      private static final int MAX_NON_EXISTING_CACHE = 1024 * 4;
-@@ -172,12 +202,12 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -172,12 +198,12 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
  
          if (input == null) {
              return new ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.ReadData(
@@ -692,7 +688,7 @@ index 5fa64ff30b8252f139ca7f77c14352c384c8c0e5..ce71ff93817341a75d636dd2418ab162
          );
  
          if (!(input instanceof ca.spottedleaf.moonrise.patches.chunk_system.util.stream.ExternalChunkStreamMarker)) {
-@@ -193,7 +223,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -193,7 +219,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          }
  
          return new ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.ReadData(
@@ -701,7 +697,7 @@ index 5fa64ff30b8252f139ca7f77c14352c384c8c0e5..ce71ff93817341a75d636dd2418ab162
          );
      }
  
-@@ -203,7 +233,32 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -203,7 +229,32 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          final int chunkX, final int chunkZ, final ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.ReadData readData
      ) throws IOException {
          try {
@@ -735,15 +731,15 @@ index 5fa64ff30b8252f139ca7f77c14352c384c8c0e5..ce71ff93817341a75d636dd2418ab162
          } finally {
              readData.input().close();
          }
-@@ -219,6 +274,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -219,6 +270,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          this.folder = folder;
          this.sync = sync;
          this.info = info;
-+        this.isChunkData = isChunkDataFolder(this.folder); // Paper - recalculate region file headers
++        this.isChunkData = info.dfuType()[0] == net.minecraft.util.datafix.DataFixTypes.CHUNK; // Paper - recalculate region file headers
      }
  
      @org.jetbrains.annotations.Contract("_, false -> !null") private @Nullable RegionFile getRegionFile(final ChunkPos pos, boolean existingOnly) throws IOException { // CraftBukkit
-@@ -313,6 +369,19 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -313,6 +365,19 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
              }
  
              var4 = NbtIo.read(regionChunkInputStream);
@@ -776,6 +772,24 @@ index 97d3da90c270a06d85e70d261658f71d97ae4e3c..11b65c688144e7ef5b7cba603949843a
      private static final Object2ObjectMap<String, RegionFileVersion> VERSIONS_BY_NAME = new Object2ObjectOpenHashMap<>();
      public static final RegionFileVersion VERSION_GZIP = register(
          new RegionFileVersion(1, null, in -> new FastBufferedInputStream(new GZIPInputStream(in)), out -> new BufferedOutputStream(new GZIPOutputStream(out)))
+diff --git a/net/minecraft/world/level/chunk/storage/RegionStorageInfo.java b/net/minecraft/world/level/chunk/storage/RegionStorageInfo.java
+index 590bd1ca60956e5c5be58481f97401e55f9e1aeb..4e0c9fa1eecfa9f21285b7911e25830bbcbc8d86 100644
+--- a/net/minecraft/world/level/chunk/storage/RegionStorageInfo.java
++++ b/net/minecraft/world/level/chunk/storage/RegionStorageInfo.java
+@@ -3,7 +3,12 @@ package net.minecraft.world.level.chunk.storage;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.world.level.Level;
+ 
+-public record RegionStorageInfo(String level, ResourceKey<Level> dimension, String type) {
++// Paper start - crazy hack to indicate what type the region file is
++public record RegionStorageInfo(String level, ResourceKey<Level> dimension, String type, net.minecraft.util.datafix.DataFixTypes[] dfuType) {
++    public RegionStorageInfo(String level, ResourceKey<Level> dimension, String type) {
++        this(level, dimension, type, new net.minecraft.util.datafix.DataFixTypes[1]);
++    }
++    // Paper end - crazy hack to indicate what type the region file is
+     public RegionStorageInfo withTypeSuffix(final String suffix) {
+         return new RegionStorageInfo(this.level, this.dimension, this.type + suffix);
+     }
 diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 index 22a83f312d357176a5489e5b6b71c3ef3e737df7..74158a5d7ea8058c99ab215265987746aa043fc7 100644
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
@@ -808,3 +822,15 @@ index 22a83f312d357176a5489e5b6b71c3ef3e737df7..74158a5d7ea8058c99ab215265987746
          tag.putLong("InhabitedTime", this.inhabitedTime);
          tag.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(this.chunkStatus).toString());
          tag.storeNullable("blending_data", BlendingData.Packed.CODEC, this.blendingData);
+diff --git a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
+index 884fa9545a93008fa92863c845aef8f18d88e25a..15da3686bb1b5fddd388a88a7b300aa221c83f58 100644
+--- a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
++++ b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
+@@ -34,6 +34,7 @@ public class SimpleRegionStorage implements ca.spottedleaf.moonrise.patches.chun
+     public SimpleRegionStorage(
+         final RegionStorageInfo info, final Path folder, final DataFixer fixerUpper, final boolean syncWrites, final DataFixTypes dataFixType
+     ) {
++        info.dfuType()[0] = dataFixType; // Paper - crazy hack to indicate what type the region file is
+         this.fixerUpper = fixerUpper;
+         this.dataFixType = dataFixType;
+         this.storage = new IOWorker(info, folder, syncWrites).storage; // Paper - rewrite chunk system
