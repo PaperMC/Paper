@@ -29,7 +29,7 @@ How To (Plugin Developers)
 * See upcoming, pending, and recently added API [here](https://github.com/orgs/PaperMC/projects/2/views/4)
 * Paper API javadocs here: [papermc.io/javadocs](https://papermc.io/javadocs/)
 #### Repository (for paper-api)
-> You can read more about adding paper as repository [here](https://docs.papermc.io/paper/dev/project-setup/#adding-paper-as-a-dependency) for more details.
+> See [the docs](https://docs.papermc.io/paper/dev/project-setup/#adding-paper-as-a-dependency) for more details, including Maven caveats.
 ##### Maven
 
 ```xml
