@@ -26200,7 +26200,7 @@ index de75dda2e6f17f0ae6e7f6a5620fd3eac9d389e5..6774d12d04fa848624fb8bf7a3c2b8bc
          List<Entity> passengers = this.entity.getPassengers();
          if (!passengers.equals(this.lastPassengers)) {
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 71446ef19c560f67d22697941973326e2b81bb60..d04bc21590e002f5e8c6759c3468f7c1c4385ab4 100644
+index 71446ef19c560f67d22697941973326e2b81bb60..8c954add1949777b4f5658064eb7cd381d542140 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -182,7 +182,7 @@ import net.minecraft.world.waypoints.WaypointTransmitter;
@@ -26345,9 +26345,7 @@ index 71446ef19c560f67d22697941973326e2b81bb60..d04bc21590e002f5e8c6759c3468f7c1
 +            priority, onLoad
 +        );
 +    }
- 
--        int requiredChunks = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
--        int[] loadedChunks = new int[1];
++
 +    @Override
 +    public final void moonrise$loadChunksAsync(final BlockPos pos, final int radiusBlocks,
 +                                               final net.minecraft.world.level.chunk.status.ChunkStatus chunkStatus, final ca.spottedleaf.concurrentutil.util.Priority priority,
@@ -26361,7 +26359,8 @@ index 71446ef19c560f67d22697941973326e2b81bb60..d04bc21590e002f5e8c6759c3468f7c1
 +        );
 +    }
  
--        java.util.function.Consumer<net.minecraft.world.level.chunk.ChunkAccess> consumer = (net.minecraft.world.level.chunk.ChunkAccess chunk) -> {
+-        int requiredChunks = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
+-        int[] loadedChunks = new int[1];
 +    @Override
 +    public final void moonrise$loadChunksAsync(final int minChunkX, final int maxChunkX, final int minChunkZ, final int maxChunkZ,
 +                                               final ca.spottedleaf.concurrentutil.util.Priority priority,
@@ -26389,7 +26388,8 @@ index 71446ef19c560f67d22697941973326e2b81bb60..d04bc21590e002f5e8c6759c3468f7c1
 +        final int ticketLevel = ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.getTicketLevel(chunkStatus);
 +
 +        final List<ChunkAccess> ret = new ArrayList<>(requiredChunks);
-+
+ 
+-        java.util.function.Consumer<net.minecraft.world.level.chunk.ChunkAccess> consumer = (net.minecraft.world.level.chunk.ChunkAccess chunk) -> {
 +        final java.util.function.Consumer<net.minecraft.world.level.chunk.ChunkAccess> consumer = (final ChunkAccess chunk) -> {
              if (chunk != null) {
 -                int ticketLevel = Math.max(33, chunkProvider.chunkMap.getUpdatingChunkIfPresent(chunk.getPos().pack()).getTicketLevel());
@@ -26400,11 +26400,11 @@ index 71446ef19c560f67d22697941973326e2b81bb60..d04bc21590e002f5e8c6759c3468f7c1
 +                    ret.add(chunk);
 +                }
 +                chunkHolderManager.addTicketAtLevel(ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.CHUNK_LOAD, chunk.getPos(), ticketLevel, holderIdentifier);
-             }
--            if (++loadedChunks[0] == requiredChunks) {
++            }
 +            if (onEachLoad != null) {
 +                onEachLoad.accept(chunk);
-+            }
+             }
+-            if (++loadedChunks[0] == requiredChunks) {
 +            if (loadedChunks.incrementAndGet() == requiredChunks) {
                  try {
 -                    onLoad.accept(java.util.Collections.unmodifiableList(ret));
@@ -26437,7 +26437,8 @@ index 71446ef19c560f67d22697941973326e2b81bb60..d04bc21590e002f5e8c6759c3468f7c1
 -        return player != null && player.level() == this ? player : null;
 +    public final ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader.ViewDistanceHolder moonrise$getViewDistanceHolder() {
 +        return this.viewDistanceHolder;
-+    }
+     }
+-    // Paper end - optimise getPlayerByUUID
 +
 +    @Override
 +    public final long moonrise$getLastMidTickFailure() {
@@ -26462,8 +26463,7 @@ index 71446ef19c560f67d22697941973326e2b81bb60..d04bc21590e002f5e8c6759c3468f7c1
 +    @Override
 +    public final ca.spottedleaf.moonrise.common.list.ReferenceList<LevelChunk> moonrise$getTickingChunks() {
 +        return this.tickingChunks;
-     }
--    // Paper end - optimise getPlayerByUUID
++    }
 +
 +    @Override
 +    public final ca.spottedleaf.moonrise.common.list.ReferenceList<LevelChunk> moonrise$getEntityTickingChunks() {
@@ -26604,8 +26604,8 @@ index 71446ef19c560f67d22697941973326e2b81bb60..d04bc21590e002f5e8c6759c3468f7c1
 +        this.chunkTaskScheduler = new ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler((ServerLevel)(Object)this);
 +        this.entityDataController = new ca.spottedleaf.moonrise.patches.chunk_system.io.datacontroller.EntityDataController(
 +            new ca.spottedleaf.moonrise.patches.chunk_system.io.datacontroller.EntityDataController.EntityRegionFileStorage(
-+                new RegionStorageInfo(levelStorageAccess.getLevelId(), dimension, "entities"),
-+                levelStorageAccess.getDimensionPath(dimension).resolve("entities"),
++                new RegionStorageInfo(levelStorage.getLevelId(), dimension, "entities"),
++                levelStorage.getDimensionPath(dimension).resolve("entities"),
 +                server.forceSynchronousWrites()
 +            ),
 +            this.chunkTaskScheduler
