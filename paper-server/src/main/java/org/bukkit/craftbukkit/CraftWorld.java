@@ -1422,7 +1422,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Path getWorldPath() {
-        return this.world.getServer().storageSource.getLevelDirectory().path();
+        return this.world.getServer().storageSource.getDimensionPath(this.world.dimension());
     }
 
     @Override
