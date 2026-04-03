@@ -96,6 +96,7 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
         final RespawnData normalizedRespawnData = respawnData.normalized();
         if (!this.respawnData.equals(normalizedRespawnData)) {
             this.respawnData = normalizedRespawnData;
+            // Do not syncRootData here, handled separately in MinecraftServer#updateEffectiveRespawnData
             this.setDirty();
         }
     }
@@ -219,6 +220,7 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
         }
     }
 
+    // Like LevelData.RespawnData, but with a BlockPos instead of a GlobalPos
     public record RespawnData(BlockPos pos, float yaw, float pitch) {
         public static final RespawnData DEFAULT = new RespawnData(BlockPos.ZERO, 0.0F, 0.0F);
         public static final Codec<RespawnData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
