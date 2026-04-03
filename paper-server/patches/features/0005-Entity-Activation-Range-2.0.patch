@@ -354,10 +354,10 @@ index 0000000000000000000000000000000000000000..c18823746ab2edcab536cb1589b7720e
 +    }
 +}
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 71446ef19c560f67d22697941973326e2b81bb60..6ea8d1c04afdaf2136dfd5fb3ab1899e8e62fc70 100644
+index d04bc21590e002f5e8c6759c3468f7c1c4385ab4..eb831511927d27a2614de8a1334dedef3b96d67b 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -599,6 +599,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -857,6 +857,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
                  profiler.pop();
              }
  
@@ -365,7 +365,7 @@ index 71446ef19c560f67d22697941973326e2b81bb60..6ea8d1c04afdaf2136dfd5fb3ab1899e
              this.entityTickList
                  .forEach(
                      entity -> {
-@@ -1072,12 +1073,15 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1373,12 +1374,15 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
          entity.totalEntityAge++; // Paper - age-like counter for all entities
          profiler.push(entity.typeHolder()::getRegisteredName);
          profiler.incrementCounter("tickNonPassenger");
@@ -382,7 +382,7 @@ index 71446ef19c560f67d22697941973326e2b81bb60..6ea8d1c04afdaf2136dfd5fb3ab1899e
          }
          // Paper start - log detailed entity tick information
          } finally {
-@@ -1088,7 +1092,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1389,7 +1393,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
          // Paper end - log detailed entity tick information
      }
  
@@ -391,7 +391,7 @@ index 71446ef19c560f67d22697941973326e2b81bb60..6ea8d1c04afdaf2136dfd5fb3ab1899e
          if (entity.isRemoved() || entity.getVehicle() != vehicle) {
              entity.stopRiding();
          } else if (entity instanceof Player || this.entityTickList.contains(entity)) {
-@@ -1098,12 +1102,21 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1399,12 +1403,21 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
              ProfilerFiller profiler = Profiler.get();
              profiler.push(entity.typeHolder()::getRegisteredName);
              profiler.incrementCounter("tickPassenger");
@@ -462,10 +462,10 @@ index 6309a615ba2525437758b1fe39c43060ec42d6f8..677b0cadec2270537d868aac7d0acaf7
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index a480a35b23f38680598cb428bd09b7d1db07af6e..9ea33286ac0d4691dbc6b607a18b6688ca1724e9 100644
+index fe197ff989f084b563021ac62984e4710594402e..6a76817b135d5bf1f045c3ff263c3945bdaa8c2d 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -426,6 +426,15 @@ public abstract class Entity
+@@ -382,6 +382,15 @@ public abstract class Entity
      private final int despawnTime; // Paper - entity despawn time limit
      public int totalEntityAge; // Paper - age-like counter for all entities
      public final io.papermc.paper.entity.activation.ActivationType activationType = io.papermc.paper.entity.activation.ActivationType.activationTypeFor(this); // Paper - EAR 2/tracking ranges
@@ -481,7 +481,7 @@ index a480a35b23f38680598cb428bd09b7d1db07af6e..9ea33286ac0d4691dbc6b607a18b6688
      // CraftBukkit end
  
      // Paper start
-@@ -441,6 +450,13 @@ public abstract class Entity
+@@ -547,6 +556,13 @@ public abstract class Entity
          this.position = Vec3.ZERO;
          this.blockPosition = BlockPos.ZERO;
          this.chunkPosition = ChunkPos.ZERO;
@@ -495,7 +495,7 @@ index a480a35b23f38680598cb428bd09b7d1db07af6e..9ea33286ac0d4691dbc6b607a18b6688
          SynchedEntityData.Builder entityDataBuilder = new SynchedEntityData.Builder(this);
          entityDataBuilder.define(DATA_SHARED_FLAGS_ID, (byte)0);
          entityDataBuilder.define(DATA_AIR_SUPPLY_ID, this.getMaxAirSupply());
-@@ -1029,6 +1045,10 @@ public abstract class Entity
+@@ -1135,6 +1151,10 @@ public abstract class Entity
          } else {
              if (moverType == MoverType.PISTON) {
                  delta = this.limitPistonMovement(delta);
@@ -506,7 +506,7 @@ index a480a35b23f38680598cb428bd09b7d1db07af6e..9ea33286ac0d4691dbc6b607a18b6688
                  if (delta.equals(Vec3.ZERO)) {
                      return;
                  }
-@@ -1044,6 +1064,13 @@ public abstract class Entity
+@@ -1150,6 +1170,13 @@ public abstract class Entity
                  this.stuckSpeedMultiplier = Vec3.ZERO;
                  this.setDeltaMovement(Vec3.ZERO);
              }
@@ -816,10 +816,10 @@ index 3a590d4dc980a2912e9cc043d8c8db4cf9d60803..06ab7c48b18c03af494ab10fc2b584ce
 +
  }
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 16ca35249e2248500073bb2b12447d2a0e545b95..00be50d2b8de3b5084c14c2e02eaf97f76ed5e49 100644
+index 86b37a276b33a10efc950243787e85a657b93138..9a56fc04ad397d962b56e2a3a8fedb8eddeeb89e 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -153,6 +153,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -154,6 +154,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      @Nullable
      public List<net.minecraft.world.entity.item.ItemEntity> captureDrops;
      public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
