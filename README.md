@@ -40,7 +40,7 @@ How To (Plugin Developers)
 <dependency>
     <groupId>io.papermc.paper</groupId>
     <artifactId>paper-api</artifactId>
-    <version>1.21.11-R0.1-SNAPSHOT</version>
+    <version>26.1.1.build.+</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -53,19 +53,19 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:26.1.1.build.+")
 }
 
 java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+    toolchain.languageVersion.set(JavaLanguageVersion.of(25))
 }
 ```
 
 How To (Compiling Jar From Source)
 ------
-To compile Paper, you need JDK 21 and an internet connection.
+To compile Paper, you need JDK 25 and an internet connection.
 
-Clone this repo, run `./gradlew applyPatches`, then `./gradlew createMojmapBundlerJar` from your terminal. You can find the compiled jar in the `paper-server/build/libs` directory.
+Clone this repo, run `./gradlew applyPatches`, then `./gradlew createPaperclipJar` from your terminal. You can find the compiled jar in the `paper-server/build/libs` directory.
 
 To get a full list of tasks, run `./gradlew tasks`.
 
