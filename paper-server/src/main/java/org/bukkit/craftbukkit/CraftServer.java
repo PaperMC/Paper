@@ -1202,7 +1202,6 @@ public final class CraftServer implements Server {
         };
 
         final ResourceKey<net.minecraft.world.level.Level> dimensionKey = PaperWorldLoader.dimensionKey(creator.key());
-        final ResourceKey<LevelStem> levelStemKey = Registries.levelToLevelStem(dimensionKey);
         WorldLoader.DataLoadContext context = this.console.worldLoaderContext;
         RegistryAccess.Frozen registryAccess = context.datapackDimensions();
         net.minecraft.core.Registry<LevelStem> contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
@@ -1232,18 +1231,16 @@ public final class CraftServer implements Server {
             .orElse(null);
         if (worldGenSettings == null) {
             WorldOptions worldOptions = new WorldOptions(creator.seed(), creator.generateStructures(), creator.bonusChest());
-            WorldDimensions worldDimensions;
 
             DedicatedServerProperties.WorldDimensionData properties = new DedicatedServerProperties.WorldDimensionData(GsonHelper.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.type().name().toLowerCase(Locale.ROOT));
-            worldDimensions = properties.create(context.datapackWorldgen());
+            WorldDimensions worldDimensions = properties.create(context.datapackWorldgen());
 
             WorldDimensions.Complete complete = worldDimensions.bake(contextLevelStemRegistry);
-            final LevelStem bakedStem = complete.dimensions().getValue(actualDimension);
-            if (bakedStem == null) {
+            if (complete.dimensions().getValue(actualDimension) == null) {
                 throw new IllegalStateException("Missing generated level stem " + actualDimension + " for world " + name);
             }
 
-            worldGenSettings = new WorldGenSettings(worldOptions, new WorldDimensions(java.util.Map.of(levelStemKey, bakedStem)));
+            worldGenSettings = new WorldGenSettings(worldOptions, worldDimensions);
             registryAccess = complete.dimensionsRegistryAccess();
             final PaperLevelOverrides levelOverrides = PaperLevelOverrides.createFromLiveLevelData(primaryLevelData);
             levelOverrides.setHardcore(creator.hardcore());
@@ -1263,17 +1260,12 @@ public final class CraftServer implements Server {
         }
 
         long biomeZoomSeed = BiomeManager.obfuscateSeed(genSettingsFinal.options().seed());
-        LevelStem customStem = genSettingsFinal.dimensions().get(levelStemKey)
-            .or(() -> genSettingsFinal.dimensions().get(actualDimension))
-            .orElse(null);
-        if (customStem == null) {
-            customStem = contextLevelStemRegistry.getValue(levelStemKey);
-        }
+        LevelStem customStem = genSettingsFinal.dimensions().get(actualDimension).orElse(null);
         if (customStem == null) {
             customStem = contextLevelStemRegistry.getValue(actualDimension);
         }
         if (customStem == null) {
-            throw new IllegalStateException("Missing level stem for world " + name + " using keys " + levelStemKey + " and " + actualDimension);
+            throw new IllegalStateException("Missing level stem for world " + name + " using key " + actualDimension);
         }
 
         WorldInfo worldInfo = new CraftWorldInfo(loadedWorldData.bukkitName(), genSettingsFinal.options().seed(), primaryLevelData.enabledFeatures(), creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess(), loadedWorldData.uuid());
