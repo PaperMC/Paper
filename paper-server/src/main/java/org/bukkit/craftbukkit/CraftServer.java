@@ -1242,13 +1242,12 @@ public final class CraftServer implements Server {
 
             worldGenSettings = new WorldGenSettings(worldOptions, worldDimensions);
             registryAccess = complete.dimensionsRegistryAccess();
-            final PaperLevelOverrides levelOverrides = PaperLevelOverrides.createFromLiveLevelData(primaryLevelData);
-            levelOverrides.setHardcore(creator.hardcore());
+            loadedWorldData.levelOverrides().setHardcore(creator.hardcore());
             loadedWorldData = new PaperWorldLoader.LoadedWorldData(
                 loadedWorldData.bukkitName(),
                 loadedWorldData.uuid(),
                 loadedWorldData.pdc(),
-                levelOverrides
+                loadedWorldData.levelOverrides()
             );
         }
         final WorldGenSettings genSettingsFinal = worldGenSettings;
