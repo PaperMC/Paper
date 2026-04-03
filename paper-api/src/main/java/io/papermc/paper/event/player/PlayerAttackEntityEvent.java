@@ -6,7 +6,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 
 /**
@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * Cancelling this event results in an attack with no damage, like when hitting an invulnerable entity. To cancel the damage completely, use {@link PrePlayerAttackEntityEvent}.
  */
+@NullMarked
 public class PlayerAttackEntityEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -39,7 +40,7 @@ public class PlayerAttackEntityEvent extends PlayerEvent implements Cancellable 
      *
      * @return entity that was attacked
      */
-    public @NotNull Entity getAttacked() {
+    public Entity getAttacked() {
         return this.attacked;
     }
 
@@ -70,7 +71,7 @@ public class PlayerAttackEntityEvent extends PlayerEvent implements Cancellable 
      *
      * @return type of the attack
      */
-    public @NotNull PlayerAttackType getType() {
+    public PlayerAttackType getType() {
         return this.type;
     }
 
@@ -79,7 +80,7 @@ public class PlayerAttackEntityEvent extends PlayerEvent implements Cancellable 
      *
      * @param type type of the attack
      */
-    public void setType(final @NotNull PlayerAttackType type) {
+    public void setType(final PlayerAttackType type) {
         this.type = type;
     }
 
@@ -94,11 +95,11 @@ public class PlayerAttackEntityEvent extends PlayerEvent implements Cancellable 
     }
 
     @Override
-    public @NotNull HandlerList getHandlers() {
+    public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    public static @NotNull HandlerList getHandlerList() {
+    public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
 
