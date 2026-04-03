@@ -51,8 +51,12 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
 
     public record WorldLoadingInfoAndData(WorldLoadingInfo info, LoadedWorldData data) {}
 
-    private WorldLoadingInfoAndData getWorldInfoAndData(final LevelStem stem) {
+    private @Nullable WorldLoadingInfoAndData getWorldInfoAndData(final LevelStem stem) {
         final WorldLoadingInfo info = this.getWorldInfo(stem);
+        if (!info.enabled()) {
+            return null;
+        }
+
         final String defaultName = defaultWorldName(this.levelId, info.stemKey());
 
         try {
@@ -144,7 +148,7 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
 
     private void loadInitialWorld(final LevelStem stem, final boolean hasWorldData) {
         final WorldLoadingInfoAndData loading = this.getWorldInfoAndData(stem);
-        if (!loading.info().enabled()) {
+        if (loading == null) {
             return;
         }
 
