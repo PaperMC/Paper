@@ -156,6 +156,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.block.BlockShearEntityEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
+import org.bukkit.event.block.CauldronLevelChangeEvent;
 import org.bukkit.event.block.CrafterCraftEvent;
 import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.block.FluidLevelChangeEvent;
@@ -1288,12 +1289,12 @@ public class CraftEventFactory {
         return false;
     }
 
-    public static boolean handleCauldronLevelChangeEvent(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, @org.jspecify.annotations.Nullable Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason) {
-        org.bukkit.craftbukkit.block.CraftBlockState snapshot = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(level, pos);
+    public static boolean handleCauldronLevelChangeEvent(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, @Nullable Entity entity, CauldronLevelChangeEvent.ChangeReason reason) {
+        CraftBlockState snapshot = CraftBlockStates.getBlockState(level, pos);
         snapshot.setBlock(newState);
 
-        org.bukkit.event.block.CauldronLevelChangeEvent event = new org.bukkit.event.block.CauldronLevelChangeEvent(
-            org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
+        CauldronLevelChangeEvent event = new CauldronLevelChangeEvent(
+            CraftBlock.at(level, pos),
             (entity == null) ? null : entity.getBukkitEntity(), reason, snapshot
         );
         if (event.callEvent()) {
