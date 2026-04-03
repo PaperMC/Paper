@@ -1288,6 +1288,22 @@ public class CraftEventFactory {
         return false;
     }
 
+    public static boolean handleCauldronLevelChangeEvent(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, @org.jspecify.annotations.Nullable Entity entity, org.bukkit.event.block.CauldronLevelChangeEvent.ChangeReason reason) {
+        org.bukkit.craftbukkit.block.CraftBlockState snapshot = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(level, pos);
+        snapshot.setBlock(newState);
+
+        org.bukkit.event.block.CauldronLevelChangeEvent event = new org.bukkit.event.block.CauldronLevelChangeEvent(
+            org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
+            (entity == null) ? null : entity.getBukkitEntity(), reason, snapshot
+        );
+        if (event.callEvent()) {
+            snapshot.place(net.minecraft.world.level.block.Block.UPDATE_ALL);
+            return true;
+        }
+
+        return false;
+    }
+
     public static FluidLevelChangeEvent callFluidLevelChangeEvent(Level level, BlockPos block, net.minecraft.world.level.block.state.BlockState newData) {
         FluidLevelChangeEvent event = new FluidLevelChangeEvent(CraftBlock.at(level, block), newData.asBlockData());
         level.getCraftServer().getPluginManager().callEvent(event);
