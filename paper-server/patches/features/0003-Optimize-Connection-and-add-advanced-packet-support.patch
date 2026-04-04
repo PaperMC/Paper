@@ -28,7 +28,7 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf, sandtechnology
 
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index b1ea3da2f37b247e6b7ebf37c821da27e374dfa6..b18fc4d6fe01db767068b8e05aadae251bc08fa8 100644
+index 0bc6ab5e498f82c5b3cbdf8dddfed6c8406ad511..9cd6ec17981da310be1d35054af080d6b33beff8 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
 @@ -65,7 +65,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -219,7 +219,7 @@ index b1ea3da2f37b247e6b7ebf37c821da27e374dfa6..b18fc4d6fe01db767068b8e05aadae25
          if (this.channel == null) {
              this.delayedDisconnect = details;
          }
-@@ -713,7 +806,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -714,7 +807,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public void handleDisconnection() {
          if (this.channel != null && !this.channel.isOpen()) {
              if (this.disconnectionHandled) {
@@ -228,7 +228,7 @@ index b1ea3da2f37b247e6b7ebf37c821da27e374dfa6..b18fc4d6fe01db767068b8e05aadae25
              } else {
                  this.disconnectionHandled = true;
                  PacketListener packetListener = this.getPacketListener();
-@@ -724,7 +817,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -725,7 +818,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                      );
                      disconnectListener.onDisconnect(details);
                  }
@@ -237,7 +237,7 @@ index b1ea3da2f37b247e6b7ebf37c821da27e374dfa6..b18fc4d6fe01db767068b8e05aadae25
                  // Paper start - Add PlayerConnectionCloseEvent
                  if (packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl commonPacketListener) {
                      /* Player was logged in, either game listener or configuration listener */
-@@ -759,4 +852,96 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -760,4 +853,96 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public void setBandwidthLogger(final LocalSampleLogger bandwidthLogger) {
          this.bandwidthDebugMonitor = new BandwidthDebugMonitor(bandwidthLogger);
      }
@@ -372,10 +372,10 @@ index 1480d0db90f5797e3dee19503e52d1e783493ac3..f6cfce2ce30a426cd57a89f3f8ccf144
 +    // Paper end
  }
 diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
-index e72bd8239eed69be774373b49cdb05fbf0799030..22276be80b8729884c797b96c93bf0965ca9eed1 100644
+index b0445b4ad9adb6d2dec08537559d2ed243ca69bb..b266e4f7b437578356568d86910e3b428ee66523 100644
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
-@@ -51,11 +51,13 @@ public class ServerConnectionListener {
+@@ -52,11 +52,13 @@ public class ServerConnectionListener {
  
      // Paper start - prevent blocking on adding a new connection while the server is ticking
      private final java.util.Queue<Connection> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
@@ -389,11 +389,11 @@ index e72bd8239eed69be774373b49cdb05fbf0799030..22276be80b8729884c797b96c93bf096
          }
      }
      // Paper end - prevent blocking on adding a new connection while the server is ticking
-@@ -91,6 +93,7 @@ public class ServerConnectionListener {
+@@ -92,6 +94,7 @@ public class ServerConnectionListener {
                                      } catch (ChannelException var5) {
                                      }
  
 +                                    if (!disableFlushConsolidation) channel.pipeline().addFirst(new io.netty.handler.flush.FlushConsolidationHandler()); // Paper - Optimize network
-                                     ChannelPipeline pipeline = channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30));
+                                     ChannelPipeline pipeline = channel.pipeline().addLast(HandlerNames.TIMEOUT, new ReadTimeoutHandler(30));
                                      if (ServerConnectionListener.this.server.repliesToStatus()) {
-                                         pipeline.addLast("legacy_query", new LegacyQueryHandler(ServerConnectionListener.this.getServer()));
+                                         pipeline.addLast(HandlerNames.LEGACY_QUERY, new LegacyQueryHandler(ServerConnectionListener.this.getServer()));

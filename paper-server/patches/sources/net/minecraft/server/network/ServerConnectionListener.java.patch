@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
-@@ -49,9 +_,31 @@
+@@ -50,9 +_,31 @@
          this.running = true;
      }
  
@@ -33,26 +33,26 @@
              this.channels
                  .add(
                      new ServerBootstrap()
-@@ -79,22 +_,64 @@
+@@ -80,22 +_,64 @@
                                      Connection connection = (Connection)(rateLimitPacketsPerSecond > 0
                                          ? new RateKickingConnection(rateLimitPacketsPerSecond)
                                          : new Connection(PacketFlow.SERVERBOUND));
 -                                    ServerConnectionListener.this.connections.add(connection);
 +                                    // Paper start - Add support for Proxy Protocol
 +                                    if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
-+                                        channel.pipeline().addAfter("timeout", "haproxy-decoder", new io.netty.handler.codec.haproxy.HAProxyMessageDecoder());
++                                        channel.pipeline().addAfter(HandlerNames.TIMEOUT, "haproxy-decoder", new io.netty.handler.codec.haproxy.HAProxyMessageDecoder());
 +                                        channel.pipeline().addAfter("haproxy-decoder", "haproxy-handler", new ChannelInboundHandlerAdapter() {
 +                                            @Override
 +                                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 +                                                if (msg instanceof io.netty.handler.codec.haproxy.HAProxyMessage message) {
 +                                                    if (message.command() == io.netty.handler.codec.haproxy.HAProxyCommand.PROXY) {
-+                                                        String realaddress = message.sourceAddress();
-+                                                        int realport = message.sourcePort();
++                                                        String realAddress = message.sourceAddress();
++                                                        int realPort = message.sourcePort();
 +
-+                                                        SocketAddress socketaddr = new java.net.InetSocketAddress(realaddress, realport);
++                                                        SocketAddress socketAddr = new java.net.InetSocketAddress(realAddress, realPort);
 +
-+                                                        Connection connection = (Connection) channel.pipeline().get("packet_handler");
-+                                                        connection.address = socketaddr;
++                                                        Connection connection = (Connection) channel.pipeline().get(HandlerNames.PACKET_HANDLER);
++                                                        connection.address = socketAddr;
 +                                                        // Paper start - Add API to get player's proxy address
 +                                                        final String proxyAddress = message.destinationAddress();
 +                                                        final int proxyPort = message.destinationPort();
@@ -100,7 +100,7 @@
      public SocketAddress startMemoryChannel() {
          ChannelFuture newChannel;
          synchronized (this.channels) {
-@@ -150,6 +_,13 @@
+@@ -151,6 +_,13 @@
  
      public void tick() {
          synchronized (this.connections) {
@@ -114,7 +114,7 @@
              Iterator<Connection> iterator = this.connections.iterator();
  
              while (iterator.hasNext()) {
-@@ -169,6 +_,7 @@
+@@ -170,6 +_,7 @@
                              connection.setReadOnly();
                          }
                      } else {
