@@ -14,8 +14,8 @@ java {
 val annotationsVersion = "26.0.2"
 val adventureVersion = "4.26.1"
 val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
-val slf4jVersion = "2.0.16"
-val log4jVersion = "2.24.1"
+val slf4jVersion = "2.0.17"
+val log4jVersion = "2.25.2"
 
 val apiAndDocs: Configuration by configurations.creating {
     attributes {
@@ -42,8 +42,8 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     // api dependencies are listed transitively to API consumers
-    api("com.google.guava:guava:33.3.1-jre")
-    api("com.google.code.gson:gson:2.11.0")
+    api("com.google.guava:guava:33.5.0-jre")
+    api("com.google.code.gson:gson:2.13.2")
     api("org.yaml:snakeyaml:2.2")
     api("org.joml:joml:1.10.8") {
         isTransitive = false // https://github.com/JOML-CI/JOML/issues/352
@@ -187,7 +187,7 @@ tasks.withType<Javadoc>().configureEach {
     options.use()
     options.isDocFilesSubDirs = true
     options.links(
-        "https://guava.dev/releases/33.3.1-jre/api/docs/",
+        "https://guava.dev/releases/33.5.0-jre/api/docs/",
         "https://www.javadocs.dev/org.yaml/snakeyaml/2.2/",
         "https://www.javadocs.dev/org.jetbrains/annotations/$annotationsVersion/",
         "https://www.javadocs.dev/org.joml/joml/1.10.8/",
