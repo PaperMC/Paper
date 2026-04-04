@@ -48,7 +48,7 @@ dependencies {
     api("org.joml:joml:1.10.8") {
         isTransitive = false // https://github.com/JOML-CI/JOML/issues/352
     }
-    api("it.unimi.dsi:fastutil:8.5.15")
+    api("it.unimi.dsi:fastutil:8.5.18")
     api("org.apache.logging.log4j:log4j-api:$log4jVersion")
     api("org.slf4j:slf4j-api:$slf4jVersion")
     api("com.mojang:brigadier:1.3.10")
