@@ -66,7 +66,7 @@ On Windows, remove the `./` the beginning of `gradlew` commands;
 **Only changes made in `paper-server/src/minecraft` have to deal with the patch system.**
 
 `paper-server/src/minecraft` is not a git repositories in the traditional sense. Its
-initial commits are the decompiled and deobfuscated Minecraft source files. The per-file
+initial commits are the decompiled Minecraft source files. The per-file
 patches are applied on top of these files as a single, large commit, which is then followed
 by the individual feature-patch commits.
 
