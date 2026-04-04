@@ -184,8 +184,7 @@ These steps assume the `origin` remote is your fork of this repository and `upst
 ## PR Policy
 
 We'll accept changes that make sense. You should be able to justify their
-existence, along with any maintenance costs that come with them. Using
-[obfuscation helpers](#obfuscation-helpers) aids in the maintenance costs.
+existence, along with any maintenance costs that come with them.
 Remember that these changes will affect everyone who runs Paper, not just you
 and your server.
 
@@ -381,26 +380,6 @@ index a92bf8967..d0ab87d0f 100644
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 ```
 -->
-
-## Obfuscation Helpers
-
-While rarely needed, obfuscation helpers are sometimes useful when it comes
-to unmapped local variables, or poorly named method parameters. In an effort
-to make future updates easier on ourselves, Paper tries to use obfuscation
-helpers wherever it makes sense. The purpose of these helpers is to make the
-code more readable and maintainable. These helpers should be made easy to
-inline by the JVM wherever possible.
-
-An example of an obfuscation helper for a local variable:
-```java
-double d0 = entity.getX(); final double fromX = d0; // Paper - OBFHELPER
-// ...   
-this.someMethod(fromX); // Paper
-```
-
-While they may not always be done in exactly the same way, the general goal is
-always to improve readability and maintainability. Use your best judgment and do
-what fits best in your situation.
 
 ## Configuration files
 
