@@ -23697,7 +23697,7 @@ index 0000000000000000000000000000000000000000..8424cf9d4617b4732d44cc460d25b044
 +
 +}
 diff --git a/net/minecraft/core/Direction.java b/net/minecraft/core/Direction.java
-index 4bacdaa64a88007cc81b54a6fdacbba65ec70b20..0759e882ef3fd136ef03058d7cdb9cb0ff9e10df 100644
+index 3f516ffd7a76f1d17daaa865f7446803b8217bcc..240fb1346b721e4aaf8517b01fa205760cee4bbd 100644
 --- a/net/minecraft/core/Direction.java
 +++ b/net/minecraft/core/Direction.java
 @@ -29,7 +29,7 @@ import org.joml.Vector3f;
@@ -23761,12 +23761,12 @@ index 4bacdaa64a88007cc81b54a6fdacbba65ec70b20..0759e882ef3fd136ef03058d7cdb9cb0
  
      public Quaternionf getRotation() {
 -        return switch (this) {
--            case DOWN -> new Quaternionf().rotationX((float) Math.PI);
+-            case DOWN -> new Quaternionf().rotationX(Mth.PI);
 -            case UP -> new Quaternionf();
--            case NORTH -> new Quaternionf().rotationXYZ((float) (Math.PI / 2), 0.0F, (float) Math.PI);
--            case SOUTH -> new Quaternionf().rotationX((float) (Math.PI / 2));
--            case WEST -> new Quaternionf().rotationXYZ((float) (Math.PI / 2), 0.0F, (float) (Math.PI / 2));
--            case EAST -> new Quaternionf().rotationXYZ((float) (Math.PI / 2), 0.0F, (float) (-Math.PI / 2));
+-            case NORTH -> new Quaternionf().rotationXYZ(Mth.PI / 2.0F, 0.0F, Mth.PI);
+-            case SOUTH -> new Quaternionf().rotationX(Mth.PI / 2.0F);
+-            case WEST -> new Quaternionf().rotationXYZ(Mth.PI / 2.0F, 0.0F, Mth.PI / 2.0F);
+-            case EAST -> new Quaternionf().rotationXYZ(Mth.PI / 2.0F, 0.0F, -Mth.PI / 2.0F);
 -        };
 +        // Paper start - optimise collisions
 +        try {
@@ -24595,7 +24595,7 @@ index 60d7c6ddbd179ddaa75a9211bdf8902e4a44285c..3fa0f090edf4c5b4d96a3a9810d8a5ca
  
      @FunctionalInterface
 diff --git a/net/minecraft/server/level/ChunkLevel.java b/net/minecraft/server/level/ChunkLevel.java
-index efa1a630d8b63374d2b3f039700f2e8f761059b2..600f514d8c40230d963200e1c169c41b571839a6 100644
+index 62290d63f44f4fb4e1eb02fb68ba9c34e051a50a..bbb7ca544df9342089d9630e3aa7e70050d3a947 100644
 --- a/net/minecraft/server/level/ChunkLevel.java
 +++ b/net/minecraft/server/level/ChunkLevel.java
 @@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
@@ -28301,7 +28301,7 @@ index 40f97e3657a1672d3865ab915c7f36d3dbf88c6e..b075d7f68a263422cfa1f35b1f896038
  
      public TicketType getType() {
 diff --git a/net/minecraft/server/level/TicketType.java b/net/minecraft/server/level/TicketType.java
-index 6c415347331dc96f0680b5487ca0b2f0a4ad0ef3..5dd7804add1d67e91e6c3638fe20e095034cf2a7 100644
+index 4de90a597bd5c5ac639fd228b3494e70a945d7ff..147cd0458d719be6679b6bac2b6617b48d98ce4c 100644
 --- a/net/minecraft/server/level/TicketType.java
 +++ b/net/minecraft/server/level/TicketType.java
 @@ -7,7 +7,45 @@ import java.lang.annotation.Target;
@@ -28893,7 +28893,7 @@ index 1ceb7e4a3abd4d9de5133d182d3267d2164918f6..eb2fa32cff6824c14f865c8731df7d08
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index a480a35b23f38680598cb428bd09b7d1db07af6e..fe197ff989f084b563021ac62984e4710594402e 100644
+index 3d7bc43e3e367a2328601ac6b74f99361b4be57e..f7b4da570ee28b7128b4d2cd1c67b89e3980bced 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -167,7 +167,7 @@ public abstract class Entity
@@ -29440,7 +29440,7 @@ index a480a35b23f38680598cb428bd09b7d1db07af6e..fe197ff989f084b563021ac62984e471
  
      @Override
 diff --git a/net/minecraft/world/entity/ai/behavior/AcquirePoi.java b/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-index 05e4a32b7d7fef586b1abd1384650839a0d5371b..99ee30e039636f7577532f5121bf8c89293c3656 100644
+index 3325e7d4827067a65b176c5ba01aa491abd222a5..a8f2b22436ff0f4bff06b2c5cf01375da755cfde 100644
 --- a/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 +++ b/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 @@ -88,12 +88,16 @@ public class AcquirePoi {
@@ -29448,14 +29448,14 @@ index 05e4a32b7d7fef586b1abd1384650839a0d5371b..99ee30e039636f7577532f5121bf8c89
                                      }
                                  };
 -                                Set<Pair<Holder<PoiType>, BlockPos>> poiPositions = poiManager.findAllClosestFirstWithType(
--                                        poiType, cacheTest, body.blockPosition(), 48, PoiManager.Occupancy.HAS_SPACE
+-                                        poiType, cacheTest, body.blockPosition(), SCAN_RANGE, PoiManager.Occupancy.HAS_SPACE
 -                                    )
 -                                    .limit(5L)
 -                                    .filter(px -> validPoi.test(level, (BlockPos)px.getSecond()))
 -                                    .collect(Collectors.toSet());
 +                                // Paper start - optimise POI searches
 +                                java.util.List<Pair<Holder<PoiType>, BlockPos>> poiPositionsRaw = new java.util.ArrayList<>();
-+                                ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.findNearestPoiPositions(poiManager, poiType, cacheTest, body.blockPosition(), 48, Double.MAX_VALUE, PoiManager.Occupancy.HAS_SPACE, ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.LOAD_FOR_SEARCHING, 5, poiPositionsRaw);
++                                ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.findNearestPoiPositions(poiManager, poiType, cacheTest, body.blockPosition(), SCAN_RANGE, Double.MAX_VALUE, PoiManager.Occupancy.HAS_SPACE, ca.spottedleaf.moonrise.patches.poi_lookup.PoiAccess.LOAD_FOR_SEARCHING, 5, poiPositionsRaw);
 +                                Set<Pair<Holder<PoiType>, BlockPos>> poiPositions = new java.util.HashSet<>(poiPositionsRaw.size());
 +                                for (Pair<Holder<PoiType>, BlockPos> pair : poiPositionsRaw) {
 +                                    if (validPoi.test(level, pair.getSecond())) {
@@ -30053,7 +30053,7 @@ index e07a7bda45146686a6ac2d20507df9fc8630514f..f84e651e2a34e76a0a71993332e4be1b
  
      // Paper start - Affects Spawning API
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 16ca35249e2248500073bb2b12447d2a0e545b95..86b37a276b33a10efc950243787e85a657b93138 100644
+index b014cb670dc089be42c8546afa2a86625a8c0a82..2569893356946511fc8c29b51220014519f7bad1 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -87,6 +87,7 @@ import net.minecraft.world.level.storage.LevelData;
@@ -31859,7 +31859,7 @@ index 9404f0b0b03dce54e2c9ad6ca2c36354888cc9f5..a0d7f6f8ecbc320267bdad27315fc2e2
  
      public interface NoiseBiomeSource {
 diff --git a/net/minecraft/world/level/block/Block.java b/net/minecraft/world/level/block/Block.java
-index 63c745431fef5bdcf50f6698fc9594d063ccaf31..2aa2dc0e84401dffdabefa51060c4648e50a4f22 100644
+index 7678701a578d2dc45b35da072a0bb2c027522043..41aab9a526be77b400bed7a74614eceec95345b5 100644
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
 @@ -366,7 +366,7 @@ public class Block extends BlockBehaviour implements ItemLike {
@@ -31872,10 +31872,10 @@ index 63c745431fef5bdcf50f6698fc9594d063ccaf31..2aa2dc0e84401dffdabefa51060c4648
  
      public void animateTick(final BlockState state, final Level level, final BlockPos pos, final RandomSource random) {
 diff --git a/net/minecraft/world/level/block/state/BlockBehaviour.java b/net/minecraft/world/level/block/state/BlockBehaviour.java
-index f212758a7ee7edf7a5a70d2730deccc92f9f101f..a489bc2ccf84040247c5a3e7118c1db7752e74a4 100644
+index e66b04c89c5155f660e3274ebb205cfb72190b1b..ca77680b645c352456744b148e0ff4ac31b05aa2 100644
 --- a/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -434,7 +434,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -435,7 +435,7 @@ public abstract class BlockBehaviour implements FeatureElement {
          return this.properties.destroyTime;
      }
  
@@ -31884,7 +31884,7 @@ index f212758a7ee7edf7a5a70d2730deccc92f9f101f..a489bc2ccf84040247c5a3e7118c1db7
          private static final Direction[] DIRECTIONS = Direction.values();
          private static final VoxelShape[] EMPTY_OCCLUSION_SHAPES = Util.make(new VoxelShape[DIRECTIONS.length], s -> Arrays.fill(s, Shapes.empty()));
          private static final VoxelShape[] FULL_BLOCK_OCCLUSION_SHAPES = Util.make(new VoxelShape[DIRECTIONS.length], s -> Arrays.fill(s, Shapes.block()));
-@@ -469,6 +469,76 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -470,6 +470,76 @@ public abstract class BlockBehaviour implements FeatureElement {
          private boolean propagatesSkylightDown;
          private int lightDampening;
  
@@ -31961,7 +31961,7 @@ index f212758a7ee7edf7a5a70d2730deccc92f9f101f..a489bc2ccf84040247c5a3e7118c1db7
          protected BlockStateBase(final Block owner, final Property<?>[] propertyKeys, final Comparable<?>[] propertyValues) {
              super(owner, propertyKeys, propertyValues);
              BlockBehaviour.Properties properties = owner.properties;
-@@ -546,6 +616,41 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -547,6 +617,41 @@ public abstract class BlockBehaviour implements FeatureElement {
  
              this.propagatesSkylightDown = this.owner.propagatesSkylightDown(this.asState());
              this.lightDampening = this.owner.getLightDampening(this.asState());

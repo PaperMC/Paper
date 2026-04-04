@@ -266,7 +266,7 @@ index 319325e741cc314b84844bb49ea569aaf014f319..7d8986fe3c96cef829275ddd113bcd8a
 +    // Paper end - Use Velocity cipher
  }
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index b18fc4d6fe01db767068b8e05aadae251bc08fa8..1109503f270067ca679785194148b446fc8c2c76 100644
+index 9cd6ec17981da310be1d35054af080d6b33beff8..d7ed1621709c491525daaf7adc8e9f0d781c93e1 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
 @@ -738,11 +738,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -275,8 +275,8 @@ index b18fc4d6fe01db767068b8e05aadae251bc08fa8..1109503f270067ca679785194148b446
  
 -    public void setEncryptionKey(final Cipher decryptCipher, final Cipher encryptCipher) {
 -        this.encrypted = true;
--        this.channel.pipeline().addBefore("splitter", "decrypt", new CipherDecoder(decryptCipher));
--        this.channel.pipeline().addBefore("prepender", "encrypt", new CipherEncoder(encryptCipher));
+-        this.channel.pipeline().addBefore(HandlerNames.SPLITTER, HandlerNames.DECRYPT, new CipherDecoder(decryptCipher));
+-        this.channel.pipeline().addBefore(HandlerNames.PREPENDER, HandlerNames.ENCRYPT, new CipherEncoder(encryptCipher));
 +    // Paper start - Use Velocity cipher
 +    public void setEncryptionKey(final javax.crypto.SecretKey key) throws net.minecraft.util.CryptException {
 +        if (!this.encrypted) {
@@ -285,8 +285,8 @@ index b18fc4d6fe01db767068b8e05aadae251bc08fa8..1109503f270067ca679785194148b446
 +                final com.velocitypowered.natives.encryption.VelocityCipher encryptionCipher = com.velocitypowered.natives.util.Natives.cipher.get().forEncryption(key);
 +
 +                this.encrypted = true;
-+                this.channel.pipeline().addBefore("splitter", "decrypt", new CipherDecoder(decryptionCipher));
-+                this.channel.pipeline().addBefore("prepender", "encrypt", new CipherEncoder(encryptionCipher));
++                this.channel.pipeline().addBefore(HandlerNames.SPLITTER, HandlerNames.DECRYPT, new CipherDecoder(decryptionCipher));
++                this.channel.pipeline().addBefore(HandlerNames.PREPENDER, HandlerNames.ENCRYPT, new CipherEncoder(encryptionCipher));
 +            } catch (final java.security.GeneralSecurityException e) {
 +                throw new net.minecraft.util.CryptException(e);
 +            }
@@ -296,32 +296,32 @@ index b18fc4d6fe01db767068b8e05aadae251bc08fa8..1109503f270067ca679785194148b446
  
      public boolean isEncrypted() {
          return this.encrypted;
-@@ -779,16 +790,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     // Paper end - add proper async disconnect
+@@ -780,16 +791,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+ 
      public void setupCompression(final int threshold, final boolean validateDecompressed) {
          if (threshold >= 0) {
 +            com.velocitypowered.natives.compression.VelocityCompressor compressor = com.velocitypowered.natives.util.Natives.compress.get().create(io.papermc.paper.configuration.GlobalConfiguration.get().misc.compressionLevel.or(-1)); // Paper - Use Velocity cipher
-             if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder compressionDecoder) {
+             if (this.channel.pipeline().get(HandlerNames.DECOMPRESS) instanceof CompressionDecoder compressionDecoder) {
 -                compressionDecoder.setThreshold(threshold, validateDecompressed);
 +                compressionDecoder.setThreshold(compressor, threshold, validateDecompressed); // Paper - Use Velocity cipher
              } else {
--                this.channel.pipeline().addAfter("splitter", "decompress", new CompressionDecoder(threshold, validateDecompressed));
-+                this.channel.pipeline().addAfter("splitter", "decompress", new CompressionDecoder(compressor, threshold, validateDecompressed)); // Paper - Use Velocity cipher
+-                this.channel.pipeline().addAfter(HandlerNames.SPLITTER, HandlerNames.DECOMPRESS, new CompressionDecoder(threshold, validateDecompressed));
++                this.channel.pipeline().addAfter(HandlerNames.SPLITTER, HandlerNames.DECOMPRESS, new CompressionDecoder(compressor, threshold, validateDecompressed)); // Paper - Use Velocity cipher
              }
  
-             if (this.channel.pipeline().get("compress") instanceof CompressionEncoder compressionEncoder) {
+             if (this.channel.pipeline().get(HandlerNames.COMPRESS) instanceof CompressionEncoder compressionEncoder) {
                  compressionEncoder.setThreshold(threshold);
              } else {
--                this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(threshold));
-+                this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(compressor, threshold)); // Paper - Use Velocity cipher
+-                this.channel.pipeline().addAfter(HandlerNames.PREPENDER, HandlerNames.COMPRESS, new CompressionEncoder(threshold));
++                this.channel.pipeline().addAfter(HandlerNames.PREPENDER, HandlerNames.COMPRESS, new CompressionEncoder(compressor, threshold)); // Paper - Use Velocity cipher
              }
              this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_THRESHOLD_SET); // Paper - Add Channel initialization listeners
          } else {
 diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
-index 22276be80b8729884c797b96c93bf0965ca9eed1..c5d345f2e4b8661e0675565d779685e8c9a191f7 100644
+index b266e4f7b437578356568d86910e3b428ee66523..0b57e3bcd0319e4e9571fddbcb85db5a3105b8b2 100644
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
-@@ -76,6 +76,10 @@ public class ServerConnectionListener {
+@@ -77,6 +77,10 @@ public class ServerConnectionListener {
                  LOGGER.warn("Using HAProxy, please ensure the server port is adequately firewalled.");
              }
              // Paper end - Warn people with console access that HAProxy is in use.
