@@ -191,7 +191,7 @@ tasks.withType<Javadoc>().configureEach {
         "https://www.javadocs.dev/org.yaml/snakeyaml/2.2/",
         "https://www.javadocs.dev/org.jetbrains/annotations/$annotationsVersion/",
         "https://www.javadocs.dev/org.joml/joml/1.10.8/",
-        "https://www.javadocs.dev/com.google.code.gson/gson/2.11.0",
+        "https://www.javadocs.dev/com.google.code.gson/gson/2.13.2",
         "https://jspecify.dev/docs/api/",
         "https://jd.advntr.dev/api/$adventureVersion/",
         "https://jd.advntr.dev/key/$adventureVersion/",
