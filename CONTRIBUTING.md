@@ -280,7 +280,7 @@ public class SomeVanillaClass {
 
 We are in the process of switching nullability annotation libraries, so you might need to use one or the other:
 
-**For classes we add**: Fields, method parameters and return types that are nullable should be marked via the
+**For classes, we add or modifications to Vanilla Files**: Fields, method parameters and return types that are nullable should be marked via the
 `@Nullable` annotation from `org.jspecify.annotations`. Whenever you create a new class, add `@NullMarked`, meaning types
 are assumed to be non-null by default. For less obvious placing such as on generics or arrays, see the [JSpecify docs](https://jspecify.dev/docs/user-guide/).
 
