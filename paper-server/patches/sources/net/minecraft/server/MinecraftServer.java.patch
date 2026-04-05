@@ -58,7 +58,11 @@
      private final ServerFunctionManager functionManager;
      private boolean enforceWhitelist;
      private boolean usingWhitelist;
-@@ -292,13 +_,14 @@
+@@ -289,16 +_,18 @@
+     private FuelValues fuelValues;
+     private int emptyTicks;
+     private volatile boolean isSaving;
++    public volatile boolean cancelStartup = false; // Paper - cancel startup if server shut down
      private final SuppressedExceptionCollector suppressedExceptions = new SuppressedExceptionCollector();
      private final DiscontinuousFrame tickFrame;
      private final PacketProcessor packetProcessor;
@@ -300,7 +304,7 @@
          if (profiledDuration != null) {
              profiledDuration.finish(true);
          }
-@@ -422,33 +_,139 @@
+@@ -422,33 +_,144 @@
          }
      }
  
@@ -320,6 +324,11 @@
 +        }
 +        // Paper end - Configurable player collision; Handle collideRule team for player collision toggle
 +        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
++        // Paper start - Cancel server startup if shut down
++        if (cancelStartup) {
++            return;
++        }
++        // Paper end
 +        this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
 +        this.server.spark.enableAfterPlugins(this.server); // Paper - spark
 +        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
@@ -605,7 +614,8 @@
 +        // CraftBukkit end
          this.getConnection().stop();
          this.isSaving = true;
-         if (this.playerList != null) {
+-        if (this.playerList != null) {
++        if (this.playerList != null && !cancelStartup) { // Paper - Cancel player list save on shutdown during server start
              LOGGER.info("Saving players");
              this.playerList.saveAll();
 -            this.playerList.removeAll();

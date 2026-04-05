@@ -590,6 +590,10 @@ public final class CraftServer implements Server {
         Plugin[] plugins = this.pluginManager.getPlugins();
 
         for (Plugin plugin : plugins) {
+            if (console.cancelStartup) {
+                // Startup was canceled, cancel loading plugins
+                return;
+            }
             if ((!plugin.isEnabled()) && (plugin.getDescription().getLoad() == type)) {
                 this.enablePlugin(plugin);
             }
