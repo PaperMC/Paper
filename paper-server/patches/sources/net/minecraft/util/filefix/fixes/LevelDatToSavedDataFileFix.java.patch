@@ -1,0 +1,15 @@
+--- a/net/minecraft/util/filefix/fixes/LevelDatToSavedDataFileFix.java
++++ b/net/minecraft/util/filefix/fixes/LevelDatToSavedDataFileFix.java
+@@ -120,6 +_,12 @@
+             return content;
+         } else {
+             Dynamic<?> playerTag = playerTagOpt.result().get();
++            // Paper start - check if player tag is empty, for avoidance create fallback user file with not data
++            final Boolean emptyPlayerTag = playerTag.convert(net.minecraft.nbt.NbtOps.INSTANCE).getValue().asCompound().map(net.minecraft.nbt.CompoundTag::isEmpty).orElse(true);
++            if (emptyPlayerTag) {
++                return content.remove("Player");
++            }
++            // Paper end
+             int dataVersion = NbtUtils.getDataVersion(playerTag);
+             Dynamic<?> playerTagFixed = DataFixTypes.PLAYER.update(DataFixers.getDataFixer(), playerTag, dataVersion, this.getVersion());
+             Optional<? extends Dynamic<?>> playerUuid = playerTagFixed.get("UUID").result();
