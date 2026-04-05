@@ -1,35 +1,35 @@
 --- a/net/minecraft/world/level/block/DetectorRailBlock.java
 +++ b/net/minecraft/world/level/block/DetectorRailBlock.java
-@@ -49,6 +_,7 @@
- 
-     @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean pastEdges) {
+@@ -56,6 +_,7 @@
+         final InsideBlockEffectApplier effectApplier,
+         final boolean isPrecise
+     ) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (!level.isClientSide()) {
              if (!state.getValue(POWERED)) {
                  this.checkPressed(level, pos, state);
-@@ -79,6 +_,7 @@
+@@ -86,6 +_,7 @@
  
-     private void checkPressed(Level level, BlockPos pos, BlockState state) {
+     private void checkPressed(final Level level, final BlockPos pos, final BlockState state) {
          if (this.canSurvive(state, level, pos)) {
 +            if (!state.is(this)) { return; } // Paper - Fix some rails connecting improperly
-             boolean poweredValue = state.getValue(POWERED);
-             boolean flag = false;
-             List<AbstractMinecart> interactingMinecartOfType = this.getInteractingMinecartOfType(level, pos, AbstractMinecart.class, entity -> true);
-@@ -86,6 +_,16 @@
-                 flag = true;
+             boolean wasPressed = state.getValue(POWERED);
+             boolean shouldBePressed = false;
+             List<AbstractMinecart> entities = this.getInteractingMinecartOfType(level, pos, AbstractMinecart.class, e -> true);
+@@ -93,6 +_,16 @@
+                 shouldBePressed = true;
              }
  
 +            // CraftBukkit start
-+            if (poweredValue != flag) {
++            if (wasPressed != shouldBePressed) {
 +                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +
-+                org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(block, flag ? 15 : 0, flag ? 15 : 0);
++                org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(block, shouldBePressed ? 15 : 0, shouldBePressed ? 15 : 0);
 +                level.getCraftServer().getPluginManager().callEvent(eventRedstone);
 +
-+                flag = eventRedstone.getNewCurrent() > 0;
++                shouldBePressed = eventRedstone.getNewCurrent() > 0;
 +            }
 +            // CraftBukkit end
-             if (flag && !poweredValue) {
-                 BlockState blockState = state.setValue(POWERED, true);
-                 level.setBlock(pos, blockState, Block.UPDATE_ALL);
+             if (shouldBePressed && !wasPressed) {
+                 BlockState newState = state.setValue(POWERED, true);
+                 level.setBlock(pos, newState, Block.UPDATE_ALL);

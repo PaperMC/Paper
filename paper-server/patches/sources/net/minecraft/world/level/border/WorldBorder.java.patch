@@ -1,15 +1,16 @@
 --- a/net/minecraft/world/level/border/WorldBorder.java
 +++ b/net/minecraft/world/level/border/WorldBorder.java
-@@ -33,6 +_,7 @@
-     double centerZ;
-     int absoluteMaxSize = 29999984;
-     WorldBorder.BorderExtent extent = new WorldBorder.StaticBorderExtent(5.999997E7F);
+@@ -37,6 +_,8 @@
+     private double centerZ;
+     private int absoluteMaxSize = 29999984;
+     private WorldBorder.BorderExtent extent = new WorldBorder.StaticBorderExtent(5.999997E7F);
 +    public net.minecraft.server.level.@org.jspecify.annotations.Nullable ServerLevel world; // CraftBukkit
++    private int lastTick = -1; // Paper - Prevent ticking virtual world borders multiple times per server tick
  
      public WorldBorder() {
          this(WorldBorder.Settings.DEFAULT);
-@@ -54,6 +_,20 @@
-         return this.isWithinBounds(chunkPos.getMinBlockX(), chunkPos.getMinBlockZ()) && this.isWithinBounds(chunkPos.getMaxBlockX(), chunkPos.getMaxBlockZ());
+@@ -58,6 +_,20 @@
+         return this.isWithinBounds(pos.getMinBlockX(), pos.getMinBlockZ()) && this.isWithinBounds(pos.getMaxBlockX(), pos.getMaxBlockZ());
      }
  
 +    // Paper start - Bound treasure maps to world border
@@ -26,16 +27,18 @@
 +    }
 +    // Paper end - Bound treasure maps to world border
 +
-     public boolean isWithinBounds(AABB box) {
-         return this.isWithinBounds(box.minX, box.minZ, box.maxX - 1.0E-5F, box.maxZ - 1.0E-5F);
+     public boolean isWithinBounds(final AABB aabb) {
+         return this.isWithinBounds(aabb.minX, aabb.minZ, aabb.maxX - 1.0E-5F, aabb.maxZ - 1.0E-5F);
      }
-@@ -158,6 +_,14 @@
+@@ -161,7 +_,15 @@
+         return this.centerZ;
      }
  
-     public void setCenter(double x, double z) {
-+        // Paper start - Add worldborder events
+-    public void setCenter(final double x, final double z) {
++    // Paper start - Add worldborder events
++    public void setCenter(double x, double z) {
 +        if (this.world != null) {
-+            io.papermc.paper.event.world.border.WorldBorderCenterChangeEvent event = new io.papermc.paper.event.world.border.WorldBorderCenterChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), new org.bukkit.Location(world.getWorld(), this.getCenterX(), 0, this.getCenterZ()), new org.bukkit.Location(world.getWorld(), x, 0, z));
++            io.papermc.paper.event.world.border.WorldBorderCenterChangeEvent event = new io.papermc.paper.event.world.border.WorldBorderCenterChangeEvent(this.world.getWorld(), this.world.getWorld().getWorldBorder(), new org.bukkit.Location(this.world.getWorld(), this.getCenterX(), 0, this.getCenterZ()), new org.bukkit.Location(this.world.getWorld(), this.centerX, 0, this.centerZ));
 +            if (!event.callEvent()) return;
 +            x = event.getNewCenter().getX();
 +            z = event.getNewCenter().getZ();
@@ -44,13 +47,15 @@
          this.centerX = x;
          this.centerZ = z;
          this.extent.onCenterChange();
-@@ -181,6 +_,17 @@
+@@ -184,7 +_,18 @@
+         return this.extent.getLerpTarget();
      }
  
-     public void setSize(double size) {
-+        // Paper start - Add worldborder events
+-    public void setSize(final double size) {
++    // Paper start - Add worldborder events
++    public void setSize(double size) {
 +        if (this.world != null) {
-+            io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent event = new io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type.INSTANT_MOVE, getSize(), size, 0);
++            io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent event = new io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent(this.world.getWorld(), this.world.getWorld().getWorldBorder(), io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type.INSTANT_MOVE, getSize(), size, 0);
 +            if (!event.callEvent()) return;
 +            if (event.getType() == io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type.STARTED_MOVE && event.getDurationTicks() > 0) { // If changed to a timed transition
 +                lerpSizeBetween(event.getOldSize(), event.getNewSize(), event.getDurationTicks(), this.world.getGameTime());
@@ -62,63 +67,78 @@
          this.extent = new WorldBorder.StaticBorderExtent(size);
          this.setDirty();
  
-@@ -190,6 +_,20 @@
+@@ -193,7 +_,21 @@
+         }
      }
  
-     public void lerpSizeBetween(double oldSize, double newSize, long time, long startTime) {
-+        // Paper start - Add worldborder events
+-    public void lerpSizeBetween(final double from, final double to, final long ticks, final long gameTime) {
++    // Paper start - Add worldborder events
++    public void lerpSizeBetween(final double from, double to, long ticks, final long gameTime) {
 +        if (this.world != null) {
 +            io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type type;
-+            if (oldSize == newSize) { // new size = old size
++            if (from == to) {
 +                type = io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type.INSTANT_MOVE; // Use INSTANT_MOVE because below it creates a Static border if they are equal.
 +            } else {
 +                type = io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent.Type.STARTED_MOVE;
 +            }
-+            io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent event = new io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent(world.getWorld(), world.getWorld().getWorldBorder(), type, oldSize, newSize, time);
++            io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent event = new io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent(this.world.getWorld(), this.world.getWorld().getWorldBorder(), type, from, to, ticks);
 +            if (!event.callEvent()) return;
-+            newSize = event.getNewSize();
-+            time = event.getDurationTicks();
++            to = event.getNewSize();
++            ticks = event.getDurationTicks();
 +        }
 +        // Paper end - Add worldborder events
-         this.extent = (WorldBorder.BorderExtent)(oldSize == newSize
-             ? new WorldBorder.StaticBorderExtent(newSize)
-             : new WorldBorder.MovingBorderExtent(oldSize, newSize, time, startTime));
-@@ -205,6 +_,7 @@
+         this.extent = (WorldBorder.BorderExtent)(from == to
+             ? new WorldBorder.StaticBorderExtent(to)
+             : new WorldBorder.MovingBorderExtent(from, to, ticks, gameTime));
+@@ -209,6 +_,7 @@
      }
  
-     public void addListener(BorderChangeListener listener) {
+     public void addListener(final BorderChangeListener listener) {
 +        if (this.listeners.contains(listener)) return; // CraftBukkit
          this.listeners.add(listener);
      }
  
-@@ -298,6 +_,22 @@
+@@ -282,6 +_,12 @@
+     }
+ 
+     public void tick() {
++        // Paper start - Prevent ticking virtual world borders multiple times per server tick
++        if (this.lastTick == net.minecraft.server.MinecraftServer.currentTick) {
++            return;
++        }
++        this.lastTick = net.minecraft.server.MinecraftServer.currentTick;
++        // Paper end - Prevent ticking virtual world borders multiple times per server tick
+         this.extent = this.extent.update();
+     }
+ 
+@@ -302,6 +_,22 @@
          }
      }
  
 +    // Paper start - add back applySettings
-+    public void applySettings(net.minecraft.world.level.border.WorldBorder.Settings settings) {
++    public void applySettings(WorldBorder.Settings settings) {
 +        this.setCenter(settings.centerX(), settings.centerZ());
 +        this.setDamagePerBlock(settings.damagePerBlock());
 +        this.setSafeZone(settings.safeZone());
 +        this.setWarningBlocks(settings.warningBlocks());
 +        this.setWarningTime(settings.warningTime());
 +        if (settings.lerpTime() > 0L) {
-+            final long startTime = (this.world != null) ? this.world.getGameTime() : 0; // Virtual Borders don't have a World
-+            this.lerpSizeBetween(settings.size(), settings.lerpTarget(), settings.lerpTime(), startTime);
++            final long gameTime = (this.world != null) ? this.world.getGameTime() : 0; // Virtual Borders don't have a World
++            this.lerpSizeBetween(settings.size(), settings.lerpTarget(), settings.lerpTime(), gameTime);
 +        } else {
 +            this.setSize(settings.size());
 +        }
 +    }
 +    // Paper end - add back applySettings
 +
-     interface BorderExtent {
-         double getMinX(float partialTick);
+     private interface BorderExtent {
+         double getMinX(final float deltaPartialTick);
  
-@@ -432,6 +_,7 @@
+@@ -438,6 +_,7 @@
              this.previousSize = this.size;
              this.size = this.calculateSize();
              if (this.lerpProgress <= 0L) {
-+                if (world != null) new io.papermc.paper.event.world.border.WorldBorderBoundsChangeFinishEvent(world.getWorld(), world.getWorld().getWorldBorder(), this.from, this.to, this.lerpDuration).callEvent(); // Paper - Add worldborder events
++                if (WorldBorder.this.world != null) new io.papermc.paper.event.world.border.WorldBorderBoundsChangeFinishEvent(WorldBorder.this.world.getWorld(), WorldBorder.this.world.getWorld().getWorldBorder(), this.from, this.to, this.lerpDuration).callEvent(); // Paper - Add worldborder events
                  WorldBorder.this.setDirty();
                  return WorldBorder.this.new StaticBorderExtent(this.to);
              } else {

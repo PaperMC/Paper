@@ -14,7 +14,7 @@ import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JavaOps;
 import com.mojang.serialization.JsonOps;
 import io.papermc.paper.adventure.AdventureCodecs;
-import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.File;
 import java.io.IOException;
@@ -25,15 +25,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
-import io.papermc.paper.entity.EntitySerializationFlag;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
-import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.item.ItemParser;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -61,7 +61,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.UnsafeValues;
 import org.bukkit.World;
 import org.bukkit.advancement.Advancement;
@@ -72,7 +71,6 @@ import org.bukkit.configuration.MemorySection;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.damage.CraftDamageSourceBuilder;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -248,7 +246,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public BlockData fromLegacy(Material material, byte data) {
-        return CraftBlockData.fromData(CraftMagicNumbers.getBlock(material, data));
+        return CraftMagicNumbers.getBlock(material, data).asBlockData();
     }
 
     @Override
@@ -273,7 +271,8 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     /**
      * @deprecated in favor of {@link io.papermc.paper.ServerBuildInfo#minecraftVersionId()}
-     * Paper has used Mojang mappings since 1.20.5, and this method no longer returns a useful value.
+     * Paper has used Mojang mappings since 1.20.5 and now in 26.1 the server is not obfuscated anymore,
+     * so this method no longer returns a useful value.
      */
     @Deprecated(forRemoval = true, since = "1.21.6")
     public String getMappingsVersion() {
@@ -286,18 +285,22 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public ItemStack modifyItemStack(ItemStack stack, String arguments) {
-        net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(stack);
-
-        try {
-            nmsStack.applyComponents(new ItemParser(Commands.createValidationContext(CraftRegistry.getMinecraftRegistry())).parse(new StringReader(arguments)).components());
-        } catch (CommandSyntaxException ex) {
-            com.mojang.logging.LogUtils.getClassLogger().error("Exception modifying ItemStack", new Throwable(ex)); // Paper - show stack trace
+    public ItemStack modifyItemStack(ItemStack item, String components) {
+        if (item.isEmpty()) {
+            return item;
         }
 
-        stack.setItemMeta(CraftItemStack.getItemMeta(nmsStack));
-
-        return stack;
+        net.minecraft.world.item.ItemStack stack = CraftItemStack.unwrap(item); // mutation is expected as old behavior
+        try {
+            StringReader reader = new StringReader(item.getType().key().asString() + components);
+            stack.applyComponents(new ItemParser(CraftRegistry.getMinecraftRegistry()).parse(reader).components());
+            if (reader.canRead()) {
+                throw new IllegalArgumentException("Trailing input found when parsing components: " + reader.getRemaining());
+            }
+        } catch (CommandSyntaxException ex) {
+            throw new IllegalArgumentException("Could not parse components: " + components, ex);
+        }
+        return item;
     }
 
     private static File getBukkitDataPackFolder() {
@@ -394,8 +397,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
         // Paper start
         if (DISABLE_OLD_API_SUPPORT) {
-            // Make sure we still go through our reflection rewriting if needed
-            return io.papermc.paper.pluginremap.reflect.ReflectionRemapper.processClass(clazz);
+            return clazz;
         }
         // Paper end
         try {
@@ -849,9 +851,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public org.bukkit.Color getSpawnEggLayerColor(final EntityType entityType, final int layer) {
-        final net.minecraft.world.entity.EntityType<?> nmsType = org.bukkit.craftbukkit.entity.CraftEntityType.bukkitToMinecraft(entityType);
-        final net.minecraft.world.item.SpawnEggItem eggItem = net.minecraft.world.item.SpawnEggItem.byId(nmsType);
-        if (eggItem != null) {
+        final net.minecraft.world.entity.EntityType<?> type = org.bukkit.craftbukkit.entity.CraftEntityType.bukkitToMinecraft(entityType);
+        final Optional<Holder<Item>> eggItem = net.minecraft.world.item.SpawnEggItem.byId(type);
+        if (eggItem.isPresent()) {
             throw new UnsupportedOperationException();
         }
         return null;

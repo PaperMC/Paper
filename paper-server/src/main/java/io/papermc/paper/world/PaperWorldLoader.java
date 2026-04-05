@@ -12,7 +12,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixers;
+import net.minecraft.util.worldupdate.UpgradeProgress;
 import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.storage.LevelDataAndDimensions;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.LevelSummary;
 import net.minecraft.world.level.storage.PrimaryLevelData;
@@ -129,9 +131,9 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
                 return;
             }
 
-            final PrimaryLevelData primaryLevelData;
+            final LevelDataAndDimensions.WorldDataAndGenSettings worldDataAndGenSettings;
             if (levelData.dataTag == null) {
-                primaryLevelData = (PrimaryLevelData) Main.createNewWorldData(
+                worldDataAndGenSettings = Main.createNewWorldData(
                     ((DedicatedServer) this.server).settings,
                     this.server.worldLoaderContext,
                     this.server.worldLoaderContext.datapackDimensions().lookupOrThrow(Registries.LEVEL_STEM),
@@ -139,21 +141,22 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
                     this.server.options.has("bonusChest")
                 ).cookie();
             } else {
-                primaryLevelData = (PrimaryLevelData) LevelStorageSource.getLevelDataAndDimensions(
+                worldDataAndGenSettings = LevelStorageSource.getLevelDataAndDimensions(
+                    levelStorageAccess,
                     levelData.dataTag,
                     this.server.worldLoaderContext.dataConfiguration(),
                     this.server.worldLoaderContext.datapackDimensions().lookupOrThrow(Registries.LEVEL_STEM),
                     this.server.worldLoaderContext.datapackWorldgen()
-                ).worldData();
+                ).worldDataAndGenSettings();
             }
 
+            final var primaryLevelData = ((PrimaryLevelData) worldDataAndGenSettings.data());
             primaryLevelData.checkName(info.name()); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
             primaryLevelData.setModdedInfo(this.server.getServerModName(), this.server.getModdedStatus().shouldReportAsModified());
 
             if (this.server.options.has("forceUpgrade")) {
                 Main.forceUpgrade(
                     levelStorageAccess,
-                    primaryLevelData,
                     DataFixers.getDataFixer(),
                     this.server.options.has("eraseCache"),
                     () -> true,
@@ -162,10 +165,10 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
                 );
             }
 
-            this.server.createLevel(stem, info, levelStorageAccess, primaryLevelData);
+            this.server.createLevel(stem, info, levelStorageAccess, worldDataAndGenSettings);
         }
 
-        ((DedicatedServer) this.server).forceDifficulty();
+        // ((DedicatedServer) this.server).forceDifficulty();
 
         for (ServerLevel serverLevel : this.server.getAllLevels()) {
             this.server.prepareLevel(serverLevel);
@@ -176,35 +179,19 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
 
     // Based on code in net.minecraft.server.Main
     public static LevelDataResult getLevelData(
-        final LevelStorageSource.LevelStorageAccess levelStorageAccess
+        final LevelStorageSource.LevelStorageAccess access
     ) {
-        Dynamic<?> dataTag;
-        if (levelStorageAccess.hasWorldData()) {
-            LevelSummary summary;
+        Dynamic<?> levelDataTag;
+        if (access.hasWorldData()) {
+            Dynamic<?> levelDataUnfixed;
             try {
-                dataTag = levelStorageAccess.getDataTag();
-                summary = levelStorageAccess.getSummary(dataTag);
-            } catch (NbtException | ReportedNbtException | IOException var41) {
-                LevelStorageSource.LevelDirectory levelDirectory = levelStorageAccess.getLevelDirectory();
-                LOGGER.warn("Failed to load world data from {}", levelDirectory.dataFile(), var41);
-                LOGGER.info("Attempting to use fallback");
-
-                try {
-                    dataTag = levelStorageAccess.getDataTagFallback();
-                    summary = levelStorageAccess.getSummary(dataTag);
-                } catch (NbtException | ReportedNbtException | IOException var40) {
-                    LOGGER.error("Failed to load world data from {}", levelDirectory.oldDataFile(), var40);
-                    LOGGER.error(
-                        "Failed to load world data from {} and {}. World files may be corrupted. Shutting down.",
-                        levelDirectory.dataFile(),
-                        levelDirectory.oldDataFile()
-                    );
-                    return new LevelDataResult(null, true);
-                }
-
-                levelStorageAccess.restoreLevelDataFromOld();
+                levelDataUnfixed = access.getUnfixedDataTagWithFallback();
+            } catch (NbtException | ReportedNbtException | IOException var39) {
+                LOGGER.error("Failed to load world data. World files may be corrupted. Shutting down.", var39);
+                return new LevelDataResult(null, true);
             }
 
+            LevelSummary summary = access.fixAndGetSummaryFromTag(levelDataUnfixed);
             if (summary.requiresManualConversion()) {
                 LOGGER.info("This world must be opened in an older version (like 1.6.4) to be safely converted");
                 return new LevelDataResult(null, true);
@@ -214,10 +201,12 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
                 LOGGER.info("This world was created by an incompatible version.");
                 return new LevelDataResult(null, true);
             }
+
+            levelDataTag = DataFixers.getFileFixer().fix(access, levelDataUnfixed, new UpgradeProgress());
         } else {
             return new LevelDataResult(null, false);
         }
 
-        return new LevelDataResult(dataTag, false);
+        return new LevelDataResult(levelDataTag, false);
     }
 }

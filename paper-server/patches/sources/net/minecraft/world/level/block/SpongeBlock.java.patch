@@ -1,63 +1,61 @@
 --- a/net/minecraft/world/level/block/SpongeBlock.java
 +++ b/net/minecraft/world/level/block/SpongeBlock.java
-@@ -50,7 +_,8 @@
+@@ -52,7 +_,8 @@
      }
  
-     private boolean removeWaterBreadthFirstSearch(Level level, BlockPos pos) {
--        return BlockPos.breadthFirstTraversal(
+     private boolean removeWaterBreadthFirstSearch(final Level level, final BlockPos startPos) {
+-        return BlockPos.breadthFirstTraversal(startPos, 6, 65, (pos, consumer) -> {
 +        org.bukkit.craftbukkit.util.BlockStateListPopulator blockList = new org.bukkit.craftbukkit.util.BlockStateListPopulator(level); // CraftBukkit - Use BlockStateListPopulator
-+        BlockPos.breadthFirstTraversal(
-                 pos,
-                 6,
-                 65,
-@@ -63,16 +_,18 @@
-                     if (blockPos.equals(pos)) {
-                         return BlockPos.TraversalNodeStatus.ACCEPT;
++        BlockPos.breadthFirstTraversal(startPos, 6, 65, (pos, consumer) -> {
+             for (Direction direction : ALL_DIRECTIONS) {
+                 consumer.accept(pos.relative(direction));
+             }
+@@ -60,28 +_,65 @@
+             if (pos.equals(startPos)) {
+                 return BlockPos.TraversalNodeStatus.ACCEPT;
+             } else {
+-                BlockState state = level.getBlockState(pos);
+-                FluidState fluidState = level.getFluidState(pos);
++                // CraftBukkit start
++                BlockState blockState = blockList.getBlockState(pos);
++                FluidState fluidState = blockList.getFluidState(pos);
++                // CraftBukkit end
+                 if (!fluidState.is(FluidTags.WATER)) {
+                     return BlockPos.TraversalNodeStatus.SKIP;
+-                } else if (state.getBlock() instanceof BucketPickup bucketPickup && !bucketPickup.pickupBlock(null, level, pos, state).isEmpty()) {
++                } else if (blockState.getBlock() instanceof BucketPickup bucketPickup
++                    && !bucketPickup.pickupBlock(null, blockList, pos, blockState).isEmpty()) { // CraftBukkit
+                     return BlockPos.TraversalNodeStatus.ACCEPT;
+                 } else {
+-                    if (state.getBlock() instanceof LiquidBlock) {
+-                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
++                    if (blockState.getBlock() instanceof LiquidBlock) {
++                        blockList.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL); // CraftBukkit
                      } else {
--                        BlockState blockState = level.getBlockState(blockPos);
--                        FluidState fluidState = level.getFluidState(blockPos);
-+                        // CraftBukkit start
-+                        BlockState blockState = blockList.getBlockState(blockPos);
-+                        FluidState fluidState = blockList.getFluidState(blockPos);
-+                        // CraftBukkit end
-                         if (!fluidState.is(FluidTags.WATER)) {
+-                        if (!state.is(Blocks.KELP) && !state.is(Blocks.KELP_PLANT) && !state.is(Blocks.SEAGRASS) && !state.is(Blocks.TALL_SEAGRASS)) {
++                        if (!blockState.is(Blocks.KELP) && !blockState.is(Blocks.KELP_PLANT) && !blockState.is(Blocks.SEAGRASS) && !blockState.is(Blocks.TALL_SEAGRASS)) {
                              return BlockPos.TraversalNodeStatus.SKIP;
-                         } else if (blockState.getBlock() instanceof BucketPickup bucketPickup
--                            && !bucketPickup.pickupBlock(null, level, blockPos, blockState).isEmpty()) {
-+                            && !bucketPickup.pickupBlock(null, blockList, blockPos, blockState).isEmpty()) { // CraftBukkit
-                             return BlockPos.TraversalNodeStatus.ACCEPT;
-                         } else {
-                             if (blockState.getBlock() instanceof LiquidBlock) {
--                                level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-+                                blockList.setBlock(blockPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL); // CraftBukkit
-                             } else {
-                                 if (!blockState.is(Blocks.KELP)
-                                     && !blockState.is(Blocks.KELP_PLANT)
-@@ -81,16 +_,49 @@
-                                     return BlockPos.TraversalNodeStatus.SKIP;
-                                 }
- 
--                                BlockEntity blockEntity = blockState.hasBlockEntity() ? level.getBlockEntity(blockPos) : null;
--                                dropResources(blockState, level, blockPos, blockEntity);
--                                level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-+                                // CraftBukkit start
-+                                // BlockEntity blockEntity = blockState.hasBlockEntity() ? level.getBlockEntity(blockPos) : null;
-+                                // dropResources(blockState, level, blockPos, blockEntity);
-+                                blockList.setBlock(blockPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-+                                // CraftBukkit end
-                             }
- 
-                             return BlockPos.TraversalNodeStatus.ACCEPT;
                          }
+ 
+-                        BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
+-                        dropResources(state, level, pos, blockEntity);
+-                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
++                        // CraftBukkit start
++                        // BlockEntity blockEntity = blockState.hasBlockEntity() ? level.getBlockEntity(pos) : null;
++                        // dropResources(blockState, level, pos, blockEntity);
++                        blockList.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
++                        // CraftBukkit end
                      }
+ 
+                     return BlockPos.TraversalNodeStatus.ACCEPT;
                  }
--            )
--            > 1;
-+            );
+             }
+-        }) > 1;
++        });
 +        // CraftBukkit start
 +        java.util.List<org.bukkit.craftbukkit.block.CraftBlockState> snapshots = blockList.getSnapshotBlocks(); // Is a clone
 +        if (!snapshots.isEmpty()) {
-+            final org.bukkit.block.Block sponge = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
++            final org.bukkit.block.Block sponge = org.bukkit.craftbukkit.block.CraftBlock.at(level, startPos);
 +
 +            org.bukkit.event.block.SpongeAbsorbEvent event = new org.bukkit.event.block.SpongeAbsorbEvent(sponge, (java.util.List<org.bukkit.block.BlockState>) (java.util.List) snapshots);
 +            if (!event.callEvent()) {

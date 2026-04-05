@@ -1,41 +1,41 @@
 --- a/net/minecraft/world/level/block/BasePressurePlateBlock.java
 +++ b/net/minecraft/world/level/block/BasePressurePlateBlock.java
-@@ -82,6 +_,7 @@
- 
-     @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean pastEdges) {
+@@ -89,6 +_,7 @@
+         final InsideBlockEffectApplier effectApplier,
+         final boolean isPrecise
+     ) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (!level.isClientSide()) {
-             int signalForState = this.getSignalForState(state);
-             if (signalForState == 0) {
-@@ -94,6 +_,16 @@
-         int signalStrength = this.getSignalStrength(level, pos);
-         boolean flag = currentSignal > 0;
-         boolean flag1 = signalStrength > 0;
+             int signal = this.getSignalForState(state);
+             if (signal == 0) {
+@@ -101,6 +_,16 @@
+         int signal = this.getSignalStrength(level, pos);
+         boolean wasPressed = oldSignal > 0;
+         boolean isPressed = signal > 0;
 +
 +        // CraftBukkit start - Interact Pressure Plate
-+        if (flag != flag1) {
-+            org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), currentSignal, signalStrength);
++        if (wasPressed != isPressed) {
++            org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), oldSignal, signal);
 +            eventRedstone.callEvent();
 +
-+            flag1 = eventRedstone.getNewCurrent() > 0;
-+            signalStrength = eventRedstone.getNewCurrent();
++            isPressed = eventRedstone.getNewCurrent() > 0;
++            signal = eventRedstone.getNewCurrent();
 +        }
 +        // CraftBukkit end
-         if (currentSignal != signalStrength) {
-             BlockState blockState = this.setSignalForState(state, signalStrength);
-             level.setBlock(pos, blockState, Block.UPDATE_CLIENTS);
-@@ -142,7 +_,13 @@
+         if (oldSignal != signal) {
+             BlockState newState = this.setSignalForState(state, signal);
+             level.setBlock(pos, newState, Block.UPDATE_CLIENTS);
+@@ -149,7 +_,13 @@
      }
  
-     protected static int getEntityCount(Level level, AABB box, Class<? extends Entity> entityClass) {
--        return level.getEntitiesOfClass(entityClass, box, EntitySelector.NO_SPECTATORS.and(entity -> !entity.isIgnoringBlockTriggers())).size();
+     protected static int getEntityCount(final Level level, final AABB entityDetectionBox, final Class<? extends Entity> entityClass) {
+-        return level.getEntitiesOfClass(entityClass, entityDetectionBox, EntitySelector.NO_SPECTATORS.and(e -> !e.isIgnoringBlockTriggers())).size();
 +        // CraftBukkit start
-+        return BasePressurePlateBlock.getEntities(level, box, entityClass).size();
++        return BasePressurePlateBlock.getEntities(level, entityDetectionBox, entityClass).size();
 +    }
 +
 +    protected static <T extends Entity> java.util.List<T> getEntities(Level level, AABB box, Class<T> entityClass) {
-+        return level.getEntitiesOfClass(entityClass, box, EntitySelector.NO_SPECTATORS.and(entity -> !entity.isIgnoringBlockTriggers()));
++        return level.getEntitiesOfClass(entityClass, box, EntitySelector.NO_SPECTATORS.and(e -> !e.isIgnoringBlockTriggers()));
 +        // CraftBukkit end
      }
  

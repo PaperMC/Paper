@@ -1,39 +1,39 @@
 --- a/net/minecraft/world/entity/monster/illager/Illusioner.java
 +++ b/net/minecraft/world/entity/monster/illager/Illusioner.java
-@@ -174,7 +_,8 @@
+@@ -175,7 +_,8 @@
  
      @Override
-     public void performRangedAttack(LivingEntity target, float distanceFactor) {
--        ItemStack itemInHand = this.getItemInHand(ProjectileUtil.getWeaponHoldingHand(this, Items.BOW));
+     public void performRangedAttack(final LivingEntity target, final float power) {
+-        ItemStack bowItem = this.getItemInHand(ProjectileUtil.getWeaponHoldingHand(this, Items.BOW));
 +        net.minecraft.world.InteractionHand hand = ProjectileUtil.getWeaponHoldingHand(this, Items.BOW); // Paper - call EntityShootBowEvent
-+        ItemStack itemInHand = this.getItemInHand(hand); // Paper - call EntityShootBowEvent
-         ItemStack projectile = this.getProjectile(itemInHand);
-         AbstractArrow mobArrow = ProjectileUtil.getMobArrow(this, projectile, distanceFactor, itemInHand);
-         double d = target.getX() - this.getX();
-@@ -182,9 +_,21 @@
-         double d2 = target.getZ() - this.getZ();
-         double squareRoot = Math.sqrt(d * d + d2 * d2);
++        ItemStack bowItem = this.getItemInHand(hand); // Paper - call EntityShootBowEvent
+         ItemStack projectile = this.getProjectile(bowItem);
+         AbstractArrow arrow = ProjectileUtil.getMobArrow(this, projectile, power, bowItem);
+         double xd = target.getX() - this.getX();
+@@ -183,9 +_,21 @@
+         double zd = target.getZ() - this.getZ();
+         double distanceToTarget = Math.sqrt(xd * xd + zd * zd);
          if (this.level() instanceof ServerLevel serverLevel) {
 -            Projectile.spawnProjectileUsingShoot(
 +            Projectile.Delayed<AbstractArrow> delayedEntity = Projectile.spawnProjectileUsingShootDelayed( // Paper - delayed
-                 mobArrow, serverLevel, projectile, d, d1 + squareRoot * 0.2F, d2, 1.6F, 14 - serverLevel.getDifficulty().getId() * 4
+                 arrow, serverLevel, projectile, xd, yd + distanceToTarget * 0.2F, zd, 1.6F, 14 - serverLevel.getDifficulty().getId() * 4
              );
 +
 +            // Paper start - call EntityShootBowEvent
-+            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, itemInHand, mobArrow.getPickupItem(), mobArrow, hand, distanceFactor, true);
++            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, bowItem, arrow.getPickupItem(), arrow, hand, power, true);
 +            if (event.isCancelled()) {
 +                event.getProjectile().remove();
 +                return;
 +            }
 +
-+            if (event.getProjectile() == mobArrow.getBukkitEntity()) {
++            if (event.getProjectile() == arrow.getBukkitEntity()) {
 +                delayedEntity.spawn();
 +            }
 +            // Paper end - call EntityShootBowEvent
          }
  
          this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
-@@ -231,7 +_,7 @@
+@@ -237,7 +_,7 @@
  
          @Override
          protected void performSpellCasting() {
@@ -42,7 +42,7 @@
          }
  
          @Override
-@@ -263,7 +_,7 @@
+@@ -274,7 +_,7 @@
  
          @Override
          protected void performSpellCasting() {

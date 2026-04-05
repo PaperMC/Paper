@@ -60,7 +60,7 @@ public interface UnsafeValues {
 
     int getDataVersion();
 
-    ItemStack modifyItemStack(ItemStack stack, String arguments);
+    ItemStack modifyItemStack(ItemStack item, String components);
 
     void checkSupported(PluginDescriptionFile pdf) throws InvalidPluginException;
 
