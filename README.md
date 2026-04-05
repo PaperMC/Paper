@@ -59,7 +59,7 @@ java {
 <dependency>
     <groupId>io.papermc.paper</groupId>
     <artifactId>paper-api</artifactId>
-    <version>[26.1.1,)</version>
+    <version>[26.1.1.build,)</version>
     <scope>provided</scope>
 </dependency>
 ```
