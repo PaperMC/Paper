@@ -8,32 +8,6 @@
  
      protected Projectile(final EntityType<? extends Projectile> type, final Level level) {
          super(type, level);
-@@ -51,12 +_,25 @@
- 
-     protected void setOwner(final @Nullable EntityReference<Entity> owner) {
-         this.owner = owner;
-+        this.refreshProjectileSource(false); // Paper
-     }
- 
-     public void setOwner(final @Nullable Entity owner) {
-         this.setOwner(EntityReference.of(owner));
-     }
- 
-+    // Paper start - Refresh ProjectileSource for projectiles
-+    public void refreshProjectileSource(boolean fillCache) {
-+        if (fillCache) {
-+            this.getOwner();
-+        }
-+        Entity owner = this.getOwner();
-+        if (owner != null && this.projectileSource == null && owner.getBukkitEntity() instanceof org.bukkit.projectiles.ProjectileSource projSource) {
-+            this.projectileSource = projSource;
-+        }
-+    }
-+    // Paper end - Refresh ProjectileSource for projectiles
-+
-     @Override
-     public @Nullable Entity getOwner() {
-         return EntityReference.getEntity(this.owner, this.level());
 @@ -83,6 +_,7 @@
      @Override
      protected void readAdditionalSaveData(final ValueInput input) {
@@ -43,12 +17,12 @@
          this.hasBeenShot = input.getBooleanOr("HasBeenShot", false);
      }
 @@ -155,7 +_,14 @@
-         float zd = Mth.cos(yRot * (float) (Math.PI / 180.0)) * Mth.cos(xRot * (float) (Math.PI / 180.0));
+         float zd = Mth.cos(yRot * Mth.DEG_TO_RAD) * Mth.cos(xRot * Mth.DEG_TO_RAD);
          this.shoot(xd, yd, zd, pow, uncertainty);
          Vec3 sourceMovement = source.getKnownMovement();
 +        // Paper start - allow disabling relative velocity
-+        if (Double.isNaN(sourceMovement.x) || Double.isNaN(sourceMovement.y) || Double.isNaN(sourceMovement.z)) {
-+            sourceMovement = new Vec3(0, 0, 0);
++        if (!sourceMovement.isFinite()) {
++            sourceMovement = Vec3.ZERO;
 +        }
 +        if (!source.level().paperConfig().misc.disableRelativeProjectileVelocity) {
          this.setDeltaMovement(this.getDeltaMovement().add(sourceMovement.x, source.onGround() ? 0.0 : sourceMovement.y, sourceMovement.z));

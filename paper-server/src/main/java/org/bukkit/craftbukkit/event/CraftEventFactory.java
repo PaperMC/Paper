@@ -156,6 +156,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.block.BlockShearEntityEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
+import org.bukkit.event.block.CauldronLevelChangeEvent;
 import org.bukkit.event.block.CrafterCraftEvent;
 import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.block.FluidLevelChangeEvent;
@@ -1282,6 +1283,22 @@ public class CraftEventFactory {
         BlockGrowEvent event = new BlockGrowEvent(snapshot.getBlock(), snapshot);
         if (event.callEvent()) {
             snapshot.place(flags);
+            return true;
+        }
+
+        return false;
+    }
+
+    public static boolean handleCauldronLevelChangeEvent(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, @Nullable Entity entity, CauldronLevelChangeEvent.ChangeReason reason) {
+        CraftBlockState snapshot = CraftBlockStates.getBlockState(level, pos);
+        snapshot.setBlock(newState);
+
+        CauldronLevelChangeEvent event = new CauldronLevelChangeEvent(
+            CraftBlock.at(level, pos),
+            (entity == null) ? null : entity.getBukkitEntity(), reason, snapshot
+        );
+        if (event.callEvent()) {
+            snapshot.place(net.minecraft.world.level.block.Block.UPDATE_ALL);
             return true;
         }
 

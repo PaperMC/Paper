@@ -76,7 +76,6 @@ import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.gamerules.GameRule;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.storage.LevelData;
-import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -325,7 +324,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Location getSpawnLocation() {
-        final LevelData.RespawnData respawnData = this.world.serverLevelData.getRespawnData();
+        final var respawnData = this.world.serverLevelData.getRespawnData();
         return CraftLocation.toBukkit(respawnData.pos(), this, respawnData.yaw(), respawnData.pitch());
     }
 
@@ -338,11 +337,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     private boolean setSpawnLocation(int x, int y, int z, float yaw, float pitch) {
         try {
-            Location previousLocation = this.getSpawnLocation();
-            this.world.serverLevelData.setSpawn(LevelData.RespawnData.of(this.world.dimension(), new BlockPos(x, y, z), yaw, pitch));
-
-            this.server.getServer().updateEffectiveRespawnData();
-            new SpawnChangeEvent(this, previousLocation).callEvent();
+            this.world.setRespawnData(LevelData.RespawnData.of(this.world.dimension(), new BlockPos(x, y, z), yaw, pitch));
             return true;
         } catch (Exception e) {
             return false;
@@ -764,7 +759,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public String getName() {
-        return this.world.serverLevelData.getLevelName();
+        return this.world.bukkitName;
     }
 
     @Override
@@ -1427,7 +1422,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Path getWorldPath() {
-        return this.world.levelStorageAccess.getLevelPath(LevelResource.ROOT).getParent();
+        return this.world.getServer().storageSource.getDimensionPath(this.world.dimension());
     }
 
     @Override
@@ -1457,12 +1452,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean canGenerateStructures() {
-        return this.world.worldDataAndGenSettings.genSettings().options().generateStructures();
+        return this.world.worldGenSettings.options().generateStructures();
     }
 
     @Override
     public boolean hasBonusChest() {
-        return this.world.worldDataAndGenSettings.genSettings().options().generateBonusChest();
+        return this.world.worldGenSettings.options().generateBonusChest();
     }
 
     @Override
@@ -1472,7 +1467,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void setHardcore(boolean hardcore) {
-        this.world.serverLevelData.settings = this.world.serverLevelData.settings.withHardcore(hardcore);
+        this.world.serverLevelData.setHardcore(hardcore);
     }
 
     @Override

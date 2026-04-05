@@ -290,20 +290,15 @@
              return true;
          } else {
              return false;
-@@ -1110,24 +_,45 @@
+@@ -1109,19 +_,40 @@
+     public void causeExtraKnockback(final Entity entity, final float knockbackAmount, final Vec3 oldMovement) {
          if (knockbackAmount > 0.0F) {
              if (entity instanceof LivingEntity livingTarget) {
-                 livingTarget.knockback(
--                    knockbackAmount, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))
-+                    knockbackAmount, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK // Paper - knockback events
-                 );
+-                livingTarget.knockback(knockbackAmount, Mth.sin(this.getYRot() * Mth.DEG_TO_RAD), -Mth.cos(this.getYRot() * Mth.DEG_TO_RAD));
++                livingTarget.knockback(knockbackAmount, Mth.sin(this.getYRot() * Mth.DEG_TO_RAD), -Mth.cos(this.getYRot() * Mth.DEG_TO_RAD), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // Paper - knockback events
              } else {
-                 entity.push(
-                     -Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)) * knockbackAmount,
-                     0.1,
--                    Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)) * knockbackAmount
-+                    Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)) * knockbackAmount, this // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
-                 );
+-                entity.push(-Mth.sin(this.getYRot() * Mth.DEG_TO_RAD) * knockbackAmount, 0.1, Mth.cos(this.getYRot() * Mth.DEG_TO_RAD) * knockbackAmount);
++                entity.push(-Mth.sin(this.getYRot() * Mth.DEG_TO_RAD) * knockbackAmount, 0.1, Mth.cos(this.getYRot() * Mth.DEG_TO_RAD) * knockbackAmount, this); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
              }
  
              this.setDeltaMovement(this.getDeltaMovement().multiply(0.6, 1.0, 0.6));
@@ -338,21 +333,21 @@
          }
      }
  
-@@ -1148,8 +_,11 @@
+@@ -1142,8 +_,11 @@
                      && !(nearby instanceof ArmorStand armorStand && armorStand.isMarker())
                      && this.distanceToSqr(nearby) < 9.0) {
                      float enchantedDamage = this.getEnchantedDamage(nearby, var12, damageSource) * attackStrengthScale;
 -                    if (nearby.hurtServer(serverLevel, damageSource, enchantedDamage)) {
--                        nearby.knockback(0.4F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)));
+-                        nearby.knockback(0.4F, Mth.sin(this.getYRot() * Mth.DEG_TO_RAD), -Mth.cos(this.getYRot() * Mth.DEG_TO_RAD));
 +                    // Paper start - Only apply knockback if the event is not canceled
 +                    nearby.lastDamageCancelled = false;
 +                    if (nearby.hurtServer(serverLevel, damageSource.knownCause(org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK), enchantedDamage) && !nearby.lastDamageCancelled) {
 +                        // Paper end - Only apply knockback if the event is not canceled
-+                        nearby.knockback(0.4F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SWEEP_ATTACK); // Paper - knockback events
++                        nearby.knockback(0.4F, Mth.sin(this.getYRot() * Mth.DEG_TO_RAD), -Mth.cos(this.getYRot() * Mth.DEG_TO_RAD), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SWEEP_ATTACK); // Paper - knockback events
                          EnchantmentHelper.doPostAttackEffects(serverLevel, nearby, damageSource);
                      }
                  }
-@@ -1182,7 +_,16 @@
+@@ -1176,7 +_,16 @@
      public boolean stabAttack(
          final EquipmentSlot slot, final Entity target, float baseDamage, final boolean dealsDamage, final boolean dealsKnockback, final boolean dismounts
      ) {
@@ -370,7 +365,7 @@
              return false;
          } else {
              ItemStack weaponItem = this.getItemBySlot(slot);
-@@ -1193,7 +_,8 @@
+@@ -1187,7 +_,8 @@
                  baseDamage *= this.baseDamageScaleFactor();
              }
  
@@ -380,7 +375,7 @@
                  return true;
              } else {
                  float totalDamage = dealsDamage ? baseDamage + magicBoost : 0.0F;
-@@ -1221,7 +_,7 @@
+@@ -1215,7 +_,7 @@
                      this.setLastHurtMob(target);
                      this.itemAttackInteraction(target, weaponItem, damageSource, wasHurt);
                      this.damageStatsAndHearts(target, oldLivingEntityHealth);
@@ -389,7 +384,7 @@
                      return true;
                  }
              }
-@@ -1232,8 +_,8 @@
+@@ -1226,8 +_,8 @@
      }
  
      @Override
@@ -400,7 +395,7 @@
          this.inventoryMenu.removed(this);
          if (this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1301,6 +_,12 @@
+@@ -1295,6 +_,12 @@
      }
  
      public Either<Player.BedSleepingProblem, Unit> startSleepInBed(final BlockPos pos) {
@@ -413,7 +408,7 @@
          this.startSleeping(pos);
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
-@@ -1417,7 +_,7 @@
+@@ -1411,7 +_,7 @@
  
      @Override
      public boolean causeFallDamage(final double fallDistance, final float damageModifier, final DamageSource damageSource) {
@@ -422,7 +417,7 @@
              return false;
          } else {
              if (fallDistance >= 2.0) {
-@@ -1438,7 +_,15 @@
+@@ -1432,7 +_,15 @@
      }
  
      public void startFallFlying() {
@@ -438,7 +433,7 @@
      }
  
      @Override
-@@ -1536,7 +_,7 @@
+@@ -1530,7 +_,7 @@
  
          if (amount > 0 && this.experienceLevel % 5 == 0 && this.lastLevelUpTime < this.tickCount - 100.0F) {
              float vol = this.experienceLevel > 30 ? 1.0F : this.experienceLevel / 30.0F;
@@ -447,7 +442,7 @@
              this.lastLevelUpTime = this.tickCount;
          }
      }
-@@ -1544,15 +_,35 @@
+@@ -1538,15 +_,35 @@
      public int getXpNeededForNextLevel() {
          if (this.experienceLevel >= 30) {
              return 112 + (this.experienceLevel - 30) * 9;
@@ -485,7 +480,7 @@
              }
          }
      }
-@@ -1814,10 +_,31 @@
+@@ -1808,10 +_,31 @@
  
      @Override
      public void onAttack() {
@@ -518,7 +513,7 @@
      public void resetOnlyAttackStrengthTicker() {
          this.attackStrengthTicker = 0;
      }
-@@ -1849,17 +_,32 @@
+@@ -1843,17 +_,32 @@
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
      }
  
@@ -553,7 +548,7 @@
  
                  for (int i = 0; i < this.inventory.getContainerSize(); i++) {
                      ItemStack itemStack = this.inventory.getItem(i);
-@@ -1868,6 +_,7 @@
+@@ -1862,6 +_,7 @@
                      }
                  }
  
@@ -561,7 +556,7 @@
                  return this.hasInfiniteMaterials() ? new ItemStack(Items.ARROW) : ItemStack.EMPTY;
              }
          }
-@@ -2031,5 +_,6 @@
+@@ -2025,5 +_,6 @@
          public static final Player.BedSleepingProblem OBSTRUCTED = new Player.BedSleepingProblem(Component.translatable("block.minecraft.bed.obstructed"));
          public static final Player.BedSleepingProblem OTHER_PROBLEM = new Player.BedSleepingProblem(null);
          public static final Player.BedSleepingProblem NOT_SAFE = new Player.BedSleepingProblem(Component.translatable("block.minecraft.bed.not_safe"));

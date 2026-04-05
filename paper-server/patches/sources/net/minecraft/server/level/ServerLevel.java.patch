@@ -5,23 +5,23 @@
      public final ServerChunkCache chunkSource;
      private final MinecraftServer server;
 -    public final ServerLevelData serverLevelData;
-+    public final net.minecraft.world.level.storage.PrimaryLevelData serverLevelData; // CraftBukkit - type
++    public final io.papermc.paper.world.saveddata.PaperLevelOverrides serverLevelData; // Paper - type
      private final EntityTickList entityTickList = new EntityTickList();
      private final ServerWaypointManager waypointManager;
      private EnvironmentAttributeSystem environmentAttributes;
-@@ -221,24 +_,183 @@
+@@ -221,24 +_,192 @@
      private final boolean tickTime;
      private final LevelDebugSynchronizers debugSynchronizers = new LevelDebugSynchronizers(this);
  
 +    // CraftBukkit start
-+    public final LevelStorageSource.LevelStorageAccess levelStorageAccess;
++    private final ResourceKey<LevelStem> typeKey;
++    public final String bukkitName;
 +    public final UUID uuid;
 +    public final net.minecraft.server.level.progress.LevelLoadListener levelLoadListener;
-+    private final SavedDataStorage savedDataStorage; // Paper - save per-world data in level storage
 +    private final net.minecraft.world.level.gamerules.GameRules gameRules;
 +    private final WeatherData weatherData;
 +    public final net.minecraft.world.level.timers.TimerQueue<net.minecraft.server.MinecraftServer> scheduledEvents;
-+    public final net.minecraft.world.level.storage.LevelDataAndDimensions.WorldDataAndGenSettings worldDataAndGenSettings;
++    public final WorldGenSettings worldGenSettings;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
 +
@@ -32,7 +32,7 @@
 +
 +    @Override
 +    public ResourceKey<LevelStem> getTypeKey() {
-+        return this.levelStorageAccess.dimensionType;
++        return this.typeKey;
 +    }
 +
 +    // Paper start
@@ -144,31 +144,38 @@
          final Executor executor,
          final LevelStorageSource.LevelStorageAccess levelStorage,
 -        final ServerLevelData levelData,
-+        final net.minecraft.world.level.storage.LevelDataAndDimensions.WorldDataAndGenSettings worldDataAndGenSettings, // CraftBukkit
++        final WorldGenSettings worldGenSettings, // CraftBukkit
          final ResourceKey<Level> dimension,
          final LevelStem levelStem,
          final boolean isDebug,
          final long biomeZoomSeed,
          final List<CustomSpawner> customSpawners,
          final boolean tickTime
-+        , org.bukkit.World.Environment env, // CraftBukkit
-+        org.bukkit.generator.ChunkGenerator gen, // CraftBukkit
-+        org.bukkit.generator.BiomeProvider biomeProvider, // CraftBukkit
-+        SavedDataStorage savedDataStorage // Paper - pass SavedDataStorage
++        // Paper start - add parameters
++        , ResourceKey<LevelStem> typeKey,
++        org.bukkit.World.Environment env,
++        org.bukkit.generator.ChunkGenerator gen,
++        org.bukkit.generator.BiomeProvider biomeProvider,
++        SavedDataStorage savedDataStorage,
++        io.papermc.paper.world.PaperWorldLoader.LoadedWorldData loadedWorldData
++        // Paper end - add parameters
      ) {
 -        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates());
 +        // CraftBukkit start
-+        final var levelData = (net.minecraft.world.level.storage.PrimaryLevelData) worldDataAndGenSettings.data();
-+        final GameRules gameRules = new GameRules(levelData.enabledFeatures(), savedDataStorage.computeIfAbsent(net.minecraft.world.level.gamerules.GameRuleMap.TYPE));
++        final io.papermc.paper.world.saveddata.PaperLevelOverrides levelData = loadedWorldData.levelOverrides();
++        savedDataStorage.set(io.papermc.paper.world.saveddata.PaperLevelOverrides.TYPE, levelData);
++        savedDataStorage.set(io.papermc.paper.world.saveddata.PaperWorldMetadata.TYPE, new io.papermc.paper.world.saveddata.PaperWorldMetadata(loadedWorldData.uuid()));
++        savedDataStorage.set(io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE, loadedWorldData.pdc() == null ? io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE.constructor().get() : loadedWorldData.pdc());
++        final GameRules gameRules = new GameRules(server.getWorldData().enabledFeatures(), savedDataStorage.computeIfAbsent(net.minecraft.world.level.gamerules.GameRuleMap.TYPE));
 +        this.gameRules = gameRules;
-+        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorage.levelDirectory.path(), levelData.getLevelName(), dimension.identifier(), spigotConfig, server.registryAccess(), gameRules))); // Paper - create paper world configs
-+        this.savedDataStorage = savedDataStorage; // Paper - save per-world data in level storage
++        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), loadedWorldData.bukkitName(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(server.storageSource.getDimensionPath(dimension), loadedWorldData.bukkitName(), dimension.identifier(), spigotConfig, server.registryAccess(), gameRules))); // Paper - create paper world configs
 +        this.weatherData = savedDataStorage.computeIfAbsent(WeatherData.TYPE);
 +        this.weatherData.setLevel(this);
-+        this.levelStorageAccess = levelStorage;
-+        this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getOrCreate(levelStorageAccess.levelDirectory.path().toFile());
++        this.typeKey = typeKey;
++        this.bukkitName = loadedWorldData.bukkitName();
++        this.uuid = loadedWorldData.uuid();
 +        this.levelLoadListener = new net.minecraft.server.level.progress.LoggingLevelLoadListener(false, this);
-+        this.worldDataAndGenSettings = worldDataAndGenSettings;
++        this.worldGenSettings = worldGenSettings;
 +        this.scheduledEvents = savedDataStorage.computeIfAbsent(net.minecraft.world.level.timers.TimerQueue.TYPE);
 +        // CraftBukkit end
          this.tickTime = tickTime;
@@ -177,7 +184,9 @@
          this.serverLevelData = levelData;
          ChunkGenerator generator = levelStem.generator();
 +        // CraftBukkit start
-+        this.serverLevelData.setWorld(this);
++        if (loadedWorldData.pdc() != null) {
++            this.getWorld().readBukkitValues(loadedWorldData.pdc().persistentData().toTagCompound());
++        }
 +
 +        if (biomeProvider != null) {
 +            net.minecraft.world.level.biome.BiomeSource biomeSource = new org.bukkit.craftbukkit.generator.CustomWorldChunkManager(this.getWorld(), biomeProvider, generator.getBiomeSource()); // Paper - add vanillaBiomeProvider
@@ -195,7 +204,7 @@
          boolean syncWrites = server.forceSynchronousWrites();
          DataFixer fixerUpper = server.getFixerUpper();
          EntityPersistentStorage<Entity> entityStorage = new EntityStorage(
-@@ -260,8 +_,8 @@
+@@ -260,16 +_,17 @@
              server.getStructureManager(),
              executor,
              generator,
@@ -206,7 +215,8 @@
              syncWrites,
              this.entityManager::updateChunkStatus,
              () -> server.overworld().getDataStorage()
-@@ -269,7 +_,7 @@
++            , savedDataStorage // Paper - initialize SavedDataStorage earlier
+         );
          this.chunkSource.getGeneratorState().ensureStructuresGenerated();
          this.portalForcer = new PortalForcer(this);
          if (this.canHaveWeather()) {
@@ -215,12 +225,11 @@
          }
  
          this.raids = this.getDataStorage().computeIfAbsent(Raids.TYPE);
-@@ -277,14 +_,14 @@
+@@ -277,14 +_,13 @@
              levelData.setGameType(server.getDefaultGameType());
          }
  
 -        WorldGenSettings worldGenSettings = server.getWorldGenSettings();
-+        WorldGenSettings worldGenSettings = worldDataAndGenSettings.genSettings(); // Paper - use world's gen settings
          WorldOptions options = worldGenSettings.options();
          long seed = options.seed();
          this.structureCheck = new StructureCheck(
@@ -232,18 +241,6 @@
              generator,
              this.chunkSource.randomState(),
              this,
-@@ -292,8 +_,9 @@
-             seed,
-             fixerUpper
-         );
--        this.structureManager = new StructureManager(this, options, this.structureCheck);
--        if (this.dimensionType().hasEnderDragonFight()) {
-+        this.structureManager = new StructureManager(this, worldDataAndGenSettings.genSettings().options(), this.structureCheck); // CraftBukkit
-+        if (this.dimension() == Level.END && this.dimensionTypeRegistration().is(net.minecraft.world.level.dimension.BuiltinDimensionTypes.END) || env == org.bukkit.World.Environment.THE_END) { // CraftBukkit - Allow to create EnderDragonBattle in default and custom END
-+            // this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenOptions().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit // TODO - snapshot
-             this.dragonFight = this.getDataStorage().computeIfAbsent(EnderDragonFight.TYPE);
-             this.dragonFight.init(this, seed, BlockPos.ZERO);
-         }
 @@ -303,7 +_,15 @@
          this.waypointManager = new ServerWaypointManager();
          this.environmentAttributes = EnvironmentAttributeSystem.builder().addDefaultLayers(this).build();
@@ -553,28 +550,14 @@
              if (progressListener != null) {
                  progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
              }
-@@ -883,9 +_,21 @@
-                 this.entityManager.autoSave();
-             }
-         }
-+
-+        // CraftBukkit start - moved from MinecraftServer#saveAllChunks
-+        com.mojang.authlib.GameProfile singleplayerProfile = this.server.getSingleplayerProfile();
-+        this.levelStorageAccess.saveDataTag(this.worldDataAndGenSettings.data(), singleplayerProfile == null ? null : singleplayerProfile.id());
-+        // CraftBukkit end - moved from MinecraftServer#saveAllChunks
-     }
+@@ -887,6 +_,7 @@
  
      private void saveLevelData(final boolean sync) {
-+        // Paper start - save per-world data in level storage
-+        if (sync) {
-+            this.savedDataStorage.saveAndJoin();
-+        } else {
-+            this.savedDataStorage.scheduleSave();
-+        }
-+        // Paper end - save per-world data in level storage
          SavedDataStorage savedDataStorage = this.getChunkSource().getDataStorage();
++        savedDataStorage.computeIfAbsent(io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE).setFrom((org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer) this.getWorld().getPersistentDataContainer()); // Paper
          if (sync) {
              savedDataStorage.saveAndJoin();
+         } else {
 @@ -949,18 +_,40 @@
  
      @Override
@@ -958,7 +941,7 @@
          final TagKey<Structure> structureTag, final BlockPos origin, final int maxSearchRadius, final boolean createReference
      ) {
 -        if (!this.server.getWorldGenSettings().options().generateStructures()) {
-+        if (!this.worldDataAndGenSettings.genSettings().options().generateStructures()) { // CraftBukkit
++        if (!this.worldGenSettings.options().generateStructures()) { // CraftBukkit
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> tag = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
@@ -1000,21 +983,23 @@
          this.getServer().getDataStorage().set(MapItemSavedData.type(id), data);
      }
  
-@@ -1492,7 +_,19 @@
+@@ -1492,7 +_,21 @@
  
      @Override
      public void setRespawnData(final LevelData.RespawnData respawnData) {
 -        this.getServer().setRespawnData(respawnData);
 +        // Paper start
-+        if (!this.serverLevelData.getRespawnData().positionEquals(respawnData)) {
++        final LevelData.RespawnData previousRespawnData = this.serverLevelData.getRespawnData();
++        this.serverLevelData.setSpawn(respawnData);
++        if (!previousRespawnData.positionEquals(respawnData)) {
 +            org.bukkit.Location previousLocation = this.getWorld().getSpawnLocation();
-+            this.serverLevelData.setSpawn(respawnData);
 +            this.server.getPlayerList().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket(respawnData), this.dimension());
 +            this.server.updateEffectiveRespawnData();
 +            new org.bukkit.event.world.SpawnChangeEvent(this.getWorld(), previousLocation).callEvent();
 +        }
-+        if (this.server.overworld().serverLevelData.respawnDimension != this.dimension()) {
-+            this.server.overworld().serverLevelData.respawnDimension = this.dimension();
++        final net.minecraft.world.level.storage.PrimaryLevelData overworldData = (net.minecraft.world.level.storage.PrimaryLevelData) this.server.getWorldData();
++        if (overworldData.respawnDimension != this.dimension()) {
++            overworldData.respawnDimension = this.dimension();
 +            this.server.updateEffectiveRespawnData();
 +        }
 +        // Paper end
@@ -1038,13 +1023,13 @@
  
      public boolean isFlat() {
 -        return this.server.getWorldData().isFlatWorld();
-+        return this.serverLevelData.isFlatWorld(); // CraftBukkit
++        return this.worldGenSettings.dimensions().get(this.getTypeKey()).map(levelStem -> levelStem.generator() instanceof net.minecraft.world.level.levelgen.FlatLevelSource).orElse(false); // Paper
      }
  
      @Override
      public long getSeed() {
 -        return this.server.getWorldGenSettings().options().seed();
-+        return this.worldDataAndGenSettings.genSettings().options().seed(); // CraftBukkit
++        return this.worldGenSettings.options().seed(); // CraftBukkit
      }
  
      public @Nullable EnderDragonFight getDragonFight() {
@@ -1065,14 +1050,6 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1785,6 +_,7 @@
-     public void close() throws IOException {
-         super.close();
-         this.entityManager.close();
-+        this.savedDataStorage.close(); // Paper - save per-world data in level storage
-     }
- 
-     @Override
 @@ -1841,8 +_,30 @@
      }
  

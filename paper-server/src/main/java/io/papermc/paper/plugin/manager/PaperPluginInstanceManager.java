@@ -343,7 +343,7 @@ class PaperPluginInstanceManager {
 
         for (final Appender appender : context.getConfiguration().getAppenders().values()) {
             if (appender instanceof AsyncAppender asyncAppender) {
-                final boolean flushed = true; // TODO - snapshot - feature patches - asyncAppender.flush(100, TimeUnit.MILLISECONDS);
+                final boolean flushed = asyncAppender.flush(100, TimeUnit.MILLISECONDS);
                 if (!flushed) {
                     this.server.getLogger().log(Level.WARNING, "Failed to flush log messages before plugin unload.");
                 }

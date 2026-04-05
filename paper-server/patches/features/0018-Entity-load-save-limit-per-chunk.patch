@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 18 Nov 2020 20:52:25 -0800
+Subject: [PATCH] Entity load/save limit per chunk
+
+Adds a config option to limit the number of entities saved and loaded
+to a chunk. The default values of -1 disable the limit. Although
+defaults are only included for certain entites, this allows setting
+limits for any entity type.
+
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
+index 0cfdbdee091f43ca011bc68f7479eb7b84801b09..8d9ce3d301d5f7e4106587ae00adb8dd5b8b6f88 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
+@@ -116,8 +116,19 @@ public final class ChunkEntitySlices {
+         }
+ 
+         final ListTag entitiesTag = new ListTag();
++        final java.util.Map<net.minecraft.world.entity.EntityType<?>, Integer> savedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
+         try (final ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(ChunkAccess.problemPath(chunkPos), LOGGER)) {
+             for (final Entity entity : PlatformHooks.get().modifySavedEntities(world, chunkPos.x(), chunkPos.z(), entities)) {
++                // Paper start - Entity load/save limit per chunk
++                final EntityType<?> entityType = entity.getType();
++                final int saveLimit = world.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
++                if (saveLimit > -1) {
++                    if (savedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
++                        continue;
++                    }
++                    savedEntityCounts.merge(entityType, 1, Integer::sum);
++                }
++                // Paper end - Entity load/save limit per chunk
+                 final TagValueOutput savedEntity = TagValueOutput.createWithContext(
+                     scopedCollector.forChild(entity.problemPath()), entity.registryAccess()
+                 );
+diff --git a/net/minecraft/world/entity/EntityType.java b/net/minecraft/world/entity/EntityType.java
+index 2cdbb5f9bace96a8c4ad7fc4de17678ec0db8a6c..6b19f8cd8655cc52a0d8deadb9ca9f24473637a4 100644
+--- a/net/minecraft/world/entity/EntityType.java
++++ b/net/minecraft/world/entity/EntityType.java
+@@ -1647,7 +1647,18 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
+     }
+ 
+     public static Stream<Entity> loadEntitiesRecursive(final ValueInput.ValueInputList entities, final Level level, final EntitySpawnReason reason) {
++        final java.util.Map<EntityType<?>, Integer> loadedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
+         return entities.stream().mapMulti((tag, output) -> loadEntityRecursive(tag, level, reason, entity -> {
++            // Paper start - Entity load/save limit per chunk
++            final EntityType<?> entityType = entity.getType();
++            final int saveLimit = level.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
++            if (saveLimit > -1) {
++                if (loadedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
++                    return null;
++                }
++                loadedEntityCounts.merge(entityType, 1, Integer::sum);
++            }
++            // Paper end - Entity load/save limit per chunk
+             output.accept(entity);
+             return entity;
+         }));
+diff --git a/net/minecraft/world/level/chunk/storage/EntityStorage.java b/net/minecraft/world/level/chunk/storage/EntityStorage.java
+index 04045397dff89870316d0d374b9e472540c3298d..b1cd822c114b99a25fad2e649ca44596109aa0e5 100644
+--- a/net/minecraft/world/level/chunk/storage/EntityStorage.java
++++ b/net/minecraft/world/level/chunk/storage/EntityStorage.java
+@@ -95,7 +95,18 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
+         } else {
+             try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(ChunkAccess.problemPath(pos), LOGGER)) {
+                 ListTag entities = new ListTag();
++                final java.util.Map<net.minecraft.world.entity.EntityType<?>, Integer> savedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
+                 chunk.getEntities().forEach(e -> {
++                    // Paper start - Entity load/save limit per chunk
++                    final EntityType<?> entityType = e.getType();
++                    final int saveLimit = this.level.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
++                    if (saveLimit > -1) {
++                        if (savedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
++                            return;
++                        }
++                        savedEntityCounts.merge(entityType, 1, Integer::sum);
++                    }
++                    // Paper end - Entity load/save limit per chunk
+                     TagValueOutput output = TagValueOutput.createWithContext(reporter.forChild(e.problemPath()), e.registryAccess());
+                     if (e.save(output)) {
+                         CompoundTag result = output.buildResult();

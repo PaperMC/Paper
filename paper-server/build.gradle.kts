@@ -8,13 +8,13 @@ plugins {
     `maven-publish`
     idea
     id("io.papermc.paperweight.core")
-    id("io.papermc.fill.gradle") version "1.0.10"
+    id("io.papermc.fill.gradle") version "1.0.11"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:26.1+build.1")
+    mache("io.papermc:mache:26.1.1+build.3")
     paperclip("io.papermc:paperclip:3.0.3")
 }
 
@@ -23,7 +23,7 @@ paperweight {
     gitFilePatches = false
 
     updatingMinecraft {
-        oldPaperCommit = "7e80cef5198561d0db53406127e5b8bc7af51577"
+        // oldPaperCommit = "7e80cef5198561d0db53406127e5b8bc7af51577"
     }
 }
 
@@ -110,7 +110,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:concurrentutil:0.0.8")
+    implementation("ca.spottedleaf:concurrentutil:0.0.10")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -321,7 +321,7 @@ fill {
     version(paperweight.minecraftVersion)
 
     build {
-        channel = BuildChannel.STABLE
+        channel = providers.gradleProperty("channel").map { BuildChannel.valueOf(it.uppercase()) }
 
         downloads {
             register("server:default") {
