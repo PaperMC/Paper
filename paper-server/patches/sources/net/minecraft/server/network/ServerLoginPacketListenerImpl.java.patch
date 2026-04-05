@@ -17,7 +17,7 @@
      private static final int MAX_TICKS_BEFORE_LOGIN = 600;
      private final byte[] challenge;
      final MinecraftServer server;
-@@ -56,10 +_,15 @@
+@@ -56,10 +_,14 @@
      final ServerActivityMonitor serverActivityMonitor;
      public volatile ServerLoginPacketListenerImpl.State state = ServerLoginPacketListenerImpl.State.HELLO;
      private int tick;
@@ -31,11 +31,10 @@
 +    private int velocityLoginMessageId = -1; // Paper - Add Velocity IP Forwarding Support
 +    public java.util.@Nullable UUID requestedUuid; // Paper
 +    private final io.papermc.paper.connection.PaperPlayerLoginConnection paperLoginConnection; // Paper - Config API
-+    private volatile boolean disconnecting = false; // Paper - Fix disconnect still ticking login
  
      public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection, boolean transferred) {
          this.server = server;
-@@ -67,10 +_,20 @@
+@@ -67,10 +_,19 @@
          this.serverActivityMonitor = this.server.getServerActivityMonitor();
          this.challenge = Ints.toByteArray(RandomSource.create().nextInt());
          this.transferred = transferred;
@@ -44,7 +43,6 @@
  
      @Override
      public void tick() {
-+        if (this.disconnecting) return; // Paper - Fix disconnect being called multiple times due to not awaiting for disconnect
 +        // Paper start - login cookie API
 +        // Don't block the connection
 +        if (this.paperLoginConnection.isAwaitingCookies()) {
@@ -56,7 +54,7 @@
          if (this.state == ServerLoginPacketListenerImpl.State.VERIFYING) {
              this.verifyLoginAndFinishConnectionSetup(Objects.requireNonNull(this.authenticatedProfile));
          }
-@@ -80,11 +_,23 @@
+@@ -80,16 +_,39 @@
              this.finishLoginAndWaitForClient(this.authenticatedProfile);
          }
  
@@ -66,28 +64,37 @@
 +    public void tickTimeout() {
 +    // Paper end - login cookie API
          if (this.tick++ == 600) {
-             this.disconnect(Component.translatable("multiplayer.disconnect.slow_login"));
+-            this.disconnect(Component.translatable("multiplayer.disconnect.slow_login"));
++            this.disconnectAsync(Component.translatable("multiplayer.disconnect.slow_login")); // Paper
          }
      }
- 
++
 +    // CraftBukkit start
 +    @Deprecated
 +    public void disconnect(String reason) {
 +        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(reason))); // Paper - Fix hex colors not working in some kick messages
 +    }
 +    // CraftBukkit end
-+
+ 
      @Override
      public boolean isAcceptingMessages() {
          return this.connection.isConnected();
-@@ -95,6 +_,7 @@
+     }
+ 
++    // Paper start
++    public void disconnectAsync(Component reason) {
++        try {
++            LOGGER.info("Disconnecting {}: {}", this.getUserName(), reason.getString());
++            this.connection.send(new ClientboundLoginDisconnectPacket(reason), PacketSendListener.thenRun(() -> this.connection.disconnect(reason)));
++            this.connection.handleConnectionDisconnectOnNextTick = true;
++        } catch (Exception var3) {
++            LOGGER.error("Error whilst disconnecting player", (Throwable)var3);
++        }
++    }
++    // Paper end
+     public void disconnect(Component reason) {
+         try {
              LOGGER.info("Disconnecting {}: {}", this.getUserName(), reason.getString());
-             this.connection.send(new ClientboundLoginDisconnectPacket(reason));
-             this.connection.disconnect(reason);
-+            this.disconnecting = true; // Paper - Fix disconnect still ticking login
-         } catch (Exception var3) {
-             LOGGER.error("Error whilst disconnecting player", (Throwable)var3);
-         }
 @@ -117,7 +_,14 @@
      @Override
      public void handleHello(ServerboundHelloPacket packet) {
@@ -138,15 +145,18 @@
              }
          }
      }
-@@ -139,7 +_,7 @@
+@@ -139,9 +_,9 @@
  
      private void verifyLoginAndFinishConnectionSetup(GameProfile profile) {
          PlayerList playerList = this.server.getPlayerList();
 -        Component component = playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(profile));
 +        Component component = org.bukkit.craftbukkit.event.CraftEventFactory.handleLoginResult(playerList.canPlayerLogin(this.connection.getRemoteAddress(), new NameAndId(profile)), this.paperLoginConnection, this.connection, profile, this.server, true); // Paper
          if (component != null) {
-             this.disconnect(component);
+-            this.disconnect(component);
++            this.disconnectAsync(component); // Paper
          } else {
+             if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
+                 this.connection
 @@ -151,7 +_,7 @@
                      );
              }
