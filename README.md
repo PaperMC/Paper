@@ -29,7 +29,7 @@ How To (Plugin Developers)
 * See upcoming, pending, and recently added API [here](https://github.com/orgs/PaperMC/projects/2/views/4)
 * Paper API javadocs here: [papermc.io/javadocs](https://papermc.io/javadocs/)
 #### Repository (for paper-api)
-See [the docs](https://docs.papermc.io/paper/dev/project-setup/#adding-paper-as-a-dependency) for more details, including Maven caveats.
+See [the docs](https://docs.papermc.io/paper/dev/project-setup/#adding-paper-as-a-dependency) for more details.
 ##### Gradle
 ```kotlin
 repositories {
@@ -59,7 +59,7 @@ java {
 <dependency>
     <groupId>io.papermc.paper</groupId>
     <artifactId>paper-api</artifactId>
-    <version>VERSION</version>
+    <version>[26.1.1,)</version>
     <scope>provided</scope>
 </dependency>
 ```
