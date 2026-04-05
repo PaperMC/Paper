@@ -29,7 +29,23 @@ How To (Plugin Developers)
 * See upcoming, pending, and recently added API [here](https://github.com/orgs/PaperMC/projects/2/views/4)
 * Paper API javadocs here: [papermc.io/javadocs](https://papermc.io/javadocs/)
 #### Repository (for paper-api)
-> See [the docs](https://docs.papermc.io/paper/dev/project-setup/#adding-paper-as-a-dependency) for more details, including Maven caveats.
+See [the docs](https://docs.papermc.io/paper/dev/project-setup/#adding-paper-as-a-dependency) for more details, including Maven caveats.
+##### Gradle
+```kotlin
+repositories {
+    maven {
+        url = uri("https://repo.papermc.io/repository/maven-public/")
+    }
+}
+
+dependencies {
+    compileOnly("io.papermc.paper:paper-api:26.1.1.build.+")
+}
+
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(25))
+}
+```
 ##### Maven
 
 ```xml
@@ -46,22 +62,6 @@ How To (Plugin Developers)
     <version>VERSION</version>
     <scope>provided</scope>
 </dependency>
-```
-##### Gradle
-```kotlin
-repositories {
-    maven {
-        url = uri("https://repo.papermc.io/repository/maven-public/")
-    }
-}
-
-dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.1.1.build.+")
-}
-
-java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(25))
-}
 ```
 
 How To (Compiling Jar From Source)
