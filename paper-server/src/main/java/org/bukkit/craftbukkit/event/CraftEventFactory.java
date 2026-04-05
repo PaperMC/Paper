@@ -14,6 +14,7 @@ import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
+import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -27,6 +28,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -2393,5 +2395,26 @@ public class CraftEventFactory {
             return true;
         }
         return false;
+    }
+
+    public static boolean callPlayerToggleEntityAgeLockEvent(net.minecraft.world.entity.player.Player player, Mob target, ItemStack itemUsed, InteractionHand hand, boolean ageLocked, @Nullable EntityDataAccessor<?> accessorToResync) {
+        PlayerToggleEntityAgeLockEvent event = new PlayerToggleEntityAgeLockEvent(
+            (org.bukkit.entity.Player) player.getBukkitEntity(),
+            (LivingEntity) target.getBukkitEntity(),
+            itemUsed.asBukkitCopy(),
+            org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand),
+            ageLocked
+        );
+
+        if (!event.callEvent()) {
+            if (accessorToResync != null && player instanceof ServerPlayer serverPlayer) {
+                target.resendPossiblyDesyncedDataValues(List.of(accessorToResync), serverPlayer);
+            }
+            if (!player.hasInfiniteMaterials()) {
+                player.inventoryMenu.forceHeldSlot(hand);
+            }
+            return false;
+        }
+        return true;
     }
 }

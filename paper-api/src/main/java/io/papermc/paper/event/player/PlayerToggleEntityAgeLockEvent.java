@@ -18,16 +18,16 @@ public class PlayerToggleEntityAgeLockEvent extends PlayerEvent implements Cance
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final LivingEntity entity;
-    private final ItemStack itemStack;
+    private final ItemStack item;
     private final EquipmentSlot hand;
     private final boolean ageLocked;
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerToggleEntityAgeLockEvent(final Player player, final LivingEntity entity, final ItemStack itemStack, final EquipmentSlot hand, final boolean ageLocked) {
+    public PlayerToggleEntityAgeLockEvent(final Player player, final LivingEntity entity, final ItemStack item, final EquipmentSlot hand, final boolean ageLocked) {
         super(player);
         this.entity = entity;
-        this.itemStack = itemStack;
+        this.item = item;
         this.hand = hand;
         this.ageLocked = ageLocked;
     }
@@ -42,8 +42,8 @@ public class PlayerToggleEntityAgeLockEvent extends PlayerEvent implements Cance
     /**
      * {@return the item being used to toggle the age lock of the entity}
      */
-    public ItemStack getItemStack() {
-        return this.itemStack.clone();
+    public ItemStack getItem() {
+        return this.item.clone();
     }
 
     /**
@@ -57,7 +57,7 @@ public class PlayerToggleEntityAgeLockEvent extends PlayerEvent implements Cance
      * {@return whether the age of the entity is going to be locked or not}
      */
     public boolean isAgeLocked() {
-        return ageLocked;
+        return this.ageLocked;
     }
 
     @Override

@@ -1,26 +1,14 @@
 --- a/net/minecraft/world/entity/AgeableMob.java
 +++ b/net/minecraft/world/entity/AgeableMob.java
-@@ -68,7 +_,7 @@
+@@ -68,6 +_,11 @@
      protected InteractionResult mobInteract(final Player player, final InteractionHand hand) {
          ItemStack itemInHand = player.getItemInHand(hand);
          if (canUseGoldenDandelion(itemInHand, this.isBaby(), this.ageLockParticleTimer, this)) {
--            setAgeLocked(this, this::isAgeLocked, player, itemInHand, mob -> this.setAgeLockedData());
-+            setAgeLocked(this, this::isAgeLocked, player, itemInHand, mob -> this.setAgeLockedData(), hand); // Paper - toggle entity age lock event - add hand
++            // Paper start - call PlayerToggleEntityAgeLockEvent
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerToggleEntityAgeLockEvent(player, this, itemInHand, hand, !this.isAgeLocked(), AGE_LOCKED)) {
++                return InteractionResult.SUCCESS;
++            }
++            // Paper end - call PlayerToggleEntityAgeLockEvent
+             setAgeLocked(this, this::isAgeLocked, player, itemInHand, mob -> this.setAgeLockedData());
              return InteractionResult.SUCCESS;
          } else {
-             return super.mobInteract(player, hand);
-@@ -87,7 +_,14 @@
- 
-     public static void setAgeLocked(
-         final Mob mob, final Supplier<Boolean> isAgedLocked, final Player player, final ItemStack itemInHand, final Consumer<Mob> setAgeLockData
-+        , final InteractionHand hand // Paper - toggle entity age lock event - add hand
-     ) {
-+        // Paper start - toggle entity age lock event
-+        if (!new io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent((org.bukkit.entity.Player) player.getBukkitEntity(), mob.getBukkitLivingEntity(), itemInHand.asBukkitCopy(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), isAgedLocked.get()).callEvent()) {
-+            player.inventoryMenu.forceHeldSlot(hand);
-+            return;
-+        }
-+        // Paper end - toggle entity age lock event
-         setAgeLockData.accept(mob);
-         itemInHand.consume(1, player);
-         boolean isAgeLocked = isAgedLocked.get();
