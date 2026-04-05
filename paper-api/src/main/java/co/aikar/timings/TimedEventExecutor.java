@@ -56,7 +56,7 @@ public class TimedEventExecutor implements EventExecutor {
         String id;
 
         if (method == null) {
-            if (executor.getClass().getEnclosingClass() != null) { // Oh Skript, how we love you
+            if (executor.getClass().getEnclosingMethod() != null) { // Oh Skript, how we love you
                 method = executor.getClass().getEnclosingMethod();
             }
         }
