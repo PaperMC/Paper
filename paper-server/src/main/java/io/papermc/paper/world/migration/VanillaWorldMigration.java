@@ -3,11 +3,13 @@ package io.papermc.paper.world.migration;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Dynamic;
 import io.papermc.paper.world.saveddata.PaperLevelOverrides;
+import io.papermc.paper.world.saveddata.PaperWorldMetadata;
 import io.papermc.paper.world.saveddata.PaperWorldPDC;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.world.level.Level;
@@ -43,6 +45,7 @@ final class VanillaWorldMigration {
 
         if (rootOwnsThisWorld) {
             WorldMigrationSupport.migratePaperWorldConfig(context.baseRoot(), context.targetDimensionPath());
+            migrateLegacyWorldMetadata(context);
         }
 
         migrateSavedData(context);
@@ -108,17 +111,32 @@ final class VanillaWorldMigration {
         final @Nullable Dynamic<?> levelData
     ) {
         final Path pdcPath = WorldMigrationSupport.savedDataPath(context.targetDataRoot(), PaperWorldPDC.TYPE);
-        if (!Files.exists(pdcPath)) {
-            final PaperWorldPDC pdc = WorldMigrationSupport.readLegacyPdc(levelData, context.registryAccess());
-            if (pdc != null) {
-                final SavedDataStorage targetStorage = new SavedDataStorage(context.targetDataRoot(), DataFixers.getDataFixer(), context.registryAccess());
-                targetStorage.set(PaperWorldPDC.TYPE, pdc);
-                targetStorage.saveAndJoin();
-
-                WorldMigrationSupport.clearLegacyPdc(levelData);
-                context.rootAccess().saveLevelData(levelData);
-            }
+        if (Files.exists(pdcPath)) {
+            return;
         }
+
+        final PaperWorldPDC pdc = WorldMigrationSupport.readLegacyPdc(levelData, context.registryAccess());
+        if (pdc != null) {
+            final SavedDataStorage targetStorage = new SavedDataStorage(context.targetDataRoot(), DataFixers.getDataFixer(), context.registryAccess());
+            targetStorage.set(PaperWorldPDC.TYPE, pdc);
+            targetStorage.saveAndJoin();
+
+            WorldMigrationSupport.clearLegacyPdc(levelData);
+            context.rootAccess().saveLevelData(levelData);
+        }
+    }
+
+    private static void migrateLegacyWorldMetadata(final WorldMigrationContext context) throws IOException {
+        final Path metadataPath = WorldMigrationSupport.savedDataPath(context.targetDataRoot(), PaperWorldMetadata.TYPE);
+        if (Files.exists(metadataPath)) {
+            return;
+        }
+
+        final UUID legacyUuid = WorldMigrationSupport.readLegacyUuid(context.baseRoot());
+        final SavedDataStorage targetStorage = new SavedDataStorage(context.targetDataRoot(), DataFixers.getDataFixer(), context.registryAccess());
+        targetStorage.set(PaperWorldMetadata.TYPE, new PaperWorldMetadata(legacyUuid == null ? UUID.randomUUID() : legacyUuid));
+        targetStorage.saveAndJoin();
+        Files.deleteIfExists(context.baseRoot().resolve(WorldMigrationSupport.LEGACY_UID_FILE_NAME));
     }
 
     private static @Nullable ResourceKey<Level> resolveExplicitPaperRespawnDimension(final @Nullable Dynamic<?> levelData) {

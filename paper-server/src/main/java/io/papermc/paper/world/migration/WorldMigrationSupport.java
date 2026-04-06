@@ -3,11 +3,13 @@ package io.papermc.paper.world.migration;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Dynamic;
 import io.papermc.paper.world.saveddata.PaperWorldPDC;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.NbtException;
 import net.minecraft.nbt.NbtOps;
@@ -27,6 +29,7 @@ final class WorldMigrationSupport {
     private static final Logger LOGGER = LogUtils.getClassLogger();
     static final List<String> DIMENSION_DIRECTORIES = List.of("region", "entities", "poi");
     static final String PAPER_WORLD_CONFIG = "paper-world.yml";
+    static final String LEGACY_UID_FILE_NAME = "uid.dat";
 
     private WorldMigrationSupport() {
     }
@@ -44,6 +47,20 @@ final class WorldMigrationSupport {
 
     static void clearLegacyPdc(final Dynamic<?> levelData) {
         levelData.remove("BukkitValues");
+    }
+
+    static @Nullable UUID readLegacyUuid(final Path sourceRoot) {
+        final Path fileId = sourceRoot.resolve(LEGACY_UID_FILE_NAME);
+        if (!Files.isRegularFile(fileId)) {
+            return null;
+        }
+
+        try (DataInputStream inputStream = new DataInputStream(Files.newInputStream(fileId))) {
+            return new UUID(inputStream.readLong(), inputStream.readLong());
+        } catch (final IOException ex) {
+            LOGGER.warn("Failed to read {}", fileId, ex);
+            return null;
+        }
     }
 
     static Path getStorageFolder(final Identifier dimension, final Path baseFolder) {

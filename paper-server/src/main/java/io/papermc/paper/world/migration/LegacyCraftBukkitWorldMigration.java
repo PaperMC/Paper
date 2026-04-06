@@ -5,7 +5,6 @@ import com.mojang.serialization.Dynamic;
 import io.papermc.paper.world.saveddata.PaperLevelOverrides;
 import io.papermc.paper.world.saveddata.PaperWorldMetadata;
 import io.papermc.paper.world.saveddata.PaperWorldPDC;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -162,7 +161,7 @@ final class LegacyCraftBukkitWorldMigration {
         if (Files.isDirectory(root.resolve(LevelResource.DATA.id()))) {
             return true;
         }
-        if (Files.isRegularFile(root.resolve(WorldMigrationSupport.PAPER_WORLD_CONFIG)) || Files.isRegularFile(root.resolve("uid.dat"))) {
+        if (Files.isRegularFile(root.resolve(WorldMigrationSupport.PAPER_WORLD_CONFIG)) || Files.isRegularFile(root.resolve(WorldMigrationSupport.LEGACY_UID_FILE_NAME))) {
             return true;
         }
         for (final String directory : WorldMigrationSupport.DIMENSION_DIRECTORIES) {
@@ -184,20 +183,6 @@ final class LegacyCraftBukkitWorldMigration {
         final SavedDataType<?> type
     ) throws IOException {
         WorldMigrationSupport.copySavedDataIfPresent(this.sourceDataRoots, this.targetDataRoot, type, true);
-    }
-
-    private static @Nullable UUID readLegacyUuid(final Path sourceRoot) {
-        final Path fileId = sourceRoot.resolve("uid.dat");
-        if (!Files.isRegularFile(fileId)) {
-            return null;
-        }
-
-        try (DataInputStream inputStream = new DataInputStream(Files.newInputStream(fileId))) {
-            return new UUID(inputStream.readLong(), inputStream.readLong());
-        } catch (final IOException ex) {
-            LOGGER.warn("Failed to read {}", fileId, ex);
-            return null;
-        }
     }
 
     private static void deleteMigratedSeparateRoot(final Path sourceRoot) throws IOException {
@@ -231,7 +216,7 @@ final class LegacyCraftBukkitWorldMigration {
         final SavedDataStorage targetStorage,
         final @Nullable Dynamic<?> levelData
     ) {
-        targetStorage.set(PaperWorldMetadata.TYPE, new PaperWorldMetadata(requireNonNullElseGet(readLegacyUuid(this.sourceRoot), UUID::randomUUID)));
+        targetStorage.set(PaperWorldMetadata.TYPE, new PaperWorldMetadata(requireNonNullElseGet(WorldMigrationSupport.readLegacyUuid(this.sourceRoot), UUID::randomUUID)));
         final PaperWorldPDC preservedPdc = WorldMigrationSupport.readLegacyPdc(levelData, this.registryAccess);
         if (preservedPdc != null) {
             targetStorage.set(PaperWorldPDC.TYPE, preservedPdc);
