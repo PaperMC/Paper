@@ -84,7 +84,8 @@ public class WorldCreator {
      * Creates an empty WorldCreator for the given key.
      *
      * <p>Note: Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
-     * with this method, use {@link #WorldCreator(String)} with {@link NamespacedKey#getKey()}.</p>
+     * with this method, use {@link #WorldCreator(String)} with {@link NamespacedKey#getKey()}, or use this method
+     * with {@link NamespacedKey#minecraft(String)} and {@link NamespacedKey#getKey()}.</p>
      *
      * @param worldKey NamespacedKey of the world that will be created
      */
@@ -107,8 +108,8 @@ public class WorldCreator {
      *
      * @param levelName LevelName of the world that will be created
      * @param worldKey NamespacedKey of the world that will be created
-     * @deprecated To load unconverted pre-26.1 worlds identified by their name (custom key was never persisted), use
-     * {@link #WorldCreator(String)}. For new worlds and already-converted worlds, prefer {@link #ofKey(NamespacedKey)}.
+     * @deprecated Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
+     * with this method, use {@link #WorldCreator(String)} with the name.
      */
     @Deprecated(since = "26.1")
     @NotNull
@@ -123,7 +124,8 @@ public class WorldCreator {
      * Creates an empty WorldCreator for the given key.
      *
      * <p>Note: Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
-     * with this method, use {@link #WorldCreator(String)} with {@link NamespacedKey#getKey()}.</p>
+     * with this method, use {@link #WorldCreator(String)} with {@link NamespacedKey#getKey()}, or use this method
+     * with {@link NamespacedKey#minecraft(String)} and {@link NamespacedKey#getKey()}.</p>
      *
      * @param worldKey NamespacedKey of the world that will be created
      */
