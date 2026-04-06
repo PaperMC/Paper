@@ -5,14 +5,16 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraft.world.level.storage.LevelDataAndDimensions;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.generator.WorldInfo;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftWorldInfo implements WorldInfo {
 
     private final String name;
+    private final NamespacedKey dimension;
     private final UUID uuid;
     private final World.Environment environment;
     private final long seed;
@@ -24,20 +26,22 @@ public class CraftWorldInfo implements WorldInfo {
 
     public CraftWorldInfo(
         String name,
+        NamespacedKey dimension,
         long seed,
         FeatureFlagSet enabledFeatures,
         World.Environment environment,
-        DimensionType dimensionManager,
+        DimensionType dimensionType,
         ChunkGenerator vanillaChunkGenerator,
         RegistryAccess.Frozen registryAccess,
         UUID uuid
     ) {
         this.name = name;
+        this.dimension = dimension;
         this.seed = seed;
         this.enabledFeatures = enabledFeatures;
         this.environment = environment;
-        this.minHeight = dimensionManager.minY();
-        this.maxHeight = dimensionManager.minY() + dimensionManager.height();
+        this.minHeight = dimensionType.minY();
+        this.maxHeight = dimensionType.minY() + dimensionType.height();
         this.vanillaChunkGenerator = vanillaChunkGenerator;
         this.registryAccess = registryAccess;
         this.uuid = uuid;
@@ -104,5 +108,10 @@ public class CraftWorldInfo implements WorldInfo {
     @Override
     public java.util.Set<org.bukkit.FeatureFlag> getFeatureFlags() {
         return io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl.fromNms(this.enabledFeatures);
+    }
+
+    @Override
+    public @NotNull NamespacedKey getKey() {
+        return this.dimension;
     }
 }

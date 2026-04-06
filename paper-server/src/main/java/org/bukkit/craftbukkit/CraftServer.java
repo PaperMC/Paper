@@ -1268,7 +1268,7 @@ public final class CraftServer implements Server {
             throw new IllegalStateException("Missing level stem for world " + name + " using key " + actualDimension);
         }
 
-        WorldInfo worldInfo = new CraftWorldInfo(loadedWorldData.bukkitName(), genSettingsFinal.options().seed(), primaryLevelData.enabledFeatures(), creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess(), loadedWorldData.uuid());
+        WorldInfo worldInfo = new CraftWorldInfo(loadedWorldData.bukkitName(), CraftNamespacedKey.fromMinecraft(dimensionKey.identifier()), genSettingsFinal.options().seed(), primaryLevelData.enabledFeatures(), creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess(), loadedWorldData.uuid());
         if (biomeProvider == null && chunkGenerator != null) {
             biomeProvider = chunkGenerator.getDefaultBiomeProvider(worldInfo);
         }
