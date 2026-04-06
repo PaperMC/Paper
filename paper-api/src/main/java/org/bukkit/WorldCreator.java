@@ -51,6 +51,14 @@ public class WorldCreator {
         }
     }
 
+    private static String nameFromKey(NamespacedKey key) {
+        if (key.getNamespace().equals("minecraft")) {
+            // This way, plugins can load legacy worlds by the 'minecraft:<name>' key.
+            return key.getKey();
+        }
+        return key.getNamespace() + "_" + key.getKey();
+    }
+
     /**
      * Creates an empty WorldCreator for the given world name or key.
      *
@@ -67,7 +75,7 @@ public class WorldCreator {
         if (levelName != null && worldKey != null) {
             throw new IllegalArgumentException("World name and key cannot both be specified");
         }
-        this.name = levelName == null ? worldKey.getNamespace() + "_" + worldKey.getKey() : levelName;
+        this.name = levelName == null ? nameFromKey(worldKey) : levelName;
         this.seed = (new Random()).nextLong();
         this.key = worldKey == null ? defaultWorldKey(levelName) : worldKey;
     }
