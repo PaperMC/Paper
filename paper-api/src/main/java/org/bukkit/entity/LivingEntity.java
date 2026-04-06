@@ -842,6 +842,24 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public boolean isSleeping();
 
     /**
+     * Attempts to make the entity sleep at the given location.
+     * <br>
+     * The location must be in the current world and have a bed placed at the
+     * location.
+     *
+     * @param location the location of the bed
+     * @return whether the sleep was successful
+     */
+    public boolean sleep(@NotNull Location location);
+
+    /**
+     * Causes this entity to wake up if it is currently sleeping.
+     *
+     * @throws IllegalStateException if not sleeping
+     */
+    public void wakeup();
+
+    /**
      * Gets if the entity is climbing.
      *
      * @return if the entity is climbing
