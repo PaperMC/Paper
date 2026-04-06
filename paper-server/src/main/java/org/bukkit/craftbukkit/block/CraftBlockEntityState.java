@@ -60,7 +60,7 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
             throw new RuntimeException(
                 world == null
                     ? "Failed to read non-placed BlockState"
-                    : "Failed to read BlockState at: world: " + world.getName() + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")",
+                    : "Failed to read BlockState at: world: " + world.getKey() + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")",
                 thr
             );
         }

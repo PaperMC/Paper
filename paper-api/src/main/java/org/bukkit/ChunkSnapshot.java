@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import net.kyori.adventure.key.Key;
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.NotNull;
@@ -29,10 +30,20 @@ public interface ChunkSnapshot {
     /**
      * Gets name of the world containing this chunk
      *
+     * <p>This method is considered obsolete and is a candidate for future deprecation.
+     * Prefer using {@link #getWorldKey()} as the world identity.</p>
+     *
      * @return Parent World Name
      */
     @NotNull
     String getWorldName();
+
+    /**
+     * Gets the key of the world containing this chunk
+     *
+     * @return Parent World Key
+     */
+    Key getWorldKey();
 
     /**
      * Get block type for block at corresponding coordinate in the chunk

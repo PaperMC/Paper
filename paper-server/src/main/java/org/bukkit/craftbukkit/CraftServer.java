@@ -1403,7 +1403,7 @@ public final class CraftServer implements Server {
     public void addWorld(World world) {
         // Check if a World already exists with the UID.
         if (this.getWorld(world.getUID()) != null) {
-            System.out.println("World " + world.getName() + " is a duplicate of another world and has been prevented from loading. Please remove or change the duplicated Paper world metadata before loading it again.");
+            System.out.println("World " + world.getKey() + " is a duplicate of another world and has been prevented from loading. Please remove or change the duplicated Paper world metadata before loading it again.");
             return;
         }
         this.worlds.put(world.getName().toLowerCase(Locale.ROOT), world);

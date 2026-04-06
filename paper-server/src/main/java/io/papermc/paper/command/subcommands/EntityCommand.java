@@ -23,6 +23,7 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.HeightMap;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -85,18 +86,18 @@ public final class EntityCommand implements PaperSubcommand {
             if (args.length > 2) {
                 worldName = args[2];
             } else if (sender instanceof Player) {
-                worldName = ((Player) sender).getWorld().getName();
+                worldName = ((Player) sender).getWorld().getKey().toString();
             } else {
                 sender.sendMessage(text("Please specify the name of a world", RED));
                 sender.sendMessage(text("To do so without a filter, specify '*' as the filter", RED));
-                sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
+                sender.sendMessage(text("Usage: /paper entity list [filter] [worldKey]", RED));
                 return;
             }
             Map<Identifier, MutablePair<Integer, Map<ChunkPos, Integer>>> list = Maps.newHashMap();
-            @Nullable World bukkitWorld = Bukkit.getWorld(worldName);
+            @Nullable World bukkitWorld = Bukkit.getWorld(NamespacedKey.fromString(worldName));
             if (bukkitWorld == null) {
                 sender.sendMessage(text("Could not load world for " + worldName + ". Please select a valid world.", RED));
-                sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
+                sender.sendMessage(text("Usage: /paper entity list [filter] [worldKey]", RED));
                 return;
             }
             ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();

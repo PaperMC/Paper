@@ -3,6 +3,8 @@ package org.bukkit.craftbukkit;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import java.util.function.Predicate;
+
+import net.kyori.adventure.key.Key;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.block.state.BlockState;
@@ -25,6 +27,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     private final int x, z;
     private final int minHeight, maxHeight, seaLevel;
     private final String worldName;
+    private final Key worldKey;
     private final PalettedContainer<BlockState>[] blockIds;
     private final byte[][] skylight;
     private final byte[][] emitLight;
@@ -33,13 +36,14 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     private final long captureFullTime;
     private final PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome;
 
-    CraftChunkSnapshot(int x, int z, int minHeight, int maxHeight, int seaLevel, String worldName, long fullTime, PalettedContainer<BlockState>[] sectionBlockIDs, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, Heightmap heightmap, PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome) {
+    CraftChunkSnapshot(int x, int z, int minHeight, int maxHeight, int seaLevel, String worldName, Key worldKey, long fullTime, PalettedContainer<BlockState>[] sectionBlockIDs, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, Heightmap heightmap, PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome) {
         this.x = x;
         this.z = z;
         this.minHeight = minHeight;
         this.maxHeight = maxHeight;
         this.seaLevel = seaLevel;
         this.worldName = worldName;
+        this.worldKey = worldKey;
         this.captureFullTime = fullTime;
         this.blockIds = sectionBlockIDs;
         this.skylight = sectionSkyLights;
@@ -62,6 +66,11 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     @Override
     public String getWorldName() {
         return this.worldName;
+    }
+
+    @Override
+    public Key getWorldKey() {
+        return this.worldKey;
     }
 
     @Override

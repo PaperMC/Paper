@@ -250,4 +250,8 @@ public final class MCUtil {
             || (entity instanceof MushroomCow && stack.is(Items.BOWL))
             || (entity instanceof Bucketable && stack.is(Items.WATER_BUCKET));
     }
+
+    public static String getLevelName(Level level) {
+        return level.dimension().identifier().toString();
+    }
 }
