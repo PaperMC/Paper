@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 8 Apr 2026 18:25:47 -0400
+Subject: [PATCH] Fix Comparator State Issues
+
+
+diff --git a/net/minecraft/world/level/block/ComparatorBlock.java b/net/minecraft/world/level/block/ComparatorBlock.java
+index 578e7c8dc601f53cf2a068685c6901bfaf47e763..7e87d56cd42f27c115b575b9acf2ce9ac0953af8 100644
+--- a/net/minecraft/world/level/block/ComparatorBlock.java
++++ b/net/minecraft/world/level/block/ComparatorBlock.java
+@@ -136,7 +136,7 @@ public class ComparatorBlock extends DiodeBlock implements EntityBlock {
+             float f = state.getValue(MODE) == ComparatorMode.SUBTRACT ? 0.55F : 0.5F;
+             level.playSound(player, pos, SoundEvents.COMPARATOR_CLICK, SoundSource.BLOCKS, 0.3F, f);
+             level.setBlock(pos, state, Block.UPDATE_CLIENTS);
+-            this.refreshOutputState(level, pos, state);
++            if (level.getBlockState(pos).is(this)) { this.refreshOutputState(level, pos, state); } // Paper
+             return InteractionResult.SUCCESS;
+         }
+     }
+diff --git a/net/minecraft/world/level/block/DiodeBlock.java b/net/minecraft/world/level/block/DiodeBlock.java
+index 02ffb5569e2405d86b3a4a695dd17c9372169ff7..a750e2d7f6c5ac7561c8b06870e022b07875c587 100644
+--- a/net/minecraft/world/level/block/DiodeBlock.java
++++ b/net/minecraft/world/level/block/DiodeBlock.java
+@@ -92,6 +92,7 @@ public abstract class DiodeBlock extends HorizontalDirectionalBlock {
+ 
+     @Override
+     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
++        if (!level.getBlockState(pos).is(this)) return; // Paper
+         if (state.canSurvive(level, pos)) {
+             this.checkTickOnNeighbor(level, pos, state);
+         } else {
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index 3acc1374a7ef968d88e9f566ce7b812fb8d580af..11a72bcc8c74e4ed874f9c80e0e7c068b125269d 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -425,6 +425,12 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+                         state.onPlace(this.level, pos, blockState, flag1);
+                     }
+ 
++                    // Paper start - Some blocks may break here
++                    if (!section.getBlockState(i, i1, i2).is(block)) {
++                        return null;
++                    }
++                    // Paper end - Some blocks may break here
++
+                     if (state.hasBlockEntity()) {
+                         BlockEntity blockEntity = this.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
+                         if (blockEntity != null && !blockEntity.isValidBlockState(state)) {
