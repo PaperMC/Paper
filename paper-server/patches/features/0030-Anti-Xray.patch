@@ -326,14 +326,14 @@ index 398018ad7037669a756f804403fd76cf333a06de..d274149a977ed828b6bd02d88d285052
  
      public int getSerializedSize() {
 diff --git a/net/minecraft/world/level/chunk/PalettedContainer.java b/net/minecraft/world/level/chunk/PalettedContainer.java
-index edf2990bfbe3d6b64eed85446eef207d2506efc5..ef65de3142e50b44b43b1a4a8fafae46d2591599 100644
+index edf2990bfbe3d6b64eed85446eef207d2506efc5..09111c50cb34b643b7717f107a6f5bf6953bf0b2 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -26,6 +26,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
      private static final int MIN_PALETTE_BITS = 0;
      public volatile PalettedContainer.Data<T> data; // Paper - optimise collisions - public
      private final Strategy<T> strategy;
-+    private final T @org.jetbrains.annotations.Nullable [] presetValues; // Paper - Anti-Xray - Add preset values
++    private final T @Nullable [] presetValues; // Paper - Anti-Xray - Add preset values
      //private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer"); // Paper - unused
  
      public void acquire() {
@@ -348,7 +348,7 @@ index edf2990bfbe3d6b64eed85446eef207d2506efc5..ef65de3142e50b44b43b1a4a8fafae46
 +        return codecRW(elementCodec, strategy, defaultValue, null);
 +    }
 +    public static <T> Codec<PalettedContainer<T>> codecRW(final Codec<T> elementCodec, final Strategy<T> strategy, final T defaultValue,
-+                                                          final T @org.jetbrains.annotations.Nullable [] presetValues) {
++                                                          final T @Nullable [] presetValues) {
 +        // Paper end - Anti-Xray - Add preset values
 +        PalettedContainerRO.Unpacker<T, PalettedContainer<T>> unpacker = (strategy1, packedData) -> unpack(strategy1, packedData, defaultValue, presetValues); // Paper - Anti-Xray
          return codec(elementCodec, strategy, defaultValue, unpacker);
@@ -367,16 +367,16 @@ index edf2990bfbe3d6b64eed85446eef207d2506efc5..ef65de3142e50b44b43b1a4a8fafae46
 -    private PalettedContainer(final Strategy<T> strategy, final Configuration dataConfiguration, final BitStorage storage, final Palette<T> palette) {
 +    // Paper start - Anti-Xray - Add preset values
 +    private PalettedContainer(final Strategy<T> strategy, final Configuration dataConfiguration, final BitStorage storage, final Palette<T> palette,
-+                              final List<T> values, final T defaultValue, final T @org.jetbrains.annotations.Nullable [] presetValues) {
++                              final List<T> values, final T defaultValue, final T @Nullable [] presetValues) {
 +        this.presetValues = presetValues;
 +        // Paper end - Anti-Xray - Add preset values
          this.strategy = strategy;
          this.data = new PalettedContainer.Data<>(dataConfiguration, storage, palette);
 +        // Paper start - Anti-Xray
 +        if (presetValues != null
-+            && (dataConfiguration instanceof net.minecraft.world.level.chunk.Configuration.Simple simpleFactory && simpleFactory.factory() == Strategy.SINGLE_VALUE_PALETTE_FACTORY
++            && (dataConfiguration instanceof Configuration.Simple simpleFactory && simpleFactory.factory() == Strategy.SINGLE_VALUE_PALETTE_FACTORY
 +            ? this.data.palette.valueFor(0) != defaultValue
-+            : !(dataConfiguration instanceof net.minecraft.world.level.chunk.Configuration.Global))) {
++            : !(dataConfiguration instanceof Configuration.Global))) {
 +            // In 1.18 Mojang unfortunately removed code that already handled possible resize operations on read from disk for us
 +            // We readd this here but in a smarter way than it was before
 +            int maxSize = 1 << dataConfiguration.bitsInMemory();
@@ -402,7 +402,7 @@ index edf2990bfbe3d6b64eed85446eef207d2506efc5..ef65de3142e50b44b43b1a4a8fafae46
      }
  
 -    private PalettedContainer(final PalettedContainer<T> source) {
-+    private PalettedContainer(final PalettedContainer<T> source, final T @org.jetbrains.annotations.Nullable [] presetValues) { // Paper - Anti-Xray - Add preset values
++    private PalettedContainer(final PalettedContainer<T> source, final T @Nullable [] presetValues) { // Paper - Anti-Xray - Add preset values
 +        this.presetValues = presetValues; // Paper - Anti-Xray - Add preset values
          this.strategy = source.strategy;
          this.data = source.data.copy();
@@ -414,7 +414,7 @@ index edf2990bfbe3d6b64eed85446eef207d2506efc5..ef65de3142e50b44b43b1a4a8fafae46
 +        // Paper start - Anti-Xray - Add preset values
 +        this(initialValue, strategy, null);
 +    }
-+    public PalettedContainer(final T initialValue, final Strategy<T> strategy, final T @org.jetbrains.annotations.Nullable [] presetValues) {
++    public PalettedContainer(final T initialValue, final Strategy<T> strategy, final T @Nullable [] presetValues) {
 +        this.presetValues = presetValues;
 +        // Paper end - Anti-Xray
          this.strategy = strategy;
@@ -500,7 +500,7 @@ index edf2990bfbe3d6b64eed85446eef207d2506efc5..ef65de3142e50b44b43b1a4a8fafae46
  
      @VisibleForTesting
 -    public static <T> DataResult<PalettedContainer<T>> unpack(final Strategy<T> strategy, final PalettedContainerRO.PackedData<T> discData) {
-+    public static <T> DataResult<PalettedContainer<T>> unpack(final Strategy<T> strategy, final PalettedContainerRO.PackedData<T> discData, final T defaultValue, final T @org.jetbrains.annotations.Nullable [] presetValues) { // Paper - Anti-Xray
++    public static <T> DataResult<PalettedContainer<T>> unpack(final Strategy<T> strategy, final PalettedContainerRO.PackedData<T> discData, final T defaultValue, final T @Nullable [] presetValues) { // Paper - Anti-Xray
          List<T> paletteEntries = discData.paletteEntries();
          int entryCount = strategy.entryCount();
          Configuration storedConfiguration = strategy.getConfigurationForPaletteSize(paletteEntries.size());
@@ -547,7 +547,7 @@ index edf2990bfbe3d6b64eed85446eef207d2506efc5..ef65de3142e50b44b43b1a4a8fafae46
          }
  
 diff --git a/net/minecraft/world/level/chunk/PalettedContainerFactory.java b/net/minecraft/world/level/chunk/PalettedContainerFactory.java
-index 9977331d182cbc592f00006aabce23f0f69d2393..eda9da9a29c4fc382ed0cb6aab3d9172c9b8f919 100644
+index 9977331d182cbc592f00006aabce23f0f69d2393..cd20a791b101548367ed53080f78e78bc7aa5d39 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainerFactory.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainerFactory.java
 @@ -29,19 +29,31 @@ public record PalettedContainerFactory(
@@ -570,7 +570,7 @@ index 9977331d182cbc592f00006aabce23f0f69d2393..eda9da9a29c4fc382ed0cb6aab3d9172
 +        return new PalettedContainer<>(this.defaultBlockState, this.blockStatesStrategy, null);
 +    }
 +
-+    public PalettedContainer<BlockState> createForBlockStates(@javax.annotation.Nullable net.minecraft.world.level.Level level, net.minecraft.world.level.ChunkPos chunkPos, int chunkSectionY) {
++    public PalettedContainer<BlockState> createForBlockStates(net.minecraft.world.level.@org.jspecify.annotations.Nullable Level level, net.minecraft.world.level.ChunkPos chunkPos, int chunkSectionY) {
 +        net.minecraft.world.level.block.state.BlockState[] states = null;
 +        if (level != null
 +            // This check is needed because of a circular reference in ChunkPacketBlockControllerAntiXray when creating an empty chunk section
@@ -587,17 +587,17 @@ index 9977331d182cbc592f00006aabce23f0f69d2393..eda9da9a29c4fc382ed0cb6aab3d9172
      }
  }
 diff --git a/net/minecraft/world/level/chunk/PalettedContainerRO.java b/net/minecraft/world/level/chunk/PalettedContainerRO.java
-index d2a2d435d0eda14a04f2c8582abffb8f98092a59..1310ea8a0f62040f966fc92be5e1be816f67047f 100644
+index d2a2d435d0eda14a04f2c8582abffb8f98092a59..1498e9a760878f444debac9d4257d096731bb3ba 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainerRO.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainerRO.java
-@@ -14,7 +14,10 @@ public interface PalettedContainerRO<T> {
+@@ -14,7 +14,11 @@ public interface PalettedContainerRO<T> {
  
      void getAll(Consumer<T> consumer);
  
--    void write(FriendlyByteBuf buffer);
 +    // Paper start - Anti-Xray - Add chunk packet info
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse void write(FriendlyByteBuf buffer);
-+    void write(FriendlyByteBuf buffer, @javax.annotation.Nullable io.papermc.paper.antixray.ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex);
++    @Deprecated @io.papermc.paper.annotation.DoNotUse
+     void write(FriendlyByteBuf buffer);
++    void write(FriendlyByteBuf buffer, io.papermc.paper.antixray.@org.jspecify.annotations.Nullable ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex);
 +    // Paper end
  
      int getSerializedSize();
@@ -616,7 +616,7 @@ index 45ff1447312f239154930f748637f413e2ea8f87..a0f8b23612f8315eef2aaf4c036c2ec7
      private static final Palette.Factory HASHMAP_PALETTE_FACTORY = HashMapPalette::create;
      private static final Configuration ZERO_BITS = new Configuration.Simple(SINGLE_VALUE_PALETTE_FACTORY, 0);
 diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index 74158a5d7ea8058c99ab215265987746aa043fc7..264c45b80b32075a40396fb3f9488c548e3c884c 100644
+index df0bb06176ad5cce3ed8785d22d68b2dcbf5a8ca..9823f20186679d75444eff2b7a7b9cf8bb2ef575 100644
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 @@ -141,6 +141,7 @@ public record SerializableChunkData(
