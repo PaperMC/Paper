@@ -33466,7 +33466,7 @@ index 8d3eb23eb607c862e15fb9e2e7f71a2019b02d04..6eb1a3a83c5bae8935c042396d676f7a
          }
      }
 diff --git a/net/minecraft/world/level/chunk/status/ChunkStep.java b/net/minecraft/world/level/chunk/status/ChunkStep.java
-index 3e381c26fe9a646c73704515f57ba09d9533f37e..06d5de6ccdd07b1645f656170863b419d8d23fc5 100644
+index 3e381c26fe9a646c73704515f57ba09d9533f37e..554faa6ebfc7c7db11634fc9a8cac846df9b92fb 100644
 --- a/net/minecraft/world/level/chunk/status/ChunkStep.java
 +++ b/net/minecraft/world/level/chunk/status/ChunkStep.java
 @@ -11,9 +11,50 @@ import net.minecraft.world.level.chunk.ChunkAccess;
@@ -33476,7 +33476,7 @@ index 3e381c26fe9a646c73704515f57ba09d9533f37e..06d5de6ccdd07b1645f656170863b419
 -public record ChunkStep(
 -    ChunkStatus targetStatus, ChunkDependencies directDependencies, ChunkDependencies accumulatedDependencies, int blockStateWriteRadius, ChunkStatusTask task
 -) {
-+// Paper start - rewerite chunk system - convert record to class
++// Paper start - rewrite chunk system - convert record to class
 +public final class ChunkStep implements ca.spottedleaf.moonrise.patches.chunk_system.status.ChunkSystemChunkStep { // Paper - rewrite chunk system
 +    private final ChunkStatus targetStatus;
 +    private final ChunkDependencies directDependencies;
@@ -33518,16 +33518,16 @@ index 3e381c26fe9a646c73704515f57ba09d9533f37e..06d5de6ccdd07b1645f656170863b419
 +    }
 +    // Paper end - rewrite chunk system
 +
-+    // Paper end - rewerite chunk system - convert record to class
++    // Paper end - rewrite chunk system - convert record to class
 +
      public int getAccumulatedRadiusOf(final ChunkStatus status) {
          return status == this.targetStatus ? 0 : this.accumulatedDependencies.getRadiusOf(status);
      }
-@@ -39,6 +80,56 @@ public record ChunkStep(
+@@ -39,6 +80,55 @@ public record ChunkStep(
          return newCenterChunk;
      }
  
-+    // Paper start - rewerite chunk system - convert record to class
++    // Paper start - rewrite chunk system - convert record to class
 +    public ChunkStatus targetStatus() {
 +        return targetStatus;
 +    }
@@ -33574,8 +33574,7 @@ index 3e381c26fe9a646c73704515f57ba09d9533f37e..06d5de6ccdd07b1645f656170863b419
 +            "blockStateWriteRadius=" + blockStateWriteRadius + ", " +
 +            "task=" + task + ']';
 +    }
-+    // Paper end - rewerite chunk system - convert record to class
-+
++    // Paper end - rewrite chunk system - convert record to class
 +
      public static class Builder {
          private final ChunkStatus status;
@@ -34157,7 +34156,7 @@ index b0b7af7e541eef20063c11ee94d7a6ceaec1626a..18be8647455dee182622f3bbefa91225
  
      private record PackedChunk<T>(Int2ObjectMap<T> sectionsByY, boolean versionChanged) {
 diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index 480623c30777fd230bf8428b16364db09806562b..22a83f312d357176a5489e5b6b71c3ef3e737df7 100644
+index 480623c30777fd230bf8428b16364db09806562b..1e0afa9590de7fe492cf29aded96be3db498c51e 100644
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 @@ -145,7 +145,7 @@ public record SerializableChunkData(
@@ -34368,7 +34367,7 @@ index 480623c30777fd230bf8428b16364db09806562b..22a83f312d357176a5489e5b6b71c3ef
          return tag;
      }
  
-@@ -668,6 +775,66 @@ public record SerializableChunkData(
+@@ -668,6 +775,60 @@ public record SerializableChunkData(
          }
      }
  
@@ -34376,12 +34375,9 @@ index 480623c30777fd230bf8428b16364db09806562b..22a83f312d357176a5489e5b6b71c3ef
 +    // Paper start - starlight - convert from record
 +    public static final class SectionData implements ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData { // Paper - starlight - our diff
 +        private final int y;
-+        @javax.annotation.Nullable
-+        private final net.minecraft.world.level.chunk.LevelChunkSection chunkSection;
-+        @javax.annotation.Nullable
-+        private final net.minecraft.world.level.chunk.DataLayer blockLight;
-+        @javax.annotation.Nullable
-+        private final net.minecraft.world.level.chunk.DataLayer skyLight;
++        private final @Nullable LevelChunkSection chunkSection;
++        private final @Nullable DataLayer blockLight;
++        private final @Nullable DataLayer skyLight;
 +
 +        // Paper start - starlight - our diff
 +        private int blockLightState = -1;
@@ -34408,7 +34404,7 @@ index 480623c30777fd230bf8428b16364db09806562b..22a83f312d357176a5489e5b6b71c3ef
 +        }
 +        // Paper end - starlight - our diff
 +
-+        public SectionData(int y, @javax.annotation.Nullable net.minecraft.world.level.chunk.LevelChunkSection chunkSection, @javax.annotation.Nullable net.minecraft.world.level.chunk.DataLayer blockLight, @javax.annotation.Nullable net.minecraft.world.level.chunk.DataLayer skyLight) {
++        public SectionData(int y, @Nullable LevelChunkSection chunkSection, @Nullable DataLayer blockLight, @Nullable DataLayer skyLight) {
 +            this.y = y;
 +            this.chunkSection = chunkSection;
 +            this.blockLight = blockLight;
@@ -34416,22 +34412,19 @@ index 480623c30777fd230bf8428b16364db09806562b..22a83f312d357176a5489e5b6b71c3ef
 +        }
 +
 +        public int y() {
-+            return y;
++            return this.y;
 +        }
 +
-+        @javax.annotation.Nullable
-+        public net.minecraft.world.level.chunk.LevelChunkSection chunkSection() {
-+            return chunkSection;
++        public @Nullable LevelChunkSection chunkSection() {
++            return this.chunkSection;
 +        }
 +
-+        @javax.annotation.Nullable
-+        public net.minecraft.world.level.chunk.DataLayer blockLight() {
-+            return blockLight;
++        public @Nullable DataLayer blockLight() {
++            return this.blockLight;
 +        }
 +
-+        @javax.annotation.Nullable
-+        public net.minecraft.world.level.chunk.DataLayer skyLight() {
-+            return skyLight;
++        public @Nullable DataLayer skyLight() {
++            return this.skyLight;
 +        }
 +        // Paper end - starlight - convert from record
      }
