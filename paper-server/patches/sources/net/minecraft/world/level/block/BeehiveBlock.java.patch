@@ -1,61 +1,61 @@
 --- a/net/minecraft/world/level/block/BeehiveBlock.java
 +++ b/net/minecraft/world/level/block/BeehiveBlock.java
-@@ -87,8 +_,8 @@
-     }
- 
-     @Override
--    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack stack) {
--        super.playerDestroy(level, player, pos, state, blockEntity, stack);
-+    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack stack, boolean includeDrops, boolean dropExp) { // Paper - fix drops not preventing stats/food exhaustion
-+        super.playerDestroy(level, player, pos, state, blockEntity, stack, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion
+@@ -94,8 +_,9 @@
+         final BlockState state,
+         final @Nullable BlockEntity blockEntity,
+         final ItemStack destroyedWith
++        , boolean includeDrops, boolean dropExp // Paper - fix drops not preventing stats/food exhaustion
+     ) {
+-        super.playerDestroy(level, player, pos, state, blockEntity, destroyedWith);
++        super.playerDestroy(level, player, pos, state, blockEntity, destroyedWith, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion
          if (!level.isClientSide() && blockEntity instanceof BeehiveBlockEntity beehiveBlockEntity) {
-             if (!EnchantmentHelper.hasTag(stack, EnchantmentTags.PREVENTS_BEE_SPAWNS_WHEN_MINING)) {
+             if (!EnchantmentHelper.hasTag(destroyedWith, EnchantmentTags.PREVENTS_BEE_SPAWNS_WHEN_MINING)) {
                  beehiveBlockEntity.emptyAllLivingFromHive(player, state, BeehiveBlockEntity.BeeReleaseStatus.EMERGENCY);
-@@ -96,7 +_,7 @@
+@@ -103,7 +_,7 @@
                  this.angerNearbyBees(level, pos);
              }
  
--            CriteriaTriggers.BEE_NEST_DESTROYED.trigger((ServerPlayer)player, state, stack, beehiveBlockEntity.getOccupantCount());
-+            // CriteriaTriggers.BEE_NEST_DESTROYED.trigger((ServerPlayer)player, state, stack, beehiveBlockEntity.getOccupantCount()); // Paper - Trigger bee_nest_destroyed trigger in the correct place; moved until after items are dropped
+-            CriteriaTriggers.BEE_NEST_DESTROYED.trigger((ServerPlayer)player, state, destroyedWith, beehiveBlockEntity.getOccupantCount());
++            // CriteriaTriggers.BEE_NEST_DESTROYED.trigger((ServerPlayer)player, state, destroyedWith, beehiveBlockEntity.getOccupantCount()); // Paper - Trigger bee_nest_destroyed trigger in the correct place; moved until after items are dropped
          }
      }
  
-@@ -118,7 +_,7 @@
-             for (Bee bee : entitiesOfClass) {
+@@ -127,7 +_,7 @@
+             for (Bee bee : beesToAnger) {
                  if (bee.getTarget() == null) {
-                     Player player = Util.getRandom(entitiesOfClass1, level.random);
--                    bee.setTarget(player);
-+                    bee.setTarget(player, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER); // CraftBukkit
+                     Player angerTarget = Util.getRandom(playersToBeAngryAt, level.getRandom());
+-                    bee.setTarget(angerTarget);
++                    bee.setTarget(angerTarget, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER); // CraftBukkit
                  }
              }
          }
-@@ -128,7 +_,7 @@
-         ServerLevel level, ItemStack stack, BlockState state, @Nullable BlockEntity blockEntity, @Nullable Entity entity, BlockPos pos
+@@ -142,7 +_,7 @@
+         final BlockPos pos
      ) {
          dropFromBlockInteractLootTable(
--            level, BuiltInLootTables.HARVEST_BEEHIVE, state, blockEntity, stack, entity, (serverLevel, itemStack) -> popResource(serverLevel, pos, itemStack)
-+            level, BuiltInLootTables.HARVEST_BEEHIVE, state, blockEntity, stack, entity, (serverLevel, itemStack) -> popResource(serverLevel, pos, itemStack) // Paper - diff on change - copied below
+-            level, BuiltInLootTables.HARVEST_BEEHIVE, blockState, blockEntity, tool, entity, (serverLevel, stack) -> popResource(serverLevel, pos, stack)
++            level, BuiltInLootTables.HARVEST_BEEHIVE, blockState, blockEntity, tool, entity, (serverLevel, stack) -> popResource(serverLevel, pos, stack) // Paper - diff on change - copied below
          );
      }
  
-@@ -141,7 +_,19 @@
-         if (honeyLevelValue >= 5) {
-             Item item = stack.getItem();
-             if (level instanceof ServerLevel serverLevel && stack.is(Items.SHEARS)) {
--                dropHoneycomb(serverLevel, stack, state, level.getBlockEntity(pos), player, pos);
+@@ -161,7 +_,19 @@
+         if (honeyLevel >= 5) {
+             Item item = itemStack.getItem();
+             if (level instanceof ServerLevel serverLevel && itemStack.is(Items.SHEARS)) {
+-                dropHoneycomb(serverLevel, itemStack, state, level.getBlockEntity(pos), player, pos);
 +                // Paper start - Add PlayerShearBlockEvent
 +                List<org.bukkit.inventory.ItemStack> drops = new java.util.ArrayList<>();
 +                dropFromBlockInteractLootTable(
-+                    serverLevel, BuiltInLootTables.HARVEST_BEEHIVE, state, level.getBlockEntity(pos), stack, player, (serverLevel1, itemStack) -> drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack))
++                    serverLevel, BuiltInLootTables.HARVEST_BEEHIVE, state, level.getBlockEntity(pos), itemStack, player, (_, stack) -> drops.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack))
 +                );
-+                io.papermc.paper.event.block.PlayerShearBlockEvent event = new io.papermc.paper.event.block.PlayerShearBlockEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), drops);
++                io.papermc.paper.event.block.PlayerShearBlockEvent event = new io.papermc.paper.event.block.PlayerShearBlockEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), drops);
 +                if (!event.callEvent()) {
 +                    return InteractionResult.PASS;
 +                }
-+                for (org.bukkit.inventory.ItemStack itemStack : event.getDrops()) {
-+                    popResource(serverLevel, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemStack));
++                for (org.bukkit.inventory.ItemStack stack : event.getDrops()) {
++                    popResource(serverLevel, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(stack));
 +                }
 +                // Paper end - Add PlayerShearBlockEvent
                  level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BEEHIVE_SHEAR, SoundSource.BLOCKS, 1.0F, 1.0F);
-                 stack.hurtAndBreak(1, player, hand.asEquipmentSlot());
-                 flag = true;
+                 itemStack.hurtAndBreak(1, player, hand.asEquipmentSlot());
+                 hiveEmptied = true;

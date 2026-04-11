@@ -30,7 +30,7 @@ public class CraftSniffer extends CraftAnimals implements Sniffer {
     public void removeExploredLocation(Location location) {
         Preconditions.checkArgument(location != null, "location cannot be null");
 
-        BlockPos pos = CraftLocation.toBlockPosition(location);
+        BlockPos pos = CraftLocation.toBlockPos(location);
         net.minecraft.world.level.Level level = location.getWorld() != null ? ((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle() : this.getHandle().level();
         net.minecraft.core.GlobalPos globalPos = net.minecraft.core.GlobalPos.of(level.dimension(), pos);
         this.getHandle().getBrain().setMemory(MemoryModuleType.SNIFFER_EXPLORED_POSITIONS, this.getHandle().getExploredPositions().filter(blockPositionExplored -> !blockPositionExplored.equals(globalPos)).collect(Collectors.toList()));
@@ -43,7 +43,7 @@ public class CraftSniffer extends CraftAnimals implements Sniffer {
             return;
         }
 
-        this.getHandle().storeExploredPosition(CraftLocation.toBlockPosition(location));
+        this.getHandle().storeExploredPosition(CraftLocation.toBlockPos(location));
     }
 
     @Override

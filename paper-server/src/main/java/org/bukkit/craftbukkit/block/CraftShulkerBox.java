@@ -46,9 +46,9 @@ public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implem
     public void open() {
         this.requirePlaced();
         if (!this.getBlockEntity().opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
-            net.minecraft.world.level.Level world = this.getBlockEntity().getLevel();
-            world.blockEvent(this.getPosition(), this.getBlockEntity().getBlockState().getBlock(), 1, 1);
-            world.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
+            net.minecraft.world.level.Level level = this.getBlockEntity().getLevel();
+            level.blockEvent(this.getPosition(), this.getBlockEntity().getBlockState().getBlock(), 1, 1);
+            level.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, level.getRandom().nextFloat() * 0.1F + 0.9F);
         }
         this.getBlockEntity().opened = true;
     }
@@ -57,9 +57,9 @@ public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implem
     public void close() {
         this.requirePlaced();
         if (this.getBlockEntity().opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
-            net.minecraft.world.level.Level world = this.getBlockEntity().getLevel();
-            world.blockEvent(this.getPosition(), this.getBlockEntity().getBlockState().getBlock(), 1, 0);
-            world.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F); // Paper - More Lidded Block API (Wrong sound)
+            net.minecraft.world.level.Level level = this.getBlockEntity().getLevel();
+            level.blockEvent(this.getPosition(), this.getBlockEntity().getBlockState().getBlock(), 1, 0);
+            level.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.BLOCKS, 0.5F, level.getRandom().nextFloat() * 0.1F + 0.9F); // Paper - More Lidded Block API (Wrong sound)
         }
         this.getBlockEntity().opened = false;
     }

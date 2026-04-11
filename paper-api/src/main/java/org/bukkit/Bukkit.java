@@ -1753,7 +1753,7 @@ public final class Bukkit {
     // Paper end
 
     /**
-     * Gets the folder that contains all of the various {@link World}s.
+     * Gets the folder that contains all the various {@link World}s.
      *
      * @return folder that contains all worlds
      */

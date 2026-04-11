@@ -32,7 +32,7 @@ public class CraftTurtle extends CraftAnimals implements Turtle {
 
     @Override
     public void setHome(org.bukkit.Location location) {
-        this.getHandle().homePos = CraftLocation.toBlockPosition(location);
+        this.getHandle().homePos = CraftLocation.toBlockPos(location);
     }
 
     @Override
