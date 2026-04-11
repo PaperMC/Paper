@@ -13,8 +13,11 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.DynamicOps;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
+import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -134,6 +137,7 @@ import org.slf4j.Logger;
 import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 import static io.papermc.paper.util.BoundChecker.requirePositive;
 import static io.papermc.paper.util.BoundChecker.requireRange;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Children must include the following:
