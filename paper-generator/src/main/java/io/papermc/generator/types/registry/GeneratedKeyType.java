@@ -1,6 +1,7 @@
 package io.papermc.generator.types.registry;
 
 import com.google.common.base.Suppliers;
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -8,6 +9,7 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.WildcardTypeName;
 import io.papermc.generator.registry.RegistryEntry;
 import io.papermc.generator.types.SimpleGenerator;
 import io.papermc.generator.utils.Annotations;
@@ -60,7 +62,7 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
             .addCode("return $T.create($T.$L, $N);", TypedKey.class, RegistryKey.class, this.entry.registryKeyField(), keyParam)
             .returns(returnType);
         if (publicCreateKeyMethod) {
-            create.addJavadoc(Javadocs.CREATE_TYPED_KEY_JAVADOC, this.entry.apiClass(), this.entry.registryKey().location().toString());
+            create.addJavadoc(Javadocs.CREATE_TYPED_KEY_JAVADOC, this.entry.apiClass(), this.entry.registryKey().identifier().toString());
         }
         return create;
     }
@@ -69,7 +71,7 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
         return classBuilder(this.className)
             .addModifiers(PUBLIC, FINAL)
             .addJavadoc(Javadocs.getVersionDependentClassHeader("keys", "{@link $T#$L}"), RegistryKey.class, this.entry.registryKeyField())
-            .addAnnotations(Annotations.CLASS_HEADER)
+            .addAnnotations(Annotations.CONSTANTS_HEADER)
             .addMethod(MethodSpec.constructorBuilder()
                 .addModifiers(PRIVATE)
                 .build()
@@ -78,7 +80,17 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
 
     @Override
     protected TypeSpec getTypeSpec() {
-        TypeName typedKeyType = ParameterizedTypeName.get(TypedKey.class, this.entry.apiClass());
+        final TypeName apiType;
+        if (this.entry.genericArgCount() > 0) {
+            final TypeName[] args = new TypeName[this.entry.genericArgCount()];
+            for (int i = 0; i < args.length; i++) {
+                args[i] = WildcardTypeName.subtypeOf(Object.class);
+            }
+            apiType = ParameterizedTypeName.get(ClassName.get(this.entry.apiClass()), args);
+        } else {
+            apiType = ClassName.get(this.entry.apiClass());
+        }
+        TypeName typedKeyType = ParameterizedTypeName.get(ClassName.get(TypedKey.class), apiType);
 
         TypeSpec.Builder typeBuilder = this.keyHolderType();
         MethodSpec.Builder createMethod = this.createMethod(typedKeyType);
@@ -86,7 +98,7 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
         boolean allExperimental = true;
         for (Holder.Reference<T> reference : this.entry.registry().listElements().sorted(Formatting.HOLDER_ORDER).toList()) {
             ResourceKey<T> key = reference.key();
-            String keyPath = key.location().getPath();
+            String keyPath = key.identifier().getPath();
             String fieldName = Formatting.formatKeyAsField(keyPath);
             if (!SourceVersion.isIdentifier(fieldName) && this.entry.getFieldNames().containsKey(key)) {
                 fieldName = this.entry.getFieldNames().get(key);
@@ -94,7 +106,7 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
 
             FieldSpec.Builder fieldBuilder = FieldSpec.builder(typedKeyType, fieldName, PUBLIC, STATIC, FINAL)
                 .initializer("$N(key($S))", createMethod.build(), keyPath)
-                .addJavadoc(Javadocs.getVersionDependentField("{@code $L}"), key.location().toString());
+                .addJavadoc(Javadocs.getVersionDependentField("{@code $L}"), key.identifier().toString());
 
             SingleFlagHolder requiredFeature = this.getRequiredFeature(reference);
             if (requiredFeature != null) {

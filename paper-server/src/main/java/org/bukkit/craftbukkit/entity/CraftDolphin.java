@@ -7,13 +7,13 @@ import org.bukkit.entity.Dolphin;
 
 public class CraftDolphin extends CraftAgeable implements Dolphin {
 
-    public CraftDolphin(CraftServer server, net.minecraft.world.entity.animal.Dolphin entity) {
+    public CraftDolphin(CraftServer server, net.minecraft.world.entity.animal.dolphin.Dolphin entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Dolphin getHandle() {
-        return (net.minecraft.world.entity.animal.Dolphin) this.entity;
+    public net.minecraft.world.entity.animal.dolphin.Dolphin getHandle() {
+        return (net.minecraft.world.entity.animal.dolphin.Dolphin) this.entity;
     }
 
     @Override
@@ -43,6 +43,6 @@ public class CraftDolphin extends CraftAgeable implements Dolphin {
 
     @Override
     public void setTreasureLocation(org.bukkit.Location location) {
-        this.getHandle().treasurePos = location == null ? null : CraftLocation.toBlockPosition(location);
+        this.getHandle().treasurePos = location == null ? null : CraftLocation.toBlockPos(location);
     }
 }

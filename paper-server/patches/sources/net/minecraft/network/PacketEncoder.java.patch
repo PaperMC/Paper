@@ -6,25 +6,25 @@
  
 +    static final ThreadLocal<java.util.Locale> ADVENTURE_LOCALE = ThreadLocal.withInitial(() -> null); // Paper - adventure; set player's locale
      @Override
-     protected void encode(ChannelHandlerContext channelHandlerContext, Packet<T> packet, ByteBuf byteBuf) throws Exception {
-         PacketType<? extends Packet<? super T>> packetType = packet.type();
+     protected void encode(final ChannelHandlerContext ctx, final Packet<T> packet, final ByteBuf output) throws Exception {
+         PacketType<? extends Packet<? super T>> packetId = packet.type();
  
          try {
-+            ADVENTURE_LOCALE.set(channelHandlerContext.channel().attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).get()); // Paper - adventure; set player's locale
-             this.protocolInfo.codec().encode(byteBuf, packet);
-             int i = byteBuf.readableBytes();
++            ADVENTURE_LOCALE.set(ctx.channel().attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).get()); // Paper - adventure; set player's locale
+             this.protocolInfo.codec().encode(output, packet);
+             int writtenBytes = output.readableBytes();
              if (LOGGER.isDebugEnabled()) {
-@@ -39,7 +_,33 @@
+@@ -44,7 +_,33 @@
  
              throw var9;
          } finally {
 +            // Paper start - Handle large packets disconnecting client
-+            int packetLength = byteBuf.readableBytes();
++            int packetLength = output.readableBytes();
 +            if (packetLength > MAX_PACKET_SIZE || (packetLength > MAX_FINAL_PACKET_SIZE && packet.hasLargePacketFallback())) {
 +                throw new PacketTooLargeException(packet, packetLength);
 +            }
 +            // Paper end - Handle large packets disconnecting client
-             ProtocolSwapHandler.handleOutboundTerminalPacket(channelHandlerContext, packet);
+             ProtocolSwapHandler.handleOutboundTerminalPacket(ctx, packet);
          }
      }
 +

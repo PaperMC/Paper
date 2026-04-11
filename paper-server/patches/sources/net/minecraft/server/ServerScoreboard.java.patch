@@ -1,44 +1,44 @@
 --- a/net/minecraft/server/ServerScoreboard.java
 +++ b/net/minecraft/server/ServerScoreboard.java
-@@ -45,9 +_,7 @@
-     protected void onScoreChanged(ScoreHolder scoreHolder, Objective objective, Score score) {
-         super.onScoreChanged(scoreHolder, objective, score);
+@@ -51,9 +_,7 @@
+     protected void onScoreChanged(final ScoreHolder owner, final Objective objective, final Score score) {
+         super.onScoreChanged(owner, objective, score);
          if (this.trackedObjectives.contains(objective)) {
 -            this.server
 -                .getPlayerList()
 -                .broadcastAll(
 +            this.broadcastAll( // CraftBukkit
                      new ClientboundSetScorePacket(
-                         scoreHolder.getScoreboardName(),
+                         owner.getScoreboardName(),
                          objective.getName(),
-@@ -70,7 +_,7 @@
+@@ -76,7 +_,7 @@
      @Override
-     public void onPlayerRemoved(ScoreHolder scoreHolder) {
-         super.onPlayerRemoved(scoreHolder);
--        this.server.getPlayerList().broadcastAll(new ClientboundResetScorePacket(scoreHolder.getScoreboardName(), null));
-+        this.broadcastAll(new ClientboundResetScorePacket(scoreHolder.getScoreboardName(), null)); // CraftBukkit
+     public void onPlayerRemoved(final ScoreHolder player) {
+         super.onPlayerRemoved(player);
+-        this.server.getPlayerList().broadcastAll(new ClientboundResetScorePacket(player.getScoreboardName(), null));
++        this.broadcastAll(new ClientboundResetScorePacket(player.getScoreboardName(), null)); // CraftBukkit
          this.setDirty();
      }
  
-@@ -78,7 +_,7 @@
-     public void onPlayerScoreRemoved(ScoreHolder scoreHolder, Objective objective) {
-         super.onPlayerScoreRemoved(scoreHolder, objective);
+@@ -84,7 +_,7 @@
+     public void onPlayerScoreRemoved(final ScoreHolder player, final Objective objective) {
+         super.onPlayerScoreRemoved(player, objective);
          if (this.trackedObjectives.contains(objective)) {
--            this.server.getPlayerList().broadcastAll(new ClientboundResetScorePacket(scoreHolder.getScoreboardName(), objective.getName()));
-+            this.broadcastAll(new ClientboundResetScorePacket(scoreHolder.getScoreboardName(), objective.getName())); // CraftBukkit
+-            this.server.getPlayerList().broadcastAll(new ClientboundResetScorePacket(player.getScoreboardName(), objective.getName()));
++            this.broadcastAll(new ClientboundResetScorePacket(player.getScoreboardName(), objective.getName())); // CraftBukkit
          }
  
          this.setDirty();
-@@ -90,7 +_,7 @@
+@@ -96,7 +_,7 @@
          super.setDisplayObjective(slot, objective);
-         if (displayObjective != objective && displayObjective != null) {
-             if (this.getObjectiveDisplaySlotCount(displayObjective) > 0) {
+         if (old != objective && old != null) {
+             if (this.getObjectiveDisplaySlotCount(old) > 0) {
 -                this.server.getPlayerList().broadcastAll(new ClientboundSetDisplayObjectivePacket(slot, objective));
 +                this.broadcastAll(new ClientboundSetDisplayObjectivePacket(slot, objective)); // CraftBukkit
              } else {
-                 this.stopTrackingObjective(displayObjective);
+                 this.stopTrackingObjective(old);
              }
-@@ -98,7 +_,7 @@
+@@ -104,7 +_,7 @@
  
          if (objective != null) {
              if (this.trackedObjectives.contains(objective)) {
@@ -47,18 +47,18 @@
              } else {
                  this.startTrackingObjective(objective);
              }
-@@ -110,9 +_,7 @@
+@@ -116,9 +_,7 @@
      @Override
-     public boolean addPlayerToTeam(String playerName, PlayerTeam team) {
-         if (super.addPlayerToTeam(playerName, team)) {
+     public boolean addPlayerToTeam(final String player, final PlayerTeam team) {
+         if (super.addPlayerToTeam(player, team)) {
 -            this.server
 -                .getPlayerList()
--                .broadcastAll(ClientboundSetPlayerTeamPacket.createPlayerPacket(team, playerName, ClientboundSetPlayerTeamPacket.Action.ADD));
-+            this.broadcastAll(ClientboundSetPlayerTeamPacket.createPlayerPacket(team, playerName, ClientboundSetPlayerTeamPacket.Action.ADD)); // CraftBukkit
-             this.updatePlayerWaypoint(playerName);
+-                .broadcastAll(ClientboundSetPlayerTeamPacket.createPlayerPacket(team, player, ClientboundSetPlayerTeamPacket.Action.ADD));
++            this.broadcastAll(ClientboundSetPlayerTeamPacket.createPlayerPacket(team, player, ClientboundSetPlayerTeamPacket.Action.ADD)); // CraftBukkit
+             this.updatePlayerWaypoint(player);
              this.setDirty();
              return true;
-@@ -121,16 +_,44 @@
+@@ -127,14 +_,44 @@
          }
      }
  
@@ -82,13 +82,11 @@
 +    // Paper end - Multiple Entries with Scoreboards
 +
      @Override
-     public void removePlayerFromTeam(String username, PlayerTeam playerTeam) {
-         super.removePlayerFromTeam(username, playerTeam);
--        this.server
--            .getPlayerList()
--            .broadcastAll(ClientboundSetPlayerTeamPacket.createPlayerPacket(playerTeam, username, ClientboundSetPlayerTeamPacket.Action.REMOVE));
-+        this.broadcastAll(ClientboundSetPlayerTeamPacket.createPlayerPacket(playerTeam, username, ClientboundSetPlayerTeamPacket.Action.REMOVE)); // CraftBukkit
-         this.updatePlayerWaypoint(username);
+     public void removePlayerFromTeam(final String player, final PlayerTeam team) {
+         super.removePlayerFromTeam(player, team);
+-        this.server.getPlayerList().broadcastAll(ClientboundSetPlayerTeamPacket.createPlayerPacket(team, player, ClientboundSetPlayerTeamPacket.Action.REMOVE));
++        this.broadcastAll(ClientboundSetPlayerTeamPacket.createPlayerPacket(team, player, ClientboundSetPlayerTeamPacket.Action.REMOVE)); // CraftBukkit
+         this.updatePlayerWaypoint(player);
          this.setDirty();
      }
  
@@ -104,61 +102,61 @@
 +    // Paper end - Multiple Entries with Scoreboards
 +
      @Override
-     public void onObjectiveAdded(Objective objective) {
+     public void onObjectiveAdded(final Objective objective) {
          super.onObjectiveAdded(objective);
-@@ -141,7 +_,7 @@
-     public void onObjectiveChanged(Objective objective) {
+@@ -145,7 +_,7 @@
+     public void onObjectiveChanged(final Objective objective) {
          super.onObjectiveChanged(objective);
          if (this.trackedObjectives.contains(objective)) {
--            this.server.getPlayerList().broadcastAll(new ClientboundSetObjectivePacket(objective, 2));
-+            this.broadcastAll(new ClientboundSetObjectivePacket(objective, 2)); // CraftBukkit
+-            this.server.getPlayerList().broadcastAll(new ClientboundSetObjectivePacket(objective, ClientboundSetObjectivePacket.METHOD_CHANGE));
++            this.broadcastAll(new ClientboundSetObjectivePacket(objective, ClientboundSetObjectivePacket.METHOD_CHANGE)); // CraftBukkit
          }
  
          this.setDirty();
-@@ -160,14 +_,14 @@
+@@ -164,14 +_,14 @@
      @Override
-     public void onTeamAdded(PlayerTeam playerTeam) {
-         super.onTeamAdded(playerTeam);
--        this.server.getPlayerList().broadcastAll(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(playerTeam, true));
-+        this.broadcastAll(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(playerTeam, true)); // CraftBukkit
+     public void onTeamAdded(final PlayerTeam team) {
+         super.onTeamAdded(team);
+-        this.server.getPlayerList().broadcastAll(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, true));
++        this.broadcastAll(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, true)); // CraftBukkit
          this.setDirty();
      }
  
      @Override
-     public void onTeamChanged(PlayerTeam playerTeam) {
-         super.onTeamChanged(playerTeam);
--        this.server.getPlayerList().broadcastAll(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(playerTeam, false));
-+        this.broadcastAll(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(playerTeam, false)); // CraftBukkit
-         this.updateTeamWaypoints(playerTeam);
+     public void onTeamChanged(final PlayerTeam team) {
+         super.onTeamChanged(team);
+-        this.server.getPlayerList().broadcastAll(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, false));
++        this.broadcastAll(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, false)); // CraftBukkit
+         this.updateTeamWaypoints(team);
          this.setDirty();
      }
-@@ -175,7 +_,7 @@
+@@ -179,7 +_,7 @@
      @Override
-     public void onTeamRemoved(PlayerTeam playerTeam) {
-         super.onTeamRemoved(playerTeam);
--        this.server.getPlayerList().broadcastAll(ClientboundSetPlayerTeamPacket.createRemovePacket(playerTeam));
-+        this.broadcastAll(ClientboundSetPlayerTeamPacket.createRemovePacket(playerTeam)); // CraftBukkit
-         this.updateTeamWaypoints(playerTeam);
+     public void onTeamRemoved(final PlayerTeam team) {
+         super.onTeamRemoved(team);
+-        this.server.getPlayerList().broadcastAll(ClientboundSetPlayerTeamPacket.createRemovePacket(team));
++        this.broadcastAll(ClientboundSetPlayerTeamPacket.createRemovePacket(team)); // CraftBukkit
+         this.updateTeamWaypoints(team);
          this.setDirty();
      }
-@@ -219,6 +_,7 @@
-         List<Packet<?>> startTrackingPackets = this.getStartTrackingPackets(objective);
+@@ -220,6 +_,7 @@
+         List<Packet<?>> packets = this.getStartTrackingPackets(objective);
  
-         for (ServerPlayer serverPlayer : this.server.getPlayerList().getPlayers()) {
-+            if (serverPlayer.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
-             for (Packet<?> packet : startTrackingPackets) {
-                 serverPlayer.connection.send(packet);
+         for (ServerPlayer player : this.server.getPlayerList().getPlayers()) {
++            if (player.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
+             for (Packet<?> packet : packets) {
+                 player.connection.send(packet);
              }
-@@ -244,6 +_,7 @@
-         List<Packet<?>> stopTrackingPackets = this.getStopTrackingPackets(objective);
+@@ -245,6 +_,7 @@
+         List<Packet<?>> packets = this.getStopTrackingPackets(objective);
  
-         for (ServerPlayer serverPlayer : this.server.getPlayerList().getPlayers()) {
-+            if (serverPlayer.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
-             for (Packet<?> packet : stopTrackingPackets) {
-                 serverPlayer.connection.send(packet);
+         for (ServerPlayer player : this.server.getPlayerList().getPlayers()) {
++            if (player.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
+             for (Packet<?> packet : packets) {
+                 player.connection.send(packet);
              }
-@@ -295,4 +_,13 @@
-                 .forEach(serverPlayer -> serverLevel.getWaypointManager().remakeConnections(serverPlayer));
+@@ -281,4 +_,13 @@
+                 .forEach(player -> level.getWaypointManager().remakeConnections(player));
          }
      }
 +    // CraftBukkit start - Send to players

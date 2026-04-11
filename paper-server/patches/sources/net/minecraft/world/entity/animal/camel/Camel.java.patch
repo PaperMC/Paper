@@ -1,55 +1,55 @@
 --- a/net/minecraft/world/entity/animal/camel/Camel.java
 +++ b/net/minecraft/world/entity/animal/camel/Camel.java
-@@ -404,12 +_,12 @@
+@@ -419,12 +_,12 @@
          } else {
-             boolean flag = this.getHealth() < this.getMaxHealth();
-             if (flag) {
+             boolean couldHeal = this.getHealth() < this.getMaxHealth();
+             if (couldHeal) {
 -                this.heal(2.0F);
 +                this.heal(2.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // Paper - Add missing regain reason
              }
  
-             boolean flag1 = this.isTamed() && this.getAge() == 0 && this.canFallInLove();
-             if (flag1) {
+             boolean couldSetInLove = this.isTamed() && this.getAge() == 0 && this.canFallInLove();
+             if (couldSetInLove) {
 -                this.setInLove(player);
-+                this.setInLove(player, stack.copy()); // Paper - Fix EntityBreedEvent copying
++                this.setInLove(player, itemStack.copy()); // Paper - Fix EntityBreedEvent copying
              }
  
-             boolean isBaby = this.isBaby();
-@@ -469,9 +_,13 @@
+             boolean couldAgeUp = this.canAgeUp();
+@@ -482,9 +_,13 @@
      }
  
      @Override
--    protected void actuallyHurt(ServerLevel level, DamageSource damageSource, float amount) {
+-    protected void actuallyHurt(final ServerLevel level, final DamageSource source, final float dmg) {
 +    // CraftBukkit start - void -> boolean
-+    public boolean actuallyHurt(ServerLevel level, DamageSource damageSource, float amount, org.bukkit.event.entity.EntityDamageEvent event) {
-+        boolean damageResult = super.actuallyHurt(level, damageSource, amount, event);
++    public boolean actuallyHurt(final ServerLevel level, final DamageSource source, final float dmg, final org.bukkit.event.entity.EntityDamageEvent event) {
++        boolean damageResult = super.actuallyHurt(level, source, dmg, event);
 +        if (!damageResult) return false;
 +        // CraftBukkit end
          this.standUpInstantly();
--        super.actuallyHurt(level, damageSource, amount);
+-        super.actuallyHurt(level, source, dmg);
 +        return true; // CraftBukkit
      }
  
      @Override
-@@ -572,7 +_,7 @@
+@@ -581,7 +_,7 @@
      }
  
      public void sitDown() {
 -        if (!this.isCamelSitting()) {
 +        if (!this.isCamelSitting() && new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), true).callEvent()) { // Paper - Add EntityToggleSitEvent
-             this.makeSound(SoundEvents.CAMEL_SIT);
+             this.makeSound(this.getSitDownSound());
              this.setPose(Pose.SITTING);
              this.gameEvent(GameEvent.ENTITY_ACTION);
-@@ -581,7 +_,7 @@
+@@ -590,7 +_,7 @@
      }
  
      public void standUp() {
 -        if (this.isCamelSitting()) {
 +        if (this.isCamelSitting() && new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), false).callEvent()) { // Paper - Add EntityToggleSitEvent
-             this.makeSound(SoundEvents.CAMEL_STAND);
+             this.makeSound(this.getStandUpSound());
              this.setPose(Pose.STANDING);
              this.gameEvent(GameEvent.ENTITY_ACTION);
-@@ -590,6 +_,7 @@
+@@ -607,6 +_,7 @@
      }
  
      public void standUpInstantly() {

@@ -17,9 +17,9 @@ public interface FlowerBed extends Directional {
     /**
      * Sets the value of the 'flower_amount' property.
      *
-     * @param flower_amount the new 'flower_amount' value
+     * @param flowerAmount the new 'flower_amount' value
      */
-    void setFlowerAmount(int flower_amount);
+    void setFlowerAmount(int flowerAmount);
 
     // Paper start
     /**

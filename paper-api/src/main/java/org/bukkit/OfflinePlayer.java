@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
+import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import org.bukkit.ban.ProfileBanList;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.AnimalTamer;
@@ -20,7 +21,7 @@ import org.jspecify.annotations.Nullable;
  * player needing to be online.
  */
 @NullMarked
-public interface OfflinePlayer extends ServerOperator, AnimalTamer, ConfigurationSerializable, io.papermc.paper.persistence.PersistentDataViewHolder { // Paper - Add Offline PDC API
+public interface OfflinePlayer extends ServerOperator, AnimalTamer, ConfigurationSerializable, io.papermc.paper.persistence.PersistentDataViewHolder, PlayerHeadObjectContents.SkinSource { // Paper - Add Offline PDC API
 
     /**
      * Checks if this player is currently online
@@ -585,4 +586,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
     @Override
     io.papermc.paper.persistence.PersistentDataContainerView getPersistentDataContainer();
     // Paper end - add pdc to offline player
+
+    @Override
+    default void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.Builder builder) {
+        builder.skin(this.getPlayerProfile());
+    }
 }

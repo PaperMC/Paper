@@ -6,7 +6,7 @@ import java.lang.reflect.Field;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructureSets;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
@@ -34,15 +34,15 @@ public class StructureSeedConfigTest {
         final SpigotWorldConfig config = PaperConfigurations.SPIGOT_WORLD_DEFAULTS.get();
 
 
-        final Registry<StructureSet> structureSets = RegistryHelper.getRegistry().lookupOrThrow(Registries.STRUCTURE_SET);
+        final Registry<StructureSet> structureSets = RegistryHelper.registryAccess().lookupOrThrow(Registries.STRUCTURE_SET);
         for (final ResourceKey<StructureSet> setKey : structureSets.registryKeySet()) {
-            assertEquals(ResourceLocation.DEFAULT_NAMESPACE, setKey.location().getNamespace());
+            assertEquals(Identifier.DEFAULT_NAMESPACE, setKey.identifier().getNamespace());
             final StructureSet set = structureSets.getValueOrThrow(setKey);
             if (setKey == BuiltinStructureSets.STRONGHOLDS) { // special case due to seed matching world seed
                 assertEquals(0, set.placement().salt);
                 continue;
             }
-            int salt = switch (setKey.location().getPath()) {
+            int salt = switch (setKey.identifier().getPath()) {
                 case "villages" -> config.villageSeed;
                 case "desert_pyramids" -> config.desertSeed;
                 case "igloos" -> config.iglooSeed;

@@ -2,9 +2,9 @@ package org.bukkit.inventory.meta.trim;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 public interface TrimPattern extends Keyed, Translatable {
 
     // Start generate - TrimPattern
-    // @GeneratedFrom 1.21.8
     TrimPattern BOLT = getTrimPattern("bolt");
 
     TrimPattern COAST = getTrimPattern("coast");
@@ -54,8 +53,8 @@ public interface TrimPattern extends Keyed, Translatable {
     // End generate - TrimPattern
 
     @NotNull
-    private static TrimPattern getTrimPattern(@NotNull String key) {
-        return RegistryAccess.registryAccess().getRegistry(RegistryKey.TRIM_PATTERN).getOrThrow(NamespacedKey.minecraft(key));
+    private static TrimPattern getTrimPattern(@NotNull @KeyPattern.Value String key) {
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.TRIM_PATTERN).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     // Paper start - adventure

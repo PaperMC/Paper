@@ -1,61 +1,62 @@
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -28,18 +_,19 @@
+@@ -29,18 +_,20 @@
          this.info = info;
      }
  
--    private RegionFile getRegionFile(ChunkPos chunkPos) throws IOException {
-+    @org.jetbrains.annotations.Contract("_, false -> !null") @Nullable private RegionFile getRegionFile(ChunkPos chunkPos, boolean existingOnly) throws IOException { // CraftBukkit
-         long packedChunkPos = ChunkPos.asLong(chunkPos.getRegionX(), chunkPos.getRegionZ());
-         RegionFile regionFile = this.regionCache.getAndMoveToFirst(packedChunkPos);
-         if (regionFile != null) {
-             return regionFile;
+-    private RegionFile getRegionFile(final ChunkPos pos) throws IOException {
++    @org.jetbrains.annotations.Contract("_, false -> !null") private @Nullable RegionFile getRegionFile(final ChunkPos pos, boolean existingOnly) throws IOException { // CraftBukkit
+         long key = ChunkPos.pack(pos.getRegionX(), pos.getRegionZ());
+         RegionFile region = this.regionCache.getAndMoveToFirst(key);
+         if (region != null) {
+             return region;
          } else {
 -            if (this.regionCache.size() >= 256) {
-+            if (this.regionCache.size() >= io.papermc.paper.configuration.GlobalConfiguration.get().misc.regionFileCacheSize) { // Paper - Sanitise RegionFileCache and make configurable
++            int cacheSize = io.papermc.paper.configuration.GlobalConfiguration.get() == null ? 256 : io.papermc.paper.configuration.GlobalConfiguration.get().misc.regionFileCacheSize; // Paper - Sanitise RegionFileCache and make configurable - Config not available during initial FileFixerUpper run
++            if (this.regionCache.size() >= cacheSize) { // Paper - Sanitise RegionFileCache and make configurable
                  this.regionCache.removeLast().close();
              }
  
              FileUtil.createDirectoriesSafe(this.folder);
-             Path path = this.folder.resolve("r." + chunkPos.getRegionX() + "." + chunkPos.getRegionZ() + ".mca");
-+            if (existingOnly && !java.nio.file.Files.exists(path)) return null; // CraftBukkit
-             RegionFile regionFile1 = new RegionFile(this.info, path, this.folder, this.sync);
-             this.regionCache.putAndMoveToFirst(packedChunkPos, regionFile1);
-             return regionFile1;
+             Path file = this.folder.resolve("r." + pos.getRegionX() + "." + pos.getRegionZ() + ".mca");
++            if (existingOnly && !java.nio.file.Files.exists(file)) return null; // CraftBukkit
+             RegionFile newRegion = new RegionFile(this.info, file, this.folder, this.sync);
+             this.regionCache.putAndMoveToFirst(key, newRegion);
+             return newRegion;
 @@ -48,7 +_,12 @@
+     }
  
-     @Nullable
-     public CompoundTag read(ChunkPos chunkPos) throws IOException {
--        RegionFile regionFile = this.getRegionFile(chunkPos);
+     public @Nullable CompoundTag read(final ChunkPos pos) throws IOException {
+-        RegionFile region = this.getRegionFile(pos);
 +        // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-+        RegionFile regionFile = this.getRegionFile(chunkPos, true);
-+        if (regionFile == null) {
++        RegionFile region = this.getRegionFile(pos, true);
++        if (region == null) {
 +            return null;
 +        }
 +        // CraftBukkit end
  
          CompoundTag var4;
-         try (DataInputStream chunkDataInputStream = regionFile.getChunkDataInputStream(chunkPos)) {
+         try (DataInputStream regionChunkInputStream = region.getChunkDataInputStream(pos)) {
 @@ -63,7 +_,12 @@
      }
  
-     public void scanChunk(ChunkPos chunkPos, StreamTagVisitor visitor) throws IOException {
--        RegionFile regionFile = this.getRegionFile(chunkPos);
+     public void scanChunk(final ChunkPos pos, final StreamTagVisitor scanner) throws IOException {
+-        RegionFile region = this.getRegionFile(pos);
 +        // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-+        RegionFile regionFile = this.getRegionFile(chunkPos, true);
-+        if (regionFile == null) {
++        RegionFile region = this.getRegionFile(pos, true);
++        if (region == null) {
 +            return;
 +        }
 +        // CraftBukkit end
  
-         try (DataInputStream chunkDataInputStream = regionFile.getChunkDataInputStream(chunkPos)) {
-             if (chunkDataInputStream != null) {
-@@ -73,7 +_,7 @@
-     }
+         try (DataInputStream regionChunkInputStream = region.getChunkDataInputStream(pos)) {
+             if (regionChunkInputStream != null) {
+@@ -74,7 +_,7 @@
  
-     protected void write(ChunkPos chunkPos, @Nullable CompoundTag chunkData) throws IOException {
--        RegionFile regionFile = this.getRegionFile(chunkPos);
-+        RegionFile regionFile = this.getRegionFile(chunkPos, false); // CraftBukkit
-         if (chunkData == null) {
-             regionFile.clear(chunkPos);
-         } else {
+     protected void write(final ChunkPos pos, final @Nullable CompoundTag value) throws IOException {
+         if (!SharedConstants.DEBUG_DONT_SAVE_WORLD) {
+-            RegionFile region = this.getRegionFile(pos);
++            RegionFile region = this.getRegionFile(pos, false); // CraftBukkit
+             if (value == null) {
+                 region.clear(pos);
+             } else {

@@ -2,7 +2,6 @@ package org.bukkit.entity;
 
 import org.bukkit.attribute.Attribute;
 import org.bukkit.damage.DamageSource;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,7 +32,6 @@ public interface Damageable extends Entity {
      * @param amount amount of damage to deal
      * @param damageSource source to which the damage should be attributed
      */
-    @ApiStatus.Experimental
     void damage(double amount, @NotNull DamageSource damageSource);
 
     /**
@@ -106,7 +104,7 @@ public interface Damageable extends Entity {
      * to that value.
      * <p>
      * Note: An entity with a health bar ({@link Player}, {@link EnderDragon},
-     * {@link Wither}, etc...} will have their bar scaled accordingly.
+     * {@link Wither}, etc...) will have their bar scaled accordingly.
      *
      * @param health amount of health to set the maximum to
      * @deprecated use {@link Attribute#MAX_HEALTH}.

@@ -1,0 +1,43 @@
+--- a/net/minecraft/world/entity/animal/nautilus/AbstractNautilus.java
++++ b/net/minecraft/world/entity/animal/nautilus/AbstractNautilus.java
+@@ -141,8 +_,12 @@
+     ) {
+         int seaLevel = level.getSeaLevel();
+         int minSpawnLevel = seaLevel - 25;
++        // Paper start - Make water animal spawn height configurable
++        seaLevel = level.getMinecraftWorld().paperConfig().entities.spawning.wateranimalSpawnHeight.maximum.or(seaLevel - 5);
++        minSpawnLevel = level.getMinecraftWorld().paperConfig().entities.spawning.wateranimalSpawnHeight.minimum.or(minSpawnLevel);
++        // Paper end - Make water animal spawn height configurable
+         return pos.getY() >= minSpawnLevel
+-            && pos.getY() <= seaLevel - 5
++            && pos.getY() <= seaLevel // Paper - Make water animal spawn height configurable
+             && level.getFluidState(pos.below()).is(FluidTags.WATER)
+             && level.getBlockState(pos.above()).is(Blocks.WATER);
+     }
+@@ -263,7 +_,7 @@
+             boolean hasEffect = player.hasEffect(MobEffects.BREATH_OF_THE_NAUTILUS);
+             boolean shouldRefresh = level.getGameTime() % 40L == 0L;
+             if (!hasEffect || shouldRefresh) {
+-                player.addEffect(new MobEffectInstance(MobEffects.BREATH_OF_THE_NAUTILUS, 60, 0, true, true, true));
++                player.addEffect(new MobEffectInstance(MobEffects.BREATH_OF_THE_NAUTILUS, 60, 0, true, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.NAUTILUS); // Paper - Add cause
+             }
+         }
+     }
+@@ -431,7 +_,7 @@
+     }
+ 
+     private void tryToTame(final Player player) {
+-        if (this.random.nextInt(3) == 0) {
++        if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit - added event call
+             this.tame(player);
+             this.navigation.stop();
+             this.level().broadcastEntityEvent(this, EntityEvent.TAMING_SUCCEEDED);
+@@ -486,7 +_,7 @@
+ 
+     protected void createInventory() {
+         SimpleContainer old = this.inventory;
+-        this.inventory = new SimpleContainer(this.getInventorySize());
++        this.inventory = new SimpleContainer(this.getInventorySize(), (org.bukkit.entity.AbstractNautilus) this.getBukkitEntity()); // Paper - add owner
+         if (old != null) {
+             int max = Math.min(old.getContainerSize(), this.inventory.getContainerSize());
+ 

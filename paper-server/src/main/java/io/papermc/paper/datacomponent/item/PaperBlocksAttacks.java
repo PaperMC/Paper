@@ -6,12 +6,15 @@ import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
 import io.papermc.paper.datacomponent.item.blocksattacks.PaperDamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.PaperItemDamageFunction;
-import io.papermc.paper.registry.PaperRegistries;
-import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.registry.set.PaperRegistrySets;
+import io.papermc.paper.registry.set.RegistryKeySet;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
 import java.util.Optional;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.kyori.adventure.key.Key;
+import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
 import org.jspecify.annotations.Nullable;
@@ -46,9 +49,8 @@ public record PaperBlocksAttacks(
     }
 
     @Override
-    public @Nullable TagKey<DamageType> bypassedBy() {
-        final Optional<TagKey<DamageType>> tagKey = this.impl.bypassedBy().map(PaperRegistries::fromNms);
-        return tagKey.orElse(null);
+    public @Nullable RegistryKeySet<DamageType> bypassedBy() {
+        return this.impl.bypassedBy().map(holders -> PaperRegistrySets.convertToApi(RegistryKey.DAMAGE_TYPE, holders)).orElse(null);
     }
 
     @Override
@@ -67,7 +69,7 @@ public record PaperBlocksAttacks(
         private float disableCooldownScale = 1.0F;
         private List<DamageReduction> damageReductions = new ObjectArrayList<>();
         private ItemDamageFunction itemDamage = new PaperItemDamageFunction(net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction.DEFAULT);
-        private @Nullable TagKey<DamageType> bypassedBy;
+        private @Nullable RegistryKeySet<DamageType> bypassedBy;
         private @Nullable Key blockSound;
         private @Nullable Key disableSound;
 
@@ -104,7 +106,7 @@ public record PaperBlocksAttacks(
         }
 
         @Override
-        public Builder bypassedBy(@Nullable final TagKey<DamageType> bypassedBy) {
+        public Builder bypassedBy(final @Nullable RegistryKeySet<DamageType> bypassedBy) {
             this.bypassedBy = bypassedBy;
             return this;
         }
@@ -126,9 +128,9 @@ public record PaperBlocksAttacks(
             return new PaperBlocksAttacks(new net.minecraft.world.item.component.BlocksAttacks(
                 this.blockDelaySeconds,
                 this.disableCooldownScale,
-                this.damageReductions.stream().map(damageReduction -> ((PaperDamageReduction) damageReduction).getHandle()).toList(),
-                ((PaperItemDamageFunction) this.itemDamage).getHandle(),
-                Optional.ofNullable(this.bypassedBy).map(PaperRegistries::toNms),
+                this.damageReductions.stream().map(damageReduction -> ((PaperDamageReduction) damageReduction).internal()).toList(),
+                ((PaperItemDamageFunction) this.itemDamage).internal(),
+                Optional.ofNullable(this.bypassedBy).map(holders -> PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, Conversions.global().lookup(), holders)),
                 Optional.ofNullable(this.blockSound).map(PaperAdventure::resolveSound),
                 Optional.ofNullable(this.disableSound).map(PaperAdventure::resolveSound)
             ));

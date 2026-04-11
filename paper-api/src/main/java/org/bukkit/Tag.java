@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 public interface Tag<T extends Keyed> extends Keyed {
 
     // Start generate - Tag
-    // @GeneratedFrom 1.21.8
     String REGISTRY_BLOCKS = "blocks";
 
     Tag<Material> ACACIA_LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("acacia_logs"), Material.class);
@@ -49,9 +48,9 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> BAMBOO_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("bamboo_blocks"), Material.class);
 
-    Tag<Material> BAMBOO_PLANTABLE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("bamboo_plantable_on"), Material.class);
-
     Tag<Material> BANNERS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("banners"), Material.class);
+
+    Tag<Material> BARS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("bars"), Material.class);
 
     Tag<Material> BASE_STONE_NETHER = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("base_stone_nether"), Material.class);
 
@@ -69,7 +68,9 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> BEEHIVES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("beehives"), Material.class);
 
-    Tag<Material> BIG_DRIPLEAF_PLACEABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("big_dripleaf_placeable"), Material.class);
+    Tag<Material> BENEATH_BAMBOO_PODZOL_REPLACEABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("beneath_bamboo_podzol_replaceable"), Material.class);
+
+    Tag<Material> BENEATH_TREE_PODZOL_REPLACEABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("beneath_tree_podzol_replaceable"), Material.class);
 
     Tag<Material> BIRCH_LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("birch_logs"), Material.class);
 
@@ -83,15 +84,27 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> CAMPFIRES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("campfires"), Material.class);
 
+    Tag<Material> CAN_GLIDE_THROUGH = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("can_glide_through"), Material.class);
+
     Tag<Material> CANDLE_CAKES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("candle_cakes"), Material.class);
 
     Tag<Material> CANDLES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("candles"), Material.class);
+
+    Tag<Material> CANNOT_REPLACE_BELOW_TREE_TRUNK = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("cannot_replace_below_tree_trunk"), Material.class);
+
+    Tag<Material> CANNOT_SUPPORT_KELP = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("cannot_support_kelp"), Material.class);
+
+    Tag<Material> CANNOT_SUPPORT_SEAGRASS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("cannot_support_seagrass"), Material.class);
+
+    Tag<Material> CANNOT_SUPPORT_SNOW_LAYER = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("cannot_support_snow_layer"), Material.class);
 
     Tag<Material> CAULDRONS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("cauldrons"), Material.class);
 
     Tag<Material> CAVE_VINES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("cave_vines"), Material.class);
 
     Tag<Material> CEILING_HANGING_SIGNS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("ceiling_hanging_signs"), Material.class);
+
+    Tag<Material> CHAINS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("chains"), Material.class);
 
     Tag<Material> CHERRY_LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("cherry_logs"), Material.class);
 
@@ -106,6 +119,12 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> CONCRETE_POWDER = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("concrete_powder"), Material.class);
 
     Tag<Material> CONVERTABLE_TO_MUD = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("convertable_to_mud"), Material.class);
+
+    Tag<Material> COPPER = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("copper"), Material.class);
+
+    Tag<Material> COPPER_CHESTS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("copper_chests"), Material.class);
+
+    Tag<Material> COPPER_GOLEM_STATUES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("copper_golem_statues"), Material.class);
 
     Tag<Material> COPPER_ORES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("copper_ores"), Material.class);
 
@@ -141,11 +160,13 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> DRIPSTONE_REPLACEABLE_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("dripstone_replaceable_blocks"), Material.class);
 
-    Tag<Material> DRY_VEGETATION_MAY_PLACE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("dry_vegetation_may_place_on"), Material.class);
-
     Tag<Material> EDIBLE_FOR_SHEEP = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("edible_for_sheep"), Material.class);
 
     Tag<Material> EMERALD_ORES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("emerald_ores"), Material.class);
+
+    Tag<Material> ENABLES_BUBBLE_COLUMN_DRAG_DOWN = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("enables_bubble_column_drag_down"), Material.class);
+
+    Tag<Material> ENABLES_BUBBLE_COLUMN_PUSH_UP = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("enables_bubble_column_push_up"), Material.class);
 
     Tag<Material> ENCHANTMENT_POWER_PROVIDER = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("enchantment_power_provider"), Material.class);
 
@@ -167,6 +188,8 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> FLOWERS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("flowers"), Material.class);
 
+    Tag<Material> FOREST_ROCK_CAN_PLACE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("forest_rock_can_place_on"), Material.class);
+
     Tag<Material> FOXES_SPAWNABLE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("foxes_spawnable_on"), Material.class);
 
     Tag<Material> FROG_PREFER_JUMP_TO = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("frog_prefer_jump_to"), Material.class);
@@ -179,15 +202,27 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> GOLD_ORES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("gold_ores"), Material.class);
 
+    Tag<Material> GRASS_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("grass_blocks"), Material.class);
+
+    Tag<Material> GROWS_CROPS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("grows_crops"), Material.class);
+
     Tag<Material> GUARDED_BY_PIGLINS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("guarded_by_piglins"), Material.class);
 
     Tag<Material> HAPPY_GHAST_AVOIDS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("happy_ghast_avoids"), Material.class);
 
     Tag<Material> HOGLIN_REPELLENTS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("hoglin_repellents"), Material.class);
 
+    Tag<Material> HUGE_BROWN_MUSHROOM_CAN_PLACE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("huge_brown_mushroom_can_place_on"), Material.class);
+
+    Tag<Material> HUGE_RED_MUSHROOM_CAN_PLACE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("huge_red_mushroom_can_place_on"), Material.class);
+
     Tag<Material> ICE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("ice"), Material.class);
 
+    Tag<Material> ICE_SPIKE_REPLACEABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("ice_spike_replaceable"), Material.class);
+
     Tag<Material> IMPERMEABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("impermeable"), Material.class);
+
+    Tag<Material> INCORRECT_FOR_COPPER_TOOL = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("incorrect_for_copper_tool"), Material.class);
 
     Tag<Material> INCORRECT_FOR_DIAMOND_TOOL = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("incorrect_for_diamond_tool"), Material.class);
 
@@ -215,11 +250,15 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> JUNGLE_LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("jungle_logs"), Material.class);
 
+    Tag<Material> LANTERNS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("lanterns"), Material.class);
+
     Tag<Material> LAPIS_ORES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("lapis_ores"), Material.class);
 
     Tag<Material> LAVA_POOL_STONE_CANNOT_REPLACE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("lava_pool_stone_cannot_replace"), Material.class);
 
     Tag<Material> LEAVES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("leaves"), Material.class);
+
+    Tag<Material> LIGHTNING_RODS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("lightning_rods"), Material.class);
 
     Tag<Material> LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("logs"), Material.class);
 
@@ -247,9 +286,11 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> MOOSHROOMS_SPAWNABLE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("mooshrooms_spawnable_on"), Material.class);
 
+    Tag<Material> MOSS_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("moss_blocks"), Material.class);
+
     Tag<Material> MOSS_REPLACEABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("moss_replaceable"), Material.class);
 
-    Tag<Material> MUSHROOM_GROW_BLOCK = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("mushroom_grow_block"), Material.class);
+    Tag<Material> MUD = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("mud"), Material.class);
 
     Tag<Material> NEEDS_DIAMOND_TOOL = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("needs_diamond_tool"), Material.class);
 
@@ -264,6 +305,8 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> OAK_LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("oak_logs"), Material.class);
 
     Tag<Material> OCCLUDES_VIBRATION_SIGNALS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("occludes_vibration_signals"), Material.class);
+
+    Tag<Material> OVERRIDES_MUSHROOM_LIGHT_REQUIREMENT = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("overrides_mushroom_light_requirement"), Material.class);
 
     Tag<Material> OVERWORLD_CARVER_REPLACEABLES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("overworld_carver_replaceables"), Material.class);
 
@@ -284,6 +327,8 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> PRESSURE_PLATES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("pressure_plates"), Material.class);
 
     Tag<Material> PREVENT_MOB_SPAWNING_INSIDE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("prevent_mob_spawning_inside"), Material.class);
+
+    Tag<Material> PREVENTS_NEARBY_LEAF_DECAY = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("prevents_nearby_leaf_decay"), Material.class);
 
     Tag<Material> RABBITS_SPAWNABLE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("rabbits_spawnable_on"), Material.class);
 
@@ -311,8 +356,6 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> SLABS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("slabs"), Material.class);
 
-    Tag<Material> SMALL_DRIPLEAF_PLACEABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("small_dripleaf_placeable"), Material.class);
-
     Tag<Material> SMALL_FLOWERS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("small_flowers"), Material.class);
 
     Tag<Material> SMELTS_TO_GLASS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("smelts_to_glass"), Material.class);
@@ -324,10 +367,6 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> SNIFFER_EGG_HATCH_BOOST = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("sniffer_egg_hatch_boost"), Material.class);
 
     Tag<Material> SNOW = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("snow"), Material.class);
-
-    Tag<Material> SNOW_LAYER_CAN_SURVIVE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("snow_layer_can_survive_on"), Material.class);
-
-    Tag<Material> SNOW_LAYER_CANNOT_SURVIVE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("snow_layer_cannot_survive_on"), Material.class);
 
     Tag<Material> SOUL_FIRE_BASE_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("soul_fire_base_blocks"), Material.class);
 
@@ -348,6 +387,72 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> STONE_PRESSURE_PLATES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("stone_pressure_plates"), Material.class);
 
     Tag<Material> STRIDER_WARM_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("strider_warm_blocks"), Material.class);
+
+    Tag<Material> SUBSTRATE_OVERWORLD = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("substrate_overworld"), Material.class);
+
+    Tag<Material> SUPPORT_OVERRIDE_CACTUS_FLOWER = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("support_override_cactus_flower"), Material.class);
+
+    Tag<Material> SUPPORT_OVERRIDE_SNOW_LAYER = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("support_override_snow_layer"), Material.class);
+
+    Tag<Material> SUPPORTS_AZALEA = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_azalea"), Material.class);
+
+    Tag<Material> SUPPORTS_BAMBOO = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_bamboo"), Material.class);
+
+    Tag<Material> SUPPORTS_BIG_DRIPLEAF = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_big_dripleaf"), Material.class);
+
+    Tag<Material> SUPPORTS_CACTUS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_cactus"), Material.class);
+
+    Tag<Material> SUPPORTS_CHORUS_FLOWER = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_chorus_flower"), Material.class);
+
+    Tag<Material> SUPPORTS_CHORUS_PLANT = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_chorus_plant"), Material.class);
+
+    Tag<Material> SUPPORTS_COCOA = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_cocoa"), Material.class);
+
+    Tag<Material> SUPPORTS_CRIMSON_FUNGUS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_crimson_fungus"), Material.class);
+
+    Tag<Material> SUPPORTS_CRIMSON_ROOTS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_crimson_roots"), Material.class);
+
+    Tag<Material> SUPPORTS_CROPS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_crops"), Material.class);
+
+    Tag<Material> SUPPORTS_DRY_VEGETATION = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_dry_vegetation"), Material.class);
+
+    Tag<Material> SUPPORTS_FROGSPAWN = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_frogspawn"), Material.class);
+
+    Tag<Material> SUPPORTS_HANGING_MANGROVE_PROPAGULE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_hanging_mangrove_propagule"), Material.class);
+
+    Tag<Material> SUPPORTS_LILY_PAD = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_lily_pad"), Material.class);
+
+    Tag<Material> SUPPORTS_MANGROVE_PROPAGULE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_mangrove_propagule"), Material.class);
+
+    Tag<Material> SUPPORTS_MELON_STEM = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_melon_stem"), Material.class);
+
+    Tag<Material> SUPPORTS_MELON_STEM_FRUIT = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_melon_stem_fruit"), Material.class);
+
+    Tag<Material> SUPPORTS_NETHER_SPROUTS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_nether_sprouts"), Material.class);
+
+    Tag<Material> SUPPORTS_NETHER_WART = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_nether_wart"), Material.class);
+
+    Tag<Material> SUPPORTS_PUMPKIN_STEM = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_pumpkin_stem"), Material.class);
+
+    Tag<Material> SUPPORTS_PUMPKIN_STEM_FRUIT = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_pumpkin_stem_fruit"), Material.class);
+
+    Tag<Material> SUPPORTS_SMALL_DRIPLEAF = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_small_dripleaf"), Material.class);
+
+    Tag<Material> SUPPORTS_STEM_CROPS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_stem_crops"), Material.class);
+
+    Tag<Material> SUPPORTS_STEM_FRUIT = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_stem_fruit"), Material.class);
+
+    Tag<Material> SUPPORTS_SUGAR_CANE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_sugar_cane"), Material.class);
+
+    Tag<Material> SUPPORTS_SUGAR_CANE_ADJACENTLY = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_sugar_cane_adjacently"), Material.class);
+
+    Tag<Material> SUPPORTS_VEGETATION = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_vegetation"), Material.class);
+
+    Tag<Material> SUPPORTS_WARPED_FUNGUS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_warped_fungus"), Material.class);
+
+    Tag<Material> SUPPORTS_WARPED_ROOTS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_warped_roots"), Material.class);
+
+    Tag<Material> SUPPORTS_WITHER_ROSE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("supports_wither_rose"), Material.class);
 
     Tag<Material> SWORD_EFFICIENT = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("sword_efficient"), Material.class);
 
@@ -401,6 +506,8 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> WOODEN_PRESSURE_PLATES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wooden_pressure_plates"), Material.class);
 
+    Tag<Material> WOODEN_SHELVES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wooden_shelves"), Material.class);
+
     Tag<Material> WOODEN_SLABS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wooden_slabs"), Material.class);
 
     Tag<Material> WOODEN_STAIRS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wooden_stairs"), Material.class);
@@ -429,6 +536,8 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_BANNERS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("banners"), Material.class);
 
+    Tag<Material> ITEMS_BARS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("bars"), Material.class);
+
     Tag<Material> ITEMS_BEACON_PAYMENT_ITEMS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("beacon_payment_items"), Material.class);
 
     Tag<Material> ITEMS_BEDS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("beds"), Material.class);
@@ -453,9 +562,17 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_CAMEL_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("camel_food"), Material.class);
 
+    Tag<Material> ITEMS_CAMEL_HUSK_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("camel_husk_food"), Material.class);
+
     Tag<Material> ITEMS_CANDLES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("candles"), Material.class);
 
+    Tag<Material> ITEMS_CAT_COLLAR_DYES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("cat_collar_dyes"), Material.class);
+
     Tag<Material> ITEMS_CAT_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("cat_food"), Material.class);
+
+    Tag<Material> ITEMS_CAULDRON_CAN_REMOVE_DYE = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("cauldron_can_remove_dye"), Material.class);
+
+    Tag<Material> ITEMS_CHAINS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("chains"), Material.class);
 
     Tag<Material> ITEMS_CHERRY_LOGS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("cherry_logs"), Material.class);
 
@@ -475,7 +592,15 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_COMPLETES_FIND_TREE_TUTORIAL = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("completes_find_tree_tutorial"), Material.class);
 
+    Tag<Material> ITEMS_COPPER = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("copper"), Material.class);
+
+    Tag<Material> ITEMS_COPPER_CHESTS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("copper_chests"), Material.class);
+
+    Tag<Material> ITEMS_COPPER_GOLEM_STATUES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("copper_golem_statues"), Material.class);
+
     Tag<Material> ITEMS_COPPER_ORES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("copper_ores"), Material.class);
+
+    Tag<Material> ITEMS_COPPER_TOOL_MATERIALS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("copper_tool_materials"), Material.class);
 
     Tag<Material> ITEMS_COW_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("cow_food"), Material.class);
 
@@ -505,7 +630,7 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_DUPLICATES_ALLAYS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("duplicates_allays"), Material.class);
 
-    Tag<Material> ITEMS_DYEABLE = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("dyeable"), Material.class);
+    Tag<Material> ITEMS_DYES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("dyes"), Material.class);
 
     Tag<Material> ITEMS_EGGS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("eggs"), Material.class);
 
@@ -533,7 +658,11 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_ENCHANTABLE_LEG_ARMOR = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("enchantable/leg_armor"), Material.class);
 
+    Tag<Material> ITEMS_ENCHANTABLE_LUNGE = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("enchantable/lunge"), Material.class);
+
     Tag<Material> ITEMS_ENCHANTABLE_MACE = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("enchantable/mace"), Material.class);
+
+    Tag<Material> ITEMS_ENCHANTABLE_MELEE_WEAPON = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("enchantable/melee_weapon"), Material.class);
 
     Tag<Material> ITEMS_ENCHANTABLE_MINING = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("enchantable/mining"), Material.class);
 
@@ -541,7 +670,7 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_ENCHANTABLE_SHARP_WEAPON = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("enchantable/sharp_weapon"), Material.class);
 
-    Tag<Material> ITEMS_ENCHANTABLE_SWORD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("enchantable/sword"), Material.class);
+    Tag<Material> ITEMS_ENCHANTABLE_SWEEPING = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("enchantable/sweeping"), Material.class);
 
     Tag<Material> ITEMS_ENCHANTABLE_TRIDENT = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("enchantable/trident"), Material.class);
 
@@ -575,6 +704,8 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_GOLD_TOOL_MATERIALS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("gold_tool_materials"), Material.class);
 
+    Tag<Material> ITEMS_GRASS_BLOCKS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("grass_blocks"), Material.class);
+
     Tag<Material> ITEMS_HANGING_SIGNS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("hanging_signs"), Material.class);
 
     Tag<Material> ITEMS_HAPPY_GHAST_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("happy_ghast_food"), Material.class);
@@ -601,6 +732,8 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_JUNGLE_LOGS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("jungle_logs"), Material.class);
 
+    Tag<Material> ITEMS_LANTERNS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("lanterns"), Material.class);
+
     Tag<Material> ITEMS_LAPIS_ORES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("lapis_ores"), Material.class);
 
     Tag<Material> ITEMS_LEAVES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("leaves"), Material.class);
@@ -608,6 +741,8 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> ITEMS_LECTERN_BOOKS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("lectern_books"), Material.class);
 
     Tag<Material> ITEMS_LEG_ARMOR = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("leg_armor"), Material.class);
+
+    Tag<Material> ITEMS_LIGHTNING_RODS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("lightning_rods"), Material.class);
 
     Tag<Material> ITEMS_LLAMA_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("llama_food"), Material.class);
 
@@ -617,11 +752,27 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_LOGS_THAT_BURN = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("logs_that_burn"), Material.class);
 
+    Tag<Material> ITEMS_LOOM_DYES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("loom_dyes"), Material.class);
+
+    Tag<Material> ITEMS_LOOM_PATTERNS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("loom_patterns"), Material.class);
+
     Tag<Material> ITEMS_MANGROVE_LOGS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("mangrove_logs"), Material.class);
 
     Tag<Material> ITEMS_MAP_INVISIBILITY_EQUIPMENT = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("map_invisibility_equipment"), Material.class);
 
     Tag<Material> ITEMS_MEAT = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("meat"), Material.class);
+
+    Tag<Material> ITEMS_METAL_NUGGETS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("metal_nuggets"), Material.class);
+
+    Tag<Material> ITEMS_MOSS_BLOCKS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("moss_blocks"), Material.class);
+
+    Tag<Material> ITEMS_MUD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("mud"), Material.class);
+
+    Tag<Material> ITEMS_NAUTILUS_BUCKET_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("nautilus_bucket_food"), Material.class);
+
+    Tag<Material> ITEMS_NAUTILUS_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("nautilus_food"), Material.class);
+
+    Tag<Material> ITEMS_NAUTILUS_TAMING_ITEMS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("nautilus_taming_items"), Material.class);
 
     Tag<Material> ITEMS_NETHERITE_TOOL_MATERIALS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("netherite_tool_materials"), Material.class);
 
@@ -669,6 +820,8 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_REPAIRS_CHAIN_ARMOR = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("repairs_chain_armor"), Material.class);
 
+    Tag<Material> ITEMS_REPAIRS_COPPER_ARMOR = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("repairs_copper_armor"), Material.class);
+
     Tag<Material> ITEMS_REPAIRS_DIAMOND_ARMOR = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("repairs_diamond_armor"), Material.class);
 
     Tag<Material> ITEMS_REPAIRS_GOLD_ARMOR = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("repairs_gold_armor"), Material.class);
@@ -686,6 +839,8 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> ITEMS_SAND = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("sand"), Material.class);
 
     Tag<Material> ITEMS_SAPLINGS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("saplings"), Material.class);
+
+    Tag<Material> ITEMS_SHEARABLE_FROM_COPPER_GOLEM = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("shearable_from_copper_golem"), Material.class);
 
     Tag<Material> ITEMS_SHEEP_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("sheep_food"), Material.class);
 
@@ -708,6 +863,8 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> ITEMS_SNIFFER_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("sniffer_food"), Material.class);
 
     Tag<Material> ITEMS_SOUL_FIRE_BASE_BLOCKS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("soul_fire_base_blocks"), Material.class);
+
+    Tag<Material> ITEMS_SPEARS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("spears"), Material.class);
 
     Tag<Material> ITEMS_SPRUCE_LOGS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("spruce_logs"), Material.class);
 
@@ -749,6 +906,8 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_WITHER_SKELETON_DISLIKED_WEAPONS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("wither_skeleton_disliked_weapons"), Material.class);
 
+    Tag<Material> ITEMS_WOLF_COLLAR_DYES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("wolf_collar_dyes"), Material.class);
+
     Tag<Material> ITEMS_WOLF_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("wolf_food"), Material.class);
 
     Tag<Material> ITEMS_WOODEN_BUTTONS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("wooden_buttons"), Material.class);
@@ -758,6 +917,8 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> ITEMS_WOODEN_FENCES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("wooden_fences"), Material.class);
 
     Tag<Material> ITEMS_WOODEN_PRESSURE_PLATES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("wooden_pressure_plates"), Material.class);
+
+    Tag<Material> ITEMS_WOODEN_SHELVES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("wooden_shelves"), Material.class);
 
     Tag<Material> ITEMS_WOODEN_SLABS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("wooden_slabs"), Material.class);
 
@@ -771,13 +932,25 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_WOOL_CARPETS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("wool_carpets"), Material.class);
 
+    Tag<Material> ITEMS_ZOMBIE_HORSE_FOOD = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("zombie_horse_food"), Material.class);
+
     String REGISTRY_FLUIDS = "fluids";
 
+    Tag<Fluid> FLUIDS_BUBBLE_COLUMN_CAN_OCCUPY = Bukkit.getTag(REGISTRY_FLUIDS, NamespacedKey.minecraft("bubble_column_can_occupy"), Fluid.class);
+
     Tag<Fluid> FLUIDS_LAVA = Bukkit.getTag(REGISTRY_FLUIDS, NamespacedKey.minecraft("lava"), Fluid.class);
+
+    Tag<Fluid> FLUIDS_SUPPORTS_FROGSPAWN = Bukkit.getTag(REGISTRY_FLUIDS, NamespacedKey.minecraft("supports_frogspawn"), Fluid.class);
+
+    Tag<Fluid> FLUIDS_SUPPORTS_LILY_PAD = Bukkit.getTag(REGISTRY_FLUIDS, NamespacedKey.minecraft("supports_lily_pad"), Fluid.class);
+
+    Tag<Fluid> FLUIDS_SUPPORTS_SUGAR_CANE_ADJACENTLY = Bukkit.getTag(REGISTRY_FLUIDS, NamespacedKey.minecraft("supports_sugar_cane_adjacently"), Fluid.class);
 
     Tag<Fluid> FLUIDS_WATER = Bukkit.getTag(REGISTRY_FLUIDS, NamespacedKey.minecraft("water"), Fluid.class);
 
     String REGISTRY_ENTITY_TYPES = "entity_types";
+
+    Tag<EntityType> ENTITY_TYPES_ACCEPTS_IRON_GOLEM_GIFT = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("accepts_iron_golem_gift"), EntityType.class);
 
     Tag<EntityType> ENTITY_TYPES_AQUATIC = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("aquatic"), EntityType.class);
 
@@ -793,15 +966,27 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<EntityType> ENTITY_TYPES_BOAT = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("boat"), EntityType.class);
 
+    Tag<EntityType> ENTITY_TYPES_BURN_IN_DAYLIGHT = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("burn_in_daylight"), EntityType.class);
+
     Tag<EntityType> ENTITY_TYPES_CAN_BREATHE_UNDER_WATER = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("can_breathe_under_water"), EntityType.class);
 
     Tag<EntityType> ENTITY_TYPES_CAN_EQUIP_HARNESS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("can_equip_harness"), EntityType.class);
 
     Tag<EntityType> ENTITY_TYPES_CAN_EQUIP_SADDLE = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("can_equip_saddle"), EntityType.class);
 
+    Tag<EntityType> ENTITY_TYPES_CAN_FLOAT_WHILE_RIDDEN = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("can_float_while_ridden"), EntityType.class);
+
     Tag<EntityType> ENTITY_TYPES_CAN_TURN_IN_BOATS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("can_turn_in_boats"), EntityType.class);
 
     Tag<EntityType> ENTITY_TYPES_CAN_WEAR_HORSE_ARMOR = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("can_wear_horse_armor"), EntityType.class);
+
+    Tag<EntityType> ENTITY_TYPES_CAN_WEAR_NAUTILUS_ARMOR = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("can_wear_nautilus_armor"), EntityType.class);
+
+    Tag<EntityType> ENTITY_TYPES_CANDIDATE_FOR_IRON_GOLEM_GIFT = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("candidate_for_iron_golem_gift"), EntityType.class);
+
+    Tag<EntityType> ENTITY_TYPES_CANNOT_BE_AGE_LOCKED = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("cannot_be_age_locked"), EntityType.class);
+
+    Tag<EntityType> ENTITY_TYPES_CANNOT_BE_PUSHED_ONTO_BOATS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("cannot_be_pushed_onto_boats"), EntityType.class);
 
     Tag<EntityType> ENTITY_TYPES_DEFLECTS_PROJECTILES = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("deflects_projectiles"), EntityType.class);
 
@@ -830,6 +1015,8 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<EntityType> ENTITY_TYPES_IMPACT_PROJECTILES = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("impact_projectiles"), EntityType.class);
 
     Tag<EntityType> ENTITY_TYPES_INVERTED_HEALING_AND_HARM = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("inverted_healing_and_harm"), EntityType.class);
+
+    Tag<EntityType> ENTITY_TYPES_NAUTILUS_HOSTILES = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("nautilus_hostiles"), EntityType.class);
 
     Tag<EntityType> ENTITY_TYPES_NO_ANGER_FROM_WIND_CHARGE = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("no_anger_from_wind_charge"), EntityType.class);
 
@@ -869,18 +1056,54 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<GameEvent> GAME_EVENT_WARDEN_CAN_LISTEN = Bukkit.getTag(REGISTRY_GAME_EVENTS, NamespacedKey.minecraft("warden_can_listen"), GameEvent.class);
     // End generate - Tag
+    //<editor-fold desc="deprecated tags" defaultstate="collapsed">
     /**
-     * @deprecated {@link #WOOL_CARPETS}.
+     * @deprecated replaced by {@link #WOOL_CARPETS}.
      */
-    @Deprecated(since = "1.19")
+    @Deprecated(since = "1.19", forRemoval = true)
     Tag<Material> CARPETS = WOOL_CARPETS;
+    /**
+     * @deprecated replaced by {@link #CANNOT_SUPPORT_SNOW_LAYER}
+     */
+    @Deprecated(since = "26.1", forRemoval = true)
+    Tag<Material> SNOW_LAYER_CANNOT_SURVIVE_ON = CANNOT_SUPPORT_SNOW_LAYER;
+    /**
+     * @deprecated replaced by {@link #SUPPORT_OVERRIDE_SNOW_LAYER}
+     */
+    @Deprecated(since = "26.1", forRemoval = true)
+    Tag<Material> SNOW_LAYER_CAN_SURVIVE_ON = SUPPORT_OVERRIDE_SNOW_LAYER;
+    /**
+     * @deprecated partially replaced by {@link #OVERRIDES_MUSHROOM_LIGHT_REQUIREMENT}
+     */
+    @Deprecated(since = "26.1", forRemoval = true)
+    Tag<Material> MUSHROOM_GROW_BLOCK = OVERRIDES_MUSHROOM_LIGHT_REQUIREMENT;
+    /**
+     * @deprecated replaced by {@link #SUPPORTS_SMALL_DRIPLEAF}
+     */
+    @Deprecated(since = "26.1", forRemoval = true)
+    Tag<Material> SMALL_DRIPLEAF_PLACEABLE = SUPPORTS_SMALL_DRIPLEAF;
+    /**
+     * @deprecated replaced by {@link #SUPPORTS_BIG_DRIPLEAF}
+     */
+    @Deprecated(since = "26.1", forRemoval = true)
+    Tag<Material> BIG_DRIPLEAF_PLACEABLE = SUPPORTS_BIG_DRIPLEAF;
+    /**
+     * @deprecated replaced by {@link #SUPPORTS_BAMBOO}
+     */
+    @Deprecated(since = "26.1", forRemoval = true)
+    Tag<Material> BAMBOO_PLANTABLE_ON = SUPPORTS_BAMBOO;
+    /**
+     * @deprecated replaced by {@link #SUPPORTS_DRY_VEGETATION}
+     */
+    @Deprecated(since = "26.1", forRemoval = true)
+    Tag<Material> DRY_VEGETATION_MAY_PLACE_ON = SUPPORTS_DRY_VEGETATION;
     /**
      * Vanilla block tag representing all blocks which dead bushes may be placed on.
      *
-     * @deprecated partially replaced by {@link #DRY_VEGETATION_MAY_PLACE_ON}
+     * @deprecated partially replaced by {@link #SUPPORTS_DRY_VEGETATION}
      */
     @Deprecated(since = "1.21.5", forRemoval = true)
-    Tag<Material> DEAD_BUSH_MAY_PLACE_ON = DRY_VEGETATION_MAY_PLACE_ON;
+    Tag<Material> DEAD_BUSH_MAY_PLACE_ON = SUPPORTS_DRY_VEGETATION;
     /**
      * @deprecated replaced by {@link #TRIGGERS_AMBIENT_DESERT_DRY_VEGETATION_BLOCK_SOUNDS}
      */
@@ -890,23 +1113,23 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla block tag representing all blocks that are replaceable by
      * dripstone.
      *
-     * @deprecated use {@link #DRIPSTONE_REPLACEABLE_BLOCKS}
+     * @deprecated replaced by {@link #DRIPSTONE_REPLACEABLE_BLOCKS}
      */
     @Deprecated(since = "1.21.4", forRemoval = true)
     Tag<Material> DRIPSTONE_REPLACEABLE = DRIPSTONE_REPLACEABLE_BLOCKS;
     /**
      * Vanilla item tag representing all piglin food.
      *
-     * @deprecated use {@link #ITEMS_PIGLIN_FOOD}
+     * @deprecated replaced by {@link #ITEMS_PIGLIN_FOOD}
      */
-    @Deprecated(since = "1.20.5")
+    @Deprecated(since = "1.20.5", forRemoval = true)
     Tag<Material> PIGLIN_FOOD = ITEMS_PIGLIN_FOOD;
     /**
      * Vanilla item tag representing all fox food.
      *
-     * @deprecated use {@link #ITEMS_FOX_FOOD}
+     * @deprecated replaced by {@link #ITEMS_FOX_FOOD}
      */
-    @Deprecated(since = "1.20.5")
+    @Deprecated(since = "1.20.5", forRemoval = true)
     Tag<Material> FOX_FOOD = ITEMS_FOX_FOOD;
     /**
      * Vanilla item tag representing all furnace materials.
@@ -918,7 +1141,7 @@ public interface Tag<T extends Keyed> extends Keyed {
     /**
      * Vanilla item tag representing all items which modify note block sounds when placed on top.
      *
-     * @deprecated use {@link #ITEMS_NOTEBLOCK_TOP_INSTRUMENTS}
+     * @deprecated replaced by {@link #ITEMS_NOTEBLOCK_TOP_INSTRUMENTS}
      */
     @Deprecated(since = "1.21.4", forRemoval = true)
     Tag<Material> ITEMS_NOTE_BLOCK_TOP_INSTRUMENTS = ITEMS_NOTEBLOCK_TOP_INSTRUMENTS;
@@ -934,16 +1157,18 @@ public interface Tag<T extends Keyed> extends Keyed {
     /**
      * Vanilla item tag representing all items which tempt axolotls.
      *
-     * @deprecated use {@link #ITEMS_AXOLOTL_FOOD}
+     * @deprecated replaced by {@link #ITEMS_AXOLOTL_FOOD}
      */
-    @Deprecated(since = "1.20.5")
+    @Deprecated(since = "1.20.5", forRemoval = true)
     Tag<Material> AXOLOTL_TEMPT_ITEMS = ITEMS_AXOLOTL_FOOD;
     /**
      * Vanilla tag representing entities which deflect arrows.
-     * @deprecated use {@link #ENTITY_TYPES_DEFLECTS_PROJECTILES}
+     *
+     * @deprecated replaced by {@link #ENTITY_TYPES_DEFLECTS_PROJECTILES}
      */
-    @Deprecated(since = "1.20.5")
+    @Deprecated(since = "1.20.5", forRemoval = true)
     Tag<EntityType> ENTITY_TYPES_DEFLECTS_ARROWS = ENTITY_TYPES_DEFLECTS_PROJECTILES;
+    //</editor-fold>
 
     /**
      * Returns whether or not this tag has an entry for the specified item.

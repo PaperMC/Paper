@@ -30,7 +30,7 @@ public interface PlayerTextures {
     /**
      * Checks if the profile stores no textures.
      *
-     * @return <code>true</code> if the profile stores no textures
+     * @return {@code true} if the profile stores no textures
      */
     boolean isEmpty();
 
@@ -42,7 +42,7 @@ public interface PlayerTextures {
     /**
      * Gets the URL that points to the player's skin.
      *
-     * @return the URL of the player's skin, or <code>null</code> if not set
+     * @return the URL of the player's skin, or {@code null} if not set
      */
     @Nullable
     URL getSkin();
@@ -56,7 +56,7 @@ public interface PlayerTextures {
      * http://textures.minecraft.net/texture/b3fbd454b599df593f57101bfca34e67d292a8861213d2202bb575da7fd091ac
      * </pre>
      *
-     * @param skinUrl the URL of the player's skin, or <code>null</code> to
+     * @param skinUrl the URL of the player's skin, or {@code null} to
      * unset it
      */
     void setSkin(@Nullable URL skinUrl);
@@ -69,13 +69,13 @@ public interface PlayerTextures {
      * http://textures.minecraft.net/texture/b3fbd454b599df593f57101bfca34e67d292a8861213d2202bb575da7fd091ac
      * </pre>
      * <p>
-     * A skin model of <code>null</code> results in {@link SkinModel#CLASSIC} to
+     * A skin model of {@code null} results in {@link SkinModel#CLASSIC} to
      * be used.
      *
-     * @param skinUrl the URL of the player's skin, or <code>null</code> to
+     * @param skinUrl the URL of the player's skin, or {@code null} to
      * unset it
      * @param skinModel the skin model, ignored if the skin URL is
-     * <code>null</code>
+     * {@code null}
      */
     void setSkin(@Nullable URL skinUrl, @Nullable SkinModel skinModel);
 
@@ -92,7 +92,7 @@ public interface PlayerTextures {
     /**
      * Gets the URL that points to the player's cape.
      *
-     * @return the URL of the player's cape, or <code>null</code> if not set
+     * @return the URL of the player's cape, or {@code null} if not set
      */
     @Nullable
     URL getCape();
@@ -105,7 +105,7 @@ public interface PlayerTextures {
      * http://textures.minecraft.net/texture/2340c0e03dd24a11b15a8b33c2a7e9e32abb2051b2481d0ba7defd635ca7a933
      * </pre>
      *
-     * @param capeUrl the URL of the player's cape, or <code>null</code> to
+     * @param capeUrl the URL of the player's cape, or {@code null} to
      * unset it
      */
     void setCape(@Nullable URL capeUrl);
@@ -113,14 +113,14 @@ public interface PlayerTextures {
     /**
      * Gets the timestamp at which the profile was last updated.
      *
-     * @return the timestamp, or <code>0</code> if unknown
+     * @return the timestamp, or {@code 0} if unknown
      */
     long getTimestamp();
 
     /**
      * Checks if the textures are signed and the signature is valid.
      *
-     * @return <code>true</code> if the textures are signed and the signature is
+     * @return {@code true} if the textures are signed and the signature is
      * valid
      */
     boolean isSigned();

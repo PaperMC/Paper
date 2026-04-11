@@ -15,6 +15,7 @@ import io.papermc.paper.registry.data.JukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PigVariantRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
+import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
 import org.bukkit.Art;
 import org.bukkit.GameEvent;
@@ -29,6 +30,7 @@ import org.bukkit.entity.Cow;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.ZombieNautilus;
 
 import static io.papermc.paper.registry.event.RegistryEventProviderImpl.create;
 
@@ -39,7 +41,6 @@ import static io.papermc.paper.registry.event.RegistryEventProviderImpl.create;
 public final class RegistryEvents {
 
     // Start generate - RegistryEvents
-    // @GeneratedFrom 1.21.8
     public static final RegistryEventProvider<GameEvent, GameEventRegistryEntry.Builder> GAME_EVENT = create(RegistryKey.GAME_EVENT);
     public static final RegistryEventProvider<DamageType, DamageTypeRegistryEntry.Builder> DAMAGE_TYPE = create(RegistryKey.DAMAGE_TYPE);
     public static final RegistryEventProvider<Wolf.Variant, WolfVariantRegistryEntry.Builder> WOLF_VARIANT = create(RegistryKey.WOLF_VARIANT);
@@ -53,6 +54,7 @@ public final class RegistryEvents {
     public static final RegistryEventProvider<Chicken.Variant, ChickenVariantRegistryEntry.Builder> CHICKEN_VARIANT = create(RegistryKey.CHICKEN_VARIANT);
     public static final RegistryEventProvider<Cow.Variant, CowVariantRegistryEntry.Builder> COW_VARIANT = create(RegistryKey.COW_VARIANT);
     public static final RegistryEventProvider<Pig.Variant, PigVariantRegistryEntry.Builder> PIG_VARIANT = create(RegistryKey.PIG_VARIANT);
+    public static final RegistryEventProvider<ZombieNautilus.Variant, ZombieNautilusVariantRegistryEntry.Builder> ZOMBIE_NAUTILUS_VARIANT = create(RegistryKey.ZOMBIE_NAUTILUS_VARIANT);
     public static final RegistryEventProvider<Dialog, DialogRegistryEntry.Builder> DIALOG = create(RegistryKey.DIALOG);
     // End generate - RegistryEvents
 

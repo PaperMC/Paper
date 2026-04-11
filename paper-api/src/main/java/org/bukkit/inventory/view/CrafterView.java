@@ -18,7 +18,7 @@ public interface CrafterView extends InventoryView {
      * Checks if the given crafter slot is disabled.
      *
      * @param slot the slot to check
-     * @return true if the slot is disabled otherwise false
+     * @return whether the slot is disabled
      */
     boolean isSlotDisabled(int slot);
 
@@ -33,7 +33,7 @@ public interface CrafterView extends InventoryView {
      * Sets the status of the crafter slot.
      *
      * @param slot the slot to set the status of
-     * @param disabled true if the slot should be disabled otherwise false
+     * @param disabled whether the slot should be disabled
      */
     void setSlotDisabled(int slot, boolean disabled);
 }

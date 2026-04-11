@@ -5,7 +5,8 @@ import io.papermc.paper.registry.HolderableBase;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.animal.PigVariant;
+import net.minecraft.world.entity.animal.pig.PigSoundVariant;
+import net.minecraft.world.entity.animal.pig.PigVariant;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.bukkit.Material;
@@ -17,13 +18,13 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class CraftPig extends CraftAnimals implements Pig {
 
-    public CraftPig(CraftServer server, net.minecraft.world.entity.animal.Pig entity) {
+    public CraftPig(CraftServer server, net.minecraft.world.entity.animal.pig.Pig entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Pig getHandle() {
-        return (net.minecraft.world.entity.animal.Pig) this.entity;
+    public net.minecraft.world.entity.animal.pig.Pig getHandle() {
+        return (net.minecraft.world.entity.animal.pig.Pig) this.entity;
     }
 
     @Override
@@ -82,18 +83,22 @@ public class CraftPig extends CraftAnimals implements Pig {
         this.getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
     }
 
-    public static class CraftVariant extends HolderableBase<PigVariant> implements Variant {
+    @Override
+    public SoundVariant getSoundVariant() {
+        return CraftSoundVariant.minecraftHolderToBukkit(this.getHandle().getSoundVariant());
+    }
 
-        public static Variant minecraftToBukkit(PigVariant minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.PIG_VARIANT);
-        }
+    @Override
+    public void setSoundVariant(SoundVariant variant) {
+        Preconditions.checkArgument(variant != null, "variant cannot be null");
+
+        this.getHandle().setSoundVariant(CraftSoundVariant.bukkitToMinecraftHolder(variant));
+    }
+
+    public static class CraftVariant extends HolderableBase<PigVariant> implements Variant {
 
         public static Variant minecraftHolderToBukkit(Holder<PigVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.PIG_VARIANT);
-        }
-
-        public static PigVariant bukkitToMinecraft(Variant bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<PigVariant> bukkitToMinecraftHolder(Variant bukkit) {
@@ -101,6 +106,21 @@ public class CraftPig extends CraftAnimals implements Pig {
         }
 
         public CraftVariant(final Holder<PigVariant> holder) {
+            super(holder);
+        }
+    }
+
+    public static class CraftSoundVariant extends HolderableBase<PigSoundVariant> implements SoundVariant {
+
+        public static SoundVariant minecraftHolderToBukkit(Holder<PigSoundVariant> minecraft) {
+            return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.PIG_SOUND_VARIANT);
+        }
+
+        public static Holder<PigSoundVariant> bukkitToMinecraftHolder(SoundVariant bukkit) {
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
+        }
+
+        public CraftSoundVariant(final Holder<PigSoundVariant> holder) {
             super(holder);
         }
     }

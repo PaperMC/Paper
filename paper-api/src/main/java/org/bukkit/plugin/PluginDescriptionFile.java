@@ -269,7 +269,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
     // Paper end - plugin loader api
     // Paper start - oh my goddddd
     /**
-     * Don't use this.
+     * @hidden
      */
     @org.jetbrains.annotations.ApiStatus.Internal
     public PluginDescriptionFile(String rawName, String name, List<String> provides, String main, String classLoaderOf, List<String> depend, List<String> softDepend, List<String> loadBefore, String version, Map<String, Map<String, Object>> commands, String description, List<String> authors, List<String> contributors, String website, String prefix, PluginLoadOrder order, List<Permission> permissions, PermissionDefault defaultPerm, Set<PluginAwareness> awareness, String apiVersion, List<String> libraries) {
@@ -379,7 +379,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      * <li>It is good practice to name your jar the same as this, for example
      *     'MyPlugin.jar'.
      * <li>Case sensitive.
-     * <li>The is the token referenced in {@link #getDepend()}, {@link
+     * <li>It's the token referenced in {@link #getDepend()}, {@link
      *     #getSoftDepend()}, and {@link #getLoadBefore()}.
      * <li>Using spaces in the plugin's name is deprecated.
      * </ul>
@@ -544,7 +544,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      *authors:
      *- feildmaster
      *- amaranth</pre></blockquote>
-     * Is equivilant to this example:
+     * Is equivalent to this example:
      * <pre>authors: [Grum, feildmaster, aramanth]</pre>
      *
      * @return an immutable list of the plugin's authors
@@ -640,7 +640,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      * <li>When an unresolvable plugin is listed, it will be ignored and does
      *     not affect load order.
      * <li>When a circular dependency occurs (a network of plugins depending
-     *     or soft-dependending each other), it will arbitrarily choose a
+     *     or soft-depending on each other), it will arbitrarily choose a
      *     plugin that can be resolved when ignoring soft-dependencies.
      * <li><code>softdepend</code> must be in <a
      *     href="https://en.wikipedia.org/wiki/YAML#Lists">YAML list
@@ -789,7 +789,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      *         <blockquote><pre>usage: "Usage: /god [player]"</pre></blockquote></td>
      * </tr>
      * </table>
-     * The commands are structured as a hiearchy of <a
+     * The commands are structured as a hierarchy of <a
      * href="http://yaml.org/spec/current.html#id2502325">nested mappings</a>.
      * The primary (top-level, no intendentation) node is
      * `<code>commands</code>', while each individual command name is
@@ -830,7 +830,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
 
     /**
      * Gives the list of permissions the plugin will register at runtime,
-     * immediately proceding enabling. The format for defining permissions is
+     * immediately preceding enabling. The format for defining permissions is
      * a map from permission name to properties. To represent a map without
      * any specific property, empty <a
      * href="http://yaml.org/spec/current.html#id2502702">curly-braces</a> (
@@ -894,7 +894,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      *             properties. To define a valid nested permission without
      *             defining any specific property, empty curly-braces (
      *             <code>&#123;&#125;</code> ) must be used.
-     *          <li>A nested permission may carry it's own nested permissions
+     *          <li>A nested permission may carry its own nested permissions
      *              as children, as they may also have nested permissions, and
      *              so forth. There is no direct limit to how deep the
      *              permission tree is defined.
@@ -910,9 +910,9 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      *         </td>
      * </tr>
      * </table>
-     * The permissions are structured as a hiearchy of <a
+     * The permissions are structured as a hierarchy of <a
      * href="http://yaml.org/spec/current.html#id2502325">nested mappings</a>.
-     * The primary (top-level, no intendentation) node is
+     * The primary (top-level, no indentation) node is
      * `<code>permissions</code>', while each individual permission name is
      * indented, indicating it maps to some value (in our case, the
      * properties of the table above).
@@ -974,7 +974,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
     /**
      * Gives a set of every {@link PluginAwareness} for a plugin. An awareness
      * dictates something that a plugin developer acknowledges when the plugin
-     * is compiled. Some implementions may define extra awarenesses that are
+     * is compiled. Some implementations may define extra awarenesses that are
      * not included in the API. Any unrecognized
      * awareness (one unsupported or in a future version) will cause a dummy
      * object to be created instead of failing.
@@ -1356,8 +1356,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
     }
 
     /**
-     * @return internal use
-     * @apiNote Internal use
+     * @hidden
      */
     @ApiStatus.Internal
     @NotNull

@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys.tags;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
@@ -23,14 +23,42 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.8")
+@GeneratedClass
 public final class FluidTagKeys {
+    /**
+     * {@code #minecraft:bubble_column_can_occupy}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> BUBBLE_COLUMN_CAN_OCCUPY = create(key("bubble_column_can_occupy"));
+
     /**
      * {@code #minecraft:lava}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<Fluid> LAVA = create(key("lava"));
+
+    /**
+     * {@code #minecraft:supports_frogspawn}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> SUPPORTS_FROGSPAWN = create(key("supports_frogspawn"));
+
+    /**
+     * {@code #minecraft:supports_lily_pad}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> SUPPORTS_LILY_PAD = create(key("supports_lily_pad"));
+
+    /**
+     * {@code #minecraft:supports_sugar_cane_adjacently}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> SUPPORTS_SUGAR_CANE_ADJACENTLY = create(key("supports_sugar_cane_adjacently"));
 
     /**
      * {@code #minecraft:water}

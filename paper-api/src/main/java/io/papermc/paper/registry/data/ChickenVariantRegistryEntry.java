@@ -36,6 +36,13 @@ public interface ChickenVariantRegistryEntry {
     ClientTextureAsset clientTextureAsset();
 
     /**
+     * Provides the client texture asset of the baby chicken variant, which represents the texture to use.
+     *
+     * @return the baby client texture asset.
+     */
+    ClientTextureAsset babyClientTextureAsset();
+
+    /**
      * Provides the model of the chicken variant.
      *
      * @return the model.
@@ -48,6 +55,7 @@ public interface ChickenVariantRegistryEntry {
      * The following values are required for each builder:
      * <ul>
      *     <li>{@link #clientTextureAsset(ClientTextureAsset)}</li>
+     *     <li>{@link #babyClientTextureAsset(ClientTextureAsset)}</li>
      *     <li>{@link #model(Model)}</li>
      * </ul>
      */
@@ -64,6 +72,16 @@ public interface ChickenVariantRegistryEntry {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder clientTextureAsset(ClientTextureAsset clientTextureAsset);
+
+        /**
+         * Sets the client texture asset of the baby chicken variant, which is the location of the texture to use.
+         *
+         * @param babyClientTextureAsset the baby client texture asset.
+         * @return this builder instance.
+         * @see ChickenVariantRegistryEntry#babyClientTextureAsset()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder babyClientTextureAsset(ClientTextureAsset babyClientTextureAsset);
 
         /**
          * Sets the model to use for this chicken variant.

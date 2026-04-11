@@ -24,13 +24,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.support.environment.AllFeatures;
+import org.bukkit.support.environment.VanillaFeature;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static net.minecraft.resources.ResourceLocation.fromNamespaceAndPath;
+import static net.minecraft.resources.Identifier.fromNamespaceAndPath;
 
 /**
  * CraftBlockData's {@link org.bukkit.craftbukkit.block.data.CraftBlockData#getDestroySpeed(ItemStack, boolean)}
@@ -40,7 +40,7 @@ import static net.minecraft.resources.ResourceLocation.fromNamespaceAndPath;
  * This test is responsible for ensuring that said logic emits the expected destroy speed under heavy attribute
  * modifier use.
  */
-@AllFeatures
+@VanillaFeature
 public class CraftBlockDataDestroySpeedTest {
 
     @Test
@@ -56,7 +56,7 @@ public class CraftBlockDataDestroySpeedTest {
         itemStack.set(DataComponents.ENCHANTMENTS, mutable.toImmutable());
 
         // Compute expected value by running the entire attribute instance chain
-        final AttributeInstance dummyInstance = new AttributeInstance(Attributes.MINING_EFFICIENCY, $ -> {
+        final AttributeInstance dummyInstance = new AttributeInstance(Attributes.MINING_EFFICIENCY, _ -> {
         });
         EnchantmentHelper.forEachModifier(itemStack, EquipmentSlot.MAINHAND, (attributeHolder, attributeModifier) -> {
             if (attributeHolder.is(Attributes.MINING_EFFICIENCY)) dummyInstance.addTransientModifier(attributeModifier);

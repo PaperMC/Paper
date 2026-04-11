@@ -18,6 +18,14 @@ public class CraftStructure extends Structure implements Holderable<net.minecraf
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
+    public static Structure minecraftHolderToBukkit(Holder<net.minecraft.world.level.levelgen.structure.Structure> minecraft) {
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.STRUCTURE);
+    }
+
+    public static Holder<net.minecraft.world.level.levelgen.structure.Structure> bukkitToMinecraftHolder(Structure bukkit) {
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
+    }
+
     private final Holder<net.minecraft.world.level.levelgen.structure.Structure> holder;
 
     public CraftStructure(Holder<net.minecraft.world.level.levelgen.structure.Structure> holder) {

@@ -1,40 +1,41 @@
 --- a/net/minecraft/world/level/TicketStorage.java
 +++ b/net/minecraft/world/level/TicketStorage.java
-@@ -163,7 +_,7 @@
+@@ -179,7 +_,7 @@
      }
  
-     private static boolean isTicketSameTypeAndLevel(Ticket first, Ticket second) {
--        return second.getType() == first.getType() && second.getTicketLevel() == first.getTicketLevel();
-+        return second.getType() == first.getType() && second.getTicketLevel() == first.getTicketLevel() && java.util.Objects.equals(second.getIdentifier(), first.getIdentifier()); // Paper - add identifier
+     private static boolean isTicketSameTypeAndLevel(final Ticket ticket, final Ticket t) {
+-        return t.getType() == ticket.getType() && t.getTicketLevel() == ticket.getTicketLevel();
++        return t.getType() == ticket.getType() && t.getTicketLevel() == ticket.getTicketLevel() && java.util.Objects.equals(t.getIdentifier(), ticket.getIdentifier()); // Paper - add identifier
      }
  
-     public int getTicketLevelAt(long chunkPos, boolean requireSimulation) {
-@@ -272,7 +_,7 @@
+     public int getTicketLevelAt(final long key, final boolean simulation) {
+@@ -300,7 +_,7 @@
      }
  
      public void deactivateTicketsOnClosing() {
--        this.removeTicketIf((_long, ticket) -> ticket.getType() != TicketType.UNKNOWN, this.deactivatedTickets);
-+        this.removeTicketIf((_long, ticket) -> ticket.getType() != TicketType.UNKNOWN && ticket.getType() != TicketType.CHUNK_LOAD && ticket.getType() != TicketType.FUTURE_AWAIT, this.deactivatedTickets);
+-        this.removeTicketIf((ticket, chunkPos) -> ticket.getType() != TicketType.UNKNOWN, this.deactivatedTickets);
++        this.removeTicketIf((ticket, chunkPos) -> ticket.getType() != TicketType.UNKNOWN && ticket.getType() != TicketType.CHUNK_LOAD && ticket.getType() != TicketType.FUTURE_AWAIT, this.deactivatedTickets);
      }
  
-     public void removeTicketIf(BiPredicate<Long, Ticket> biPredicate, @Nullable Long2ObjectOpenHashMap<List<Ticket>> map) {
-@@ -378,4 +_,19 @@
-     public interface ChunkUpdated {
-         void update(long chunkPos, int ticketLevel, boolean isDecreasing);
+     public void removeTicketIf(final TicketStorage.TicketPredicate predicate, final @Nullable Long2ObjectOpenHashMap<List<Ticket>> removedTickets) {
+@@ -410,4 +_,20 @@
+     public interface TicketPredicate {
+         boolean test(Ticket ticket, long chunkPos);
      }
++
 +    // Paper start
 +    public boolean addPluginRegionTicket(final ChunkPos pos, final org.bukkit.plugin.Plugin value) {
 +        // Keep inline with force loading
-+        return addTicket(pos.toLong(), new Ticket(TicketType.PLUGIN_TICKET, ChunkMap.FORCED_TICKET_LEVEL, value));
++        return addTicket(pos.pack(), new Ticket(TicketType.PLUGIN_TICKET, ChunkMap.FORCED_TICKET_LEVEL, value));
 +    }
 +
 +    public boolean removePluginRegionTicket(final ChunkPos pos, final org.bukkit.plugin.Plugin value) {
 +        // Keep inline with force loading
-+        return removeTicket(pos.toLong(), new Ticket(TicketType.PLUGIN_TICKET, ChunkMap.FORCED_TICKET_LEVEL, value));
++        return removeTicket(pos.pack(), new Ticket(TicketType.PLUGIN_TICKET, ChunkMap.FORCED_TICKET_LEVEL, value));
 +    }
 +
 +    public void removeAllPluginRegionTickets(TicketType ticketType, int ticketLevel, org.bukkit.plugin.Plugin ticketIdentifier) {
-+        removeTicketIf((chunkKey, ticket) -> ticket.getType() == ticketType && ticket.getTicketLevel() == ticketLevel && ticket.getIdentifier() == ticketIdentifier, null);
++        removeTicketIf((ticket, _) -> ticket.getType() == ticketType && ticket.getTicketLevel() == ticketLevel && ticket.getIdentifier() == ticketIdentifier, null);
 +    }
 +    // Paper end
  }

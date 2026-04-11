@@ -2,11 +2,9 @@ package io.papermc.paper.datacomponent.item;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.common.base.Preconditions;
-import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
-import io.papermc.paper.registry.tag.TagKey;
 import io.papermc.paper.text.Filtered;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.TriState;
@@ -151,6 +149,16 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
+    public ResolvableProfile.SkinPatchBuilder skinPatch() {
+        return new PaperResolvableProfile.SkinPatchBuilderImpl();
+    }
+
+    @Override
+    public ResolvableProfile.SkinPatch emptySkinPatch() {
+        return new PaperResolvableProfile.PaperSkinPatch(null, null, null, null);
+    }
+
+    @Override
     public ResolvableProfile resolvableProfile(final PlayerProfile profile) {
         return PaperResolvableProfile.toApi(profile);
     }
@@ -175,7 +183,7 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
         Preconditions.checkArgument(stack != null, "Item cannot be null");
         Preconditions.checkArgument(!stack.isEmpty(), "Remaining item cannot be empty!");
         return new PaperUseRemainder(
-            new net.minecraft.world.item.component.UseRemainder(CraftItemStack.asNMSCopy(stack))
+            new net.minecraft.world.item.component.UseRemainder(CraftItemStack.asTemplate(stack))
         );
     }
 
@@ -191,8 +199,8 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
-    public DamageResistant damageResistant(final TagKey<DamageType> types) {
-        return new PaperDamageResistant(new net.minecraft.world.item.component.DamageResistant(PaperRegistries.toNms(types)));
+    public DamageResistant damageResistant(final RegistryKeySet<DamageType> types) {
+        return new PaperDamageResistant(new net.minecraft.world.item.component.DamageResistant(PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, Conversions.global().lookup(), types)));
     }
 
     @Override
@@ -245,5 +253,38 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     @Override
     public Weapon.Builder weapon() {
         return new PaperWeapon.BuilderImpl();
+    }
+
+    @Override
+    public KineticWeapon.Builder kineticWeapon() {
+        return new PaperKineticWeapon.BuilderImpl();
+    }
+
+    @Override
+    public UseEffects.Builder useEffects() {
+        return new PaperUseEffects.BuilderImpl();
+    }
+
+    @Override
+    public PiercingWeapon.Builder piercingWeapon() {
+        return new PaperPiercingWeapon.BuilderImpl();
+    }
+
+    @Override
+    public AttackRange.Builder attackRange() {
+        return new PaperAttackRange.BuilderImpl();
+    }
+
+    @Override
+    public SwingAnimation.Builder swingAnimation() {
+        return new PaperSwingAnimation.BuilderImpl();
+    }
+
+    @Override
+    public KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed) {
+        Preconditions.checkArgument(maxDurationTicks >= 0, "maxDurationTicks must be non-negative");
+        return new PaperKineticWeapon.PaperKineticWeaponCondition(new net.minecraft.world.item.component.KineticWeapon.Condition(
+                maxDurationTicks, minSpeed, minRelativeSpeed
+        ));
     }
 }

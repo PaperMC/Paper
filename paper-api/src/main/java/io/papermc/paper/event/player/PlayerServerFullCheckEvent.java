@@ -59,10 +59,13 @@ public class PlayerServerFullCheckEvent extends Event {
     }
 
     /**
+     * Denies the player access to join this server.
+     *
      * @param kickMessage The message to send to the player on kick if not able to join.
      */
     public void deny(final Component kickMessage) {
         this.kickMessage = kickMessage;
+        this.allow = false;
     }
 
     /**

@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.bukkit.command.CommandSender;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
@@ -56,7 +56,7 @@ public final class CommandUtil {
                 while (iterator.hasNext()) {
                     Object object = iterator.next();
 
-                    if (object instanceof ResourceLocation && matches(last, ((ResourceLocation) object).getPath())) {
+                    if (object instanceof Identifier && matches(last, ((Identifier) object).getPath())) {
                         results.add(String.valueOf(object));
                     }
                 }

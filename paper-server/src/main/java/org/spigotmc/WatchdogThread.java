@@ -86,7 +86,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
 
                     if (net.minecraft.world.level.Level.lastPhysicsProblem != null) {
                         logger.log(Level.SEVERE, "------------------------------");
-                        logger.log(Level.SEVERE, "During the run of the server, a physics stackoverflow was supressed");
+                        logger.log(Level.SEVERE, "During the run of the server, a physics stackoverflow was suppressed");
                         logger.log(Level.SEVERE, "near " + net.minecraft.world.level.Level.lastPhysicsProblem);
                     }
 
@@ -172,7 +172,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
         }
         logger.log(Level.SEVERE, "\tStack:");
 
-        for (StackTraceElement stack : io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(thread.getStackTrace())) { // Paper
+        for (StackTraceElement stack : thread.getStackTrace()) {
             logger.log(Level.SEVERE, "\t\t" + stack);
         }
     }

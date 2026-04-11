@@ -2,36 +2,30 @@ package io.papermc.paper.datacomponent.item.blocksattacks;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.world.item.component.BlocksAttacks;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.checkerframework.checker.index.qual.NonNegative;
 
 public record PaperItemDamageFunction(
-    net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction impl
-) implements ItemDamageFunction, Handleable<net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction> {
-
-    @Override
-    public net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction getHandle() {
-        return this.impl;
-    }
+    net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction internal
+) implements ItemDamageFunction {
 
     @Override
     public @NonNegative float threshold() {
-        return this.impl.threshold();
+        return this.internal.threshold();
     }
 
     @Override
     public float base() {
-        return this.impl.base();
+        return this.internal.base();
     }
 
     @Override
     public float factor() {
-        return this.impl.factor();
+        return this.internal.factor();
     }
 
     @Override
     public int damageToApply(final float damage) {
-        return this.impl.apply(damage);
+        return this.internal.apply(damage);
     }
 
     static final class BuilderImpl implements Builder {

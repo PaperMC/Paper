@@ -21,7 +21,7 @@ public class TimedRegisteredListenerTest {
             @Override
             public void execute(Listener listener, Event event) {}
         };
-        TestPlugin plugin = new TestPlugin("Test");
+        BukkitTestPlugin plugin = new BukkitTestPlugin("Test");
 
         PlayerInteractEvent interactEvent = new PlayerInteractEvent(null, null, null, null, null);
         PlayerMoveEvent moveEvent = new PlayerMoveEvent(null, null, null);

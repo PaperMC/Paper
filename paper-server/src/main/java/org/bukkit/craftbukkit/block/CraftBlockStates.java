@@ -85,7 +85,6 @@ public final class CraftBlockStates {
 
     static {
         // Start generate - CraftBlockEntityStates
-        // @GeneratedFrom 1.21.8
         register(BlockEntityType.BANNER, CraftBanner.class, CraftBanner::new);
         register(BlockEntityType.BARREL, CraftBarrel.class, CraftBarrel::new);
         register(BlockEntityType.BEACON, CraftBeacon.class, CraftBeacon::new);
@@ -102,6 +101,7 @@ public final class CraftBlockStates {
         register(BlockEntityType.COMMAND_BLOCK, CraftCommandBlock.class, CraftCommandBlock::new);
         register(BlockEntityType.COMPARATOR, CraftComparator.class, CraftComparator::new);
         register(BlockEntityType.CONDUIT, CraftConduit.class, CraftConduit::new);
+        register(BlockEntityType.COPPER_GOLEM_STATUE, CraftCopperGolemStatue.class, CraftCopperGolemStatue::new);
         register(BlockEntityType.CRAFTER, CraftCrafter.class, CraftCrafter::new);
         register(BlockEntityType.CREAKING_HEART, CraftCreakingHeart.class, CraftCreakingHeart::new);
         register(BlockEntityType.DAYLIGHT_DETECTOR, CraftDaylightDetector.class, CraftDaylightDetector::new);
@@ -123,6 +123,7 @@ public final class CraftBlockStates {
         register(BlockEntityType.SCULK_CATALYST, CraftSculkCatalyst.class, CraftSculkCatalyst::new);
         register(BlockEntityType.SCULK_SENSOR, CraftSculkSensor.class, CraftSculkSensor::new);
         register(BlockEntityType.SCULK_SHRIEKER, CraftSculkShrieker.class, CraftSculkShrieker::new);
+        register(BlockEntityType.SHELF, CraftShelf.class, CraftShelf::new);
         register(BlockEntityType.SHULKER_BOX, CraftShulkerBox.class, CraftShulkerBox::new);
         register(BlockEntityType.SIGN, CraftSign.class, CraftSign::new);
         register(BlockEntityType.SKULL, CraftSkull.class, CraftSkull::new);
@@ -193,13 +194,13 @@ public final class CraftBlockStates {
         CraftBlock craftBlock = (CraftBlock) block;
         CraftWorld world = (CraftWorld) block.getWorld();
         BlockPos pos = craftBlock.getPosition();
-        net.minecraft.world.level.block.state.BlockState state = craftBlock.getNMS();
-        BlockEntity blockEntity = craftBlock.getHandle().getBlockEntity(pos);
+        net.minecraft.world.level.block.state.BlockState state = craftBlock.getBlockState();
+        BlockEntity blockEntity = craftBlock.getLevel().getBlockEntity(pos);
         boolean prev = CraftBlockEntityState.DISABLE_SNAPSHOT;
         CraftBlockEntityState.DISABLE_SNAPSHOT = !useSnapshot;
         try {
             CraftBlockState blockState = CraftBlockStates.getBlockState(world, pos, state, blockEntity);
-            blockState.setWorldHandle(craftBlock.getHandle()); // Inject the block's generator access
+            blockState.setWorldHandle(craftBlock.getLevel()); // Inject the block's level accessor
             return blockState;
         } finally {
             CraftBlockEntityState.DISABLE_SNAPSHOT = prev;
@@ -211,14 +212,14 @@ public final class CraftBlockStates {
         return CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), pos, material, blockEntityTag);
     }
 
-    public static BlockState getBlockState(LevelReader world, BlockPos pos, Material material, @Nullable CompoundTag blockEntityTag) {
-        return CraftBlockStates.getBlockState(world.registryAccess(), pos, material, blockEntityTag);
+    public static BlockState getBlockState(LevelReader level, BlockPos pos, Material material, @Nullable CompoundTag blockEntityTag) {
+        return CraftBlockStates.getBlockState(level.registryAccess(), pos, material, blockEntityTag);
     }
 
-    public static BlockState getBlockState(RegistryAccess registry, BlockPos pos, Material material, @Nullable CompoundTag blockEntityTag) {
+    public static BlockState getBlockState(RegistryAccess registryAccess, BlockPos pos, Material material, @Nullable CompoundTag blockEntityTag) {
         Preconditions.checkNotNull(material, "material is null");
-        net.minecraft.world.level.block.state.BlockState blockData = CraftBlockType.bukkitToMinecraft(material).defaultBlockState();
-        return CraftBlockStates.getBlockState(registry, pos, blockData, blockEntityTag);
+        net.minecraft.world.level.block.state.BlockState state = CraftBlockType.bukkitToMinecraft(material).defaultBlockState();
+        return CraftBlockStates.getBlockState(registryAccess, pos, state, blockEntityTag);
     }
 
     @Deprecated
@@ -256,8 +257,8 @@ public final class CraftBlockStates {
     }
 
     // This ignores block entity data.
-    public static CraftBlockState getBlockState(LevelAccessor world, BlockPos pos) {
-        return new CraftBlockState(CraftBlock.at(world, pos));
+    public static CraftBlockState getBlockState(LevelAccessor level, BlockPos pos) {
+        return new CraftBlockState(CraftBlock.at(level, pos));
     }
 
     @Nullable

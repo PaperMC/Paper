@@ -1,10 +1,11 @@
 package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import java.util.Locale;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import java.util.Locale;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -53,7 +54,6 @@ public interface Frog extends Animals {
     interface Variant extends OldEnum<Variant>, Keyed {
 
         // Start generate - FrogVariant
-        // @GeneratedFrom 1.21.8
         Variant COLD = getVariant("cold");
 
         Variant TEMPERATE = getVariant("temperate");
@@ -62,8 +62,8 @@ public interface Frog extends Animals {
         // End generate - FrogVariant
 
         @NotNull
-        private static Variant getVariant(@NotNull String key) {
-            return RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT).getOrThrow(NamespacedKey.minecraft(key));
+        private static Variant getVariant(@NotNull @KeyPattern.Value String key) {
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
 
         /**
@@ -74,19 +74,20 @@ public interface Frog extends Animals {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Variant valueOf(@NotNull String name) {
-            Variant variant = RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT).get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+            Variant variant = key == null ? null : RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT).get(key);
             Preconditions.checkArgument(variant != null, "No frog variant found with the name %s", name);
             return variant;
         }
 
         /**
          * @return an array of all known frog variants.
-         * @deprecated use {@link Registry#iterator()}.
+         * @deprecated use {@link Registry#stream()}.
          */
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Variant[] values() {
-            return Lists.newArrayList(RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT)).toArray(new Variant[0]);
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT).stream().toArray(Variant[]::new);
         }
     }
 }

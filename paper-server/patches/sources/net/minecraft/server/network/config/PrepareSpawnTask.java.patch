@@ -1,0 +1,208 @@
+--- a/net/minecraft/server/network/config/PrepareSpawnTask.java
++++ b/net/minecraft/server/network/config/PrepareSpawnTask.java
+@@ -37,10 +_,18 @@
+     private final LevelLoadListener loadListener;
+     private PrepareSpawnTask.@Nullable State state;
+ 
+-    public PrepareSpawnTask(final MinecraftServer server, final NameAndId nameAndId) {
++    // Paper start - passthrough profile and packet listener
++    private final com.mojang.authlib.GameProfile profile;
++    private final net.minecraft.server.network.ServerConfigurationPacketListenerImpl listener;
++    private boolean newPlayer;
++
++    public PrepareSpawnTask(final MinecraftServer server, final com.mojang.authlib.GameProfile profile, final net.minecraft.server.network.ServerConfigurationPacketListenerImpl listener) {
++        this.profile = profile;
++        this.listener = listener;
++        // Paper end - passthrough profile and packet listener
+         this.server = server;
+-        this.nameAndId = nameAndId;
+-        this.loadListener = server.getLevelLoadListener();
++        this.nameAndId = new net.minecraft.server.players.NameAndId(profile); // Paper - passthrough profile and packet listener - create from profile
++        this.loadListener = LevelLoadListener.noop(); // Paper - per level load listener - this is already a no-op on dedicated server, but we moved it to Level
+     }
+ 
+     @Override
+@@ -50,16 +_,58 @@
+                 .getPlayerList()
+                 .loadPlayerData(this.nameAndId)
+                 .map(tag -> TagValueInput.create(reporter, this.server.registryAccess(), tag));
++            // Paper start - move logic in Entity to here, to use bukkit supplied world UUID & reset to main world spawn if no valid world is found
++            this.newPlayer = loadedData.isEmpty(); // New players don't have saved data!
++            net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> resourceKey = null; // Paper
++            boolean[] invalidPlayerWorld = {false};
++            bukkitData: if (loadedData.isPresent()) {
++                // The main way for bukkit worlds to store the world is the world UUID despite mojang adding custom worlds
++                final org.bukkit.World bWorld;
++                final ValueInput playerData = loadedData.get();
++                // TODO maybe convert this to a codec and use compoundTag#read, we need silent variants of that method first.
++                final Optional<Long> worldUUIDMost = playerData.getLong("WorldUUIDMost");
++                final Optional<Long> worldUUIDLeast = playerData.getLong("WorldUUIDLeast");
++                final java.util.Optional<String> worldName = playerData.getString("world");
++                if (worldUUIDMost.isPresent() && worldUUIDLeast.isPresent()) {
++                    bWorld = org.bukkit.Bukkit.getServer().getWorld(new java.util.UUID(worldUUIDMost.get(), worldUUIDLeast.get()));
++                } else if (worldName.isPresent()) { // Paper - legacy bukkit world name
++                    bWorld = org.bukkit.Bukkit.getServer().getWorld(worldName.get());
++                } else {
++                    break bukkitData; // if neither of the bukkit data points exist, proceed to the vanilla migration section
++                }
++                if (bWorld != null) {
++                    resourceKey = ((org.bukkit.craftbukkit.CraftWorld) bWorld).getHandle().dimension();
++                } else {
++                    resourceKey = net.minecraft.world.level.Level.OVERWORLD;
++                    invalidPlayerWorld[0] = true;
++                }
++            }
+             ServerPlayer.SavedPosition loadedPosition = loadedData.<ServerPlayer.SavedPosition>flatMap(tag -> tag.read(ServerPlayer.SavedPosition.MAP_CODEC))
+                 .orElse(ServerPlayer.SavedPosition.EMPTY);
+             LevelData.RespawnData respawnData = this.server.getWorldData().overworldData().getRespawnData();
+-            ServerLevel spawnLevel = loadedPosition.dimension().map(this.server::getLevel).orElseGet(() -> {
+-                ServerLevel spawnDataLevel = this.server.getLevel(respawnData.dimension());
+-                return spawnDataLevel != null ? spawnDataLevel : this.server.overworld();
+-            });
++            if (resourceKey == null) { // only run the vanilla logic if we haven't found a world from the bukkit data
++                // Below is the vanilla way of getting the dimension, this is for migration from vanilla servers
++                resourceKey = loadedPosition.dimension().orElse(null);
++            }
++            ServerLevel spawnDataLevel = this.server.getLevel(respawnData.dimension());
++            if (spawnDataLevel == null) {
++                spawnDataLevel = this.server.overworld();
++            }
++            ServerLevel spawnLevel;
++            if (resourceKey == null) {
++                spawnLevel = spawnDataLevel;
++            } else {
++                spawnLevel = this.server.getLevel(resourceKey);
++                if (spawnLevel == null) {
++                    LOGGER.warn("Unknown respawn dimension {}, defaulting to overworld", resourceKey);
++                    spawnLevel = spawnDataLevel;
++                }
++            }
++            final ServerLevel finalSpawnLevel = spawnLevel;
+             CompletableFuture<Vec3> spawnPosition = loadedPosition.position()
+                 .map(CompletableFuture::completedFuture)
+-                .orElseGet(() -> PlayerSpawnFinder.findSpawn(spawnLevel, respawnData.pos()));
++                .orElseGet(() -> PlayerSpawnFinder.findSpawn(finalSpawnLevel, respawnData.pos()));
++            // Paper end - move logic in Entity to here, to use bukkit supplied world UUID & reset to main world spawn if no valid world is found
+             Vec2 spawnAngle = loadedPosition.rotation().orElse(new Vec2(respawnData.yaw(), respawnData.pitch()));
+             this.state = new PrepareSpawnTask.Preparing(spawnLevel, spawnPosition, spawnAngle);
+         }
+@@ -111,10 +_,11 @@
+     }
+ 
+     private final class Preparing implements PrepareSpawnTask.State {
+-        private final ServerLevel spawnLevel;
+-        private final CompletableFuture<Vec3> spawnPosition;
+-        private final Vec2 spawnAngle;
++        private ServerLevel spawnLevel; // Paper - remove final
++        private CompletableFuture<Vec3> spawnPosition; // Paper - remove final
++        private Vec2 spawnAngle; // Paper - remove final
+         private @Nullable CompletableFuture<?> chunkLoadFuture;
++        private @Nullable CompletableFuture<org.bukkit.Location> eventFuture; // Paper
+         private final ChunkLoadCounter chunkLoadCounter;
+ 
+         private Preparing(final ServerLevel spawnLevel, final CompletableFuture<Vec3> spawnPosition, final Vec2 spawnAngle) {
+@@ -136,6 +_,54 @@
+             } else {
+                 Vec3 spawnPosition = this.spawnPosition.join();
+                 if (this.chunkLoadFuture == null) {
++                    // Paper start - PlayerSpawnLocationEvent
++                    if (this.eventFuture == null && org.spigotmc.event.player.PlayerSpawnLocationEvent.getHandlerList().getRegisteredListeners().length != 0) {
++                        ServerPlayer player;
++                        if (PrepareSpawnTask.this.listener.connection.savedPlayerForLegacyEvents != null) {
++                            player = PrepareSpawnTask.this.listener.connection.savedPlayerForLegacyEvents;
++                        } else {
++                            player = new ServerPlayer(
++                                PrepareSpawnTask.this.server,
++                                PrepareSpawnTask.this.server.overworld(),
++                                PrepareSpawnTask.this.profile,
++                                net.minecraft.server.level.ClientInformation.createDefault()
++                            );
++                            PrepareSpawnTask.this.listener.connection.savedPlayerForLegacyEvents = player;
++                        }
++                        org.spigotmc.event.player.PlayerSpawnLocationEvent ev = new org.spigotmc.event.player.PlayerSpawnLocationEvent(
++                            player.getBukkitEntity(),
++                            org.bukkit.craftbukkit.util.CraftLocation.toBukkit(spawnPosition, this.spawnLevel, this.spawnAngle.x, this.spawnAngle.y)
++                        );
++                        ev.callEvent();
++                        spawnPosition = io.papermc.paper.util.MCUtil.toVec3(ev.getSpawnLocation());
++                        this.spawnLevel = ((org.bukkit.craftbukkit.CraftWorld) ev.getSpawnLocation().getWorld()).getHandle();
++                        this.spawnPosition = CompletableFuture.completedFuture(spawnPosition);
++                        this.spawnAngle = new Vec2(ev.getSpawnLocation().getYaw(), ev.getSpawnLocation().getPitch());
++                    }
++
++                    if (this.eventFuture == null && io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent.getHandlerList().getRegisteredListeners().length != 0) {
++                        final Vec3 spawnPositionFinal = spawnPosition;
++                        this.eventFuture = CompletableFuture.supplyAsync(() -> {
++                            io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent ev = new io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent(
++                                PrepareSpawnTask.this.listener.paperConnection,
++                                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(spawnPositionFinal, this.spawnLevel, this.spawnAngle.x, this.spawnAngle.y),
++                                PrepareSpawnTask.this.newPlayer
++                            );
++                            ev.callEvent();
++                            return ev.getSpawnLocation();
++                        }, io.papermc.paper.connection.PaperConfigurationTask.CONFIGURATION_POOL);
++                    }
++                    if (this.eventFuture != null) {
++                        if (!this.eventFuture.isDone()) {
++                            return null;
++                        }
++                        org.bukkit.Location location = this.eventFuture.join();
++                        spawnPosition = io.papermc.paper.util.MCUtil.toVec3(location);
++                        this.spawnLevel = ((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle();
++                        this.spawnPosition = CompletableFuture.completedFuture(spawnPosition);
++                        this.spawnAngle = new Vec2(location.getYaw(), location.getPitch());
++                    }
++                    // Paper end - PlayerSpawnLocationEvent
+                     ChunkPos spawnChunk = ChunkPos.containing(BlockPos.containing(spawnPosition));
+                     this.chunkLoadCounter
+                         .track(
+@@ -178,15 +_,48 @@
+         public ServerPlayer spawn(final Connection connection, final CommonListenerCookie cookie) {
+             ChunkPos spawnChunk = ChunkPos.containing(BlockPos.containing(this.spawnPosition));
+             this.spawnLevel.waitForEntities(spawnChunk, 3);
+-            ServerPlayer player = new ServerPlayer(PrepareSpawnTask.this.server, this.spawnLevel, cookie.gameProfile(), cookie.clientInformation());
++            // Paper start - configuration api - possibly use legacy saved server player instance
++            ServerPlayer player;
++            if (connection.savedPlayerForLegacyEvents != null) {
++                player = connection.savedPlayerForLegacyEvents;
++                connection.savedPlayerForLegacyEvents = null;
++                // Update the existing instance
++                player.gameProfile = cookie.gameProfile();
++                player.updateOptionsNoEvents(cookie.clientInformation());
++                player.setServerLevel(this.spawnLevel);
++            } else {
++                player = new ServerPlayer(PrepareSpawnTask.this.server, this.spawnLevel, cookie.gameProfile(), cookie.clientInformation());
++            }
++            // Paper end - configuration api - possibly use legacy saved server player instance
+ 
+             ServerPlayer var7;
+             try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(player.problemPath(), PrepareSpawnTask.LOGGER)) {
+                 Optional<ValueInput> input = PrepareSpawnTask.this.server
+                     .getPlayerList()
+                     .loadPlayerData(PrepareSpawnTask.this.nameAndId)
++                    // CraftBukkit start
++                    .map(tag -> {
++                        org.bukkit.craftbukkit.entity.CraftPlayer craftPlayer = player.getBukkitEntity();
++                        // Only update first played if it is older than the one we have
++                        long modified = new java.io.File(net.minecraft.server.network.config.PrepareSpawnTask.this.server.playerDataStorage.getPlayerDir(), player.getStringUUID() + ".dat").lastModified();
++                        if (modified < craftPlayer.getFirstPlayed()) {
++                            craftPlayer.setFirstPlayed(modified);
++                        }
++                        return tag;
++                    })
++                    // CraftBukkit end
+                     .map(tag -> TagValueInput.create(reporter, PrepareSpawnTask.this.server.registryAccess(), tag));
+                 input.ifPresent(player::load);
++                // CraftBukkit start - Better rename detection
++                if (input.isPresent()) {
++                    player.lastKnownName = input.flatMap(t -> t.child("bukkit")).flatMap(t -> t.getString("lastKnownName")).orElse(null);
++                }
++                // CraftBukkit end - Better rename detection
++                // Paper start - Entity#getEntitySpawnReason
++                if (input.isEmpty()) {
++                    player.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT; // set Player SpawnReason to DEFAULT on first login
++                }
++                // Paper end - Entity#getEntitySpawnReason
+                 player.snapTo(this.spawnPosition, this.spawnAngle.x, this.spawnAngle.y);
+                 PrepareSpawnTask.this.server.getPlayerList().placeNewPlayer(connection, player, cookie);
+                 input.ifPresent(tag -> {

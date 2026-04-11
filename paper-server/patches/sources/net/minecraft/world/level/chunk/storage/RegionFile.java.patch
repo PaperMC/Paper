@@ -1,18 +1,18 @@
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -46,7 +_,7 @@
+@@ -47,7 +_,7 @@
      protected final RegionBitmap usedSectors = new RegionBitmap();
  
-     public RegionFile(RegionStorageInfo info, Path path, Path externalFileDir, boolean sync) throws IOException {
+     public RegionFile(final RegionStorageInfo info, final Path path, final Path externalFileDir, final boolean sync) throws IOException {
 -        this(info, path, externalFileDir, RegionFileVersion.getSelected(), sync);
 +        this(info, path, externalFileDir, RegionFileVersion.getCompressionFormat(), sync); // Paper - Configurable region compression format
      }
  
-     public RegionFile(RegionStorageInfo info, Path path, Path externalFileDir, RegionFileVersion version, boolean sync) throws IOException {
-@@ -82,6 +_,14 @@
-                     if (i2 != 0) {
-                         int sectorNumber = getSectorNumber(i2);
-                         int numSectors = getNumSectors(i2);
+     public RegionFile(final RegionStorageInfo info, final Path path, final Path externalFileDir, final RegionFileVersion version, final boolean sync) throws IOException {
+@@ -83,6 +_,14 @@
+                     if (offset != 0) {
+                         int sectorNumber = getSectorNumber(offset);
+                         int numSectors = getNumSectors(offset);
 +                        // Spigot start
 +                        if (numSectors == 255) {
 +                            // We're maxed out, so we need to read the proper length from the section
@@ -22,8 +22,8 @@
 +                        }
 +                        // Spigot end
                          if (sectorNumber < 2) {
-                             LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", path, i1, sectorNumber);
-                             this.offsets.put(i1, 0);
+                             LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", path, i, sectorNumber);
+                             this.offsets.put(i, 0);
 @@ -117,6 +_,13 @@
          } else {
              int sectorNumber = getSectorNumber(offset);
@@ -35,10 +35,10 @@
 +                numSectors = (realLen.getInt(0) + 4) / 4096 + 1;
 +            }
 +            // Spigot end
-             int i = numSectors * 4096;
-             ByteBuffer byteBuffer = ByteBuffer.allocate(i);
-             this.file.read(byteBuffer, sectorNumber * 4096);
-@@ -260,6 +_,7 @@
+             int sectorsLength = numSectors * 4096;
+             ByteBuffer buffer = ByteBuffer.allocate(sectorsLength);
+             this.file.read(buffer, sectorNumber * 4096);
+@@ -258,6 +_,7 @@
                      return true;
                  }
              } catch (IOException var9) {
@@ -46,10 +46,10 @@
                  return false;
              }
          }
-@@ -331,6 +_,11 @@
-         try (FileChannel fileChannel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-             chunkData.position(5);
-             fileChannel.write(chunkData);
+@@ -329,6 +_,11 @@
+         try (FileChannel extFile = FileChannel.open(tmpPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+             data.position(5);
+             extFile.write(data);
 +            // Paper start - ServerExceptionEvent
 +        } catch (Throwable throwable) {
 +            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable);
@@ -57,4 +57,4 @@
 +            // Paper end - ServerExceptionEvent
          }
  
-         return () -> Files.move(path, externalChunkFile, StandardCopyOption.REPLACE_EXISTING);
+         return () -> Files.move(tmpPath, path, StandardCopyOption.REPLACE_EXISTING);

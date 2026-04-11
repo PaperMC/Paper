@@ -75,7 +75,7 @@ public class NotePlayEvent extends BlockEvent implements Cancellable {
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override

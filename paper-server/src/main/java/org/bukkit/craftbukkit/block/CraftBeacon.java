@@ -2,12 +2,10 @@ package org.bukkit.craftbukkit.block;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
-import net.minecraft.advancements.critereon.DataComponentMatchers;
-import net.minecraft.advancements.critereon.ItemPredicate;
-import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.advancements.criterion.DataComponentMatchers;
+import net.minecraft.advancements.criterion.ItemPredicate;
 import net.minecraft.core.component.DataComponentExactPredicate;
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.LockCode;
@@ -111,18 +109,22 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
 
     @Override
     public String getLock() {
-        Optional<? extends Component> customName = this.getSnapshot().lockKey.predicate().components().exact().asPatch().get(DataComponents.CUSTOM_NAME);
-
-        return (customName != null) ? customName.map(CraftChatMessage::fromComponent).orElse("") : "";
+        Component customName = this.getSnapshot().lockKey.predicate().components().exact().asPatch().get(DataComponentMap.EMPTY, DataComponents.CUSTOM_NAME);
+        return (customName != null) ? CraftChatMessage.fromComponent(customName) : "";
     }
 
     @Override
     public void setLock(String key) {
-        if (key == null) {
+        if (key == null || key.isEmpty()) {
             this.getSnapshot().lockKey = LockCode.NO_LOCK;
         } else {
-            DataComponentExactPredicate predicate = DataComponentExactPredicate.builder().expect(DataComponents.CUSTOM_NAME, CraftChatMessage.fromStringOrNull(key)).build();
-            this.getSnapshot().lockKey = new LockCode(new ItemPredicate(Optional.empty(), MinMaxBounds.Ints.ANY, new DataComponentMatchers(predicate, Collections.emptyMap())));
+            this.getSnapshot().lockKey = new LockCode(ItemPredicate.Builder.item().withComponents(
+                DataComponentMatchers.Builder.components().exact(
+                    DataComponentExactPredicate.builder().expect(
+                        DataComponents.CUSTOM_NAME, CraftChatMessage.fromString(key)[0]
+                    ).build()
+                ).build()
+            ).build());
         }
     }
 

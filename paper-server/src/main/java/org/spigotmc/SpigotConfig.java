@@ -15,7 +15,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
@@ -202,7 +202,7 @@ public class SpigotConfig {
     }
 
     public static boolean disableStatSaving;
-    public static Map<ResourceLocation, Integer> forcedStats = new HashMap<>();
+    public static Map<Identifier, Integer> forcedStats = new HashMap<>();
 
     private static void stats() {
         SpigotConfig.disableStatSaving = SpigotConfig.getBoolean("stats.disable-saving", false);
@@ -215,7 +215,7 @@ public class SpigotConfig {
         for (String name : section.getKeys(true)) {
             if (section.isInt(name)) {
                 try {
-                    ResourceLocation key = ResourceLocation.parse(name);
+                    Identifier key = Identifier.parse(name);
                     if (BuiltInRegistries.CUSTOM_STAT.get(key) == null) {
                         Bukkit.getLogger().log(Level.WARNING, "Ignoring non existent stats.forced-stats " + name);
                         continue;
@@ -289,12 +289,12 @@ public class SpigotConfig {
 
     public static double movedWronglyThreshold;
     private static void movedWronglyThreshold() {
-        SpigotConfig.movedWronglyThreshold = SpigotConfig.getDouble("settings.moved-wrongly-threshold", 0.0625D);
+        SpigotConfig.movedWronglyThreshold = SpigotConfig.getDouble("settings.moved-wrongly-threshold", 0.0625);
     }
 
     public static double movedTooQuicklyMultiplier;
     private static void movedTooQuicklyMultiplier() {
-        SpigotConfig.movedTooQuicklyMultiplier = SpigotConfig.getDouble("settings.moved-too-quickly-multiplier", 10.0D);
+        SpigotConfig.movedTooQuicklyMultiplier = SpigotConfig.getDouble("settings.moved-too-quickly-multiplier", 10.0);
     }
 
     public static double maxAbsorption = 2048;

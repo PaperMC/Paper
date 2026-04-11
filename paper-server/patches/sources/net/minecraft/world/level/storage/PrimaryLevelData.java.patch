@@ -1,120 +1,74 @@
 --- a/net/minecraft/world/level/storage/PrimaryLevelData.java
 +++ b/net/minecraft/world/level/storage/PrimaryLevelData.java
-@@ -74,6 +_,21 @@
-     private final Set<String> removedFeatureFlags;
-     private final TimerQueue<MinecraftServer> scheduledEvents;
- 
-+    // CraftBukkit start - Add world and pdc
-+    public net.minecraft.core.Registry<net.minecraft.world.level.dimension.LevelStem> customDimensions;
-+    private net.minecraft.server.level.ServerLevel world;
-+    protected net.minecraft.nbt.Tag pdc;
-+
-+    public void setWorld(net.minecraft.server.level.ServerLevel world) {
-+        if (this.world != null) {
-+            return;
-+        }
-+        this.world = world;
-+        world.getWorld().readBukkitValues(this.pdc);
-+        this.pdc = null;
-+    }
-+    // CraftBukkit end
-+
-     private PrimaryLevelData(
-         @Nullable CompoundTag loadedPlayerTag,
-         boolean wasModded,
-@@ -237,7 +_,7 @@
-         nbt.put("Version", compoundTag);
-         NbtUtils.addCurrentDataVersion(nbt);
-         DynamicOps<Tag> dynamicOps = registry.createSerializationContext(NbtOps.INSTANCE);
--        WorldGenSettings.encode(dynamicOps, this.worldOptions, registry)
-+        WorldGenSettings.encode(dynamicOps, this.worldOptions, new net.minecraft.world.level.levelgen.WorldDimensions(this.customDimensions != null ? this.customDimensions : registry.lookupOrThrow(net.minecraft.core.registries.Registries.LEVEL_STEM))) // CraftBukkit
-             .resultOrPartial(Util.prefix("WorldGenSettings: ", LOGGER::error))
-             .ifPresent(worldOptionsTag -> nbt.put("WorldGenSettings", worldOptionsTag));
-         nbt.putInt("GameType", this.settings.gameType().getId());
-@@ -276,6 +_,8 @@
-         nbt.putInt("WanderingTraderSpawnDelay", this.wanderingTraderSpawnDelay);
-         nbt.putInt("WanderingTraderSpawnChance", this.wanderingTraderSpawnChance);
-         nbt.storeNullable("WanderingTraderId", UUIDUtil.CODEC, this.wanderingTraderId);
-+        nbt.putString("Bukkit.Version", org.bukkit.Bukkit.getName() + "/" + org.bukkit.Bukkit.getVersion() + "/" + org.bukkit.Bukkit.getBukkitVersion()); // CraftBukkit
-+        this.world.getWorld().storeBukkitValues(nbt); // CraftBukkit - add pdc
-     }
- 
-     private static ListTag stringCollectionToTag(Set<String> stringCollection) {
-@@ -353,6 +_,25 @@
- 
-     @Override
-     public void setThundering(boolean thundering) {
-+        // Paper start - Add cause to Weather/ThunderChangeEvents
-+        this.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.UNKNOWN);
-+    }
-+    public void setThundering(boolean thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause cause) {
-+        // Paper end - Add cause to Weather/ThunderChangeEvents
-+        // CraftBukkit start
-+        if (this.thundering == thundering) {
-+            return;
-+        }
-+
-+        org.bukkit.World world = org.bukkit.Bukkit.getWorld(this.getLevelName());
-+        if (world != null) {
-+            org.bukkit.event.weather.ThunderChangeEvent thunder = new org.bukkit.event.weather.ThunderChangeEvent(world, thundering, cause); // Paper - Add cause to Weather/ThunderChangeEvents
-+            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(thunder);
-+            if (thunder.isCancelled()) {
-+                return;
-+            }
-+        }
-+        // CraftBukkit end
-         this.thundering = thundering;
-     }
- 
-@@ -373,6 +_,26 @@
- 
-     @Override
-     public void setRaining(boolean isRaining) {
-+        // Paper start - Add cause to Weather/ThunderChangeEvents
-+        this.setRaining(isRaining, org.bukkit.event.weather.WeatherChangeEvent.Cause.UNKNOWN);
-+    }
-+
-+    public void setRaining(boolean isRaining, org.bukkit.event.weather.WeatherChangeEvent.Cause cause) {
-+        // Paper end - Add cause to Weather/ThunderChangeEvents
-+        // CraftBukkit start
-+        if (this.raining == isRaining) {
-+            return;
-+        }
-+
-+        org.bukkit.World world = org.bukkit.Bukkit.getWorld(this.getLevelName());
-+        if (world != null) {
-+            org.bukkit.event.weather.WeatherChangeEvent weather = new org.bukkit.event.weather.WeatherChangeEvent(world, isRaining, cause); // Paper - Add cause to Weather/ThunderChangeEvents
-+            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(weather);
-+            if (weather.isCancelled()) {
-+                return;
-+            }
-+        }
-+        // CraftBukkit end
-         this.raining = isRaining;
-     }
- 
-@@ -439,6 +_,12 @@
-     @Override
-     public void setDifficulty(Difficulty difficulty) {
-         this.settings = this.settings.withDifficulty(difficulty);
-+        // CraftBukkit start
-+        net.minecraft.network.protocol.game.ClientboundChangeDifficultyPacket packet = new net.minecraft.network.protocol.game.ClientboundChangeDifficultyPacket(this.getDifficulty(), this.isDifficultyLocked());
-+        for (net.minecraft.server.level.ServerPlayer player : (java.util.List<net.minecraft.server.level.ServerPlayer>) (java.util.List) this.world.players()) {
-+            player.connection.send(packet);
-+        }
-+        // CraftBukkit end
+@@ -35,6 +_,8 @@
+     private final PrimaryLevelData.SpecialWorldProperty specialWorldProperty;
+     private final Lifecycle worldGenSettingsLifecycle;
+     private LevelData.RespawnData respawnData;
++    public static final String PAPER_RESPAWN_DIMENSION = "paperSpawnDimension"; // Paper
++    public net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> respawnDimension = net.minecraft.world.level.Level.OVERWORLD; // Paper
+     private long gameTime;
+     private final @Nullable UUID singlePlayerUUID;
+     private final int version;
+@@ -93,7 +_,7 @@
+     ) {
+         long gameTime = input.get("Time").asLong(0L);
+         LevelVersion levelVersion = LevelVersion.parse(input);
+-        return new PrimaryLevelData(
++        PrimaryLevelData data = new PrimaryLevelData( // Paper
+             input.get("singleplayer_uuid").flatMap(UUIDUtil.CODEC::parse).result().orElse(null),
+             input.get("WasModded").asBoolean(false),
+             input.get("spawn").read(LevelData.RespawnData.CODEC).result().orElse(LevelData.RespawnData.DEFAULT),
+@@ -106,6 +_,13 @@
+             specialWorldProperty,
+             worldGenSettingsLifecycle
+         );
++        // Paper start
++        data.respawnDimension = input.get(PAPER_RESPAWN_DIMENSION)
++            .read(net.minecraft.world.level.Level.RESOURCE_KEY_CODEC)
++            .result()
++            .orElse(data.respawnData.dimension());
++        return data;
++        // Paper end
      }
  
      @Override
-@@ -574,6 +_,14 @@
+@@ -128,20 +_,22 @@
+ 
+         writeVersionTag(tag);
+         NbtUtils.addCurrentDataVersion(tag);
+-        tag.putInt("GameType", this.settings.gameType().getId());
+-        tag.store("spawn", LevelData.RespawnData.CODEC, this.respawnData);
+-        tag.putLong("Time", this.gameTime);
++        tag.putInt("GameType", this.settings.gameType().getId()); // Paper - diff on change - PaperLevelOverrides.createFromRawLevelData
++        tag.store("spawn", LevelData.RespawnData.CODEC, this.respawnData); // Paper - diff on change - PaperLevelOverrides.createFromRawLevelData
++        tag.store(PAPER_RESPAWN_DIMENSION, net.minecraft.world.level.Level.RESOURCE_KEY_CODEC, this.respawnDimension); // Paper
++        tag.putLong("Time", this.gameTime); // Paper - diff on change - PaperLevelOverrides.createFromRawLevelData
+         writeLastPlayed(tag);
+         tag.putString("LevelName", this.settings.levelName());
+         tag.putInt("version", 19133);
+         tag.putBoolean("allowCommands", this.settings.allowCommands());
+-        tag.putBoolean("initialized", this.initialized);
+-        tag.store("difficulty_settings", LevelSettings.DifficultySettings.CODEC, this.settings.difficultySettings());
++        tag.putBoolean("initialized", this.initialized); // Paper - diff on change - PaperLevelOverrides.createFromRawLevelData
++        tag.store("difficulty_settings", LevelSettings.DifficultySettings.CODEC, this.settings.difficultySettings()); // Paper - diff on change - PaperLevelOverrides.createFromRawLevelData
+         if (singlePlayerUUID != null) {
+             tag.storeNullable("singleplayer_uuid", UUIDUtil.CODEC, singlePlayerUUID);
+         }
+ 
+         tag.store(WorldDataConfiguration.MAP_CODEC, this.settings.dataConfiguration());
++        tag.putString("Bukkit.Version", org.bukkit.Bukkit.getName() + "/" + org.bukkit.Bukkit.getVersion() + "/" + org.bukkit.Bukkit.getBukkitVersion()); // CraftBukkit
+     }
+ 
+     public static void writeLastPlayed(final CompoundTag tag) {
+@@ -322,6 +_,14 @@
      public LevelSettings getLevelSettings() {
          return this.settings.copy();
      }
 +
 +    // CraftBukkit start - Check if the name stored in NBT is the correct one
 +    public void checkName(String name) {
-+        if (!this.settings.levelName.equals(name)) {
-+            this.settings.levelName = name;
++        if (!this.settings.levelName().equals(name)) {
++            this.settings = this.settings.withLevelName(name);
 +        }
 +    }
 +    // CraftBukkit end

@@ -1,0 +1,46 @@
+--- a/net/minecraft/world/entity/animal/parrot/Parrot.java
++++ b/net/minecraft/world/entity/animal/parrot/Parrot.java
+@@ -270,7 +_,7 @@
+             }
+ 
+             if (!this.level().isClientSide()) {
+-                if (this.random.nextInt(10) == 0) {
++                if (this.random.nextInt(10) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit
+                     this.tame(player);
+                     this.level().broadcastEntityEvent(this, EntityEvent.TAMING_SUCCEEDED);
+                 } else {
+@@ -291,7 +_,7 @@
+             }
+         } else {
+             this.usePlayerItem(player, hand, itemStack);
+-            this.addEffect(new MobEffectInstance(MobEffects.POISON, 900));
++            this.addEffect(new MobEffectInstance(MobEffects.POISON, 900), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD); // CraftBukkit
+             if (player.isCreative() || !this.isInvulnerable()) {
+                 this.hurt(this.damageSources().playerAttack(player), Float.MAX_VALUE);
+             }
+@@ -384,8 +_,8 @@
+     }
+ 
+     @Override
+-    public boolean isPushable() {
+-        return true;
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
++        return super.isCollidable(ignoreClimbing); // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
+     }
+ 
+     @Override
+@@ -400,8 +_,13 @@
+         if (this.isInvulnerableTo(level, source)) {
+             return false;
+         } else {
++            // CraftBukkit start
++            if (!super.hurtServer(level, source, damage)) {
++                return false;
++            }
+             this.setOrderedToSit(false);
+-            return super.hurtServer(level, source, damage);
++            return true;
++            // CraftBukkit
+         }
+     }
+ 

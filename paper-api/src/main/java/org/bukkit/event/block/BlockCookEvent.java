@@ -33,7 +33,6 @@ public class BlockCookEvent extends BlockEvent implements Cancellable {
         super(block);
         this.source = source;
         this.result = result;
-        this.cancelled = false;
         this.recipe = recipe;
     }
 

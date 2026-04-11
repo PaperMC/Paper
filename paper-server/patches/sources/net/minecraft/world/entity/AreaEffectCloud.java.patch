@@ -1,15 +1,15 @@
 --- a/net/minecraft/world/entity/AreaEffectCloud.java
 +++ b/net/minecraft/world/entity/AreaEffectCloud.java
-@@ -191,7 +_,7 @@
+@@ -189,7 +_,7 @@
  
-     private void serverTick(ServerLevel level) {
+     private void serverTick(final ServerLevel serverLevel) {
          if (this.duration != -1 && this.tickCount - this.waitTime >= this.duration) {
 -            this.discard();
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else {
              boolean isWaiting = this.isWaiting();
-             boolean flag = this.tickCount < this.waitTime;
-@@ -204,7 +_,7 @@
+             boolean shouldWait = this.tickCount < this.waitTime;
+@@ -202,7 +_,7 @@
                  if (this.radiusPerTick != 0.0F) {
                      radius += this.radiusPerTick;
                      if (radius < 0.5F) {
@@ -18,38 +18,37 @@
                          return;
                      }
  
-@@ -220,6 +_,7 @@
-                         this.potionContents.forEachEffect(list::add, this.potionDurationScale);
-                         List<LivingEntity> entitiesOfClass = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox());
-                         if (!entitiesOfClass.isEmpty()) {
-+                            List<org.bukkit.entity.LivingEntity> entities = new java.util.ArrayList<>(); // CraftBukkit
-                             for (LivingEntity livingEntity : entitiesOfClass) {
-                                 if (!this.victims.containsKey(livingEntity)
-                                     && livingEntity.isAffectedByPotions()
-@@ -228,6 +_,17 @@
-                                     double d1 = livingEntity.getZ() - this.getZ();
-                                     double d2 = d * d + d1 * d1;
-                                     if (d2 <= radius * radius) {
+@@ -218,12 +_,24 @@
+                         this.potionContents.forEachEffect(allEffects::add, this.potionDurationScale);
+                         List<LivingEntity> entities = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox());
+                         if (!entities.isEmpty()) {
++                            List<org.bukkit.entity.LivingEntity> bukkitEntities = new java.util.ArrayList<>(); // CraftBukkit
+                             for (LivingEntity entity : entities) {
+                                 if (!this.victims.containsKey(entity) && entity.isAffectedByPotions() && !allEffects.stream().noneMatch(entity::canBeAffected)) {
+                                     double xd = entity.getX() - this.getX();
+                                     double zd = entity.getZ() - this.getZ();
+                                     double dist = xd * xd + zd * zd;
+                                     if (dist <= radius * radius) {
 +                                        // CraftBukkit start
-+                                        entities.add((org.bukkit.entity.LivingEntity) livingEntity.getBukkitEntity());
++                                        bukkitEntities.add((org.bukkit.entity.LivingEntity) entity.getBukkitEntity());
 +                                    }
 +                                }
 +                            }
-+                            org.bukkit.event.entity.AreaEffectCloudApplyEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callAreaEffectCloudApplyEvent(this, entities);
++                            org.bukkit.event.entity.AreaEffectCloudApplyEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callAreaEffectCloudApplyEvent(this, bukkitEntities);
 +                            if (!event.isCancelled()) {
-+                                for (org.bukkit.entity.LivingEntity entity : event.getAffectedEntities()) {
-+                                    if (entity instanceof org.bukkit.craftbukkit.entity.CraftLivingEntity) {
-+                                        net.minecraft.world.entity.LivingEntity livingEntity = ((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity).getHandle();
++                                for (org.bukkit.entity.LivingEntity bukkitLivingEntity : event.getAffectedEntities()) {
++                                    if (bukkitLivingEntity instanceof org.bukkit.craftbukkit.entity.CraftLivingEntity craftLivingEntity) {
++                                        LivingEntity entity = craftLivingEntity.getHandle();
 +                                        // CraftBukkit end
-                                         this.victims.put(livingEntity, this.tickCount + this.reapplicationDelay);
+                                         this.victims.put(entity, this.tickCount + this.reapplicationDelay);
  
-                                         for (MobEffectInstance mobEffectInstance : list) {
-@@ -236,14 +_,14 @@
+                                         for (MobEffectInstance effect : allEffects) {
+@@ -232,14 +_,14 @@
                                                      .value()
-                                                     .applyInstantenousEffect(level, this, this.getOwner(), livingEntity, mobEffectInstance.getAmplifier(), 0.5);
+                                                     .applyInstantenousEffect(serverLevel, this, this.getOwner(), entity, effect.getAmplifier(), 0.5);
                                              } else {
--                                                livingEntity.addEffect(new MobEffectInstance(mobEffectInstance), this);
-+                                                livingEntity.addEffect(new MobEffectInstance(mobEffectInstance), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AREA_EFFECT_CLOUD); // CraftBukkit
+-                                                entity.addEffect(new MobEffectInstance(effect), this);
++                                                entity.addEffect(new MobEffectInstance(effect), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AREA_EFFECT_CLOUD); // CraftBukkit
                                              }
                                          }
  
@@ -61,7 +60,7 @@
                                                  return;
                                              }
  
-@@ -253,7 +_,7 @@
+@@ -249,7 +_,7 @@
                                          if (this.durationOnUse != 0 && this.duration != -1) {
                                              this.duration = this.duration + this.durationOnUse;
                                              if (this.duration <= 0) {

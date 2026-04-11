@@ -41,14 +41,13 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public void setPickupDelay(int delay) {
-        this.getHandle().pickupDelay = Math.min(delay, Short.MAX_VALUE);
+        this.getHandle().pickupDelay = Math.min(delay, NO_PICKUP_TIME);
     }
 
     @Override
     public void setUnlimitedLifetime(boolean unlimited) {
         if (unlimited) {
-            // See EntityItem#INFINITE_LIFETIME
-            this.getHandle().age = Short.MIN_VALUE;
+            this.getHandle().age = NO_AGE_TIME;
         } else {
             this.getHandle().age = this.getTicksLived();
         }
@@ -56,14 +55,14 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public boolean isUnlimitedLifetime() {
-        return this.getHandle().age == Short.MIN_VALUE;
+        return this.getHandle().age == NO_AGE_TIME;
     }
 
     @Override
     public void setTicksLived(int value) {
         super.setTicksLived(value);
 
-        // Second field for EntityItem (don't set if lifetime is unlimited)
+        // Second field for ItemEntity (don't set if lifetime is unlimited)
         if (!this.isUnlimitedLifetime()) {
             this.getHandle().age = value;
         }
@@ -99,14 +98,13 @@ public class CraftItem extends CraftEntity implements Item {
         this.getHandle().age = willAge ? 0 : NO_AGE_TIME;
      }
 
-     @org.jetbrains.annotations.NotNull
      @Override
      public net.kyori.adventure.util.TriState getFrictionState() {
         return this.getHandle().frictionState;
      }
 
      @Override
-     public void setFrictionState(@org.jetbrains.annotations.NotNull net.kyori.adventure.util.TriState state) {
+     public void setFrictionState(net.kyori.adventure.util.TriState state) {
          Preconditions.checkArgument(state != null, "state may not be null");
          this.getHandle().frictionState = state;
      }
@@ -138,7 +136,7 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public void setThrower(UUID uuid) {
-        this.getHandle().thrower = uuid == null ? null : new EntityReference<>(uuid);
+        this.getHandle().thrower = uuid == null ? null : EntityReference.of(uuid);
     }
 
     @Override

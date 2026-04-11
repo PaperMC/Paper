@@ -1,7 +1,6 @@
 package io.papermc.paper.command.brigadier.argument;
 
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.ForwardingSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
@@ -37,7 +36,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.util.MCUtil;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -49,7 +47,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
-import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.advancements.criterion.MinMaxBounds;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.AngleArgument;
 import net.minecraft.commands.arguments.ColorArgument;
@@ -61,12 +59,12 @@ import net.minecraft.commands.arguments.GameModeArgument;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.commands.arguments.HeightmapTypeArgument;
 import net.minecraft.commands.arguments.HexColorArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.MessageArgument;
 import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
 import net.minecraft.commands.arguments.RangeArgument;
 import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.commands.arguments.ResourceKeyArgument;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.commands.arguments.ScoreboardSlotArgument;
 import net.minecraft.commands.arguments.StyleArgument;
 import net.minecraft.commands.arguments.TemplateMirrorArgument;
@@ -158,9 +156,9 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     public ArgumentType<PlayerProfileListResolver> playerProfiles() {
         return this.wrap(GameProfileArgument.gameProfile(), result -> {
             if (result instanceof GameProfileArgument.SelectorResult) {
-                return sourceStack -> Collections.unmodifiableCollection(Collections2.transform(result.getNames((CommandSourceStack) sourceStack), CraftPlayerProfile::new));
+                return sourceStack -> MCUtil.transformUnmodifiable(result.getNames((CommandSourceStack) sourceStack), CraftPlayerProfile::new);
             } else {
-                return sourceStack -> Collections.unmodifiableCollection(Collections2.transform(result.getNames((CommandSourceStack) sourceStack), CraftPlayerProfile::new));
+                return sourceStack -> MCUtil.transformUnmodifiable(result.getNames((CommandSourceStack) sourceStack), CraftPlayerProfile::new);
             }
         });
     }
@@ -189,7 +187,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
             result -> (block, loadChunk) -> {
                 final BlockInWorld blockInWorld = new BlockInWorld(
                     ((CraftWorld) block.getWorld()).getHandle(),
-                    CraftLocation.toBlockPosition(block.getLocation()),
+                    CraftLocation.toBlockPos(block.getLocation()),
                     loadChunk
                 );
                 // Get state lazy loads the state, will remain null if chunk is unloaded.
@@ -250,7 +248,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
         return this.wrap(SwizzleArgument.swizzle(), (result) -> {
             final EnumSet<Axis> bukkitAxes = EnumSet.noneOf(Axis.class);
             for (final Direction.Axis nmsAxis : result) {
-                bukkitAxes.add(CraftBlockData.toBukkit(nmsAxis, Axis.class));
+                bukkitAxes.add(CraftBlockData.fromVanilla(nmsAxis, Axis.class));
             }
             return new AxisSetImpl(bukkitAxes);
         });
@@ -270,7 +268,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     @Override
     public ArgumentType<ItemStack> itemStack() {
         return this.wrap(ItemArgument.item(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
-            return CraftItemStack.asBukkitCopy(result.createItemStack(1, true));
+            return CraftItemStack.asBukkitCopy(result.createItemStack(1));
         });
     }
 
@@ -318,12 +316,12 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
     @Override
     public ArgumentType<NamespacedKey> namespacedKey() {
-        return this.wrap(ResourceLocationArgument.id(), CraftNamespacedKey::fromMinecraft);
+        return this.wrap(IdentifierArgument.id(), CraftNamespacedKey::fromMinecraft);
     }
 
     @Override
     public ArgumentType<Key> key() {
-        return this.wrap(ResourceLocationArgument.id(), CraftNamespacedKey::fromMinecraft);
+        return this.wrap(IdentifierArgument.id(), CraftNamespacedKey::fromMinecraft);
     }
 
     @Override
@@ -407,7 +405,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     public <T> ArgumentType<TypedKey<T>> resourceKey(final RegistryKey<T> registryKey) {
         return this.wrap(
             ResourceKeyArgument.key(PaperRegistries.registryToNms(registryKey)),
-            nmsRegistryKey -> TypedKey.create(registryKey, CraftNamespacedKey.fromMinecraft(nmsRegistryKey.location()))
+            nmsRegistryKey -> TypedKey.create(registryKey, CraftNamespacedKey.fromMinecraft(nmsRegistryKey.identifier()))
         );
     }
 
@@ -424,7 +422,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
             resource -> requireNonNull(
                 RegistryAccess.registryAccess()
                     .getRegistry(registryKey)
-                    .get(CraftNamespacedKey.fromMinecraft(resource.key().location()))
+                    .get(CraftNamespacedKey.fromMinecraft(resource.key().identifier()))
             )
         );
     }

@@ -5,7 +5,7 @@
      }
  
 +    // Paper start - Add PlayerItemCooldownEvent
-+    private int getCurrentCooldown(final ResourceLocation groupId) {
++    private int getCurrentCooldown(final Identifier groupId) {
 +        final net.minecraft.world.item.ItemCooldowns.CooldownInstance cooldownInstance = this.cooldowns.get(groupId);
 +        if (cooldownInstance == null) {
 +            return 0;
@@ -15,7 +15,7 @@
 +
 +    @Override
 +    public void addCooldown(ItemStack item, int duration) {
-+        final ResourceLocation cooldownGroup = this.getCooldownGroup(item);
++        final Identifier cooldownGroup = this.getCooldownGroup(item);
 +        final io.papermc.paper.event.player.PlayerItemCooldownEvent event = new io.papermc.paper.event.player.PlayerItemCooldownEvent(
 +            this.player.getBukkitEntity(),
 +            org.bukkit.craftbukkit.inventory.CraftItemType.minecraftToBukkit(item.getItem()),
@@ -30,24 +30,24 @@
 +    }
 +
 +    @Override
-+    public void addCooldown(ResourceLocation groupId, int duration, boolean callEvent) {
++    public void addCooldown(Identifier cooldownGroup, int time, boolean callEvent) {
 +        if (callEvent) {
 +            final io.papermc.paper.event.player.PlayerItemGroupCooldownEvent event = new io.papermc.paper.event.player.PlayerItemGroupCooldownEvent(
 +                this.player.getBukkitEntity(),
-+                org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(groupId),
-+                duration
++                org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(cooldownGroup),
++                time
 +            );
 +            if (!event.callEvent()) {
-+                this.player.connection.send(new ClientboundCooldownPacket(groupId, this.getCurrentCooldown(groupId)));
++                this.player.connection.send(new ClientboundCooldownPacket(cooldownGroup, this.getCurrentCooldown(cooldownGroup)));
 +                return;
 +            }
 +
-+            duration = event.getCooldown();
++            time = event.getCooldown();
 +        }
-+        super.addCooldown(groupId, duration, false);
++        super.addCooldown(cooldownGroup, time, false);
 +    }
 +    // Paper end - Add PlayerItemCooldownEvent
 +
      @Override
-     protected void onCooldownStarted(ResourceLocation group, int cooldown) {
-         super.onCooldownStarted(group, cooldown);
+     protected void onCooldownStarted(final Identifier cooldownGroup, final int duration) {
+         super.onCooldownStarted(cooldownGroup, duration);

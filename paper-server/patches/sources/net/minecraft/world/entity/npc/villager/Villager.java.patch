@@ -1,0 +1,152 @@
+--- a/net/minecraft/world/entity/npc/villager/Villager.java
++++ b/net/minecraft/world/entity/npc/villager/Villager.java
+@@ -262,7 +_,7 @@
+                     this.increaseProfessionLevelOnUpdate = false;
+                 }
+ 
+-                this.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 0));
++                this.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.VILLAGER_TRADE); // CraftBukkit
+             }
+         }
+ 
+@@ -376,7 +_,12 @@
+         this.updateDemand();
+ 
+         for (MerchantOffer offer : this.getOffers()) {
+-            offer.resetUses();
++            // CraftBukkit start
++            org.bukkit.event.entity.VillagerReplenishTradeEvent event = new org.bukkit.event.entity.VillagerReplenishTradeEvent((org.bukkit.entity.Villager) this.getBukkitEntity(), offer.asBukkit());
++            if (event.callEvent()) {
++                offer.resetUses();
++            }
++            // CraftBukkit end
+         }
+ 
+         this.resendOffersToTradingPlayer();
+@@ -437,7 +_,12 @@
+         int missedUpdates = 2 - this.numberOfRestocksToday;
+         if (missedUpdates > 0) {
+             for (MerchantOffer offer : this.getOffers()) {
+-                offer.resetUses();
++                // CraftBukkit start
++                org.bukkit.event.entity.VillagerReplenishTradeEvent event = new org.bukkit.event.entity.VillagerReplenishTradeEvent((org.bukkit.entity.Villager) this.getBukkitEntity(), offer.asBukkit());
++                if (event.callEvent()) {
++                    offer.resetUses();
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -458,6 +_,7 @@
+         int reputation = this.getPlayerReputation(player);
+         if (reputation != 0) {
+             for (MerchantOffer offer : this.getOffers()) {
++                if (offer.ignoreDiscounts) continue; // Paper - Add ignore discounts API
+                 offer.addToSpecialPriceDiff(-Mth.floor(reputation * offer.getPriceMultiplier()));
+             }
+         }
+@@ -467,6 +_,7 @@
+             int amplifier = effect.getAmplifier();
+ 
+             for (MerchantOffer offer : this.getOffers()) {
++                if (offer.ignoreDiscounts) continue; // Paper - Add ignore discounts API
+                 double modifier = 0.3 + 0.0625 * amplifier;
+                 int costReduction = (int)Math.floor(modifier * offer.getBaseCostA().getCount());
+                 offer.addToSpecialPriceDiff(-Math.max(costReduction, 1));
+@@ -582,7 +_,7 @@
+         }
+ 
+         if (offer.shouldRewardExp()) {
+-            this.level().addFreshEntity(new ExperienceOrb(this.level(), this.getX(), this.getY() + 0.5, this.getZ(), popXp));
++            this.level().addFreshEntity(new ExperienceOrb(this.level(), this.getX(), this.getY() + 0.5, this.getZ(), popXp, org.bukkit.entity.ExperienceOrb.SpawnReason.VILLAGER_TRADE, this.getTradingPlayer(), this)); // Paper
+         }
+     }
+ 
+@@ -600,7 +_,7 @@
+ 
+     @Override
+     public void die(final DamageSource source) {
+-        LOGGER.info("Villager {} died, message: '{}'", this, source.getLocalizedDeathMessage(this).getString());
++        if (org.spigotmc.SpigotConfig.logVillagerDeaths) LOGGER.info("Villager {} died, message: '{}'", this, source.getLocalizedDeathMessage(this).getString()); // Spigot
+         Entity murderer = source.getEntity();
+         if (murderer != null) {
+             this.tellWitnessesThatIWasMurdered(murderer);
+@@ -699,7 +_,7 @@
+         return VillagerData.canLevelUp(currentLevel) && this.villagerXp >= VillagerData.getMaxXpPerLevel(currentLevel);
+     }
+ 
+-    private void increaseMerchantCareer(final ServerLevel level) {
++    public void increaseMerchantCareer(final ServerLevel level) { // Paper - public
+         this.setVillagerData(this.getVillagerData().withLevel(this.getVillagerData().level() + 1));
+         this.updateTrades(level);
+     }
+@@ -762,12 +_,19 @@
+     @Override
+     public void thunderHit(final ServerLevel level, final LightningBolt lightningBolt) {
+         if (level.getDifficulty() != Difficulty.PEACEFUL) {
+-            LOGGER.info("Villager {} was struck by lightning {}.", this, lightningBolt);
++            // Paper - Add EntityZapEvent; move log down, event can cancel
+             Witch witch = this.convertTo(EntityType.WITCH, ConversionParams.single(this, false, false), w -> {
++                // Paper start - Add EntityZapEvent
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityZapEvent(this, lightningBolt, w).isCancelled()) {
++                    return false;
++                }
++                if (org.spigotmc.SpigotConfig.logVillagerDeaths) LOGGER.info("Villager {} was struck by lightning {}.", this, lightningBolt); // Move down
++                // Paper end - Add EntityZapEvent
+                 w.finalizeSpawn(level, level.getCurrentDifficultyAt(w.blockPosition()), EntitySpawnReason.CONVERSION, null);
+                 w.setPersistenceRequired();
+                 this.releaseAllPois();
+-            });
++                return true; // Paper - Add EntityZapEvent
++            }, org.bukkit.event.entity.EntityTransformEvent.TransformReason.LIGHTNING, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING); // CraftBukkit
+             if (witch == null) {
+                 super.thunderHit(level, lightningBolt);
+             }
+@@ -807,15 +_,23 @@
+ 
+     @Override
+     protected void updateTrades(final ServerLevel level) {
++        // Paper start - More vanilla friendly methods to update trades
++        this.updateTrades(level, -1);
++    }
++
++    public boolean updateTrades(final ServerLevel level, int amount) {
++        // Paper end - More vanilla friendly methods to update trades
+         VillagerData data = this.getVillagerData();
+         VillagerProfession profession = data.profession().value();
+         ResourceKey<TradeSet> trades = profession.getTrades(data.level());
+         if (trades != null) {
+-            this.addOffersFromTradeSet(level, this.getOffers(), trades);
++            this.addOffersFromTradeSet(level, this.getOffers(), trades, amount); // Paper - More vanilla friendly methods to update trades
+             if (SharedConstants.DEBUG_UNLOCK_ALL_TRADES && data.level() < 5) {
+                 this.increaseMerchantCareer(level);
+             }
++            return true; // Paper - More vanilla friendly methods to update trades
+         }
++        return false; // Paper - More vanilla friendly methods to update trades
+     }
+ 
+     public void gossip(final ServerLevel level, final Villager target, final long timestamp) {
+@@ -847,7 +_,7 @@
+                 .limit(5L)
+                 .toList();
+             if (nearbyVillagersThatWantAGolem.size() >= villagersNeededToAgree) {
+-                if (!SpawnUtil.trySpawnMob(
++                if (SpawnUtil.trySpawnMob( // Paper - Set Golem Last Seen to stop it from spawning another one - switch to isPresent
+                         EntityType.IRON_GOLEM,
+                         EntitySpawnReason.MOB_SUMMONED,
+                         level,
+@@ -856,9 +_,11 @@
+                         8,
+                         6,
+                         SpawnUtil.Strategy.LEGACY_IRON_GOLEM,
+-                        false
++                        false,
++                        org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE, // CraftBukkit,
++                        () -> {GolemSensor.golemDetected(this);} // Paper - Set Golem Last Seen to stop it from spawning another one
+                     )
+-                    .isEmpty()) {
++                    .isPresent()) { // Paper - Set Golem Last Seen to stop it from spawning another one - switch to isPresent
+                     nearbyVillagers.forEach(GolemSensor::golemDetected);
+                 }
+             }
