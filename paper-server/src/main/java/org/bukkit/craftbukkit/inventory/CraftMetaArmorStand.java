@@ -36,11 +36,11 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
         this.entityTag = armorStand.entityTag;
     }
 
-    CraftMetaArmorStand(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaArmorStand(DataComponentPatch patch, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaArmorStand.ENTITY_TAG).ifPresent((nbt) -> {
-            this.entityTag = nbt.copyTagWithEntityId();
+        getOrEmpty(patch, CraftMetaArmorStand.ENTITY_TAG).ifPresent((entityData) -> {
+            this.entityTag = entityData.copyTagWithEntityId();
         });
     }
 
@@ -113,7 +113,7 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
     }
 
     boolean isArmorStandEmpty() {
-        return this.entityTag == null || this.entityTag.size() == 1 && this.entityTag.contains("id"); // consider armor stand empty if tag is empty.
+        return this.entityTag == null || this.entityTag.isEmpty(); // consider armor stand empty if tag is empty.
     }
 
     @Override

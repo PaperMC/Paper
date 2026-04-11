@@ -140,11 +140,11 @@ public class CraftMerchantRecipe extends MerchantRecipe {
         Preconditions.checkState(!ingredients.isEmpty(), "No offered ingredients");
         net.minecraft.world.item.ItemStack baseCostA = CraftItemStack.asNMSCopy(ingredients.get(0));
         DataComponentExactPredicate baseCostAPredicate = DataComponentExactPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, baseCostA.getComponentsPatch()));
-        this.handle.baseCostA = new ItemCost(baseCostA.getItemHolder(), baseCostA.getCount(), baseCostAPredicate, baseCostA);
+        this.handle.baseCostA = new ItemCost(baseCostA.typeHolder(), baseCostA.getCount(), baseCostAPredicate, baseCostA);
         if (ingredients.size() > 1) {
             net.minecraft.world.item.ItemStack costB = CraftItemStack.asNMSCopy(ingredients.get(1));
             DataComponentExactPredicate costBPredicate = DataComponentExactPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, costB.getComponentsPatch()));
-            this.handle.costB = Optional.of(new ItemCost(costB.getItemHolder(), costB.getCount(), costBPredicate, costB));
+            this.handle.costB = Optional.of(new ItemCost(costB.typeHolder(), costB.getCount(), costBPredicate, costB));
         } else {
             this.handle.costB = Optional.empty();
         }

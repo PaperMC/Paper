@@ -1,16 +1,16 @@
 --- a/net/minecraft/server/commands/SetSpawnCommand.java
 +++ b/net/minecraft/server/commands/SetSpawnCommand.java
-@@ -74,24 +_,34 @@
-         float f = Mth.wrapDegrees(rotation.y);
-         float f1 = Mth.clamp(rotation.x, -90.0F, 90.0F);
+@@ -74,12 +_,22 @@
+         float yaw = Mth.wrapDegrees(rotationVector.y);
+         float pitch = Mth.clamp(rotationVector.x, -90.0F, 90.0F);
  
 +        final Collection<ServerPlayer> actualTargets = new java.util.ArrayList<>(); // Paper - Add PlayerSetSpawnEvent
-         for (ServerPlayer serverPlayer : targets) {
--            serverPlayer.setRespawnPosition(new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(resourceKey, pos, f, f1), true), false);
+         for (ServerPlayer target : targets) {
+-            target.setRespawnPosition(new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(dimension, pos, yaw, pitch), true), false);
 -        }
 +            // Paper start - Add PlayerSetSpawnEvent
-+            if (serverPlayer.setRespawnPosition(new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(resourceKey, pos, f, f1), true), false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.COMMAND)) {
-+                actualTargets.add(serverPlayer);
++            if (target.setRespawnPosition(new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(dimension, pos, yaw, pitch), true), false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.COMMAND)) {
++                actualTargets.add(target);
 +            }
 +            // Paper end - Add PlayerSetSpawnEvent
 +        }
@@ -20,20 +20,28 @@
 +        }
 +        // Paper end - Add PlayerSetSpawnEvent
  
-         String string = resourceKey.identifier().toString();
+         String dimensionName = dimension.identifier().toString();
 -        if (targets.size() == 1) {
 +        if (actualTargets.size() == 1) { // Paper - Add PlayerSetSpawnEvent
              source.sendSuccess(
                  () -> Component.translatable(
--                    "commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), f, f1, string, targets.iterator().next().getDisplayName()
-+                    "commands.spawnpoint.success.single", pos.getX(), pos.getY(), pos.getZ(), f, f1, string, actualTargets.iterator().next().getDisplayName() // Paper - Add PlayerSetSpawnEvent
+                     "commands.spawnpoint.success.single",
+@@ -89,19 +_,19 @@
+                     yaw,
+                     pitch,
+                     dimensionName,
+-                    targets.iterator().next().getDisplayName()
++                    actualTargets.iterator().next().getDisplayName() // Paper - Add PlayerSetSpawnEvent
                  ),
                  true
              );
          } else {
              source.sendSuccess(
--                () -> Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), f, f1, string, targets.size()), true
-+                () -> Component.translatable("commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), f, f1, string, actualTargets.size()), true // Paper - Add PlayerSetSpawnEvent
+                 () -> Component.translatable(
+-                    "commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), yaw, pitch, dimensionName, targets.size()
++                    "commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), yaw, pitch, dimensionName, actualTargets.size() // Paper - Add PlayerSetSpawnEvent
+                 ),
+                 true
              );
          }
  

@@ -175,6 +175,8 @@ public enum Particle implements Keyed {
      */
     BLOCK_MARKER("block_marker", BlockData.class),
     COPPER_FIRE_FLAME("copper_fire_flame"),
+    PAUSE_MOB_GROWTH("pause_mob_growth"),
+    RESET_MOB_GROWTH("reset_mob_growth"),
     ;
 
     private final NamespacedKey key;
