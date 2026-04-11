@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import io.papermc.paper.world.MoonPhase;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -19,6 +18,7 @@ import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.level.MoonPhase;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.chunk.ChunkGenerator;
@@ -464,9 +464,9 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public MoonPhase getMoonPhase() {
-        final net.minecraft.world.level.MoonPhase moonPhase = this.getHandle().getLevel().environmentAttributes().getDimensionValue(EnvironmentAttributes.MOON_PHASE);
-        return MoonPhase.values()[moonPhase.ordinal()];
+    public io.papermc.paper.world.MoonPhase getMoonPhase() {
+        final MoonPhase moonPhase = this.getHandle().getLevel().environmentAttributes().getDimensionValue(EnvironmentAttributes.MOON_PHASE);
+        return io.papermc.paper.world.MoonPhase.values()[moonPhase.ordinal()];
     }
 
     @Override
