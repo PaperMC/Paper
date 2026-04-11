@@ -1,27 +1,27 @@
 --- a/net/minecraft/world/level/gameevent/GameEventDispatcher.java
 +++ b/net/minecraft/world/level/gameevent/GameEventDispatcher.java
 @@ -22,6 +_,15 @@
-     public void post(Holder<GameEvent> gameEvent, Vec3 pos, GameEvent.Context context) {
-         int notificationRadius = gameEvent.value().notificationRadius();
-         BlockPos blockPos = BlockPos.containing(pos);
+     public void post(final Holder<GameEvent> gameEvent, final Vec3 position, final GameEvent.Context context) {
+         int radius = gameEvent.value().notificationRadius();
+         BlockPos center = BlockPos.containing(position);
 +        // CraftBukkit start
 +        org.bukkit.event.world.GenericGameEvent apiEvent = new org.bukkit.event.world.GenericGameEvent(
-+            org.bukkit.craftbukkit.CraftGameEvent.minecraftHolderToBukkit(gameEvent), org.bukkit.craftbukkit.util.CraftLocation.toBukkit(blockPos, this.level),
-+            (context.sourceEntity() == null) ? null : context.sourceEntity().getBukkitEntity(), notificationRadius, !org.bukkit.Bukkit.isPrimaryThread());
++            org.bukkit.craftbukkit.CraftGameEvent.minecraftHolderToBukkit(gameEvent), org.bukkit.craftbukkit.util.CraftLocation.toBukkit(center, this.level),
++            (context.sourceEntity() == null) ? null : context.sourceEntity().getBukkitEntity(), radius, !org.bukkit.Bukkit.isPrimaryThread());
 +        if (!apiEvent.callEvent()) {
 +            return;
 +        }
-+        notificationRadius = apiEvent.getRadius();
++        radius = apiEvent.getRadius();
 +        // CraftBukkit end
-         int sectionPosCoord = SectionPos.blockToSectionCoord(blockPos.getX() - notificationRadius);
-         int sectionPosCoord1 = SectionPos.blockToSectionCoord(blockPos.getY() - notificationRadius);
-         int sectionPosCoord2 = SectionPos.blockToSectionCoord(blockPos.getZ() - notificationRadius);
+         int sectionMinX = SectionPos.blockToSectionCoord(center.getX() - radius);
+         int sectionMinY = SectionPos.blockToSectionCoord(center.getY() - radius);
+         int sectionMinZ = SectionPos.blockToSectionCoord(center.getZ() - radius);
 @@ -40,7 +_,7 @@
  
-         for (int i = sectionPosCoord; i <= sectionPosCoord3; i++) {
-             for (int i1 = sectionPosCoord2; i1 <= sectionPosCoord5; i1++) {
--                ChunkAccess chunkNow = this.level.getChunkSource().getChunkNow(i, i1);
-+                ChunkAccess chunkNow = this.level.getChunkIfLoadedImmediately(i, i1); // Paper - Use getChunkIfLoadedImmediately
-                 if (chunkNow != null) {
-                     for (int i2 = sectionPosCoord1; i2 <= sectionPosCoord4; i2++) {
-                         flag |= chunkNow.getListenerRegistry(i2).visitInRangeListeners(gameEvent, pos, context, listenerVisitor);
+         for (int chunkX = sectionMinX; chunkX <= sectionMaxX; chunkX++) {
+             for (int chunkZ = sectionMinZ; chunkZ <= sectionMaxZ; chunkZ++) {
+-                ChunkAccess chunk = this.level.getChunkSource().getChunkNow(chunkX, chunkZ);
++                ChunkAccess chunk = this.level.getChunkIfLoadedImmediately(chunkX, chunkZ); // Paper - Use getChunkIfLoadedImmediately
+                 if (chunk != null) {
+                     for (int section = sectionMinY; section <= sectionMaxY; section++) {
+                         applicable |= chunk.getListenerRegistry(section).visitInRangeListeners(gameEvent, position, context, visitListeners);

@@ -7,71 +7,67 @@ Co-authored-by: Bjarne Koll <git@lynxplay.dev>
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
 diff --git a/net/minecraft/world/entity/ai/behavior/GateBehavior.java b/net/minecraft/world/entity/ai/behavior/GateBehavior.java
-index c215d97c24e6501e1a48a76fc08bf48ff4dfe462..bd31d1cac0d022a72bd536c41d1ef811886e7068 100644
+index 135d932a31a557ff06643fb563262423d48cd540..9fb025b05cacc901d72d93c16cf2b7e48d4dd9a6 100644
 --- a/net/minecraft/world/entity/ai/behavior/GateBehavior.java
 +++ b/net/minecraft/world/entity/ai/behavior/GateBehavior.java
-@@ -57,7 +57,7 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
-         if (this.hasRequiredMemories(entity)) {
+@@ -69,7 +69,7 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+         if (this.hasRequiredMemories(body)) {
              this.status = Behavior.Status.RUNNING;
              this.orderPolicy.apply(this.behaviors);
--            this.runningPolicy.apply(this.behaviors.stream(), level, entity, gameTime);
-+            this.runningPolicy.apply(this.behaviors, level, entity, gameTime); // Paper - Perf: Remove streams from hot code
+-            this.runningPolicy.apply(this.behaviors.stream(), level, body, timestamp);
++            this.runningPolicy.apply(this.behaviors, level, body, timestamp); // Paper - Perf: Remove streams from hot code
              return true;
          } else {
              return false;
-@@ -66,10 +66,13 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+@@ -78,8 +78,14 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
  
      @Override
-     public final void tickOrStop(ServerLevel level, E entity, long gameTime) {
--        this.behaviors
--            .stream()
--            .filter(behavior -> behavior.getStatus() == Behavior.Status.RUNNING)
--            .forEach(behavior -> behavior.tickOrStop(level, entity, gameTime));
+     public final void tickOrStop(final ServerLevel level, final E body, final long timestamp) {
+-        this.behaviors.stream().filter(goal -> goal.getStatus() == Behavior.Status.RUNNING).forEach(goal -> goal.tickOrStop(level, body, timestamp));
+-        if (this.behaviors.stream().noneMatch(g -> g.getStatus() == Behavior.Status.RUNNING)) {
 +        // Paper start - Perf: Remove streams from hot code
 +        for (final BehaviorControl<? super E> behavior : this.behaviors) {
 +            if (behavior.getStatus() == Behavior.Status.RUNNING) {
-+                behavior.tickOrStop(level, entity, gameTime);
++                behavior.tickOrStop(level, body, timestamp);
 +            }
 +        }
 +        // Paper end - Perf: Remove streams from hot code
-         if (this.behaviors.stream().noneMatch(behavior -> behavior.getStatus() == Behavior.Status.RUNNING)) {
-             this.doStop(level, entity, gameTime);
++        if (this.behaviors.stream().noneMatch(behavior -> behavior.getStatus() == Behavior.Status.RUNNING)) {
+             this.doStop(level, body, timestamp);
          }
-@@ -78,11 +81,16 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+     }
+@@ -87,8 +93,16 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
      @Override
-     public final void doStop(ServerLevel level, E entity, long gameTime) {
+     public final void doStop(final ServerLevel level, final E body, final long timestamp) {
          this.status = Behavior.Status.STOPPED;
--        this.behaviors
--            .stream()
--            .filter(behavior -> behavior.getStatus() == Behavior.Status.RUNNING)
--            .forEach(behavior -> behavior.doStop(level, entity, gameTime));
--        this.exitErasedMemories.forEach(entity.getBrain()::eraseMemory);
+-        this.behaviors.stream().filter(goal -> goal.getStatus() == Behavior.Status.RUNNING).forEach(goal -> goal.doStop(level, body, timestamp));
+-        this.exitErasedMemories.forEach(body.getBrain()::eraseMemory);
 +        // Paper start - Perf: Remove streams from hot code
 +        for (final BehaviorControl<? super E> behavior : this.behaviors) {
 +            if (behavior.getStatus() == Behavior.Status.RUNNING) {
-+                behavior.doStop(level, entity, gameTime);
++                behavior.doStop(level, body, timestamp);
 +            }
 +        }
 +        for (final MemoryModuleType<?> exitErasedMemory : this.exitErasedMemories) {
-+            entity.getBrain().eraseMemory(exitErasedMemory);
++            body.getBrain().eraseMemory(exitErasedMemory);
 +        }
 +        // Paper end - Perf: Remove streams from hot code
      }
  
      @Override
-@@ -116,20 +124,30 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+@@ -118,24 +132,36 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
  
      public static enum RunningPolicy {
          RUN_ONE {
 +            // Paper start - Perf: Remove streams from hot code
              @Override
--            public <E extends LivingEntity> void apply(Stream<BehaviorControl<? super E>> behaviors, ServerLevel level, E owner, long gameTime) {
--                behaviors.filter(behavior -> behavior.getStatus() == Behavior.Status.STOPPED)
--                    .filter(behavior -> behavior.tryStart(level, owner, gameTime))
--                    .findFirst();
-+            public <E extends LivingEntity> void apply(ShufflingList<BehaviorControl<? super E>> behaviors, ServerLevel level, E owner, long gameTime) {
+             public <E extends LivingEntity> void apply(
+-                final Stream<BehaviorControl<? super E>> behaviors, final ServerLevel level, final E body, final long timestamp
++                final ShufflingList<BehaviorControl<? super E>> behaviors, final ServerLevel level, final E body, final long timestamp
+             ) {
+-                behaviors.filter(goal -> goal.getStatus() == Behavior.Status.STOPPED).filter(goal -> goal.tryStart(level, body, timestamp)).findFirst();
 +                for (final BehaviorControl<? super E> behavior : behaviors) {
-+                    if (behavior.getStatus() == Behavior.Status.STOPPED && behavior.tryStart(level, owner, gameTime)) {
++                    if (behavior.getStatus() == Behavior.Status.STOPPED && behavior.tryStart(level, body, timestamp)) {
 +                        break;
 +                    }
 +                }
@@ -81,111 +77,110 @@ index c215d97c24e6501e1a48a76fc08bf48ff4dfe462..bd31d1cac0d022a72bd536c41d1ef811
          TRY_ALL {
 +            // Paper start - Perf: Remove streams from hot code
              @Override
--            public <E extends LivingEntity> void apply(Stream<BehaviorControl<? super E>> behaviors, ServerLevel level, E owner, long gameTime) {
--                behaviors.filter(behavior -> behavior.getStatus() == Behavior.Status.STOPPED).forEach(behavior -> behavior.tryStart(level, owner, gameTime));
-+            public <E extends LivingEntity> void apply(ShufflingList<BehaviorControl<? super E>> behaviors, ServerLevel level, E owner, long gameTime) {
+             public <E extends LivingEntity> void apply(
+-                final Stream<BehaviorControl<? super E>> behaviors, final ServerLevel level, final E body, final long timestamp
++                final ShufflingList<BehaviorControl<? super E>> behaviors, final ServerLevel level, final E body, final long timestamp
+             ) {
+-                behaviors.filter(goal -> goal.getStatus() == Behavior.Status.STOPPED).forEach(goal -> goal.tryStart(level, body, timestamp));
 +                for (final BehaviorControl<? super E> behavior : behaviors) {
 +                    if (behavior.getStatus() == Behavior.Status.STOPPED) {
-+                        behavior.tryStart(level, owner, gameTime);
++                        behavior.tryStart(level, body, timestamp);
 +                    }
 +                }
 +                // Paper end - Perf: Remove streams from hot code
              }
          };
  
--        public abstract <E extends LivingEntity> void apply(Stream<BehaviorControl<? super E>> behaviors, ServerLevel level, E owner, long gameTime);
-+        public abstract <E extends LivingEntity> void apply(ShufflingList<BehaviorControl<? super E>> behaviors, ServerLevel level, E owner, long gameTime); // Paper - Perf: Remove streams from hot code
+         public abstract <E extends LivingEntity> void apply(
+-            final Stream<BehaviorControl<? super E>> behaviors, final ServerLevel level, final E body, final long timestamp
++            final ShufflingList<BehaviorControl<? super E>> behaviors, final ServerLevel level, final E body, final long timestamp // Paper - Perf: Remove streams from hot code
+         );
      }
  }
 diff --git a/net/minecraft/world/entity/ai/gossip/GossipContainer.java b/net/minecraft/world/entity/ai/gossip/GossipContainer.java
-index d93ef8d7ff04ffd3d7434ea6e2d476115203215b..425ca1931fb0a5c33ba7aaf4f639409c9fea836f 100644
+index 75233df622242db6c23f7a1a5812bf25942bca41..133aab614b102419ec731e901858c0347076bae9 100644
 --- a/net/minecraft/world/entity/ai/gossip/GossipContainer.java
 +++ b/net/minecraft/world/entity/ai/gossip/GossipContainer.java
 @@ -28,7 +28,7 @@ import net.minecraft.util.VisibleForDebug;
  public class GossipContainer {
      public static final Codec<GossipContainer> CODEC = GossipContainer.GossipEntry.CODEC
          .listOf()
--        .xmap(GossipContainer::new, gossipContainer -> gossipContainer.unpack().toList());
-+        .xmap(GossipContainer::new, gossipContainer -> gossipContainer.decompress()); // Paper - Perf: Remove streams from hot code
+-        .xmap(GossipContainer::new, container -> container.unpack().toList());
++        .xmap(GossipContainer::new, GossipContainer::decompress); // Paper - Perf: Remove streams from hot code
      public static final int DISCARD_THRESHOLD = 2;
      public final Map<UUID, GossipContainer.EntityGossips> gossips = new HashMap<>();
  
 @@ -65,8 +65,22 @@ public class GossipContainer {
-         return this.gossips.entrySet().stream().flatMap(entry -> entry.getValue().unpack(entry.getKey()));
+         return this.gossips.entrySet().stream().flatMap(e -> e.getValue().unpack(e.getKey()));
      }
  
 +    // Paper start - Perf: Remove streams from hot code
 +    private List<GossipContainer.GossipEntry> decompress() {
-+        final List<GossipContainer.GossipEntry> list = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
-+        for (final Map.Entry<UUID, GossipContainer.EntityGossips> entry : this.gossips.entrySet()) {
-+            for (final GossipContainer.GossipEntry cur : entry.getValue().decompress(entry.getKey())) {
-+                if (cur.weightedValue() != 0) {
-+                    list.add(cur);
++        final List<GossipContainer.GossipEntry> entries = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
++        for (final Map.Entry<UUID, GossipContainer.EntityGossips> gossips : this.gossips.entrySet()) {
++            for (final GossipContainer.GossipEntry entry : gossips.getValue().decompress(gossips.getKey())) {
++                if (entry.weightedValue() != 0) {
++                    entries.add(entry);
 +                }
 +            }
 +        }
-+        return list;
++        return entries;
 +    }
 +    // Paper end - Perf: Remove streams from hot code
 +
-     private Collection<GossipContainer.GossipEntry> selectGossipsForTransfer(RandomSource random, int amount) {
--        List<GossipContainer.GossipEntry> list = this.unpack().toList();
-+        List<GossipContainer.GossipEntry> list = this.decompress(); // Paper - Perf: Remove streams from hot code
-         if (list.isEmpty()) {
+     private Collection<GossipContainer.GossipEntry> selectGossipsForTransfer(final RandomSource random, final int maxCount) {
+-        List<GossipContainer.GossipEntry> entries = this.unpack().toList();
++        List<GossipContainer.GossipEntry> entries = this.decompress(); // Paper - Perf: Remove streams from hot code
+         if (entries.isEmpty()) {
              return Collections.emptyList();
          } else {
-@@ -176,12 +190,23 @@ public class GossipContainer {
-         final Object2IntMap<GossipType> entries = new Object2IntOpenHashMap<>();
+@@ -176,7 +190,23 @@ public class GossipContainer {
+         private final Object2IntMap<GossipType> entries = new Object2IntOpenHashMap<>();
  
-         public int weightedValue(Predicate<GossipType> gossipType) {
--            return this.entries
--                .object2IntEntrySet()
--                .stream()
--                .filter(gossip -> gossipType.test(gossip.getKey()))
--                .mapToInt(gossip -> gossip.getIntValue() * gossip.getKey().weight)
--                .sum();
+         public int weightedValue(final Predicate<GossipType> types) {
+-            return this.entries.object2IntEntrySet().stream().filter(e -> types.test(e.getKey())).mapToInt(e -> e.getIntValue() * e.getKey().weight).sum();
 +            // Paper start - Perf: Remove streams from hot code
 +            int weight = 0;
-+            for (Object2IntMap.Entry<GossipType> entry : entries.object2IntEntrySet()) {
-+                if (gossipType.test(entry.getKey())) {
++            for (Object2IntMap.Entry<GossipType> entry : this.entries.object2IntEntrySet()) {
++                if (types.test(entry.getKey())) {
 +                    weight += entry.getIntValue() * entry.getKey().weight;
 +                }
 +            }
 +            return weight;
 +        }
 +
-+        public List<GossipContainer.GossipEntry> decompress(UUID uuid) {
-+            List<GossipContainer.GossipEntry> list = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
-+            for (Object2IntMap.Entry<GossipType> entry : entries.object2IntEntrySet()) {
-+                list.add(new GossipContainer.GossipEntry(uuid, entry.getKey(), entry.getIntValue()));
++        public List<GossipContainer.GossipEntry> decompress(final UUID target) {
++            List<GossipContainer.GossipEntry> entries = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
++            for (Object2IntMap.Entry<GossipType> entry : this.entries.object2IntEntrySet()) {
++                entries.add(new GossipContainer.GossipEntry(target, entry.getKey(), entry.getIntValue()));
 +            }
-+            return list;
++            return entries;
 +            // Paper end - Perf: Remove streams from hot code
          }
  
-         public Stream<GossipContainer.GossipEntry> unpack(UUID identifier) {
+         public Stream<GossipContainer.GossipEntry> unpack(final UUID target) {
 diff --git a/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java b/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
-index 38873e56e95dc772b184e4271f7af1fb411ac9f8..09fd13e2d958da8326276c4dadf25bf488aff5ac 100644
+index e08da5b08dca5849fe0fd6d0ed237fbd36881e15..8aeea55380462421cde43afb4b2fb0ce44b65195 100644
 --- a/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
 +++ b/net/minecraft/world/entity/ai/sensing/NearestItemSensor.java
 @@ -24,13 +24,17 @@ public class NearestItemSensor extends Sensor<Mob> {
      @Override
-     protected void doTick(ServerLevel level, Mob entity) {
-         Brain<?> brain = entity.getBrain();
--        List<ItemEntity> entitiesOfClass = level.getEntitiesOfClass(ItemEntity.class, entity.getBoundingBox().inflate(32.0, 16.0, 32.0), itemEntity -> true);
-+        List<ItemEntity> entitiesOfClass = level.getEntitiesOfClass(ItemEntity.class, entity.getBoundingBox().inflate(32.0, 16.0, 32.0), itemEntity -> itemEntity.closerThan(entity, MAX_DISTANCE_TO_WANTED_ITEM) && entity.wantsToPickUp(level, itemEntity.getItem())); // Paper - Perf: Move predicate into getEntities
-         entitiesOfClass.sort(Comparator.comparingDouble(entity::distanceToSqr));
--        Optional<ItemEntity> optional = entitiesOfClass.stream()
--            .filter(itemEntity -> entity.wantsToPickUp(level, itemEntity.getItem()))
--            .filter(itemEntity -> itemEntity.closerThan(entity, 32.0))
--            .filter(entity::hasLineOfSight)
+     protected void doTick(final ServerLevel level, final Mob body) {
+         Brain<?> brain = body.getBrain();
+-        List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, body.getBoundingBox().inflate(32.0, 16.0, 32.0), item -> true);
++        List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, body.getBoundingBox().inflate(32.0, 16.0, 32.0), item -> item.closerThan(body, MAX_DISTANCE_TO_WANTED_ITEM) && body.wantsToPickUp(level, item.getItem())); // Paper - Perf: Move predicate into getEntities
+         items.sort(Comparator.comparingDouble(body::distanceToSqr));
+-        Optional<ItemEntity> nearestVisibleLovedItem = items.stream()
+-            .filter(itemEntity -> body.wantsToPickUp(level, itemEntity.getItem()))
+-            .filter(itemEntity -> itemEntity.closerThan(body, 32.0))
+-            .filter(body::hasLineOfSight)
 -            .findFirst();
--        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, optional);
+-        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, nearestVisibleLovedItem);
 +        // Paper start - Perf: remove streams from hot code
 +        ItemEntity nearest = null;
-+        for (final ItemEntity itemEntity : entitiesOfClass) {
-+            if (entity.hasLineOfSight(itemEntity)) { // Paper - Perf: Move predicate into getEntities
-+                nearest = itemEntity;
++        for (final ItemEntity item : items) {
++            if (body.hasLineOfSight(item)) { // Paper - Perf: Move predicate into getEntities
++                nearest = item;
 +                break;
 +            }
 +        }

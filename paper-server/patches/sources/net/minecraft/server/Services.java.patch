@@ -4,11 +4,11 @@
      GameProfileRepository profileRepository,
      UserNameToIdResolver nameToIdCache,
      ProfileResolver profileResolver
-+    , @javax.annotation.Nullable PaperServices paper // Paper
++    , @Nullable PaperServices paper // Paper
  ) {
      public static final String USERID_CACHE_FILE = "usercache.json";
  
--    public static Services create(YggdrasilAuthenticationService authenticationService, File profileRepository) {
+-    public static Services create(final YggdrasilAuthenticationService serviceAccess, final File nameCacheDir) {
 +    // Paper start - add paper configuration files
 +    public record PaperServices(
 +        io.papermc.paper.configuration.PaperConfigurations configurations,
@@ -25,23 +25,23 @@
 +    }
 +    // Paper end - add paper configuration files
 +
-+    public static Services create(YggdrasilAuthenticationService authenticationService, File profileRepository, File userCacheFile, joptsimple.OptionSet optionSet) throws Exception { // Paper - add optionset to load paper config files; add userCacheFile parameter
-         MinecraftSessionService minecraftSessionService = authenticationService.createMinecraftSessionService();
-         GameProfileRepository gameProfileRepository = authenticationService.createProfileRepository();
--        UserNameToIdResolver userNameToIdResolver = new CachedUserNameToIdResolver(gameProfileRepository, new File(profileRepository, "usercache.json"));
--        ProfileResolver profileResolver = new ProfileResolver.Cached(minecraftSessionService, userNameToIdResolver);
--        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, userNameToIdResolver, profileResolver);
-+        UserNameToIdResolver userNameToIdResolver = new CachedUserNameToIdResolver(gameProfileRepository, userCacheFile); // Paper
++    public static Services create(final YggdrasilAuthenticationService serviceAccess, final File nameCacheDir, final File userCacheFile, final joptsimple.OptionSet options) throws Exception { // Paper - add options to load paper config files; add userCacheFile parameter
+         MinecraftSessionService sessionService = serviceAccess.createMinecraftSessionService();
+         GameProfileRepository profileRepository = serviceAccess.createProfileRepository();
+-        UserNameToIdResolver profileCache = new CachedUserNameToIdResolver(profileRepository, new File(nameCacheDir, "usercache.json"));
+-        ProfileResolver profileResolver = new ProfileResolver.Cached(sessionService, profileCache);
+-        return new Services(sessionService, serviceAccess.getServicesKeySet(), profileRepository, profileCache, profileResolver);
++        UserNameToIdResolver profileCache = new CachedUserNameToIdResolver(profileRepository, userCacheFile); // Paper
 +        // Paper start - load paper config files from cli options
-+        final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
-+        final java.nio.file.Path configDirPath = ((File) optionSet.valueOf("paper-settings-directory")).toPath();
-+        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, profileRepository.toPath(), (File) optionSet.valueOf("spigot-settings"));
++        final java.nio.file.Path legacyConfigPath = ((File) options.valueOf("paper-settings")).toPath();
++        final java.nio.file.Path configDirPath = ((File) options.valueOf("paper-settings-directory")).toPath();
++        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, nameCacheDir.toPath(), (File) options.valueOf("spigot-settings"));
 +        PaperServices paperServices = new PaperServices(
 +            paperConfigurations,
 +            new io.papermc.paper.profile.PaperFilledProfileCache()
 +        );
-+        ProfileResolver profileResolver = new ProfileResolver.Cached(minecraftSessionService, userNameToIdResolver, paperServices.filledProfileCache());
-+        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, userNameToIdResolver, profileResolver, paperServices);
++        ProfileResolver profileResolver = new ProfileResolver.Cached(sessionService, profileCache, paperServices.filledProfileCache());
++        return new Services(sessionService, serviceAccess.getServicesKeySet(), profileRepository, profileCache, profileResolver, paperServices);
 +        // Paper end - load paper config files from cli options
      }
  

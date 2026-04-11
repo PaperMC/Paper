@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/AbstractContainerMenu.java
 +++ b/net/minecraft/world/inventory/AbstractContainerMenu.java
-@@ -63,6 +_,35 @@
+@@ -65,6 +_,35 @@
      private final List<ContainerListener> containerListeners = Lists.newArrayList();
      private @Nullable ContainerSynchronizer synchronizer;
      private boolean suppressRemoteUpdates;
@@ -34,12 +34,12 @@
 +    public void startOpen() {}
 +    // CraftBukkit end
  
-     protected AbstractContainerMenu(@Nullable MenuType<?> menuType, int containerId) {
+     protected AbstractContainerMenu(final @Nullable MenuType<?> menuType, final int containerId) {
          this.menuType = menuType;
-@@ -174,8 +_,43 @@
+@@ -176,8 +_,43 @@
  
          if (this.synchronizer != null) {
-             this.synchronizer.sendInitialData(this, list, carried.copy(), this.remoteDataSlots.toIntArray());
+             this.synchronizer.sendInitialData(this, itemsToSend, carried.copy(), this.remoteDataSlots.toIntArray());
 -        }
 -    }
 +            this.synchronizer.sendOffHandSlotChange(); // Paper - Sync offhand slot in menus; update player's offhand since the offhand slot is not added to the slots for menus but can be changed by swapping from a menu slot
@@ -80,52 +80,52 @@
 +    }
 +    // CraftBukkit end
  
-     public void removeSlotListener(ContainerListener listener) {
+     public void removeSlotListener(final ContainerListener listener) {
          this.containerListeners.remove(listener);
-@@ -241,7 +_,7 @@
-             this.lastSlots.set(slotIndex, itemStack1);
+@@ -243,7 +_,7 @@
+             this.lastSlots.set(i, newItem);
  
              for (ContainerListener containerListener : this.containerListeners) {
--                containerListener.slotChanged(this, slotIndex, itemStack1);
-+                containerListener.slotChanged(this, slotIndex, itemStack, itemStack1); // Paper - Add PlayerInventorySlotChangeEvent
+-                containerListener.slotChanged(this, i, newItem);
++                containerListener.slotChanged(this, i, localExpected, newItem); // Paper - Add PlayerInventorySlotChangeEvent
              }
          }
      }
-@@ -349,6 +_,7 @@
+@@ -351,6 +_,7 @@
                      this.resetQuickCraft();
                  }
-             } else if (this.quickcraftStatus == 1) {
+             } else if (this.quickcraftStatus == QUICKCRAFT_HEADER_CONTINUE) {
 +                if (slotIndex < 0) return; // Paper - Add slot sanity checks to container clicks
                  Slot slot = this.slots.get(slotIndex);
-                 ItemStack carried = this.getCarried();
-                 if (canItemQuickReplace(slot, carried, true)
-@@ -373,6 +_,7 @@
+                 ItemStack carriedItemStack = this.getCarried();
+                 if (canItemQuickReplace(slot, carriedItemStack, true)
+@@ -375,6 +_,7 @@
                      }
  
-                     int count = this.getCarried().getCount();
+                     int remaining = this.getCarried().getCount();
 +                    it.unimi.dsi.fastutil.ints.Int2ObjectMap<net.minecraft.world.item.ItemStack> draggedSlots = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>(); // CraftBukkit - Store slots from drag in map (raw slot id -> new stack)
  
-                     for (Slot slot1 : this.quickcraftSlots) {
-                         ItemStack carried1 = this.getCarried();
-@@ -385,12 +_,46 @@
-                             int min = Math.min(itemStack.getMaxStackSize(), slot1.getMaxStackSize(itemStack));
-                             int min1 = Math.min(getQuickCraftPlaceCount(this.quickcraftSlots, this.quickcraftType, itemStack) + i2, min);
-                             count -= min1 - i2;
--                            slot1.setByPlayer(itemStack.copyWithCount(min1));
+                     for (Slot slot : this.quickcraftSlots) {
+                         ItemStack carriedItemStack = this.getCarried();
+@@ -387,12 +_,42 @@
+                             int maxSize = Math.min(source.getMaxStackSize(), slot.getMaxStackSize(source));
+                             int newCount = Math.min(getQuickCraftPlaceCount(this.quickcraftSlots.size(), this.quickcraftType, source) + carry, maxSize);
+                             remaining -= newCount - carry;
+-                            slot.setByPlayer(source.copyWithCount(newCount));
 -                        }
 -                    }
 -
--                    itemStack.setCount(count);
--                    this.setCarried(itemStack);
-+                            // slot1.setByPlayer(itemStack.copyWithCount(min1));
-+                            draggedSlots.put(slot1.index, itemStack.copyWithCount(min1)); // CraftBukkit - Put in map instead of setting
+-                    source.setCount(remaining);
+-                    this.setCarried(source);
++                            // slot.setByPlayer(source.copyWithCount(newCount));
++                            draggedSlots.put(slot.index, source.copyWithCount(newCount)); // CraftBukkit - Put in map instead of setting
 +                        }
 +                    }
 +
 +                    // CraftBukkit start - InventoryDragEvent
 +                    org.bukkit.inventory.InventoryView view = this.getBukkitView();
-+                    org.bukkit.inventory.ItemStack newCarried = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack);
-+                    newCarried.setAmount(count);
++                    org.bukkit.inventory.ItemStack newCarried = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(source);
++                    newCarried.setAmount(remaining);
 +                    java.util.Map<Integer, org.bukkit.inventory.ItemStack> eventMap = new java.util.HashMap<>();
 +                    for (it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<net.minecraft.world.item.ItemStack> entry : draggedSlots.int2ObjectEntrySet()) {
 +                        eventMap.put(entry.getIntKey(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(entry.getValue()));
@@ -148,11 +148,7 @@
 +                        for (final it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry<net.minecraft.world.item.ItemStack> entry : draggedSlots.int2ObjectEntrySet()) {
 +                            view.setItem(entry.getIntKey(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(entry.getValue()));
 +                        }
-+                        // The only time the carried item will be set to empty is if the inventory is closed by the server.
-+                        // If the inventory is closed by the server, then the cursor items are dropped.  This is why we change the cursor early.
-+                        if (!this.getCarried().isEmpty()) {
-+                            this.setCarried(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getCursor()));
-+                        }
++                        this.setCarried(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getCursor()));
 +                    } else {
 +                        this.setCarried(oldCarried);
 +                    }
@@ -160,8 +156,8 @@
                  }
  
                  this.resetQuickCraft();
-@@ -404,8 +_,11 @@
-             if (slotIndex == SLOT_CLICKED_OUTSIDE) {
+@@ -406,8 +_,11 @@
+             if (slotIndex == -999) {
                  if (!this.getCarried().isEmpty()) {
                      if (clickAction == ClickAction.PRIMARY) {
 -                        player.drop(this.getCarried(), true);
@@ -173,13 +169,13 @@
                      } else {
                          player.drop(this.getCarried().split(1), true);
                      }
-@@ -467,8 +_,18 @@
+@@ -469,8 +_,18 @@
                  }
  
-                 slot.setChanged();
+                 slotx.setChanged();
 +                // CraftBukkit start - Make sure the client has the right slot contents
-+                if (player instanceof ServerPlayer serverPlayer && slot.getMaxStackSize() != Container.MAX_STACK) {
-+                    serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(this.containerId, this.incrementStateId(), slot.index, slot.getItem()));
++                if (player instanceof ServerPlayer serverPlayer && slotx.getMaxStackSize() != Container.MAX_STACK) {
++                    serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(this.containerId, this.incrementStateId(), slotx.index, slotx.getItem()));
 +                    // Updating a crafting inventory makes the client reset the result slot, have to send it again
 +                    if (this.getBukkitView().getType() == org.bukkit.event.inventory.InventoryType.WORKBENCH || this.getBukkitView().getType() == org.bukkit.event.inventory.InventoryType.CRAFTING) {
 +                        serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(this.containerId, this.incrementStateId(), 0, this.getSlot(0).getItem()));
@@ -187,25 +183,25 @@
 +                }
 +                // CraftBukkit end
              }
-         } else if (clickType == ClickType.SWAP && (button >= 0 && button < 9 || button == 40)) {
+         } else if (containerInput == ContainerInput.SWAP && (buttonNum >= 0 && buttonNum < 9 || buttonNum == Inventory.SLOT_OFFHAND)) {
 +            if (slotIndex < 0) return; // Paper - Add slot sanity checks to container clicks
-             ItemStack item = inventory.getItem(button);
-             Slot slot = this.slots.get(slotIndex);
-             ItemStack carried = slot.getItem();
-@@ -528,7 +_,11 @@
+             ItemStack source = inventory.getItem(buttonNum);
+             Slot target = this.slots.get(slotIndex);
+             ItemStack targetItemStack = target.getItem();
+@@ -530,7 +_,11 @@
                      }
  
-                     carried = slot2.safeTake(i1, Integer.MAX_VALUE, player);
--                    player.drop(carried, true);
+                     itemStack = slotx.safeTake(amount, Integer.MAX_VALUE, player);
+-                    player.drop(itemStack, true);
 +                    // CraftBukkit start - SPIGOT-8010: break loop
-+                    if (player.drop(carried, true) == null) {
++                    if (player.drop(itemStack, true) == null) {
 +                        break;
 +                    }
 +                    // CraftBukkit end - SPIGOT-8010: break loop
-                     player.handleCreativeModeItemDrop(carried);
+                     player.handleCreativeModeItemDrop(itemStack);
                  }
              }
-@@ -588,8 +_,9 @@
+@@ -595,8 +_,9 @@
          if (player instanceof ServerPlayer) {
              ItemStack carried = this.getCarried();
              if (!carried.isEmpty()) {
@@ -216,72 +212,72 @@
              }
          }
      }
-@@ -635,6 +_,14 @@
+@@ -642,6 +_,14 @@
      public abstract boolean stillValid(Player player);
  
-     protected boolean moveItemStackTo(ItemStack stack, int startIndex, int endIndex, boolean reverseDirection) {
+     protected boolean moveItemStackTo(final ItemStack itemStack, final int startSlot, final int endSlot, final boolean backwards) {
 +        // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
-+        return this.moveItemStackTo(stack, startIndex, endIndex, reverseDirection, false);
++        return this.moveItemStackTo(itemStack, startSlot, endSlot, backwards, false);
 +    }
-+    protected boolean moveItemStackTo(ItemStack stack, int startIndex, int endIndex, boolean reverseDirection, boolean isCheck) {
++    protected boolean moveItemStackTo(ItemStack itemStack, final int startSlot, final int endSlot, final boolean backwards, final boolean isCheck) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent - non-final itemStack
 +        if (isCheck) {
-+            stack = stack.copy();
++            itemStack = itemStack.copy();
 +        }
 +        // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
-         boolean flag = false;
-         int i = startIndex;
-         if (reverseDirection) {
-@@ -645,18 +_,27 @@
-             while (!stack.isEmpty() && (reverseDirection ? i >= startIndex : i < endIndex)) {
-                 Slot slot = this.slots.get(i);
-                 ItemStack item = slot.getItem();
+         boolean anythingChanged = false;
+         int destSlot = startSlot;
+         if (backwards) {
+@@ -652,18 +_,27 @@
+             while (!itemStack.isEmpty() && (backwards ? destSlot >= startSlot : destSlot < endSlot)) {
+                 Slot slot = this.slots.get(destSlot);
+                 ItemStack target = slot.getItem();
 +                // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent; clone if only a check
 +                if (isCheck) {
-+                    item = item.copy();
++                    target = target.copy();
 +                }
 +                // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
-                 if (!item.isEmpty() && ItemStack.isSameItemSameComponents(stack, item)) {
-                     int i1 = item.getCount() + stack.getCount();
-                     int maxStackSize = slot.getMaxStackSize(item);
-                     if (i1 <= maxStackSize) {
-                         stack.setCount(0);
-                         item.setCount(i1);
+                 if (!target.isEmpty() && ItemStack.isSameItemSameComponents(itemStack, target)) {
+                     int totalStack = target.getCount() + itemStack.getCount();
+                     int maxStackSize = slot.getMaxStackSize(target);
+                     if (totalStack <= maxStackSize) {
+                         itemStack.setCount(0);
+                         target.setCount(totalStack);
 +                        if (!isCheck) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                          slot.setChanged();
 +                        } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
-                         flag = true;
-                     } else if (item.getCount() < maxStackSize) {
-                         stack.shrink(maxStackSize - item.getCount());
-                         item.setCount(maxStackSize);
-+                         if (!isCheck) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
+                         anythingChanged = true;
+                     } else if (target.getCount() < maxStackSize) {
+                         itemStack.shrink(maxStackSize - target.getCount());
+                         target.setCount(maxStackSize);
++                        if (!isCheck) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                          slot.setChanged();
 +                        } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
-                         flag = true;
+                         anythingChanged = true;
                      }
                  }
-@@ -679,10 +_,21 @@
-             while (reverseDirection ? i >= startIndex : i < endIndex) {
-                 Slot slotx = this.slots.get(i);
-                 ItemStack itemx = slotx.getItem();
+@@ -686,10 +_,21 @@
+             while (backwards ? destSlot >= startSlot : destSlot < endSlot) {
+                 Slot slotx = this.slots.get(destSlot);
+                 ItemStack targetx = slotx.getItem();
 +                // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
 +                if (isCheck) {
-+                    itemx = itemx.copy();
++                    targetx = targetx.copy();
 +                }
 +                // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
-                 if (itemx.isEmpty() && slotx.mayPlace(stack)) {
-                     int i1 = slotx.getMaxStackSize(stack);
+                 if (targetx.isEmpty() && slotx.mayPlace(itemStack)) {
+                     int maxStackSize = slotx.getMaxStackSize(itemStack);
 +                    // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
 +                    if (isCheck) {
-+                        stack.shrink(Math.min(stack.getCount(), i1));
++                        itemStack.shrink(Math.min(itemStack.getCount(), maxStackSize));
 +                    } else {
 +                    // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
-                     slotx.setByPlayer(stack.split(Math.min(stack.getCount(), i1)));
+                     slotx.setByPlayer(itemStack.split(Math.min(itemStack.getCount(), maxStackSize)));
                      slotx.setChanged();
 +                    } // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
-                     flag = true;
+                     anythingChanged = true;
                      break;
                  }
-@@ -766,6 +_,11 @@
+@@ -773,6 +_,11 @@
      }
  
      public ItemStack getCarried() {
@@ -293,7 +289,7 @@
          return this.carried;
      }
  
-@@ -818,4 +_,15 @@
+@@ -826,4 +_,15 @@
          this.stateId = this.stateId + 1 & 32767;
          return this.stateId;
      }

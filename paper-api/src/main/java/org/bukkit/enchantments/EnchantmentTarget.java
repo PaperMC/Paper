@@ -87,7 +87,7 @@ public enum EnchantmentTarget {
     WEAPON {
         @Override
         public boolean includes(@NotNull Material item) {
-            return Tag.ITEMS_ENCHANTABLE_SHARP_WEAPON.isTagged(item);
+            return Tag.ITEMS_ENCHANTABLE_MELEE_WEAPON.isTagged(item);
         }
     },
 

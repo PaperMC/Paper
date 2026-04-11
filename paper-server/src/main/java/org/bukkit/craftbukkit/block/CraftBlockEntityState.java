@@ -219,7 +219,7 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
 
     @Nullable
     public Packet<ClientGamePacketListener> getUpdatePacket(@NotNull Location location) {
-        return new ClientboundBlockEntityDataPacket(CraftLocation.toBlockPosition(location), this.snapshot.getType(), this.getUpdateNBT());
+        return new ClientboundBlockEntityDataPacket(CraftLocation.toBlockPos(location), this.snapshot.getType(), this.getUpdateNBT());
     }
 
     @Override

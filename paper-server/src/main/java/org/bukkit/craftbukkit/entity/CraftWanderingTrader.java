@@ -59,7 +59,7 @@ public class CraftWanderingTrader extends CraftAbstractVillager implements Wande
     public void setWanderingTowards(org.bukkit.Location location) {
         net.minecraft.core.BlockPos pos = null;
         if (location != null) {
-            pos = CraftLocation.toBlockPosition(location);
+            pos = CraftLocation.toBlockPos(location);
         }
 
         this.getHandle().setWanderTarget(pos);

@@ -38,7 +38,7 @@ public class CraftBat extends CraftAmbient implements Bat {
     public void setTargetLocation(org.bukkit.Location location) {
         net.minecraft.core.BlockPos pos = null;
         if (location != null) {
-            pos = CraftLocation.toBlockPosition(location);
+            pos = CraftLocation.toBlockPos(location);
         }
 
         this.getHandle().targetPosition = pos;

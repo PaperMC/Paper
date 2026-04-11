@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/golem/CopperGolem.java
 +++ b/net/minecraft/world/entity/animal/golem/CopperGolem.java
-@@ -57,8 +_,8 @@
+@@ -58,8 +_,8 @@
  import org.jspecify.annotations.Nullable;
  
  public class CopperGolem extends AbstractGolem implements ContainerUser, Shearable {
@@ -11,7 +11,7 @@
      private static final int WEATHERING_TICK_FROM = 504000;
      private static final int WEATHERING_TICK_TO = 552000;
      private static final int SPIN_ANIMATION_MIN_COOLDOWN = 200;
-@@ -75,7 +_,7 @@
+@@ -79,7 +_,7 @@
      );
      private @Nullable BlockPos openedChestPos;
      private @Nullable UUID lastLightningBoltUUID;
@@ -20,32 +20,32 @@
      private int idleAnimationStartTick = 0;
      private final AnimationState idleAnimationState = new AnimationState();
      private final AnimationState interactionGetItemAnimationState = new AnimationState();
-@@ -219,7 +_,15 @@
+@@ -218,7 +_,15 @@
          Level level = this.level();
-         if (itemInHand.is(Items.SHEARS) && this.readyForShearing()) {
+         if (itemStack.is(Items.SHEARS) && this.readyForShearing()) {
              if (level instanceof ServerLevel serverLevel) {
--                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand);
+-                this.shear(serverLevel, SoundSource.PLAYERS, itemStack);
 +                // Paper start
-+                java.util.List<ItemStack> drops = this.generateDefaultDrops(serverLevel, itemInHand);
-+                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemInHand, hand, drops);
++                java.util.List<ItemStack> drops = this.generateDefaultDrops(serverLevel, itemStack);
++                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemStack, hand, drops);
 +                if (event != null) {
 +                    if (event.isCancelled()) return InteractionResult.PASS;
 +                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
 +                }
-+                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand, drops);
++                this.shear(serverLevel, SoundSource.PLAYERS, itemStack, drops);
 +                // Paper end
                  this.gameEvent(GameEvent.SHEAR, player);
-                 itemInHand.hurtAndBreak(1, player, hand);
+                 itemStack.hurtAndBreak(1, player, hand);
              }
-@@ -282,20 +_,27 @@
+@@ -281,20 +_,27 @@
  
-     private void turnToStatue(ServerLevel level) {
-         BlockPos blockPos = this.blockPosition();
+     private void turnToStatue(final ServerLevel level) {
+         BlockPos pos = this.blockPosition();
 -        level.setBlock(
--            blockPos,
+-            pos,
 +        // Paper start - call EntityChangeBlockEvent
 +        //level.setBlock(
-+        //    blockPos,
++        //    pos,
 +        BlockState newState =
              Blocks.OXIDIZED_COPPER_GOLEM_STATUE
                  .defaultBlockState()
@@ -56,14 +56,14 @@
 -            Block.UPDATE_ALL
 -        );
 +                .setValue(CopperGolemStatueBlock.FACING, Direction.fromYRot(this.getYRot()));
-+        //    3
++        //    Block.UPDATE_ALL
 +        //);
-+        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, blockPos, newState)) {
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, pos, newState)) {
 +            return;
 +        }
-+        level.setBlock(blockPos, newState, 3);
++        level.setBlock(pos, newState, Block.UPDATE_ALL);
 +        // Paper end - call EntityChangeBlockEvent
-         if (level.getBlockEntity(blockPos) instanceof CopperGolemStatueBlockEntity copperGolemStatueBlockEntity) {
+         if (level.getBlockEntity(pos) instanceof CopperGolemStatueBlockEntity copperGolemStatueBlockEntity) {
              copperGolemStatueBlockEntity.createStatue(this);
              this.dropPreservedEquipment(level);
 -            this.discard();
@@ -71,17 +71,17 @@
              this.playSound(SoundEvents.COPPER_GOLEM_BECOME_STATUE);
              if (this.isLeashed()) {
                  if (level.getGameRules().get(GameRules.ENTITY_DROPS)) {
-@@ -425,12 +_,32 @@
+@@ -424,12 +_,32 @@
      }
  
      @Override
--    public void shear(ServerLevel level, SoundSource source, ItemStack shears) {
+-    public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool) {
 +    // Paper start
-+    public void shear(ServerLevel level, SoundSource source, ItemStack shears, java.util.List<ItemStack> drops) {
-         level.playSound(null, this, SoundEvents.COPPER_GOLEM_SHEAR, source, 1.0F, 1.0F);
--        ItemStack itemBySlot = this.getItemBySlot(EQUIPMENT_SLOT_ANTENNA);
++    public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool, final java.util.List<ItemStack> drops) {
+         level.playSound(null, this, SoundEvents.COPPER_GOLEM_SHEAR, soundSource, 1.0F, 1.0F);
+-        ItemStack itemStack = this.getItemBySlot(EQUIPMENT_SLOT_ANTENNA);
          this.setItemSlot(EQUIPMENT_SLOT_ANTENNA, ItemStack.EMPTY);
--        this.spawnAtLocation(level, itemBySlot, 1.5F);
+-        this.spawnAtLocation(level, itemStack, 1.5F);
 -    }
 +        for (ItemStack drop : drops) {
 +            this.forceDrops = true;
@@ -91,12 +91,12 @@
 +    }
 +
 +    @Override
-+    public void shear(ServerLevel level, SoundSource source, ItemStack shears) {
-+        this.shear(level, source, shears, this.generateDefaultDrops(level, shears));
++    public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool) {
++        this.shear(level, soundSource, tool, this.generateDefaultDrops(level, tool));
 +    }
 +
 +    @Override
-+    public java.util.List<net.minecraft.world.item.ItemStack> generateDefaultDrops(final net.minecraft.server.level.ServerLevel serverLevel, final net.minecraft.world.item.ItemStack shears) {
++    public java.util.List<ItemStack> generateDefaultDrops(final ServerLevel level, final ItemStack tool) {
 +        if (!this.readyForShearing()) {
 +            return java.util.Collections.emptyList();
 +        }
@@ -108,15 +108,15 @@
  
      @Override
      public boolean readyForShearing() {
-@@ -444,9 +_,13 @@
+@@ -443,9 +_,13 @@
      }
  
      @Override
--    protected void actuallyHurt(ServerLevel level, DamageSource damageSource, float amount) {
--        super.actuallyHurt(level, damageSource, amount);
+-    protected void actuallyHurt(final ServerLevel level, final DamageSource source, final float dmg) {
+-        super.actuallyHurt(level, source, dmg);
 +    // CraftBukkit start - void -> boolean
-+    protected boolean actuallyHurt(ServerLevel level, DamageSource damageSource, float amount, org.bukkit.event.entity.EntityDamageEvent event) {
-+        boolean damageResult = super.actuallyHurt(level, damageSource, amount, event);
++    protected boolean actuallyHurt(final ServerLevel level, final DamageSource source, final float dmg, final org.bukkit.event.entity.EntityDamageEvent event) {
++        boolean damageResult = super.actuallyHurt(level, source, dmg, event);
 +        if (!damageResult) return false;
 +        // CraftBukkit end
          this.setState(CopperGolemState.IDLE);

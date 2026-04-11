@@ -125,9 +125,9 @@ public final class EntityCommand implements PaperSubcommand {
                 info.getRight().entrySet().stream()
                     .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
                     .limit(10).forEach(e -> {
-                        final int x = (e.getKey().x << 4) + 8;
-                        final int z = (e.getKey().z << 4) + 8;
-                        final Component message = text("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isPositionTicking(e.getKey().toLong()) ? " (Ticking)" : " (Non-Ticking)"))
+                        final int x = (e.getKey().x() << 4) + 8;
+                        final int z = (e.getKey().z() << 4) + 8;
+                        final Component message = text("  " + e.getValue() + ": " + e.getKey().x() + ", " + e.getKey().z() + (chunkProviderServer.isPositionTicking(e.getKey().pack()) ? " (Ticking)" : " (Non-Ticking)"))
                             .hoverEvent(HoverEvent.showText(text("Click to teleport to chunk", GREEN)))
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/minecraft:execute as @s in " + world.getWorld().getKey() + " run tp " + x + " " + (world.getWorld().getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING) + 1) + " " + z));
                         sender.sendMessage(message);

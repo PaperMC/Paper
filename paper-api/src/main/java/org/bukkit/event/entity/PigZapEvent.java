@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Stores data for pigs being zapped
  */
-public class PigZapEvent extends EntityZapEvent implements Cancellable {
+public class PigZapEvent extends EntityZapEvent implements Cancellable { // todo redundant with parent?
 
     private final PigZombie zombifiedPiglin;
     private final LightningStrike bolt;
