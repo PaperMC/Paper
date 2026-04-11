@@ -46,6 +46,7 @@ import org.bukkit.block.Sign;
 import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.sign.Side;
+import org.bukkit.command.CommandException;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
@@ -472,10 +473,12 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Makes the player perform the given command
      *
-     * @param command Command to perform
-     * @return true if the command was successful, otherwise false
+     * @param command the command to perform. Example: <code>test abc 123</code>
+     * @return {@code true} if the command was successful, otherwise {@code false}
+     * @throws CommandException thrown when the executor for the given command fails with an unhandled exception
+     * @see Server#dispatchCommand(org.bukkit.command.CommandSender, String)
      */
-    public boolean performCommand(String command);
+    boolean performCommand(String command) throws CommandException;
 
     /**
      * Returns true if the entity is supported by a block.
