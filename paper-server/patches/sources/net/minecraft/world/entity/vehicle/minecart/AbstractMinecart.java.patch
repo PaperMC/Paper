@@ -16,12 +16,12 @@
 +    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
 +    // CraftBukkit end
  
-     protected AbstractMinecart(EntityType<?> type, Level level) {
+     protected AbstractMinecart(final EntityType<?> type, final Level level) {
          super(type, level);
-@@ -154,11 +_,19 @@
+@@ -161,11 +_,19 @@
  
      @Override
-     public boolean canCollideWith(Entity entity) {
+     public boolean canCollideWith(final Entity entity) {
 -        return AbstractBoat.canVehicleCollide(this, entity);
 +        // Paper start - fix VehicleEntityCollisionEvent not called when colliding with player
 +        boolean collides = AbstractBoat.canVehicleCollide(this, entity);
@@ -40,7 +40,7 @@
          return true;
      }
  
-@@ -259,6 +_,14 @@
+@@ -270,6 +_,14 @@
  
      @Override
      public void tick() {
@@ -55,7 +55,7 @@
          if (this.getHurtTime() > 0) {
              this.setHurtTime(this.getHurtTime() - 1);
          }
-@@ -269,8 +_,20 @@
+@@ -280,8 +_,20 @@
  
          this.checkBelowWorld();
          this.computeSpeed();
@@ -74,12 +74,12 @@
 +            new org.bukkit.event.vehicle.VehicleMoveEvent(vehicle, from, to).callEvent();
 +        }
 +        // CraftBukkit end
-         this.updateInWaterStateAndDoFluidPushing();
+         this.updateFluidInteraction();
          if (this.isInLava()) {
              this.lavaIgnite();
-@@ -358,12 +_,16 @@
-         Vec3 deltaMovement = this.getDeltaMovement();
-         this.setDeltaMovement(Mth.clamp(deltaMovement.x, -maxSpeed, maxSpeed), deltaMovement.y, Mth.clamp(deltaMovement.z, -maxSpeed, maxSpeed));
+@@ -371,12 +_,16 @@
+         Vec3 movement = this.getDeltaMovement();
+         this.setDeltaMovement(Mth.clamp(movement.x, -maxSpeed, maxSpeed), movement.y, Mth.clamp(movement.z, -maxSpeed, maxSpeed));
          if (this.onGround()) {
 -            this.setDeltaMovement(this.getDeltaMovement().scale(0.5));
 +            // CraftBukkit start - replace magic numbers with our variables
@@ -96,7 +96,7 @@
          }
      }
  
-@@ -465,6 +_,15 @@
+@@ -478,6 +_,15 @@
          this.setDisplayOffset(input.getIntOr("DisplayOffset", this.getDefaultDisplayOffset()));
          this.flipped = input.getBooleanOr("FlippedRotation", false);
          this.firstTick = input.getBooleanOr("HasTicked", false);
@@ -112,7 +112,7 @@
      }
  
      @Override
-@@ -477,13 +_,26 @@
+@@ -490,13 +_,26 @@
  
          output.putBoolean("FlippedRotation", this.flipped);
          output.putBoolean("HasTicked", this.firstTick);
@@ -124,7 +124,7 @@
      }
  
      @Override
-     public void push(Entity entity) {
+     public void push(final Entity entity) {
          if (!this.level().isClientSide()) {
              if (!entity.noPhysics && !this.noPhysics) {
 +                if (!this.level().paperConfig().collisions.allowVehicleCollisions && this.level().paperConfig().collisions.onlyPlayersCollide && !(entity instanceof Player)) return; // Paper - Collision option for requiring a player participant
@@ -136,10 +136,10 @@
 +                    );
 +                    if (!collisionEvent.callEvent()) return;
 +                    // CraftBukkit end
-                     double d = entity.getX() - this.getX();
-                     double d1 = entity.getZ() - this.getZ();
-                     double d2 = d * d + d1 * d1;
-@@ -592,4 +_,26 @@
+                     double xa = entity.getX() - this.getX();
+                     double za = entity.getZ() - this.getZ();
+                     double dd = xa * xa + za * za;
+@@ -605,4 +_,26 @@
      public boolean isFurnace() {
          return false;
      }

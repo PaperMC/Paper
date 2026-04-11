@@ -1218,6 +1218,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ArmorMeta> GOLDEN_CHESTPLATE = getItemType("golden_chestplate");
 
+    ItemType.Typed<ItemMeta> GOLDEN_DANDELION = getItemType("golden_dandelion");
+
     ItemType.Typed<ArmorMeta> GOLDEN_HELMET = getItemType("golden_helmet");
 
     ItemType.Typed<ItemMeta> GOLDEN_HOE = getItemType("golden_hoe");

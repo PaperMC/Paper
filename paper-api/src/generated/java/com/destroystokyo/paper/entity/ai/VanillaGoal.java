@@ -130,7 +130,7 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Creature> FLEE_SUN = create("flee_sun", Creature.class);
 
-    GoalKey<Creature> FOLLOW_BOAT = create("follow_boat", Creature.class);
+    GoalKey<Creature> FOLLOW_PLAYER_RIDDEN_ENTITY = create("follow_player_ridden_entity", Creature.class);
 
     GoalKey<Creature> GOLEM_RANDOM_STROLL_IN_VILLAGE = create("golem_random_stroll_in_village", Creature.class);
 

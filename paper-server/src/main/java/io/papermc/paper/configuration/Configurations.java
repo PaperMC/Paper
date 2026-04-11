@@ -276,7 +276,7 @@ public abstract class Configurations<G, W> {
     }
 
     public Path getWorldConfigFile(ServerLevel level) {
-        return level.levelStorageAccess.levelDirectory.path().resolve(this.worldConfigFileName);
+        return level.getServer().storageSource.getDimensionPath(level.dimension()).resolve(this.worldConfigFileName);
     }
 
     public static class ContextMap {

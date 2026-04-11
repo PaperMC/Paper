@@ -2,22 +2,22 @@
 +++ b/net/minecraft/world/effect/WeavingMobEffect.java
 @@ -27,11 +_,11 @@
      @Override
-     public void onMobRemoved(ServerLevel level, LivingEntity entity, int amplifier, Entity.RemovalReason reason) {
-         if (reason == Entity.RemovalReason.KILLED && (entity instanceof Player || level.getGameRules().get(GameRules.MOB_GRIEFING))) {
--            this.spawnCobwebsRandomlyAround(level, entity.getRandom(), entity.blockPosition());
-+            this.spawnCobwebsRandomlyAround(level, entity.getRandom(), entity.blockPosition(), entity); // Paper - Fire EntityChangeBlockEvent in more places
+     public void onMobRemoved(final ServerLevel level, final LivingEntity mob, final int amplifier, final Entity.RemovalReason reason) {
+         if (reason == Entity.RemovalReason.KILLED && (mob instanceof Player || level.getGameRules().get(GameRules.MOB_GRIEFING))) {
+-            this.spawnCobwebsRandomlyAround(level, mob.getRandom(), mob.blockPosition());
++            this.spawnCobwebsRandomlyAround(level, mob.getRandom(), mob.blockPosition(), mob); // Paper - Fire EntityChangeBlockEvent in more places
          }
      }
  
--    private void spawnCobwebsRandomlyAround(ServerLevel level, RandomSource random, BlockPos pos) {
-+    private void spawnCobwebsRandomlyAround(ServerLevel level, RandomSource random, BlockPos pos, LivingEntity entity) { // Paper - Fire EntityChangeBlockEvent in more places
-         Set<BlockPos> set = Sets.newHashSet();
-         int i = this.maxCobwebs.applyAsInt(random);
+-    private void spawnCobwebsRandomlyAround(final ServerLevel level, final RandomSource random, final BlockPos pos) {
++    private void spawnCobwebsRandomlyAround(final ServerLevel level, final RandomSource random, final BlockPos pos, LivingEntity entity) { // Paper - Fire EntityChangeBlockEvent in more places
+         Set<BlockPos> positionsToTransform = Sets.newHashSet();
+         int cobwebCount = this.maxCobwebs.applyAsInt(random);
  
 @@ -48,6 +_,7 @@
          }
  
-         for (BlockPos blockPosx : set) {
+         for (BlockPos blockPosx : positionsToTransform) {
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockPosx, Blocks.COBWEB.defaultBlockState())) continue; // Paper - Fire EntityChangeBlockEvent in more places
              level.setBlock(blockPosx, Blocks.COBWEB.defaultBlockState(), Block.UPDATE_ALL);
              level.levelEvent(LevelEvent.ANIMATION_SPAWN_COBWEB, blockPosx, 0);

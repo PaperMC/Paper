@@ -21,6 +21,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.waypoints.ServerWaypointManager;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -631,21 +632,21 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             launch = new FireworkRocketEntity(world, FireworkRocketEntity.getDefaultItem(), this.getHandle(), location.getX(), location.getY() - 0.15F, location.getZ(), true); // Paper - pass correct default to rocket for data storage & see CrossbowItem for regular launch without elytra boost
 
             // Lifted from net.minecraft.world.item.ProjectileWeaponItem.shoot
-            float f2 = /* net.minecraft.world.item.enchantment.EnchantmentHelper.processProjectileSpread((ServerLevel) world, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CROSSBOW), this.getHandle(), 0.0F); */ 0; // Just shortcut this to 0, no need to do any calculations on a non existing stack
             int projectileSize = 1;
             int i = 0;
 
-            float f3 = projectileSize == 1 ? 0.0F : 2.0F * f2 / (float) (projectileSize - 1);
-            float f4 = (float) ((projectileSize - 1) % 2) * f3 / 2.0F;
-            float f5 = 1.0F;
-            float yaw = f4 + f5 * (float) ((i + 1) / 2) * f3;
+            float maxAngle = /* net.minecraft.world.item.enchantment.EnchantmentHelper.processProjectileSpread((ServerLevel) world, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CROSSBOW), this.getHandle(), 0.0F); */ 0; // Just shortcut this to 0, no need to do any calculations on a non existing stack
+            float angleStep = projectileSize == 1 ? 0.0F : 2.0F * maxAngle / (float) (projectileSize - 1);
+            float angleOffset = (float) ((projectileSize - 1) % 2) * angleStep / 2.0F;
+            float direction = 1.0F;
+            float angle = angleOffset + direction * ((i + 1) / 2) * angleStep;
 
             // Lifted from net.minecraft.world.item.CrossbowItem.shootProjectile
-            Vec3 vec3 = this.getHandle().getUpVector(1.0F);
-            org.joml.Quaternionf quaternionf = new org.joml.Quaternionf().setAngleAxis((double)(yaw * (float) (Math.PI / 180.0)), vec3.x, vec3.y, vec3.z);
-            Vec3 vec32 = this.getHandle().getViewVector(1.0F);
-            org.joml.Vector3f vector3f = vec32.toVector3f().rotate(quaternionf);
-            ((FireworkRocketEntity) launch).shoot((double)vector3f.x(), (double)vector3f.y(), (double)vector3f.z(), net.minecraft.world.item.CrossbowItem.FIREWORK_POWER, 1.0F);
+            Vec3 upVector = this.getHandle().getUpVector(1.0F);
+            org.joml.Quaternionf upQuaternion = new org.joml.Quaternionf().setAngleAxis((double)(angle * (float) (Math.PI / 180.0)), upVector.x, upVector.y, upVector.z);
+            Vec3 viewVec = this.getHandle().getViewVector(1.0F);
+            org.joml.Vector3f shotVector = viewVec.toVector3f().rotate(upQuaternion);
+            ((FireworkRocketEntity) launch).shoot(shotVector.x(), shotVector.y(), shotVector.z(), net.minecraft.world.item.CrossbowItem.FIREWORK_POWER, 1.0F);
             // Paper end
         }
 
@@ -677,7 +678,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
         net.minecraft.world.phys.Vec3 start = new net.minecraft.world.phys.Vec3(this.getHandle().getX(), this.getHandle().getEyeY(), this.getHandle().getZ());
         net.minecraft.world.phys.Vec3 end = new net.minecraft.world.phys.Vec3(loc.getX(), loc.getY(), loc.getZ());
-        if (end.distanceToSqr(start) > 128D * 128D) {
+        if (end.distanceToSqr(start) > Mth.square(128.0)) {
             return false; // Return early if the distance is greater than 128 blocks
         }
 
@@ -686,13 +687,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean getRemoveWhenFarAway() {
-        return this.getHandle() instanceof Mob && !((Mob) this.getHandle()).isPersistenceRequired();
+        return this.getHandle() instanceof Mob mob && !mob.isPersistenceRequired();
     }
 
     @Override
     public void setRemoveWhenFarAway(boolean remove) {
-        if (this.getHandle() instanceof Mob) {
-            ((Mob) this.getHandle()).setPersistenceRequired(!remove);
+        if (this.getHandle() instanceof Mob mob) {
+            mob.persistenceRequired = !remove;
         }
     }
 
@@ -703,8 +704,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void setCanPickupItems(boolean pickup) {
-        if (this.getHandle() instanceof Mob) {
-            ((Mob) this.getHandle()).setCanPickUpLoot(pickup);
+        if (this.getHandle() instanceof Mob mob) {
+            mob.setCanPickUpLoot(pickup);
         } else {
             this.getHandle().bukkitPickUpLoot = pickup;
         }
