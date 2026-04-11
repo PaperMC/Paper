@@ -43,6 +43,7 @@ public interface ChunkSnapshot {
      *
      * @return Parent World Key
      */
+    @NotNull
     Key getWorldKey();
 
     /**
