@@ -1809,7 +1809,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Nullable
     default RayTraceResult rayTraceEntities(@NotNull Location start, @NotNull Vector direction, double maxDistance, @Nullable Predicate<? super Entity> filter) {
-        return this.rayTraceEntities(start, direction, maxDistance, 0.0D, filter);
+        return this.rayTraceEntities(start, direction, maxDistance, 0.0, filter);
     }
 
     /**
@@ -1901,13 +1901,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Performs a ray trace that checks for block collisions using the blocks'
      * precise collision shapes.
      * <p>
-     * If collisions with passable blocks are ignored, fluid collisions are
-     * ignored as well regardless of the fluid collision mode.
-     * <p>
-     * Portal blocks are only considered passable if the ray starts within
-     * them. Apart from that collisions with portal blocks will be considered
-     * even if collisions with passable blocks are otherwise ignored.
-     * <p>
      * This may cause loading of chunks! Some implementations may impose
      * artificial restrictions on the maximum distance.
      *
@@ -1924,17 +1917,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
         return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, null);
     }
 
-    // Paper start
     /**
      * Performs a ray trace that checks for block collisions using the blocks'
      * precise collision shapes.
-     * <p>
-     * If collisions with passable blocks are ignored, fluid collisions are
-     * ignored as well regardless of the fluid collision mode.
-     * <p>
-     * Portal blocks are only considered passable if the ray starts within
-     * them. Apart from that collisions with portal blocks will be considered
-     * even if collisions with passable blocks are otherwise ignored.
      * <p>
      * This may cause loading of chunks! Some implementations may impose
      * artificial restrictions on the maximum distance.
@@ -1950,7 +1935,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the ray trace hit result, or <code>null</code> if there is no hit
      */
     @Nullable RayTraceResult rayTraceBlocks(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, @Nullable Predicate<? super Block> canCollide);
-    // Paper end
 
     /**
      * Performs a ray trace that checks for both block and entity collisions.
@@ -1958,13 +1942,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Block collisions use the blocks' precise collision shapes. The
      * <code>raySize</code> parameter is only taken into account for entity
      * collision checks.
-     * <p>
-     * If collisions with passable blocks are ignored, fluid collisions are
-     * ignored as well regardless of the fluid collision mode.
-     * <p>
-     * Portal blocks are only considered passable if the ray starts within them.
-     * Apart from that collisions with portal blocks will be considered even if
-     * collisions with passable blocks are otherwise ignored.
      * <p>
      * This may cause loading of chunks! Some implementations may impose
      * artificial restrictions on the maximum distance.
@@ -1987,20 +1964,12 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
         return this.rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, raySize, filter, null);
     }
 
-    // Paper start
     /**
      * Performs a ray trace that checks for both block and entity collisions.
      * <p>
      * Block collisions use the blocks' precise collision shapes. The
      * <code>raySize</code> parameter is only taken into account for entity
      * collision checks.
-     * <p>
-     * If collisions with passable blocks are ignored, fluid collisions are
-     * ignored as well regardless of the fluid collision mode.
-     * <p>
-     * Portal blocks are only considered passable if the ray starts within them.
-     * Apart from that collisions with portal blocks will be considered even if
-     * collisions with passable blocks are otherwise ignored.
      * <p>
      * This may cause loading of chunks! Some implementations may impose
      * artificial restrictions on the maximum distance.
@@ -2021,7 +1990,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     entity, or <code>null</code> if there is no hit
      */
     @Nullable RayTraceResult rayTrace(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter, @Nullable Predicate<? super Block> canCollide);
-    // Paper end
 
     /**
      * Performs a ray trace that checks for collisions with the specified
@@ -2083,7 +2051,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     }
 
     /**
-     * Gets the relative in-game time of this world.
+     * Gets the relative in-game time of this world, or {@code 0} if this world does not have a world clock.
      * <p>
      * The relative time is analogous to hours * 1000
      *
@@ -2108,7 +2076,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public void setTime(long time);
 
     /**
-     * Gets the full in-game time on this world
+     * Gets the full in-game time on this world, or {@code 0} if this world does not have a world clock.
      *
      * @return The current absolute time
      * @see #getTime() Returns a relative time of this world
@@ -2123,7 +2091,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param time The new absolute time to set this world to
      * @see #setTime(long) Sets the relative time of this world
+     * @deprecated all overworlds share the same world clock by default now
+     * @throws IllegalArgumentException if this world does not have a world clock (e.g. the nether)
      */
+    @Deprecated // TODO world clock API with links to it
     public void setFullTime(long time);
 
     // Paper start
@@ -4135,7 +4106,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     public <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @Nullable Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
     // Paper end
-
 
     /**
      * Spawns the particle (the number of times specified by count)

@@ -2,9 +2,6 @@ package org.bukkit.craftbukkit;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import joptsimple.OptionParser;
@@ -82,37 +79,6 @@ public class Main {
                         .ofType(Integer.class)
                         .describedAs("Server size");
 
-                this.acceptsAll(asList("d", "date-format"), "Format of the date to display in the console (for log entries)")
-                        .withRequiredArg()
-                        .ofType(SimpleDateFormat.class)
-                        .describedAs("Log date format");
-
-                this.accepts("log-pattern", "Specifies the log filename pattern")
-                        .withRequiredArg()
-                        .ofType(String.class)
-                        .defaultsTo("server.log")
-                        .describedAs("Log filename");
-
-                this.accepts("log-limit", "Limits the maximum size of the log file (0 = unlimited)")
-                        .withRequiredArg()
-                        .ofType(Integer.class)
-                        .defaultsTo(0)
-                        .describedAs("Max log size");
-
-                this.accepts("log-count", "Specified how many log files to cycle through")
-                        .withRequiredArg()
-                        .ofType(Integer.class)
-                        .defaultsTo(1)
-                        .describedAs("Log count");
-
-                this.accepts("log-append", "Whether to append to the log file")
-                        .withRequiredArg()
-                        .ofType(Boolean.class)
-                        .defaultsTo(true)
-                        .describedAs("Log append");
-
-                this.accepts("log-strip-color", "Strips color codes from log file");
-
                 this.acceptsAll(asList("b", "bukkit-settings"), "File for bukkit settings")
                         .withRequiredArg()
                         .ofType(File.class)
@@ -139,6 +105,8 @@ public class Main {
 
                 this.accepts("demo", "Demo mode");
 
+                this.accepts("bonusChest", "Enable the bonus chest");
+
                 this.accepts("initSettings", "Only create configuration files and then exit"); // SPIGOT-5761: Add initSettings option
 
                 this.acceptsAll(asList("S", "spigot-settings"), "File for spigot settings")
@@ -148,10 +116,11 @@ public class Main {
                         .describedAs("Yml file");
 
                 this.acceptsAll(asList("paper-dir", "paper-settings-directory"), "Directory for Paper settings")
-                    .withRequiredArg()
-                    .ofType(File.class)
-                    .defaultsTo(new File(io.papermc.paper.configuration.PaperConfigurations.CONFIG_DIR))
-                    .describedAs("Config directory");
+                        .withRequiredArg()
+                        .ofType(File.class)
+                        .defaultsTo(new File(io.papermc.paper.configuration.PaperConfigurations.CONFIG_DIR))
+                        .describedAs("Config directory");
+
                 this.acceptsAll(asList("paper", "paper-settings"), "File for Paper settings")
                         .withRequiredArg()
                         .ofType(File.class)
@@ -163,6 +132,12 @@ public class Main {
                         .ofType(File.class)
                         .defaultsTo(new File[] {})
                         .describedAs("Jar file");
+
+                this.acceptsAll(asList("add-plugin-dir", "add-extra-plugin-dir"), "Specify paths to extra plugin directories to be loaded in addition to the plugins folder. This argument can be specified multiple times, once for each extra plugin dir path.")
+                        .withRequiredArg()
+                        .ofType(File.class)
+                        .defaultsTo(new File[] {})
+                        .describedAs("Plugin directory");
 
                 this.accepts("server-name", "Name of the server")
                         .withRequiredArg()
@@ -221,19 +196,6 @@ public class Main {
                     Main.useConsole = false;
                     useJline = false; // Paper
                     System.setProperty(net.minecrell.terminalconsole.TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
-                }
-
-                if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
-                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
-
-                    Calendar deadline = Calendar.getInstance();
-                    deadline.add(Calendar.DAY_OF_YEAR, -14);
-                    if (buildDate.before(deadline.getTime())) {
-                        // Paper start - This is some stupid bullshit
-                        System.err.println("*** Warning, you've not updated in a while! ***");
-                        System.err.println("*** Please download a new build from https://papermc.io/downloads/paper ***");
-                        // Paper end
-                    }
                 }
 
                 System.setProperty("library.jansi.version", "Paper"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows

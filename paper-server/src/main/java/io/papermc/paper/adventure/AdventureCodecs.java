@@ -7,6 +7,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JavaOps;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.papermc.paper.dialog.Dialog;
@@ -47,7 +48,8 @@ import net.kyori.adventure.text.object.ObjectContents;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import net.kyori.adventure.text.object.SpriteObjectContents;
 import net.kyori.adventure.util.Index;
-import net.minecraft.commands.arguments.selector.SelectorPattern;
+import net.minecraft.commands.arguments.selector.EntitySelector;
+import net.minecraft.core.Holder;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -59,10 +61,11 @@ import net.minecraft.network.chat.contents.ScoreContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.util.CompilableString;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -195,13 +198,12 @@ public final class AdventureCodecs {
     ).apply(instance, (key, uuid, component) -> HoverEvent.showEntity(key, uuid, component.orElse(null))));
 
     public static final MapCodec<HoverEvent<HoverEvent.ShowItem>> SHOW_ITEM_CODEC = net.minecraft.network.chat.HoverEvent.ShowItem.CODEC.xmap(internal -> {
-        @Subst("key") final String typeKey = internal.item().getItemHolder().unwrapKey().orElseThrow().identifier().toString();
-        return HoverEvent.showItem(Key.key(typeKey), internal.item().getCount(), PaperAdventure.asAdventure(internal.item().getComponentsPatch()));
+        @Subst("key") final String typeKey = internal.item().typeHolder().unwrapKey().orElseThrow().identifier().toString();
+        return HoverEvent.showItem(Key.key(typeKey), internal.item().count(), PaperAdventure.asAdventure(internal.item().components()));
     }, adventure -> {
-        final Item itemType = BuiltInRegistries.ITEM.getValue(PaperAdventure.asVanilla(adventure.value().item()));
+        final Holder<Item> itemType = BuiltInRegistries.ITEM.get(PaperAdventure.asVanilla(adventure.value().item())).orElseThrow();
         final Map<Key, DataComponentValue> dataComponentsMap = adventure.value().dataComponents();
-        final ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.wrapAsHolder(itemType), adventure.value().count(), PaperAdventure.asVanilla(dataComponentsMap));
-        return new net.minecraft.network.chat.HoverEvent.ShowItem(stack);
+        return new net.minecraft.network.chat.HoverEvent.ShowItem(new ItemStackTemplate(itemType, adventure.value().count(), PaperAdventure.asVanilla(dataComponentsMap)));
     });
 
     static final HoverEventType<HoverEvent.ShowEntity> SHOW_ENTITY_HOVER_EVENT_TYPE = new HoverEventType<>(SHOW_ENTITY_CODEC, "show_entity");
@@ -396,9 +398,9 @@ public final class AdventureCodecs {
     }, "object");
 
     static final MapCodec<ScoreComponent> SCORE_COMPONENT_INNER_MAP_CODEC = ScoreContents.INNER_CODEC.xmap(
-        s -> Component.score(s.name().map(SelectorPattern::pattern, identity()), s.objective()),
-        s -> new ScoreContents(SelectorPattern.parse(s.name()).<Either<SelectorPattern, String>>map(Either::left).result().orElse(Either.right(s.name())), s.objective())
-    ); // TODO we might want to ask adventure for a nice way we can avoid parsing and flattening the SelectorPattern on every conversion.
+        s -> Component.score(s.name().map(CompilableString::source, identity()), s.objective()),
+        s -> new ScoreContents(EntitySelector.COMPILABLE_CODEC.parse(JavaOps.INSTANCE, s.name()).<Either<CompilableString<EntitySelector>, String>>map(Either::left).result().orElse(Either.right(s.name())), s.objective())
+    ); // TODO we might want to ask adventure for a nice way we can avoid parsing and flattening the selector string on every conversion.
     static final MapCodec<ScoreComponent> SCORE_COMPONENT_MAP_CODEC = SCORE_COMPONENT_INNER_MAP_CODEC.fieldOf("score");
     static final MapCodec<SelectorComponent> SELECTOR_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
         return instance.group(

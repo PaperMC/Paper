@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.entity.PaperShearable;
 import io.papermc.paper.world.WeatheringCopperState;
+import net.minecraft.world.entity.animal.golem.CopperGolemState;
 import net.minecraft.world.level.block.WeatheringCopper;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.CopperGolem;
@@ -28,6 +29,17 @@ public class CraftCopperGolem extends CraftGolem implements CopperGolem, PaperSh
     public void setWeatheringState(final WeatheringCopperState state) {
         Preconditions.checkArgument(state != null, "state cannot be null");
         this.getHandle().setWeatherState(WeatheringCopper.WeatherState.valueOf(state.name()));
+    }
+
+    @Override
+    public CopperGolem.State getGolemState() {
+        return State.valueOf(this.getHandle().getState().name());
+    }
+
+    @Override
+    public void setGolemState(final CopperGolem.State state) {
+        Preconditions.checkArgument(state != null, "state cannot be null");
+        this.getHandle().setState(CopperGolemState.valueOf(state.name()));
     }
 
     @Override

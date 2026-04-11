@@ -5,6 +5,7 @@ import ca.spottedleaf.concurrentutil.numa.OSNuma;
 import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -16,21 +17,24 @@ public final class MoonriseCommon {
     public static final long WORKER_QUEUE_HOLD_TIME = (long)(20.0e6); // 20ms
     public static final BalancedPrioritisedThreadPool WORKER_POOL = new BalancedPrioritisedThreadPool(
         WORKER_QUEUE_HOLD_TIME,
-            new Consumer<>() {
-                private final AtomicInteger idGenerator = new AtomicInteger();
+        new ThreadFactory() {
+            private final AtomicInteger idGenerator = new AtomicInteger();
 
-                @Override
-                public void accept(Thread thread) {
-                    thread.setDaemon(true);
-                    thread.setName(PlatformHooks.get().getBrand() + " Common Worker #" + this.idGenerator.getAndIncrement());
-                    thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-                        @Override
-                        public void uncaughtException(final Thread thread, final Throwable throwable) {
-                            LOGGER.error("Uncaught exception in thread " + thread.getName(), throwable);
-                        }
-                    });
-                }
+            @Override
+            public Thread newThread(final Runnable run) {
+                final Thread thread = new Thread(run, PlatformHooks.get().getBrand() + " Common Worker #" + this.idGenerator.getAndIncrement());
+
+                thread.setDaemon(true);
+                thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+                    @Override
+                    public void uncaughtException(final Thread thread, final Throwable throwable) {
+                        LOGGER.error("Uncaught exception in thread " + thread.getName(), throwable);
+                    }
+                });
+
+                return thread;
             }
+        }
     );
     public static final BalancedPrioritisedThreadPool.OrderedStreamGroup CLIENT_GROUP = MoonriseCommon.WORKER_POOL.createOrderedStreamGroup();
     public static final BalancedPrioritisedThreadPool.OrderedStreamGroup SERVER_GROUP = MoonriseCommon.WORKER_POOL.createOrderedStreamGroup();
@@ -61,19 +65,22 @@ public final class MoonriseCommon {
     public static final long IO_QUEUE_HOLD_TIME = (long)(25.0e6); // 25ms
     public static final BalancedPrioritisedThreadPool IO_POOL = new BalancedPrioritisedThreadPool(
         IO_QUEUE_HOLD_TIME,
-            new Consumer<>() {
+        new ThreadFactory() {
                 private final AtomicInteger idGenerator = new AtomicInteger();
 
                 @Override
-                public void accept(final Thread thread) {
+                public Thread newThread(final Runnable run) {
+                    final Thread thread = new Thread(run, PlatformHooks.get().getBrand() + " I/O Worker #" + this.idGenerator.getAndIncrement());
+
                     thread.setDaemon(true);
-                    thread.setName(PlatformHooks.get().getBrand() + " I/O Worker #" + this.idGenerator.getAndIncrement());
                     thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                         @Override
                         public void uncaughtException(final Thread thread, final Throwable throwable) {
                             LOGGER.error("Uncaught exception in thread " + thread.getName(), throwable);
                         }
                     });
+
+                    return thread;
                 }
             }
     );

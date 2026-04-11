@@ -6,25 +6,25 @@
      public @Nullable LivingEntity attachedToEntity;
 +    public java.util.@Nullable UUID spawningEntity; // Paper
  
-     public FireworkRocketEntity(EntityType<? extends FireworkRocketEntity> type, Level level) {
+     public FireworkRocketEntity(final EntityType<? extends FireworkRocketEntity> type, final Level level) {
          super(type, level);
 @@ -163,7 +_,7 @@
          }
  
-         if (!this.noPhysics && this.isAlive() && hitResultOnMoveVector.getType() != HitResult.Type.MISS) {
--            this.hitTargetOrDeflectSelf(hitResultOnMoveVector);
-+            this.preHitTargetOrDeflectSelf(hitResultOnMoveVector); // CraftBukkit - projectile hit event
+         if (!this.noPhysics && this.isAlive() && hitResult.getType() != HitResult.Type.MISS) {
+-            this.hitTargetOrDeflectSelf(hitResult);
++            this.preHitTargetOrDeflectSelf(hitResult); // CraftBukkit - projectile hit event
              this.needsSync = true;
          }
  
 @@ -187,7 +_,11 @@
          }
  
-         if (this.life > this.lifetime && this.level() instanceof ServerLevel serverLevel) {
--            this.explode(serverLevel);
+         if (this.life > this.lifetime && this.level() instanceof ServerLevel level) {
+-            this.explode(level);
 +            // Paper start - Call FireworkExplodeEvent
 +            if (org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this)) {
-+                this.explode(serverLevel);
++                this.explode(level);
 +            }
 +            // Paper end - Call FireworkExplodeEvent
          }
@@ -39,31 +39,31 @@
      }
  
      @Override
-     protected void onHitEntity(EntityHitResult result) {
-         super.onHitEntity(result);
-         if (this.level() instanceof ServerLevel serverLevel) {
--            this.explode(serverLevel);
+     protected void onHitEntity(final EntityHitResult hitResult) {
+         super.onHitEntity(hitResult);
+         if (this.level() instanceof ServerLevel level) {
+-            this.explode(level);
 +            // Paper start - Call FireworkExplodeEvent
 +            if (org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this)) {
-+                this.explode(serverLevel);
++                this.explode(level);
 +            }
 +            // Paper end - Call FireworkExplodeEvent
          }
      }
  
 @@ -211,7 +_,11 @@
-         BlockPos blockPos = new BlockPos(result.getBlockPos());
-         this.level().getBlockState(blockPos).entityInside(this.level(), blockPos, this, InsideBlockEffectApplier.NOOP, true);
-         if (this.level() instanceof ServerLevel serverLevel && this.hasExplosion()) {
--            this.explode(serverLevel);
+         BlockPos pos = new BlockPos(hitResult.getBlockPos());
+         this.level().getBlockState(pos).entityInside(this.level(), pos, this, InsideBlockEffectApplier.NOOP, true);
+         if (this.level() instanceof ServerLevel level && this.hasExplosion()) {
+-            this.explode(level);
 +            // Paper start - Call FireworkExplodeEvent
 +            if (org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this)) {
-+                this.explode(serverLevel);
++                this.explode(level);
 +            }
 +            // Paper end - Call FireworkExplodeEvent
          }
  
-         super.onHitBlock(result);
+         super.onHitBlock(hitResult);
 @@ -283,6 +_,7 @@
          output.putInt("LifeTime", this.lifetime);
          output.store("FireworksItem", ItemStack.CODEC, this.getItem());

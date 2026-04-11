@@ -10,10 +10,10 @@ hoping that at least then we don't swap chunks, and maybe recover
 them all.
 
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java b/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
-index 344e155420de9148cd402f626af11d4c523cacff..93776be67380f3f8993348b9cb81bc183aa93a56 100644
+index 27eeb842e6b22bd12b582379eaaa76b622dfca5e..d4606e3d95a98e745cd565c0c23b2a657249602a 100644
 --- a/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
-@@ -1467,7 +1467,7 @@ public final class MoonriseRegionFileIO {
+@@ -1466,7 +1466,7 @@ public final class MoonriseRegionFileIO {
  
          public abstract void finishWrite(final int chunkX, final int chunkZ, final WriteData writeData) throws IOException;
  
@@ -23,7 +23,7 @@ index 344e155420de9148cd402f626af11d4c523cacff..93776be67380f3f8993348b9cb81bc18
                  NO_DATA,
                  HAS_DATA,
 diff --git a/net/minecraft/world/level/chunk/storage/RegionBitmap.java b/net/minecraft/world/level/chunk/storage/RegionBitmap.java
-index 64a718c98f799c62a5bb28e1e8e5f66cc96c915d..666f2e967c99f78422c83fb20e1a3bf3efa7845e 100644
+index a6f9435a8e2a6c8cc05bd3873cb6fc0ec98973b8..d44fd9eea0ccb09c894d6431ede8a4c2aae85c5b 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionBitmap.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionBitmap.java
 @@ -9,6 +9,27 @@ import java.util.BitSet;
@@ -51,14 +51,14 @@ index 64a718c98f799c62a5bb28e1e8e5f66cc96c915d..666f2e967c99f78422c83fb20e1a3bf3
 +    }
 +    // Paper end - Attempt to recalculate regionfile header if it is corrupt
 +
-     public void force(int sectorOffset, int sectorCount) {
-         this.used.set(sectorOffset, sectorOffset + sectorCount);
+     public void force(final int position, final int size) {
+         this.used.set(position, position + size);
      }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index f2ef716788c1ed1933139c1f53a6d73769362809..c6adcb44bc96eaeba74bfc228a6a61765b1628e7 100644
+index fc712f9dbc893a6dee8ccecc54d0af07659dee62..b4a59b855b45018853e8122a5829a48ebd220a5f 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -46,6 +46,363 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -47,6 +47,363 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
      @VisibleForTesting
      protected final RegionBitmap usedSectors = new RegionBitmap();
  
@@ -136,7 +136,7 @@ index f2ef716788c1ed1933139c1f53a6d73769362809..c6adcb44bc96eaeba74bfc228a6a6176
 +    }
 +
 +    private static boolean inSameRegionfile(ChunkPos first, ChunkPos second) {
-+        return (first.x & ~31) == (second.x & ~31) && (first.z & ~31) == (second.z & ~31);
++        return (first.x() & ~31) == (second.x() & ~31) && (first.z() & ~31) == (second.z() & ~31);
 +    }
 +
 +    // note: only call for CHUNK regionfiles
@@ -182,10 +182,10 @@ index f2ef716788c1ed1933139c1f53a6d73769362809..c6adcb44bc96eaeba74bfc228a6a6176
 +
 +                ChunkPos chunkPos = SerializableChunkData.getChunkCoordinate(compound);
 +                if (!inSameRegionfile(ourLowerLeftPosition, chunkPos)) {
-+                    LOGGER.error("Ignoring absolute chunk " + chunkPos + " in regionfile as it is not contained in the bounds of the regionfile '" + this.path.toAbsolutePath() + "'. It should be in regionfile (" + (chunkPos.x >> 5) + "," + (chunkPos.z >> 5) + ")");
++                    LOGGER.error("Ignoring absolute chunk " + chunkPos + " in regionfile as it is not contained in the bounds of the regionfile '" + this.path.toAbsolutePath() + "'. It should be in regionfile (" + (chunkPos.x() >> 5) + "," + (chunkPos.z() >> 5) + ")");
 +                    continue;
 +                }
-+                int location = (chunkPos.x & 31) | ((chunkPos.z & 31) << 5);
++                int location = (chunkPos.x() & 31) | ((chunkPos.z() & 31) << 5);
 +
 +                net.minecraft.nbt.CompoundTag otherCompound = compounds[location];
 +
@@ -194,17 +194,17 @@ index f2ef716788c1ed1933139c1f53a6d73769362809..c6adcb44bc96eaeba74bfc228a6a6176
 +                }
 +
 +                // aikar oversized?
-+                Path aikarOversizedFile = this.getOversizedFile(chunkPos.x, chunkPos.z);
++                Path aikarOversizedFile = this.getOversizedFile(chunkPos.x(), chunkPos.z());
 +                boolean isAikarOversized = false;
 +                if (Files.exists(aikarOversizedFile)) {
 +                    try {
-+                        net.minecraft.nbt.CompoundTag aikarOversizedCompound = this.getOversizedData(chunkPos.x, chunkPos.z);
++                        net.minecraft.nbt.CompoundTag aikarOversizedCompound = this.getOversizedData(chunkPos.x(), chunkPos.z());
 +                        if (SerializableChunkData.getLastWorldSaveTime(compound) == SerializableChunkData.getLastWorldSaveTime(aikarOversizedCompound)) {
 +                            // best we got for an id. hope it's good enough
 +                            isAikarOversized = true;
 +                        }
 +                    } catch (Exception ex) {
-+                        LOGGER.error("Failed to read aikar oversized data for absolute chunk (" + chunkPos.x + "," + chunkPos.z + ") in regionfile " + this.path.toAbsolutePath() + ", oversized data for this chunk will be lost", ex);
++                        LOGGER.error("Failed to read aikar oversized data for absolute chunk (" + chunkPos.x() + "," + chunkPos.z() + ") in regionfile " + this.path.toAbsolutePath() + ", oversized data for this chunk will be lost", ex);
 +                        // fall through, if we can't read aikar oversized we can't risk corrupting chunk data
 +                    }
 +                }
@@ -229,8 +229,8 @@ index f2ef716788c1ed1933139c1f53a6d73769362809..c6adcb44bc96eaeba74bfc228a6a6176
 +            RegionFileVersion[] oversizedCompressionTypes = new RegionFileVersion[32 * 32];
 +
 +            if (regionFiles != null) {
-+                int lowerXBound = ourLowerLeftPosition.x; // inclusive
-+                int lowerZBound = ourLowerLeftPosition.z; // inclusive
++                int lowerXBound = ourLowerLeftPosition.x(); // inclusive
++                int lowerZBound = ourLowerLeftPosition.z(); // inclusive
 +                int upperXBound = lowerXBound + 32 - 1; // inclusive
 +                int upperZBound = lowerZBound + 32 - 1; // inclusive
 +
@@ -241,13 +241,13 @@ index f2ef716788c1ed1933139c1f53a6d73769362809..c6adcb44bc96eaeba74bfc228a6a6176
 +                        continue;
 +                    }
 +
-+                    if ((oversizedCoords.x < lowerXBound || oversizedCoords.x > upperXBound) || (oversizedCoords.z < lowerZBound || oversizedCoords.z > upperZBound)) {
++                    if ((oversizedCoords.x() < lowerXBound || oversizedCoords.x() > upperXBound) || (oversizedCoords.z() < lowerZBound || oversizedCoords.z() > upperZBound)) {
 +                        continue; // not in our regionfile
 +                    }
 +
 +                    // ensure oversized data is valid & is newer than data in the regionfile
 +
-+                    int location = (oversizedCoords.x & 31) | ((oversizedCoords.z & 31) << 5);
++                    int location = (oversizedCoords.x() & 31) | ((oversizedCoords.z() & 31) << 5);
 +
 +                    byte[] chunkData;
 +                    try {
@@ -422,52 +422,52 @@ index f2ef716788c1ed1933139c1f53a6d73769362809..c6adcb44bc96eaeba74bfc228a6a6176
      // Paper start - rewrite chunk system
      @Override
      public final ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.WriteData moonrise$startWrite(final net.minecraft.nbt.CompoundTag data, final ChunkPos pos) throws IOException {
-@@ -74,6 +431,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -75,6 +432,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
              throw new IllegalArgumentException("Expected directory, got " + externalFileDir.toAbsolutePath());
          } else {
              this.externalFileDir = externalFileDir;
-+            this.canRecalcHeader = RegionFileStorage.isChunkDataFolder(this.externalFileDir); // Paper - add can recalc flag
++            this.canRecalcHeader = info.dfuType()[0] == net.minecraft.util.datafix.DataFixTypes.CHUNK; // Paper - add can recalc flag
              this.offsets = this.header.asIntBuffer();
              this.offsets.limit(1024);
              this.header.position(4096);
-@@ -94,11 +452,13 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -95,11 +453,13 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
  
                  long size = Files.size(path);
  
--                for (int i1 = 0; i1 < 1024; i1++) {
+-                for (int i = 0; i < 1024; i++) {
 +                boolean needsHeaderRecalc = false; // Paper - recalculate header on header corruption
 +                boolean hasBackedUp = false; // Paper - recalculate header on header corruption
-+                for (int i1 = 0; i1 < 1024; i1++) { final int headerLocation = i1; // Paper - we expect this to be the header location
-                     int i2 = this.offsets.get(i1);
-                     if (i2 != 0) {
--                        int sectorNumber = getSectorNumber(i2);
--                        int numSectors = getNumSectors(i2);
-+                        final int sectorNumber = getSectorNumber(i2); // Paper - we expect this to be offset in file in sectors
-+                        int numSectors = getNumSectors(i2); // Paper - diff on change, we expect this to be sector length of region - watch out for reassignments
++                for (int i = 0; i < 1024; i++) { final int headerLocation = i; // Paper - we expect this to be the header location
+                     int offset = this.offsets.get(i);
+                     if (offset != 0) {
+-                        int sectorNumber = getSectorNumber(offset);
+-                        int numSectors = getNumSectors(offset);
++                        int sectorNumber = getSectorNumber(offset); // Paper - we expect this to be offset in file in sectors
++                        int numSectors = getNumSectors(offset); // Paper - diff on change, we expect this to be sector length of region - watch out for reassignments
                          // Spigot start
                          if (numSectors == 255) {
                              // We're maxed out, so we need to read the proper length from the section
-@@ -109,18 +469,62 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -110,18 +470,62 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
                          // Spigot end
                          if (sectorNumber < 2) {
-                             LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", path, i1, sectorNumber);
--                            this.offsets.put(i1, 0);
-+                            //this.offsets.put(i1, 0); // Paper - we catch this, but need it in the header for the summary change
+                             LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", path, i, sectorNumber);
+-                            this.offsets.put(i, 0);
++                            //this.offsets.put(i, 0); // Paper - we catch this, but need it in the header for the summary change
                          } else if (numSectors == 0) {
-                             LOGGER.warn("Region file {} has an invalid sector at index: {}; size has to be > 0", path, i1);
--                            this.offsets.put(i1, 0);
-+                            //this.offsets.put(i1, 0); // Paper - we catch this, but need it in the header for the summary change
+                             LOGGER.warn("Region file {} has an invalid sector at index: {}; size has to be > 0", path, i);
+-                            this.offsets.put(i, 0);
++                            //this.offsets.put(i, 0); // Paper - we catch this, but need it in the header for the summary change
                          } else if (sectorNumber * 4096L > size) {
-                             LOGGER.warn("Region file {} has an invalid sector at index: {}; sector {} is out of bounds", path, i1, sectorNumber);
--                            this.offsets.put(i1, 0);
-+                            //this.offsets.put(i1, 0); // Paper - we catch this, but need it in the header for the summary change
+                             LOGGER.warn("Region file {} has an invalid sector at index: {}; sector {} is out of bounds", path, i, sectorNumber);
+-                            this.offsets.put(i, 0);
++                            //this.offsets.put(i, 0); // Paper - we catch this, but need it in the header for the summary change
                          } else {
 -                            this.usedSectors.force(sectorNumber, numSectors);
 +                            //this.usedSectors.force(sectorNumber, numSectors); // Paper - move this down so we can check if it fails to allocate
 +                        }
 +                        // Paper start - recalculate header on header corruption
 +                        if (sectorNumber < 2 || numSectors <= 0 || ((long)sectorNumber * 4096L) > size) {
-+                            if (canRecalcHeader) {
++                            if (this.canRecalcHeader) {
 +                                LOGGER.error("Detected invalid header for regionfile " + this.path.toAbsolutePath() + "! Recalculating header...");
 +                                needsHeaderRecalc = true;
 +                                break;
@@ -483,12 +483,12 @@ index f2ef716788c1ed1933139c1f53a6d73769362809..c6adcb44bc96eaeba74bfc228a6a6176
 +                                this.offsets.put(headerLocation, 0); // delete the entry from header
 +                                continue;
 +                            }
-+                        }
+                         }
 +                        boolean failedToAllocate = !this.usedSectors.tryAllocate(sectorNumber, numSectors);
 +                        if (failedToAllocate) {
 +                            LOGGER.error("Overlapping allocation by local chunk (" + (headerLocation & 31) + "," + (headerLocation >>> 5) + ") in regionfile " + this.path.toAbsolutePath());
-                         }
-+                        if (failedToAllocate & !canRecalcHeader) {
++                        }
++                        if (failedToAllocate & !this.canRecalcHeader) {
 +                            // location = chunkX | (chunkZ << 5);
 +                            LOGGER.error("Detected invalid header for regionfile " + this.path.toAbsolutePath() +
 +                                    "! Cannot recalculate, removing local chunk (" + (headerLocation & 31) + "," + (headerLocation >>> 5) + ") from header");
@@ -514,13 +514,13 @@ index f2ef716788c1ed1933139c1f53a6d73769362809..c6adcb44bc96eaeba74bfc228a6a6176
              }
          }
      }
-@@ -130,10 +534,35 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -131,10 +535,34 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
      }
  
-     private Path getExternalChunkPath(ChunkPos chunkPos) {
--        String string = "c." + chunkPos.x + "." + chunkPos.z + ".mcc";
-+        String string = "c." + chunkPos.x + "." + chunkPos.z + ".mcc"; // Paper - diff on change
-         return this.externalFileDir.resolve(string);
+     private Path getExternalChunkPath(final ChunkPos pos) {
+-        String externalFileName = "c." + pos.x() + "." + pos.z() + ".mcc";
++        String externalFileName = "c." + pos.x() + "." + pos.z() + ".mcc"; // Paper - diff on change
+         return this.externalFileDir.resolve(externalFileName);
      }
  
 +    // Paper start
@@ -546,82 +546,81 @@ index f2ef716788c1ed1933139c1f53a6d73769362809..c6adcb44bc96eaeba74bfc228a6a6176
 +            return null;
 +        }
 +    }
-+    // Paper end
 +
-     public synchronized @Nullable DataInputStream getChunkDataInputStream(ChunkPos chunkPos) throws IOException {
-         int offset = this.getOffset(chunkPos);
+     public synchronized @Nullable DataInputStream getChunkDataInputStream(final ChunkPos pos) throws IOException {
+         int offset = this.getOffset(pos);
          if (offset == 0) {
-@@ -154,30 +583,67 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
-             byteBuffer.flip();
-             if (byteBuffer.remaining() < 5) {
-                 LOGGER.error("Chunk {} header is truncated: expected {} but read {}", chunkPos, i, byteBuffer.remaining());
+@@ -155,30 +583,67 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+             buffer.flip();
+             if (buffer.remaining() < 5) {
+                 LOGGER.error("Chunk {} header is truncated: expected {} but read {}", pos, sectorsLength, buffer.remaining());
 +                // Paper start - recalculate header on regionfile corruption
 +                if (this.canRecalcHeader && this.recalculateHeader()) {
-+                    return this.getChunkDataInputStream(chunkPos);
++                    return this.getChunkDataInputStream(pos);
 +                }
 +                // Paper end - recalculate header on regionfile corruption
                  return null;
              } else {
-                 int _int = byteBuffer.getInt();
-                 byte b = byteBuffer.get();
-                 if (_int == 0) {
-                     LOGGER.warn("Chunk {} is allocated, but stream is missing", chunkPos);
+                 int length = buffer.getInt();
+                 byte versionId = buffer.get();
+                 if (length == 0) {
+                     LOGGER.warn("Chunk {} is allocated, but stream is missing", pos);
 +                    // Paper start - recalculate header on regionfile corruption
 +                    if (this.canRecalcHeader && this.recalculateHeader()) {
-+                        return this.getChunkDataInputStream(chunkPos);
++                        return this.getChunkDataInputStream(pos);
 +                    }
 +                    // Paper end - recalculate header on regionfile corruption
                      return null;
                  } else {
-                     int i1 = _int - 1;
-                     if (isExternalStreamChunk(b)) {
-                         if (i1 != 0) {
+                     int streamLength = length - 1;
+                     if (isExternalStreamChunk(versionId)) {
+                         if (streamLength != 0) {
                              LOGGER.warn("Chunk has both internal and external streams");
 +                            // Paper start - recalculate header on regionfile corruption
 +                            if (this.canRecalcHeader && this.recalculateHeader()) {
-+                                return this.getChunkDataInputStream(chunkPos);
++                                return this.getChunkDataInputStream(pos);
 +                            }
 +                            // Paper end - recalculate header on regionfile corruption
                          }
  
--                        return this.createExternalChunkInputStream(chunkPos, getExternalChunkVersion(b));
+-                        return this.createExternalChunkInputStream(pos, getExternalChunkVersion(versionId));
 +                        // Paper start - recalculate header on regionfile corruption
-+                        final DataInputStream ret = this.createExternalChunkInputStream(chunkPos, getExternalChunkVersion(b));
++                        final DataInputStream ret = this.createExternalChunkInputStream(pos, getExternalChunkVersion(versionId));
 +                        if (ret == null && this.canRecalcHeader && this.recalculateHeader()) {
-+                            return this.getChunkDataInputStream(chunkPos);
++                            return this.getChunkDataInputStream(pos);
 +                        }
 +                        return ret;
 +                        // Paper end - recalculate header on regionfile corruption
-                     } else if (i1 > byteBuffer.remaining()) {
-                         LOGGER.error("Chunk {} stream is truncated: expected {} but read {}", chunkPos, i1, byteBuffer.remaining());
+                     } else if (streamLength > buffer.remaining()) {
+                         LOGGER.error("Chunk {} stream is truncated: expected {} but read {}", pos, streamLength, buffer.remaining());
 +                        // Paper start - recalculate header on regionfile corruption
 +                        if (this.canRecalcHeader && this.recalculateHeader()) {
-+                            return this.getChunkDataInputStream(chunkPos);
++                            return this.getChunkDataInputStream(pos);
 +                        }
 +                        // Paper end - recalculate header on regionfile corruption
                          return null;
-                     } else if (i1 < 0) {
-                         LOGGER.error("Declared size {} of chunk {} is negative", _int, chunkPos);
+                     } else if (streamLength < 0) {
+                         LOGGER.error("Declared size {} of chunk {} is negative", length, pos);
 +                        // Paper start - recalculate header on regionfile corruption
 +                        if (this.canRecalcHeader && this.recalculateHeader()) {
-+                            return this.getChunkDataInputStream(chunkPos);
++                            return this.getChunkDataInputStream(pos);
 +                        }
 +                        // Paper end - recalculate header on regionfile corruption
                          return null;
                      } else {
-                         JvmProfiler.INSTANCE.onRegionFileRead(this.info, chunkPos, this.version, i1);
--                        return this.createChunkInputStream(chunkPos, b, createStream(byteBuffer, i1));
+                         JvmProfiler.INSTANCE.onRegionFileRead(this.info, pos, this.version, streamLength);
+-                        return this.createChunkInputStream(pos, versionId, createStream(buffer, streamLength));
 +                        // Paper start - recalculate header on regionfile corruption
-+                        final DataInputStream ret = this.createChunkInputStream(chunkPos, b, createStream(byteBuffer, i1));
++                        final DataInputStream ret = this.createChunkInputStream(pos, versionId, createStream(buffer, streamLength));
 +                        if (ret == null && this.canRecalcHeader && this.recalculateHeader()) {
-+                            return this.getChunkDataInputStream(chunkPos);
++                            return this.getChunkDataInputStream(pos);
 +                        }
 +                        return ret;
 +                        // Paper end - recalculate header on regionfile corruption
                      }
                  }
              }
-@@ -358,9 +824,14 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -358,9 +823,14 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
      }
  
      private ByteBuffer createExternalStub() {
@@ -630,27 +629,23 @@ index f2ef716788c1ed1933139c1f53a6d73769362809..c6adcb44bc96eaeba74bfc228a6a6176
 +    }
 +    private ByteBuffer createExternalStub(RegionFileVersion version) {
 +        // Paper end - add version param
-         ByteBuffer byteBuffer = ByteBuffer.allocate(5);
-         byteBuffer.putInt(1);
--        byteBuffer.put((byte)(this.version.getId() | 128));
-+        byteBuffer.put((byte)(version.getId() | 128));
-         byteBuffer.flip();
-         return byteBuffer;
+         ByteBuffer stub = ByteBuffer.allocate(5);
+         stub.putInt(1);
+-        stub.put((byte)(this.version.getId() | 128));
++        stub.put((byte)(version.getId() | 128)); // Paper - add version param
+         stub.flip();
+         return stub;
      }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 3ca75289ac9eb05eadb74c87c0c94cbc026fd08f..1e9e061ec694ad64fc2724b83a66dfec7e069a43 100644
+index 5fa64ff30b8252f139ca7f77c14352c384c8c0e5..eae4963b6d18c5f92871477b93f81c2c79331cd9 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -24,6 +24,36 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -24,6 +24,32 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
      private final Path folder;
      private final boolean sync;
  
 +    // Paper start - recalculate region file headers
 +    private final boolean isChunkData;
-+
-+    public static boolean isChunkDataFolder(Path path) {
-+        return path.toFile().getName().equalsIgnoreCase("region");
-+    }
 +
 +    @Nullable
 +    public static ChunkPos getRegionFileCoordinates(Path file) {
@@ -678,7 +673,7 @@ index 3ca75289ac9eb05eadb74c87c0c94cbc026fd08f..1e9e061ec694ad64fc2724b83a66dfec
      // Paper start - rewrite chunk system
      private static final int REGION_SHIFT = 5;
      private static final int MAX_NON_EXISTING_CACHE = 1024 * 4;
-@@ -170,12 +200,12 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -172,12 +198,12 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
  
          if (input == null) {
              return new ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.ReadData(
@@ -693,7 +688,7 @@ index 3ca75289ac9eb05eadb74c87c0c94cbc026fd08f..1e9e061ec694ad64fc2724b83a66dfec
          );
  
          if (!(input instanceof ca.spottedleaf.moonrise.patches.chunk_system.util.stream.ExternalChunkStreamMarker)) {
-@@ -191,7 +221,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -193,7 +219,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          }
  
          return new ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.ReadData(
@@ -702,7 +697,7 @@ index 3ca75289ac9eb05eadb74c87c0c94cbc026fd08f..1e9e061ec694ad64fc2724b83a66dfec
          );
      }
  
-@@ -201,7 +231,32 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -203,7 +229,32 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          final int chunkX, final int chunkZ, final ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.ReadData readData
      ) throws IOException {
          try {
@@ -736,27 +731,27 @@ index 3ca75289ac9eb05eadb74c87c0c94cbc026fd08f..1e9e061ec694ad64fc2724b83a66dfec
          } finally {
              readData.input().close();
          }
-@@ -217,6 +272,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -219,6 +270,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          this.folder = folder;
          this.sync = sync;
          this.info = info;
-+        this.isChunkData = isChunkDataFolder(this.folder); // Paper - recalculate region file headers
++        this.isChunkData = info.dfuType()[0] == net.minecraft.util.datafix.DataFixTypes.CHUNK; // Paper - recalculate region file headers
      }
  
-     @org.jetbrains.annotations.Contract("_, false -> !null") @Nullable private RegionFile getRegionFile(ChunkPos chunkPos, boolean existingOnly) throws IOException { // CraftBukkit
-@@ -309,6 +365,19 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+     @org.jetbrains.annotations.Contract("_, false -> !null") private @Nullable RegionFile getRegionFile(final ChunkPos pos, boolean existingOnly) throws IOException { // CraftBukkit
+@@ -313,6 +365,19 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
              }
  
-             var4 = NbtIo.read(chunkDataInputStream);
+             var4 = NbtIo.read(regionChunkInputStream);
 +            // Paper start - recover from corrupt regionfile header
 +            if (this.isChunkData) {
 +                ChunkPos headerChunkPos = SerializableChunkData.getChunkCoordinate(var4);
-+                if (!headerChunkPos.equals(chunkPos)) {
-+                    net.minecraft.server.MinecraftServer.LOGGER.error("Attempting to read chunk data at " + chunkPos + " but got chunk data for " + headerChunkPos + " instead! Attempting regionfile recalculation for regionfile " + regionFile.getPath().toAbsolutePath());
-+                    if (regionFile.recalculateHeader()) {
-+                        return this.read(chunkPos);
++                if (!headerChunkPos.equals(pos)) {
++                    net.minecraft.server.MinecraftServer.LOGGER.error("Attempting to read chunk data at " + pos + " but got chunk data for " + headerChunkPos + " instead! Attempting regionfile recalculation for regionfile " + region.getPath().toAbsolutePath());
++                    if (region.recalculateHeader()) {
++                        return this.read(pos);
 +                    }
-+                    net.minecraft.server.MinecraftServer.LOGGER.error("Can't recalculate regionfile header, regenerating chunk " + chunkPos + " for " + regionFile.getPath().toAbsolutePath());
++                    net.minecraft.server.MinecraftServer.LOGGER.error("Can't recalculate regionfile header, regenerating chunk " + pos + " for " + region.getPath().toAbsolutePath());
 +                    return null;
 +                }
 +            }
@@ -765,7 +760,7 @@ index 3ca75289ac9eb05eadb74c87c0c94cbc026fd08f..1e9e061ec694ad64fc2724b83a66dfec
  
          return var4;
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileVersion.java b/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
-index d857a69ad3a0c4eeec52585e8d92f0f8673684f3..e813dedf8d70ae58d595bcd7bc92a1de845fe4a9 100644
+index 97d3da90c270a06d85e70d261658f71d97ae4e3c..11b65c688144e7ef5b7cba603949843a11ccd084 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
 @@ -21,7 +21,7 @@ import org.slf4j.Logger;
@@ -776,9 +771,27 @@ index d857a69ad3a0c4eeec52585e8d92f0f8673684f3..e813dedf8d70ae58d595bcd7bc92a1de
 +    public static final Int2ObjectMap<RegionFileVersion> VERSIONS = new Int2ObjectOpenHashMap<>(); // Paper - private -> public
      private static final Object2ObjectMap<String, RegionFileVersion> VERSIONS_BY_NAME = new Object2ObjectOpenHashMap<>();
      public static final RegionFileVersion VERSION_GZIP = register(
-         new RegionFileVersion(
+         new RegionFileVersion(1, null, in -> new FastBufferedInputStream(new GZIPInputStream(in)), out -> new BufferedOutputStream(new GZIPOutputStream(out)))
+diff --git a/net/minecraft/world/level/chunk/storage/RegionStorageInfo.java b/net/minecraft/world/level/chunk/storage/RegionStorageInfo.java
+index 590bd1ca60956e5c5be58481f97401e55f9e1aeb..4e0c9fa1eecfa9f21285b7911e25830bbcbc8d86 100644
+--- a/net/minecraft/world/level/chunk/storage/RegionStorageInfo.java
++++ b/net/minecraft/world/level/chunk/storage/RegionStorageInfo.java
+@@ -3,7 +3,12 @@ package net.minecraft.world.level.chunk.storage;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.world.level.Level;
+ 
+-public record RegionStorageInfo(String level, ResourceKey<Level> dimension, String type) {
++// Paper start - crazy hack to indicate what type the region file is
++public record RegionStorageInfo(String level, ResourceKey<Level> dimension, String type, net.minecraft.util.datafix.DataFixTypes[] dfuType) {
++    public RegionStorageInfo(String level, ResourceKey<Level> dimension, String type) {
++        this(level, dimension, type, new net.minecraft.util.datafix.DataFixTypes[1]);
++    }
++    // Paper end - crazy hack to indicate what type the region file is
+     public RegionStorageInfo withTypeSuffix(final String suffix) {
+         return new RegionStorageInfo(this.level, this.dimension, this.type + suffix);
+     }
 diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index b2363fa364be15d0a28f5966615131282b7aaa8f..68874c0b6f6f7c5d8e3a79c9a7b391b9624ab748 100644
+index 1e0afa9590de7fe492cf29aded96be3db498c51e..df0bb06176ad5cce3ed8785d22d68b2dcbf5a8ca 100644
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 @@ -120,6 +120,18 @@ public record SerializableChunkData(
@@ -800,12 +813,24 @@ index b2363fa364be15d0a28f5966615131282b7aaa8f..68874c0b6f6f7c5d8e3a79c9a7b391b9
  
      // Paper start - Do not let the server load chunks from newer versions
      private static final int CURRENT_DATA_VERSION = net.minecraft.SharedConstants.getCurrentVersion().dataVersion().version();
-@@ -552,7 +564,7 @@ public record SerializableChunkData(
-         compoundTag.putInt("xPos", this.chunkPos.x);
-         compoundTag.putInt("yPos", this.minSectionY);
-         compoundTag.putInt("zPos", this.chunkPos.z);
--        compoundTag.putLong("LastUpdate", this.lastUpdateTime);
-+        compoundTag.putLong("LastUpdate", this.lastUpdateTime); // Paper - Diff on change
-         compoundTag.putLong("InhabitedTime", this.inhabitedTime);
-         compoundTag.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(this.chunkStatus).toString());
-         compoundTag.storeNullable("blending_data", BlendingData.Packed.CODEC, this.blendingData);
+@@ -544,7 +556,7 @@ public record SerializableChunkData(
+         tag.putInt("xPos", this.chunkPos.x());
+         tag.putInt("yPos", this.minSectionY);
+         tag.putInt("zPos", this.chunkPos.z());
+-        tag.putLong("LastUpdate", this.lastUpdateTime);
++        tag.putLong("LastUpdate", this.lastUpdateTime); // Paper - Diff on change
+         tag.putLong("InhabitedTime", this.inhabitedTime);
+         tag.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(this.chunkStatus).toString());
+         tag.storeNullable("blending_data", BlendingData.Packed.CODEC, this.blendingData);
+diff --git a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
+index 884fa9545a93008fa92863c845aef8f18d88e25a..15da3686bb1b5fddd388a88a7b300aa221c83f58 100644
+--- a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
++++ b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
+@@ -34,6 +34,7 @@ public class SimpleRegionStorage implements ca.spottedleaf.moonrise.patches.chun
+     public SimpleRegionStorage(
+         final RegionStorageInfo info, final Path folder, final DataFixer fixerUpper, final boolean syncWrites, final DataFixTypes dataFixType
+     ) {
++        info.dfuType()[0] = dataFixType; // Paper - crazy hack to indicate what type the region file is
+         this.fixerUpper = fixerUpper;
+         this.dataFixType = dataFixType;
+         this.storage = new IOWorker(info, folder, syncWrites).storage; // Paper - rewrite chunk system

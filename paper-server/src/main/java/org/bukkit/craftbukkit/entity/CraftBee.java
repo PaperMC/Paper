@@ -27,7 +27,7 @@ public class CraftBee extends CraftAnimals implements Bee {
     @Override
     public void setHive(Location location) {
         Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Hive must be in same world");
-        this.getHandle().hivePos = (location == null) ? null : CraftLocation.toBlockPosition(location);
+        this.getHandle().hivePos = (location == null) ? null : CraftLocation.toBlockPos(location);
     }
 
     @Override
@@ -39,7 +39,7 @@ public class CraftBee extends CraftAnimals implements Bee {
     @Override
     public void setFlower(Location location) {
         Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Flower must be in same world");
-        this.getHandle().setSavedFlowerPos(location == null ? null : CraftLocation.toBlockPosition(location));
+        this.getHandle().setSavedFlowerPos(location == null ? null : CraftLocation.toBlockPos(location));
     }
 
     @Override
@@ -64,7 +64,7 @@ public class CraftBee extends CraftAnimals implements Bee {
 
     @Override
     public int getAnger() {
-        return (int) (this.getHandle().getPersistentAngerEndTime() - this.getHandle().level().getGameTime());
+        return (int) Math.max(this.getHandle().getPersistentAngerEndTime() - this.getHandle().level().getGameTime(), 0);
     }
 
     @Override
