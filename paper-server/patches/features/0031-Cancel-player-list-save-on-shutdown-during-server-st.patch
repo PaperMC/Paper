@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Strokkur24 <strokkur.24@gmail.com>
+Date: Sat, 11 Apr 2026 22:11:34 +0200
+Subject: [PATCH] Cancel player list save on shutdown during server start
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 0848c9ef4c5935b9d528146a16169f8b9142de75..978006d7392cb6e182ed391b1ab5977d97483912 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -292,6 +292,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private FuelValues fuelValues;
+     private int emptyTicks;
+     private volatile boolean isSaving;
++    public volatile boolean cancelStartup = false; // Paper - cancel startup if server shut down
+     private final SuppressedExceptionCollector suppressedExceptions = new SuppressedExceptionCollector();
+     private final DiscontinuousFrame tickFrame;
+     private final PacketProcessor packetProcessor;
+@@ -678,6 +679,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+         // Paper end - Configurable player collision; Handle collideRule team for player collision toggle
+         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
++        // Paper start - Cancel server startup if shut down
++        if (cancelStartup) {
++            return;
++        }
++        // Paper end
+         this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
+         this.server.spark.enableAfterPlugins(this.server); // Paper - spark
+         io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
+@@ -1055,7 +1061,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // CraftBukkit end
+         this.getConnection().stop();
+         this.isSaving = true;
+-        if (this.playerList != null) {
++        if (this.playerList != null && !cancelStartup) { // Paper - Cancel player list save on shutdown during server start
+             LOGGER.info("Saving players");
+             this.playerList.saveAll();
+             this.playerList.removeAll(this.isRestarting); // Paper
