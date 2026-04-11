@@ -82,7 +82,7 @@ public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnem
             this.getHandle().setPodium(null);
         } else {
             Preconditions.checkArgument(location.getWorld() == null || location.getWorld().equals(getWorld()), "You cannot set a podium in a different world to where the dragon is");
-            this.getHandle().setPodium(CraftLocation.toBlockPosition(location));
+            this.getHandle().setPodium(CraftLocation.toBlockPos(location));
         }
     }
     // Paper end - Allow changing the EnderDragon podium

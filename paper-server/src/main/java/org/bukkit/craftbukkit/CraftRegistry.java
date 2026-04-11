@@ -218,7 +218,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     @NotNull
     @Override
     public Stream<B> stream() {
-        return this.minecraftRegistry.keySet().stream().map(minecraftKey -> this.get(CraftNamespacedKey.fromMinecraft(minecraftKey)));
+        return this.minecraftRegistry.keySet().stream().map(key -> this.get(CraftNamespacedKey.fromMinecraft(key)));
     }
 
     @NotNull

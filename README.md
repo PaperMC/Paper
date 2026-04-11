@@ -1,4 +1,6 @@
-Paper [![Paper Build Status](https://img.shields.io/github/actions/workflow/status/PaperMC/Paper/build.yml?branch=main)](https://github.com/PaperMC/Paper/actions)
+Paper [![Version](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fartifactory.papermc.io%2Fartifactory%2Funiverse%2Fio%2Fpapermc%2Fpaper%2Fpaper-api%2Fmaven-metadata.xml&strategy=highestVersion&filter=26.1*&label=version&color=%23344ceb
+)](https://papermc.io/downloads/paper)
+[![Paper Build Status](https://img.shields.io/github/actions/workflow/status/PaperMC/Paper/build.yml?branch=main)](https://github.com/PaperMC/Paper/actions)
 [![Discord](https://img.shields.io/discord/289587909051416579.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/papermc)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/papermc?label=GitHub%20Sponsors)](https://github.com/sponsors/PaperMC)
 [![Open Collective](https://img.shields.io/opencollective/all/papermc?label=OpenCollective%20Sponsors)](https://opencollective.com/papermc)
@@ -27,6 +29,23 @@ How To (Plugin Developers)
 * See upcoming, pending, and recently added API [here](https://github.com/orgs/PaperMC/projects/2/views/4)
 * Paper API javadocs here: [papermc.io/javadocs](https://papermc.io/javadocs/)
 #### Repository (for paper-api)
+See [the docs](https://docs.papermc.io/paper/dev/project-setup/#adding-paper-as-a-dependency) for more details.
+##### Gradle
+```kotlin
+repositories {
+    maven {
+        url = uri("https://repo.papermc.io/repository/maven-public/")
+    }
+}
+
+dependencies {
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+}
+
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(25))
+}
+```
 ##### Maven
 
 ```xml
@@ -40,32 +59,16 @@ How To (Plugin Developers)
 <dependency>
     <groupId>io.papermc.paper</groupId>
     <artifactId>paper-api</artifactId>
-    <version>1.21.11-R0.1-SNAPSHOT</version>
+    <version>[26.1.2.build,)</version>
     <scope>provided</scope>
 </dependency>
-```
-##### Gradle
-```kotlin
-repositories {
-    maven {
-        url = uri("https://repo.papermc.io/repository/maven-public/")
-    }
-}
-
-dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
-}
-
-java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
-}
 ```
 
 How To (Compiling Jar From Source)
 ------
-To compile Paper, you need JDK 21 and an internet connection.
+To compile Paper, you need JDK 25 and an internet connection.
 
-Clone this repo, run `./gradlew applyPatches`, then `./gradlew createMojmapBundlerJar` from your terminal. You can find the compiled jar in the `paper-server/build/libs` directory.
+Clone this repo, run `./gradlew applyPatches`, then `./gradlew createPaperclipJar` from your terminal. You can find the compiled jar in the `paper-server/build/libs` directory.
 
 To get a full list of tasks, run `./gradlew tasks`.
 

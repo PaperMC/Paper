@@ -57,12 +57,12 @@ public final class CraftLocation {
         return new Location(level.getWorld(), point.x, point.y, point.z);
     }
 
-    public static BlockPos toBlockPosition(Location loc) {
+    public static BlockPos toBlockPos(Location loc) {
         return new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
     public static net.minecraft.core.GlobalPos toGlobalPos(Location loc) {
-        return net.minecraft.core.GlobalPos.of(((org.bukkit.craftbukkit.CraftWorld) loc.getWorld()).getHandle().dimension(), toBlockPosition(loc));
+        return net.minecraft.core.GlobalPos.of(((org.bukkit.craftbukkit.CraftWorld) loc.getWorld()).getHandle().dimension(), toBlockPos(loc));
     }
 
     public static Location fromGlobalPos(net.minecraft.core.GlobalPos globalPos) {

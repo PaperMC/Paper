@@ -2,59 +2,59 @@
 +++ b/net/minecraft/server/players/OldUsersConverter.java
 @@ -50,7 +_,8 @@
  
-     private static void lookupPlayers(MinecraftServer server, Collection<String> names, ProfileLookupCallback callback) {
-         String[] strings = names.stream().filter(name -> !StringUtil.isNullOrEmpty(name)).toArray(String[]::new);
+     private static void lookupPlayers(final MinecraftServer server, final Collection<String> names, final ProfileLookupCallback callback) {
+         String[] filteredNames = names.stream().filter(s -> !StringUtil.isNullOrEmpty(s)).toArray(String[]::new);
 -        if (server.usesAuthentication()) {
 +        if (server.usesAuthentication() ||
 +            (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode())) { // Spigot: bungee = online mode, for now.  // Paper - Add setting for proxy online mode status
-             server.services().profileRepository().findProfilesByNames(strings, callback);
+             server.services().profileRepository().findProfilesByNames(filteredNames, callback);
          } else {
-             for (String string : strings) {
+             for (String name : filteredNames) {
 @@ -66,7 +_,7 @@
                  try {
-                     userBanList.load();
+                     bans.load();
                  } catch (IOException var6) {
--                    LOGGER.warn("Could not load existing file {}", userBanList.getFile().getName(), var6);
-+                    LOGGER.warn("Could not load existing file {}", userBanList.getFile().getName()); // CraftBukkit - don't print stacktrace
+-                    LOGGER.warn("Could not load existing file {}", bans.getFile().getName(), var6);
++                    LOGGER.warn("Could not load existing file {}", bans.getFile().getName()); // CraftBukkit - don't print stacktrace
                  }
              }
  
 @@ -122,7 +_,7 @@
                  try {
-                     ipBanList.load();
+                     ipBans.load();
                  } catch (IOException var11) {
--                    LOGGER.warn("Could not load existing file {}", ipBanList.getFile().getName(), var11);
-+                    LOGGER.warn("Could not load existing file {}", ipBanList.getFile().getName()); // CraftBukkit - don't print stacktrace
+-                    LOGGER.warn("Could not load existing file {}", ipBans.getFile().getName(), var11);
++                    LOGGER.warn("Could not load existing file {}", ipBans.getFile().getName()); // CraftBukkit - don't print stacktrace
                  }
              }
  
 @@ -158,7 +_,7 @@
                  try {
-                     serverOpList.load();
+                     opsList.load();
                  } catch (IOException var6) {
--                    LOGGER.warn("Could not load existing file {}", serverOpList.getFile().getName(), var6);
-+                    LOGGER.warn("Could not load existing file {}", serverOpList.getFile().getName()); // CraftBukkit - don't print stacktrace
+-                    LOGGER.warn("Could not load existing file {}", opsList.getFile().getName(), var6);
++                    LOGGER.warn("Could not load existing file {}", opsList.getFile().getName()); // CraftBukkit - don't print stacktrace
                  }
              }
  
 @@ -203,7 +_,7 @@
                  try {
-                     userWhiteList.load();
+                     whitelist.load();
                  } catch (IOException var6) {
--                    LOGGER.warn("Could not load existing file {}", userWhiteList.getFile().getName(), var6);
-+                    LOGGER.warn("Could not load existing file {}", userWhiteList.getFile().getName()); // CraftBukkit - don't print stacktrace
+-                    LOGGER.warn("Could not load existing file {}", whitelist.getFile().getName(), var6);
++                    LOGGER.warn("Could not load existing file {}", whitelist.getFile().getName()); // CraftBukkit - don't print stacktrace
                  }
              }
  
 @@ -317,6 +_,35 @@
-                     private void movePlayerFile(File file3, String oldFileName, String newFileName) {
-                         File file4 = new File(worldPlayersDirectory, oldFileName + ".dat");
-                         File file5 = new File(file3, newFileName + ".dat");
+                     private void movePlayerFile(final File directory, final String oldName, final String newName) {
+                         File oldFileName = new File(worldPlayerDirectory, oldName + ".dat");
+                         File newFileName = new File(directory, newName + ".dat");
 +                        // CraftBukkit start - Use old file name to seed lastKnownName
 +                        net.minecraft.nbt.CompoundTag root = null;
 +
 +                        try {
-+                            root = net.minecraft.nbt.NbtIo.readCompressed(new java.io.FileInputStream(file4), net.minecraft.nbt.NbtAccounter.unlimitedHeap());
++                            root = net.minecraft.nbt.NbtIo.readCompressed(new java.io.FileInputStream(oldFileName), net.minecraft.nbt.NbtAccounter.unlimitedHeap());
 +                        } catch (Exception exception) {
 +                            // Paper start
 +                            exception.printStackTrace();
@@ -67,10 +67,10 @@
 +                                root.put("bukkit", new net.minecraft.nbt.CompoundTag());
 +                            }
 +                            net.minecraft.nbt.CompoundTag data = root.getCompoundOrEmpty("bukkit");
-+                            data.putString("lastKnownName", oldFileName);
++                            data.putString("lastKnownName", oldName);
 +
 +                            try {
-+                                net.minecraft.nbt.NbtIo.writeCompressed(root, new java.io.FileOutputStream(file1));
++                                net.minecraft.nbt.NbtIo.writeCompressed(root, new java.io.FileOutputStream(oldFileName));
 +                            } catch (Exception exception) {
 +                                // Paper start
 +                                exception.printStackTrace();
@@ -79,6 +79,6 @@
 +                            }
 +                       }
 +                        // CraftBukkit end
-                         OldUsersConverter.ensureDirectoryExists(file3);
-                         if (!file4.renameTo(file5)) {
-                             throw new OldUsersConverter.ConversionError("Could not convert file for " + oldFileName);
+                         OldUsersConverter.ensureDirectoryExists(directory);
+                         if (!oldFileName.renameTo(newFileName)) {
+                             throw new OldUsersConverter.ConversionError("Could not convert file for " + oldName);

@@ -15,22 +15,22 @@ public record PaperAttackRange(
 
     @Override
     public float minReach() {
-        return this.impl.minRange();
+        return this.impl.minReach();
     }
 
     @Override
     public float maxReach() {
-        return this.impl.maxRange();
+        return this.impl.maxReach();
     }
 
     @Override
     public float minCreativeReach() {
-        return this.impl.minCreativeRange();
+        return this.impl.minCreativeReach();
     }
 
     @Override
     public float maxCreativeReach() {
-        return this.impl.maxCreativeRange();
+        return this.impl.maxCreativeReach();
     }
 
     @Override
@@ -45,10 +45,10 @@ public record PaperAttackRange(
 
     static final class BuilderImpl implements AttackRange.Builder {
 
-        private float minReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.minRange();
-        private float maxReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.maxRange();
-        private float minCreativeReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.minCreativeRange();
-        private float maxCreativeReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.maxCreativeRange();
+        private float minReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.minReach();
+        private float maxReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.maxReach();
+        private float minCreativeReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.minCreativeReach();
+        private float maxCreativeReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.maxCreativeReach();
         private float hitboxMargin = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.hitboxMargin();
         private float mobFactor = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.mobFactor();
 

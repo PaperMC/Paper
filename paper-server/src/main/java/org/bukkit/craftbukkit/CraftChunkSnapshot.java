@@ -103,7 +103,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     public final BlockData getBlockData(int x, int y, int z) {
         this.validateChunkCoordinates(x, y, z);
 
-        return CraftBlockData.fromData(this.blockIds[this.getSectionIndex(y)].get(x, y & 0xF, z));
+        return this.blockIds[this.getSectionIndex(y)].get(x, y & 0xF, z).asBlockData();
     }
 
     @Override
