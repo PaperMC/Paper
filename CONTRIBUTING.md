@@ -21,12 +21,12 @@ which can be obtained in (most) package managers such as `apt` (Debian / Ubuntu;
 you will most likely use this for WSL), `homebrew` (macOS / Linux), and more:
 
 - `git` (package `git` everywhere);
-- A Java 21 or later JDK (packages vary, use Google/DuckDuckGo/etc.).
+- A Java 25 or later JDK (packages vary, use Google/DuckDuckGo/etc.).
   - [Adoptium](https://adoptium.net/) has builds for most operating systems.
-  - Paper requires JDK 21 to build, however, makes use of Gradle's
+  - Paper requires JDK 25 to build, however, makes use of Gradle's
     [Toolchains](https://docs.gradle.org/current/userguide/toolchains.html)
-    feature to allow building with only JRE 17 or later installed. (Gradle will
-    automatically provision JDK 21 for compilation if it cannot find an existing
+    feature to allow building with only JRE 21 or later installed. (Gradle will
+    automatically provision JDK 25 for compilation if it cannot find an existing
     installation).
 
 If you're on Windows, check
@@ -36,11 +36,11 @@ If you're compiling with Docker, you can use Adoptium's
 [`eclipse-temurin`](https://hub.docker.com/_/eclipse-temurin/) images like so:
 
 ```console
-# docker run -it -v "$(pwd)":/data --rm eclipse-temurin:21.0.5_11-jdk bash
+# docker run -it -v "$(pwd)":/data --rm eclipse-temurin:25.0.2_10-jdk bash
 Pulling image...
 
 root@abcdefg1234:/# javac -version
-javac 21.0.5
+javac 25.0.2
 ```
 
 ## Understanding Patches
@@ -66,7 +66,7 @@ On Windows, remove the `./` the beginning of `gradlew` commands;
 **Only changes made in `paper-server/src/minecraft` have to deal with the patch system.**
 
 `paper-server/src/minecraft` is not a git repositories in the traditional sense. Its
-initial commits are the decompiled and deobfuscated Minecraft source files. The per-file
+initial commits are the decompiled Minecraft source files. The per-file
 patches are applied on top of these files as a single, large commit, which is then followed
 by the individual feature-patch commits.
 
@@ -184,8 +184,7 @@ These steps assume the `origin` remote is your fork of this repository and `upst
 ## PR Policy
 
 We'll accept changes that make sense. You should be able to justify their
-existence, along with any maintenance costs that come with them. Using
-[obfuscation helpers](#obfuscation-helpers) aids in the maintenance costs.
+existence, along with any maintenance costs that come with them.
 Remember that these changes will affect everyone who runs Paper, not just you
 and your server.
 
@@ -281,7 +280,7 @@ public class SomeVanillaClass {
 
 We are in the process of switching nullability annotation libraries, so you might need to use one or the other:
 
-**For classes we add**: Fields, method parameters and return types that are nullable should be marked via the
+**For classes, we add or modifications to Vanilla Files**: Fields, method parameters and return types that are nullable should be marked via the
 `@Nullable` annotation from `org.jspecify.annotations`. Whenever you create a new class, add `@NullMarked`, meaning types
 are assumed to be non-null by default. For less obvious placing such as on generics or arrays, see the [JSpecify docs](https://jspecify.dev/docs/user-guide/).
 
@@ -381,26 +380,6 @@ index a92bf8967..d0ab87d0f 100644
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 ```
 -->
-
-## Obfuscation Helpers
-
-While rarely needed, obfuscation helpers are sometimes useful when it comes
-to unmapped local variables, or poorly named method parameters. In an effort
-to make future updates easier on ourselves, Paper tries to use obfuscation
-helpers wherever it makes sense. The purpose of these helpers is to make the
-code more readable and maintainable. These helpers should be made easy to
-inline by the JVM wherever possible.
-
-An example of an obfuscation helper for a local variable:
-```java
-double d0 = entity.getX(); final double fromX = d0; // Paper - OBFHELPER
-// ...   
-this.someMethod(fromX); // Paper
-```
-
-While they may not always be done in exactly the same way, the general goal is
-always to improve readability and maintainability. Use your best judgment and do
-what fits best in your situation.
 
 ## Configuration files
 
