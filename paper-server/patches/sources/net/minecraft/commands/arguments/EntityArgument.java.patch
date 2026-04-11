@@ -1,35 +1,33 @@
 --- a/net/minecraft/commands/arguments/EntityArgument.java
 +++ b/net/minecraft/commands/arguments/EntityArgument.java
-@@ -106,9 +_,14 @@
+@@ -107,9 +_,14 @@
      }
  
-     private EntitySelector parse(StringReader reader, boolean allowSelectors) throws CommandSyntaxException {
+     private EntitySelector parse(final StringReader reader, final boolean allowSelectors) throws CommandSyntaxException {
 +        // CraftBukkit start
 +        return this.parse(reader, allowSelectors, false);
 +    }
-+    public EntitySelector parse(StringReader reader, boolean allowSelectors, boolean overridePermissions) throws CommandSyntaxException {
++    public EntitySelector parse(final StringReader reader, final boolean allowSelectors, final boolean overridePermissions) throws CommandSyntaxException {
 +        // CraftBukkit end
-         int i = 0;
-         EntitySelectorParser entitySelectorParser = new EntitySelectorParser(reader, allowSelectors);
--        EntitySelector entitySelector = entitySelectorParser.parse();
-+        EntitySelector entitySelector = entitySelectorParser.parse(overridePermissions); // CraftBukkit
-         if (entitySelector.getMaxResults() > 1 && this.single) {
+         int start = 0;
+         EntitySelectorParser parser = new EntitySelectorParser(reader, allowSelectors);
+-        EntitySelector selector = parser.parse();
++        EntitySelector selector = parser.parse(overridePermissions); // CraftBukkit
+         if (selector.getMaxResults() > 1 && this.single) {
              if (this.playersOnly) {
                  reader.setCursor(0);
-@@ -130,9 +_,15 @@
-         if (context.getSource() instanceof SharedSuggestionProvider sharedSuggestionProvider) {
-             StringReader stringReader = new StringReader(builder.getInput());
-             stringReader.setCursor(builder.getStart());
+@@ -131,7 +_,13 @@
+         if (contextBuilder.getSource() instanceof SharedSuggestionProvider source) {
+             StringReader reader = new StringReader(builder.getInput());
+             reader.setCursor(builder.getStart());
+-            EntitySelectorParser parser = new EntitySelectorParser(reader, source.permissions().hasPermission(Permissions.COMMANDS_ENTITY_SELECTORS));
 +            // Paper start - Fix EntityArgument permissions
-+            final boolean permission = sharedSuggestionProvider instanceof CommandSourceStack stack
++            final boolean permission = source instanceof CommandSourceStack stack
 +                ? stack.bypassSelectorPermissions || stack.hasPermission(Permissions.COMMANDS_ENTITY_SELECTORS, "minecraft.command.selector")
 +                // Only CommandSourceStack implements SharedSuggestionProvider. If *somehow* anything else ends up here, try to query its permission level, otherwise yield false.
-+                : sharedSuggestionProvider.permissions().hasPermission(Permissions.COMMANDS_ENTITY_SELECTORS);
-             EntitySelectorParser entitySelectorParser = new EntitySelectorParser(
--                stringReader, sharedSuggestionProvider.permissions().hasPermission(Permissions.COMMANDS_ENTITY_SELECTORS)
-+                stringReader, permission
-             );
++                : source.permissions().hasPermission(Permissions.COMMANDS_ENTITY_SELECTORS);
++            EntitySelectorParser parser = new EntitySelectorParser(reader, permission);
 +            // Paper end - Fix EntityArgument permissions
  
              try {
-                 entitySelectorParser.parse();
+                 parser.parse();

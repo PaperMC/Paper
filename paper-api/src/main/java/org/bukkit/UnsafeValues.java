@@ -61,7 +61,7 @@ public interface UnsafeValues {
 
     int getDataVersion();
 
-    ItemStack modifyItemStack(ItemStack stack, String arguments);
+    ItemStack modifyItemStack(ItemStack item, String components);
 
     void checkSupported(PluginDescriptionFile pdf) throws InvalidPluginException;
 
@@ -175,7 +175,7 @@ public interface UnsafeValues {
     String get(Class<?> aClass, String value);
 
     @ApiStatus.Internal
-    <B extends Keyed> B get(RegistryKey<B> registry, NamespacedKey key);
+    @Nullable <B extends Keyed> B get(RegistryKey<B> registry, NamespacedKey key);
 
     // Paper start
     @Deprecated(forRemoval = true)

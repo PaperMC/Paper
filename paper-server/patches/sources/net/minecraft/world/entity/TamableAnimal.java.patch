@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/TamableAnimal.java
 +++ b/net/minecraft/world/entity/TamableAnimal.java
-@@ -75,7 +_,7 @@
+@@ -80,7 +_,7 @@
          }
  
          this.orderedToSit = input.getBooleanOr("Sitting", false);
@@ -9,21 +9,30 @@
      }
  
      @Override
-@@ -133,6 +_,13 @@
+@@ -136,7 +_,7 @@
+     protected void feed(final Player player, final InteractionHand hand, final ItemStack itemStack, final float healingFactor, final float defaultHeal) {
+         FoodProperties foodProperties = itemStack.get(DataComponents.FOOD);
+         this.usePlayerItem(player, hand, itemStack);
+-        this.heal(foodProperties != null ? healingFactor * foodProperties.nutrition() : defaultHeal);
++        this.heal(foodProperties != null ? healingFactor * foodProperties.nutrition() : defaultHeal, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // Paper - Add missing regain reason
+         this.playEatingSound();
      }
  
-     public void setInSittingPose(boolean sitting) {
+@@ -145,6 +_,13 @@
+     }
+ 
+     public void setInSittingPose(final boolean value) {
 +        // Paper start - Add EntityToggleSitEvent
-+        this.setInSittingPose(sitting, true);
++        this.setInSittingPose(value, true);
 +    }
 +
-+    public void setInSittingPose(boolean sitting, boolean callEvent) {
-+        if (callEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return;
++    public void setInSittingPose(boolean value, boolean callEvent) {
++        if (callEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), value).callEvent()) return;
 +        // Paper end - Add EntityToggleSitEvent
-         byte b = this.entityData.get(DATA_FLAGS_ID);
-         if (sitting) {
-             this.entityData.set(DATA_FLAGS_ID, (byte)(b | 1));
-@@ -213,7 +_,12 @@
+         byte current = this.entityData.get(DATA_FLAGS_ID);
+         if (value) {
+             this.entityData.set(DATA_FLAGS_ID, (byte)(current | 1));
+@@ -225,7 +_,12 @@
          if (this.level() instanceof ServerLevel serverLevel
              && serverLevel.getGameRules().get(GameRules.SHOW_DEATH_MESSAGES)
              && this.getOwner() instanceof ServerPlayer serverPlayer) {
@@ -36,8 +45,8 @@
 +            // Paper end - Add TameableDeathMessageEvent
          }
  
-         super.die(damageSource);
-@@ -256,7 +_,14 @@
+         super.die(source);
+@@ -268,7 +_,14 @@
          if (!this.canTeleportTo(new BlockPos(x, y, z))) {
              return false;
          } else {

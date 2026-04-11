@@ -3,24 +3,24 @@
 @@ -16,7 +_,7 @@
      private static final Logger LOGGER = LogUtils.getLogger();
  
-     public static void reloadPacks(Collection<String> selectedIds, CommandSourceStack source) {
--        source.getServer().reloadResources(selectedIds).exceptionally(throwable -> {
-+        source.getServer().reloadResources(selectedIds, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.COMMAND).exceptionally(throwable -> { // Paper - Add ServerResourcesReloadedEvent
+     public static void reloadPacks(final Collection<String> selectedPacks, final CommandSourceStack source) {
+-        source.getServer().reloadResources(selectedPacks).exceptionally(throwable -> {
++        source.getServer().reloadResources(selectedPacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.COMMAND).exceptionally(throwable -> { // Paper - Add ServerResourcesReloadedEvent
              LOGGER.warn("Failed to execute reload", throwable);
              source.sendFailure(Component.translatable("commands.reload.failure"));
              return null;
 @@ -24,7 +_,7 @@
      }
  
-     private static Collection<String> discoverNewPacks(PackRepository packRepository, WorldData worldData, Collection<String> selectedIds) {
+     private static Collection<String> discoverNewPacks(final PackRepository packRepository, final WorldData worldData, final Collection<String> currentPacks) {
 -        packRepository.reload();
 +        packRepository.reload(true); // Paper - will perform a full reload
-         Collection<String> list = Lists.newArrayList(selectedIds);
+         Collection<String> selected = Lists.newArrayList(currentPacks);
          Collection<String> disabled = worldData.getDataConfiguration().dataPacks().getDisabled();
  
 @@ -36,6 +_,16 @@
  
-         return list;
+         return selected;
      }
 +
 +    // CraftBukkit start
@@ -33,5 +33,5 @@
 +    }
 +    // CraftBukkit end
  
-     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-         dispatcher.register(Commands.literal("reload").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(commandContext -> {
+     public static void register(final CommandDispatcher<CommandSourceStack> dispatcher) {
+         dispatcher.register(Commands.literal("reload").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(s -> {

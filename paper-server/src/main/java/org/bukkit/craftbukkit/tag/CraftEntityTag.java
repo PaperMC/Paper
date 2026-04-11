@@ -16,7 +16,7 @@ public class CraftEntityTag extends CraftTag<net.minecraft.world.entity.EntityTy
 
     @Override
     public boolean isTagged(EntityType entity) {
-        return CraftEntityType.bukkitToMinecraft(entity).is(this.tag);
+        return CraftEntityType.bukkitToMinecraft(entity).builtInRegistryHolder().is(this.tag);
     }
 
     @Override

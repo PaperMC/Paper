@@ -1,11 +1,11 @@
 --- a/net/minecraft/world/entity/projectile/ShulkerBullet.java
 +++ b/net/minecraft/world/entity/projectile/ShulkerBullet.java
 @@ -55,7 +_,21 @@
-         this.finalTarget = EntityReference.of(finalTarget);
+         this.finalTarget = EntityReference.of(target);
          this.currentMoveDirection = Direction.UP;
-         this.selectNextMoveDirection(axis, finalTarget);
+         this.selectNextMoveDirection(invalidStartAxis, target);
 -    }
-+        this.projectileSource = shooter.getBukkitLivingEntity(); // CraftBukkit
++        this.projectileSource = owner.getBukkitLivingEntity(); // CraftBukkit
 +    }
 +
 +    // CraftBukkit start
@@ -32,7 +32,7 @@
          }
      }
  
-@@ -220,7 +_,7 @@
+@@ -218,7 +_,7 @@
          }
  
          if (hitResult != null && this.isAlive() && hitResult.getType() != HitResult.Type.MISS) {
@@ -41,16 +41,16 @@
          }
  
          ProjectileUtil.rotateTowardsMovement(this, 0.5F);
-@@ -293,7 +_,7 @@
+@@ -288,7 +_,7 @@
              }
  
-             if (entity instanceof LivingEntity livingEntity1) {
--                livingEntity1.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 200), MoreObjects.firstNonNull(owner, this));
-+                livingEntity1.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 200), MoreObjects.firstNonNull(owner, this), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
+             if (target instanceof LivingEntity livingTarget) {
+-                livingTarget.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 200), MoreObjects.firstNonNull(owner, this));
++                livingTarget.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 200), MoreObjects.firstNonNull(owner, this), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
              }
          }
      }
-@@ -306,14 +_,20 @@
+@@ -301,14 +_,20 @@
      }
  
      private void destroy() {
@@ -66,19 +66,19 @@
      }
  
      @Override
-     protected void onHit(HitResult result) {
-         super.onHit(result);
+     protected void onHit(final HitResult hitResult) {
+         super.onHit(hitResult);
 -        this.destroy();
 +        this.destroy(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
      }
  
      @Override
-@@ -328,9 +_,14 @@
+@@ -323,9 +_,14 @@
  
      @Override
-     public boolean hurtServer(ServerLevel level, DamageSource damageSource, float amount) {
+     public boolean hurtServer(final ServerLevel level, final DamageSource source, final float damage) {
 +        // CraftBukkit start
-+        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damageSource, amount, false)) {
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, damage, false)) {
 +            return false;
 +        }
 +        // CraftBukkit end

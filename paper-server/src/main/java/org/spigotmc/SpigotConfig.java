@@ -289,12 +289,12 @@ public class SpigotConfig {
 
     public static double movedWronglyThreshold;
     private static void movedWronglyThreshold() {
-        SpigotConfig.movedWronglyThreshold = SpigotConfig.getDouble("settings.moved-wrongly-threshold", 0.0625D);
+        SpigotConfig.movedWronglyThreshold = SpigotConfig.getDouble("settings.moved-wrongly-threshold", 0.0625);
     }
 
     public static double movedTooQuicklyMultiplier;
     private static void movedTooQuicklyMultiplier() {
-        SpigotConfig.movedTooQuicklyMultiplier = SpigotConfig.getDouble("settings.moved-too-quickly-multiplier", 10.0D);
+        SpigotConfig.movedTooQuicklyMultiplier = SpigotConfig.getDouble("settings.moved-too-quickly-multiplier", 10.0);
     }
 
     public static double maxAbsorption = 2048;

@@ -5,45 +5,41 @@
      }
  
 +    // Paper start - Affects Spawning API
-+    default @Nullable Player findNearbyPlayer(Entity entity, double maxDistance, @Nullable Predicate<Entity> predicate) {
-+        return this.getNearestPlayer(entity.getX(), entity.getY(), entity.getZ(), maxDistance, predicate);
++    default @Nullable Player findNearbyPlayer(Entity entity, double range, @Nullable Predicate<Entity> predicate) {
++        return this.getNearestPlayer(entity.getX(), entity.getY(), entity.getZ(), range, predicate);
 +    }
 +    // Paper end - Affects Spawning API
 +
-     default @Nullable Player getNearestPlayer(double x, double y, double z, double distance, @Nullable Predicate<Entity> predicate) {
-         double d = -1.0;
-         Player player = null;
-@@ -88,6 +_,28 @@
-         return player;
+     default @Nullable Player getNearestPlayer(final double x, final double y, final double z, final double range, final @Nullable Predicate<Entity> predicate) {
+         double best = -1.0;
+         Player result = null;
+@@ -88,6 +_,24 @@
+         return result;
      }
  
 +    // Paper start
-+    default List<org.bukkit.entity.HumanEntity> findNearbyBukkitPlayers(double x, double y, double z, double radius, boolean notSpectator) {
-+        return findNearbyBukkitPlayers(x, y, z, radius, notSpectator ? EntitySelector.NO_SPECTATORS : net.minecraft.world.entity.EntitySelector.NO_CREATIVE_OR_SPECTATOR);
-+    }
++    default List<org.bukkit.entity.HumanEntity> findNearbyBukkitPlayers(double x, double y, double z, double range, @Nullable Predicate<Entity> predicate) {
++        ImmutableList.Builder<org.bukkit.entity.HumanEntity> players = ImmutableList.builder();
 +
-+    default List<org.bukkit.entity.HumanEntity> findNearbyBukkitPlayers(double x, double y, double z, double radius, @Nullable Predicate<Entity> predicate) {
-+        com.google.common.collect.ImmutableList.Builder<org.bukkit.entity.HumanEntity> builder = com.google.common.collect.ImmutableList.builder();
++        for (Player player : this.players()) {
++            if (predicate == null || predicate.test(player)) {
++                double dist = player.distanceToSqr(x, y, z);
 +
-+        for (Player human : this.players()) {
-+            if (predicate == null || predicate.test(human)) {
-+                double distanceSquared = human.distanceToSqr(x, y, z);
-+
-+                if (radius < 0.0D || distanceSquared < radius * radius) {
-+                    builder.add(human.getBukkitEntity());
++                if (range < 0.0 || dist < range * range) {
++                    players.add(player.getBukkitEntity());
 +                }
 +            }
 +        }
 +
-+        return builder.build();
++        return players.build();
 +    }
 +    // Paper end
 +
-     default @Nullable Player getNearestPlayer(Entity entity, double distance) {
-         return this.getNearestPlayer(entity.getX(), entity.getY(), entity.getZ(), distance, false);
+     default @Nullable Player getNearestPlayer(final Entity source, final double maxDist) {
+         return this.getNearestPlayer(source.getX(), source.getY(), source.getZ(), maxDist, false);
      }
 @@ -97,6 +_,25 @@
-         return this.getNearestPlayer(x, y, z, distance, predicate);
+         return this.getNearestPlayer(x, y, z, maxDist, predicate);
      }
  
 +    // Paper start - Affects Spawning API
@@ -56,7 +52,7 @@
 +        for (Player player : this.players()) {
 +            if (EntitySelector.PLAYER_AFFECTS_SPAWNING.test(player)) { // combines NO_SPECTATORS and LIVING_ENTITY_STILL_ALIVE with an "affects spawning" check
 +                double playerDist = player.distanceToSqr(x, y, z);
-+                if (range < 0.0D || playerDist < range * range) {
++                if (range < 0.0 || playerDist < range * range) {
 +                    return true;
 +                }
 +            }
@@ -65,7 +61,7 @@
 +    }
 +    // Paper end - Affects Spawning API
 +
-     default boolean hasNearbyAlivePlayer(double x, double y, double z, double distance) {
+     default boolean hasNearbyAlivePlayer(final double x, final double y, final double z, final double range) {
          for (Player player : this.players()) {
              if (EntitySelector.NO_SPECTATORS.test(player) && EntitySelector.LIVING_ENTITY_STILL_ALIVE.test(player)) {
 @@ -120,4 +_,11 @@

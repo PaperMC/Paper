@@ -26,6 +26,7 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.item.MapPostProcessing;
 import io.papermc.paper.world.WeatheringCopperState;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
@@ -160,6 +161,7 @@ public final class Rewriters {
             ))
             .register("ItemUseAnimation", ItemUseAnimation.class, new EnumCloneRewriter<>(net.minecraft.world.item.ItemUseAnimation.class))
             .register("SwingAnimationType", SwingAnimation.Animation.class, new EnumCloneRewriter<>(SwingAnimationType.class))
+            .register("MapPostProcessing", MapPostProcessing.class, new EnumCloneRewriter<>(net.minecraft.world.item.component.MapPostProcessing.class))
             .register("ItemRarity", ItemRarity.class, new EnumCloneRewriter<>(Rarity.class) {
                 @Override
                 protected EnumValue.Builder rewriteEnumValue(Rarity rarity) {
@@ -213,6 +215,7 @@ public final class Rewriters {
             .register("WolfVariant", Wolf.Variant.class, new RegistryFieldRewriter<>(Registries.WOLF_VARIANT, "getVariant"))
             .register("WolfSoundVariant", Wolf.SoundVariant.class, new RegistryFieldRewriter<>(Registries.WOLF_SOUND_VARIANT, "getSoundVariant"))
             .register("CatType", Cat.Type.class, new RegistryFieldRewriter<>(Registries.CAT_VARIANT, "getType"))
+            .register("CatSoundVariant", Cat.SoundVariant.class, new RegistryFieldRewriter<>(Registries.CAT_SOUND_VARIANT, "getSoundVariant"))
             .register("FrogVariant", Frog.Variant.class, new RegistryFieldRewriter<>(Registries.FROG_VARIANT, "getVariant"))
             .register("PatternType", PatternType.class, new RegistryFieldRewriter<>(Registries.BANNER_PATTERN, "getType"))
             .register("Biome", Biome.class, new RegistryFieldRewriter<>(Registries.BIOME, "getBiome"))
@@ -221,8 +224,11 @@ public final class Rewriters {
             .register("Sound", Sound.class, new RegistryFieldRewriter<>(Registries.SOUND_EVENT, "getSound"))
             .register("Art", Art.class, new RegistryFieldRewriter<>(Registries.PAINTING_VARIANT, "getArt"))
             .register("ChickenVariant", Chicken.Variant.class, new RegistryFieldRewriter<>(Registries.CHICKEN_VARIANT, "getVariant"))
+            .register("ChickenSoundVariant", Chicken.SoundVariant.class, new RegistryFieldRewriter<>(Registries.CHICKEN_SOUND_VARIANT, "getSoundVariant"))
             .register("CowVariant", Cow.Variant.class, new RegistryFieldRewriter<>(Registries.COW_VARIANT, "getVariant"))
+            .register("CowSoundVariant", Cow.SoundVariant.class, new RegistryFieldRewriter<>(Registries.COW_SOUND_VARIANT, "getSoundVariant"))
             .register("PigVariant", Pig.Variant.class, new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
+            .register("PigSoundVariant", Pig.SoundVariant.class, new RegistryFieldRewriter<>(Registries.PIG_SOUND_VARIANT, "getSoundVariant"))
             .register("ZombieNautilusVariant", ZombieNautilus.Variant.class, new RegistryFieldRewriter<>(Registries.ZOMBIE_NAUTILUS_VARIANT, "getVariant"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
@@ -236,7 +242,7 @@ public final class Rewriters {
 
     private static void bootstrapServer(PatternSourceSetRewriter sourceSet) {
         sourceSet
-            .register("CraftBlockData#MAP", Types.CRAFT_BLOCK_DATA, new CraftBlockDataMapping())
+            .register("CraftBlockData#INSTANCE_CREATOR", Types.CRAFT_BLOCK_DATA, new CraftBlockDataMapping())
             .register("CraftBlockEntityStates", Types.CRAFT_BLOCK_STATES, new CraftBlockEntityStateMapping())
             .register(Types.CRAFT_STATISTIC, composite(
                 holder("CraftStatisticCustom", new StatisticRewriter.CraftCustom()),

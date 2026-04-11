@@ -60,14 +60,14 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         }
     }
 
-    CraftMetaFirework(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaFirework(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaFirework.FIREWORKS).ifPresent((fireworks) -> {
+        getOrEmpty(patch, CraftMetaFirework.FIREWORKS).ifPresent((fireworks) -> {
             this.power = fireworks.flightDuration();
 
             List<FireworkExplosion> fireworkEffects = fireworks.explosions();
-            List<FireworkEffect> effects = this.effects = new ArrayList<FireworkEffect>(fireworkEffects.size());
+            List<FireworkEffect> effects = this.effects = new ArrayList<>(fireworkEffects.size());
 
             for (int i = 0; i < fireworkEffects.size(); i++) {
                 try {
@@ -113,41 +113,27 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         IntList colors = CraftMetaFirework.addColors(effect.getColors());
         IntList fadeColors = CraftMetaFirework.addColors(effect.getFadeColors());
 
-        return new FireworkExplosion(CraftMetaFirework.getNBT(effect.getType()), colors, fadeColors, effect.hasTrail(), effect.hasFlicker());
+        return new FireworkExplosion(CraftMetaFirework.getShape(effect.getType()), colors, fadeColors, effect.hasTrail(), effect.hasFlicker());
     }
 
-    public static FireworkExplosion.Shape getNBT(Type type) {
-        switch (type) {
-            case BALL:
-                return FireworkExplosion.Shape.SMALL_BALL;
-            case BALL_LARGE:
-                return FireworkExplosion.Shape.LARGE_BALL;
-            case STAR:
-                return FireworkExplosion.Shape.STAR;
-            case CREEPER:
-                return FireworkExplosion.Shape.CREEPER;
-            case BURST:
-                return FireworkExplosion.Shape.BURST;
-            default:
-                throw new IllegalArgumentException("Unknown effect type " + type);
-        }
+    public static FireworkExplosion.Shape getShape(Type type) {
+        return switch (type) {
+            case BALL -> FireworkExplosion.Shape.SMALL_BALL;
+            case BALL_LARGE -> FireworkExplosion.Shape.LARGE_BALL;
+            case STAR -> FireworkExplosion.Shape.STAR;
+            case CREEPER -> FireworkExplosion.Shape.CREEPER;
+            case BURST -> FireworkExplosion.Shape.BURST;
+        };
     }
 
-    static Type getEffectType(FireworkExplosion.Shape nbt) {
-        switch (nbt) {
-            case SMALL_BALL:
-                return Type.BALL;
-            case LARGE_BALL:
-                return Type.BALL_LARGE;
-            case STAR:
-                return Type.STAR;
-            case CREEPER:
-                return Type.CREEPER;
-            case BURST:
-                return Type.BURST;
-            default:
-                throw new IllegalArgumentException("Unknown effect type " + nbt);
-        }
+    static Type getEffectType(FireworkExplosion.Shape shape) {
+        return switch (shape) {
+            case SMALL_BALL -> Type.BALL;
+            case LARGE_BALL -> Type.BALL_LARGE;
+            case STAR -> Type.STAR;
+            case CREEPER -> Type.CREEPER;
+            case BURST -> Type.BURST;
+        };
     }
 
     @Override

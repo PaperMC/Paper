@@ -6,58 +6,56 @@
      public final int[] cookingTime = new int[4];
 +    public final boolean[] stopCooking = new boolean[4]; // Paper - Add more Campfire API
  
-     public CampfireBlockEntity(BlockPos pos, BlockState blockState) {
-         super(BlockEntityType.CAMPFIRE, pos, blockState);
-@@ -64,14 +_,44 @@
-             ItemStack itemStack = campfire.items.get(i);
+     public CampfireBlockEntity(final BlockPos worldPosition, final BlockState blockState) {
+         super(BlockEntityType.CAMPFIRE, worldPosition, blockState);
+@@ -64,12 +_,42 @@
+             ItemStack itemStack = entity.items.get(slot);
              if (!itemStack.isEmpty()) {
-                 flag = true;
-+                if (!campfire.stopCooking[i]) { // Paper - Add more Campfire API
-                 campfire.cookingProgress[i]++;
+                 changed = true;
++                if (!entity.stopCooking[slot]) { // Paper - Add more Campfire API
+                 entity.cookingProgress[slot]++;
 +                } // Paper - Add more Campfire API
-                 if (campfire.cookingProgress[i] >= campfire.cookingTime[i]) {
-                     SingleRecipeInput singleRecipeInput = new SingleRecipeInput(itemStack);
--                    ItemStack itemStack1 = check.getRecipeFor(singleRecipeInput, level)
+                 if (entity.cookingProgress[slot] >= entity.cookingTime[slot]) {
+                     SingleRecipeInput input = new SingleRecipeInput(itemStack);
+-                    ItemStack result = recipeCache.getRecipeFor(input, level).map(r -> r.value().assemble(input)).orElse(itemStack);
 +                    // Paper start - add recipe to cook events
-+                    final var optionalCookingRecipe = check.getRecipeFor(singleRecipeInput, level);
-+                    ItemStack itemStack1 = optionalCookingRecipe
-                         .map(recipe -> recipe.value().assemble(singleRecipeInput, level.registryAccess()))
-                         .orElse(itemStack);
++                    final java.util.Optional<net.minecraft.world.item.crafting.RecipeHolder<CampfireCookingRecipe>> recipe = recipeCache.getRecipeFor(input, level);
++                    ItemStack result = recipe.map(r -> r.value().assemble(input)).orElse(itemStack);
 +                    // Paper end - add recipe to cook events
-                     if (itemStack1.isItemEnabled(level.enabledFeatures())) {
--                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), itemStack1);
+                     if (result.isItemEnabled(level.enabledFeatures())) {
+-                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), result);
 +                        // CraftBukkit start - fire BlockCookEvent
 +                        org.bukkit.craftbukkit.inventory.CraftItemStack source = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack);
-+                        org.bukkit.inventory.ItemStack result = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemStack1);
++                        org.bukkit.inventory.ItemStack apiResult = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(result);
 +
 +                        org.bukkit.event.block.BlockCookEvent blockCookEvent = new org.bukkit.event.block.BlockCookEvent(
 +                            org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
 +                            source,
-+                            result,
-+                            (org.bukkit.inventory.CookingRecipe<?>) optionalCookingRecipe.map(RecipeHolder::toBukkitRecipe).orElse(null) // Paper -Add recipe to cook events
++                            apiResult,
++                            (org.bukkit.inventory.CookingRecipe<?>) recipe.map(RecipeHolder::toBukkitRecipe).orElse(null) // Paper - Add recipe to cook events
 +                        );
 +
 +                        if (!blockCookEvent.callEvent()) {
 +                            return;
 +                        }
 +
-+                        result = blockCookEvent.getResult();
-+                        itemStack1 = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(result);
++                        apiResult = blockCookEvent.getResult();
++                        result = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(apiResult);
 +                        // CraftBukkit end
 +                        // Paper start - Fix item locations dropped from campfires
 +                        double deviation = 0.05F * RandomSource.GAUSSIAN_SPREAD_FACTOR;
-+                        while (!itemStack1.isEmpty()) {
-+                            net.minecraft.world.entity.item.ItemEntity droppedItem = new net.minecraft.world.entity.item.ItemEntity(level, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, itemStack1.split(level.random.nextInt(21) + 10));
-+                            droppedItem.setDeltaMovement(level.random.triangle(0.0D, deviation), level.random.triangle(0.2D, deviation), level.random.triangle(0.0D, deviation));
++                        while (!result.isEmpty()) {
++                            net.minecraft.world.entity.item.ItemEntity droppedItem = new net.minecraft.world.entity.item.ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, result.split(level.getRandom().nextInt(21) + 10));
++                            droppedItem.setDeltaMovement(level.getRandom().triangle(0.0, deviation), level.getRandom().triangle(0.2, deviation), level.getRandom().triangle(0.0, deviation));
 +                            level.addFreshEntity(droppedItem);
 +                        }
 +                        // Paper end - Fix item locations dropped from campfires
-                         campfire.items.set(i, ItemStack.EMPTY);
+                         entity.items.set(slot, ItemStack.EMPTY);
                          level.sendBlockUpdated(pos, state, state, Block.UPDATE_ALL);
                          level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(state));
-@@ -143,6 +_,16 @@
-             .ifPresentOrElse(
-                 ints -> System.arraycopy(ints, 0, this.cookingTime, 0, Math.min(this.cookingTime.length, ints.length)), () -> Arrays.fill(this.cookingTime, 0)
+@@ -142,6 +_,16 @@
+                 cookingTimes -> System.arraycopy(cookingTimes, 0, this.cookingTime, 0, Math.min(this.cookingTime.length, cookingTimes.length)),
+                 () -> Arrays.fill(this.cookingTime, 0)
              );
 +
 +        // Paper start - Add more Campfire API
@@ -72,7 +70,7 @@
      }
  
      @Override
-@@ -151,6 +_,13 @@
+@@ -150,6 +_,13 @@
          ContainerHelper.saveAllItems(output, this.items, true);
          output.putIntArray("CookingTimes", this.cookingProgress);
          output.putIntArray("CookingTotalTimes", this.cookingTime);
@@ -86,20 +84,20 @@
      }
  
      @Override
-@@ -180,7 +_,15 @@
+@@ -179,7 +_,15 @@
                      return false;
                  }
  
--                this.cookingTime[i] = recipeFor.get().value().cookingTime();
+-                this.cookingTime[slot] = recipe.get().value().cookingTime();
 +                // CraftBukkit start
 +                org.bukkit.event.block.CampfireStartEvent event = new org.bukkit.event.block.CampfireStartEvent(
-+                    org.bukkit.craftbukkit.block.CraftBlock.at(this.level,this.worldPosition),
-+                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack),
-+                    (org.bukkit.inventory.CampfireRecipe) recipeFor.get().toBukkitRecipe()
++                    org.bukkit.craftbukkit.block.CraftBlock.at(this.level, this.worldPosition),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(placeItem),
++                    (org.bukkit.inventory.CampfireRecipe) recipe.get().toBukkitRecipe()
 +                );
-+                this.level.getCraftServer().getPluginManager().callEvent(event);
-+                this.cookingTime[i] = event.getTotalCookTime(); // i -> event.getTotalCookTime()
++                event.callEvent();
++                this.cookingTime[slot] = event.getTotalCookTime(); // recipe.get().value().cookingTime() -> event.getTotalCookTime()
 +                // CraftBukkit end
-                 this.cookingProgress[i] = 0;
-                 this.items.set(i, stack.consumeAndReturn(1, entity));
-                 level.gameEvent(GameEvent.BLOCK_CHANGE, this.getBlockPos(), GameEvent.Context.of(entity, this.getBlockState()));
+                 this.cookingProgress[slot] = 0;
+                 this.items.set(slot, placeItem.consumeAndReturn(1, sourceEntity));
+                 serverLevel.gameEvent(GameEvent.BLOCK_CHANGE, this.getBlockPos(), GameEvent.Context.of(sourceEntity, this.getBlockState()));
