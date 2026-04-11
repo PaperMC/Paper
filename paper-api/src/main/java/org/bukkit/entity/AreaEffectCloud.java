@@ -20,14 +20,14 @@ public interface AreaEffectCloud extends Entity {
     /**
      * Gets the duration which this cloud will exist for (in ticks).
      *
-     * @return cloud duration
+     * @return cloud duration or {@link PotionEffect#INFINITE_DURATION} for no duration
      */
     int getDuration();
 
     /**
      * Sets the duration which this cloud will exist for (in ticks).
      *
-     * @param duration cloud duration
+     * @param duration cloud duration or {@link PotionEffect#INFINITE_DURATION} for no duration
      */
     void setDuration(int duration);
 

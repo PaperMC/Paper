@@ -1,20 +1,22 @@
 --- a/net/minecraft/network/chat/ComponentUtils.java
 +++ b/net/minecraft/network/chat/ComponentUtils.java
-@@ -49,16 +_,45 @@
+@@ -47,6 +_,7 @@
          }
      }
  
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - validate separators - right now this method is only used for separator evaluation. Error on build if this changes to re-evaluate.
-     public static Optional<MutableComponent> updateForEntity(
-         @Nullable CommandSourceStack source, Optional<Component> optionalComponent, @Nullable Entity entity, int recursionDepth
-     ) throws CommandSyntaxException {
-         return optionalComponent.isPresent() ? Optional.of(updateForEntity(source, optionalComponent.get(), entity, recursionDepth)) : Optional.empty();
+     public static Optional<MutableComponent> resolve(final ResolutionContext context, final Optional<Component> component, final int recursionDepth) throws CommandSyntaxException {
+         return component.isPresent() ? Optional.of(resolve(context, component.get(), recursionDepth)) : Optional.empty();
+     }
+@@ -55,13 +_,40 @@
+         return resolve(context, component, 0);
      }
  
+-    public static MutableComponent resolve(final ResolutionContext context, final Component component, final int recursionDepth) throws CommandSyntaxException {
 +    // Paper start - validate separator
-+    public static Optional<MutableComponent> updateSeparatorForEntity(@Nullable CommandSourceStack source, Optional<Component> text, @Nullable Entity sender, int depth) throws CommandSyntaxException {
++    public static Optional<MutableComponent> resolveSeparator(final ResolutionContext context, final Optional<Component> text, final int recursionDepth) throws CommandSyntaxException {
 +        if (text.isEmpty() || !isValidSelector(text.get())) return Optional.empty();
-+        return Optional.of(updateForEntity(source, text.get(), sender, depth));
++        return Optional.of(resolve(context, text.get(), recursionDepth));
 +    }
 +
 +    public static boolean isValidSelector(final Component component) {
@@ -33,16 +35,18 @@
 +    }
 +    // Paper end - validate separator
 +
-     public static MutableComponent updateForEntity(@Nullable CommandSourceStack source, Component component, @Nullable Entity entity, int recursionDepth) throws CommandSyntaxException {
-         if (recursionDepth > 100) {
-             return component.copy();
++    public static MutableComponent resolve(final ResolutionContext context, Component component, final int recursionDepth) throws CommandSyntaxException { // Paper - adventure; pass actual vanilla component
+         if (recursionDepth > context.depthLimit()) {
+             return switch (context.depthLimitBehavior()) {
+                 case DISCARD_REMAINING -> CommonComponents.ELLIPSIS.copy();
+                 case STOP_PROCESSING_AND_COPY_REMAINING -> component.copy();
+             };
          } else {
 +            // Paper start - adventure; pass actual vanilla component
 +            if (component instanceof io.papermc.paper.adventure.AdventureComponent adventureComponent) {
 +                component = adventureComponent.deepConverted();
 +            }
 +            // Paper end - adventure; pass actual vanilla component
-+
-             MutableComponent mutableComponent = component.getContents().resolve(source, entity, recursionDepth + 1);
+             MutableComponent result = component.getContents().resolve(context, recursionDepth + 1);
  
-             for (Component component1 : component.getSiblings()) {
+             for (Component sibling : component.getSiblings()) {

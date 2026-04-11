@@ -1,0 +1,33 @@
+--- a/net/minecraft/resources/RegistryLoadTask.java
++++ b/net/minecraft/resources/RegistryLoadTask.java
+@@ -29,7 +_,7 @@
+ public abstract class RegistryLoadTask<T> {
+     private final Object registryWriteLock = new Object();
+     protected final RegistryDataLoader.RegistryData<T> data;
+-    private final WritableRegistry<T> registry;
++    final WritableRegistry<T> registry; // Paper - package-private
+     protected final ConcurrentHolderGetter<T> concurrentRegistrationGetter;
+     protected final Map<ResourceKey<?>, Exception> loadingErrors;
+     private volatile boolean elementsRegistered;
+@@ -39,6 +_,7 @@
+         this.registry = new MappedRegistry<>(data.key(), lifecycle);
+         this.loadingErrors = loadingErrors;
+         this.concurrentRegistrationGetter = new ConcurrentHolderGetter<>(this.registryWriteLock, this.registry.createRegistrationLookup());
++        io.papermc.paper.registry.PaperRegistryAccess.instance().registerRegistry(this.registry); // Paper - initialize API registry
+     }
+ 
+     protected ResourceKey<? extends Registry<T>> registryKey() {
+@@ -59,11 +_,11 @@
+         return new RegistryOps.RegistryInfo<>(this.registry, this.concurrentRegistrationGetter, this.registry.registryLifecycle());
+     }
+ 
+-    protected void registerElements(final Stream<RegistryLoadTask.PendingRegistration<T>> elements) {
++    protected void registerElements(final Stream<RegistryLoadTask.PendingRegistration<T>> elements, final io.papermc.paper.registry.data.util.Conversions conversions) { // Paper - pass conversions
+         synchronized (this.registryWriteLock) {
+             elements.forEach(
+                 element -> element.value
+-                    .ifLeft(value -> this.registry.register(element.key, (T)value, element.registrationInfo))
++                    .ifLeft(value -> io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.registerWithListeners(this.registry, element.key, (T)value, element.registrationInfo, conversions)) // Paper - register with listeners
+                     .ifRight(error -> this.loadingErrors.put(element.key, error))
+             );
+             this.elementsRegistered = true;

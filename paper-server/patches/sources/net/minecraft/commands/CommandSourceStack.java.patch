@@ -4,8 +4,8 @@
  import net.minecraft.world.phys.Vec3;
  import org.jspecify.annotations.Nullable;
  
--public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider {
-+public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, io.papermc.paper.command.brigadier.PaperCommandSourceStack { // Paper - Brigadier API
+-public class CommandSourceStack implements SharedSuggestionProvider, ExecutionCommandSource<CommandSourceStack> {
++public class CommandSourceStack implements SharedSuggestionProvider, ExecutionCommandSource<CommandSourceStack>, io.papermc.paper.command.brigadier.PaperCommandSourceStack { // Paper - Brigadier API
      public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(Component.translatable("permissions.requires.player"));
      public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(Component.translatable("permissions.requires.entity"));
      public final CommandSource source;
@@ -16,7 +16,7 @@
 +    public boolean bypassSelectorPermissions = false; // Paper - add bypass for selector permissions
  
      public CommandSourceStack(
-         CommandSource source,
+         final CommandSource source,
 @@ -190,6 +_,30 @@
              );
      }
@@ -45,7 +45,7 @@
 +    }
 +    // Paper end - Expose 'with' functions from the CommandSourceStack
 +
-     public CommandSourceStack withRotation(Vec2 rotation) {
+     public CommandSourceStack withRotation(final Vec2 rotation) {
          return this.rotation.equals(rotation)
              ? this
 @@ -379,6 +_,32 @@
@@ -84,25 +84,25 @@
 @@ -482,20 +_,25 @@
          GameRules gameRules = this.level.getGameRules();
          if (gameRules.get(GameRules.SEND_COMMAND_FEEDBACK)) {
-             for (ServerPlayer serverPlayer : this.server.getPlayerList().getPlayers()) {
--                if (serverPlayer.commandSource() != this.source && this.server.getPlayerList().isOp(serverPlayer.nameAndId())) {
-+                if (serverPlayer.commandSource() != this.source && serverPlayer.getBukkitEntity().hasPermission("minecraft.admin.command_feedback")) { // CraftBukkit
-                     serverPlayer.sendSystemMessage(component);
+             for (ServerPlayer player : this.server.getPlayerList().getPlayers()) {
+-                if (player.commandSource() != this.source && this.server.getPlayerList().isOp(player.nameAndId())) {
++                if (player.commandSource() != this.source && player.getBukkitEntity().hasPermission("minecraft.admin.command_feedback")) { // CraftBukkit
+                     player.sendSystemMessage(broadcast);
                  }
              }
          }
  
 -        if (this.source != this.server && gameRules.get(GameRules.LOG_ADMIN_COMMANDS)) {
-+        if (this.source != this.server && gameRules.get(GameRules.LOG_ADMIN_COMMANDS) && !org.spigotmc.SpigotConfig.silentCommandBlocks) { // Spigot
-             this.server.sendSystemMessage(component);
++        if (this.source != this.server && gameRules.get(GameRules.LOG_ADMIN_COMMANDS) && (!org.spigotmc.SpigotConfig.silentCommandBlocks || !(this.source instanceof net.minecraft.world.level.BaseCommandBlock.CloseableCommandBlockSource))) { // Spigot // Paper - Fix spigot config silentCommandBlocks filtering player commands
+             this.server.sendSystemMessage(broadcast);
          }
      }
  
-     public void sendFailure(Component message) {
+     public void sendFailure(final Component message) {
 +        // Paper start - Add UnknownCommandEvent
 +        this.sendFailure(message, true);
 +    }
-+    public void sendFailure(Component message, boolean withStyle) {
++    public void sendFailure(final Component message, final boolean withStyle) {
 +        // Paper end - Add UnknownCommandEvent
          if (this.source.acceptsFailure() && !this.silent) {
 -            this.source.sendSystemMessage(Component.empty().append(message).withStyle(ChatFormatting.RED));
@@ -119,7 +119,7 @@
      }
  
      @Override
-@@ -586,4 +_,16 @@
+@@ -584,4 +_,16 @@
      public boolean isSilent() {
          return this.silent;
      }
