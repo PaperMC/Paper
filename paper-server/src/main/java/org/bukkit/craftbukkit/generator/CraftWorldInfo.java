@@ -1,11 +1,13 @@
 package org.bukkit.craftbukkit.generator;
 
 import java.util.UUID;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.world.flag.FeatureFlagSet;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraft.world.level.storage.LevelStorageSource;
-import net.minecraft.world.level.storage.PrimaryLevelData;
+import net.minecraft.world.level.storage.LevelDataAndDimensions;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.util.WorldUUID;
+import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.generator.WorldInfo;
 
 public class CraftWorldInfo implements WorldInfo {
@@ -16,22 +18,29 @@ public class CraftWorldInfo implements WorldInfo {
     private final long seed;
     private final int minHeight;
     private final int maxHeight;
-    private final net.minecraft.world.flag.FeatureFlagSet enabledFeatures; // Paper - feature flag API
-    // Paper start
-    private final net.minecraft.world.level.chunk.ChunkGenerator vanillaChunkGenerator;
-    private final net.minecraft.core.RegistryAccess.Frozen registryAccess;
+    private final FeatureFlagSet enabledFeatures;
+    private final ChunkGenerator vanillaChunkGenerator;
+    private final RegistryAccess.Frozen registryAccess;
 
-    public CraftWorldInfo(PrimaryLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, World.Environment environment, DimensionType dimensionManager, net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator, net.minecraft.core.RegistryAccess.Frozen registryAccess) {
-        this.registryAccess = registryAccess;
-        this.vanillaChunkGenerator = chunkGenerator;
-        // Paper end
-        this.name = worldDataServer.getLevelName();
-        this.uuid = WorldUUID.getOrCreate(session.levelDirectory.path().toFile());
+    public CraftWorldInfo(
+        String name,
+        long seed,
+        FeatureFlagSet enabledFeatures,
+        World.Environment environment,
+        DimensionType dimensionManager,
+        ChunkGenerator vanillaChunkGenerator,
+        RegistryAccess.Frozen registryAccess,
+        UUID uuid
+    ) {
+        this.name = name;
+        this.seed = seed;
+        this.enabledFeatures = enabledFeatures;
         this.environment = environment;
-        this.seed = worldDataServer.worldGenOptions().seed();
         this.minHeight = dimensionManager.minY();
         this.maxHeight = dimensionManager.minY() + dimensionManager.height();
-        this.enabledFeatures = worldDataServer.enabledFeatures(); // Paper - feature flag API
+        this.vanillaChunkGenerator = vanillaChunkGenerator;
+        this.registryAccess = registryAccess;
+        this.uuid = uuid;
     }
 
     @Override
@@ -64,7 +73,6 @@ public class CraftWorldInfo implements WorldInfo {
         return this.maxHeight;
     }
 
-    // Paper start
     @Override
     public org.bukkit.generator.BiomeProvider vanillaBiomeProvider() {
         final net.minecraft.world.level.levelgen.RandomState randomState;
@@ -77,7 +85,7 @@ public class CraftWorldInfo implements WorldInfo {
         }
 
         final java.util.List<org.bukkit.block.Biome> possibleBiomes = CraftWorldInfo.this.vanillaChunkGenerator.getBiomeSource().possibleBiomes().stream()
-            .map(biome -> org.bukkit.craftbukkit.block.CraftBiome.minecraftHolderToBukkit(biome))
+            .map(CraftBiome::minecraftHolderToBukkit)
             .toList();
         return new org.bukkit.generator.BiomeProvider() {
             @Override
@@ -92,12 +100,9 @@ public class CraftWorldInfo implements WorldInfo {
             }
         };
     }
-    // Paper end
 
-    // Paper start - feature flag API
     @Override
     public java.util.Set<org.bukkit.FeatureFlag> getFeatureFlags() {
         return io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl.fromNms(this.enabledFeatures);
     }
-    // Paper end - feature flag API
 }

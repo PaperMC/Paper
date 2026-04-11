@@ -21,7 +21,6 @@ import net.kyori.adventure.text.TextComponent;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.NbtUtils;
@@ -70,64 +69,72 @@ public final class DumpItemCommand {
             );
     }
 
-    @SuppressWarnings({"unchecked", "OptionalAssignedToNull", "rawtypes"})
+    @SuppressWarnings({"unchecked" , "rawtypes"})
     private static void doDumpItem(final Player player, final boolean includeAllComponents, final CommandSender sender) {
-        final ItemStack itemStack = CraftItemStack.asNMSCopy(player.getInventory().getItemInMainHand());
-        final TextComponent.Builder visualOutput = text();
-        final StringBuilder itemCommandBuilder = new StringBuilder();
-        final String itemName = itemStack.getItemHolder().unwrapKey().orElseThrow().identifier().toString();
-        itemCommandBuilder.append(itemName);
-        visualOutput.append(text(itemName, YELLOW)); // item type
-        final Set<DataComponentType<?>> referencedComponentTypes = Collections.newSetFromMap(new IdentityHashMap<>());
-        final DataComponentPatch patch = itemStack.getComponentsPatch();
-        referencedComponentTypes.addAll(patch.entrySet().stream().map(Map.Entry::getKey).toList());
-        final DataComponentMap prototype = itemStack.getItem().components();
+        final TextComponent.Builder output = Component.text();
+        final StringBuilder itemToCopy = new StringBuilder();
+        final ItemStack item = CraftItemStack.asNMSCopy(player.getInventory().getItemInMainHand());
+        final String itemName = item.typeHolder().unwrapKey().orElseThrow().identifier().toString();
+        itemToCopy.append(itemName);
+        output.append(text(itemName, YELLOW)); // item type
+
+        final Set<DataComponentType<?>> remainingComponents = Collections.newSetFromMap(new IdentityHashMap<>());
+        final DataComponentPatch patch = item.getComponentsPatch();
+        remainingComponents.addAll(patch.entrySet().stream().map(Map.Entry::getKey).toList());
+        final DataComponentMap prototype = item.getPrototype();
         if (includeAllComponents) {
-            referencedComponentTypes.addAll(prototype.keySet());
+            remainingComponents.addAll(prototype.keySet());
         }
+        remainingComponents.removeIf(DataComponentType::isTransient);
 
         final RegistryOps<Tag> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE);
-        final List<ComponentLike> componentComponents = new ArrayList<>();
-        final List<String> commandComponents = new ArrayList<>();
-        for (final DataComponentType<?> type : referencedComponentTypes) {
-            final String path = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type)).getPath();
-            final Optional<?> patchedValue = patch.get(type);
-            final TypedDataComponent<?> prototypeValue = prototype.getTyped(type);
-            if (patchedValue != null) {
+        final List<ComponentLike> writtenComponents = new ArrayList<>();
+        final List<String> componentsToCopy = new ArrayList<>();
+        for (final Map.Entry<DataComponentType<?>, Optional<?>> entry : patch.entrySet()) { // patch
+            final DataComponentType<?> type = entry.getKey();
+            if (remainingComponents.remove(type)) {
+                final String path = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type)).getPath();
+                final Optional<?> patchedValue = entry.getValue();
                 if (patchedValue.isEmpty()) {
-                    componentComponents.add(text().append(text('!', RED), text(path, AQUA)));
-                    commandComponents.add("!" + path);
+                    writtenComponents.add(text().append(text('!', RED), text(path, AQUA)));
+                    componentsToCopy.add("!" + path);
                 } else {
                     final Tag serialized = (Tag) ((DataComponentType) type).codecOrThrow().encodeStart(ops, patchedValue.get()).getOrThrow();
-                    writeComponentValue(componentComponents::add, commandComponents::add, path, serialized);
+                    writeComponentValue(writtenComponents::add, componentsToCopy::add, path, serialized);
                 }
-            } else if (includeAllComponents && prototypeValue != null) {
-                final Tag serialized = prototypeValue.encodeValue(ops).getOrThrow();
-                writeComponentValue(componentComponents::add, commandComponents::add, path, serialized);
             }
         }
-        if (!componentComponents.isEmpty()) {
-            visualOutput.append(
-                text("[", color(0x8910CE)),
-                join(JoinConfiguration.separator(text(",", GRAY)), componentComponents),
-                text("]", color(0x8910CE))
+
+        if (includeAllComponents) {
+            for (final DataComponentType<?> type : remainingComponents) { // prototype
+                final String path = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type)).getPath();
+                final Tag serialized = requireNonNull(prototype.getTyped(type)).encodeValue(ops).getOrThrow();
+                writeComponentValue(writtenComponents::add, componentsToCopy::add, path, serialized);
+            }
+        }
+
+        if (!writtenComponents.isEmpty()) {
+            output.append(
+                text("[" , color(0x8910CE)),
+                join(JoinConfiguration.separator(text("," , GRAY)), writtenComponents),
+                text("]" , color(0x8910CE))
             );
-            itemCommandBuilder
+            itemToCopy
                 .append("[")
-                .append(String.join(",", commandComponents))
+                .append(String.join("," , componentsToCopy))
                 .append("]");
         }
-        sender.sendMessage(visualOutput.build().compact());
-        final Component copyMsg = text("Click to copy item definition to clipboard for use with /give", GRAY, ITALIC);
-        sender.sendMessage(copyMsg.clickEvent(copyToClipboard(itemCommandBuilder.toString())));
+        player.sendMessage(output.build().compact());
+        final Component copyMsg = text("Click to copy item definition to clipboard for use with /give" , GRAY, ITALIC);
+        sender.sendMessage(copyMsg.clickEvent(copyToClipboard(itemToCopy.toString())));
     }
 
-    private static void writeComponentValue(final Consumer<Component> visualOutput, final Consumer<String> commandOutput, final String path, final Tag serialized) {
-        visualOutput.accept(textOfChildren(
+    private static void writeComponentValue(final Consumer<Component> output, final Consumer<String> copyOutput, final String path, final Tag serialized) {
+        output.accept(textOfChildren(
             text(path, color(0xFF7FD7)),
-            text("=", WHITE),
+            text("=" , WHITE),
             PaperAdventure.asAdventure(NbtUtils.toPrettyComponent(serialized))
         ));
-        commandOutput.accept(path + "=" + new SnbtPrinterTagVisitor("", 0, new ArrayList<>()).visit(serialized));
+        copyOutput.accept(path + "=" + new SnbtPrinterTagVisitor("" , 0, new ArrayList<>()).visit(serialized));
     }
 }

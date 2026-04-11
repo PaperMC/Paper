@@ -91,9 +91,9 @@ public final class EntityCommand {
                 .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
                 .limit(10).toList();
             entitiesPerChunk.forEach(e -> {
-                    final int x = (e.getKey().x << 4) + 8;
-                    final int z = (e.getKey().z << 4) + 8;
-                    final Component message = text("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isPositionTicking(e.getKey().toLong()) ? " (Ticking)" : " (Non-Ticking)"))
+                    final int x = (e.getKey().x() << 4) + 8;
+                    final int z = (e.getKey().z() << 4) + 8;
+                    final Component message = text("  " + e.getValue() + ": " + e.getKey().x() + ", " + e.getKey().z() + (chunkProviderServer.isPositionTicking(e.getKey().longKey()) ? " (Ticking)" : " (Non-Ticking)"))
                         .hoverEvent(text("Click to teleport to chunk", GREEN))
                         .clickEvent(ClickEvent.runCommand("/minecraft:execute in " + world.getWorld().getKey() + " run tp " + x + " ~ " + z));
                     sender.sendMessage(message);

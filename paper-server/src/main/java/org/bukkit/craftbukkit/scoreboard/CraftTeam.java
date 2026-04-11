@@ -229,6 +229,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     @Override
     public void addPlayer(OfflinePlayer player) {
         Preconditions.checkArgument(player != null, "OfflinePlayer cannot be null");
+        Preconditions.checkArgument(player.getName() != null, "OfflinePlayer must have a name");
         this.addEntry(player.getName());
     }
 
@@ -256,6 +257,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     @Override
     public boolean removePlayer(OfflinePlayer player) {
         Preconditions.checkArgument(player != null, "OfflinePlayer cannot be null");
+        Preconditions.checkArgument(player.getName() != null, "OfflinePlayer must have a name");
         return this.removeEntry(player.getName());
     }
 
@@ -295,6 +297,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     @Override
     public boolean hasPlayer(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException {
         Preconditions.checkArgument(player != null, "OfflinePlayer cannot be null");
+        Preconditions.checkArgument(player.getName() != null, "OfflinePlayer must have a name");
         return this.hasEntry(player.getName());
     }
 

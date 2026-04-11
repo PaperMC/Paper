@@ -2,7 +2,7 @@ package org.bukkit;
 
 import com.mojang.serialization.DataResult;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.Set;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.DustColorTransitionOptions;
@@ -24,7 +24,6 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftParticle;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -32,7 +31,6 @@ import org.bukkit.support.environment.VanillaFeature;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -46,8 +44,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 @VanillaFeature
 public class ParticleTest {
 
-    public static Stream<Arguments> data() {
-        return CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE).keySet().stream().map(Arguments::of);
+    public static Set<Identifier> data() {
+        return CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE).keySet();
     }
 
     @ParameterizedTest
@@ -160,10 +158,10 @@ public class ParticleTest {
     }
 
     private <T extends ParticleOptions> void testItemStack(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
-        ItemStack itemStack = new ItemStack(Material.STONE);
-        ItemParticleOption param = this.createAndTest(bukkit, minecraft, itemStack, ItemParticleOption.class);
+        ItemStack item = ItemStack.of(Material.STONE);
+        ItemParticleOption param = this.createAndTest(bukkit, minecraft, item, ItemParticleOption.class);
 
-        assertEquals(itemStack, CraftItemStack.asBukkitCopy(param.getItem()), String.format("""
+        assertEquals(CraftItemStack.asTemplate(item), param.getItem(), String.format("""
                 ItemStack for particle %s do not match.
                 Did something change in the implementation or minecraft?
                 """, bukkit.getKey()));
@@ -173,7 +171,7 @@ public class ParticleTest {
         BlockData blockData = Bukkit.createBlockData(Material.STONE);
         BlockParticleOption param = this.createAndTest(bukkit, minecraft, blockData, BlockParticleOption.class);
 
-        assertEquals(blockData, CraftBlockData.fromData(param.getState()), String.format("""
+        assertEquals(blockData, param.getState().asBlockData(), String.format("""
                 Block data for particle %s do not match.
                 Did something change in the implementation or minecraft?
                 """, bukkit.getKey()));

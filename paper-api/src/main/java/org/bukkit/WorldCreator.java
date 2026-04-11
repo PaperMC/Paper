@@ -31,11 +31,10 @@ public class WorldCreator {
      * @param name Name of the world that will be created
      */
     public WorldCreator(@NotNull String name) {
-        // Paper start
-        this(name, getWorldKey(name));
+        this(name, defaultWorldKey(name));
     }
 
-    private static NamespacedKey getWorldKey(String name) {
+    private static NamespacedKey defaultWorldKey(String name) {
         final String mainLevelName = Bukkit.getUnsafe().getMainLevelName();
         if (name.equals(mainLevelName)) {
             return NamespacedKey.minecraft("overworld");
@@ -57,6 +56,9 @@ public class WorldCreator {
     public WorldCreator(@NotNull String levelName, @NotNull NamespacedKey worldKey) {
         if (levelName == null || worldKey == null) {
             throw new IllegalArgumentException("World name and key cannot be null");
+        }
+        if (!worldKey.equals(defaultWorldKey(levelName))) {
+            throw new UnsupportedOperationException("Custom world keys not yet implemented");
         }
         this.name = levelName;
         this.seed = (new Random()).nextLong();
@@ -104,7 +106,6 @@ public class WorldCreator {
     public static WorldCreator ofKey(@NotNull NamespacedKey worldKey) {
         return new WorldCreator(worldKey);
     }
-    // Paper end
 
     /**
      * Copies the options from the specified world
@@ -589,7 +590,6 @@ public class WorldCreator {
         return result;
     }
 
-    // Paper start - keep spawn loaded tristate
     /**
      * Returns the current intent to keep the world loaded, @see {@link WorldCreator#keepSpawnLoaded(net.kyori.adventure.util.TriState)}
      *
@@ -615,5 +615,4 @@ public class WorldCreator {
     public WorldCreator keepSpawnLoaded(@NotNull net.kyori.adventure.util.TriState keepSpawnLoaded) {
         return this;
     }
-    // Paper end - keep spawn loaded tristate
 }

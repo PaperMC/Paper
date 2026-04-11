@@ -1,7 +1,6 @@
 package io.papermc.paper.command.brigadier.argument;
 
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.ForwardingSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
@@ -37,7 +36,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.util.MCUtil;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -161,9 +159,9 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     public ArgumentType<PlayerProfileListResolver> playerProfiles() {
         return this.wrap(GameProfileArgument.gameProfile(), result -> {
             if (result instanceof GameProfileArgument.SelectorResult) {
-                return sourceStack -> Collections.unmodifiableCollection(Collections2.transform(result.getNames((CommandSourceStack) sourceStack), CraftPlayerProfile::new));
+                return sourceStack -> MCUtil.transformUnmodifiable(result.getNames((CommandSourceStack) sourceStack), CraftPlayerProfile::new);
             } else {
-                return sourceStack -> Collections.unmodifiableCollection(Collections2.transform(result.getNames((CommandSourceStack) sourceStack), CraftPlayerProfile::new));
+                return sourceStack -> MCUtil.transformUnmodifiable(result.getNames((CommandSourceStack) sourceStack), CraftPlayerProfile::new);
             }
         });
     }
@@ -192,7 +190,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
             result -> (block, loadChunk) -> {
                 final BlockInWorld blockInWorld = new BlockInWorld(
                     ((CraftWorld) block.getWorld()).getHandle(),
-                    CraftLocation.toBlockPosition(block.getLocation()),
+                    CraftLocation.toBlockPos(block.getLocation()),
                     loadChunk
                 );
                 // Get state lazy loads the state, will remain null if chunk is unloaded.
@@ -253,7 +251,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
         return this.wrap(SwizzleArgument.swizzle(), (result) -> {
             final EnumSet<Axis> bukkitAxes = EnumSet.noneOf(Axis.class);
             for (final Direction.Axis nmsAxis : result) {
-                bukkitAxes.add(CraftBlockData.toBukkit(nmsAxis, Axis.class));
+                bukkitAxes.add(CraftBlockData.fromVanilla(nmsAxis, Axis.class));
             }
             return new AxisSetImpl(bukkitAxes);
         });
@@ -273,7 +271,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     @Override
     public ArgumentType<ItemStack> itemStack() {
         return this.wrap(ItemArgument.item(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
-            return CraftItemStack.asBukkitCopy(result.createItemStack(1, true));
+            return CraftItemStack.asBukkitCopy(result.createItemStack(1));
         });
     }
 

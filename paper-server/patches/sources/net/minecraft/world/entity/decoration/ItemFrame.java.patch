@@ -6,52 +6,52 @@
      public boolean fixed = false;
 +    public @Nullable MapId cachedMapId; // Paper - Perf: Cache map ids on item frames
  
-     public ItemFrame(EntityType<? extends ItemFrame> type, Level level) {
+     public ItemFrame(final EntityType<? extends ItemFrame> type, final Level level) {
          super(type, level);
 @@ -111,6 +_,11 @@
      }
  
-     private AABB createBoundingBox(BlockPos pos, Direction direction, boolean hasFramedMap) {
+     private AABB createBoundingBox(final BlockPos blockPos, final Direction direction, final boolean hasFramedMap) {
 +        // Paper start - add static method
-+        return calculateBoundingBoxStatic(pos, direction, hasFramedMap);
++        return createBoundingBoxStatic(blockPos, direction, hasFramedMap);
 +    }
-+    public static AABB calculateBoundingBoxStatic(BlockPos pos, Direction direction, boolean hasFramedMap) {
++    public static AABB createBoundingBoxStatic(BlockPos blockPos, Direction direction, boolean hasFramedMap) {
 +        // Paper end - add static method
-         float f = 0.46875F;
-         Vec3 vec3 = Vec3.atCenterOf(pos).relative(direction, -0.46875);
-         float f1 = hasFramedMap ? 1.0F : 0.75F;
+         float shiftToBlockWall = 0.46875F;
+         Vec3 position = Vec3.atCenterOf(blockPos).relative(direction, -0.46875);
+         float width = hasFramedMap ? 1.0F : 0.75F;
 @@ -142,9 +_,9 @@
      }
  
      @Override
--    public void push(double x, double y, double z) {
-+    public void push(double x, double y, double z, @Nullable Entity pushingEntity) { // Paper - add push source entity param
+-    public void push(final double xa, final double ya, final double za) {
++    public void push(final double xa, final double ya, final double za, @Nullable Entity pushingEntity) { // Paper - add push source entity param
          if (!this.fixed) {
--            super.push(x, y, z);
-+            super.push(x, y, z, pushingEntity); // Paper - add push source entity param
+-            super.push(xa, ya, za);
++            super.push(xa, ya, za, pushingEntity); // Paper - add push source entity param
          }
      }
  
 @@ -173,6 +_,18 @@
-             if (this.isInvulnerableToBase(damageSource)) {
+             if (this.isInvulnerableToBase(source)) {
                  return false;
-             } else if (this.shouldDamageDropItem(damageSource)) {
+             } else if (this.shouldDamageDropItem(source)) {
 +                // CraftBukkit start - fire EntityDamageEvent
-+                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damageSource, amount, false) || this.isRemoved()) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, damage, false) || this.isRemoved()) {
 +                    return true;
 +                }
 +                // CraftBukkit end
 +                // Paper start - Add PlayerItemFrameChangeEvent
-+                if (damageSource.getEntity() instanceof Player player) {
++                if (source.getEntity() instanceof Player player) {
 +                    var event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE);
 +                    if (!event.callEvent()) return true; // return true here because you aren't cancelling the damage, just the change
 +                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false);
 +                }
 +                // Paper end - Add PlayerItemFrameChangeEvent
-                 this.dropItem(level, damageSource.getEntity(), false);
-                 this.gameEvent(GameEvent.BLOCK_CHANGE, damageSource.getEntity());
+                 this.dropItem(level, source.getEntity(), false);
+                 this.gameEvent(GameEvent.BLOCK_CHANGE, source.getEntity());
                  this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
-@@ -258,6 +_,13 @@
+@@ -256,6 +_,13 @@
          return this.getEntityData().get(DATA_ITEM);
      }
  
@@ -62,54 +62,54 @@
 +    }
 +    // Paper end
 +
-     public @Nullable MapId getFramedMapId(ItemStack stack) {
-         return stack.get(DataComponents.MAP_ID);
+     public @Nullable MapId getFramedMapId(final ItemStack itemStack) {
+         return itemStack.get(DataComponents.MAP_ID);
      }
-@@ -271,13 +_,19 @@
+@@ -269,13 +_,19 @@
      }
  
-     public void setItem(ItemStack stack, boolean updateNeighbours) {
+     public void setItem(ItemStack itemStack, final boolean updateNeighbours) {
 +        // CraftBukkit start
-+        this.setItem(stack, updateNeighbours, true);
++        this.setItem(itemStack, updateNeighbours, true);
 +    }
 +
-+    public void setItem(ItemStack stack, boolean updateNeighbours, boolean playSound) {
++    public void setItem(ItemStack itemStack, final boolean updateNeighbours, boolean playSound) {
 +        // CraftBukkit end
-         if (!stack.isEmpty()) {
-             stack = stack.copyWithCount(1);
+         if (!itemStack.isEmpty()) {
+             itemStack = itemStack.copyWithCount(1);
          }
  
-         this.onItemChanged(stack);
-         this.getEntityData().set(DATA_ITEM, stack);
--        if (!stack.isEmpty()) {
-+        if (!stack.isEmpty() && updateNeighbours && playSound) { // CraftBukkit // Paper - only play sound when update flag is set
+         this.onItemChanged(itemStack);
+         this.getEntityData().set(DATA_ITEM, itemStack);
+-        if (!itemStack.isEmpty()) {
++        if (!itemStack.isEmpty() && updateNeighbours && playSound) { // CraftBukkit // Paper - only play sound when update flag is set
              this.playSound(this.getAddItemSound(), 1.0F, 1.0F);
          }
  
-@@ -304,6 +_,7 @@
+@@ -302,6 +_,7 @@
      }
  
-     private void onItemChanged(ItemStack item) {
+     private void onItemChanged(final ItemStack item) {
 +        this.cachedMapId = item.getComponents().get(net.minecraft.core.component.DataComponents.MAP_ID); // Paper - Perf: Cache map ids on item frames
-         if (!item.isEmpty() && item.getFrame() != this) {
-             item.setEntityRepresentation(this);
-         }
-@@ -372,7 +_,13 @@
-                     if (savedData != null && savedData.isTrackedCountOverLimit(256)) {
+         this.recalculateBoundingBox();
+     }
+ 
+@@ -366,7 +_,13 @@
+                     if (data != null && data.isTrackedCountOverLimit(256)) {
                          return InteractionResult.FAIL;
                      } else {
--                        this.setItem(itemInHand);
+-                        this.setItem(itemStack);
 +                        // Paper start - Add PlayerItemFrameChangeEvent
-+                        io.papermc.paper.event.player.PlayerItemFrameChangeEvent event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), itemInHand.asBukkitCopy(), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
++                        io.papermc.paper.event.player.PlayerItemFrameChangeEvent event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), itemStack.asBukkitCopy(), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
 +                        if (!event.callEvent()) {
 +                            return InteractionResult.FAIL;
 +                        }
 +                        this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()));
 +                        // Paper end - Add PlayerItemFrameChangeEvent
                          this.gameEvent(GameEvent.BLOCK_CHANGE, player);
-                         itemInHand.consume(1, player);
+                         itemStack.consume(1, player);
                          return InteractionResult.SUCCESS;
-@@ -381,6 +_,13 @@
+@@ -375,6 +_,13 @@
                      return InteractionResult.PASS;
                  }
              } else {

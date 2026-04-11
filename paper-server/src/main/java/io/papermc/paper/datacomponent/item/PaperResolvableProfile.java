@@ -21,6 +21,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.world.entity.player.PlayerSkin;
@@ -196,7 +197,7 @@ public record PaperResolvableProfile(
             final Property newProperty = new Property(property.getName(), property.getValue(), property.getSignature());
             if (!this.propertyMap.containsEntry(property.getName(), newProperty)) { // underlying map is a multimap that doesn't allow duplicate key-value pair
                 final int newSize = this.propertyMap.size() + 1;
-                Preconditions.checkArgument(newSize <= 16, "Cannot have more than 16 properties, was %s", newSize);
+                Preconditions.checkArgument(newSize <= ExtraCodecs.MAX_PROPERTIES, "Cannot have more than %s properties, was %s", ExtraCodecs.MAX_PROPERTIES, newSize);
             }
 
             this.propertyMap.put(property.getName(), newProperty);

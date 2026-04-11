@@ -54,8 +54,8 @@ public class CraftChunk implements Chunk {
 
     public CraftChunk(net.minecraft.world.level.chunk.LevelChunk chunk) {
         this.level = chunk.level;
-        this.x = chunk.getPos().x;
-        this.z = chunk.getPos().z;
+        this.x = chunk.getPos().x();
+        this.z = chunk.getPos().z();
     }
 
     public CraftChunk(ServerLevel level, int x, int z) {
@@ -114,7 +114,7 @@ public class CraftChunk implements Chunk {
 
     @Override
     public boolean isEntitiesLoaded() {
-        return this.getCraftWorld().getHandle().areEntitiesLoaded(ChunkPos.asLong(this.x, this.z)); // Paper - chunk system
+        return this.getCraftWorld().getHandle().areEntitiesLoaded(ChunkPos.pack(this.x, this.z)); // Paper - chunk system
     }
 
     @Override
@@ -392,7 +392,7 @@ public class CraftChunk implements Chunk {
             empty[i] = true;
 
             if (biome != null) {
-                biome[i] = (PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>) biomeCodec.parse(NbtOps.INSTANCE, biomeCodec.encodeStart(NbtOps.INSTANCE, actual.getSection(i).getBiomes()).getOrThrow()).getOrThrow(SerializableChunkData.ChunkReadException::new);
+                biome[i] = actual.getSection(i).getBiomes().copy();
             }
         }
 

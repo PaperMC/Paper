@@ -1,23 +1,24 @@
 --- a/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
 +++ b/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
-@@ -31,6 +_,11 @@
-     private final Collection<String> players;
-     private final Optional<ClientboundSetPlayerTeamPacket.Parameters> parameters;
+@@ -61,6 +_,12 @@
+         );
+     }
  
 +    // Paper start - Multiple Entries with Scoreboards
-+    public static ClientboundSetPlayerTeamPacket createMultiplePlayerPacket(PlayerTeam team, Collection<String> players, ClientboundSetPlayerTeamPacket.Action operation) {
-+        return new ClientboundSetPlayerTeamPacket(team.getName(), operation == ClientboundSetPlayerTeamPacket.Action.ADD ? 3 : 4, Optional.empty(), players);
++    public static ClientboundSetPlayerTeamPacket createMultiplePlayerPacket(PlayerTeam team, Collection<String> players, ClientboundSetPlayerTeamPacket.Action action) {
++        return new ClientboundSetPlayerTeamPacket(team.getName(), action == ClientboundSetPlayerTeamPacket.Action.ADD ? METHOD_JOIN : METHOD_LEAVE, Optional.empty(), players);
 +    }
 +    // Paper end - Multiple Entries with Scoreboards
-     private ClientboundSetPlayerTeamPacket(String name, int method, Optional<ClientboundSetPlayerTeamPacket.Parameters> parameters, Collection<String> players) {
-         this.name = name;
-         this.method = method;
-@@ -197,7 +_,7 @@
-             ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buffer, this.displayName);
-             buffer.writeByte(this.options);
-             Team.Visibility.STREAM_CODEC.encode(buffer, this.nametagVisibility);
--            Team.CollisionRule.STREAM_CODEC.encode(buffer, this.collisionRule);
-+            Team.CollisionRule.STREAM_CODEC.encode(buffer, !io.papermc.paper.configuration.GlobalConfiguration.get().collisions.enablePlayerCollisions ? PlayerTeam.CollisionRule.NEVER : this.collisionRule); // Paper - Configurable player collision
-             buffer.writeEnum(this.color);
-             ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buffer, this.playerPrefix);
-             ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buffer, this.playerSuffix);
++
+     private ClientboundSetPlayerTeamPacket(final RegistryFriendlyByteBuf input) {
+         this.name = input.readUtf();
+         this.method = input.readByte();
+@@ -201,7 +_,7 @@
+             ComponentSerialization.TRUSTED_STREAM_CODEC.encode(output, this.displayName);
+             output.writeByte(this.options);
+             Team.Visibility.STREAM_CODEC.encode(output, this.nametagVisibility);
+-            Team.CollisionRule.STREAM_CODEC.encode(output, this.collisionRule);
++            Team.CollisionRule.STREAM_CODEC.encode(output, !io.papermc.paper.configuration.GlobalConfiguration.get().collisions.enablePlayerCollisions ? PlayerTeam.CollisionRule.NEVER : this.collisionRule); // Paper - Configurable player collision
+             output.writeEnum(this.color);
+             ComponentSerialization.TRUSTED_STREAM_CODEC.encode(output, this.playerPrefix);
+             ComponentSerialization.TRUSTED_STREAM_CODEC.encode(output, this.playerSuffix);

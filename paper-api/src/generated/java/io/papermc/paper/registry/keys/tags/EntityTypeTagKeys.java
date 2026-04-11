@@ -145,6 +145,13 @@ public final class EntityTypeTagKeys {
     public static final TagKey<EntityType> CANDIDATE_FOR_IRON_GOLEM_GIFT = create(key("candidate_for_iron_golem_gift"));
 
     /**
+     * {@code #minecraft:cannot_be_age_locked}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CANNOT_BE_AGE_LOCKED = create(key("cannot_be_age_locked"));
+
+    /**
      * {@code #minecraft:cannot_be_pushed_onto_boats}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

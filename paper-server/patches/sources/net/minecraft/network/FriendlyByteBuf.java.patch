@@ -16,7 +16,7 @@
 +    public byte codecDepth;
 +    // Paper end - Track codec depth
  
-     public FriendlyByteBuf(ByteBuf source) {
+     public FriendlyByteBuf(final ByteBuf source) {
 +        this.adventure$locale = PacketEncoder.ADVENTURE_LOCALE.get(); // Paper - track player's locale for server-side translations
          this.source = source;
      }
@@ -24,22 +24,22 @@
 @@ -106,8 +_,13 @@
      }
  
-     public <T> void writeJsonWithCodec(Codec<T> codec, T value) {
+     public <T> void writeJsonWithCodec(final Codec<T> codec, final T value) {
 +        // Paper start - Adventure; add max length parameter
 +        this.writeJsonWithCodec(codec, value, MAX_STRING_LENGTH);
 +    }
 +    public <T> void writeJsonWithCodec(Codec<T> codec, T value, int maxLength) {
 +        // Paper end - Adventure; add max length parameter
-         DataResult<JsonElement> dataResult = codec.encodeStart(JsonOps.INSTANCE, value);
--        this.writeUtf(GSON.toJson(dataResult.getOrThrow(exception -> new EncoderException("Failed to encode: " + exception + " " + value))));
-+        this.writeUtf(GSON.toJson(dataResult.getOrThrow(exception -> new EncoderException("Failed to encode: " + exception + " " + value))), maxLength); // Paper - Adventure; add max length parameter
+         DataResult<JsonElement> result = codec.encodeStart(JsonOps.INSTANCE, value);
+-        this.writeUtf(GSON.toJson(result.getOrThrow(error -> new EncoderException("Failed to encode: " + error + " " + value))));
++        this.writeUtf(GSON.toJson(result.getOrThrow(error -> new EncoderException("Failed to encode: " + error + " " + value))), maxLength); // Paper - Adventure; add max length parameter
      }
  
-     public static <T> IntFunction<T> limitValue(IntFunction<T> function, int limit) {
-@@ -552,7 +_,7 @@
+     public static <T> IntFunction<T> limitValue(final IntFunction<T> original, final int limit) {
+@@ -530,7 +_,7 @@
  
          try {
-             NbtIo.writeAnyTag(tag, new ByteBufOutputStream(buffer));
+             NbtIo.writeAnyTag(tag, new ByteBufOutputStream(output));
 -        } catch (IOException var3) {
 +        } catch (Exception var3) { // CraftBukkit - IOException -> Exception
              throw new EncoderException(var3);
