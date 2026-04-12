@@ -5,7 +5,7 @@
          .withClickEvent(new ClickEvent.OpenUrl(CommonLinks.INTENTIONAL_GAME_DESIGN_BUG))
          .withHoverEvent(new HoverEvent.ShowText(Component.literal("MCPE-28723")));
 -    public final List<CombatEntry> entries = Lists.newArrayList();
-+    public final java.util.Deque<CombatEntry> entries = new java.util.ArrayDeque<>(); // Paper - Fix mem leak (MC-301114); Use ArrayDeque
++    public final List<CombatEntry> entries = new net.minecraft.util.ArrayListDeque<>(); // Paper - Fix mem leak (MC-301114); Use ArrayListDeque
      public final LivingEntity mob;
      private int lastDamageTime;
      private int combatStartTime;
@@ -42,37 +42,6 @@
          this.entries.add(entry);
          this.lastDamageTime = this.mob.tickCount;
          this.takingDamage = true;
-@@ -89,7 +_,7 @@
-         if (this.entries.isEmpty()) {
-             return Component.translatable("death.attack.generic", this.mob.getDisplayName());
-         } else {
--            CombatEntry killingBlow = this.entries.get(this.entries.size() - 1);
-+            CombatEntry killingBlow = this.entries.getLast(); // Paper - Fix mem leak (MC-301114)
-             DamageSource killingSource = killingBlow.source();
-             CombatEntry knockOffEntry = this.getMostSignificantFall();
-             DeathMessageType messageType = killingSource.type().deathMessageType();
-@@ -111,14 +_,17 @@
-         float altDamage = 0.0F;
-         float bestFall = 0.0F;
- 
--        for (int i = 0; i < this.entries.size(); i++) {
--            CombatEntry entry = this.entries.get(i);
--            CombatEntry previous = i > 0 ? this.entries.get(i - 1) : null;
-+        // Paper start - Fix mem leak (MC-301114)
-+        CombatEntry lastCombatEntry = null;
-+        for (final CombatEntry entry : this.entries) {
-+            CombatEntry previous = lastCombatEntry;
-+            lastCombatEntry = entry;
-+        // Paper end - Fix mem leak (MC-301114)
-             DamageSource source = entry.source();
-             boolean isFakeFall = source.is(DamageTypeTags.ALWAYS_MOST_SIGNIFICANT_FALL);
-             float fallDistance = isFakeFall ? Float.MAX_VALUE : entry.fallDistance();
-             if ((source.is(DamageTypeTags.IS_FALL) || isFakeFall) && fallDistance > 0.0F && (result == null || fallDistance > bestFall)) {
--                if (i > 0) {
-+                if (previous != null) { // Paper - Fix mem leak (MC-301114)
-                     result = previous;
-                 } else {
-                     result = entry;
 @@ -147,6 +_,13 @@
      public void recheckStatus() {
          int reset = this.inCombat ? 300 : 100;
