@@ -207,12 +207,6 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean rideCommandAllowPlayerAsVehicle = false;
     }
 
-    public Logging logging;
-
-    public class Logging extends ConfigurationPart {
-        public boolean deobfuscateStacktraces = true;
-    }
-
     public Scoreboards scoreboards;
 
     public class Scoreboards extends ConfigurationPart {
