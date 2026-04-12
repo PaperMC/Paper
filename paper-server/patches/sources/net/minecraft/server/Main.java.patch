@@ -117,7 +117,7 @@
              LevelStorageSource levelStorageSource = LevelStorageSource.createDefault(universePath.toPath());
              LevelStorageSource.LevelStorageAccess access = levelStorageSource.validateAndCreateAccess(levelName);
              Dynamic<?> levelDataTag;
-@@ -150,12 +_,36 @@
+@@ -150,12 +_,18 @@
                  levelDataTag = null;
              }
  
@@ -128,30 +128,12 @@
              }
  
              PackRepository packRepository = ServerPacksSource.createPackRepository(access);
-+            // CraftBukkit start
-+            File bukkitDataPackFolder = new File(access.getLevelPath(net.minecraft.world.level.storage.LevelResource.DATAPACK_DIR).toFile(), "bukkit");
-+            if (!bukkitDataPackFolder.exists()) {
-+                bukkitDataPackFolder.mkdirs();
++            // Paper start
++            if (!safeModeEnabled) { // not in safeMode
++                io.papermc.paper.datapack.DynamicBuiltinPacks.refreshAllMetadata(access);
 +            }
-+            File mcMeta = new File(bukkitDataPackFolder, "pack.mcmeta");
-+            try {
-+                final var major = SharedConstants.getCurrentVersion().packVersion(net.minecraft.server.packs.PackType.SERVER_DATA).major();
-+                final var minor = SharedConstants.getCurrentVersion().packVersion(net.minecraft.server.packs.PackType.SERVER_DATA).minor();
-+                com.google.common.io.Files.asCharSink(mcMeta, java.nio.charset.StandardCharsets.UTF_8).write("""
-+                    {
-+                        "pack": {
-+                            "description": "Data pack for resources provided by Bukkit plugins",
-+                            "min_format": [%d, %d],
-+                            "max_format": [%d, %d]
-+                        }
-+                    }
-+                    """.formatted(major, minor, major, minor)
-+                );
-+            } catch (java.io.IOException ex) {
-+                throw new RuntimeException("Could not initialize Bukkit datapack", ex);
-+            }
-+            java.util.concurrent.atomic.AtomicReference<WorldLoader.DataLoadContext> worldLoader = new java.util.concurrent.atomic.AtomicReference<>();
-+            // CraftBukkit end
++            // Paper end
++            java.util.concurrent.atomic.AtomicReference<WorldLoader.DataLoadContext> worldLoader = new java.util.concurrent.atomic.AtomicReference<>(); // CraftBukkit
  
              WorldStem worldStem;
              try {
