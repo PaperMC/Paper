@@ -67,6 +67,7 @@ import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.entity.CraftCat;
 import org.bukkit.craftbukkit.entity.CraftChicken;
 import org.bukkit.craftbukkit.entity.CraftCow;
+import org.bukkit.craftbukkit.entity.CraftEntitySnapshot;
 import org.bukkit.craftbukkit.entity.CraftFrog;
 import org.bukkit.craftbukkit.entity.CraftPig;
 import org.bukkit.craftbukkit.entity.CraftVillager;
@@ -213,6 +214,7 @@ public final class DataComponentAdapters {
         register(DataComponents.CAT_COLLAR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.SHEEP_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.SHULKER_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
+        register(DataComponents.ENTITY_DATA, CraftEntitySnapshot::minecraftToBukkit, CraftEntitySnapshot::bukkitToMinecraft);
 
         for (final ResourceKey<DataComponentType<?>> key : BuiltInRegistries.DATA_COMPONENT_TYPE.registryKeySet()) {
             if (!ADAPTERS.containsKey(key)) {

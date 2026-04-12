@@ -50,7 +50,6 @@ public class RegistryConstantsTest {
     public static void populateIgnored() {
         ignore(Registries.DATA_COMPONENT_TYPE, Set.of(
             DataComponents.CUSTOM_DATA,
-            DataComponents.ENTITY_DATA,
             DataComponents.BEES,
             DataComponents.DEBUG_STICK_STATE,
             DataComponents.BLOCK_ENTITY_DATA,

@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import org.bukkit.Location;
@@ -111,5 +112,13 @@ public class CraftEntitySnapshot implements EntitySnapshot {
             ).map(CraftEntityType::minecraftToBukkit).orElse(null);
             return CraftEntitySnapshot.create(tag, type);
         }
+    }
+
+    public static CraftEntitySnapshot minecraftToBukkit(TypedEntityData<net.minecraft.world.entity.EntityType<?>> data) {
+        return CraftEntitySnapshot.create(data.copyTagWithEntityId(), CraftEntityType.minecraftToBukkit(data.type()));
+    }
+
+    public static TypedEntityData<net.minecraft.world.entity.EntityType<?>> bukkitToMinecraft(CraftEntitySnapshot snapshot) {
+        return TypedEntityData.of(CraftEntityType.bukkitToMinecraft(snapshot.getEntityType()), snapshot.getData().copy());
     }
 }

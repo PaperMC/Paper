@@ -61,6 +61,7 @@ import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Cow;
+import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.entity.Fox;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Horse;
@@ -393,6 +394,7 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<DyeColor> CAT_COLLAR = valued("cat/collar");
     public static final DataComponentType.Valued<DyeColor> SHEEP_COLOR = valued("sheep/color");
     public static final DataComponentType.Valued<DyeColor> SHULKER_COLOR = valued("shulker/color");
+    public static final DataComponentType.Valued<EntitySnapshot> ENTITY_DATA = valued("entity_data");
 
     private static DataComponentType.NonValued unvalued(final @KeyPattern.Value String key) {
         final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
