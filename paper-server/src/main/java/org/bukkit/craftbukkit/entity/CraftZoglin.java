@@ -20,8 +20,8 @@ public class CraftZoglin extends CraftMonster implements Zoglin {
     }
 
     @Override
-    public void setBaby(boolean flag) {
-        this.getHandle().setBaby(flag);
+    public void setBaby(boolean baby) {
+        CraftAgeable.setBaby(this.getHandle(), baby);
     }
 
     @Override
@@ -30,12 +30,12 @@ public class CraftZoglin extends CraftMonster implements Zoglin {
     }
 
     @Override
-    public void setAge(int i) {
-        this.getHandle().setBaby(i < 0);
+    public void setAge(int age) {
+        this.getHandle().setBaby(age < 0);
     }
 
     @Override
-    public void setAgeLock(boolean b) {
+    public void setAgeLock(boolean lock) {
     }
 
     @Override
@@ -45,12 +45,12 @@ public class CraftZoglin extends CraftMonster implements Zoglin {
 
     @Override
     public void setBaby() {
-        this.getHandle().setBaby(true);
+        CraftAgeable.setBaby(this.getHandle(), true);
     }
 
     @Override
     public void setAdult() {
-        this.getHandle().setBaby(false);
+        CraftAgeable.setBaby(this.getHandle(), false);
     }
 
     @Override

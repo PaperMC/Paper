@@ -35,7 +35,7 @@ import org.bukkit.craftbukkit.util.CraftBlockVector;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftStructureTransformer;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
-import org.bukkit.craftbukkit.util.TransformerGeneratorAccess;
+import org.bukkit.craftbukkit.util.TransformerLevelAccessor;
 import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.structure.Palette;
@@ -100,12 +100,12 @@ public class CraftStructure implements Structure {
         BlockPos pos = CraftBlockVector.toBlockPosition(location);
         WorldGenLevel handle = ((CraftRegionAccessor) regionAccessor).getHandle();
 
-        TransformerGeneratorAccess access = new TransformerGeneratorAccess();
-        access.setDelegate(handle);
-        access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkPos(pos), blockTransformers, entityTransformers));
+        TransformerLevelAccessor accessor = new TransformerLevelAccessor();
+        accessor.setDelegate(handle);
+        accessor.setStructureTransformer(new CraftStructureTransformer(handle, ChunkPos.containing(pos), blockTransformers, entityTransformers));
 
-        this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, Block.UPDATE_CLIENTS);
-        access.getStructureTransformer().discard();
+        this.structure.placeInWorld(accessor, pos, pos, definedstructureinfo, randomSource, Block.UPDATE_CLIENTS);
+        accessor.getStructureTransformer().discard();
     }
 
     @Override
@@ -128,7 +128,7 @@ public class CraftStructure implements Structure {
         Preconditions.checkArgument(size != null, "BlockVector size cannot be null");
         Preconditions.checkArgument(size.getBlockX() >= 1 && size.getBlockY() >= 1 && size.getBlockZ() >= 1, "Size must be at least 1x1x1 but was %sx%sx%s", size.getBlockX(), size.getBlockY(), size.getBlockZ());
 
-        this.structure.fillFromWorld(((CraftWorld) world).getHandle(), CraftLocation.toBlockPosition(origin), CraftBlockVector.toBlockPosition(size), includeEntities, List.of(Blocks.STRUCTURE_VOID));
+        this.structure.fillFromWorld(((CraftWorld) world).getHandle(), CraftLocation.toBlockPos(origin), CraftBlockVector.toBlockPosition(size), includeEntities, List.of(Blocks.STRUCTURE_VOID));
     }
 
     @Override

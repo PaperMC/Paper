@@ -44,20 +44,20 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         this.color = mapMeta.color;
     }
 
-    CraftMetaMap(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaMap(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaMap.MAP_ID).ifPresent((mapId) -> {
-            this.mapId = mapId.id();
+        getOrEmpty(patch, CraftMetaMap.MAP_ID).ifPresent((map) -> {
+            this.mapId = map.id();
         });
 
-        getOrEmpty(tag, CraftMetaMap.MAP_POST_PROCESSING).ifPresent((mapPostProcessing) -> {
+        getOrEmpty(patch, CraftMetaMap.MAP_POST_PROCESSING).ifPresent((mapPostProcessing) -> {
             this.scaling = (mapPostProcessing == MapPostProcessing.SCALE) ? CraftMetaMap.SCALING_TRUE : CraftMetaMap.SCALING_FALSE;
         });
 
-        getOrEmpty(tag, CraftMetaMap.MAP_COLOR).ifPresent((mapColor) -> {
+        getOrEmpty(patch, CraftMetaMap.MAP_COLOR).ifPresent((color) -> {
             try {
-                this.color = mapColor.rgb();
+                this.color = color.rgb();
             } catch (IllegalArgumentException ex) {
                 // Invalid colour
             }

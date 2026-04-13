@@ -49,7 +49,7 @@ public class VillagerProfessionRewriter extends RegistryFieldRewriter<VillagerPr
                     })
                     .skip(TokenType.IDENTIFIER)
                     .skipClosure(TokenType.LPAREN, TokenType.RPAREN, true)
-                    .map(TokenType.SECO, $ -> {
+                    .map(TokenType.SECO, _ -> {
                         if (constant.isComplete()) {
                             map.put(constant.name(), constant.javadocs());
                         }
@@ -71,7 +71,7 @@ public class VillagerProfessionRewriter extends RegistryFieldRewriter<VillagerPr
                     })
                     .skipClosure(TokenType.LPAREN, TokenType.RPAREN, true)
                     .skipClosure(TokenType.LSCOPE, TokenType.RSCOPE, true)
-                    .map(endMarkers::contains, $ -> {
+                    .map(endMarkers::contains, _ -> {
                         // this part will probably fail for the last entry for enum without end (,;)
                         if (constant.isComplete()) {
                             map.put(constant.name(), constant.javadocs());
