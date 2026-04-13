@@ -60,8 +60,6 @@ interface RemovedConfigurations {
         path("spawn", "keep-spawn-loaded-range"),
         path("misc", "shield-blocking-delay")
     };
-    // spawn.keep-spawn-loaded and spawn.keep-spawn-loaded-range are no longer used, but kept
-    // in the world default config for compatibility with old worlds being migrated to use the gamerule
 
     NodePath[] REMOVED_GLOBAL_PATHS = {
         path("data-value-allowed-items"),
