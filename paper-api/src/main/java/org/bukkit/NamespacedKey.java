@@ -72,7 +72,7 @@ public final class NamespacedKey implements Key, com.destroystokyo.paper.Namespa
     public NamespacedKey(@NotNull Plugin plugin, @NotNull String key) {
         Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
         Preconditions.checkArgument(key != null, "Key cannot be null");
-        this.namespace = plugin.getName().toLowerCase(Locale.ROOT);
+        this.namespace = plugin.namespace();
         this.key = key.toLowerCase(Locale.ROOT);
 
         // Check validity after normalization
@@ -81,7 +81,7 @@ public final class NamespacedKey implements Key, com.destroystokyo.paper.Namespa
 
     private void validate() {
         Preconditions.checkArgument(this.namespace.length() + 1 + this.key.length() <= Short.MAX_VALUE, "NamespacedKey must be less than 32768 characters");
-        checkError("[a-z0-9_-.]", "namespace", this.namespace, Key.checkNamespace(this.namespace));
+        checkError("[a-z0-9_-.]", "namespace", this.namespace, Key.checkNamespace(this.namespace)); // note: for now we will pretend ".." is a valid namespace like adventure to not break conversion
         checkError("[a-z0-9_-./]", "key", this.key, Key.checkValue(this.key));
     }
 

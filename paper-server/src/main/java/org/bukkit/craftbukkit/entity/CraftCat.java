@@ -1,10 +1,12 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.HolderableBase;
 import io.papermc.paper.util.OldEnumHolderable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.entity.animal.CatVariant;
+import net.minecraft.world.entity.animal.feline.CatSoundVariant;
+import net.minecraft.world.entity.animal.feline.CatVariant;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
@@ -12,13 +14,13 @@ import org.bukkit.entity.Cat;
 
 public class CraftCat extends CraftTameableAnimal implements Cat {
 
-    public CraftCat(CraftServer server, net.minecraft.world.entity.animal.Cat entity) {
+    public CraftCat(CraftServer server, net.minecraft.world.entity.animal.feline.Cat entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Cat getHandle() {
-        return (net.minecraft.world.entity.animal.Cat) this.entity;
+    public net.minecraft.world.entity.animal.feline.Cat getHandle() {
+        return (net.minecraft.world.entity.animal.feline.Cat) this.entity;
     }
 
     @Override
@@ -34,6 +36,18 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
     }
 
     @Override
+    public SoundVariant getSoundVariant() {
+        return CraftSoundVariant.minecraftHolderToBukkit(this.getHandle().getSoundVariant());
+    }
+
+    @Override
+    public void setSoundVariant(final SoundVariant variant) {
+        Preconditions.checkArgument(variant != null, "variant cannot be null");
+
+        this.getHandle().setSoundVariant(CraftSoundVariant.bukkitToMinecraftHolder(variant));
+    }
+
+    @Override
     public DyeColor getCollarColor() {
         return DyeColor.getByWoolData((byte) this.getHandle().getCollarColor().getId());
     }
@@ -46,16 +60,8 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
     public static class CraftType extends OldEnumHolderable<Type, CatVariant> implements Type {
         private static int count = 0;
 
-        public static Type minecraftToBukkit(CatVariant minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.CAT_VARIANT);
-        }
-
         public static Type minecraftHolderToBukkit(Holder<CatVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.CAT_VARIANT);
-        }
-
-        public static CatVariant bukkitToMinecraft(Type bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<CatVariant> bukkitToMinecraftHolder(Type bukkit) {
@@ -64,6 +70,21 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
 
         public CraftType(final Holder<CatVariant> holder) {
             super(holder, count++);
+        }
+    }
+
+    public static class CraftSoundVariant extends HolderableBase<CatSoundVariant> implements SoundVariant {
+
+        public static SoundVariant minecraftHolderToBukkit(Holder<CatSoundVariant> minecraft) {
+            return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.CAT_SOUND_VARIANT);
+        }
+
+        public static Holder<CatSoundVariant> bukkitToMinecraftHolder(SoundVariant bukkit) {
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
+        }
+
+        public CraftSoundVariant(final Holder<CatSoundVariant> holder) {
+            super(holder);
         }
     }
 

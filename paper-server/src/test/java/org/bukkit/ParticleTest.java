@@ -1,50 +1,56 @@
 package org.bukkit;
 
-import static org.junit.jupiter.api.Assertions.*;
 import com.mojang.serialization.DataResult;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.Set;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.PowerParticleOption;
 import net.minecraft.core.particles.SculkChargeParticleOptions;
 import net.minecraft.core.particles.ShriekParticleOption;
 import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.core.particles.SpellParticleOption;
 import net.minecraft.core.particles.TrailParticleOption;
 import net.minecraft.core.particles.VibrationParticleOption;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftParticle;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.support.environment.AllFeatures;
+import org.bukkit.support.environment.VanillaFeature;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@AllFeatures
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+@VanillaFeature
 public class ParticleTest {
 
-    public static Stream<Arguments> data() {
-        return CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE).keySet().stream().map(Arguments::of);
+    public static Set<Identifier> data() {
+        return CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE).keySet();
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testBukkitValuesPresent(ResourceLocation minecraft) {
+    public void testBukkitValuesPresent(Identifier minecraft) {
         // TODO: 10/19/23 Remove with enum PR, it is then no longer needed, since the enum PR has a extra test for this
         assertNotNull(Registry.PARTICLE_TYPE.get(CraftNamespacedKey.fromMinecraft(minecraft)), String.format("""
                 No bukkit particle found for minecraft particle %s.
@@ -118,6 +124,11 @@ public class ParticleTest {
             return;
         }
 
+        if (bukkit.getDataType().equals(Particle.Spell.class)) {
+            this.testSpell(bukkit, minecraft);
+            return;
+        }
+
         fail(String.format("""
                 No test found for particle %s.
                 Please add a test case for it here.
@@ -147,10 +158,10 @@ public class ParticleTest {
     }
 
     private <T extends ParticleOptions> void testItemStack(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
-        ItemStack itemStack = new ItemStack(Material.STONE);
-        ItemParticleOption param = this.createAndTest(bukkit, minecraft, itemStack, ItemParticleOption.class);
+        ItemStack item = ItemStack.of(Material.STONE);
+        ItemParticleOption param = this.createAndTest(bukkit, minecraft, item, ItemParticleOption.class);
 
-        assertEquals(itemStack, CraftItemStack.asBukkitCopy(param.getItem()), String.format("""
+        assertEquals(CraftItemStack.asTemplate(item), param.getItem(), String.format("""
                 ItemStack for particle %s do not match.
                 Did something change in the implementation or minecraft?
                 """, bukkit.getKey()));
@@ -160,7 +171,7 @@ public class ParticleTest {
         BlockData blockData = Bukkit.createBlockData(Material.STONE);
         BlockParticleOption param = this.createAndTest(bukkit, minecraft, blockData, BlockParticleOption.class);
 
-        assertEquals(blockData, CraftBlockData.fromData(param.getState()), String.format("""
+        assertEquals(blockData, param.getState().asBlockData(), String.format("""
                 Block data for particle %s do not match.
                 Did something change in the implementation or minecraft?
                 """, bukkit.getKey()));
@@ -215,13 +226,25 @@ public class ParticleTest {
     }
 
     private <T extends ParticleOptions> void testFloat(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
-        float role = 0.1205f;
-        SculkChargeParticleOptions param = this.createAndTest(bukkit, minecraft, role, SculkChargeParticleOptions.class);
+        if (bukkit == Particle.SCULK_CHARGE) {
+            float roll = 0.1205f;
+            SculkChargeParticleOptions param = this.createAndTest(bukkit, minecraft, roll, SculkChargeParticleOptions.class);
 
-        assertEquals(role, param.roll(), 0.001, String.format("""
-                Float role for particle %s do not match.
-                Did something change in the implementation or minecraft?
-                """, bukkit.getKey()));
+            assertEquals(roll, param.roll(), 0.001, String.format("""
+                    Float roll for particle %s do not match.
+                    Did something change in the implementation or minecraft?
+                    """, bukkit.getKey()));
+        } else if (bukkit == Particle.DRAGON_BREATH) {
+            float power = 3.1415f;
+            PowerParticleOption param = this.createAndTest(bukkit, minecraft, power, PowerParticleOption.class);
+
+            assertEquals(power, param.getPower(), 0.001, String.format("""
+                    Float power for particle %s do not match.
+                    Did something change in the implementation or minecraft?
+                    """, bukkit.getKey()));
+        } else {
+            throw new IllegalArgumentException("Missing float particle options test mapping, please add it here.");
+        }
     }
 
     private <T extends ParticleOptions> void testInteger(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
@@ -268,6 +291,27 @@ public class ParticleTest {
                 Expected: %s.
                 Got: %s.
                 """, bukkit.getKey(), expected, actual)); // Print expected and got since we use assert true
+    }
+
+    private <T extends ParticleOptions> void testSpell(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
+        Color color = Color.AQUA;
+        float power = 3.1415f;
+        Particle.Spell spell = new Particle.Spell(color, power);
+
+        SpellParticleOption param = this.createAndTest(bukkit, minecraft, spell, SpellParticleOption.class);
+
+        assertEquals(color.asARGB(), param.color, String.format("""
+                Spell color for particle %s do not match.
+                Did something change in the implementation or minecraft?
+                Expected: %s.
+                Got: %s.
+                """, bukkit.getKey(), color.asARGB(), param.color));
+        assertEquals(power, param.getPower(), 0.001, String.format("""
+                Spell power for particle %s do not match.
+                Did something change in the implementation or minecraft?
+                Expected: %s.
+                Got: %s.
+                """, bukkit.getKey(), power, param.getPower()));
     }
 
     private <D extends ParticleOptions, T extends ParticleOptions> D createAndTest(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft, Object data, Class<D> paramClass) {

@@ -41,16 +41,6 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
     }
 
     @Override
-    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile) {
-        return this.launchProjectile(projectile, null);
-    }
-
-    @Override
-    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
-        return this.launchProjectile(projectile, velocity, null);
-    }
-
-    @Override
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, Consumer<? super T> function) {
         Preconditions.checkArgument(this.getBlock().getType() == Material.DISPENSER, "Block is no longer dispenser");
 

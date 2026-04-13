@@ -49,7 +49,7 @@
                  if (children.size() == 1) {
                      final String usage = getSmartUsage(children.iterator().next(), source, childOptional, childOptional);
                      if (usage != null) {
-@@ -537,10 +_,14 @@
+@@ -537,15 +_,25 @@
          int i = 0;
          for (final CommandNode<S> node : parent.getChildren()) {
              CompletableFuture<Suggestions> future = Suggestions.empty();
@@ -65,3 +65,15 @@
              futures[i++] = future;
          }
  
+         final CompletableFuture<Suggestions> result = new CompletableFuture<>();
+-        CompletableFuture.allOf(futures).thenRun(() -> {
++        // Paper start - propagate failures
++        CompletableFuture.allOf(futures).whenComplete(($, throwable) -> {
++            if (throwable != null) {
++                result.completeExceptionally(throwable);
++                return;
++            }
++            // Paper end - propagate failures
+             final List<Suggestions> suggestions = new ArrayList<>();
+             for (final CompletableFuture<Suggestions> future : futures) {
+                 suggestions.add(future.join());

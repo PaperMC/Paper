@@ -162,7 +162,7 @@ public interface EntityEquipment {
      *
      * <p>
      * This returns a copy if this equipment instance is from a non-player.
-     * For stacks from players, this returns a live mirror (or null). You can check if this
+     * For items from players, this returns a live mirror. You can check if this
      * will return a mirror with
      * <pre>{@code
      * EntityEquipment equipment = entity.getEquipment();
@@ -175,8 +175,7 @@ public interface EntityEquipment {
      *
      * @return The helmet being worn
      */
-    @org.bukkit.UndefinedNullability("not null for entities, nullable for players") // Paper
-    ItemStack getHelmet();
+    @NotNull ItemStack getHelmet();
 
     /**
      * Sets the helmet worn by the entity
@@ -198,7 +197,7 @@ public interface EntityEquipment {
      *
      * <p>
      * This returns a copy if this equipment instance is from a non-player.
-     * For stacks from players, this returns a live mirror (or null). You can check if this
+     * For items from players, this returns a live mirror. You can check if this
      * will return a mirror with
      * <pre>{@code
      * EntityEquipment equipment = entity.getEquipment();
@@ -211,8 +210,7 @@ public interface EntityEquipment {
      *
      * @return The chest plate being worn
      */
-    @org.bukkit.UndefinedNullability("not null for entities, nullable for players") // Paper
-    ItemStack getChestplate();
+    @NotNull ItemStack getChestplate();
 
     /**
      * Sets the chest plate worn by the entity
@@ -234,7 +232,7 @@ public interface EntityEquipment {
      *
      * <p>
      * This returns a copy if this equipment instance is from a non-player.
-     * For stacks from players, this returns a live mirror (or null). You can check if this
+     * For items from players, this returns a live mirror. You can check if this
      * will return a mirror with
      * <pre>{@code
      * EntityEquipment equipment = entity.getEquipment();
@@ -247,8 +245,7 @@ public interface EntityEquipment {
      *
      * @return The leggings being worn
      */
-    @org.bukkit.UndefinedNullability("not null for entities, nullable for players") // Paper
-    ItemStack getLeggings();
+    @NotNull ItemStack getLeggings();
 
     /**
      * Sets the leggings worn by the entity
@@ -270,7 +267,7 @@ public interface EntityEquipment {
      *
      * <p>
      * This returns a copy if this equipment instance is from a non-player.
-     * For stacks from players, this returns a live mirror (or null). You can check if this
+     * For items from players, this returns a live mirror. You can check if this
      * will return a mirror with
      * <pre>{@code
      * EntityEquipment equipment = entity.getEquipment();
@@ -283,8 +280,7 @@ public interface EntityEquipment {
      *
      * @return The boots being worn
      */
-    @org.bukkit.UndefinedNullability("not null for entities, nullable for players") // Paper
-    ItemStack getBoots();
+    @NotNull ItemStack getBoots();
 
     /**
      * Sets the boots worn by the entity
@@ -363,7 +359,7 @@ public interface EntityEquipment {
      * <ul>
      * <li>A drop chance of 0.0F will never drop
      * <li>A drop chance of exactly 1.0F will always drop if killed by a player
-     * <li>A drop chance of greater than 1.0F will always drop killed by anything
+     * <li>A drop chance of greater than 1.0F will always drop if killed by anything
      * </ul>
      *
      * @return chance of the currently held item being dropped (1 for non-{@link Mob})

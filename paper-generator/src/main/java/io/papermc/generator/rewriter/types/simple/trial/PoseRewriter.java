@@ -51,7 +51,7 @@ public class PoseRewriter extends EnumCloneRewriter<Pose> {
                     })
                     .skipClosure(TokenType.LPAREN, TokenType.RPAREN, true, TokenTaskBuilder::asOptional) // (*)?
                     .skipClosure(TokenType.LSCOPE, TokenType.RSCOPE, true, TokenTaskBuilder::asOptional) // {*}?
-                    .map(END_VALUE_MARKERS::contains, $ -> { // ;|,
+                    .map(END_VALUE_MARKERS::contains, _ -> { // ;|,
                         // this part will fail for the last entry for enum without end (,;)
                         if (constant.isComplete()) {
                             map.put(constant.name(), constant.javadocs());

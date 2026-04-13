@@ -7,24 +7,24 @@
 +    public final org.spigotmc.SpigotWorldConfig conf; // Paper - Add missing structure set seed configs
  
      public static ChunkGeneratorStructureState createForFlat(
--        RandomState randomState, long levelSeed, BiomeSource biomeSource, Stream<Holder<StructureSet>> structureSets
-+        RandomState randomState, long levelSeed, BiomeSource biomeSource, Stream<Holder<StructureSet>> structureSets, org.spigotmc.SpigotWorldConfig conf // Spigot
+-        final RandomState randomState, final long levelSeed, final BiomeSource biomeSource, final Stream<Holder<StructureSet>> structureOverrides
++        final RandomState randomState, final long levelSeed, final BiomeSource biomeSource, final Stream<Holder<StructureSet>> structureOverrides, org.spigotmc.SpigotWorldConfig conf // Spigot
      ) {
-         List<Holder<StructureSet>> list = structureSets.filter(structureSet -> hasBiomesForStructureSet(structureSet.value(), biomeSource)).toList();
--        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, 0L, list);
-+        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, 0L, ChunkGeneratorStructureState.injectSpigot(list, conf), conf); // Spigot
+         List<Holder<StructureSet>> structures = structureOverrides.filter(structureSet -> hasBiomesForStructureSet(structureSet.value(), biomeSource)).toList();
+-        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, 0L, structures);
++        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, 0L, ChunkGeneratorStructureState.injectSpigot(structures, conf), conf); // Spigot
      }
  
      public static ChunkGeneratorStructureState createForNormal(
--        RandomState randomState, long seed, BiomeSource biomeSource, HolderLookup<StructureSet> structureSetLookup
-+        RandomState randomState, long seed, BiomeSource biomeSource, HolderLookup<StructureSet> structureSetLookup, org.spigotmc.SpigotWorldConfig conf // Spigot
+-        final RandomState randomState, final long levelSeed, final BiomeSource biomeSource, final HolderLookup<StructureSet> allStructures
++        final RandomState randomState, final long levelSeed, final BiomeSource biomeSource, final HolderLookup<StructureSet> allStructures, org.spigotmc.SpigotWorldConfig conf // Spigot
      ) {
-         List<Holder<StructureSet>> list = structureSetLookup.listElements()
+         List<Holder<StructureSet>> structures = allStructures.listElements()
              .filter(structureSet -> hasBiomesForStructureSet(structureSet.value(), biomeSource))
              .collect(Collectors.toUnmodifiableList());
--        return new ChunkGeneratorStructureState(randomState, biomeSource, seed, seed, list);
+-        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, levelSeed, structures);
 -    }
-+        return new ChunkGeneratorStructureState(randomState, biomeSource, seed, seed, ChunkGeneratorStructureState.injectSpigot(list, conf), conf); // Spigot
++        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, levelSeed, ChunkGeneratorStructureState.injectSpigot(structures, conf), conf); // Spigot
 +    }
 +    // Paper start - Add missing structure set seed configs; horrible hack because spigot creates a ton of direct Holders which lose track of the identifying key
 +    public static final class KeyedRandomSpreadStructurePlacement extends net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement {
@@ -41,8 +41,8 @@
 +        return list.stream().map((holder) -> {
 +            StructureSet structureset = holder.value();
 +            final Holder<StructureSet> newHolder; // Paper - Add missing structure set seed configs
-+            if (structureset.placement() instanceof net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement randomConfig && holder.unwrapKey().orElseThrow().location().getNamespace().equals(net.minecraft.resources.ResourceLocation.DEFAULT_NAMESPACE)) { // Paper - Add missing structure set seed configs; check namespace cause datapacks could add structure sets with the same path
-+                String name = holder.unwrapKey().orElseThrow().location().getPath();
++            if (structureset.placement() instanceof net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement randomConfig && holder.unwrapKey().orElseThrow().identifier().getNamespace().equals(net.minecraft.resources.Identifier.DEFAULT_NAMESPACE)) { // Paper - Add missing structure set seed configs; check namespace cause datapacks could add structure sets with the same path
++                String name = holder.unwrapKey().orElseThrow().identifier().getPath();
 +                int seed = randomConfig.salt;
 +
 +                switch (name) {
@@ -113,44 +113,44 @@
 +    }
 +    // Spigot end
  
-     private static boolean hasBiomesForStructureSet(StructureSet structureSet, BiomeSource biomeSource) {
-         Stream<Holder<Biome>> stream = structureSet.structures().stream().flatMap(structureEntry -> {
-@@ -67,13 +_,14 @@
-     }
- 
-     private ChunkGeneratorStructureState(
--        RandomState randomState, BiomeSource biomeSource, long levelSeed, long cocentricRingsSeed, List<Holder<StructureSet>> possibleStructureSets
-+        RandomState randomState, BiomeSource biomeSource, long levelSeed, long cocentricRingsSeed, List<Holder<StructureSet>> possibleStructureSets, org.spigotmc.SpigotWorldConfig conf // Paper - Add missing structure set seed configs
+     private static boolean hasBiomesForStructureSet(final StructureSet structureSet, final BiomeSource biomeSource) {
+         Stream<Holder<Biome>> structureBiomes = structureSet.structures().stream().flatMap(entry -> {
+@@ -71,13 +_,14 @@
+         final BiomeSource biomeSource,
+         final long levelSeed,
+         final long concentricRingsSeed,
+-        final List<Holder<StructureSet>> possibleStructureSets
++        final List<Holder<StructureSet>> possibleStructureSets, org.spigotmc.SpigotWorldConfig conf // Paper - Add missing structure set seed configs
      ) {
          this.randomState = randomState;
          this.levelSeed = levelSeed;
          this.biomeSource = biomeSource;
-         this.concentricRingsSeed = cocentricRingsSeed;
+         this.concentricRingsSeed = concentricRingsSeed;
          this.possibleStructureSets = possibleStructureSets;
 +        this.conf = conf; // Paper - Add missing structure set seed configs
      }
  
      public List<Holder<StructureSet>> possibleStructureSets() {
-@@ -118,7 +_,13 @@
+@@ -115,7 +_,13 @@
              int spread = placement.spread();
-             HolderSet<Biome> holderSet = placement.preferredBiomes();
-             RandomSource randomSource = RandomSource.create();
+             HolderSet<Biome> preferredBiomes = placement.preferredBiomes();
+             RandomSource random = RandomSource.create();
 +            // Paper start - Add missing structure set seed configs
 +            if (this.conf.strongholdSeed != null && structureSet.is(net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.STRONGHOLDS)) {
-+                randomSource.setSeed(this.conf.strongholdSeed);
++                random.setSeed(this.conf.strongholdSeed);
 +            } else {
 +            // Paper end - Add missing structure set seed configs
-             randomSource.setSeed(this.concentricRingsSeed);
+             random.setSeed(this.concentricRingsSeed);
 +            } // Paper - Add missing structure set seed configs
-             double d = randomSource.nextDouble() * Math.PI * 2.0;
-             int i = 0;
-             int i1 = 0;
-@@ -197,7 +_,7 @@
+             double angle = random.nextDouble() * Math.PI * 2.0;
+             int positionInCircle = 0;
+             int circle = 0;
+@@ -193,7 +_,7 @@
  
-         for (int i = x - range; i <= x + range; i++) {
-             for (int i1 = z - range; i1 <= z + range; i1++) {
--                if (structurePlacement.isStructureChunk(this, i, i1)) {
-+                if (structurePlacement.isStructureChunk(this, i, i1, structurePlacement instanceof KeyedRandomSpreadStructurePlacement keyed ? keyed.key : null)) { // Paper - Add missing structure set seed configs
+         for (int testX = sourceX - range; testX <= sourceX + range; testX++) {
+             for (int testZ = sourceZ - range; testZ <= sourceZ + range; testZ++) {
+-                if (placement.isStructureChunk(this, testX, testZ)) {
++                if (placement.isStructureChunk(this, testX, testZ, placement instanceof KeyedRandomSpreadStructurePlacement keyed ? keyed.key : null)) { // Paper - Add missing structure set seed configs
                      return true;
                  }
              }

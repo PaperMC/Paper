@@ -2,11 +2,11 @@ package io.papermc.paper.registry.data.dialog.type;
 
 import io.papermc.paper.registry.data.dialog.ActionButton;
 import java.util.List;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a dialog that allows multiple actions to be performed.
@@ -38,7 +38,7 @@ public non-sealed interface MultiActionType extends DialogType {
      * @return the number of columns
      */
     @Contract(pure = true)
-    @Range(from = 1, to = Integer.MAX_VALUE) int columns();
+    @Positive int columns();
 
     /**
      * A builder for creating a multi-action dialog.
@@ -62,7 +62,7 @@ public non-sealed interface MultiActionType extends DialogType {
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder columns(final @Range(from = 1, to = Integer.MAX_VALUE) int columns);
+        Builder columns(final @Positive int columns);
 
         /**
          * Builds the multi-action dialog.

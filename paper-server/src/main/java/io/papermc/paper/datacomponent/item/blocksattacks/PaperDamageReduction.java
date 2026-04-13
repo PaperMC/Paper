@@ -5,41 +5,35 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
+import java.util.Optional;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.Registries;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jspecify.annotations.Nullable;
-import java.util.Optional;
 
 public record PaperDamageReduction(
-    net.minecraft.world.item.component.BlocksAttacks.DamageReduction impl
-) implements DamageReduction, Handleable<net.minecraft.world.item.component.BlocksAttacks.DamageReduction> {
-
-    @Override
-    public net.minecraft.world.item.component.BlocksAttacks.DamageReduction getHandle() {
-        return this.impl;
-    }
+    net.minecraft.world.item.component.BlocksAttacks.DamageReduction internal
+) implements DamageReduction {
 
     @Override
     public @Nullable RegistryKeySet<DamageType> type() {
-        return this.impl.type().map((set) -> PaperRegistrySets.convertToApi(RegistryKey.DAMAGE_TYPE, set)).orElse(null);
+        return this.internal.type().map((set) -> PaperRegistrySets.convertToApi(RegistryKey.DAMAGE_TYPE, set)).orElse(null);
     }
 
     @Override
     public @Positive float horizontalBlockingAngle() {
-        return this.impl.horizontalBlockingAngle();
+        return this.internal.horizontalBlockingAngle();
     }
 
     @Override
     public float base() {
-        return this.impl.base();
+        return this.internal.base();
     }
 
     @Override
     public float factor() {
-        return this.impl.factor();
+        return this.internal.factor();
     }
 
     static final class BuilderImpl implements Builder {

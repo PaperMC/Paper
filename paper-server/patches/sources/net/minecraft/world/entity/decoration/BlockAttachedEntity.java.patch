@@ -8,10 +8,10 @@
 +    private int checkInterval; { this.checkInterval = this.getId() % this.level().spigotConfig.hangingTickFrequency; } // Paper - Perf: offset item frame ticking
      protected BlockPos pos;
  
-     protected BlockAttachedEntity(EntityType<? extends BlockAttachedEntity> entityType, Level level) {
+     protected BlockAttachedEntity(final EntityType<? extends BlockAttachedEntity> type, final Level level) {
 @@ -39,10 +_,26 @@
      public void tick() {
-         if (this.level() instanceof ServerLevel serverLevel) {
+         if (this.level() instanceof ServerLevel level) {
              this.checkBelowWorld();
 -            if (this.checkInterval++ == 100) {
 +            if (this.checkInterval++ == this.level().spigotConfig.hangingTickFrequency) { // Spigot
@@ -35,7 +35,7 @@
 +                    }
 +                    // CraftBukkit end
 +                    this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
-                     this.dropItem(serverLevel, null);
+                     this.dropItem(level, null);
                  }
              }
 @@ -75,6 +_,21 @@
@@ -43,12 +43,12 @@
          } else {
              if (!this.isRemoved()) {
 +                // CraftBukkit start - fire break events
-+                Entity damager = (!damageSource.isDirect() && damageSource.getEntity() != null) ? damageSource.getEntity() : damageSource.getDirectEntity(); // Paper - fix DamageSource API
++                Entity damager = (!source.isDirect() && source.getEntity() != null) ? source.getEntity() : source.getDirectEntity(); // Paper - fix DamageSource API
 +                org.bukkit.event.hanging.HangingBreakEvent event;
 +                if (damager != null) {
-+                    event = new org.bukkit.event.hanging.HangingBreakByEntityEvent((org.bukkit.entity.Hanging) this.getBukkitEntity(), damager.getBukkitEntity(), damageSource.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION) ? org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.EXPLOSION : org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.ENTITY);
++                    event = new org.bukkit.event.hanging.HangingBreakByEntityEvent((org.bukkit.entity.Hanging) this.getBukkitEntity(), damager.getBukkitEntity(), source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION) ? org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.EXPLOSION : org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.ENTITY);
 +                } else {
-+                    event = new org.bukkit.event.hanging.HangingBreakEvent((org.bukkit.entity.Hanging) this.getBukkitEntity(), damageSource.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION) ? org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.EXPLOSION : org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.DEFAULT);
++                    event = new org.bukkit.event.hanging.HangingBreakEvent((org.bukkit.entity.Hanging) this.getBukkitEntity(), source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION) ? org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.EXPLOSION : org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.DEFAULT);
 +                }
 +
 +                this.level().getCraftServer().getPluginManager().callEvent(event);
@@ -59,21 +59,21 @@
 +                // CraftBukkit end
                  this.kill(level);
                  this.markHurt();
-                 this.dropItem(level, damageSource.getEntity());
+                 this.dropItem(level, source.getEntity());
 @@ -93,18 +_,36 @@
      @Override
-     public void move(MoverType type, Vec3 movement) {
-         if (this.level() instanceof ServerLevel serverLevel && !this.isRemoved() && movement.lengthSqr() > 0.0) {
--            this.kill(serverLevel);
--            this.dropItem(serverLevel, null);
+     public void move(final MoverType moverType, final Vec3 delta) {
+         if (this.level() instanceof ServerLevel level && !this.isRemoved() && delta.lengthSqr() > 0.0) {
+-            this.kill(level);
+-            this.dropItem(level, null);
 -        }
 -    }
 -
 -    @Override
--    public void push(double x, double y, double z) {
--        if (this.level() instanceof ServerLevel serverLevel && !this.isRemoved() && x * x + y * y + z * z > 0.0) {
--            this.kill(serverLevel);
--            this.dropItem(serverLevel, null);
+-    public void push(final double xa, final double ya, final double za) {
+-        if (this.level() instanceof ServerLevel level && !this.isRemoved() && xa * xa + ya * ya + za * za > 0.0) {
+-            this.kill(level);
+-            this.dropItem(level, null);
 -        }
 -    }
 +            // CraftBukkit start - fire break events
@@ -85,16 +85,16 @@
 +                return;
 +            }
 +            // CraftBukkit end
-+            this.kill(serverLevel);
-+            this.dropItem(serverLevel, null);
++            this.kill(level);
++            this.dropItem(level, null);
 +        }
 +    }
 +
 +    @Override
-+    public void push(double x, double y, double z, @Nullable Entity pushingEntity) { // Paper - override correct overload
-+        if (false && this.level() instanceof ServerLevel serverLevel && !this.isRemoved() && x * x + y * y + z * z > 0.0) { // CraftBukkit - not needed
-+            this.kill(serverLevel);
-+            this.dropItem(serverLevel, null);
++    public void push(final double xa, final double ya, final double za, @Nullable final Entity pushingEntity) { // Paper - override correct overload
++        if (false && this.level() instanceof ServerLevel level && !this.isRemoved() && xa * xa + ya * ya + za * za > 0.0) { // CraftBukkit - not needed
++            this.kill(level);
++            this.dropItem(level, null);
 +        }
 +    }
 +
@@ -108,4 +108,4 @@
 +    // CraftBukkit end
  
      @Override
-     protected void addAdditionalSaveData(ValueOutput output) {
+     protected void addAdditionalSaveData(final ValueOutput output) {

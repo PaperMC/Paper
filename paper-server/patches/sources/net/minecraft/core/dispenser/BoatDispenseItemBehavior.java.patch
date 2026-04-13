@@ -1,19 +1,19 @@
 --- a/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
-@@ -40,13 +_,36 @@
-             d4 = 0.0;
+@@ -41,13 +_,36 @@
+             yOffset = 0.0;
          }
  
 +        // CraftBukkit start
-+        ItemStack singleItemStack = item.copyWithCount(1);
-+        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(serverLevel, blockSource.pos());
++        ItemStack singleItemStack = dispensed.copyWithCount(1);
++        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, source.pos());
 +        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(singleItemStack);
 +
-+        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(d1, d2 + d4, d3));
-+        serverLevel.getCraftServer().getPluginManager().callEvent(event);
++        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(spawnX, spawnY + yOffset, spawnZ));
++        level.getCraftServer().getPluginManager().callEvent(event);
 +
 +        if (event.isCancelled()) {
-+            return item;
++            return dispensed;
 +        }
 +
 +        boolean shrink = true;
@@ -21,22 +21,22 @@
 +            shrink = false;
 +            // Chain to handler for new item
 +            ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
-+            DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack);
++            DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(source, eventStack);
 +            if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) {
-+                dispenseBehavior.dispense(blockSource, eventStack);
-+                return item;
++                dispenseBehavior.dispense(source, eventStack);
++                return dispensed;
 +            }
 +        }
 +        // CraftBukkit end
-         AbstractBoat abstractBoat = this.type.create(serverLevel, EntitySpawnReason.DISPENSER);
-         if (abstractBoat != null) {
--            abstractBoat.setInitialPos(d1, d2 + d4, d3);
-+            abstractBoat.setInitialPos(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ()); // CraftBukkit
-             EntityType.<AbstractBoat>createDefaultStackConfig(serverLevel, item, null).accept(abstractBoat);
-             abstractBoat.setYRot(direction.toYRot());
--            serverLevel.addFreshEntity(abstractBoat);
--            item.shrink(1);
-+            if (serverLevel.addFreshEntity(abstractBoat) && shrink) item.shrink(1); // Paper - if entity add was successful and supposed to shrink
+         AbstractBoat boat = this.type.create(level, EntitySpawnReason.DISPENSER);
+         if (boat != null) {
+-            boat.setInitialPos(spawnX, spawnY + yOffset, spawnZ);
++            boat.setInitialPos(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ()); // CraftBukkit
+             EntityType.<AbstractBoat>createDefaultStackConfig(level, dispensed, null).accept(boat);
+             boat.setYRot(direction.toYRot());
+-            level.addFreshEntity(boat);
+-            dispensed.shrink(1);
++            if (level.addFreshEntity(boat) && shrink) dispensed.shrink(1); // Paper - if entity add was successful and supposed to shrink
          }
  
-         return item;
+         return dispensed;

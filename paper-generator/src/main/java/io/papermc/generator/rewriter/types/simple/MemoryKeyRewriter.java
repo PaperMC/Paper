@@ -16,6 +16,7 @@ import net.minecraft.util.Unit;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.behavior.PositionTracker;
+import net.minecraft.world.entity.ai.behavior.SpearAttack;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.NearestVisibleLivingEntities;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
@@ -46,6 +47,7 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
         NearestVisibleLivingEntities.class,
         WalkTarget.class,
         PositionTracker.class,
+        SpearAttack.SpearStatus.class,
         Path.class,
         DamageSource.class,
         Vec3.class,
@@ -95,7 +97,7 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
             this.apiMemoryType = memoryType;
         }
 
-        return "%s<%s>".formatted(this.fieldClass.simpleName(), this.importCollector.getShortName(this.apiMemoryType));
+        return "%s<%s>".formatted(this.registryEntry.apiClass().getSimpleName(), this.importCollector.getShortName(this.apiMemoryType));
     }
 
     @Override
@@ -107,10 +109,10 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
     @Override
     protected String rewriteFieldValue(Holder.Reference<MemoryModuleType<?>> reference) {
         return "new %s<>(%s.minecraft(%s), %s.class)".formatted(
-            this.fieldClass.simpleName(),
+            this.registryEntry.apiClass().getSimpleName(),
             NamespacedKey.class.getSimpleName(),
-            quoted(reference.key().location().getPath()),
-            this.apiMemoryType.getSimpleName() // assume the type is already import (see above in rewriteFieldType)
+            quoted(reference.key().identifier().getPath()),
+            io.papermc.typewriter.util.ClassHelper.retrieveFullNestedName(this.apiMemoryType) // assume the type is already imported (see above in rewriteFieldType)
         );
     }
 }

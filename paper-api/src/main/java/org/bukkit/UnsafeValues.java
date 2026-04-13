@@ -3,10 +3,10 @@ package org.bukkit;
 import com.google.common.collect.Multimap;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -59,7 +59,7 @@ public interface UnsafeValues {
 
     int getDataVersion();
 
-    ItemStack modifyItemStack(ItemStack stack, String arguments);
+    ItemStack modifyItemStack(ItemStack item, String components);
 
     void checkSupported(PluginDescriptionFile pdf) throws InvalidPluginException;
 
@@ -141,7 +141,7 @@ public interface UnsafeValues {
     String get(Class<?> aClass, String value);
 
     @ApiStatus.Internal
-    <B extends Keyed> B get(RegistryKey<B> registry, NamespacedKey key);
+    @Nullable <B extends Keyed> B get(RegistryKey<B> registry, NamespacedKey key);
 
     // Paper start
     @Deprecated(forRemoval = true)
@@ -384,4 +384,12 @@ public interface UnsafeValues {
     @NotNull Map<String, Object> serializeStack(ItemStack itemStack);
 
     @NotNull ItemStack deserializeStack(@NotNull Map<String, Object> args);
+
+    /**
+     * Deserializes a {@link HoverEvent.ShowItem} hover event value into an {@code ItemStack}.
+     *
+     * @param itemHover the hover to deserialize
+     * @return the deserialized {@code ItemStack}
+     */
+    @NotNull ItemStack deserializeItemHover(HoverEvent.@NotNull ShowItem itemHover);
 }

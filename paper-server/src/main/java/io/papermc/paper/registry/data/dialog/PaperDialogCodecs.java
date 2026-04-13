@@ -22,11 +22,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.dialog.CommonButtonData;
 import net.minecraft.server.dialog.Dialog;
 import net.minecraft.server.dialog.action.ParsedTemplate;
@@ -54,7 +54,7 @@ public final class PaperDialogCodecs {
     );
     private static final Map<AdventureCodecs.ClickEventType, MapCodec<DialogAction.StaticAction>> STATIC_ACTION_CODECS = Arrays.stream(AdventureCodecs.CLICK_EVENT_TYPES.get()).collect(Collectors.toMap(Function.identity(), type -> type.codec().xmap(DialogAction::staticAction, DialogAction.StaticAction::value)));
     private static final Registry<MapCodec<? extends DialogAction>> DIALOG_ACTION_TYPES = Util.make(() -> {
-        final MappedRegistry<MapCodec<? extends DialogAction>> registry = new MappedRegistry<>(ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(ResourceLocation.PAPER_NAMESPACE, "dialog_action_type")), Lifecycle.experimental());
+        final MappedRegistry<MapCodec<? extends DialogAction>> registry = new MappedRegistry<>(ResourceKey.createRegistryKey(Identifier.fromNamespaceAndPath(Identifier.PAPER_NAMESPACE, "dialog_action_type")), Lifecycle.experimental());
         STATIC_ACTION_CODECS.forEach((clickType, actionCodec) -> {
             Registry.register(registry, clickType.getSerializedName(), actionCodec);
         });
@@ -63,8 +63,8 @@ public final class PaperDialogCodecs {
         return registry.freeze();
     });
     private static final Function<DialogAction, MapCodec<? extends DialogAction>> GET_DIALOG_ACTION_TYPE = dialogAction -> switch (dialogAction) {
-        case DialogAction.CommandTemplateAction $ -> COMMAND_TEMPLATE_ACTION_CODEC;
-        case DialogAction.CustomClickAction $ -> CUSTOM_ALL_ACTION_CODEC;
+        case DialogAction.CommandTemplateAction _ -> COMMAND_TEMPLATE_ACTION_CODEC;
+        case DialogAction.CustomClickAction _ -> CUSTOM_ALL_ACTION_CODEC;
         case DialogAction.StaticAction action -> STATIC_ACTION_CODECS.get(AdventureCodecs.GET_CLICK_EVENT_TYPE.apply(action.value()));
     };
     private static final Codec<DialogAction> DIALOG_ACTION_CODEC = DIALOG_ACTION_TYPES.byNameCodec().dispatch(GET_DIALOG_ACTION_TYPE, Function.identity());
@@ -85,7 +85,7 @@ public final class PaperDialogCodecs {
     );
     private static final Codec<PlainMessageDialogBody> SIMPLE_PLAIN_MESSAGE_BODY_CODEC = Codec.withAlternative(PLAIN_MESSAGE_BODY_CODEC.codec(), AdventureCodecs.COMPONENT_CODEC, component -> DialogBody.plainMessage(component, PlainMessage.DEFAULT_WIDTH));
     private static final MapCodec<ItemDialogBody> ITEM_BODY_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ItemStack.STRICT_CODEC.xmap(CraftItemStack::asBukkitCopy, CraftItemStack::asNMSCopy).fieldOf("item").forGetter(ItemDialogBody::item),
+            ItemStack.CODEC.xmap(CraftItemStack::asBukkitCopy, CraftItemStack::asNMSCopy).fieldOf("item").forGetter(ItemDialogBody::item),
             SIMPLE_PLAIN_MESSAGE_BODY_CODEC.optionalFieldOf("description").forGetter(body -> Optional.ofNullable(body.description())),
             Codec.BOOL.optionalFieldOf("show_decorations", true).forGetter(ItemDialogBody::showDecorations),
             Codec.BOOL.optionalFieldOf("show_tooltip", true).forGetter(ItemDialogBody::showTooltip),
@@ -94,14 +94,14 @@ public final class PaperDialogCodecs {
         ).apply(instance, (itemStack, plainMessageBody, showDecorations, showTooltip, width, height) -> DialogBody.item(itemStack, plainMessageBody.orElse(null), showDecorations, showTooltip, width, height))
     );
     private static final Registry<MapCodec<? extends DialogBody>> DIALOG_BODY_TYPES = Util.make(() -> {
-        final MappedRegistry<MapCodec<? extends DialogBody>> registry = new MappedRegistry<>(ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(ResourceLocation.PAPER_NAMESPACE, "dialog_body_type")), Lifecycle.experimental());
+        final MappedRegistry<MapCodec<? extends DialogBody>> registry = new MappedRegistry<>(ResourceKey.createRegistryKey(Identifier.fromNamespaceAndPath(Identifier.PAPER_NAMESPACE, "dialog_body_type")), Lifecycle.experimental());
         Registry.register(registry, "item", ITEM_BODY_CODEC);
         Registry.register(registry, "plain_message", PLAIN_MESSAGE_BODY_CODEC);
         return registry.freeze();
     });
     private static final Function<DialogBody, MapCodec<? extends DialogBody>> GET_DIALOG_BODY_TYPE = dialogAction -> switch (dialogAction) {
-        case PlainMessageDialogBody $ -> PLAIN_MESSAGE_BODY_CODEC;
-        case ItemDialogBody $ -> ITEM_BODY_CODEC;
+        case PlainMessageDialogBody _ -> PLAIN_MESSAGE_BODY_CODEC;
+        case ItemDialogBody _ -> ITEM_BODY_CODEC;
     };
     private static final Codec<DialogBody> DIALOG_BODY_CODEC = DIALOG_BODY_TYPES.byNameCodec().dispatch(GET_DIALOG_BODY_TYPE, Function.identity());
     private static final Codec<List<DialogBody>> DIALOG_BODY_LIST_CODEC = ExtraCodecs.compactListCodec(DIALOG_BODY_CODEC);
@@ -155,7 +155,7 @@ public final class PaperDialogCodecs {
         DialogInput.text(key, width, label, labelVisible, initial, maxLength, multilineOptions.orElse(null))
     ));
     private static final Registry<MapCodec<? extends DialogInput>> DIALOG_INPUT_TYPES = Util.make(() -> {
-        final MappedRegistry<MapCodec<? extends DialogInput>> registry = new MappedRegistry<>(ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(ResourceLocation.PAPER_NAMESPACE, "dialog_input_type")), Lifecycle.experimental());
+        final MappedRegistry<MapCodec<? extends DialogInput>> registry = new MappedRegistry<>(ResourceKey.createRegistryKey(Identifier.fromNamespaceAndPath(Identifier.PAPER_NAMESPACE, "dialog_input_type")), Lifecycle.experimental());
         Registry.register(registry, "boolean", BOOLEAN_DIALOG_INPUT_TYPE_MAP_CODEC);
         Registry.register(registry, "number_range", NUMBER_RANGE_INPUT_MAP_CODEC);
         Registry.register(registry, "single_option", SINGLE_OPTION_DIALOG_INPUT_TYPE_MAP_CODEC);
@@ -163,10 +163,10 @@ public final class PaperDialogCodecs {
         return registry.freeze();
     });
     private static final Function<DialogInput, MapCodec<? extends DialogInput>> GET_DIALOG_INPUT_TYPE_TYPE = dialogAction -> switch (dialogAction) {
-        case TextDialogInput $ -> TEXT_DIALOG_INPUT_TYPE_MAP_CODEC;
-        case SingleOptionDialogInput $ -> SINGLE_OPTION_DIALOG_INPUT_TYPE_MAP_CODEC;
-        case NumberRangeDialogInput $ -> NUMBER_RANGE_INPUT_MAP_CODEC;
-        case BooleanDialogInput $ -> BOOLEAN_DIALOG_INPUT_TYPE_MAP_CODEC;
+        case TextDialogInput _ -> TEXT_DIALOG_INPUT_TYPE_MAP_CODEC;
+        case SingleOptionDialogInput _ -> SINGLE_OPTION_DIALOG_INPUT_TYPE_MAP_CODEC;
+        case NumberRangeDialogInput _ -> NUMBER_RANGE_INPUT_MAP_CODEC;
+        case BooleanDialogInput _ -> BOOLEAN_DIALOG_INPUT_TYPE_MAP_CODEC;
     };
     private static final Codec<DialogInput> DIALOG_INPUT_CODEC = DIALOG_INPUT_TYPES.byNameCodec().dispatchMap(GET_DIALOG_INPUT_TYPE_TYPE, Function.identity()).codec();
 

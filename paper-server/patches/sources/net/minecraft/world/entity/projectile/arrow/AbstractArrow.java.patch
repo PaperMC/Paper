@@ -1,0 +1,227 @@
+--- a/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
++++ b/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
+@@ -92,7 +_,14 @@
+         final ItemStack pickupItemStack,
+         final @Nullable ItemStack firedFromWeapon
+     ) {
++        // CraftBukkit start - handle the owner before the rest of things
++        this(type, x, y, z, level, pickupItemStack, firedFromWeapon, null);
++    }
++
++    protected AbstractArrow(EntityType<? extends AbstractArrow> type, double x, double y, double z, Level level, ItemStack pickupItemStack, @Nullable ItemStack firedFromWeapon, @Nullable LivingEntity ownerEntity) {
+         this(type, level);
++        this.setOwner(ownerEntity);
++        // CraftBukkit end
+         this.pickupItemStack = pickupItemStack.copy();
+         this.applyComponentsFromItemStack(pickupItemStack);
+         Unit intangible = pickupItemStack.remove(DataComponents.INTANGIBLE_PROJECTILE);
+@@ -121,8 +_,8 @@
+         final ItemStack pickupItemStack,
+         final @Nullable ItemStack firedFromWeapon
+     ) {
+-        this(type, mob.getX(), mob.getEyeY() - 0.1F, mob.getZ(), level, pickupItemStack, firedFromWeapon);
+-        this.setOwner(mob);
++        this(type, mob.getX(), mob.getEyeY() - 0.1F, mob.getZ(), level, pickupItemStack, firedFromWeapon, mob); // CraftBukkit
++        // this.setOwner(mob); // SPIGOT-7744 - Moved to the above constructor
+     }
+ 
+     public void setSoundEvent(final SoundEvent soundEvent) {
+@@ -156,7 +_,11 @@
+     @Override
+     public void lerpMotion(final Vec3 movement) {
+         super.lerpMotion(movement);
+-        this.life = 0;
++        // Paper start - Fix loophole for arrow immunity
++        if (!this.level().paperConfig().entities.spawning.maxArrowDespawnInvulnerability.enabled()) {
++            this.life = 0;
++        }
++        // Paper end - Fix loophole for arrow immunity
+         if (this.isInGround() && movement.lengthSqr() > 0.0) {
+             this.setInGround(false);
+         }
+@@ -217,6 +_,10 @@
+                 this.setSharedFlagOnFire(this.getRemainingFireTicks() > 0);
+             }
+         } else {
++            // Paper start - tick life regardless after X seconds
++            final io.papermc.paper.configuration.type.number.IntOr.Disabled maxArrowDespawnInvulnerability = this.level().paperConfig().entities.spawning.maxArrowDespawnInvulnerability;
++            if (maxArrowDespawnInvulnerability.enabled() && this.tickCount > maxArrowDespawnInvulnerability.intValue()) this.tickDespawn();
++            // Paper end - tick life regardless after X seconds
+             this.inGroundTime = 0;
+             Vec3 originalPosition = this.position();
+             if (this.isInWater()) {
+@@ -288,7 +_,7 @@
+ 
+             if (entitiesHit.isEmpty()) {
+                 if (this.isAlive() && blockHitResult.getType() != HitResult.Type.MISS) {
+-                    this.hitTargetOrDeflectSelf(blockHitResult);
++                    this.preHitTargetOrDeflectSelf(blockHitResult); // CraftBukkit - projectile hit event
+                     this.needsSync = true;
+                 }
+                 break;
+@@ -305,7 +_,7 @@
+ 
+     private ProjectileDeflection hitTargetsOrDeflectSelf(final Collection<EntityHitResult> entityHitResults) {
+         for (EntityHitResult e : entityHitResults) {
+-            ProjectileDeflection deflection = this.hitTargetOrDeflectSelf(e);
++            ProjectileDeflection deflection = this.preHitTargetOrDeflectSelf(e); // CraftBukkit - projectile hit event
+             if (!this.isAlive() || deflection != ProjectileDeflection.NONE) {
+                 return deflection;
+             }
+@@ -337,20 +_,37 @@
+         }
+     }
+ 
++    // Paper start - Fix cancelling ProjectileHitEvent for piercing arrows
++    @Override
++    public ProjectileDeflection preHitTargetOrDeflectSelf(HitResult hitResult) {
++        if (hitResult instanceof EntityHitResult entityHitResult && this.hitCancelled && this.getPierceLevel() > 0) {
++            if (this.piercingIgnoreEntityIds == null) {
++                this.piercingIgnoreEntityIds = new IntOpenHashSet(5);
++            }
++            this.piercingIgnoreEntityIds.add(entityHitResult.getEntity().getId());
++        }
++        return super.preHitTargetOrDeflectSelf(hitResult);
++    }
++    // Paper end - Fix cancelling ProjectileHitEvent for piercing arrows
++
+     @Override
+     protected double getDefaultGravity() {
+         return 0.05;
+     }
+ 
+     private boolean shouldFall() {
+-        return this.isInGround() && this.level().noCollision(new AABB(this.position(), this.position()).inflate(0.06));
++        return this.isInGround() && this.level().noCollision(new AABB(this.position(), this.position()).inflate(0.06)); // Paper - getAttachedBlocks api; diff on change
+     }
+ 
+     private void startFalling() {
+         this.setInGround(false);
+         Vec3 deltaMovement = this.getDeltaMovement();
+         this.setDeltaMovement(deltaMovement.multiply(this.random.nextFloat() * 0.2F, this.random.nextFloat() * 0.2F, this.random.nextFloat() * 0.2F));
+-        this.life = 0;
++        // Paper start - Fix loophole for arrow immunity
++        if (!this.level().paperConfig().entities.spawning.maxArrowDespawnInvulnerability.enabled()) {
++            this.life = 0;
++        }
++        // Paper end - Fix loophole for arrow immunity
+     }
+ 
+     public boolean isInGround() {
+@@ -376,8 +_,8 @@
+ 
+     protected void tickDespawn() {
+         this.life++;
+-        if (this.life >= 1200) {
+-            this.discard();
++        if (this.life >= (this.pickup == Pickup.CREATIVE_ONLY ? this.level().paperConfig().entities.spawning.creativeArrowDespawnRate.value() : (this.pickup == Pickup.DISALLOWED ? this.level().paperConfig().entities.spawning.nonPlayerArrowDespawnRate.value() : ((this instanceof ThrownTrident) ? this.level().spigotConfig.tridentDespawnRate : this.level().spigotConfig.arrowDespawnRate)))) { // Spigot // Paper - Configurable non-player arrow despawn rate; TODO: Extract this to init?
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         }
+     }
+ 
+@@ -411,9 +_,9 @@
+     }
+ 
+     @Override
+-    public void push(final double xa, final double ya, final double za) {
++    public void push(final double xa, final double ya, final double za, final @Nullable Entity pushingEntity) { // Paper - add push source entity param
+         if (!this.isInGround()) {
+-            super.push(xa, ya, za);
++            super.push(xa, ya, za, pushingEntity); // Paper - add push source entity param
+         }
+     }
+ 
+@@ -440,7 +_,7 @@
+             }
+ 
+             if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
+-                this.discard();
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+                 return;
+             }
+ 
+@@ -456,10 +_,16 @@
+             livingOwner.setLastHurtMob(entity);
+         }
+ 
++        if (this.isCritArrow()) damageSource = damageSource.critical(); // Paper - add critical damage API
+         boolean isEnderman = entity.is(EntityType.ENDERMAN);
+         int remainingFireTicks = entity.getRemainingFireTicks();
+         if (this.isOnFire() && !isEnderman) {
+-            entity.igniteForSeconds(5.0F);
++            // CraftBukkit start
++            org.bukkit.event.entity.EntityCombustByEntityEvent combustEvent = new org.bukkit.event.entity.EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5.0F);
++            if (combustEvent.callEvent()) {
++                entity.igniteForSeconds(combustEvent.getDuration(), false);
++            }
++            // CraftBukkit end
+         }
+ 
+         if (entity.hurtOrSimulate(damageSource, damage)) {
+@@ -497,7 +_,7 @@
+ 
+             this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+             if (this.getPierceLevel() <= 0) {
+-                this.discard();
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+             }
+         } else {
+             entity.setRemainingFireTicks(remainingFireTicks);
+@@ -508,7 +_,7 @@
+                     this.spawnAtLocation(level, this.getPickupItem(), 0.1F);
+                 }
+ 
+-                this.discard();
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+             }
+         }
+     }
+@@ -521,7 +_,7 @@
+             double knockbackResistance = Math.max(0.0, 1.0 - mob.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+             Vec3 movement = this.getDeltaMovement().multiply(1.0, 0.0, 1.0).normalize().scale(knockback * 0.6 * knockbackResistance);
+             if (movement.lengthSqr() > 0.0) {
+-                mob.push(movement.x, 0.1, movement.z);
++                mob.push(movement.x, 0.1, movement.z, this); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+             }
+         }
+     }
+@@ -632,7 +_,14 @@
+ 
+     @Override
+     public void setOwner(final @Nullable Entity owner) {
++        // Paper start - Fix PickupStatus getting reset
++        this.setOwner(owner, true);
++    }
++
++    public void setOwner(final @Nullable Entity owner, final boolean resetPickup) {
++        // Paper end - Fix PickupStatus getting reset
+         super.setOwner(owner);
++        if (!resetPickup) return; // Paper - Fix PickupStatus getting reset
+ 
+         this.pickup = switch (owner) {
+             case Player ignored when this.pickup == AbstractArrow.Pickup.DISALLOWED -> AbstractArrow.Pickup.ALLOWED;
+@@ -644,9 +_,22 @@
+     @Override
+     public void playerTouch(final Player player) {
+         if (!this.level().isClientSide() && (this.isInGround() || this.isNoPhysics()) && this.shakeTime <= 0) {
+-            if (this.tryPickup(player)) {
++            // CraftBukkit start
++            ItemStack itemstack = this.getPickupItem();
++            if (this.pickup == Pickup.ALLOWED && !itemstack.isEmpty() && player.getInventory().canHold(itemstack) > 0) {
++                net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), itemstack);
++                org.bukkit.event.player.PlayerPickupArrowEvent event = new org.bukkit.event.player.PlayerPickupArrowEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.Item) item.getBukkitEntity(), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
++                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
++                if (!event.callEvent()) {
++                    return;
++                }
++                itemstack = item.getItem();
++            }
++
++            if ((this.pickup == AbstractArrow.Pickup.ALLOWED && player.getInventory().add(itemstack)) || (this.pickup == AbstractArrow.Pickup.CREATIVE_ONLY && player.getAbilities().instabuild)) {
++                // CraftBukkit end
+                 player.take(this, 1);
+-                this.discard();
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+             }
+         }
+     }

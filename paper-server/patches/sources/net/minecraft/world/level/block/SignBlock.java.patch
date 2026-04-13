@@ -1,27 +1,27 @@
 --- a/net/minecraft/world/level/block/SignBlock.java
 +++ b/net/minecraft/world/level/block/SignBlock.java
-@@ -133,7 +_,7 @@
-                 } else if (!this.otherPlayerIsEditingSign(player, signBlockEntity)
-                     && player.mayBuild()
-                     && this.hasEditableText(player, signBlockEntity, isFacingFrontText)) {
--                    this.openTextEdit(player, signBlockEntity, isFacingFrontText);
-+                    this.openTextEdit(player, signBlockEntity, isFacingFrontText, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.INTERACT); // Paper - Add PlayerOpenSignEvent
+@@ -137,7 +_,7 @@
+                 } else if (executedClickCommand) {
+                     return InteractionResult.SUCCESS_SERVER;
+                 } else if (!this.otherPlayerIsEditingSign(player, sign) && player.mayBuild() && this.hasEditableText(player, sign, isFrontText)) {
+-                    this.openTextEdit(player, sign, isFrontText);
++                    this.openTextEdit(player, sign, isFrontText, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.INTERACT); // Paper - Add PlayerOpenSignEvent
                      return InteractionResult.SUCCESS_SERVER;
                  } else {
                      return InteractionResult.PASS;
-@@ -179,7 +_,34 @@
-         return woodType;
+@@ -176,7 +_,34 @@
+         return block instanceof SignBlock signBlock ? signBlock.type() : WoodType.OAK;
      }
  
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Add PlayerOpenSignEvent
-     public void openTextEdit(Player player, SignBlockEntity signEntity, boolean isFrontText) {
+     public void openTextEdit(final Player player, final SignBlockEntity sign, final boolean isFrontText) {
 +        // Paper start - Add PlayerOpenSignEvent
-+        this.openTextEdit(player, signEntity, isFrontText, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.UNKNOWN);
++        this.openTextEdit(player, sign, isFrontText, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.UNKNOWN);
 +    }
 +
-+    public void openTextEdit(Player player, SignBlockEntity signEntity, boolean isFrontText, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause cause) {
++    public void openTextEdit(Player player, SignBlockEntity sign, boolean isFrontText, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause cause) {
 +        org.bukkit.entity.Player bukkitPlayer = (org.bukkit.entity.Player) player.getBukkitEntity();
-+        org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(signEntity.getLevel(), signEntity.getBlockPos());
++        org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(sign.getLevel(), sign.getBlockPos());
 +        org.bukkit.craftbukkit.block.CraftSign<?> bukkitSign = (org.bukkit.craftbukkit.block.CraftSign<?>) org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(bukkitBlock);
 +        io.papermc.paper.event.player.PlayerOpenSignEvent event = new io.papermc.paper.event.player.PlayerOpenSignEvent(
 +            bukkitPlayer,
@@ -36,19 +36,19 @@
 +                case INTERACT -> org.bukkit.event.player.PlayerSignOpenEvent.Cause.INTERACT;
 +                case UNKNOWN -> org.bukkit.event.player.PlayerSignOpenEvent.Cause.UNKNOWN;
 +            };
-+        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerSignOpenEvent(player, signEntity, isFrontText, legacyCause)) {
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerSignOpenEvent(player, sign, isFrontText, legacyCause)) {
 +        // Paper end - Add PlayerOpenSignEvent
 +            return;
 +        }
 +        } // Paper - Add PlayerOpenSignEvent
-         signEntity.setAllowedPlayerEditor(player.getUUID());
-         player.openTextEdit(signEntity, isFrontText);
+         sign.setAllowedPlayerEditor(player.getUUID());
+         player.openTextEdit(sign, isFrontText);
      }
-@@ -192,6 +_,6 @@
-     @Nullable
+@@ -188,6 +_,6 @@
+ 
      @Override
-     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
--        return createTickerHelper(blockEntityType, BlockEntityType.SIGN, SignBlockEntity::tick);
+     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(final Level level, final BlockState blockState, final BlockEntityType<T> type) {
+-        return createTickerHelper(type, BlockEntityType.SIGN, SignBlockEntity::tick);
 +        return null; // CraftBukkit - remove unnecessary sign ticking
      }
  }

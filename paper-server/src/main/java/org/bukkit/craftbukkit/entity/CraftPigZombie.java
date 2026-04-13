@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.monster.ZombifiedPiglin;
+import net.minecraft.world.entity.monster.zombie.ZombifiedPiglin;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.PigZombie;
 
@@ -17,12 +17,12 @@ public class CraftPigZombie extends CraftZombie implements PigZombie {
 
     @Override
     public int getAnger() {
-        return this.getHandle().getRemainingPersistentAngerTime();
+        return (int) Math.max(this.getHandle().getPersistentAngerEndTime() - this.getHandle().level().getGameTime(), 0);
     }
 
     @Override
     public void setAnger(int level) {
-        this.getHandle().setRemainingPersistentAngerTime(level);
+        this.getHandle().setTimeToRemainAngry(level);
     }
 
     @Override

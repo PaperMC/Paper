@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.component.UseCooldown;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -29,7 +29,7 @@ public final class CraftUseCooldownComponent implements UseCooldownComponent {
         Float seconds = SerializableMeta.getObject(Float.class, map, "seconds", false);
         String cooldownGroup = SerializableMeta.getString(map, "cooldown-group", true);
 
-        this.handle = new UseCooldown(seconds, Optional.ofNullable(cooldownGroup).map(ResourceLocation::parse));
+        this.handle = new UseCooldown(seconds, Optional.ofNullable(cooldownGroup).map(Identifier::parse));
     }
 
     @Override

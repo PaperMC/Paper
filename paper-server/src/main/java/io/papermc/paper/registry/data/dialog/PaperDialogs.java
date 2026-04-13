@@ -26,7 +26,7 @@ public final class PaperDialogs {
     private PaperDialogs() {
     }
 
-    public static DialogType extractSpecialty(final Dialog nmsDialog, final Conversions conversions) {
+    public static DialogType extractType(final Dialog nmsDialog, final Conversions conversions) {
         final Function<net.minecraft.server.dialog.ActionButton, ActionButton> convertButton = button -> conversions.convert(button, PaperDialogCodecs.ACTION_BUTTON_CODEC, net.minecraft.server.dialog.ActionButton.CODEC);
         return switch (nmsDialog) {
             case final ConfirmationDialog conf ->

@@ -70,6 +70,10 @@ interface ItemComponentTypesBridge {
 
     ResolvableProfile.Builder resolvableProfile();
 
+    ResolvableProfile.SkinPatchBuilder skinPatch();
+
+    ResolvableProfile.SkinPatch emptySkinPatch();
+
     ResolvableProfile resolvableProfile(PlayerProfile profile);
 
     BannerPatternLayers.Builder bannerPatternLayers();
@@ -96,7 +100,7 @@ interface ItemComponentTypesBridge {
 
     UseCooldown.Builder useCooldown(final float seconds);
 
-    DamageResistant damageResistant(TagKey<DamageType> types);
+    DamageResistant damageResistant(RegistryKeySet<DamageType> types);
 
     Enchantable enchantable(int level);
 
@@ -113,4 +117,16 @@ interface ItemComponentTypesBridge {
     TooltipDisplay.Builder tooltipDisplay();
 
     Weapon.Builder weapon();
+
+    KineticWeapon.Builder kineticWeapon();
+
+    UseEffects.Builder useEffects();
+
+    PiercingWeapon.Builder piercingWeapon();
+
+    AttackRange.Builder attackRange();
+
+    SwingAnimation.Builder swingAnimation();
+
+    KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed);
 }

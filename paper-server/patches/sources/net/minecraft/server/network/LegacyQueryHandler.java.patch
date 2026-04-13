@@ -6,80 +6,80 @@
      private final ServerInfo server;
 +    private ByteBuf buf; // Paper
  
-     public LegacyQueryHandler(ServerInfo server) {
+     public LegacyQueryHandler(final ServerInfo server) {
          this.server = server;
 @@ -22,6 +_,17 @@
      @Override
-     public void channelRead(ChannelHandlerContext context, Object message) {
-         ByteBuf byteBuf = (ByteBuf)message;
+     public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
+         ByteBuf in = (ByteBuf)msg;
 +        // Paper start - Make legacy ping handler more reliable
 +        if (this.buf != null) {
 +            try {
-+                readLegacy1_6(context, byteBuf);
++                this.readLegacy1_6(ctx, in);
 +            } finally {
-+                byteBuf.release();
++                in.release();
 +            }
 +            return;
 +        }
 +        // Paper end - Make legacy ping handler more reliable
 +
-         byteBuf.markReaderIndex();
-         boolean flag = true;
+         in.markReaderIndex();
+         boolean connectNormally = true;
  
 @@ -33,9 +_,19 @@
  
-                 SocketAddress socketAddress = context.channel().remoteAddress();
-                 int i = byteBuf.readableBytes();
-+                String string = null; // Paper
-                 if (i == 0) {
--                    LOGGER.debug("Ping: (<1.3.x) from {}", socketAddress);
--                    String string = createVersion0Response(this.server);
-+                    LOGGER.debug("Ping: (<1.3.x) from {}", net.minecraft.server.MinecraftServer.getServer().logIPs() ? socketAddress : "<ip address withheld>"); // Paper - Respect logIPs option
+                 SocketAddress socket = ctx.channel().remoteAddress();
+                 int length = in.readableBytes();
++                String body = null; // Paper
+                 if (length == 0) {
+-                    LOGGER.debug("Ping: (<1.3.x) from {}", socket);
+-                    String body = createVersion0Response(this.server);
++                    LOGGER.debug("Ping: (<1.3.x) from {}", net.minecraft.server.MinecraftServer.getServer().logIPs() ? socket : "<ip address withheld>"); // Paper - Respect logIPs option
 +                    // Paper start - Call PaperServerListPingEvent and use results
-+                    com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socketAddress, 39, null);
++                    com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socket, 39, null);
 +                    if (event == null) {
-+                        context.close();
-+                        byteBuf.release();
-+                        flag = false;
++                        ctx.close();
++                        in.release();
++                        connectNormally = false;
 +                        return;
 +                    }
-+                    string = String.format(Locale.ROOT, "%s§%d§%d", com.destroystokyo.paper.network.PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
++                    body = String.format(Locale.ROOT, "%s§%d§%d", com.destroystokyo.paper.network.PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
 +                    // Paper end - Call PaperServerListPingEvent and use results
-                     sendFlushAndClose(context, createLegacyDisconnectPacket(context.alloc(), string));
+                     sendFlushAndClose(ctx, createLegacyDisconnectPacket(ctx.alloc(), body));
                  } else {
-                     if (byteBuf.readUnsignedByte() != 1) {
+                     if (in.readUnsignedByte() != 1) {
 @@ -43,16 +_,39 @@
                      }
  
-                     if (byteBuf.isReadable()) {
--                        if (!readCustomPayloadPacket(byteBuf)) {
+                     if (in.isReadable()) {
+-                        if (!readCustomPayloadPacket(in)) {
 +                        // Paper start - Replace below
-+                        if (byteBuf.readUnsignedByte() != LegacyProtocolUtils.CUSTOM_PAYLOAD_PACKET_ID) {
-+                            string = this.readLegacy1_6(context, byteBuf);
-+                            if (string == null) {
++                        if (in.readUnsignedByte() != LegacyProtocolUtils.CUSTOM_PAYLOAD_PACKET_ID) {
++                            body = this.readLegacy1_6(ctx, in);
++                            if (body == null) {
 +                                return;
 +                            }
 +                        }
 +                        // Paper end - Replace below
 +                    } else {
-+                        LOGGER.debug("Ping: (1.4-1.5.x) from {}", net.minecraft.server.MinecraftServer.getServer().logIPs() ? socketAddress : "<ip address withheld>"); // Paper - Respect logIPs option
++                        LOGGER.debug("Ping: (1.4-1.5.x) from {}", net.minecraft.server.MinecraftServer.getServer().logIPs() ? socket : "<ip address withheld>"); // Paper - Respect logIPs option
 +                    }
 +
 +                    // Paper start - Call PaperServerListPingEvent and use results
-+                    if (string == null) {
-+                        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socketAddress, 127, null); // Paper
++                    if (body == null) {
++                        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socket, 127, null); // Paper
 +                        if (event == null) {
-+                            context.close();
-+                            byteBuf.release();
-+                            flag = false;
++                            ctx.close();
++                            in.release();
++                            connectNormally = false;
                              return;
                          }
  
--                        LOGGER.debug("Ping: (1.6) from {}", socketAddress);
+-                        LOGGER.debug("Ping: (1.6) from {}", socket);
 -                    } else {
--                        LOGGER.debug("Ping: (1.4-1.5.x) from {}", socketAddress);
+-                        LOGGER.debug("Ping: (1.4-1.5.x) from {}", socket);
 +                        // See createVersion1Response
-+                        string = String.format(
++                        body = String.format(
 +                            Locale.ROOT,
 +                            "§1\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d",
 +                            event.getProtocolVersion(), this.server.getServerVersion(),
@@ -90,17 +90,17 @@
 +                        // Paper end - Call PaperServerListPingEvent and use results
                      }
 -
--                    String string = createVersion1Response(this.server);
-                     sendFlushAndClose(context, createLegacyDisconnectPacket(context.alloc(), string));
+-                    String body = createVersion1Response(this.server);
+                     sendFlushAndClose(ctx, createLegacyDisconnectPacket(ctx.alloc(), body));
                  }
  
-@@ -110,6 +_,98 @@
+@@ -110,6 +_,96 @@
              server.getMaxPlayers()
          );
      }
 +
 +    // Paper start
-+    private static @javax.annotation.Nullable String readLegacyString(ByteBuf buf) {
++    private static @org.jspecify.annotations.Nullable String readLegacyString(final ByteBuf buf) {
 +        int size = buf.readShort() * Character.BYTES;
 +        if (!buf.isReadable(size)) {
 +            return null;
@@ -111,7 +111,7 @@
 +        return result;
 +    }
 +
-+    private @javax.annotation.Nullable String readLegacy1_6(ChannelHandlerContext ctx, ByteBuf part) {
++    private @org.jspecify.annotations.Nullable String readLegacy1_6(final ChannelHandlerContext ctx, final ByteBuf part) {
 +        ByteBuf buf = this.buf;
 +
 +        if (buf == null) {
@@ -133,7 +133,7 @@
 +        }
 +
 +        if (!string.equals(LegacyProtocolUtils.CUSTOM_PAYLOAD_PACKET_PING_CHANNEL)) {
-+            removeHandler(ctx);
++            this.removeHandler(ctx);
 +            return null;
 +        }
 +
@@ -144,13 +144,13 @@
 +        int protocolVersion = buf.readByte();
 +        String host = readLegacyString(buf);
 +        if (host == null) {
-+            removeHandler(ctx);
++            this.removeHandler(ctx);
 +            return null;
 +        }
 +
 +        int port = buf.readInt();
 +        if (buf.isReadable()) {
-+            removeHandler(ctx);
++            this.removeHandler(ctx);
 +            return null;
 +        }
 +
@@ -161,19 +161,17 @@
 +
 +        net.minecraft.server.MinecraftServer server = net.minecraft.server.MinecraftServer.getServer();
 +        java.net.InetSocketAddress virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(host, port);
-+        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(
-+            server, (java.net.InetSocketAddress) ctx.channel().remoteAddress(), protocolVersion, virtualHost);
++        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(server, (java.net.InetSocketAddress) ctx.channel().remoteAddress(), protocolVersion, virtualHost);
 +        if (event == null) {
 +            ctx.close();
 +            return null;
 +        }
 +
-+        String response = String.format("§1\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", event.getProtocolVersion(), event.getVersion(),
-+            com.destroystokyo.paper.network.PaperLegacyStatusClient.getMotd(event), event.getNumPlayers(), event.getMaxPlayers());
++        String response = String.format("§1\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", event.getProtocolVersion(), event.getVersion(), com.destroystokyo.paper.network.PaperLegacyStatusClient.getMotd(event), event.getNumPlayers(), event.getMaxPlayers());
 +        return response;
 +    }
 +
-+    private void removeHandler(ChannelHandlerContext ctx) {
++    private void removeHandler(final ChannelHandlerContext ctx) {
 +        ByteBuf buf = this.buf;
 +        this.buf = null;
 +
@@ -183,7 +181,7 @@
 +    }
 +
 +    @Override
-+    public void handlerRemoved(ChannelHandlerContext ctx) {
++    public void handlerRemoved(final ChannelHandlerContext ctx) {
 +        if (this.buf != null) {
 +            this.buf.release();
 +            this.buf = null;
@@ -191,5 +189,5 @@
 +    }
 +    // Paper end
  
-     private static void sendFlushAndClose(ChannelHandlerContext context, ByteBuf buffer) {
-         context.pipeline().firstContext().writeAndFlush(buffer).addListener(ChannelFutureListener.CLOSE);
+     private static void sendFlushAndClose(final ChannelHandlerContext ctx, final ByteBuf out) {
+         ctx.pipeline().firstContext().writeAndFlush(out).addListener(ChannelFutureListener.CLOSE);

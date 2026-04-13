@@ -1,71 +1,65 @@
 --- a/net/minecraft/server/players/StoredUserList.java
 +++ b/net/minecraft/server/players/StoredUserList.java
-@@ -26,7 +_,7 @@
+@@ -28,7 +_,7 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
      private final File file;
 -    private final Map<String, V> map = Maps.newHashMap();
-+    private final Map<String, V> map = Maps.newConcurrentMap(); // Paper - Use ConcurrentHashMap in JsonList
++    private final Map<String, V> map = Maps.newConcurrentMap(); // Paper - Use ConcurrentHashMap in StoredUserList
+     protected final NotificationService notificationService;
  
-     public StoredUserList(File file) {
-         this.file = file;
-@@ -48,8 +_,11 @@
+     public StoredUserList(final File file, final NotificationService notificationService) {
+@@ -59,8 +_,11 @@
+     }
  
-     @Nullable
-     public V get(K obj) {
+     public @Nullable V get(final K user) {
 -        this.removeExpired();
--        return this.map.get(this.getKeyForUser(obj));
-+        // Paper start - Use ConcurrentHashMap in JsonList
-+        return this.map.computeIfPresent(this.getKeyForUser(obj), (k, v) -> {
-+            return v.hasExpired() ? null : v;
+-        return this.map.get(this.getKeyForUser(user));
++        // Paper start - Use ConcurrentHashMap in StoredUserList
++        return this.map.computeIfPresent(this.getKeyForUser(user), (key, value) -> {
++            return value.hasExpired() ? null : value;
 +        });
-+        // Paper end - Use ConcurrentHashMap in JsonList
++        // Paper end - Use ConcurrentHashMap in StoredUserList
      }
  
-     public void remove(K user) {
-@@ -71,7 +_,7 @@
+     public boolean remove(final K user) {
+@@ -105,22 +_,15 @@
      }
  
-     public boolean isEmpty() {
--        return this.map.size() < 1;
-+        return this.map.isEmpty(); // Paper - Use ConcurrentHashMap in JsonList
-     }
- 
-     protected String getKeyForUser(K obj) {
-@@ -79,21 +_,12 @@
-     }
- 
-     protected boolean contains(K entry) {
+     protected boolean contains(final K user) {
 +        this.removeExpired(); // CraftBukkit - SPIGOT-7589: Consistently remove expired entries to mirror .get(...)
-         return this.map.containsKey(this.getKeyForUser(entry));
+         return this.map.containsKey(this.getKeyForUser(user));
      }
  
++    // Paper start - Use ConcurrentHashMap in StoredUserList
      private void removeExpired() {
--        List<K> list = Lists.newArrayList();
+-        List<K> toRemove = Lists.newArrayList();
 -
--        for (V storedUserEntry : this.map.values()) {
--            if (storedUserEntry.hasExpired()) {
--                list.add(storedUserEntry.getUser());
+-        for (V entry : this.map.values()) {
+-            if (entry.hasExpired()) {
+-                toRemove.add(entry.getUser());
 -            }
 -        }
 -
--        for (K object : list) {
--            this.map.remove(this.getKeyForUser(object));
+-        for (K user : toRemove) {
+-            this.map.remove(this.getKeyForUser(user));
 -        }
-+        this.map.values().removeIf(StoredUserEntry::hasExpired); // Paper - Use ConcurrentHashMap in JsonList
++        this.map.values().removeIf(StoredUserEntry::hasExpired);
      }
++    // Paper end - Use ConcurrentHashMap in StoredUserList
  
-     protected abstract StoredUserEntry<K> createEntry(JsonObject entryData);
-@@ -103,6 +_,7 @@
+     protected abstract StoredUserEntry<K> createEntry(final JsonObject object);
+ 
+@@ -129,6 +_,7 @@
      }
  
      public void save() throws IOException {
 +        this.removeExpired(); // Paper - remove expired values before saving
-         JsonArray jsonArray = new JsonArray();
-         this.map.values().stream().map(storedEntry -> Util.make(new JsonObject(), storedEntry::serialize)).forEach(jsonArray::add);
+         JsonArray result = new JsonArray();
+         this.map.values().stream().map(entry -> Util.make(new JsonObject(), entry::serialize)).forEach(result::add);
  
-@@ -127,7 +_,14 @@
-                         this.map.put(this.getKeyForUser(storedUserEntry.getUser()), (V)storedUserEntry);
+@@ -153,7 +_,14 @@
+                         this.map.put(this.getKeyForUser(entry.getUser()), (V)entry);
                      }
                  }
 +            // Spigot start

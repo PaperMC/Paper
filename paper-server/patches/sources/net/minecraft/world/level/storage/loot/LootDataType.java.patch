@@ -1,20 +1,14 @@
 --- a/net/minecraft/world/level/storage/loot/LootDataType.java
 +++ b/net/minecraft/world/level/storage/loot/LootDataType.java
-@@ -32,9 +_,14 @@
-     }
- 
-     private static LootDataType.Validator<LootTable> createLootTableValidator() {
--        return (context, key, value) -> value.validate(
--            context.setContextKeySet(value.getParamSet()).enterElement(new ProblemReporter.RootElementPathElement(key), key)
--        );
+@@ -26,6 +_,11 @@
+         ContextKeySet contextKeys = this.contextGetter.context(value);
+         ValidationContext rootContext = contextSource.context(contextKeys).enterElement(new ProblemReporter.RootElementPathElement(key), key);
+         value.validate(rootContext);
 +        // CraftBukkit start
-+        return (context, key, value) -> {
-+            value.validate(
-+                context.setContextKeySet(value.getParamSet()).enterElement(new ProblemReporter.RootElementPathElement(key), key)
-+            );
-+            value.craftLootTable = new org.bukkit.craftbukkit.CraftLootTable(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(key.location()), value);
-+            // CraftBukkit end
-+        };
++        if (value instanceof LootTable lootTable) {
++            lootTable.craftLootTable = new org.bukkit.craftbukkit.CraftLootTable(org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(key.identifier()), lootTable);
++        }
++        // CraftBukkit end
      }
  
-     @FunctionalInterface
+     public void runValidation(final ValidationContextSource contextSource, final HolderLookup<T> lookup) {

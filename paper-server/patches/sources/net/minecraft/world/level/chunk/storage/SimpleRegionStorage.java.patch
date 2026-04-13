@@ -1,0 +1,49 @@
+--- a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
++++ b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
+@@ -44,7 +_,19 @@
+     }
+ 
+     public CompletableFuture<Void> write(final ChunkPos pos, final Supplier<CompoundTag> supplier) {
+-        return this.worker.store(pos, supplier);
++        // Paper start - guard against possible chunk pos desync
++        final Supplier<CompoundTag> guardedPosCheck = () -> {
++            final CompoundTag nbt = supplier.get();
++            final boolean chunkStorage = this.dataFixType == net.minecraft.util.datafix.DataFixTypes.CHUNK;
++            if (chunkStorage && nbt != null && !pos.equals(SerializableChunkData.getChunkCoordinate(nbt))) {
++                final String world = (this instanceof net.minecraft.server.level.ChunkMap chunkMap) ? chunkMap.level.getWorld().getName() : null;
++                throw new IllegalArgumentException("Chunk coordinate and serialized data do not have matching coordinates, trying to serialize coordinate " + pos
++                    + " but compound says coordinate is " + SerializableChunkData.getChunkCoordinate(nbt) + (world == null ? " for an unknown world" : (" for world: " + world)));
++            }
++            return nbt;
++        };
++        return this.worker.store(pos, guardedPosCheck);
++        // Paper end - guard against possible chunk pos desync
+     }
+ 
+     public CompoundTag upgradeChunkTag(CompoundTag chunkTag, final int defaultVersion, final @Nullable CompoundTag dataFixContextTag, final int targetVersion) {
+@@ -53,8 +_,25 @@
+             return chunkTag;
+         } else {
+             try {
++                // Spigot start - SPIGOT-6806: Quick and dirty way to prevent below zero generation in old chunks, by setting the status to heightmap instead of empty
++                boolean stopBelowZero = false;
++                final boolean chunkStorage = this.dataFixType == net.minecraft.util.datafix.DataFixTypes.CHUNK;
++                if (chunkStorage) {
++                    final boolean belowZeroGenerationInExistingChunks = (this instanceof net.minecraft.server.level.ChunkMap chunkMap)
++                        ? chunkMap.level.spigotConfig.belowZeroGenerationInExistingChunks
++                        : org.spigotmc.SpigotConfig.belowZeroGenerationInExistingChunks;
++                    if (version <= 2730 && !belowZeroGenerationInExistingChunks) {
++                        stopBelowZero = "full".equals(chunkTag.getCompound("Level").flatMap(level -> level.getString("Status")).orElse(null));
++                    }
++                }
++                // Spigot end
+                 injectDatafixingContext(chunkTag, dataFixContextTag);
+                 chunkTag = this.dataFixType.update(this.fixerUpper, chunkTag, version, targetVersion);
++                // Spigot start
++                if (stopBelowZero) {
++                    chunkTag.putString("Status", net.minecraft.core.registries.BuiltInRegistries.CHUNK_STATUS.getKey(net.minecraft.world.level.chunk.status.ChunkStatus.SPAWN).toString());
++                }
++                // Spigot end
+                 removeDatafixingContext(chunkTag);
+                 NbtUtils.addDataVersion(chunkTag, targetVersion);
+                 return chunkTag;

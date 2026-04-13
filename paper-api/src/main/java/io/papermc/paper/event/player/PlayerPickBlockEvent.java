@@ -13,6 +13,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 public class PlayerPickBlockEvent extends PlayerPickItemEvent {
+
     private final Block block;
 
     @ApiStatus.Internal

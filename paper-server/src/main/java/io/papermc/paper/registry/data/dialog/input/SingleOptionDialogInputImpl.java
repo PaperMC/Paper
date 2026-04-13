@@ -5,7 +5,7 @@ import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.minecraft.commands.functions.StringTemplate;
 import net.minecraft.server.dialog.body.PlainMessage;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record SingleOptionDialogInputImpl(
     String key,
@@ -32,9 +32,10 @@ public record SingleOptionDialogInputImpl(
 
         public BuilderImpl(final String key, final List<OptionEntry> entries, final Component label) {
             Preconditions.checkArgument(StringTemplate.isValidVariableName(key), "key must be a valid input name");
-            this.key = key;
             Preconditions.checkArgument(!entries.isEmpty(), "entries must not be empty");
             Preconditions.checkArgument(entries.stream().filter(OptionEntry::initial).count() <= 1, "only 1 option can be initially selected");
+
+            this.key = key;
             this.entries = entries;
             this.label = label;
         }

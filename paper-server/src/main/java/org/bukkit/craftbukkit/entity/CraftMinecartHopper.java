@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.vehicle.MinecartHopper;
+import net.minecraft.world.entity.vehicle.minecart.MinecartHopper;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.entity.minecart.HopperMinecart;
@@ -16,8 +16,8 @@ public class CraftMinecartHopper extends CraftMinecartContainer implements Hoppe
     }
 
     @Override
-    public net.minecraft.world.entity.vehicle.MinecartHopper getHandle() {
-        return (net.minecraft.world.entity.vehicle.MinecartHopper) this.entity;
+    public net.minecraft.world.entity.vehicle.minecart.MinecartHopper getHandle() {
+        return (net.minecraft.world.entity.vehicle.minecart.MinecartHopper) this.entity;
     }
 
     @Override

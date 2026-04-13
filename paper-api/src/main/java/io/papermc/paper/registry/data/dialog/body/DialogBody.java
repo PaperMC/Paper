@@ -58,7 +58,7 @@ public sealed interface DialogBody permits ItemDialogBody, PlainMessageDialogBod
      * @param contents the contents of the message
      * @return a new plain message body instance
      */
-    @Contract(pure = true, value = "_, -> new")
+    @Contract(pure = true, value = "_ -> new")
     static PlainMessageDialogBody plainMessage(final Component contents) {
         return DialogInstancesProvider.instance().plainMessageDialogBody(contents);
     }

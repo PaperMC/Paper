@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/entity/animal/armadillo/Armadillo.java
 +++ b/net/minecraft/world/entity/animal/armadillo/Armadillo.java
-@@ -143,10 +_,12 @@
+@@ -145,10 +_,12 @@
          ArmadilloAi.updateActivity(this);
-         profilerFiller.pop();
-         if (this.isAlive() && !this.isBaby() && --this.scuteTime <= 0) {
+         profiler.pop();
+         if (this.isAlive() && --this.scuteTime <= 0 && this.shouldDropLoot(level)) {
 +            this.forceDrops = true; // CraftBukkit
              if (this.dropFromGiftLootTable(level, BuiltInLootTables.ARMADILLO_SHED, this::spawnAtLocation)) {
                  this.playSound(SoundEvents.ARMADILLO_SCUTE_DROP, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
@@ -13,21 +13,21 @@
  
              this.scuteTime = this.pickNextScuteDropTime();
          }
-@@ -283,8 +_,11 @@
+@@ -285,8 +_,11 @@
      }
  
      @Override
--    protected void actuallyHurt(ServerLevel level, DamageSource damageSource, float amount) {
--        super.actuallyHurt(level, damageSource, amount);
+-    protected void actuallyHurt(final ServerLevel level, final DamageSource source, final float dmg) {
+-        super.actuallyHurt(level, source, dmg);
 +    // CraftBukkit start - void -> boolean
-+    public boolean actuallyHurt(ServerLevel level, DamageSource damageSource, float amount, org.bukkit.event.entity.EntityDamageEvent event) {
-+        boolean damageResult = super.actuallyHurt(level, damageSource, amount, event);
++    public boolean actuallyHurt(final ServerLevel level, final DamageSource source, final float dmg, org.bukkit.event.entity.EntityDamageEvent event) {
++        boolean damageResult = super.actuallyHurt(level, source, dmg, event);
 +        if (!damageResult) return false;
 +        // CraftBukkit end
          if (!this.isNoAi() && !this.isDeadOrDying()) {
-             if (damageSource.getEntity() instanceof LivingEntity) {
+             if (source.getEntity() instanceof LivingEntity) {
                  this.getBrain().setMemoryWithExpiry(MemoryModuleType.DANGER_DETECTED_RECENTLY, true, 80L);
-@@ -295,6 +_,7 @@
+@@ -297,6 +_,7 @@
                  this.rollOut();
              }
          }
@@ -35,13 +35,13 @@
      }
  
      @Override
-@@ -313,7 +_,9 @@
+@@ -315,7 +_,9 @@
              return false;
          } else {
-             if (this.level() instanceof ServerLevel serverLevel) {
+             if (this.level() instanceof ServerLevel level) {
 +                this.forceDrops = true; // CraftBukkit
-                 this.spawnAtLocation(serverLevel, new ItemStack(Items.ARMADILLO_SCUTE));
+                 this.dropFromEntityInteractLootTable(level, BuiltInLootTables.ARMADILLO_BRUSH, interactingEntity, tool, this::spawnAtLocation);
 +                this.forceDrops = false; // CraftBukkit
-                 this.gameEvent(GameEvent.ENTITY_INTERACT);
                  this.playSound(SoundEvents.ARMADILLO_BRUSH);
+                 this.gameEvent(GameEvent.ENTITY_INTERACT);
              }

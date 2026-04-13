@@ -3,8 +3,9 @@ package org.bukkit.potion;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.Lists;
 import java.util.Locale;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Color;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -168,7 +169,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
     public static final PotionEffectType CONDUIT_POWER = getPotionEffectType(29, "conduit_power");
 
     /**
-     * Increses underwater movement speed.<br>
+     * Increases underwater movement speed.<br>
      * Squee'ek uh'k kk'kkkk squeek eee'eek.
      */
     public static final PotionEffectType DOLPHINS_GRACE = getPotionEffectType(30, "dolphins_grace");
@@ -220,9 +221,14 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      */
     public static final PotionEffectType INFESTED = getPotionEffectType(39, "infested");
 
+    /**
+     * Prevent the oxygen bar from depleting underwater.
+     */
+    public static final PotionEffectType BREATH_OF_THE_NAUTILUS = getPotionEffectType(40, "breath_of_the_nautilus");
+
     @NotNull
-    private static PotionEffectType getPotionEffectType(int typeId, @NotNull String key) {
-        PotionEffectType potionEffectType = Registry.EFFECT.getOrThrow(NamespacedKey.minecraft(key));
+    private static PotionEffectType getPotionEffectType(int typeId, @NotNull @KeyPattern.Value String key) {
+        PotionEffectType potionEffectType = Registry.MOB_EFFECT.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
 
         if (typeId > 0) {
             ID_MAP.put(typeId, potionEffectType);
@@ -237,7 +243,6 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * @param duration time in ticks
      * @param amplifier the effect's amplifier
      * @return a resulting potion effect
-     * @see PotionBrewer#createEffect(PotionEffectType, int, int)
      */
     @NotNull
     public abstract PotionEffect createEffect(int duration, int amplifier);
@@ -308,7 +313,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
             return null;
         }
 
-        return Registry.EFFECT.get(key);
+        return Registry.MOB_EFFECT.get(key);
     }
 
     /**
@@ -327,7 +332,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
             return type;
         }
 
-        for (PotionEffectType other : Registry.EFFECT) {
+        for (PotionEffectType other : Registry.MOB_EFFECT) {
             if (other.getId() == id) {
                 ID_MAP.put(id, other);
                 return other;
@@ -348,17 +353,21 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
     @Deprecated(since = "1.20.3")
     public static PotionEffectType getByName(@NotNull String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
-        return Registry.EFFECT.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        if (key == null) {
+            return null;
+        }
+        return Registry.MOB_EFFECT.get(key);
     }
 
     /**
      * @return an array of all known PotionEffectTypes.
-     * @deprecated use {@link Registry#iterator()}.
+     * @deprecated use {@link Registry#stream()}.
      */
     @NotNull
     @Deprecated(since = "1.20.3")
     public static PotionEffectType[] values() {
-        return Lists.newArrayList(Registry.EFFECT).toArray(new PotionEffectType[0]);
+        return Registry.MOB_EFFECT.stream().toArray(PotionEffectType[]::new);
     }
 
     // Paper start

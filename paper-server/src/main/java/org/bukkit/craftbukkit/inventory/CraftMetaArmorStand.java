@@ -7,14 +7,14 @@ import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.TypedEntityData;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaArmorStand extends CraftMetaItem implements com.destroystokyo.paper.inventory.meta.ArmorStandMeta {
 
-    static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
+    static final ItemMetaKeyType<TypedEntityData<EntityType<?>>> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
 
     static final ItemMetaKey ENTITY_ID = new ItemMetaKey("id", "entity-id");
     static final ItemMetaKey INVISIBLE = new ItemMetaKey("Invisible", "invisible");
@@ -36,11 +36,11 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
         this.entityTag = armorStand.entityTag;
     }
 
-    CraftMetaArmorStand(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaArmorStand(DataComponentPatch patch, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaArmorStand.ENTITY_TAG).ifPresent((nbt) -> {
-            this.entityTag = nbt.copyTag();
+        getOrEmpty(patch, CraftMetaArmorStand.ENTITY_TAG).ifPresent((entityData) -> {
+            this.entityTag = entityData.copyTagWithEntityId();
         });
     }
 
@@ -98,7 +98,7 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
         super.applyToItem(tag);
 
         if (this.entityTag != null) {
-            tag.put(CraftMetaArmorStand.ENTITY_TAG, CustomData.of(this.entityTag));
+            tag.put(CraftMetaArmorStand.ENTITY_TAG, TypedEntityData.decodeEntity(this.entityTag));
         }
     }
 

@@ -1,36 +1,36 @@
 --- a/net/minecraft/world/entity/animal/wolf/Wolf.java
 +++ b/net/minecraft/world/entity/animal/wolf/Wolf.java
-@@ -399,16 +_,18 @@
-         if (this.isInvulnerableTo(level, damageSource)) {
+@@ -396,16 +_,18 @@
+         if (this.isInvulnerableTo(level, source)) {
              return false;
          } else {
-+            if (!super.hurtServer(level, damageSource, amount)) return false; // CraftBukkit
++            if (!super.hurtServer(level, source, damage)) return false; // CraftBukkit
              this.setOrderedToSit(false);
--            return super.hurtServer(level, damageSource, amount);
+-            return super.hurtServer(level, source, damage);
 +            return true; // CraftBukkit
          }
      }
  
      @Override
--    protected void actuallyHurt(ServerLevel level, DamageSource damageSource, float amount) {
-+    public boolean actuallyHurt(ServerLevel level, DamageSource damageSource, float amount, org.bukkit.event.entity.EntityDamageEvent event) { // CraftBukkit - void -> boolean
-         if (!this.canArmorAbsorb(damageSource)) {
--            super.actuallyHurt(level, damageSource, amount);
-+            return super.actuallyHurt(level, damageSource, amount, event); // CraftBukkit
+-    protected void actuallyHurt(final ServerLevel level, final DamageSource source, final float damage) {
++    public boolean actuallyHurt(final ServerLevel level, final DamageSource source, final float damage, final org.bukkit.event.entity.EntityDamageEvent event) { // CraftBukkit - void -> boolean
+         if (!this.canArmorAbsorb(source)) {
+-            super.actuallyHurt(level, source, damage);
++            return super.actuallyHurt(level, source, damage, event); // CraftBukkit
          } else {
 +            if (event.isCancelled()) return false; // CraftBukkit - SPIGOT-7815: if the damage was cancelled, no need to run the wolf armor behaviour
-             ItemStack bodyArmorItem = this.getBodyArmorItem();
-             int damageValue = bodyArmorItem.getDamageValue();
-             int maxDamage = bodyArmorItem.getMaxDamage();
-@@ -428,6 +_,7 @@
+             ItemStack armorBefore = this.getBodyArmorItem();
+             int damageBefore = armorBefore.getDamageValue();
+             int maxDamage = armorBefore.getMaxDamage();
+@@ -417,6 +_,7 @@
                  );
              }
          }
 +        return true; // CraftBukkit // Paper - return false ONLY if event was cancelled
      }
  
-     private boolean canArmorAbsorb(DamageSource damageSource) {
-@@ -438,7 +_,7 @@
+     private boolean canArmorAbsorb(final DamageSource source) {
+@@ -427,7 +_,7 @@
      protected void applyTamingSideEffects() {
          if (this.isTame()) {
              this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(40.0);
@@ -39,16 +39,7 @@
          } else {
              this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(8.0);
          }
-@@ -463,7 +_,7 @@
-                 this.usePlayerItem(player, hand, itemInHand);
-                 FoodProperties foodProperties = itemInHand.get(DataComponents.FOOD);
-                 float f = foodProperties != null ? foodProperties.nutrition() : 1.0F;
--                this.heal(2.0F * f);
-+                this.heal(2.0F * f, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
-                 return InteractionResult.SUCCESS;
-             }
- 
-@@ -492,7 +_,7 @@
+@@ -477,7 +_,7 @@
                      this.setOrderedToSit(!this.isOrderedToSit());
                      this.jumping = false;
                      this.navigation.stop();
@@ -57,26 +48,38 @@
                      return InteractionResult.SUCCESS.withoutItem();
                  }
  
-@@ -501,6 +_,13 @@
+@@ -486,6 +_,25 @@
  
-             DyeColor dyeColor = dyeItem.getDyeColor();
-             if (dyeColor != this.getCollarColor()) {
+             DyeColor color = itemStack.get(DataComponents.DYE);
+             if (color != null && color != this.getCollarColor()) {
 +                // Paper start - Add EntityDyeEvent and CollarColorable interface
-+                final io.papermc.paper.event.entity.EntityDyeEvent event = new io.papermc.paper.event.entity.EntityDyeEvent(this.getBukkitEntity(), org.bukkit.DyeColor.getByWoolData((byte) dyeColor.getId()), (org.bukkit.entity.Player) player.getBukkitEntity());
++                final DyeColor originalColor = color;
++                final io.papermc.paper.event.entity.EntityDyeEvent event = new io.papermc.paper.event.entity.EntityDyeEvent(this.getBukkitEntity(), org.bukkit.DyeColor.getByWoolData((byte) color.getId()), (org.bukkit.entity.Player) player.getBukkitEntity());
 +                if (!event.callEvent()) {
++                    if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
++                        this.resendPossiblyDesyncedDataValues(java.util.List.of(DATA_COLLAR_COLOR), serverPlayer);
++                    }
++                    if (!player.hasInfiniteMaterials()) {
++                        player.containerMenu.forceHeldSlot(hand);
++                    }
 +                    return InteractionResult.FAIL;
 +                }
-+                dyeColor = DyeColor.byId(event.getColor().getWoolData());
++                color = DyeColor.byId(event.getColor().getWoolData());
++                if (originalColor != color) {
++                    if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
++                        this.resendPossiblyDesyncedDataValues(java.util.List.of(DATA_COLLAR_COLOR), serverPlayer);
++                    }
++                }
 +                // Paper end - Add EntityDyeEvent and CollarColorable interface
-                 this.setCollarColor(dyeColor);
-                 itemInHand.consume(1, player);
+                 this.setCollarColor(color);
+                 itemStack.consume(1, player);
                  return InteractionResult.SUCCESS;
-@@ -515,7 +_,7 @@
+@@ -500,7 +_,7 @@
      }
  
-     private void tryToTame(Player player) {
+     private void tryToTame(final Player player) {
 -        if (this.random.nextInt(3) == 0) {
-+        if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit - added event call and isCancelled check.
++        if (this.random.nextInt(3) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit - added event call
              this.tame(player);
              this.navigation.stop();
              this.setTarget(null);

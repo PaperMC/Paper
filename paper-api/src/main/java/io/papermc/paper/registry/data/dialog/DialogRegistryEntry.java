@@ -63,9 +63,9 @@ public interface DialogRegistryEntry {
         Builder base(DialogBase dialogBase);
 
         /**
-         * Sets the specialty dialog for this entry.
+         * Sets the type of dialog for this entry.
          *
-         * @param dialogType the specialty dialog
+         * @param dialogType the type of dialog
          * @return this builder instance
          * @see DialogRegistryEntry#type()
          */

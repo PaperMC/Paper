@@ -4,8 +4,8 @@ import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A number range dialog input.
@@ -103,7 +103,7 @@ public non-sealed interface NumberRangeDialogInput extends DialogInput {
          * @param initial the initial value, or null if not set
          * @return this builder
          */
-        @Contract(value = "_ -> this", pure = true)
+        @Contract(value = "_ -> this", mutates = "this")
         Builder initial(@Nullable Float initial);
 
         /**
@@ -112,7 +112,7 @@ public non-sealed interface NumberRangeDialogInput extends DialogInput {
          * @param step the step size, or null if not set
          * @return this builder
          */
-        @Contract(value = "_ -> this", pure = true)
+        @Contract(value = "_ -> this", mutates = "this")
         Builder step(@Positive @Nullable Float step);
 
         /**

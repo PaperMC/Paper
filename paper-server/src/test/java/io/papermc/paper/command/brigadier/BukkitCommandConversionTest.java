@@ -13,7 +13,6 @@ import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.support.RegistryHelper;
-import org.bukkit.support.environment.AllFeatures;
 import org.bukkit.support.environment.Normal;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -33,7 +32,7 @@ public class BukkitCommandConversionTest {
         CommandSourceStack object = Mockito.mock(CommandSourceStack.class);
         Mockito.when(object.getLocation()).thenReturn(new Location(null, 0, 0, 0));;
 
-        CommandDispatcher dispatcher = RegistryHelper.getDataPack().commands.getDispatcher();
+        CommandDispatcher dispatcher = RegistryHelper.context().datapack().commands.getDispatcher();
         dispatcher.setConsumer((context, success, result) -> {});
         CommandMap commandMap = new SimpleCommandMap(Bukkit.getServer(), new BukkitBrigForwardingMap());
         Map<String, Command> stringCommandMap = commandMap.getKnownCommands();

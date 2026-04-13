@@ -2,6 +2,7 @@ package io.papermc.paper.registry.data.dialog.input;
 
 import io.papermc.paper.registry.data.dialog.DialogInstancesProvider;
 import net.kyori.adventure.text.Component;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
@@ -52,7 +53,7 @@ public non-sealed interface TextDialogInput extends DialogInput {
      * @return the label format
      */
     @Contract(pure = true)
-    @Range(from = 1, to = Integer.MAX_VALUE) int maxLength();
+    @Positive int maxLength();
 
     /**
      * The multiline options for the input, or null if not set.
@@ -76,7 +77,7 @@ public non-sealed interface TextDialogInput extends DialogInput {
          * @return a new MultilineOptions instance
          */
         static MultilineOptions create(
-            final @Range(from = 1, to = Integer.MAX_VALUE) @Nullable Integer maxLines,
+            final @Positive @Nullable Integer maxLines,
             final @Range(from = 1, to = 512) @Nullable Integer height
         ) {
             return DialogInstancesProvider.instance().multilineOptions(maxLines, height);
@@ -88,7 +89,7 @@ public non-sealed interface TextDialogInput extends DialogInput {
          * @return the maximum number of lines, or null if not set
          */
         @Contract(pure = true)
-        @Nullable Integer maxLines();
+        @Positive @Nullable Integer maxLines();
 
         /**
          * Gets the height of the input.
@@ -96,7 +97,7 @@ public non-sealed interface TextDialogInput extends DialogInput {
          * @return the height of the input, or null if not set
          */
         @Contract(pure = true)
-        @Nullable Integer height();
+        @Range(from = 1, to = 512) @Nullable Integer height();
     }
 
     /**
@@ -140,12 +141,12 @@ public non-sealed interface TextDialogInput extends DialogInput {
          * @return this builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder maxLength(final @Range(from = 1, to = Integer.MAX_VALUE) int maxLength);
+        Builder maxLength(final @Positive int maxLength);
 
         /**
          * Sets the multiline options for the input.
          *
-         * @param multiline the multiline options
+         * @param multiline the multiline options, or null if not set
          * @return this builder
          */
         @Contract(value = "_ -> this", mutates = "this")

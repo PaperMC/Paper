@@ -1,0 +1,44 @@
+--- a/net/minecraft/world/item/component/TypedEntityData.java
++++ b/net/minecraft/world/item/component/TypedEntityData.java
+@@ -84,6 +_,32 @@
+         this.tag = stripId(data);
+     }
+ 
++    // Paper start - utils for item meta
++    public static <IdType> TypedEntityData<IdType> decode(final Codec<IdType> idTypeCodec, final CompoundTag tag) {
++        return codec(idTypeCodec).decode(net.minecraft.nbt.NbtOps.INSTANCE, tag).result().orElseThrow().getFirst();
++    }
++
++    public static TypedEntityData<EntityType<?>> decodeEntity(final CompoundTag tag) {
++        return decode(net.minecraft.world.entity.EntityType.CODEC, tag);
++    }
++
++    public static TypedEntityData<net.minecraft.world.level.block.entity.BlockEntityType<?>> decodeBlockEntity(final CompoundTag tag) {
++        return decode(net.minecraft.core.registries.BuiltInRegistries.BLOCK_ENTITY_TYPE.byNameCodec(), tag);
++    }
++
++    public CompoundTag copyTagWithEntityId() {
++        final CompoundTag tag = this.tag.copy();
++        tag.putString("id", EntityType.getKey((EntityType<?>) this.type).toString());
++        return tag;
++    }
++
++    public CompoundTag copyTagWithBlockEntityId() {
++        final CompoundTag tag = this.tag.copy();
++        tag.putString("id", net.minecraft.core.registries.BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey((net.minecraft.world.level.block.entity.BlockEntityType<?>) this.type).toString());
++        return tag;
++    }
++    // Paper end - utils for item meta
++
+     public static <T> TypedEntityData<T> of(final T type, final CompoundTag data) {
+         return new TypedEntityData<>(type, data);
+     }
+@@ -182,7 +_,7 @@
+     ) {
+         if (this.type.getClass() == EntityType.class) {
+             EntityType<?> type = (EntityType<?>)this.type;
+-            if (context.isPeaceful() && !type.isAllowedInPeaceful()) {
++            if (context.isPeaceful() && !type.isTypeAllowedInPeaceful()) { // Paper - do not check entity data for peaceful override - match client as close as possible for compute tooltip api
+                 consumer.accept(Component.translatable("item.spawn_egg.peaceful").withStyle(ChatFormatting.RED));
+             }
+         }

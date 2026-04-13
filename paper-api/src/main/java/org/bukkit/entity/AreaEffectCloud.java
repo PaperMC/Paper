@@ -20,14 +20,14 @@ public interface AreaEffectCloud extends Entity {
     /**
      * Gets the duration which this cloud will exist for (in ticks).
      *
-     * @return cloud duration
+     * @return cloud duration or {@link PotionEffect#INFINITE_DURATION} for no duration
      */
     int getDuration();
 
     /**
      * Sets the duration which this cloud will exist for (in ticks).
      *
-     * @param duration cloud duration
+     * @param duration cloud duration or {@link PotionEffect#INFINITE_DURATION} for no duration
      */
     void setDuration(int duration);
 
@@ -213,7 +213,7 @@ public interface AreaEffectCloud extends Entity {
      * Removes a custom potion effect from this cloud.
      *
      * @param type the potion effect type to remove
-     * @return true if the an effect was removed as a result of this call
+     * @return true if the effect was removed as a result of this call
      */
     boolean removeCustomEffect(@NotNull PotionEffectType type);
 

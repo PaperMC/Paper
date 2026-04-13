@@ -1,12 +1,11 @@
 --- a/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-@@ -110,6 +_,53 @@
+@@ -111,6 +_,51 @@
              return 3;
          }
      };
 +    // CraftBukkit start - add fields and methods
-+    @Nullable
-+    public org.bukkit.potion.PotionEffect getPrimaryEffect() {
++    public org.bukkit.potion.@Nullable PotionEffect getPrimaryEffect() {
 +        return (this.primaryPower != null)
 +            ? org.bukkit.craftbukkit.potion.CraftPotionUtil.toBukkit(new MobEffectInstance(
 +                this.primaryPower,
@@ -18,8 +17,7 @@
 +            : null;
 +    }
 +
-+    @Nullable
-+    public org.bukkit.potion.PotionEffect getSecondaryEffect() {
++    public org.bukkit.potion.@Nullable PotionEffect getSecondaryEffect() {
 +        return (BeaconBlockEntity.hasSecondaryEffect(this.levels, this.primaryPower, this.secondaryPower))
 +            ? org.bukkit.craftbukkit.potion.CraftPotionUtil.toBukkit(new MobEffectInstance(
 +                this.secondaryPower,
@@ -52,38 +50,30 @@
 +    }
 +    // Paper end - Custom beacon ranges
  
-     @Nullable
-     static Holder<MobEffect> filterEffect(@Nullable Holder<MobEffect> effect) {
-@@ -167,17 +_,26 @@
-             blockEntity.lastCheckY++;
-         }
- 
--        int i = blockEntity.levels;
-+        int i = blockEntity.levels; final int originalLevels = i; // Paper - OBFHELPER
-         if (level.getGameTime() % 80L == 0L) {
-             if (!blockEntity.beamSections.isEmpty()) {
-                 blockEntity.levels = updateBase(level, x, y, z);
+     private static @Nullable Holder<MobEffect> filterEffect(final @Nullable Holder<MobEffect> effect) {
+         return VALID_EFFECTS.contains(effect) ? effect : null;
+@@ -174,10 +_,19 @@
              }
  
-             if (blockEntity.levels > 0 && !blockEntity.beamSections.isEmpty()) {
--                applyEffects(level, pos, blockEntity.levels, blockEntity.primaryPower, blockEntity.secondaryPower);
-+                applyEffects(level, pos, blockEntity.levels, blockEntity.primaryPower, blockEntity.secondaryPower, blockEntity); // Paper - Custom beacon ranges
+             if (entity.levels > 0 && !entity.beamSections.isEmpty()) {
+-                applyEffects(level, pos, entity.levels, entity.primaryPower, entity.secondaryPower);
++                applyEffects(level, pos, entity.levels, entity.primaryPower, entity.secondaryPower, entity); // Paper - Custom beacon ranges
                  playSound(level, pos, SoundEvents.BEACON_AMBIENT);
              }
          }
 +        // Paper start - beacon activation/deactivation events
-+        if (originalLevels <= 0 && blockEntity.levels > 0) {
++        if (previousLevels <= 0 && entity.levels > 0) {
 +            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +            new io.papermc.paper.event.block.BeaconActivatedEvent(block).callEvent();
-+        } else if (originalLevels > 0 && blockEntity.levels <= 0) {
++        } else if (previousLevels > 0 && entity.levels <= 0) {
 +            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +            new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
 +        }
 +        // Paper end - beacon activation/deactivation events
  
-         if (blockEntity.lastCheckY >= height) {
-             blockEntity.lastCheckY = level.getMinY() - 1;
-@@ -228,35 +_,100 @@
+         if (entity.lastCheckY >= lastSetBlock) {
+             entity.lastCheckY = level.getMinY() - 1;
+@@ -228,7 +_,15 @@
  
      @Override
      public void setRemoved() {
@@ -99,46 +89,40 @@
          super.setRemoved();
      }
  
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - pass beacon block entity
-     private static void applyEffects(
-         Level level, BlockPos pos, int beaconLevel, @Nullable Holder<MobEffect> primaryEffect, @Nullable Holder<MobEffect> secondaryEffect
+@@ -238,29 +_,78 @@
+         final int levels,
+         final @Nullable Holder<MobEffect> primaryPower,
+         final @Nullable Holder<MobEffect> secondaryPower
++        , final BeaconBlockEntity entity // Paper - pass beacon block entity
      ) {
-+        // Paper start - pass beacon block entity
-+        applyEffects(level, pos, beaconLevel, primaryEffect, secondaryEffect, null);
-+    }
-+
-+    private static void applyEffects(
-+        Level level, BlockPos pos, int beaconLevel, @Nullable Holder<MobEffect> primaryEffect, @Nullable Holder<MobEffect> secondaryEffect, @Nullable BeaconBlockEntity blockEntity
-+    ) {
-+        // Paper end - pass beacon block entity
-         if (!level.isClientSide && primaryEffect != null) {
--            double d = beaconLevel * 10 + 10;
--            int i = 0;
--            if (beaconLevel >= 4 && Objects.equals(primaryEffect, secondaryEffect)) {
--                i = 1;
+         if (!level.isClientSide() && primaryPower != null) {
+-            double range = levels * 10 + 10;
+-            int baseAmp = 0;
+-            if (levels >= 4 && Objects.equals(primaryPower, secondaryPower)) {
+-                baseAmp = 1;
 -            }
 -
--            int i1 = (9 + beaconLevel * 2) * 20;
--            AABB aabb = new AABB(pos).inflate(d).expandTowards(0.0, level.getHeight(), 0.0);
--            List<Player> entitiesOfClass = level.getEntitiesOfClass(Player.class, aabb);
+-            int durationTicks = (9 + levels * 2) * 20;
+-            AABB bb = new AABB(worldPosition).inflate(range).expandTowards(0.0, level.getHeight(), 0.0);
+-            List<Player> players = level.getEntitiesOfClass(Player.class, bb);
 -
--            for (Player player : entitiesOfClass) {
--                player.addEffect(new MobEffectInstance(primaryEffect, i1, i, true, true));
+-            for (Player player : players) {
+-                player.addEffect(new MobEffectInstance(primaryPower, durationTicks, baseAmp, true, true));
 -            }
 -
--            if (beaconLevel >= 4 && !Objects.equals(primaryEffect, secondaryEffect) && secondaryEffect != null) {
--                for (Player player : entitiesOfClass) {
--                    player.addEffect(new MobEffectInstance(secondaryEffect, i1, 0, true, true));
-+            double d = computeBeaconRange(beaconLevel); // Paper - diff out applyEffects logic components - see below
-+            int i = computeEffectAmplifier(beaconLevel, primaryEffect, secondaryEffect); // Paper - diff out applyEffects logic components - see below
+-            if (levels >= 4 && !Objects.equals(primaryPower, secondaryPower) && secondaryPower != null) {
+-                for (Player player : players) {
+-                    player.addEffect(new MobEffectInstance(secondaryPower, durationTicks, 0, true, true));
++            double range = computeBeaconRange(levels); // Paper - diff out applyEffects logic components - see below
++            int baseAmp = computeEffectAmplifier(levels, primaryPower, secondaryPower); // Paper - diff out applyEffects logic components - see below
 +
-+            int i1 = computeEffectDuration(beaconLevel); // Paper - diff out applyEffects logic components - see below
-+            List<Player> entitiesOfClass = getHumansInRange(level, pos, beaconLevel, blockEntity); // Paper - diff out applyEffects logic components - see below
++            int durationTicks = computeEffectDuration(levels); // Paper - diff out applyEffects logic components - see below
++            List<Player> players = getHumansInRange(level, worldPosition, levels, entity); // Paper - diff out applyEffects logic components - see below
 +
-+            applyEffectsAndCallEvent(level, pos, entitiesOfClass, new MobEffectInstance(primaryEffect, i1, i, true, true), true); // Paper - BeaconEffectEvent
++            applyEffectsAndCallEvent(level, worldPosition, players, new MobEffectInstance(primaryPower, durationTicks, baseAmp, true, true), true); // Paper - BeaconEffectEvent
 +
-+            if (hasSecondaryEffect(beaconLevel, primaryEffect, secondaryEffect)) { // Paper - diff out applyEffects logic components - see below
-+                applyEffectsAndCallEvent(level, pos, entitiesOfClass, new MobEffectInstance(secondaryEffect, i1, 0, true, true), false); // Paper - BeaconEffectEvent
++            if (hasSecondaryEffect(levels, primaryPower, secondaryPower)) { // Paper - diff out applyEffects logic components - see below
++                applyEffectsAndCallEvent(level, worldPosition, players, new MobEffectInstance(secondaryPower, durationTicks, 0, true, true), false); // Paper - BeaconEffectEvent
 +            }
 +        }
 +    }
@@ -150,11 +134,11 @@
 +    }
 +
 +    private static int computeEffectAmplifier(final int beaconLevel, @Nullable Holder<MobEffect> primaryEffect, @Nullable Holder<MobEffect> secondaryEffect) {
-+        int i = 0;
++        int baseAmp = 0;
 +        if (beaconLevel >= 4 && Objects.equals(primaryEffect, secondaryEffect)) {
-+            i = 1;
++            baseAmp = 1;
 +        }
-+        return i;
++        return baseAmp;
 +    }
 +
 +    private static double computeBeaconRange(final int beaconLevel) {
@@ -162,11 +146,11 @@
 +    }
 +
 +    public static List<Player> getHumansInRange(final Level level, final BlockPos pos, final int beaconLevel, final @Nullable BeaconBlockEntity blockEntity) {
-+        final double d = blockEntity != null ? blockEntity.getEffectRange() : computeBeaconRange(beaconLevel);
-+        AABB aabb = new AABB(pos).inflate(d).expandTowards(0.0, level.getHeight(), 0.0); // Diff from applyEffects
++        final double range = blockEntity != null ? blockEntity.getEffectRange() : computeBeaconRange(beaconLevel);
++        AABB aabb = new AABB(pos).inflate(range).expandTowards(0.0, level.getHeight(), 0.0); // Diff from applyEffects
 +        // Improve performance of human lookup by switching to a global player iteration when searching over 128 blocks
 +        List<Player> list;
-+        if (d <= 128.0) {
++        if (range <= 128.0) {
 +            list = level.getEntitiesOfClass(Player.class, aabb); // Diff from applyEffect
 +        } else {
 +            list = new java.util.ArrayList<>();
@@ -200,18 +184,18 @@
 +    }
 +    // Paper end - BeaconEffectEvent
  
-     public static void playSound(Level level, BlockPos pos, SoundEvent sound) {
-         level.playSound(null, pos, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
-@@ -285,7 +_,7 @@
+     public static void playSound(final Level level, final BlockPos worldPosition, final SoundEvent event) {
+         level.playSound(null, worldPosition, event, SoundSource.BLOCKS, 1.0F, 1.0F);
+@@ -288,7 +_,7 @@
+     }
  
-     @Nullable
-     private static Holder<MobEffect> loadEffect(ValueInput input, String key) {
--        return input.read(key, BuiltInRegistries.MOB_EFFECT.holderByNameCodec()).filter(VALID_EFFECTS::contains).orElse(null);
-+        return input.read(key, BuiltInRegistries.MOB_EFFECT.holderByNameCodec()).orElse(null); // CraftBukkit - persist manually set non-default beacon effects (SPIGOT-3598)
+     private static @Nullable Holder<MobEffect> loadEffect(final ValueInput input, final String field) {
+-        return input.read(field, BuiltInRegistries.MOB_EFFECT.holderByNameCodec()).filter(VALID_EFFECTS::contains).orElse(null);
++        return input.read(field, BuiltInRegistries.MOB_EFFECT.holderByNameCodec()).orElse(null); // CraftBukkit - persist manually set non-default beacon effects (SPIGOT-3598)
      }
  
      @Override
-@@ -293,8 +_,10 @@
+@@ -296,8 +_,10 @@
          super.loadAdditional(input);
          this.primaryPower = loadEffect(input, "primary_effect");
          this.secondaryPower = loadEffect(input, "secondary_effect");
@@ -222,20 +206,20 @@
      }
  
      @Override
-@@ -305,6 +_,7 @@
+@@ -308,6 +_,7 @@
          output.putInt("Levels", this.levels);
          output.storeNullable("CustomName", ComponentSerialization.CODEC, this.name);
          this.lockKey.addToTag(output);
 +        output.putDouble(PAPER_RANGE_TAG, this.effectRange); // Paper - Custom beacon ranges
      }
  
-     public void setCustomName(@Nullable Component name) {
-@@ -320,7 +_,7 @@
-     @Nullable
+     public void setCustomName(final @Nullable Component name) {
+@@ -321,7 +_,7 @@
+ 
      @Override
-     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
--        return BaseContainerBlockEntity.canUnlock(player, this.lockKey, this.getDisplayName())
-+        return BaseContainerBlockEntity.canUnlock(player, this.lockKey, this.getDisplayName(), this) // Paper - Add BlockLockCheckEvent
-             ? new BeaconMenu(containerId, playerInventory, this.dataAccess, ContainerLevelAccess.create(this.level, this.getBlockPos()))
-             : null;
-     }
+     public @Nullable AbstractContainerMenu createMenu(final int containerId, final Inventory inventory, final Player player) {
+-        if (this.lockKey.canUnlock(player)) {
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockLockCheckEvent(this, this.lockKey, this.getDisplayName(), player)) { // Paper - Call BlockLockCheckEvent
+             return new BeaconMenu(containerId, inventory, this.dataAccess, ContainerLevelAccess.create(this.level, this.getBlockPos()));
+         } else {
+             BaseContainerBlockEntity.sendChestLockedNotifications(this.getBlockPos().getCenter(), player, this.getDisplayName());

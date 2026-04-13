@@ -77,7 +77,10 @@ public class InventoryCloseEvent extends InventoryEvent {
         UNKNOWN,
         /**
          * Player is teleporting
+         *
+         * @deprecated As of 1.21.10, this is not called anymore as inventories are not closed on teleportation.
          */
+        @Deprecated(since = "1.21.10")
         TELEPORT,
         /**
          * Player is no longer permitted to use this inventory

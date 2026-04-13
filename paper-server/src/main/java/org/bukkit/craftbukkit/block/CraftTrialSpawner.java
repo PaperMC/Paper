@@ -143,19 +143,23 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
 
     @Override
     public boolean isOminous() {
-        return this.getHandle().getValue(TrialSpawnerBlock.OMINOUS);
+        return this.block.getValueOrElse(TrialSpawnerBlock.OMINOUS, false);
     }
 
     @Override
     public void setOminous(boolean ominous) {
+        if (!this.block.hasProperty(TrialSpawnerBlock.OMINOUS)) {
+            return; // block data changed
+        }
+
         this.getSnapshot().trialSpawner.isOminous = ominous;
         if (ominous) {
-            this.setData(this.getHandle().setValue(TrialSpawnerBlock.OMINOUS, true));
+            this.block = this.block.setValue(TrialSpawnerBlock.OMINOUS, true);
             // TODO: Consider calling TrialSpawnerData#resetAfterBecomingOminous in update(...), but note that method also removes entities
             return;
         }
 
-        this.setData(this.getHandle().setValue(TrialSpawnerBlock.OMINOUS, false));
+        this.block = this.block.setValue(TrialSpawnerBlock.OMINOUS, false);
     }
 
     @Override

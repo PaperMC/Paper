@@ -82,12 +82,12 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
     private static boolean isInteractable(Block block) {
         Class<?> clazz = block.getClass();
 
-        boolean hasMethod = CraftBlockType.hasMethod(clazz, CraftBlockType.USE_WITHOUT_ITEM_ARGS) || CraftBlockType.hasMethod(clazz, CraftBlockType.USE_ITEM_ON_ARGS);
+        boolean hasMethod = false;
 
-        if (!hasMethod && clazz.getSuperclass() != BlockBehaviour.class) {
-            clazz = clazz.getSuperclass();
-
+        while (!hasMethod && clazz != BlockBehaviour.class && clazz != null) {
             hasMethod = CraftBlockType.hasMethod(clazz, CraftBlockType.USE_WITHOUT_ITEM_ARGS) || CraftBlockType.hasMethod(clazz, CraftBlockType.USE_ITEM_ON_ARGS);
+
+            clazz = clazz.getSuperclass();
         }
 
         return hasMethod;
@@ -99,7 +99,7 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
     @SuppressWarnings("unchecked")
     public CraftBlockType(final Holder<Block> holder) {
         super(holder);
-        this.blockDataClass = Suppliers.memoize(() -> (Class<B>) CraftBlockData.fromData(this.getHandle().defaultBlockState()).getClass().getInterfaces()[0]);
+        this.blockDataClass = Suppliers.memoize(() -> (Class<B>) this.getHandle().defaultBlockState().asBlockData().getClass().getInterfaces()[0]);
         this.interactable = Suppliers.memoize(() -> CraftBlockType.isInteractable(this.getHandle()));
     }
 
@@ -150,7 +150,7 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
         final ImmutableList<BlockState> possibleStates = this.getHandle().getStateDefinition().getPossibleStates();
         final ImmutableList.Builder<B> builder = ImmutableList.builderWithExpectedSize(possibleStates.size());
         for (final BlockState possibleState : possibleStates) {
-            builder.add(this.blockDataClass.get().cast(possibleState.createCraftBlockData()));
+            builder.add(this.blockDataClass.get().cast(possibleState.asBlockData()));
         }
         return builder.build();
     }
@@ -169,7 +169,7 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
     @SuppressWarnings("unchecked")
     @Override
     public B createBlockData(final @Nullable String data) {
-        return (B) CraftBlockData.newData(this, data);
+        return (B) CraftBlockData.fromString(this, data);
     }
 
     @Override

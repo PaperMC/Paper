@@ -2,8 +2,8 @@
 +++ b/net/minecraft/world/item/EggItem.java
 @@ -23,22 +_,35 @@
      @Override
-     public InteractionResult use(Level level, Player player, InteractionHand hand) {
-         ItemStack itemInHand = player.getItemInHand(hand);
+     public InteractionResult use(final Level level, final Player player, final InteractionHand hand) {
+         ItemStack itemStack = player.getItemInHand(hand);
 -        level.playSound(
 -            null,
 -            player.getX(),
@@ -15,14 +15,14 @@
 -            0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F)
 -        );
 -        if (level instanceof ServerLevel serverLevel) {
--            Projectile.spawnProjectileFromRotation(ThrownEgg::new, serverLevel, itemInHand, player, 0.0F, 1.5F, 1.0F);
+-            Projectile.spawnProjectileFromRotation(ThrownEgg::new, serverLevel, itemStack, player, 0.0F, 1.5F, 1.0F);
 -        }
 +        // Paper start
-+        final Projectile.Delayed<ThrownEgg> thrownEgg = Projectile.spawnProjectileFromRotationDelayed(ThrownEgg::new, (ServerLevel) level, itemInHand, player, 0.0F, EggItem.PROJECTILE_SHOOT_POWER, 1.0F);
-+        com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemInHand), (org.bukkit.entity.Projectile) thrownEgg.projectile().getBukkitEntity());
++        final Projectile.Delayed<ThrownEgg> thrownEgg = Projectile.spawnProjectileFromRotationDelayed(ThrownEgg::new, (ServerLevel) level, itemStack, player, 0.0F, EggItem.PROJECTILE_SHOOT_POWER, 1.0F);
++        com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Projectile) thrownEgg.projectile().getBukkitEntity());
 +        if (event.callEvent() && thrownEgg.attemptSpawn()) {
 +            if (event.shouldConsume()) {
-+                itemInHand.consume(1, player);
++                itemStack.consume(1, player);
 +            } else {
 +                player.containerMenu.forceHeldSlot(hand);
 +            }
@@ -40,7 +40,7 @@
 +            // Paper - move up
  
 -        player.awardStat(Stats.ITEM_USED.get(this));
--        itemInHand.consume(1, player);
+-        itemStack.consume(1, player);
 +            player.awardStat(Stats.ITEM_USED.get(this));
 +            // Paper start
 +        } else {
