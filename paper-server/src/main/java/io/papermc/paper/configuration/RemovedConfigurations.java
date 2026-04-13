@@ -87,7 +87,7 @@ interface RemovedConfigurations {
         path("commands", "fix-target-selector-tag-completion"),
         path("misc", "fix-entity-position-desync"),
         path("chunk-system", "gen-parallelism"),
-        path("logging", "deobfuscate-stacktraces"), // vanilla already deobfuscated since 26.1
+        path("logging", "deobfuscate-stacktraces"), // vanilla its unobfuscated since 26.1
     };
 
 }
