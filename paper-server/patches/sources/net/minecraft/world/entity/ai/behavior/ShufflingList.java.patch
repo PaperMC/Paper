@@ -16,7 +16,7 @@
          this.entries = Lists.newArrayList();
      }
  
-     private ShufflingList(List<ShufflingList.WeightedEntry<U>> entries) {
+     private ShufflingList(final List<ShufflingList.WeightedEntry<U>> entries) {
 +        // Paper start - Fix Concurrency issue in ShufflingList during worldgen
 +        this(entries, true);
 +    }
@@ -30,12 +30,12 @@
      }
  
      public ShufflingList<U> shuffle() {
--        this.entries.forEach(entry -> entry.setRandom(this.random.nextFloat()));
+-        this.entries.forEach(k -> k.setRandom(this.random.nextFloat()));
 -        this.entries.sort(Comparator.comparingDouble(ShufflingList.WeightedEntry::getRandWeight));
 -        return this;
 +        // Paper start - Fix Concurrency issue in ShufflingList during worldgen
 +        List<ShufflingList.WeightedEntry<U>> list = this.isUnsafe ? Lists.newArrayList(this.entries) : this.entries;
-+        list.forEach(entry -> entry.setRandom(this.random.nextFloat()));
++        list.forEach(k -> k.setRandom(this.random.nextFloat()));
 +        list.sort(Comparator.comparingDouble(ShufflingList.WeightedEntry::getRandWeight));
 +        return this.isUnsafe ? new ShufflingList<>(list, this.isUnsafe) : this;
 +        // Paper end - Fix Concurrency issue in ShufflingList during worldgen

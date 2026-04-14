@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/entity/monster/piglin/Piglin.java
 +++ b/net/minecraft/world/entity/monster/piglin/Piglin.java
-@@ -129,6 +_,12 @@
-         MemoryModuleType.SPEAR_ENGAGE_TIME,
-         MemoryModuleType.SPEAR_STATUS
+@@ -96,6 +_,12 @@
+         List.of(SensorType.NEAREST_LIVING_ENTITIES, SensorType.NEAREST_PLAYERS, SensorType.NEAREST_ITEMS, SensorType.HURT_BY, SensorType.PIGLIN_SPECIFIC_SENSOR),
+         PiglinAi::getActivities
      );
 +    // CraftBukkit start - Custom bartering and interest list
 +    public java.util.Set<Item> allowedBarterItems = new java.util.HashSet<>();
@@ -11,9 +11,9 @@
 +        .byNameCodec().listOf().xmap(java.util.HashSet::new, List::copyOf);
 +    // CraftBukkit end
  
-     public Piglin(EntityType<? extends AbstractPiglin> type, Level level) {
+     public Piglin(final EntityType<? extends AbstractPiglin> type, final Level level) {
          super(type, level);
-@@ -141,6 +_,10 @@
+@@ -108,6 +_,10 @@
          output.putBoolean("IsBaby", this.isBaby());
          output.putBoolean("CannotHunt", this.cannotHunt);
          this.writeInventoryToTag(output);
@@ -24,7 +24,7 @@
      }
  
      @Override
-@@ -149,6 +_,10 @@
+@@ -116,6 +_,10 @@
          this.setBaby(input.getBooleanOr("IsBaby", false));
          this.setCannotHunt(input.getBooleanOr("CannotHunt", false));
          this.readInventoryFromTag(input);
@@ -35,9 +35,9 @@
      }
  
      @VisibleForDebug
-@@ -314,7 +_,9 @@
+@@ -282,7 +_,9 @@
      @Override
-     protected void finishConversion(ServerLevel level) {
+     protected void finishConversion(final ServerLevel level) {
          PiglinAi.cancelAdmiring(level, this);
 +        this.forceDrops = true; // Paper - Add missing forceDrop toggles
          this.inventory.removeAllItems().forEach(itemStack -> this.spawnAtLocation(level, itemStack));
@@ -45,29 +45,30 @@
          super.finishConversion(level);
      }
  
-@@ -391,7 +_,7 @@
+@@ -359,7 +_,7 @@
      }
  
-     protected void holdInOffHand(ItemStack stack) {
--        if (stack.is(PiglinAi.BARTERING_ITEM)) {
-+        if (stack.is(PiglinAi.BARTERING_ITEM) || this.allowedBarterItems.contains(stack.getItem())) { // CraftBukkit - Changes to accept custom payment items
-             this.setItemSlot(EquipmentSlot.OFFHAND, stack);
+     protected void holdInOffHand(final ItemStack itemStack) {
+-        if (itemStack.is(PiglinAi.BARTERING_ITEM)) {
++        if (itemStack.is(PiglinAi.BARTERING_ITEM) || this.allowedBarterItems.contains(itemStack.getItem())) { // CraftBukkit - Changes to accept custom payment items
+             this.setItemSlot(EquipmentSlot.OFFHAND, itemStack);
              this.setGuaranteedDrop(EquipmentSlot.OFFHAND);
          } else {
-@@ -416,15 +_,15 @@
+@@ -384,8 +_,8 @@
              return false;
          } else {
              TagKey<Item> preferredWeaponType = this.getPreferredWeaponType();
--            boolean flag = PiglinAi.isLovedItem(newItem) || preferredWeaponType != null && newItem.is(preferredWeaponType);
--            boolean flag1 = PiglinAi.isLovedItem(currentItem) || preferredWeaponType != null && currentItem.is(preferredWeaponType);
-+            boolean flag = PiglinAi.isLovedItem(newItem, this) || preferredWeaponType != null && newItem.is(preferredWeaponType); // CraftBukkit
-+            boolean flag1 = PiglinAi.isLovedItem(currentItem, this) || preferredWeaponType != null && currentItem.is(preferredWeaponType); // CraftBukkit
-             return flag && !flag1 || (flag || !flag1) && super.canReplaceCurrentItem(newItem, currentItem, slot);
+-            boolean newItemWanted = PiglinAi.isLovedItem(newItemStack) || preferredWeaponType != null && newItemStack.is(preferredWeaponType);
+-            boolean currentItemWanted = PiglinAi.isLovedItem(currentItemStack) || preferredWeaponType != null && currentItemStack.is(preferredWeaponType);
++            boolean newItemWanted = PiglinAi.isLovedItem(newItemStack, this) || preferredWeaponType != null && newItemStack.is(preferredWeaponType); // CraftBukkit
++            boolean currentItemWanted = PiglinAi.isLovedItem(currentItemStack, this) || preferredWeaponType != null && currentItemStack.is(preferredWeaponType); // CraftBukkit
+             return newItemWanted && !currentItemWanted
+                 || (newItemWanted || !currentItemWanted) && super.canReplaceCurrentItem(newItemStack, currentItemStack, slot);
          }
-     }
+@@ -393,7 +_,7 @@
  
      @Override
-     protected void pickUpItem(ServerLevel level, ItemEntity entity) {
+     protected void pickUpItem(final ServerLevel level, final ItemEntity entity) {
 -        this.onItemPickup(entity);
 +        // this.onItemPickup(entity); // Paper - EntityPickupItemEvent fixes; call in PiglinAi#pickUpItem after EntityPickupItemEvent is fired
          PiglinAi.pickUpItem(level, this, entity);

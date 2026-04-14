@@ -69,7 +69,7 @@ public record OptionallyFlatBedrockConditionSource(Identifier randomName, Vertic
                 } else if (blockY >= falseAtAndAboveY) {
                     return false;
                 } else {
-                    double d = Mth.map(blockY, trueAtAndBelowY, falseAtAndAboveY, 1.0D, 0.0D);
+                    double d = Mth.map(blockY, trueAtAndBelowY, falseAtAndAboveY, 1.0, 0.0);
                     RandomSource randomSource = positionalRandomFactory.at(this.context.blockX, blockY, this.context.blockZ);
                     return (double)randomSource.nextFloat() < d;
                 }
