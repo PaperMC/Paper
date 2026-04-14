@@ -1,7 +1,6 @@
 package io.papermc.paper.configuration.serializer;
 
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Type;
 import java.util.function.Predicate;
 import net.minecraft.resources.Identifier;
 import org.spongepowered.configurate.serialize.ScalarSerializer;

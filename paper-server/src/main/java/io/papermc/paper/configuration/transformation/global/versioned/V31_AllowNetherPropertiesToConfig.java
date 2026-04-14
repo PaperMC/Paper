@@ -1,12 +1,11 @@
 package io.papermc.paper.configuration.transformation.global.versioned;
 
+import java.util.Properties;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.dedicated.DedicatedServer;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.transformation.ConfigurationTransformation;
-
-import java.util.Properties;
 
 public class V31_AllowNetherPropertiesToConfig implements ConfigurationTransformation {
     public static final V31_AllowNetherPropertiesToConfig INSTANCE = new V31_AllowNetherPropertiesToConfig();

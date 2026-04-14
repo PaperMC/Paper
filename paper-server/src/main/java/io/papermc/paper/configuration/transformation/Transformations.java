@@ -5,7 +5,6 @@ import io.papermc.paper.configuration.Configurations;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.NodePath;
 import org.spongepowered.configurate.transformation.ConfigurationTransformation;
-import org.spongepowered.configurate.transformation.TransformAction;
 
 import static org.spongepowered.configurate.NodePath.path;
 

@@ -1,16 +1,15 @@
 package io.papermc.paper.configuration.type.fallback;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.server.MinecraftServer;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.spigotmc.SpigotWorldConfig;
-import org.spongepowered.configurate.serialize.SerializationException;
-
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Supplier;
+import net.minecraft.server.MinecraftServer;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.spigotmc.SpigotWorldConfig;
+import org.spongepowered.configurate.serialize.SerializationException;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public sealed abstract class FallbackValue permits FallbackValue.Int {

@@ -1,11 +1,10 @@
 package io.papermc.paper.configuration.type.fallback;
 
-import org.spigotmc.SpigotWorldConfig;
-import org.spongepowered.configurate.serialize.SerializationException;
-
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
+import org.spigotmc.SpigotWorldConfig;
+import org.spongepowered.configurate.serialize.SerializationException;
 
 public class ArrowDespawnRate extends FallbackValue.Int {
 
