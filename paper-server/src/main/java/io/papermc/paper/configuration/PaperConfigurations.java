@@ -53,6 +53,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import net.kyori.adventure.key.Key;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
@@ -133,10 +135,9 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         
         For more information, see https://docs.papermc.io/paper/reference/configuration/#per-world-configuration
         
-        World: %s (%s)""",
+        World: %s""",
         PaperConfigurations.CONFIG_DIR,
         PaperConfigurations.WORLD_DEFAULTS_CONFIG_FILE_NAME,
-        map.require(WORLD_NAME),
         map.require(WORLD_KEY)
     );
 
@@ -149,7 +150,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         """;
 
     @VisibleForTesting
-    public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
+    public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255), Key.key(RandomStringUtils.randomAlphabetic(255).toLowerCase())) {
         @Override // override to ensure "verbose" is false
         public void init() {
             SpigotConfig.readConfig(SpigotWorldConfig.class, this);
@@ -252,7 +253,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         final RegistryAccess access = contextMap.require(REGISTRY_ACCESS);
         return super.createWorldConfigLoaderBuilder(contextMap)
             .defaultOptions(options -> options
-                .header(contextMap.require(WORLD_NAME).equals(WORLD_DEFAULTS) ? WORLD_DEFAULTS_HEADER : WORLD_HEADER.apply(contextMap))
+                .header(contextMap.require(WORLD_KEY).equals(WORLD_DEFAULTS_KEY) ? WORLD_DEFAULTS_HEADER : WORLD_HEADER.apply(contextMap))
                 .serializers(serializers -> serializers
                     .register(new TypeToken<Reference2IntMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2IntMap<?>>(Reference2IntOpenHashMap::new, Integer.TYPE))
                     .register(new TypeToken<Reference2LongMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2LongMap<?>>(Reference2LongOpenHashMap::new, Long.TYPE))
@@ -315,11 +316,11 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
 
     @Override
     public WorldConfiguration createWorldConfig(final ContextMap contextMap) {
-        final String levelName = contextMap.require(WORLD_NAME);
+        final String levelKey = contextMap.require(WORLD_KEY).toString();
         try {
             return super.createWorldConfig(contextMap);
         } catch (IOException exception) {
-            throw new RuntimeException("Could not create world config for " + levelName, exception);
+            throw new RuntimeException("Could not create world config for " + levelKey, exception);
         }
     }
 
@@ -347,13 +348,12 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     private static ContextMap createWorldContextMap(ServerLevel level) {
-        return createWorldContextMap(level.getServer().storageSource.getDimensionPath(level.dimension()), level.bukkitName, level.dimension().identifier(), level.spigotConfig, level.registryAccess(), level.getGameRules());
+        return createWorldContextMap(level.getServer().storageSource.getDimensionPath(level.dimension()), level.dimension().identifier(), level.spigotConfig, level.registryAccess(), level.getGameRules());
     }
 
-    public static ContextMap createWorldContextMap(final Path dir, final String levelName, final Identifier worldKey, final SpigotWorldConfig spigotConfig, final RegistryAccess registryAccess, final GameRules gameRules) {
+    public static ContextMap createWorldContextMap(final Path dir, final Identifier worldKey, final SpigotWorldConfig spigotConfig, final RegistryAccess registryAccess, final GameRules gameRules) {
         return ContextMap.builder()
             .put(WORLD_DIRECTORY, dir)
-            .put(WORLD_NAME, levelName)
             .put(WORLD_KEY, worldKey)
             .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, Suppliers.ofInstance(spigotConfig))
             .put(REGISTRY_ACCESS, registryAccess)

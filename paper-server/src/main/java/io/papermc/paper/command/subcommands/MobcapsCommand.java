@@ -20,6 +20,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.NaturalSpawner;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -62,7 +63,7 @@ public final class MobcapsCommand implements PaperSubcommand {
 
     private List<String> suggestMobcaps(final String[] args) {
         if (args.length == 1) {
-            final List<String> worlds = new ArrayList<>(Bukkit.getWorlds().stream().map(World::getName).toList());
+            final List<String> worlds = new ArrayList<>(Bukkit.getWorlds().stream().map(World::getKey).map(NamespacedKey::toString).toList());
             worlds.add("*");
             return worlds;
         }
@@ -123,7 +124,7 @@ public final class MobcapsCommand implements PaperSubcommand {
             }
             sender.sendMessage(Component.join(JoinConfiguration.noSeparators(),
                 Component.text("Mobcaps for world: "),
-                Component.text(world.getName(), NamedTextColor.AQUA),
+                Component.text(world.getKey().toString(), NamedTextColor.AQUA),
                 Component.text(" (" + chunks + " spawnable chunks)")
             ));
 

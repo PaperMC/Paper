@@ -574,7 +574,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         } else if (o.getWorld() == null || getWorld() == null) {
             throw new IllegalArgumentException("Cannot measure distance to a null world");
         } else if (o.getWorld() != getWorld()) {
-            throw new IllegalArgumentException("Cannot measure distance between " + getWorld().getName() + " and " + o.getWorld().getName());
+            throw new IllegalArgumentException("Cannot measure distance between " + getWorld().getKey() + " and " + o.getWorld().getKey());
         }
 
         return NumberConversions.square(x - o.x) + NumberConversions.square(y - o.y) + NumberConversions.square(z - o.z);
@@ -1189,7 +1189,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         Map<String, Object> data = new HashMap<String, Object>();
 
         if (this.world != null) {
-            data.put("world", getWorld().getName());
+            data.put("world_key", getWorld().getKey().toString());
         }
 
         data.put("x", this.x);
@@ -1213,12 +1213,20 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     @NotNull
     public static Location deserialize(@NotNull Map<String, Object> args) {
         World world = null;
+        boolean requiresWorld = false;
         if (args.containsKey("world")) {
             world = Bukkit.getWorld((String) args.get("world"));
-            if (world == null) {
-                throw new IllegalArgumentException("unknown world");
-            }
+            requiresWorld = true;
         }
+        if (args.containsKey("world_key")) {
+            world = Bukkit.getWorld(NamespacedKey.fromString((String) args.get("world_key")));
+            requiresWorld = true;
+        }
+
+        if (requiresWorld && world == null) {
+            throw new IllegalArgumentException("unknown world");
+        }
+
 
         return new Location(world, NumberConversions.toDouble(args.get("x")), NumberConversions.toDouble(args.get("y")), NumberConversions.toDouble(args.get("z")), NumberConversions.toFloat(args.get("yaw")), NumberConversions.toFloat(args.get("pitch")));
     }

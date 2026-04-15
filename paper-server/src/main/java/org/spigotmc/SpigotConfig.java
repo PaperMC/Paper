@@ -68,8 +68,8 @@ public class SpigotConfig {
         SpigotConfig.commands = new HashMap<>();
         SpigotConfig.commands.put("spigot", new SpigotCommand("spigot"));
 
-        SpigotConfig.version = SpigotConfig.getInt("config-version", 12);
-        SpigotConfig.set("config-version", 12);
+        SpigotConfig.version = SpigotConfig.getInt("config-version", 13);
+        SpigotConfig.set("config-version", 13);
         SpigotConfig.readConfig(SpigotConfig.class, null);
     }
 

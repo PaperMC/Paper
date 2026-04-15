@@ -793,11 +793,15 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public void setRespawnWorld(@NotNull World world);
 
     /**
-     * Gets the world with the given name.
+     * Gets the world with the given legacy Bukkit name.
      *
-     * @param name the name of the world to retrieve
-     * @return a world with the given name, or null if none exists
+     * <p>This method is considered obsolete and is a candidate for future deprecation.
+     * Prefer using {@link #getWorld(NamespacedKey)}.</p>
+     *
+     * @param name the legacy Bukkit name of the world to retrieve
+     * @return a world with the given legacy Bukkit name, or null if none exists
      */
+    @ApiStatus.Obsolete
     @Nullable
     public World getWorld(@NotNull String name);
 

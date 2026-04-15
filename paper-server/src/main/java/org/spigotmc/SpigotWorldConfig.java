@@ -1,23 +1,36 @@
 package org.spigotmc;
 
 import java.util.List;
+
+import net.kyori.adventure.key.Key;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 public class SpigotWorldConfig {
 
-    private final String worldName;
+    private final String legacyWorldName;
+    private String worldName;
     private final YamlConfiguration config;
     private boolean verbose;
 
-    public SpigotWorldConfig(String worldName) {
-        this.worldName = worldName;
+    public SpigotWorldConfig(String legacyWorldName, Key worldKey) {
+        this.legacyWorldName = legacyWorldName;
+        this.worldName = worldKey.asString();
         this.config = SpigotConfig.config;
         this.init();
     }
 
     public void init() {
         this.verbose = this.getBoolean("verbose", false); // Paper
+        if (SpigotConfig.version <= 12) {
+            ConfigurationSection section = this.config.getConfigurationSection("world-settings." + this.legacyWorldName);
+            if (section != null) {
+                this.config.set("world-settings." + this.legacyWorldName, null);
+                this.config.set("world-settings." + this.worldName, section);
+                Bukkit.getLogger().info("NOTE: Migrated spigot world config %s -> %s".formatted(this.legacyWorldName, this.worldName));
+            }
+        }
 
         this.log("-------- World Settings For [" + this.worldName + "] --------");
         SpigotConfig.readConfig(SpigotWorldConfig.class, this);

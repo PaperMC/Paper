@@ -774,7 +774,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public String toString() {
-        return "CraftWorld{name=" + this.getName() + '}';
+        return "CraftWorld{key=" + this.getKey().toString() + '}';
     }
 
     @Override
