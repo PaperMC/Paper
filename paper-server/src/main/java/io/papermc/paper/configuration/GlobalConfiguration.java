@@ -1,16 +1,13 @@
 package io.papermc.paper.configuration;
 
 import com.mojang.logging.LogUtils;
+import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.serializer.collection.map.WriteKeyBack;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
 import io.papermc.paper.util.sanitizer.ItemObfuscationBinding;
 import io.papermc.paper.util.sanitizer.OversizedItemComponentSanitizer;
-import java.util.Map;
-import java.util.Objects;
-import java.util.OptionalInt;
-import java.util.Set;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.core.component.DataComponents;
@@ -25,13 +22,17 @@ import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 import org.spongepowered.configurate.objectmapping.meta.Required;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
 
+import java.util.Map;
+import java.util.Objects;
+import java.util.OptionalInt;
+import java.util.Set;
+
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class GlobalConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getLogger();
     static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): allow-nether property to config
     private static GlobalConfiguration instance;
     public static boolean isFirstStart = false;
-
     public static GlobalConfiguration get() {
         return instance;
     }
@@ -44,8 +45,8 @@ public class GlobalConfiguration extends ConfigurationPart {
 
         @Comment(
             "The maximum rate at which chunks will load for any individual player. " +
-                "Note that this setting also affects chunk generations, since a chunk load is always first issued to test if a" +
-                "chunk is already generated. Set to -1 to disable this limit."
+            "Note that this setting also affects chunk generations, since a chunk load is always first issued to test if a" +
+            "chunk is already generated. Set to -1 to disable this limit."
         )
         public double playerMaxChunkLoadRate = 100.0;
 
@@ -58,23 +59,22 @@ public class GlobalConfiguration extends ConfigurationPart {
     public class ChunkLoadingAdvanced extends ConfigurationPart {
         @Comment(
             "Set to true if the server will match the chunk send radius that clients have configured" +
-                "in their view distance settings if the client is less-than the server's send distance."
+            "in their view distance settings if the client is less-than the server's send distance."
         )
         public boolean autoConfigSendDistance = true;
 
         @Comment(
             "Specifies the maximum amount of concurrent chunk loads that an individual player can have." +
-                "Set to 0 to let the server configure it automatically per player, or set it to -1 to disable the limit."
+            "Set to 0 to let the server configure it automatically per player, or set it to -1 to disable the limit."
         )
         public int playerMaxConcurrentChunkLoads = 0;
 
         @Comment(
             "Specifies the maximum amount of concurrent chunk generations that an individual player can have." +
-                "Set to 0 to let the server configure it automatically per player, or set it to -1 to disable the limit."
+            "Set to 0 to let the server configure it automatically per player, or set it to -1 to disable the limit."
         )
         public int playerMaxConcurrentChunkGenerates = 0;
     }
-
     static void set(final GlobalConfiguration instance) {
         GlobalConfiguration.instance = instance;
     }
@@ -136,9 +136,7 @@ public class GlobalConfiguration extends ConfigurationPart {
                 }
             }
         }
-
         public boolean proxyProtocol = false;
-
         public boolean isProxyOnlineMode() {
             return org.bukkit.Bukkit.getOnlineMode() || (org.spigotmc.SpigotConfig.bungee && this.bungeeCord.onlineMode) || (this.velocity.enabled && this.velocity.onlineMode);
         }
@@ -249,7 +247,6 @@ public class GlobalConfiguration extends ConfigurationPart {
             public IntOr.Disabled pageMax = new IntOr.Disabled(OptionalInt.of(2560)); // TODO this appears to be a duplicate setting with one above
             public double totalMultiplier = 0.98D; // TODO this should probably be merged into the above inner class
         }
-
         public boolean resolveSelectorsInBooks = false;
     }
 
@@ -292,7 +289,6 @@ public class GlobalConfiguration extends ConfigurationPart {
     public class PlayerAutoSave extends ConfigurationPart {
         public int rate = -1;
         private int maxPerTick = -1;
-
         public int maxPerTick() {
             if (this.maxPerTick < 0) {
                 return (this.rate == 1 || this.rate > 100) ? 10 : 20;
@@ -307,7 +303,6 @@ public class GlobalConfiguration extends ConfigurationPart {
 
         @SuppressWarnings("unused") // used in postProcess
         public ChatThreads chatThreads;
-
         public class ChatThreads extends ConfigurationPart {
             private int chatExecutorCoreSize = -1;
             private int chatExecutorMaxSize = -1;
@@ -315,8 +310,7 @@ public class GlobalConfiguration extends ConfigurationPart {
             @PostProcess
             private void postProcess() {
                 //noinspection ConstantConditions
-                if (net.minecraft.server.MinecraftServer.getServer() == null)
-                    return; // In testing env, this will be null here
+                if (net.minecraft.server.MinecraftServer.getServer() == null) return; // In testing env, this will be null here
                 int _chatExecutorMaxSize = (this.chatExecutorMaxSize <= 0) ? Integer.MAX_VALUE : this.chatExecutorMaxSize; // This is somewhat dumb, but, this is the default, do we cap this?;
                 int _chatExecutorCoreSize = Math.max(this.chatExecutorCoreSize, 0);
 
@@ -329,7 +323,6 @@ public class GlobalConfiguration extends ConfigurationPart {
                 executor.setMaximumPoolSize(_chatExecutorMaxSize);
             }
         }
-
         public int maxJoinsPerTick = 5;
         public boolean sendFullPosForItemEntities = false;
         public boolean loadPermissionsYmlBeforePlugins = true;
