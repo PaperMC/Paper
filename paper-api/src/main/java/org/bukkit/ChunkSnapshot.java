@@ -3,6 +3,7 @@ package org.bukkit;
 import net.kyori.adventure.key.Key;
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -36,6 +37,7 @@ public interface ChunkSnapshot {
      * @return Parent World Name
      */
     @NotNull
+    @ApiStatus.Obsolete
     String getWorldName();
 
     /**
