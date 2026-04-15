@@ -1,10 +1,12 @@
 package io.papermc.paper.configuration.type.fallback;
 
+import net.minecraft.server.MinecraftServer;
+import org.spongepowered.configurate.serialize.SerializationException;
+
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
-import net.minecraft.server.MinecraftServer;
-import org.spongepowered.configurate.serialize.SerializationException;
+import java.util.function.Supplier;
 
 public class AutosavePeriod extends FallbackValue.Int {
 

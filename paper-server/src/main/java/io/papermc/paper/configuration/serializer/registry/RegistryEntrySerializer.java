@@ -2,11 +2,12 @@ package io.papermc.paper.configuration.serializer.registry;
 
 import io.leangen.geantyref.TypeToken;
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.Type;
 import java.util.function.Predicate;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.configurate.serialize.ScalarSerializer;
 import org.spongepowered.configurate.serialize.SerializationException;
 
