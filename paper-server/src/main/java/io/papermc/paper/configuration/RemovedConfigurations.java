@@ -60,8 +60,6 @@ interface RemovedConfigurations {
         path("spawn", "keep-spawn-loaded-range"),
         path("misc", "shield-blocking-delay")
     };
-    // spawn.keep-spawn-loaded and spawn.keep-spawn-loaded-range are no longer used, but kept
-    // in the world default config for compatibility with old worlds being migrated to use the gamerule
 
     NodePath[] REMOVED_GLOBAL_PATHS = {
         path("data-value-allowed-items"),
@@ -86,7 +84,8 @@ interface RemovedConfigurations {
         path("unsupported-settings", "allow-tripwire-disarming-exploits"),
         path("commands", "fix-target-selector-tag-completion"),
         path("misc", "fix-entity-position-desync"),
-        path("chunk-system", "gen-parallelism")
+        path("chunk-system", "gen-parallelism"),
+        path("logging"), // server is no longer obfuscated since 26.1
     };
 
 }
