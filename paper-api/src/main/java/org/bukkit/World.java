@@ -3813,7 +3813,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the default value
      * @deprecated use {@link GameRule#getDefaultValue()} instead
      */
-    @Deprecated(since = "1.21.11")
+    @Deprecated(since = "26.1.2")
     default <T> @NotNull T getGameRuleDefault(@NotNull GameRule<T> rule) {
         return rule.getDefaultValue();
     }
