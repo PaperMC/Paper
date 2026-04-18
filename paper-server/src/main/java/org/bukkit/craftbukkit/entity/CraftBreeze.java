@@ -14,6 +14,31 @@ public class CraftBreeze extends CraftMonster implements Breeze {
         return (net.minecraft.world.entity.monster.breeze.Breeze) this.entity;
     }
 
+    @Override
+    public int getInhaleTicks() {
+        return this.getHandle().getInhaleTicks();
+    }
+
+    @Override
+    public void setInhaleTicks(int ticks) {
+        this.getHandle().setInhaleTicks(ticks);
+    }
+
+    @Override
+    public int getJumpCooldown() {
+        return this.getHandle().getJumpCooldownTicks();
+    }
+
+    @Override
+    public void setJumpCooldown(int ticks) {
+        this.getHandle().setJumpCooldownTicks(ticks);
+    }
+
+    @Override
+    public boolean isJumping() {
+        return this.getHandle().isJumping();
+    }
+
     /* // TODO - snapshot - reimplement? but without reintroducing MC-199589
     @Override
     public void setTarget(LivingEntity target) {

@@ -106,6 +106,34 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
     void setSoundVariant(@NotNull SoundVariant soundVariant);
 
     /**
+     * Checks if this wolf is wearing armor.
+     *
+     * @return true if wearing armor
+     */
+    boolean isWearingArmor();
+
+    /**
+     * Gets the current durability of the wolf armor.
+     *
+     * @return the durability, or 0 if not wearing armor
+     */
+    int getArmorDurability();
+
+    /**
+     * Sets the current durability of the wolf armor.
+     *
+     * @param durability the durability
+     */
+    void setArmorDurability(int durability);
+
+    /**
+     * Gets the maximum durability of the wolf armor.
+     *
+     * @return the maximum durability, or 0 if not wearing armor
+     */
+    int getMaxArmorDurability();
+
+    /**
      * Represents the variant of a wolf.
      */
     interface Variant extends Keyed {

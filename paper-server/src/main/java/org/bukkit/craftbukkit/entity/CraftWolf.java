@@ -90,6 +90,31 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
         this.getHandle().setSoundVariant(CraftSoundVariant.bukkitToMinecraftHolder(soundVariant));
     }
 
+    @Override
+    public boolean isWearingArmor() {
+        return !this.getHandle().getBodyArmorItem().isEmpty();
+    }
+
+    @Override
+    public int getArmorDurability() {
+        net.minecraft.world.item.ItemStack armor = this.getHandle().getBodyArmorItem();
+        return armor.isEmpty() ? 0 : armor.getMaxDamage() - armor.getDamageValue();
+    }
+
+    @Override
+    public void setArmorDurability(int durability) {
+        net.minecraft.world.item.ItemStack armor = this.getHandle().getBodyArmorItem();
+        if (!armor.isEmpty()) {
+            armor.setDamageValue(armor.getMaxDamage() - durability);
+        }
+    }
+
+    @Override
+    public int getMaxArmorDurability() {
+        net.minecraft.world.item.ItemStack armor = this.getHandle().getBodyArmorItem();
+        return armor.isEmpty() ? 0 : armor.getMaxDamage();
+    }
+
     public static class CraftVariant extends HolderableBase<WolfVariant> implements Variant {
 
         public static Variant minecraftHolderToBukkit(Holder<WolfVariant> minecraft) {

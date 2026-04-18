@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.Location;
+import org.bukkit.block.CreakingHeart;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -17,6 +18,14 @@ public interface Creaking extends Monster {
      */
     @Nullable
     Location getHome();
+
+    /**
+     * Gets the creaking heart that this creaking is tied to.
+     *
+     * @return the heart if available, null otherwise
+     */
+    @Nullable
+    CreakingHeart getCreakingHeart();
 
     /**
      * Activates this creaking to target and follow a player.

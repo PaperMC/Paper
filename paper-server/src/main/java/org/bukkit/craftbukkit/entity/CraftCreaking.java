@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
 import net.minecraft.Optionull;
 import net.minecraft.world.entity.monster.creaking.Creaking;
 import org.bukkit.Location;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.CreakingHeart;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Player;
@@ -26,6 +28,15 @@ public class CraftCreaking extends CraftMonster implements org.bukkit.entity.Cre
     @Override
     public Location getHome() {
         return Optionull.map(this.getHandle().getHomePos(), pos -> CraftLocation.toBukkit(pos, this.getHandle().level()));
+    }
+
+    @Nullable
+    @Override
+    public CreakingHeart getCreakingHeart() {
+        return Optionull.map(this.getHandle().getCreakingHeartPos(), pos -> {
+            BlockState state = CraftLocation.toBukkit(pos, this.getHandle().level()).getBlock().getState();
+            return state instanceof CreakingHeart heart ? heart : null;
+        });
     }
 
     @Override
