@@ -3555,7 +3555,8 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      * Get the {@link CreativeCategory} to which this material belongs.
      *
      * @return the creative category. null if it does not belong to a category
-     * @deprecated items can belong to multiple creative categories
+     * @deprecated items can belong to multiple creative categories and this is no
+     * longer implemented, will always be {@link CreativeCategory#BUILDING_BLOCKS} if not null
      */
     @Deprecated(since = "1.20.6", forRemoval = true)
     public @Nullable CreativeCategory getCreativeCategory() {
