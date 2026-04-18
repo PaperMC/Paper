@@ -3802,8 +3802,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param <T> the GameRule's type
      * @return the current value
      */
-    @Nullable
-    public <T> T getGameRuleValue(@NotNull GameRule<T> rule);
+    public @NotNull <T> T getGameRuleValue(@NotNull GameRule<T> rule);
 
     /**
      * Get the default value for a given {@link GameRule}. This value is not
@@ -3812,9 +3811,12 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param rule the rule to return a default value for
      * @param <T> the type of GameRule
      * @return the default value
+     * @deprecated use {@link GameRule#getDefaultValue()} instead
      */
-    @Nullable
-    public <T> T getGameRuleDefault(@NotNull GameRule<T> rule);
+    @Deprecated(since = "26.1.2")
+    default <T> @NotNull T getGameRuleDefault(@NotNull GameRule<T> rule) {
+        return rule.getDefaultValue();
+    }
 
     /**
      * Set the given {@link GameRule}'s new value.
