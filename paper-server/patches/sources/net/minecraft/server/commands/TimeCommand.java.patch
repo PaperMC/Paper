@@ -1,67 +1,104 @@
 --- a/net/minecraft/server/commands/TimeCommand.java
 +++ b/net/minecraft/server/commands/TimeCommand.java
-@@ -170,23 +_,61 @@
+@@ -119,7 +_,7 @@
+         final CommandSourceStack source, final SuggestionsBuilder builder, final Holder<WorldClock> clock
+     ) {
+         return SharedSuggestionProvider.suggestResource(
+-            source.getServer().clockManager().commandTimeMarkersForClock(clock).map(ResourceKey::identifier), builder
++            source.getLevel().clockManager().commandTimeMarkersForClock(clock).map(ResourceKey::identifier), builder // Paper - per-world time
+         );
      }
  
+@@ -141,7 +_,7 @@
+     }
+ 
+     private static int queryTime(final CommandSourceStack source, final Holder<WorldClock> clock) {
+-        ServerClockManager clockManager = source.getServer().clockManager();
++        ServerClockManager clockManager = source.getLevel().clockManager(); // Paper - per-world time
+         long totalTicks = clockManager.getTotalTicks(clock);
+         source.sendSuccess(() -> Component.translatable("commands.time.query.absolute", clock.getRegisteredName(), totalTicks), false);
+         return wrapTime(totalTicks);
+@@ -151,7 +_,7 @@
+         if (!clock.equals(timeline.value().clock())) {
+             throw ERROR_WRONG_TIMELINE_FOR_CLOCK.create(clock.getRegisteredName(), timeline.getRegisteredName());
+         } else {
+-            ServerClockManager clockManager = source.getServer().clockManager();
++            ServerClockManager clockManager = source.getLevel().clockManager(); // Paper - per-world time
+             long currentTicks = timeline.value().getCurrentTicks(clockManager);
+             source.sendSuccess(() -> Component.translatable("commands.time.query.timeline", timeline.getRegisteredName(), currentTicks), false);
+             return wrapTime(currentTicks);
+@@ -162,33 +_,47 @@
+         if (!clock.equals(timeline.value().clock())) {
+             throw ERROR_WRONG_TIMELINE_FOR_CLOCK.create(clock.getRegisteredName(), timeline.getRegisteredName());
+         } else {
+-            ServerClockManager clockManager = source.getServer().clockManager();
++            ServerClockManager clockManager = source.getLevel().clockManager(); // Paper - per-world time
+             long repetitions = timeline.value().getPeriodCount(clockManager);
+             source.sendSuccess(() -> Component.translatable("commands.time.query.timeline.repetitions", timeline.getRegisteredName(), repetitions), false);
+             return wrapTime(repetitions);
+         }
+     }
+ 
++    // Paper start - per-world time
      private static int setTotalTicks(final CommandSourceStack source, final Holder<WorldClock> clock, final int totalTicks) {
-+        // Paper start
-+        // TODO - snapshot - 26.1
-+        for (net.minecraft.server.level.ServerLevel level : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) {
-+            long currentTime = level.clockManager().getTotalTicks(clock);
-+            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(level.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, totalTicks - currentTime);
-+            if (event.callEvent()) {
-+                level.clockManager().setTotalTicks(clock, currentTime + event.getSkipAmount());
-+            }
-+        }
-+        // Paper end
-         ServerClockManager clockManager = source.getServer().clockManager();
+-        ServerClockManager clockManager = source.getServer().clockManager();
 -        clockManager.setTotalTicks(clock, totalTicks);
-+        // clockManager.setTotalTicks(clock, totalTicks);
++        ServerClockManager clockManager = source.getLevel().clockManager();
++        long currentTotalTicks = clockManager.getTotalTicks(clock);
++        org.bukkit.event.world.ClockTimeSkipEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callTimeSkipEvent(source, totalTicks - currentTotalTicks);
++        if (event.callEvent()) {
++            clockManager.setTotalTicks(clock, currentTotalTicks + event.getSkipAmount());
++        }
          source.sendSuccess(() -> Component.translatable("commands.time.set.absolute", clock.getRegisteredName(), totalTicks), true);
          return totalTicks;
      }
  
      private static int addTime(final CommandSourceStack source, final Holder<WorldClock> clock, final int time) {
-+        // Paper start
-+        // TODO - snapshot - 26.1
-+        for (net.minecraft.server.level.ServerLevel level : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) {
-+            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(level.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, time);;
-+            if (event.callEvent()) {
-+                level.clockManager().addTicks(clock, event.getSkipAmount());
-+            }
-+        }
-+        // Paper end
-         ServerClockManager clockManager = source.getServer().clockManager();
+-        ServerClockManager clockManager = source.getServer().clockManager();
 -        clockManager.addTicks(clock, time);
-+        // Paper - move up
++        ServerClockManager clockManager = source.getLevel().clockManager();
++        org.bukkit.event.world.ClockTimeSkipEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callTimeSkipEvent(source, time);
++        if (event.callEvent()) {
++            clockManager.addTicks(clock, event.getSkipAmount());
++        }
          long totalTicks = clockManager.getTotalTicks(clock);
          source.sendSuccess(() -> Component.translatable("commands.time.set.absolute", clock.getRegisteredName(), totalTicks), true);
          return wrapTime(totalTicks);
      }
  
      private static int setTimeToTimeMarker(final CommandSourceStack source, final Holder<WorldClock> clock, final ResourceKey<ClockTimeMarker> timeMarkerId) throws CommandSyntaxException {
-+        // Paper start
-+        // TODO - snapshot - 26.1
-+        boolean foundMarker = false;
-+        for (net.minecraft.server.level.ServerLevel level : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) {
-+            java.util.OptionalLong targetTime = level.clockManager().getTotalTicksToTimeMarker(clock, timeMarkerId);
-+            if (targetTime.isEmpty()) {
-+                continue;
-+            }
-+
-+            foundMarker = true;
-+            long currentTime = level.clockManager().getTotalTicks(clock);
-+            long delta = targetTime.getAsLong() - currentTime;
-+            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(level.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, delta);
-+            if (event.callEvent()) {
-+                level.clockManager().setTotalTicks(clock, currentTime + event.getSkipAmount());
-+            }
-+        }
-+        // Paper end
-+
-         ServerClockManager clockManager = source.getServer().clockManager();
+-        ServerClockManager clockManager = source.getServer().clockManager();
 -        if (!clockManager.moveToTimeMarker(clock, timeMarkerId)) {
-+        if (!foundMarker) { // Paper
++        ServerClockManager clockManager = source.getLevel().clockManager();
++        java.util.OptionalLong targetTime = clockManager.getTotalTicksToTimeMarker(clock, timeMarkerId);
++        if (targetTime.isEmpty()) {
              throw ERROR_NO_TIME_MARKER_FOUND.create(clock.getRegisteredName(), timeMarkerId);
          } else {
++            final long currentTime = clockManager.getTotalTicks(clock);
++            final org.bukkit.event.world.ClockTimeSkipEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callTimeSkipEvent(source, targetTime.getAsLong() - currentTime);
++            if (event.callEvent()) {
++                clockManager.setTotalTicks(clock, currentTime + event.getSkipAmount());
++            }
              source.sendSuccess(
+                 () -> Component.translatable("commands.time.set.time_marker", clock.getRegisteredName(), timeMarkerId.identifier().toString()), true
+             );
+@@ -197,16 +_,17 @@
+     }
+ 
+     private static int setPaused(final CommandSourceStack source, final Holder<WorldClock> clock, final boolean paused) {
+-        source.getServer().clockManager().setPaused(clock, paused);
++        source.getLevel().clockManager().setPaused(clock, paused);
+         source.sendSuccess(() -> Component.translatable(paused ? "commands.time.pause" : "commands.time.resume", clock.getRegisteredName()), true);
+         return 1;
+     }
+ 
+     private static int setRate(final CommandSourceStack source, final Holder<WorldClock> clock, final float rate) {
+-        source.getServer().clockManager().setRate(clock, rate);
++        source.getLevel().clockManager().setRate(clock, rate);
+         source.sendSuccess(() -> Component.translatable("commands.time.rate", clock.getRegisteredName(), rate), true);
+         return 1;
+     }
++    // Paper end - per-world time
+ 
+     private static int wrapTime(final long ticks) {
+         return Math.toIntExact(ticks % 2147483647L);

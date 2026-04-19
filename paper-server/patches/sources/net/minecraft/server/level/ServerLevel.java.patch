@@ -9,7 +9,7 @@
      private final EntityTickList entityTickList = new EntityTickList();
      private final ServerWaypointManager waypointManager;
      private EnvironmentAttributeSystem environmentAttributes;
-@@ -221,24 +_,192 @@
+@@ -221,24 +_,199 @@
      private final boolean tickTime;
      private final LevelDebugSynchronizers debugSynchronizers = new LevelDebugSynchronizers(this);
  
@@ -22,6 +22,7 @@
 +    private final WeatherData weatherData;
 +    public final net.minecraft.world.level.timers.TimerQueue<net.minecraft.server.MinecraftServer> scheduledEvents;
 +    public final WorldGenSettings worldGenSettings;
++    private ServerClockManager clockManager;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
 +
@@ -184,6 +185,12 @@
          this.serverLevelData = levelData;
          ChunkGenerator generator = levelStem.generator();
 +        // CraftBukkit start
++        // Paper start - per-world time
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds) {
++            this.clockManager = savedDataStorage.computeIfAbsent(net.minecraft.world.clock.ServerClockManager.TYPE); // Paper - per-world time
++            this.clockManager.init(server, this); // Paper - per-world time
++        }
++        // Paper end - per-world time
 +        if (loadedWorldData.pdc() != null) {
 +            this.getWorld().readBukkitValues(loadedWorldData.pdc().persistentData().toTagCompound());
 +        }
@@ -262,30 +269,39 @@
  
      @Deprecated
      @VisibleForTesting
+@@ -322,7 +_,7 @@
+ 
+     @Override
+     public ServerClockManager clockManager() {
+-        return this.server.clockManager();
++        return io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? this.server.clockManager() : this.clockManager; // Paper - per-world time
+     }
+ 
+     @Override
 @@ -354,11 +_,24 @@
          int percentage = this.getGameRules().get(GameRules.PLAYERS_SLEEPING_PERCENTAGE);
          if (this.sleepStatus.areEnoughSleeping(percentage) && this.sleepStatus.areEnoughDeepSleeping(percentage, this.players)) {
              Optional<Holder<WorldClock>> defaultClock = this.dimensionType().defaultClock();
-+            org.bukkit.event.world.TimeSkipEvent event = null; // Paper - time skip event
++            org.bukkit.event.world.ClockTimeSkipEvent event = null; // Paper - per-world time
              if (this.getGameRules().get(GameRules.ADVANCE_TIME) && defaultClock.isPresent()) {
 -                this.server.clockManager().moveToTimeMarker(defaultClock.get(), ClockTimeMarkers.WAKE_UP_FROM_SLEEP);
-+                // Paper start - time skip event
-+                long currentTime = this.server.clockManager().getTotalTicks(defaultClock.get());
-+                long delta = this.server.clockManager().getTotalTicksToTimeMarker(defaultClock.get(), ClockTimeMarkers.WAKE_UP_FROM_SLEEP).orElse(0L) - currentTime;
++                // Paper start - per-world time
++                long currentTime = this.clockManager().getTotalTicks(defaultClock.get());
++                long delta = this.clockManager().getTotalTicksToTimeMarker(defaultClock.get(), ClockTimeMarkers.WAKE_UP_FROM_SLEEP).orElse(0L) - currentTime;
 +                event = new org.bukkit.event.world.TimeSkipEvent(
 +                    this.getWorld(),
-+                    org.bukkit.event.world.TimeSkipEvent.SkipReason.NIGHT_SKIP,
++                    org.bukkit.event.world.ClockTimeSkipEvent.SkipReason.NIGHT_SKIP,
 +                    delta
 +                );
 +
 +                if (event.callEvent()) {
-+                    this.server.clockManager().setTotalTicks(defaultClock.get(), currentTime + event.getSkipAmount()); // TODO - snapshot - per world time
++                    this.clockManager().setTotalTicks(defaultClock.get(), currentTime + event.getSkipAmount());
 +                }
-+                // Paper end - time skip event
++                // Paper end - per-world time
              }
  
 -            this.wakeUpAllPlayers();
-+            if (event == null || !event.isCancelled()) this.wakeUpAllPlayers(); // Paper - time skip event - only wake up players if time skip event is not cancelled
++            if (event == null || !event.isCancelled()) this.wakeUpAllPlayers(); // Paper - per-world time - only wake up players if time skip event is not cancelled
              if (this.getGameRules().get(GameRules.ADVANCE_WEATHER) && this.isRaining()) {
                  this.resetWeatherCycle();
              }

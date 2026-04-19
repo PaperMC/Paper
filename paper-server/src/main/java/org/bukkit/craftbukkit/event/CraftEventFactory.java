@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
@@ -261,9 +262,11 @@ import org.bukkit.event.raid.RaidStopEvent;
 import org.bukkit.event.raid.RaidTriggerEvent;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.event.weather.LightningStrikeEvent;
+import org.bukkit.event.world.ClockTimeSkipEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
 import org.bukkit.event.world.LootGenerateEvent;
+import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.inventory.CraftingRecipe;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
@@ -2416,5 +2419,12 @@ public class CraftEventFactory {
             return false;
         }
         return true;
+    }
+
+    public static ClockTimeSkipEvent callTimeSkipEvent(final CommandSourceStack source, final long skipAmount) {
+        if (io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds) {
+            return new ClockTimeSkipEvent(ClockTimeSkipEvent.SkipReason.COMMAND, skipAmount);
+        }
+        return new TimeSkipEvent(source.getLevel().getWorld(), ClockTimeSkipEvent.SkipReason.COMMAND, skipAmount);
     }
 }

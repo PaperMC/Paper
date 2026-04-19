@@ -1086,7 +1086,7 @@
              ObjectArrayList<NameAndId> sample = new ObjectArrayList<>(sampleSize);
              int offset = Mth.nextInt(this.random, 0, players.size() - sampleSize);
  
-@@ -1104,6 +_,32 @@
+@@ -1104,25 +_,73 @@
      protected void tickChildren(final BooleanSupplier haveTime) {
          ProfilerFiller profiler = Profiler.get();
          this.getPlayerList().getPlayers().forEach(playerx -> playerx.connection.suspendFlushing());
@@ -1119,7 +1119,20 @@
          profiler.push("commandFunctions");
          this.getFunctions().tick();
          profiler.pop();
-@@ -1115,14 +_,28 @@
+         if (this.tickRateManager.runsNormally()) {
+             profiler.push("clocks");
+-            this.clockManager.tick();
++            // Paper start - per-world time
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds) {
++                this.clockManager.tick();
++            } else {
++                for (ServerLevel level : this.getAllLevels()) {
++                    level.clockManager().tick();
++                }
++            }
++            // Paper end - per-world time
+             profiler.pop();
+         }
  
          if (this.tickCount % 20 == 0) {
              profiler.push("timeSync");
@@ -1172,6 +1185,17 @@
 +        this.worldData.overworldData().setSpawn(respawnData); // Sync back to level.dat for Paper->Vanilla spawn integrity
 +        // Paper end - per world respawn data
          this.effectiveRespawnData = respawnLevel.getWorldBorderAdjustedRespawnData(respawnData);
+     }
+ 
+@@ -1179,7 +_,9 @@
+     public void forceGameTimeSynchronization() {
+         ProfilerFiller profiler = Profiler.get();
+         profiler.push("timeSync");
+-        this.playerList.broadcastAll(new ClientboundSetTimePacket(this.overworld().getGameTime(), Map.of()));
++        for (ServerLevel level : this.getAllLevels()) {
++            this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
++        }
+         profiler.pop();
      }
  
 @@ -1207,6 +_,22 @@
@@ -1534,7 +1558,7 @@
                  player.connection.send(new ClientboundEntityEventPacket(player, event));
              }
          } else if (rule == GameRules.LIMITED_CRAFTING || rule == GameRules.IMMEDIATE_RESPAWN) {
-@@ -2131,19 +_,21 @@
+@@ -2131,20 +_,21 @@
                  ? ClientboundGameEventPacket.LIMITED_CRAFTING
                  : ClientboundGameEventPacket.IMMEDIATE_RESPAWN;
              ClientboundGameEventPacket packet = new ClientboundGameEventPacket(eventType, (Boolean)value ? 1.0F : 0.0F);
@@ -1556,10 +1580,11 @@
 -            this.updateMobSpawningFlags();
 +            level.setSpawnSettings(level.isSpawningMonsters()); // Paper - per-world game rules
          } else if (rule == GameRules.ADVANCE_TIME) {
-+            // TODO - snapshot - time handling
-             this.getPlayerList().broadcastAll(this.clockManager().createFullSyncPacket());
+-            this.getPlayerList().broadcastAll(this.clockManager().createFullSyncPacket());
++            this.getPlayerList().broadcastAll(level.clockManager().createFullSyncPacket(), level); // Paper - per-world time
          }
      }
+ 
 @@ -2157,12 +_,14 @@
          return this.savedDataStorage;
      }

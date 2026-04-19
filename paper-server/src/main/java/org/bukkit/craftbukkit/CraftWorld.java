@@ -139,7 +139,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.weather.ThunderChangeEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
-import org.bukkit.event.world.SpawnChangeEvent;
+import org.bukkit.event.world.ClockTimeSkipEvent;
 import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
@@ -803,7 +803,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         final long currentClockTime = this.world.getDefaultClockTime();
-        final TimeSkipEvent event = new TimeSkipEvent(this, TimeSkipEvent.SkipReason.CUSTOM, time - currentClockTime);
+        final ClockTimeSkipEvent event = new TimeSkipEvent(this, ClockTimeSkipEvent.SkipReason.CUSTOM, time - currentClockTime);
         this.server.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             return;
