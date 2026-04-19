@@ -58,7 +58,8 @@ interface RemovedConfigurations {
         path("misc", "light-queue-size"),
         path("spawn", "keep-spawn-loaded"),
         path("spawn", "keep-spawn-loaded-range"),
-        path("misc", "shield-blocking-delay")
+        path("misc", "shield-blocking-delay"),
+        path("command", "time-command-affects-all-worlds")
     };
 
     NodePath[] REMOVED_GLOBAL_PATHS = {

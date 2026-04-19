@@ -14,6 +14,7 @@ import java.util.UUID;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.datafix.DataFixers;
+import net.minecraft.world.clock.ServerClockManager;
 import net.minecraft.world.entity.raid.Raids;
 import net.minecraft.world.level.TicketStorage;
 import net.minecraft.world.level.border.WorldBorder;
@@ -107,6 +108,7 @@ final class LegacyCraftBukkitWorldMigration {
         this.copySavedDataIfPresent(TicketStorage.TYPE);
         this.copySavedDataIfPresent(Raids.TYPE);
         this.copySavedDataIfPresent(WorldGenSettings.TYPE);
+        this.copySavedDataIfPresent(ServerClockManager.TYPE);
         this.migrateLegacyWorldBorder();
 
         if (this.context.stemKey() == LevelStem.END) {

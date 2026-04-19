@@ -30,7 +30,7 @@ import java.util.Set;
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class GlobalConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getLogger();
-    static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): allow-nether property to config
+    static final int CURRENT_VERSION = 32; // (when you change the version, change the comment, so it conflicts on rebases): rename all-worlds time config
     private static GlobalConfiguration instance;
     public static boolean isFirstStart = false;
     public static GlobalConfiguration get() {
@@ -202,9 +202,14 @@ public class GlobalConfiguration extends ConfigurationPart {
 
     public class Commands extends ConfigurationPart {
         public boolean suggestPlayerNamesWhenNullTabCompletions = true;
-        public boolean timeCommandAffectsAllWorlds = false;
         @Comment("Allow mounting entities to a player in the Vanilla '/ride' command.")
         public boolean rideCommandAllowPlayerAsVehicle = false;
+    }
+
+    public Time time;
+
+    public class Time extends ConfigurationPart {
+        public boolean affectsAllWorlds = false;
     }
 
     public Scoreboards scoreboards;

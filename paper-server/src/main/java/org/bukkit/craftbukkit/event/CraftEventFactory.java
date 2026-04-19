@@ -2422,7 +2422,7 @@ public class CraftEventFactory {
     }
 
     public static ClockTimeSkipEvent callTimeSkipEvent(final CommandSourceStack source, final long skipAmount) {
-        if (io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds) {
+        if (io.papermc.paper.configuration.GlobalConfiguration.get().time.affectsAllWorlds) {
             return new ClockTimeSkipEvent(ClockTimeSkipEvent.SkipReason.COMMAND, skipAmount);
         }
         return new TimeSkipEvent(source.getLevel().getWorld(), ClockTimeSkipEvent.SkipReason.COMMAND, skipAmount);
