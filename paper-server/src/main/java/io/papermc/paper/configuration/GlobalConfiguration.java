@@ -183,19 +183,10 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean allowHeadlessPistons = false;
         @Comment("This setting controls if the vanilla damage tick should be skipped if damage was blocked via a shield.")
         public boolean skipVanillaDamageTickWhenShieldBlocked = false;
-        @Comment("This setting controls what compression format is used for region files.")
-        public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
         @Comment("This setting controls if equipment should be updated when handling certain player actions.")
         public boolean updateEquipmentOnPlayerActions = true;
         @Comment("This setting controls what item data components don't need to be sanitized in oversized item obfuscation. Adding them re-enables exploits, but may be needed for certain resource packs. (Expected: minecraft:container, minecraft:charged_projectiles and minecraft:bundle_contents)")
         public OversizedItemComponentSanitizer.AssetOversizedItemComponentSanitizerConfiguration oversizedItemComponentSanitizer = new OversizedItemComponentSanitizer.AssetOversizedItemComponentSanitizerConfiguration(Set.of());
-
-        public enum CompressionFormat {
-            GZIP,
-            ZLIB,
-            LZ4,
-            NONE
-        }
     }
 
     public Commands commands;

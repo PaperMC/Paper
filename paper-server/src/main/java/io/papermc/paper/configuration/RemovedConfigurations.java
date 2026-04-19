@@ -86,6 +86,7 @@ interface RemovedConfigurations {
         path("misc", "fix-entity-position-desync"),
         path("chunk-system", "gen-parallelism"),
         path("logging"), // server is no longer obfuscated since 26.1
+        path("unsupported-settings", "compression-format"),
     };
 
 }
