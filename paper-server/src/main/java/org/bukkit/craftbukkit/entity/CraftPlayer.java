@@ -1537,13 +1537,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         this.getHandle().relativeTime = tickTime;
 
         final ServerLevel level = this.getHandle().level();
-        if (this.getHandle().connection == null || level.dimensionType().defaultClock().isEmpty()) {
+        final java.util.Optional<Holder<WorldClock>> clock = level.getClock();
+        if (this.getHandle().connection == null || clock.isEmpty()) {
             return;
         }
 
         final long gameTime = level.getGameTime();
         final long playerClockTime = this.getHandle().getPlayerTime();
-        final Holder<WorldClock> worldClock = level.dimensionType().defaultClock().get();
+        final Holder<WorldClock> worldClock = clock.get();
         final boolean paused = !this.getHandle().relativeTime || !level.getGameRules().get(GameRules.ADVANCE_TIME) || level.clockManager().isPaused(worldClock);
         final ClockNetworkState clockState = new ClockNetworkState(
             playerClockTime,

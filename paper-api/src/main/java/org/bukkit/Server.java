@@ -16,6 +16,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import io.papermc.paper.configuration.ServerConfiguration;
+import io.papermc.paper.world.WorldClock;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -164,6 +165,85 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     @NotNull
     public Collection<? extends Player> getOnlinePlayers();
+
+    /**
+     * Gets the relative in-game time of the specified clock.
+     * <p>
+     * The relative time is analogous to hours * 1000
+     *
+     * @param clock the clock
+     * @return The current relative time
+     * @see #getFullTime(WorldClock) Returns an absolute time of the clock
+     */
+    public long getTime(@NotNull WorldClock clock);
+
+    /**
+     * Sets the relative in-game time of the specified clock.
+     * <p>
+     * The relative time is analogous to hours * 1000
+     * <p>
+     * Note that setting the relative time below the current relative time
+     * will actually move the clock forward a day. If you require to rewind
+     * time, please see {@link #setFullTime(WorldClock, long)}
+     *
+     * @param clock the clock
+     * @param time The new relative time to set the clock to (in hours*1000)
+     * @see #setFullTime(WorldClock, long) Sets the absolute time of a specific clock
+     */
+    public void setTime(@NotNull WorldClock clock, long time);
+
+    /**
+     * Gets the full in-game time of the specified clock.
+     *
+     * @param clock the clock
+     * @return The current absolute time
+     * @see #getTime(WorldClock) Returns a relative time of the clock
+     */
+    public long getFullTime(@NotNull WorldClock clock);
+
+    /**
+     * Sets the in-game time of the specified clock.
+     * <p>
+     * Note that this sets the full time of the clock, which may cause adverse
+     * effects such as breaking redstone clocks and any scheduled events
+     *
+     * @param clock the clock
+     * @param time The new absolute time to set this clock to
+     * @see #setTime(WorldClock, long) Sets the relative time of a specific clock
+     */
+    public void setFullTime(@NotNull WorldClock clock, long time);
+
+    /**
+     * Gets whether the specified clock is paused.
+     *
+     * @param clock the clock
+     * @return whether the clock is paused
+     */
+    public boolean isClockPaused(@NotNull WorldClock clock);
+
+    /**
+     * Sets whether the specified clock is paused.
+     *
+     * @param clock the clock
+     * @param paused whether the clock is paused
+     */
+    public void setClockPaused(@NotNull WorldClock clock, boolean paused);
+
+    /**
+     * Gets the rate of the specified clock.
+     *
+     * @param clock the clock
+     * @return the clock rate
+     */
+    public float getClockRate(@NotNull WorldClock clock);
+
+    /**
+     * Sets the rate of the specified clock.
+     *
+     * @param clock the clock
+     * @param rate the clock rate
+     */
+    public void setClockRate(@NotNull WorldClock clock, float rate);
 
     /**
      * Get the maximum amount of players which can login to this server.

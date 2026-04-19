@@ -261,6 +261,7 @@ import org.bukkit.event.raid.RaidStopEvent;
 import org.bukkit.event.raid.RaidTriggerEvent;
 import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.event.weather.LightningStrikeEvent;
+import org.bukkit.event.world.ClockTimeSkipEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
 import org.bukkit.event.world.LootGenerateEvent;
@@ -2416,5 +2417,10 @@ public class CraftEventFactory {
             return false;
         }
         return true;
+    }
+
+    public static ClockTimeSkipEvent callTimeSkipEvent(final net.minecraft.core.Holder<net.minecraft.world.clock.WorldClock> clock, final long skipAmount) {
+        final io.papermc.paper.world.WorldClock bukkitClock = org.bukkit.craftbukkit.CraftWorldClock.minecraftHolderToBukkit(clock);
+        return new ClockTimeSkipEvent(bukkitClock, ClockTimeSkipEvent.SkipReason.COMMAND, skipAmount);
     }
 }

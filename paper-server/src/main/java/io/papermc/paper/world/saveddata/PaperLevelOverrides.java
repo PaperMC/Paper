@@ -3,11 +3,14 @@ package io.papermc.paper.world.saveddata;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.clock.WorldClock;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
@@ -28,7 +31,8 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
         Codec.LONG.fieldOf("game_time").forGetter(levelOverrides -> levelOverrides.gameTime),
         Codec.BOOL.fieldOf("initialized").forGetter(levelOverrides -> levelOverrides.initialized),
         LEGACY_GAME_TYPE_CODEC.fieldOf("game_type").forGetter(levelOverrides -> levelOverrides.gameType),
-        LevelSettings.DifficultySettings.CODEC.fieldOf("difficulty_settings").forGetter(levelOverrides -> levelOverrides.difficultySettings)
+        LevelSettings.DifficultySettings.CODEC.fieldOf("difficulty_settings").forGetter(levelOverrides -> levelOverrides.difficultySettings),
+        ResourceKey.codec(Registries.WORLD_CLOCK).optionalFieldOf("clock").forGetter(levelOverrides -> levelOverrides.clock)
     ).apply(instance, PaperLevelOverrides::new));
     public static final SavedDataType<PaperLevelOverrides> TYPE = new SavedDataType<>(
         Identifier.fromNamespaceAndPath(Identifier.PAPER_NAMESPACE, "level_overrides"),
@@ -42,11 +46,12 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
     private boolean initialized;
     private GameType gameType;
     private LevelSettings.DifficultySettings difficultySettings;
+    private Optional<ResourceKey<WorldClock>> clock;
     private transient @Nullable PrimaryLevelData rootData;
     private transient ResourceKey<Level> dimension = Level.OVERWORLD;
 
     private PaperLevelOverrides() {
-        this(RespawnData.DEFAULT, 0L, false, GameType.SURVIVAL, LevelSettings.DifficultySettings.DEFAULT);
+        this(RespawnData.DEFAULT, 0L, false, GameType.SURVIVAL, LevelSettings.DifficultySettings.DEFAULT, Optional.empty());
     }
 
     private PaperLevelOverrides(
@@ -54,13 +59,15 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
         final long gameTime,
         final boolean initialized,
         final GameType gameType,
-        final LevelSettings.DifficultySettings difficultySettings
+        final LevelSettings.DifficultySettings difficultySettings,
+        final Optional<ResourceKey<WorldClock>> clock
     ) {
         this.respawnData = respawnData.normalized();
         this.gameTime = gameTime;
         this.initialized = initialized;
         this.gameType = gameType;
         this.difficultySettings = difficultySettings;
+        this.clock = clock;
     }
 
     public static PaperLevelOverrides createFromLiveLevelData(final PrimaryLevelData rootData) {
@@ -69,7 +76,8 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
             rootData.getGameTime(),
             false,
             rootData.getGameType(),
-            new LevelSettings.DifficultySettings(rootData.getDifficulty(), rootData.isHardcore(), rootData.isDifficultyLocked())
+            new LevelSettings.DifficultySettings(rootData.getDifficulty(), rootData.isHardcore(), rootData.isDifficultyLocked()),
+            Optional.empty()
         );
     }
 
@@ -82,7 +90,8 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
             levelData.get("Time").asLong(0L),
             levelData.get("initialized").asBoolean(true),
             GameType.byId(levelData.get("GameType").asInt(GameType.SURVIVAL.getId())),
-            levelData.get("difficulty_settings").read(LevelSettings.DifficultySettings.CODEC).result().orElse(LevelSettings.DifficultySettings.DEFAULT)
+            levelData.get("difficulty_settings").read(LevelSettings.DifficultySettings.CODEC).result().orElse(LevelSettings.DifficultySettings.DEFAULT),
+            Optional.empty()
         );
     }
 
@@ -110,6 +119,18 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
     public void setHardcore(final boolean hardcore) {
         if (this.difficultySettings.hardcore() != hardcore) {
             this.setDifficultySettings(new LevelSettings.DifficultySettings(this.difficultySettings.difficulty(), hardcore, this.difficultySettings.locked()));
+        }
+    }
+
+    public Optional<ResourceKey<WorldClock>> clock() {
+        return this.clock;
+    }
+
+    public void setClock(final @Nullable ResourceKey<WorldClock> clock) {
+        final Optional<ResourceKey<WorldClock>> newClock = Optional.ofNullable(clock);
+        if (!this.clock.equals(newClock)) {
+            this.clock = newClock;
+            this.setDirty();
         }
     }
 

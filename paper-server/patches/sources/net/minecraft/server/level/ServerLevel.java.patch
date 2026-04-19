@@ -262,24 +262,42 @@
  
      @Deprecated
      @VisibleForTesting
-@@ -354,11 +_,24 @@
+@@ -326,6 +_,13 @@
+     }
+ 
+     @Override
++    public Optional<Holder<WorldClock>> getClock() {
++        return this.serverLevelData.clock()
++            .<Holder<WorldClock>>map(clock -> this.registryAccess().lookupOrThrow(Registries.WORLD_CLOCK).getOrThrow(clock))
++            .or(() -> this.dimensionType().defaultClock());
++    }
++
++    @Override
+     public EnvironmentAttributeSystem environmentAttributes() {
+         return this.environmentAttributes;
+     }
+@@ -353,12 +_,26 @@
+ 
          int percentage = this.getGameRules().get(GameRules.PLAYERS_SLEEPING_PERCENTAGE);
          if (this.sleepStatus.areEnoughSleeping(percentage) && this.sleepStatus.areEnoughDeepSleeping(percentage, this.players)) {
-             Optional<Holder<WorldClock>> defaultClock = this.dimensionType().defaultClock();
-+            org.bukkit.event.world.TimeSkipEvent event = null; // Paper - time skip event
-             if (this.getGameRules().get(GameRules.ADVANCE_TIME) && defaultClock.isPresent()) {
+-            Optional<Holder<WorldClock>> defaultClock = this.dimensionType().defaultClock();
+-            if (this.getGameRules().get(GameRules.ADVANCE_TIME) && defaultClock.isPresent()) {
 -                this.server.clockManager().moveToTimeMarker(defaultClock.get(), ClockTimeMarkers.WAKE_UP_FROM_SLEEP);
++            Optional<Holder<WorldClock>> clock = this.getClock();
++            org.bukkit.event.world.TimeSkipEvent event = null; // Paper - time skip event
++            if (this.getGameRules().get(GameRules.ADVANCE_TIME) && clock.isPresent()) {
 +                // Paper start - time skip event
-+                long currentTime = this.server.clockManager().getTotalTicks(defaultClock.get());
-+                long delta = this.server.clockManager().getTotalTicksToTimeMarker(defaultClock.get(), ClockTimeMarkers.WAKE_UP_FROM_SLEEP).orElse(0L) - currentTime;
++                long currentTime = this.server.clockManager().getTotalTicks(clock.get());
++                long delta = this.server.clockManager().getTotalTicksToTimeMarker(clock.get(), ClockTimeMarkers.WAKE_UP_FROM_SLEEP).orElse(0L) - currentTime;
 +                event = new org.bukkit.event.world.TimeSkipEvent(
 +                    this.getWorld(),
-+                    org.bukkit.event.world.TimeSkipEvent.SkipReason.NIGHT_SKIP,
++                    org.bukkit.craftbukkit.CraftWorldClock.minecraftHolderToBukkit(clock.get()),
++                    org.bukkit.event.world.ClockTimeSkipEvent.SkipReason.NIGHT_SKIP,
 +                    delta
 +                );
 +
 +                if (event.callEvent()) {
-+                    this.server.clockManager().setTotalTicks(defaultClock.get(), currentTime + event.getSkipAmount()); // TODO - snapshot - per world time
++                    this.server.clockManager().setTotalTicks(clock.get(), currentTime + event.getSkipAmount());
 +                }
 +                // Paper end - time skip event
              }

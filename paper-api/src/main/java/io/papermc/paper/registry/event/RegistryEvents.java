@@ -14,9 +14,13 @@ import io.papermc.paper.registry.data.InstrumentRegistryEntry;
 import io.papermc.paper.registry.data.JukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PigVariantRegistryEntry;
+import io.papermc.paper.registry.data.TimelineRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
+import io.papermc.paper.registry.data.WorldClockRegistryEntry;
 import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
+import io.papermc.paper.world.Timeline;
+import io.papermc.paper.world.WorldClock;
 import org.bukkit.Art;
 import org.bukkit.GameEvent;
 import org.bukkit.JukeboxSong;
@@ -56,6 +60,8 @@ public final class RegistryEvents {
     public static final RegistryEventProvider<Pig.Variant, PigVariantRegistryEntry.Builder> PIG_VARIANT = create(RegistryKey.PIG_VARIANT);
     public static final RegistryEventProvider<ZombieNautilus.Variant, ZombieNautilusVariantRegistryEntry.Builder> ZOMBIE_NAUTILUS_VARIANT = create(RegistryKey.ZOMBIE_NAUTILUS_VARIANT);
     public static final RegistryEventProvider<Dialog, DialogRegistryEntry.Builder> DIALOG = create(RegistryKey.DIALOG);
+    public static final RegistryEventProvider<WorldClock, WorldClockRegistryEntry.Builder> WORLD_CLOCK = create(RegistryKey.WORLD_CLOCK);
+    public static final RegistryEventProvider<Timeline, TimelineRegistryEntry.Builder> TIMELINE = create(RegistryKey.TIMELINE);
     // End generate - RegistryEvents
 
     private RegistryEvents() {

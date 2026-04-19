@@ -13,7 +13,9 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
+import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.world.PaperWorldLoader;
+import io.papermc.paper.world.WorldClock;
 import io.papermc.paper.world.migration.WorldFolderMigration;
 import io.papermc.paper.world.saveddata.PaperLevelOverrides;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -45,6 +47,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
+import net.minecraft.SharedConstants;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.Optionull;
 import net.minecraft.advancements.AdvancementHolder;
@@ -52,6 +55,8 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -99,6 +104,7 @@ import net.minecraft.world.level.CustomSpawner;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.PatrolSpawner;
 import net.minecraft.world.level.levelgen.PhantomSpawner;
@@ -211,6 +217,7 @@ import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.event.server.ServerLoadEvent;
+import org.bukkit.event.world.ClockTimeSkipEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
@@ -909,6 +916,58 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public long getTime(final WorldClock clock) {
+        long time = this.getFullTime(clock) % SharedConstants.TICKS_PER_GAME_DAY;
+        if (time < 0) time += SharedConstants.TICKS_PER_GAME_DAY;
+        return time;
+    }
+
+    @Override
+    public void setTime(final WorldClock clock, final long time) {
+        long margin = (time - this.getFullTime(clock)) % SharedConstants.TICKS_PER_GAME_DAY;
+        if (margin < 0) margin += SharedConstants.TICKS_PER_GAME_DAY;
+        this.setFullTime(clock, this.getFullTime(clock) + margin);
+    }
+
+    @Override
+    public long getFullTime(final WorldClock clock) {
+        return this.console.clockManager().getTotalTicks(CraftWorldClock.bukkitToMinecraftHolder(clock));
+    }
+
+    @Override
+    public void setFullTime(final WorldClock clock, final long time) {
+        final Holder<net.minecraft.world.clock.WorldClock> nmsClock = CraftWorldClock.bukkitToMinecraftHolder(clock);
+        final long currentClockTime = this.console.clockManager().getTotalTicks(nmsClock);
+        final ClockTimeSkipEvent event = new ClockTimeSkipEvent(clock, ClockTimeSkipEvent.SkipReason.CUSTOM, time - currentClockTime);
+        this.getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            return;
+        }
+
+        this.console.clockManager().setTotalTicks(nmsClock, currentClockTime + event.getSkipAmount());
+    }
+
+    @Override
+    public boolean isClockPaused(final WorldClock clock) {
+        return this.console.clockManager().isPaused(CraftWorldClock.bukkitToMinecraftHolder(clock));
+    }
+
+    @Override
+    public void setClockPaused(final WorldClock clock, final boolean paused) {
+        this.console.clockManager().setPaused(CraftWorldClock.bukkitToMinecraftHolder(clock), paused);
+    }
+
+    @Override
+    public float getClockRate(final WorldClock clock) {
+        return this.console.clockManager().rate(CraftWorldClock.bukkitToMinecraftHolder(clock));
+    }
+
+    @Override
+    public void setClockRate(final WorldClock clock, final float rate) {
+        this.console.clockManager().setRate(CraftWorldClock.bukkitToMinecraftHolder(clock), rate);
+    }
+
+    @Override
     public boolean isTickingWorlds() {
         return console.isIteratingOverLevels;
     }
@@ -1267,6 +1326,17 @@ public final class CraftServer implements Server {
         if (customStem == null) {
             throw new IllegalStateException("Missing level stem for world " + name + " using key " + actualDimension);
         }
+        boolean dimensionTypeChanged = false;
+        if (creator.timelines() != null) {
+            customStem = this.createLevelStemWithClockAndTimelines(customStem, creator, this.console.registryAccess());
+            dimensionTypeChanged = true;
+        }
+        WorldGenSettings savedWorldGenSettings = genSettingsFinal;
+        if (dimensionTypeChanged) {
+            final Map<ResourceKey<LevelStem>, LevelStem> dimensions = new LinkedHashMap<>(genSettingsFinal.dimensions().dimensions());
+            dimensions.put(actualDimension, customStem);
+            savedWorldGenSettings = new WorldGenSettings(genSettingsFinal.options(), new WorldDimensions(dimensions));
+        }
 
         WorldInfo worldInfo = new CraftWorldInfo(loadedWorldData.bukkitName(), CraftNamespacedKey.fromMinecraft(dimensionKey.identifier()), genSettingsFinal.options().seed(), primaryLevelData.enabledFeatures(), creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess(), loadedWorldData.uuid());
         if (biomeProvider == null && chunkGenerator != null) {
@@ -1274,7 +1344,8 @@ public final class CraftServer implements Server {
         }
 
         final SavedDataStorage savedDataStorage = new SavedDataStorage(this.console.storageSource.getDimensionPath(dimensionKey).resolve(LevelResource.DATA.id()), this.console.getFixerUpper(), this.console.registryAccess());
-        savedDataStorage.set(WorldGenSettings.TYPE, new WorldGenSettings(genSettingsFinal.options(), genSettingsFinal.dimensions()));
+        loadedWorldData.levelOverrides().setClock(creator.clock() == null ? null : PaperRegistries.toNms(creator.clock()));
+        savedDataStorage.set(WorldGenSettings.TYPE, savedWorldGenSettings);
         List<CustomSpawner> list = ImmutableList.of(
             new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(savedDataStorage)
         );
@@ -1310,6 +1381,33 @@ public final class CraftServer implements Server {
         this.getServer().prepareLevel(serverLevel);
 
         return serverLevel.getWorld();
+    }
+
+    private LevelStem createLevelStemWithClockAndTimelines(final LevelStem stem, final WorldCreator creator, final RegistryAccess registryAccess) {
+        final DimensionType type = stem.type().value();
+        final List<io.papermc.paper.registry.TypedKey<io.papermc.paper.world.Timeline>> timelineKeys = creator.timelines();
+        final HolderSet<net.minecraft.world.timeline.Timeline> timelines = timelineKeys == null
+            ? type.timelines()
+            : HolderSet.direct(timelineKeys.stream().map(key -> registryAccess.lookupOrThrow(Registries.TIMELINE).getOrThrow(PaperRegistries.toNms(key))).toList());
+        final DimensionType newType = new DimensionType(
+            type.hasFixedTime(),
+            type.hasSkyLight(),
+            type.hasCeiling(),
+            type.hasEnderDragonFight(),
+            type.coordinateScale(),
+            type.minY(),
+            type.height(),
+            type.logicalHeight(),
+            type.infiniburn(),
+            type.ambientLight(),
+            type.monsterSettings(),
+            type.skybox(),
+            type.cardinalLightType(),
+            type.attributes(),
+            timelines,
+            type.defaultClock()
+        );
+        return new LevelStem(Holder.direct(newType), stem.generator());
     }
 
     @Override

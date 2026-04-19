@@ -13,6 +13,8 @@ import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.world.Timeline;
+import io.papermc.paper.world.WorldClock;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -139,8 +141,6 @@ import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.weather.ThunderChangeEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
-import org.bukkit.event.world.SpawnChangeEvent;
-import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
@@ -793,24 +793,31 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public long getFullTime() {
-        return this.world.getDefaultClockTime();
+        final WorldClock clock = this.getClock();
+        return clock == null ? 0L : this.server.getFullTime(clock);
     }
 
     @Override
     public void setFullTime(long time) {
-        if (this.world.dimensionType().defaultClock().isEmpty()) {
+        this.server.setFullTime(this.requireDefaultClock(), time);
+    }
+
+    @Override
+    public WorldClock getClock() {
+        return this.world.getClock().map(CraftWorldClock::minecraftHolderToBukkit).orElse(null);
+    }
+
+    @Override
+    public List<Timeline> getTimelines() {
+        return this.world.dimensionType().timelines().stream().map(CraftTimeline::minecraftHolderToBukkit).toList();
+    }
+
+    private WorldClock requireDefaultClock() {
+        final WorldClock clock = this.getClock();
+        if (clock == null) {
             throw new IllegalArgumentException("Cannot set time in world without world clock");
         }
-
-        final long currentClockTime = this.world.getDefaultClockTime();
-        final TimeSkipEvent event = new TimeSkipEvent(this, TimeSkipEvent.SkipReason.CUSTOM, time - currentClockTime);
-        this.server.getPluginManager().callEvent(event);
-        if (event.isCancelled()) {
-            return;
-        }
-
-        // Updates the clock for all players
-        this.world.clockManager().setTotalTicks(this.world.dimensionType().defaultClock().get(), currentClockTime + event.getSkipAmount());
+        return clock;
     }
 
     // Paper start

@@ -3,6 +3,8 @@ package io.papermc.paper.registry;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.world.Timeline;
+import io.papermc.paper.world.WorldClock;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
@@ -251,6 +253,16 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.DialogKeys
      */
     RegistryKey<Dialog> DIALOG = create("dialog");
+    /**
+     * Data-driven registry for world clocks.
+     * @see io.papermc.paper.registry.keys.WorldClockKeys
+     */
+    RegistryKey<WorldClock> WORLD_CLOCK = create("world_clock");
+    /**
+     * Data-driven registry for timelines.
+     * @see io.papermc.paper.registry.keys.TimelineKeys
+     */
+    RegistryKey<Timeline> TIMELINE = create("timeline");
 
 
     /* ******************* *

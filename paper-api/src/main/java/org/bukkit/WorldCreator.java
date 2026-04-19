@@ -1,6 +1,13 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.TypedKey;
+import io.papermc.paper.world.Timeline;
+import io.papermc.paper.world.WorldClock;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Random;
 import org.bukkit.command.CommandSender;
 import org.bukkit.generator.BiomeProvider;
@@ -25,6 +32,8 @@ public class WorldCreator {
     private String generatorSettings = "";
     private boolean hardcore = false;
     private boolean bonusChest = false;
+    private TypedKey<WorldClock> clock = null;
+    private List<TypedKey<Timeline>> timelines = null;
 
     /**
      * Creates an empty WorldCreationOptions for the given world name.
@@ -152,6 +161,8 @@ public class WorldCreator {
         generateStructures = world.canGenerateStructures();
         hardcore = world.isHardcore();
         bonusChest = world.hasBonusChest();
+        clock = world.getClock() == null ? null : TypedKey.create(RegistryKey.WORLD_CLOCK, world.getClock().getKey());
+        timelines = world.getTimelines().stream().map(timeline -> TypedKey.create(RegistryKey.TIMELINE, timeline.getKey())).toList();
 
         return this;
     }
@@ -175,6 +186,8 @@ public class WorldCreator {
         generatorSettings = creator.generatorSettings();
         hardcore = creator.hardcore();
         bonusChest = creator.bonusChest();
+        clock = creator.clock();
+        timelines = creator.timelines() == null ? null : new ArrayList<>(creator.timelines());
 
         return this;
     }
@@ -511,6 +524,56 @@ public class WorldCreator {
      */
     public boolean bonusChest() {
         return bonusChest;
+    }
+
+    /**
+     * Sets the clock that will be used by this world.
+     * <p>
+     * If unset, the clock from the selected environment's dimension type will be used.
+     * If set, this overrides the selected environment dimension type's clock.
+     *
+     * @param clock the clock, or null to use the environment default
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator clock(@Nullable TypedKey<WorldClock> clock) {
+        this.clock = clock;
+        return this;
+    }
+
+    /**
+     * Gets the clock override that will be used by this world.
+     *
+     * @return the clock override, or null to use the environment default
+     */
+    @Nullable
+    public TypedKey<WorldClock> clock() {
+        return this.clock;
+    }
+
+    /**
+     * Sets the timelines that will be used by this world's dimension type.
+     * <p>
+     * If unset, the timelines from the selected environment's dimension type will be used.
+     * Passing an empty collection will create or load the world with no timelines.
+     *
+     * @param timelines the timelines, or null to use the environment default
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator timelines(@Nullable Collection<TypedKey<Timeline>> timelines) {
+        this.timelines = timelines == null ? null : new ArrayList<>(timelines);
+        return this;
+    }
+
+    /**
+     * Gets the timeline overrides that will be used by this world's dimension type.
+     *
+     * @return the timeline overrides, or null to use the environment default
+     */
+    @Nullable
+    public List<TypedKey<Timeline>> timelines() {
+        return this.timelines == null ? null : List.copyOf(this.timelines);
     }
 
     /**

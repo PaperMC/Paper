@@ -1,6 +1,8 @@
 package org.bukkit;
 
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
+import io.papermc.paper.world.Timeline;
+import io.papermc.paper.world.WorldClock;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -2071,8 +2073,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param time The new relative time to set the in-game time to (in
      *     hours*1000)
-     * @see #setFullTime(long) Sets the absolute time of this world
+     * @see Server#setTime(WorldClock, long) Sets the relative time of a specific clock
+     * @deprecated use {@link Server#setTime(WorldClock, long)} with {@link #getClock()} instead
      */
+    @Deprecated(since = "26.1")
     public void setTime(long time);
 
     /**
@@ -2090,12 +2094,30 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * effects such as breaking redstone clocks and any scheduled events
      *
      * @param time The new absolute time to set this world to
-     * @see #setTime(long) Sets the relative time of this world
-     * @deprecated all overworlds share the same world clock by default now
+     * @see Server#setFullTime(WorldClock, long) Sets the absolute time of a specific clock
+     * @deprecated use {@link Server#setFullTime(WorldClock, long)} with {@link #getClock()} instead
      * @throws IllegalArgumentException if this world does not have a world clock (e.g. the nether)
      */
-    @Deprecated // TODO world clock API with links to it
+    @Deprecated(since = "26.1")
     public void setFullTime(long time);
+
+    /**
+     * Gets the clock of this world.
+     * <p>
+     * This may be a world-specific override of the dimension type's clock.
+     *
+     * @return the clock, or null if this world does not have one
+     */
+    @Nullable
+    public WorldClock getClock();
+
+    /**
+     * Gets the timelines applied by this world's dimension type.
+     *
+     * @return the timelines
+     */
+    @NotNull
+    public List<Timeline> getTimelines();
 
     // Paper start
 
