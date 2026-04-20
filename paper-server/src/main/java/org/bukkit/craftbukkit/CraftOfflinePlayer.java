@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import com.mojang.authlib.GameProfile;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -17,6 +18,7 @@ import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.world.level.storage.PlayerDataStorage;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.ScoreHolder;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
@@ -29,12 +31,13 @@ import org.bukkit.World;
 import org.bukkit.ban.ProfileBanList;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
+import org.bukkit.craftbukkit.scoreboard.CraftScoreHolder;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
 @SerializableAs("Player")
-public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
+public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable, CraftScoreHolder {
     private final NameAndId nameAndId;
     private final CraftServer server;
     private final PlayerDataStorage storage;
@@ -77,13 +80,22 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     @Override
+    public ScoreHolder asNmsScoreHolder() {
+        return ScoreHolder.fromGameProfile(this.getProfile());
+    }
+
+    @Override
     public UUID getUniqueId() {
         return this.nameAndId.id();
     }
 
+    public GameProfile getProfile() {
+        return this.nameAndId.toUncompletedGameProfile();
+    }
+
     @Override
     public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() { // Paper
-        return com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(this.nameAndId.toUncompletedGameProfile()); // Paper
+        return com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(this.getProfile()); // Paper
     }
 
     public Server getServer() {
