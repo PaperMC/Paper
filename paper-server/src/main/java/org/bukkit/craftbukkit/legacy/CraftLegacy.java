@@ -325,6 +325,10 @@ public final class CraftLegacy {
             if (!material.isLegacy()) {
                 continue;
             }
+            // Do old heads separately
+            if (material == Material.LEGACY_SKULL || material == Material.LEGACY_SKULL_ITEM) {
+                continue;
+            }
 
             // Handle blocks
             if (isBlock(material)) { // Use custom method instead of Material#isBlock since it relies on this being already run
@@ -332,7 +336,7 @@ public final class CraftLegacy {
                     MaterialData matData = new MaterialData(material, data);
                     Dynamic blockTag = BlockStateData.getTag(material.getId() << 4 | data);
                     blockTag = DataFixers.getDataFixer().update(References.BLOCK_STATE, blockTag, 100, CraftMagicNumbers.INSTANCE.getDataVersion());
-                    // TODO: better skull conversion, chests
+                    // TODO: chests
                     if (blockTag.get("Name").asString("").contains("%%FILTER_ME%%")) {
                         continue;
                     }
@@ -461,6 +465,46 @@ public final class CraftLegacy {
 
                 materialToItem.put(matData, newMaterial);
                 itemToMaterial.put(newMaterial, matData);
+            }
+        }
+
+        // Do old heads
+        for (byte data = 0; data < 16; data++) {
+            MaterialData itemMatData = new MaterialData(Material.LEGACY_SKULL_ITEM, data);
+            MaterialData blockMatData = new MaterialData(Material.LEGACY_SKULL, data);
+            Item nonLegacyItem;
+            Block nonLegacyBlock;
+            switch (data) {
+                case 1 -> {
+                    nonLegacyItem = Items.WITHER_SKELETON_SKULL;
+                    nonLegacyBlock = Blocks.WITHER_SKELETON_SKULL;
+                }
+                case 2 -> {
+                    nonLegacyItem = Items.ZOMBIE_HEAD;
+                    nonLegacyBlock = Blocks.ZOMBIE_HEAD;
+                }
+                case 3 -> {
+                    nonLegacyItem = Items.PLAYER_HEAD;
+                    nonLegacyBlock = Blocks.PLAYER_HEAD;
+                }
+                case 4 -> {
+                    nonLegacyItem = Items.CREEPER_HEAD;
+                    nonLegacyBlock = Blocks.CREEPER_HEAD;
+                }
+                case 5 -> {
+                    nonLegacyItem = Items.DRAGON_HEAD;
+                    nonLegacyBlock = Blocks.DRAGON_HEAD;
+                }
+                default -> {
+                    nonLegacyItem = Items.SKELETON_SKULL;
+                    nonLegacyBlock = Blocks.SKELETON_SKULL;
+                }
+            }
+            materialToItem.put(itemMatData, nonLegacyItem);
+            materialToBlock.put(blockMatData, nonLegacyBlock);
+            if (data <= 5) {
+                itemToMaterial.put(nonLegacyItem, itemMatData);
+                blockToMaterial.put(nonLegacyBlock, blockMatData);
             }
         }
     }
