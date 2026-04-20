@@ -49,7 +49,7 @@ fi
 	done
 	for i in $($gitcmd status --porcelain | awk '{print $2}'); do
 		filedata=$(cat "$i")
-		if [ -f "$file" ] && [[ "$filedata" == *"<<<<<"* ]]; then
+		if [ -f "$i" ] && [[ "$filedata" == *"<<<<<"* ]]; then
 			export summaryfail="$summaryfail\nFAILED TO APPLY: $i"
 		else
 			$gitcmd add --force "$i"
