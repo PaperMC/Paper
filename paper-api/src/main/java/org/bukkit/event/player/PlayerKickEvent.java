@@ -6,11 +6,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a player gets kicked from the server
  */
+@NullMarked
 public class PlayerKickEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -23,7 +25,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
-    public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final String kickReason, @NotNull final String leaveMessage) {
+    public PlayerKickEvent(final Player playerKicked, final String kickReason, final String leaveMessage) {
         super(playerKicked);
         this.kickReason = LegacyComponentSerializer.legacySection().deserialize(kickReason);
         this.leaveMessage = LegacyComponentSerializer.legacySection().deserialize(leaveMessage);
@@ -32,7 +34,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
 
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
-    public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final Component kickReason, @NotNull final Component leaveMessage) {
+    public PlayerKickEvent(final Player playerKicked, final Component kickReason, final Component leaveMessage) {
         super(playerKicked);
         this.kickReason = kickReason;
         this.leaveMessage = leaveMessage;
@@ -40,7 +42,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
     }
 
     @ApiStatus.Internal
-    public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final Component kickReason, @NotNull final Component leaveMessage, @NotNull final Cause cause) {
+    public PlayerKickEvent(final Player playerKicked, final Component kickReason, final Component leaveMessage, final Cause cause) {
         super(playerKicked);
         this.kickReason = kickReason;
         this.leaveMessage = leaveMessage;
@@ -52,7 +54,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      *
      * @return string kick reason
      */
-    public @NotNull Component reason() {
+    public Component reason() {
         return this.kickReason;
     }
 
@@ -61,7 +63,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      *
      * @param kickReason kick reason
      */
-    public void reason(@NotNull Component kickReason) {
+    public void reason(Component kickReason) {
         this.kickReason = kickReason;
     }
 
@@ -71,7 +73,6 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      * @return string kick reason
      * @deprecated in favour of {@link #reason()}
      */
-    @NotNull
     @Deprecated
     public String getReason() {
         return LegacyComponentSerializer.legacySection().serialize(this.kickReason);
@@ -84,7 +85,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      * @deprecated in favour of {@link #reason(net.kyori.adventure.text.Component)}
      */
     @Deprecated
-    public void setReason(@NotNull String kickReason) {
+    public void setReason(String kickReason) {
         this.kickReason = LegacyComponentSerializer.legacySection().deserialize(kickReason);
     }
 
@@ -93,16 +94,16 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      *
      * @return string kick reason
      */
-    public @NotNull Component leaveMessage() {
+    public @Nullable Component leaveMessage() {
         return this.leaveMessage;
     }
 
     /**
      * Sets the leave message send to all online players
      *
-     * @param leaveMessage leave message
+     * @param leaveMessage leave message. If {@code null}, no message will be sent
      */
-    public void leaveMessage(@NotNull Component leaveMessage) {
+    public void leaveMessage(@Nullable Component leaveMessage) {
         this.leaveMessage = leaveMessage;
     }
 
@@ -112,7 +113,6 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      * @return string kick reason
      * @deprecated in favour of {@link #leaveMessage()}
      */
-    @NotNull
     @Deprecated
     public String getLeaveMessage() {
         return LegacyComponentSerializer.legacySection().serialize(this.leaveMessage);
@@ -125,15 +125,14 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      * @deprecated in favour of {@link #leaveMessage(net.kyori.adventure.text.Component)}
      */
     @Deprecated
-    public void setLeaveMessage(@NotNull String leaveMessage) {
+    public void setLeaveMessage(String leaveMessage) {
         this.leaveMessage = LegacyComponentSerializer.legacySection().deserialize(leaveMessage);
     }
 
     /**
      * Gets the cause of this kick
      */
-    @NotNull
-    public org.bukkit.event.player.PlayerKickEvent.Cause getCause() {
+    public PlayerKickEvent.Cause getCause() {
         return this.cause;
     }
 
@@ -147,13 +146,11 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
