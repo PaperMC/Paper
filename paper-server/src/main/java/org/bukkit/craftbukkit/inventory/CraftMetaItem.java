@@ -134,6 +134,9 @@ import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.slf4j.Logger;
 
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
+import static io.papermc.paper.util.BoundChecker.requirePositive;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -1425,9 +1428,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     @Override
-    public void setEnchantable(Integer data) {
-        Preconditions.checkArgument(data == null || data > 0, "Enchantability must be positive");
-        this.enchantableValue = data;
+    public void setEnchantable(Integer enchantable) {
+        if (enchantable != null) {
+            requirePositive(enchantable, "enchantable");
+        }
+        this.enchantableValue = enchantable;
     }
 
     @Override
@@ -1600,9 +1605,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void setMaxStackSize(Integer max) {
-        Preconditions.checkArgument(max == null || max > 0, "max_stack_size must be > 0");
-        Preconditions.checkArgument(max == null || max <= net.minecraft.world.item.Item.ABSOLUTE_MAX_STACK_SIZE, "max_stack_size must be <= 99");
-        this.maxStackSize = max;
+        this.maxStackSize = max == null ? null : requireRange(max, "max", 1, net.minecraft.world.item.Item.ABSOLUTE_MAX_STACK_SIZE);
     }
 
     @Override
@@ -1918,9 +1921,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void setDamage(int damage) {
-        Preconditions.checkArgument(damage >= 0, "Damage cannot be negative");
         Preconditions.checkArgument(!this.hasMaxDamage() || damage <= this.maxDamage, "Damage cannot exceed max damage");
-        this.damage = damage;
+        this.damage = requireNonNegative(damage, "damage");
     }
 
     // Paper start - preserve empty/0 damage
@@ -1948,8 +1950,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void setMaxDamage(Integer maxDamage) {
-        Preconditions.checkArgument(maxDamage == null || maxDamage > 0, "Max damage should be positive");
-        this.maxDamage = maxDamage;
+        this.maxDamage = maxDamage == null ? null : requirePositive(maxDamage, "maxDamage");
     }
 
     @Override

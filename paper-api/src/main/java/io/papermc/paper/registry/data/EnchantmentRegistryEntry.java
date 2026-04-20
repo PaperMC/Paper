@@ -12,6 +12,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemType;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
@@ -99,7 +100,7 @@ public interface EnchantmentRegistryEntry {
      *
      * @return the anvil cost of this enchantment
      */
-    @Range(from = 0, to = Integer.MAX_VALUE) int anvilCost();
+    @NonNegative int anvilCost();
 
     /**
      * Provides a list of slot groups this enchantment may be active in.
@@ -245,7 +246,7 @@ public interface EnchantmentRegistryEntry {
          * @see Enchantment#getAnvilCost()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder anvilCost(@Range(from = 0, to = Integer.MAX_VALUE) int anvilCost);
+        Builder anvilCost(@NonNegative int anvilCost);
 
         /**
          * Configures the list of slot groups this enchantment may be active in.
