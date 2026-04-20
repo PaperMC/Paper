@@ -1,0 +1,36 @@
+--- a/net/minecraft/world/item/HoeItem.java
++++ b/net/minecraft/world/item/HoeItem.java
+@@ -21,6 +_,17 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
+ 
+ public class HoeItem extends Item {
++    // Paper start - EntityChangeBlockEvent
++    private static final Map<Block, BlockState> TILLABLE_STATES = Maps.newHashMap(
++        ImmutableMap.of(
++            Blocks.GRASS_BLOCK, Blocks.FARMLAND.defaultBlockState(),
++            Blocks.DIRT_PATH, Blocks.FARMLAND.defaultBlockState(),
++            Blocks.DIRT, Blocks.FARMLAND.defaultBlockState(),
++            Blocks.COARSE_DIRT, Blocks.DIRT.defaultBlockState(),
++            Blocks.ROOTED_DIRT, Blocks.DIRT.defaultBlockState()
++        )
++    );
++    // Paper end - EntityChangeBlockEvent
+     protected static final Map<Block, Pair<Predicate<UseOnContext>, Consumer<UseOnContext>>> TILLABLES = Maps.newHashMap(
+         ImmutableMap.of(
+             Blocks.GRASS_BLOCK,
+@@ -52,8 +_,14 @@
+             Consumer<UseOnContext> consumer = pair.getSecond();
+             if (predicate.test(context)) {
+                 Player player = context.getPlayer();
+-                level.playSound(player, clickedPos, SoundEvents.HOE_TILL, SoundSource.BLOCKS, 1.0F, 1.0F);
+                 if (!level.isClientSide()) {
++                    // Paper start - EntityChangeBlockEvent
++                    BlockState newState = TILLABLE_STATES.get(level.getBlockState(clickedPos).getBlock());
++                    if (newState != null && player != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, clickedPos, newState)) {
++                        return InteractionResult.PASS;
++                    }
++                    // Paper end - EntityChangeBlockEvent
++                    level.playSound(player, clickedPos, SoundEvents.HOE_TILL, SoundSource.BLOCKS, 1.0F, 1.0F); // Paper - moved inside isClientSide check
+                     consumer.accept(context);
+                     if (player != null) {
+                         context.getItemInHand().hurtAndBreak(1, player, context.getHand().asEquipmentSlot());
