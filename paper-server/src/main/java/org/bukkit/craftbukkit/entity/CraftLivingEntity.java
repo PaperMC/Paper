@@ -13,6 +13,7 @@ import java.util.UUID;
 import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.key.Key;
 import net.minecraft.Optionull;
+import net.minecraft.core.BlockPos;
 import io.papermc.paper.world.damagesource.CombatTracker;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
@@ -41,6 +42,8 @@ import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownExper
 import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Consumable;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.waypoints.WaypointStyleAsset;
 import net.minecraft.world.waypoints.WaypointStyleAssets;
@@ -62,6 +65,7 @@ import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.craftbukkit.inventory.CraftEntityEquipment;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractWindCharge;
 import org.bukkit.entity.Arrow;
@@ -768,6 +772,31 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public boolean isSleeping() {
         return this.getHandle().isSleeping();
+    }
+
+    @Override
+    public boolean sleep(Location location) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "Location needs to be in a world");
+        Preconditions.checkArgument(location.getWorld().equals(this.getWorld()), "Cannot sleep across worlds");
+        Preconditions.checkState(!this.getHandle().generation, "Cannot sleep during world generation");
+
+        BlockPos position = CraftLocation.toBlockPosition(location);
+        BlockState state = this.getHandle().level().getBlockState(position);
+        if (!(state.getBlock() instanceof BedBlock)) {
+            return false;
+        }
+
+        this.getHandle().startSleeping(position);
+        return true;
+    }
+
+    @Override
+    public void wakeup() {
+        Preconditions.checkState(this.isSleeping(), "Cannot wakeup if not sleeping");
+        Preconditions.checkState(!this.getHandle().generation, "Cannot wakeup during world generation");
+
+        this.getHandle().stopSleeping();
     }
 
     @Override

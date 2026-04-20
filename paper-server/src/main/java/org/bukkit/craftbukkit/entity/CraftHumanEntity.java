@@ -213,10 +213,20 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
+    public boolean sleep(Location location) {
+        return this.sleep(location, false);
+    }
+
+    @Override
     public void wakeup(boolean setSpawnLocation) {
         Preconditions.checkState(this.isSleeping(), "Cannot wakeup if not sleeping");
 
         this.getHandle().stopSleepInBed(true, setSpawnLocation);
+    }
+
+    @Override
+    public void wakeup() {
+        this.wakeup(false);
     }
 
     @Override
