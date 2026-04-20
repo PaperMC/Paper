@@ -18,7 +18,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private Component kickReason;
-    private Component leaveMessage;
+    private @Nullable Component leaveMessage;
     private final Cause cause;
 
     private boolean cancelled;
@@ -114,19 +114,19 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      * @deprecated in favour of {@link #leaveMessage()}
      */
     @Deprecated
-    public String getLeaveMessage() {
-        return LegacyComponentSerializer.legacySection().serialize(this.leaveMessage);
+    public @Nullable String getLeaveMessage() {
+        return this.leaveMessage == null ? null : LegacyComponentSerializer.legacySection().serialize(this.leaveMessage);
     }
 
     /**
      * Sets the leave message send to all online players
      *
-     * @param leaveMessage leave message
+     * @param leaveMessage leave message. If {@code null}, no message will be sent
      * @deprecated in favour of {@link #leaveMessage(net.kyori.adventure.text.Component)}
      */
     @Deprecated
-    public void setLeaveMessage(String leaveMessage) {
-        this.leaveMessage = LegacyComponentSerializer.legacySection().deserialize(leaveMessage);
+    public void setLeaveMessage(@Nullable String leaveMessage) {
+        this.leaveMessage = leaveMessage != null ? LegacyComponentSerializer.legacySection().deserialize(leaveMessage) : null;
     }
 
     /**
