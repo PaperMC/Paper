@@ -14,6 +14,7 @@ public class ServerShutdownThread extends Thread {
     public void run() {
         try {
             // Paper start - try to shutdown on main
+            server.cancelStartup = true;
             server.safeShutdown(false, false);
             for (int i = 1000; i > 0 && !server.hasStopped(); i -= 100) {
                 Thread.sleep(100);
