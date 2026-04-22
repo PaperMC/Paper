@@ -82,7 +82,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      * Sets the reason why the player is getting kicked
      *
      * @param kickReason kick reason
-     * @deprecated in favour of {@link #reason(net.kyori.adventure.text.Component)}
+     * @deprecated in favour of {@link #reason(Component)}
      */
     @Deprecated
     public void setReason(String kickReason) {
@@ -115,18 +115,18 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      */
     @Deprecated
     public @Nullable String getLeaveMessage() {
-        return this.leaveMessage == null ? null : LegacyComponentSerializer.legacySection().serialize(this.leaveMessage);
+        return LegacyComponentSerializer.legacySection().serializeOrNull(this.leaveMessage);
     }
 
     /**
      * Sets the leave message send to all online players
      *
      * @param leaveMessage leave message. If {@code null}, no message will be sent
-     * @deprecated in favour of {@link #leaveMessage(net.kyori.adventure.text.Component)}
+     * @deprecated in favour of {@link #leaveMessage(Component)}
      */
     @Deprecated
     public void setLeaveMessage(@Nullable String leaveMessage) {
-        this.leaveMessage = leaveMessage != null ? LegacyComponentSerializer.legacySection().deserialize(leaveMessage) : null;
+        this.leaveMessage = LegacyComponentSerializer.legacySection().deserializeOrNull(leaveMessage);
     }
 
     /**
