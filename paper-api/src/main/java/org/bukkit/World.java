@@ -2094,10 +2094,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param time The new absolute time to set this world to
      * @see #setTime(long) Sets the relative time of this world
-     * @deprecated all overworlds share the same world clock by default now
      * @throws IllegalArgumentException if this world does not have a world clock (e.g. the nether)
      */
-    @Deprecated // TODO world clock API with links to it
     public void setFullTime(long time);
 
     // Paper start

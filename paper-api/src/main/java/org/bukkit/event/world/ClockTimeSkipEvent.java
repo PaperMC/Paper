@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * If the event is cancelled the time will not change.
  */
 // TODO - snapshot - 26.1 clock
+@ApiStatus.Experimental
 public class ClockTimeSkipEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

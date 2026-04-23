@@ -1096,7 +1096,7 @@
              ObjectArrayList<NameAndId> sample = new ObjectArrayList<>(sampleSize);
              int offset = Mth.nextInt(this.random, 0, players.size() - sampleSize);
  
-@@ -1104,25 +_,73 @@
+@@ -1104,12 +_,46 @@
      protected void tickChildren(final BooleanSupplier haveTime) {
          ProfilerFiller profiler = Profiler.get();
          this.getPlayerList().getPlayers().forEach(playerx -> playerx.connection.suspendFlushing());
@@ -1144,23 +1144,16 @@
              profiler.pop();
          }
  
-         if (this.tickCount % 20 == 0) {
-             profiler.push("timeSync");
--            this.forceGameTimeSynchronization();
-+            // Paper start - per-world game time
-+            for (final ServerLevel level : this.getAllLevels()) {
-+                this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
-+            }
-+            // Paper end - per-world game time
+@@ -1119,10 +_,20 @@
              profiler.pop();
-+        }
-+
+         }
+ 
 +        // CraftBukkit start
 +        // Run tasks that are waiting on processing
 +        while (!this.processQueue.isEmpty()) {
 +            this.processQueue.remove().run();
-         }
- 
++        }
++
          profiler.push("levels");
          this.updateEffectiveRespawnData();
  
@@ -1197,14 +1190,16 @@
          this.effectiveRespawnData = respawnLevel.getWorldBorderAdjustedRespawnData(respawnData);
      }
  
-@@ -1179,7 +_,9 @@
+@@ -1179,7 +_,11 @@
      public void forceGameTimeSynchronization() {
          ProfilerFiller profiler = Profiler.get();
          profiler.push("timeSync");
 -        this.playerList.broadcastAll(new ClientboundSetTimePacket(this.overworld().getGameTime(), Map.of()));
++        // Paper start - per-world time
 +        for (ServerLevel level : this.getAllLevels()) {
 +            this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
 +        }
++        // Paper end - per-world time
          profiler.pop();
      }
  
@@ -1591,7 +1586,7 @@
 +            level.setSpawnSettings(level.isSpawningMonsters()); // Paper - per-world game rules
          } else if (rule == GameRules.ADVANCE_TIME) {
 -            this.getPlayerList().broadcastAll(this.clockManager().createFullSyncPacket());
-+            this.getPlayerList().broadcastAll(level.clockManager().createFullSyncPacket(), level); // Paper - per-world time
++            level.players().forEach(player -> player.connection.send(level.clockManager().createFullSyncPacket(player))); // Paper - per-world time; per-player time
          }
      }
  

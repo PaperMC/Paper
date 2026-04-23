@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * Called when the time skips in a world.
  * <p>
  * If the event is cancelled the time will not change.
+ *
+ * @see ClockTimeSkipEvent for changing of clocks that affect all worlds
  */
 public class TimeSkipEvent extends ClockTimeSkipEvent {
 

@@ -97,7 +97,6 @@ import net.minecraft.network.protocol.game.ClientboundSetExperiencePacket;
 import net.minecraft.network.protocol.game.ClientboundSetHealthPacket;
 import net.minecraft.network.protocol.game.ClientboundSetPlayerInventoryPacket;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
-import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
@@ -118,8 +117,6 @@ import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.clock.ClockNetworkState;
-import net.minecraft.world.clock.WorldClock;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -132,7 +129,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SignText;
 import net.minecraft.world.level.border.BorderChangeListener;
-import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.saveddata.maps.MapDecoration;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
@@ -1541,16 +1537,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
             return;
         }
 
-        final long gameTime = level.getGameTime();
-        final long playerClockTime = this.getHandle().getPlayerTime();
-        final Holder<WorldClock> worldClock = level.dimensionType().defaultClock().get();
-        final boolean paused = !this.getHandle().relativeTime || !level.getGameRules().get(GameRules.ADVANCE_TIME) || level.clockManager().isPaused(worldClock);
-        final ClockNetworkState clockState = new ClockNetworkState(
-            playerClockTime,
-            level.clockManager().partialTick(worldClock),
-            paused ? 0.0F : level.clockManager().rate(worldClock)
-        );
-        this.getHandle().connection.send(new ClientboundSetTimePacket(gameTime, Map.of(worldClock, clockState)));
+        this.getHandle().connection.send(level.clockManager().createFullSyncPacket(this.getHandle()));
     }
 
     @Override

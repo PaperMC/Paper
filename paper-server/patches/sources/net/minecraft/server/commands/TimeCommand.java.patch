@@ -27,7 +27,7 @@
              long currentTicks = timeline.value().getCurrentTicks(clockManager);
              source.sendSuccess(() -> Component.translatable("commands.time.query.timeline", timeline.getRegisteredName(), currentTicks), false);
              return wrapTime(currentTicks);
-@@ -162,33 +_,47 @@
+@@ -162,33 +_,53 @@
          if (!clock.equals(timeline.value().clock())) {
              throw ERROR_WRONG_TIMELINE_FOR_CLOCK.create(clock.getRegisteredName(), timeline.getRegisteredName());
          } else {
@@ -43,14 +43,20 @@
      private static int setTotalTicks(final CommandSourceStack source, final Holder<WorldClock> clock, final int totalTicks) {
 -        ServerClockManager clockManager = source.getServer().clockManager();
 -        clockManager.setTotalTicks(clock, totalTicks);
+-        source.sendSuccess(() -> Component.translatable("commands.time.set.absolute", clock.getRegisteredName(), totalTicks), true);
+-        return totalTicks;
 +        ServerClockManager clockManager = source.getLevel().clockManager();
 +        long currentTotalTicks = clockManager.getTotalTicks(clock);
 +        org.bukkit.event.world.ClockTimeSkipEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callTimeSkipEvent(source, totalTicks - currentTotalTicks);
++        final long newTotalTicks;
 +        if (event.callEvent()) {
-+            clockManager.setTotalTicks(clock, currentTotalTicks + event.getSkipAmount());
++            newTotalTicks = currentTotalTicks + event.getSkipAmount();
++            clockManager.setTotalTicks(clock, newTotalTicks);
++        } else {
++            newTotalTicks = totalTicks; // just pass it through
 +        }
-         source.sendSuccess(() -> Component.translatable("commands.time.set.absolute", clock.getRegisteredName(), totalTicks), true);
-         return totalTicks;
++        source.sendSuccess(() -> Component.translatable("commands.time.set.absolute", clock.getRegisteredName(), newTotalTicks), true);
++        return wrapTime(newTotalTicks);
      }
  
      private static int addTime(final CommandSourceStack source, final Holder<WorldClock> clock, final int time) {
@@ -69,6 +75,7 @@
      private static int setTimeToTimeMarker(final CommandSourceStack source, final Holder<WorldClock> clock, final ResourceKey<ClockTimeMarker> timeMarkerId) throws CommandSyntaxException {
 -        ServerClockManager clockManager = source.getServer().clockManager();
 -        if (!clockManager.moveToTimeMarker(clock, timeMarkerId)) {
++        // Paper start - per-world time
 +        ServerClockManager clockManager = source.getLevel().clockManager();
 +        java.util.OptionalLong targetTime = clockManager.getTotalTicksToTimeMarker(clock, timeMarkerId);
 +        if (targetTime.isEmpty()) {
@@ -79,26 +86,23 @@
 +            if (event.callEvent()) {
 +                clockManager.setTotalTicks(clock, currentTime + event.getSkipAmount());
 +            }
++            // Paper end - per-world time
              source.sendSuccess(
                  () -> Component.translatable("commands.time.set.time_marker", clock.getRegisteredName(), timeMarkerId.identifier().toString()), true
              );
-@@ -197,16 +_,17 @@
+@@ -197,13 +_,13 @@
      }
  
      private static int setPaused(final CommandSourceStack source, final Holder<WorldClock> clock, final boolean paused) {
 -        source.getServer().clockManager().setPaused(clock, paused);
-+        source.getLevel().clockManager().setPaused(clock, paused);
++        source.getLevel().clockManager().setPaused(clock, paused); // Paper - per-world time
          source.sendSuccess(() -> Component.translatable(paused ? "commands.time.pause" : "commands.time.resume", clock.getRegisteredName()), true);
          return 1;
      }
  
      private static int setRate(final CommandSourceStack source, final Holder<WorldClock> clock, final float rate) {
 -        source.getServer().clockManager().setRate(clock, rate);
-+        source.getLevel().clockManager().setRate(clock, rate);
++        source.getLevel().clockManager().setRate(clock, rate); // Paper - per-world time
          source.sendSuccess(() -> Component.translatable("commands.time.rate", clock.getRegisteredName(), rate), true);
          return 1;
      }
-+    // Paper end - per-world time
- 
-     private static int wrapTime(final long ticks) {
-         return Math.toIntExact(ticks % 2147483647L);
