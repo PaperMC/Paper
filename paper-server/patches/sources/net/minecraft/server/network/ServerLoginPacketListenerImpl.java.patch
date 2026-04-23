@@ -13,7 +13,7 @@
  public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener, TickablePacketListener {
      private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
      private static final Logger LOGGER = LogUtils.getLogger();
-+    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads
++    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("User Authenticator #", 0).uncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).factory()); // Paper - Virtual authenticator threads
      private static final int MAX_TICKS_BEFORE_LOGIN = 600;
      private final byte[] challenge;
      private final MinecraftServer server;
@@ -111,7 +111,7 @@
          this.requestedUsername = packet.name();
          GameProfile singleplayerProfile = this.server.getSingleplayerProfile();
          if (singleplayerProfile != null && this.requestedUsername.equalsIgnoreCase(singleplayerProfile.name())) {
-@@ -127,7 +_,32 @@
+@@ -127,7 +_,30 @@
                  this.state = ServerLoginPacketListenerImpl.State.KEY;
                  this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge, true));
              } else {
@@ -126,8 +126,7 @@
 +                    return;
 +                }
 +                // Paper end - Add Velocity IP Forwarding Support
-+                // CraftBukkit start
-+                // Paper start - Cache authenticator threads
++                // Paper start - Virtual authenticator threads
 +                authenticatorPool.execute(() -> {
 +                    try {
 +                        GameProfile gameprofile = ServerLoginPacketListenerImpl.this.createOfflineProfile(ServerLoginPacketListenerImpl.this.requestedUsername); // Spigot
@@ -140,8 +139,7 @@
 +                        ServerLoginPacketListenerImpl.this.server.server.getLogger().log(java.util.logging.Level.WARNING, "Exception verifying " + ServerLoginPacketListenerImpl.this.requestedUsername, ex);
 +                    }
 +                });
-+                // Paper end - Cache authenticator threads
-+                // CraftBukkit end
++                // Paper end - Virtual authenticator threads
              }
          }
      }
@@ -179,7 +177,7 @@
          }
  
 -        Thread thread = new Thread("User Authenticator #" + UNIQUE_THREAD_ID.incrementAndGet()) {
-+        // Paper start - Cache authenticator threads
++        // Paper start - Virtual authenticator threads
 +        authenticatorPool.execute(new Runnable() {
              {
                  Objects.requireNonNull(ServerLoginPacketListenerImpl.this);
@@ -232,7 +230,7 @@
 -        thread.start();
 -    }
 +        });
-+        // Paper end - Cache authenticator threads
++        // Paper end - Virtual authenticator threads
 +    }
 +
 +    // CraftBukkit start
