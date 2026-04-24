@@ -4,7 +4,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when the time skips for a world clock.
@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
  */
 // TODO - snapshot - 26.1 clock
 @ApiStatus.Experimental
+@NullMarked
 public class ClockTimeSkipEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -23,7 +24,7 @@ public class ClockTimeSkipEvent extends Event implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public ClockTimeSkipEvent(@NotNull SkipReason skipReason, long skipAmount) {
+    public ClockTimeSkipEvent(final SkipReason skipReason, final long skipAmount) {
         this.skipReason = skipReason;
         this.skipAmount = skipAmount;
     }
@@ -33,7 +34,6 @@ public class ClockTimeSkipEvent extends Event implements Cancellable {
      *
      * @return a SkipReason value detailing why the time has skipped
      */
-    @NotNull
     public SkipReason getSkipReason() {
         return this.skipReason;
     }
@@ -66,13 +66,11 @@ public class ClockTimeSkipEvent extends Event implements Cancellable {
         this.cancelled = cancel;
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
