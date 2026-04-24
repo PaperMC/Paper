@@ -184,6 +184,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private boolean voidDamageEnabled;
     private float voidDamageAmount;
     private double voidDamageMinBuildHeightOffset;
+    private final NamespacedKey key;
 
     @Override
     public boolean isVoidDamageEnabled() {
@@ -298,6 +299,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     public CraftWorld(ServerLevel world, @Nullable ChunkGenerator generator, @Nullable BiomeProvider biomeProvider, Environment environment) {
         this.world = world;
+        this.key = CraftNamespacedKey.fromMinecraft(this.world.dimension().identifier());
         this.generator = generator;
         this.biomeProvider = biomeProvider;
 
@@ -769,7 +771,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public NamespacedKey getKey() {
-        return CraftNamespacedKey.fromMinecraft(this.world.dimension().identifier());
+        return this.key;
     }
 
     @Override
