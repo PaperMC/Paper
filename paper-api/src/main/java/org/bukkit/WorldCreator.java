@@ -277,6 +277,7 @@ public class WorldCreator {
      * @param pitch    the pitch rotation at spawn
      * @return this object, for chaining
      */
+    @NotNull
     public WorldCreator forcedSpawnPosition(@Nullable Position position, float yaw, float pitch) {
         this.spawnPositionOverride = position;
         this.spawnYawOverride = yaw;
@@ -291,6 +292,7 @@ public class WorldCreator {
      *
      * @return this object, for chaining
      */
+    @NotNull
     public WorldCreator clearForcedSpawnPosition() {
         this.spawnPositionOverride = null;
         this.spawnYawOverride = null;
