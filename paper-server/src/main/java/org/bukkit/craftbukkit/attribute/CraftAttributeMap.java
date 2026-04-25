@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.attribute;
 
+import ca.spottedleaf.moonrise.common.util.TickThread;
 import com.google.common.base.Preconditions;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeMap;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.attribute.Attribute;
@@ -9,6 +11,7 @@ import org.bukkit.attribute.AttributeInstance;
 public class CraftAttributeMap implements Attributable {
 
     private final AttributeMap handle;
+    private final LivingEntity entity;
 
     // convert legacy attributes
     private static final com.google.common.collect.ImmutableMap<String, String> LEGACY_ATTRIBUTE_MAP = com.google.common.collect.ImmutableMap.<String, String>builder()
@@ -40,13 +43,15 @@ public class CraftAttributeMap implements Attributable {
         return nms;
     }
 
-    public CraftAttributeMap(AttributeMap handle) {
+    public CraftAttributeMap(LivingEntity entity, AttributeMap handle) {
+        this.entity = entity;
         this.handle = handle;
     }
 
     @Override
     public AttributeInstance getAttribute(Attribute attribute) {
         Preconditions.checkArgument(attribute != null, "attribute");
+        TickThread.ensureTickThread(entity, "Cannot update attributes asynchronously");
         net.minecraft.world.entity.ai.attributes.AttributeInstance nms = this.handle.getInstance(CraftAttribute.bukkitToMinecraftHolder(attribute));
 
         return (nms == null) ? null : new CraftAttributeInstance(nms, attribute);
