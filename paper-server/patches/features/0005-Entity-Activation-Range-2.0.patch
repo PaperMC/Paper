@@ -354,7 +354,7 @@ index 0000000000000000000000000000000000000000..ce6b57eeeeb1bd652f4bb53c19dcfbc0
 +    }
 +}
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 96e45eab1e8cf857f5068e911070259866d8bdcb..a0477b407d41ab7391f764b3d21352f410dde9a5 100644
+index 3cd2fcc38f3989bb5124ba5bc2f4597103e7a111..6d847ff3646b27fe9bc75e792d813a7f611ab3e5 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -857,6 +857,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
@@ -540,10 +540,10 @@ index c4da41f3b5ba6d8492d3776654b1ce62a5015895..6a0ebbdfcc0bc07915574c1cf87463e8
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index c7c53ef16e104ebc48aeb8719783fb4c45d39fc2..90eaa775dc134041647618c3b965334a9bb9fd3b 100644
+index c7c53ef16e104ebc48aeb8719783fb4c45d39fc2..5bbb5cbb51953399c7bce547cd6968eb3c6bd130 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -211,6 +211,19 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+@@ -211,6 +211,20 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
          return this.lookControl;
      }
  
@@ -551,6 +551,7 @@ index c7c53ef16e104ebc48aeb8719783fb4c45d39fc2..90eaa775dc134041647618c3b965334a
 +    @Override
 +    public void inactiveTick() {
 +        super.inactiveTick();
++        if (!this.aware) return; // Paper - Do not tick AI for inactive unaware mobs
 +        if (this.goalSelector.inactiveTick()) {
 +            this.goalSelector.tick();
 +        }
@@ -673,7 +674,7 @@ index c482c3348267ca2b88109e34291aa860e0cde916..b11b59d80e37d272770ab51a63028fdd
      public void tick() {
          if (this.getItem().isEmpty()) {
 diff --git a/net/minecraft/world/entity/npc/villager/Villager.java b/net/minecraft/world/entity/npc/villager/Villager.java
-index a80e6a23cf29cb44943339101f15565dbc19af1f..f481fd661440f77c98940cbde4a8b95818e4a22c 100644
+index a80e6a23cf29cb44943339101f15565dbc19af1f..26108ac0543c7b4195f149c07d8348b5b15b8bdb 100644
 --- a/net/minecraft/world/entity/npc/villager/Villager.java
 +++ b/net/minecraft/world/entity/npc/villager/Villager.java
 @@ -244,11 +244,35 @@ public class Villager extends AbstractVillager implements VillagerDataHolder, Re
@@ -687,7 +688,7 @@ index a80e6a23cf29cb44943339101f15565dbc19af1f..f481fd661440f77c98940cbde4a8b958
 +        if (this.getUnhappyCounter() > 0) {
 +            this.setUnhappyCounter(this.getUnhappyCounter() - 1);
 +        }
-+        if (this.isEffectiveAi()) {
++        if (this.aware && this.isEffectiveAi()) { // Paper - Do not tick AI for inactive unaware mobs
 +            if (this.level().spigotConfig.tickInactiveVillagers) {
 +                this.customServerAiStep(this.level().getMinecraftWorld());
 +            } else {
@@ -816,10 +817,10 @@ index 3a590d4dc980a2912e9cc043d8c8db4cf9d60803..06ab7c48b18c03af494ab10fc2b584ce
 +
  }
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 2569893356946511fc8c29b51220014519f7bad1..83041532ee49be800c66995ad64d570270349fb6 100644
+index 0958fe0438c3e934b885acf78a0f8003ef8bb694..31c7223d2d01573c24d4ad83737fa2c2752db028 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -154,6 +154,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -155,6 +155,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      @Nullable
      public List<net.minecraft.world.entity.item.ItemEntity> captureDrops;
      public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();

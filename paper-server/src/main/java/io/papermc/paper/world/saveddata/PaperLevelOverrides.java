@@ -198,7 +198,7 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
 
     private PrimaryLevelData rootDataOrThrow() {
         if (this.rootData == null) {
-            throw new IllegalStateException("PaperWorldLevelOverrides not attached");
+            throw new IllegalStateException(this.getClass().getName() + " not attached");
         }
         return this.rootData;
     }

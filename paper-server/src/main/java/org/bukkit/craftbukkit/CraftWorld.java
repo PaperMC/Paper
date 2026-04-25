@@ -56,6 +56,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.NullOps;
+import net.minecraft.util.TriState;
 import net.minecraft.world.attribute.BedRule;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -170,16 +171,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         .resolving(net.kyori.adventure.identity.Identity.UUID, World::getUID)
         .build();
 
-    private final ServerLevel world;
-    private WorldBorder worldBorder;
-    private Environment environment;
     private final CraftServer server = (CraftServer) Bukkit.getServer();
-    private final @Nullable ChunkGenerator generator;
     private final @Nullable BiomeProvider biomeProvider;
     private final List<BlockPopulator> populators = new ArrayList<>();
     private final BlockMetadataStore blockMetadata = new BlockMetadataStore(this);
     private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftWorld.DATA_TYPE_REGISTRY);
+    private final ServerLevel world;
+    private final NamespacedKey key;
+    private final Environment environment;
+    private WorldBorder worldBorder;
     // Paper start - void damage configuration
     private boolean voidDamageEnabled;
     private float voidDamageAmount;
@@ -296,9 +297,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     private static final Random rand = new Random();
 
-    public CraftWorld(ServerLevel world, @Nullable ChunkGenerator generator, @Nullable BiomeProvider biomeProvider, Environment environment) {
+    public CraftWorld(ServerLevel world, Identifier identifier, @Nullable BiomeProvider biomeProvider, Environment environment) {
         this.world = world;
-        this.generator = generator;
+        this.key = CraftNamespacedKey.fromMinecraft(identifier);
         this.biomeProvider = biomeProvider;
 
         this.environment = environment;
@@ -337,7 +338,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     private boolean setSpawnLocation(int x, int y, int z, float yaw, float pitch) {
         try {
-            this.world.setRespawnData(LevelData.RespawnData.of(this.world.dimension(), new BlockPos(x, y, z), yaw, pitch));
+            Location previousLocation = this.getSpawnLocation();
+            this.world.serverLevelData.setSpawn(LevelData.RespawnData.of(this.world.dimension(), new BlockPos(x, y, z), yaw, pitch));
+
+            this.server.getServer().updateEffectiveRespawnData();
+            new SpawnChangeEvent(this, previousLocation).callEvent();
             return true;
         } catch (Exception e) {
             return false;
@@ -769,12 +774,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public NamespacedKey getKey() {
-        return CraftNamespacedKey.fromMinecraft(this.world.dimension().identifier());
+        return this.key;
     }
 
     @Override
     public String toString() {
-        return "CraftWorld{name=" + this.getName() + '}';
+        return "CraftWorld{key=" + this.getKey().toString() + '}';
     }
 
     @Override
@@ -869,7 +874,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public @Nullable ChunkGenerator getGenerator() {
-        return this.generator;
+        return this.world.generator;
     }
 
     @Override
@@ -1355,7 +1360,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean isNatural() {
-        throw new UnsupportedOperationException("// TODO - snapshot");
+        return this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.CREAKING_ACTIVE)
+            && this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.EYEBLOSSOM_OPEN).toBoolean(true)
+            && this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.NETHER_PORTAL_SPAWNS_PIGLINS);
     }
 
     @Override
@@ -1392,8 +1399,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public boolean isUltraWarm() {
         return this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.WATER_EVAPORATES)
-            && this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.FAST_LAVA)
-            && this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.DEFAULT_DRIPSTONE_PARTICLE).equals(ParticleTypes.DRIPPING_DRIPSTONE_LAVA);
+            && this.world.environmentAttributes().getDimensionValue(EnvironmentAttributes.FAST_LAVA);
     }
 
     @Override
@@ -1688,30 +1694,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return this.getHandle().getGameRules().rules.has(CraftGameRule.bukkitToMinecraft(bukkit));
     }
 
-    public static <T> T shimLegacyValue(T value, org.bukkit.GameRule<?> gameRule){
-        //noinspection rawtypes unchecked
-        if (gameRule instanceof CraftGameRule.LegacyGameRuleWrapper legacyGameRuleWrapper) {
-            //noinspection unchecked
-            return (T) legacyGameRuleWrapper.getToLegacyFromModern().apply(value);
-        }
-
-        return value;
-    }
-
     @Override
-    public <T> @Nullable T getGameRuleValue(org.bukkit.@NotNull GameRule<T> rule) {
+    public <T> @NotNull T getGameRuleValue(org.bukkit.@NotNull GameRule<T> rule) {
         Preconditions.checkArgument(rule != null, "GameRule cannot be null");
 
         T value = this.getHandle().getGameRules().get(CraftGameRule.bukkitToMinecraft(rule));
-        return shimLegacyValue(value, rule);
-    }
-
-    @Override
-    public <T> @Nullable T getGameRuleDefault(org.bukkit.@NotNull GameRule<T> rule) {
-        Preconditions.checkArgument(rule != null, "GameRule cannot be null");
-        T value = CraftGameRule.bukkitToMinecraft(rule).defaultValue();
-
-        return shimLegacyValue(value, rule);
+        return CraftGameRule.shimLegacyValue(value, rule);
     }
 
     @Override

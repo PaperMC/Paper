@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/vehicle/VehicleEntity.java
 +++ b/net/minecraft/world/entity/vehicle/VehicleEntity.java
-@@ -32,12 +_,20 @@
+@@ -32,12 +_,22 @@
      }
  
      @Override
@@ -13,9 +13,11 @@
          } else {
 +            // CraftBukkit start
 +            org.bukkit.entity.Vehicle vehicle = (org.bukkit.entity.Vehicle) this.getBukkitEntity();
-+            org.bukkit.entity.Entity attacker = (source.getEntity() == null) ? null : source.getEntity().getBukkitEntity();
-+
-+            org.bukkit.event.vehicle.VehicleDamageEvent event = new org.bukkit.event.vehicle.VehicleDamageEvent(vehicle, attacker, damage);
++            org.bukkit.craftbukkit.damage.CraftDamageSource damageSourceBukkit = new org.bukkit.craftbukkit.damage.CraftDamageSource(source);
++            org.bukkit.entity.Entity attacker = net.minecraft.Optionull.map(
++                source.eventEntityDamager() != null ? source.eventEntityDamager() : source.getDirectEntity(), Entity::getBukkitEntity
++            );
++            org.bukkit.event.vehicle.VehicleDamageEvent event = new org.bukkit.event.vehicle.VehicleDamageEvent(vehicle, damageSourceBukkit, attacker, damage);
 +            if (!event.callEvent()) return false;
 +            damage = (float) event.getDamage();
 +            // CraftBukkit end
@@ -28,7 +30,7 @@
                  if (creativePlayer) {
 -                    this.discard();
 +                    // CraftBukkit start
-+                    org.bukkit.event.vehicle.VehicleDestroyEvent destroyEvent = new org.bukkit.event.vehicle.VehicleDestroyEvent(vehicle, attacker);
++                    org.bukkit.event.vehicle.VehicleDestroyEvent destroyEvent = new org.bukkit.event.vehicle.VehicleDestroyEvent(vehicle, damageSourceBukkit, attacker);
 +                    if (!destroyEvent.callEvent()) {
 +                        this.setDamage(40.0F); // Maximize damage so this doesn't get triggered again right away
 +                        return true;
@@ -38,7 +40,7 @@
                  }
              } else {
 +                // CraftBukkit start
-+                org.bukkit.event.vehicle.VehicleDestroyEvent destroyEvent = new org.bukkit.event.vehicle.VehicleDestroyEvent(vehicle, attacker);
++                org.bukkit.event.vehicle.VehicleDestroyEvent destroyEvent = new org.bukkit.event.vehicle.VehicleDestroyEvent(vehicle, damageSourceBukkit, attacker);
 +                if (!destroyEvent.callEvent()) {
 +                    this.setDamage(40.0F); // Maximize damage so this doesn't get triggered again right away
 +                    return true;

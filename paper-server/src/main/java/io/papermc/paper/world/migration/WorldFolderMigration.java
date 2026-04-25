@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 public final class WorldFolderMigration {
     private static final Logger LOGGER = LogUtils.getClassLogger();
     private static final boolean DISABLE_MIGRATION_DELAY = Boolean.getBoolean("paper.disableMigrationDelay");
+    public static boolean didInitialLoad;
     private static boolean startupMigrationWarningShown;
 
     private WorldFolderMigration() {
@@ -60,7 +61,7 @@ public final class WorldFolderMigration {
         LegacyCraftBukkitWorldMigration.migrateApiWorld(new WorldMigrationContext(rootAccess, registryAccess, worldName, stemKey, dimensionKey));
     }
 
-    private static synchronized void warnAndDelayStartupMigration() throws IOException {
+    public static synchronized void warnAndDelayStartupMigration() {
         if (startupMigrationWarningShown) {
             return;
         }
@@ -77,7 +78,7 @@ public final class WorldFolderMigration {
                 Thread.sleep(30_000L);
             } catch (final InterruptedException ex) {
                 Thread.currentThread().interrupt();
-                throw new IOException("Interrupted while waiting before startup world migration", ex);
+                throw new RuntimeException("Interrupted while waiting before startup world migration", ex);
             }
         }
         LOGGER.info("Continuing with startup world migration.");

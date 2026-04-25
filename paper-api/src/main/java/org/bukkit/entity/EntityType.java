@@ -37,8 +37,6 @@ import org.bukkit.entity.minecart.PoweredMinecart;
 import org.bukkit.entity.minecart.RideableMinecart;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -98,7 +96,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     EXPERIENCE_ORB("experience_orb", ExperienceOrb.class, 2),
     EYE_OF_ENDER("eye_of_ender", EnderSignal.class, 15),
     FALLING_BLOCK("falling_block", FallingBlock.class, 21),
-    FIREBALL("fireball", Fireball.class, 12),
+    FIREBALL("fireball", LargeFireball.class, 12),
     FIREWORK_ROCKET("firework_rocket", Firework.class, 22),
     FISHING_BOBBER("fishing_bobber", FishHook.class, -1, false),
     FOX("fox", Fox.class, -1),

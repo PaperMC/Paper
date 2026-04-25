@@ -13,10 +13,10 @@ average over the last 5 seconds of keepalive transactions.
 
 diff --git a/io/papermc/paper/util/KeepAlive.java b/io/papermc/paper/util/KeepAlive.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4a2520f554c2ee74faf86d7c93baccf0f391a6b3
+index 0000000000000000000000000000000000000000..66d6af2833d76af28fbeb2ce70c194a559572460
 --- /dev/null
 +++ b/io/papermc/paper/util/KeepAlive.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,84 @@
 +package io.papermc.paper.util;
 +
 +public class KeepAlive {
@@ -34,6 +34,14 @@ index 0000000000000000000000000000000000000000..4a2520f554c2ee74faf86d7c93baccf0
 +    public final PingCalculator pingCalculator1m = new PingCalculator(java.util.concurrent.TimeUnit.MINUTES.toNanos(1L));
 +    public final PingCalculator pingCalculator5s = new PingCalculator(java.util.concurrent.TimeUnit.SECONDS.toNanos(5L));
 +
++    public KeepAlive copyForListenerHandoff() {
++        KeepAlive copy = new KeepAlive();
++        copy.lastKeepAliveTx = this.lastKeepAliveTx;
++        copy.pingCalculator1m.copyFrom(this.pingCalculator1m);
++        copy.pingCalculator5s.copyFrom(this.pingCalculator5s);
++        return copy;
++    }
++
 +    public static final class PingCalculator {
 +
 +        private final long intervalNS;
@@ -45,6 +53,15 @@ index 0000000000000000000000000000000000000000..4a2520f554c2ee74faf86d7c93baccf0
 +
 +        public PingCalculator(long intervalNS) {
 +            this.intervalNS = intervalNS;
++        }
++
++        private void copyFrom(PingCalculator other) {
++            for (KeepAliveResponse response : other.responses) {
++                this.responses.add(response);
++            }
++            this.timeSumNS = other.timeSumNS;
++            this.timeSumCount = other.timeSumCount;
++            this.lastAverageNS = other.lastAverageNS;
 +        }
 +
 +        public void update(KeepAliveResponse response) {
@@ -100,7 +117,7 @@ index d87a00ee3cd04ce25dbe46ae6b386b7f0799102c..ace440c2b82a6368aa27a85ff433ba2c
      }
  }
 diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index f54d99c59bbca7fb5e0615f8fee9c3f6fbffa18a..d9b6f3826e2126d339e926afed782f6d0e890508 100644
+index 079ab378920c0e52ef4e42ef20b37bd389f40870..dc9020f210c21a626c948d013cc6c972cbc093f3 100644
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -39,12 +39,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -223,11 +240,19 @@ index f54d99c59bbca7fb5e0615f8fee9c3f6fbffa18a..d9b6f3826e2126d339e926afed782f6d
              }
          }
  
-@@ -424,6 +457,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -424,6 +457,14 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      }
  
      protected CommonListenerCookie createCookie(final ClientInformation clientInformation) {
 -        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand, this.pluginMessagerChannels); // Paper
-+        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand, this.pluginMessagerChannels, this.keepAlive); // Paper // Paper
++        return new CommonListenerCookie(
++            this.playerProfile(),
++            this.latency,
++            clientInformation,
++            this.transferred,
++            this.playerBrand,
++            this.pluginMessagerChannels,
++            this.keepAlive.copyForListenerHandoff()
++        ); // Paper - listener handoff should reset pending keepalive expectations
      }
  }

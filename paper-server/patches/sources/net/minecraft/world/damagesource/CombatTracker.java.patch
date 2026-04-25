@@ -1,6 +1,14 @@
 --- a/net/minecraft/world/damagesource/CombatTracker.java
 +++ b/net/minecraft/world/damagesource/CombatTracker.java
-@@ -29,15 +_,24 @@
+@@ -22,22 +_,40 @@
+     private static final Style INTENTIONAL_GAME_DESIGN_STYLE = Style.EMPTY
+         .withClickEvent(new ClickEvent.OpenUrl(CommonLinks.INTENTIONAL_GAME_DESIGN_BUG))
+         .withHoverEvent(new HoverEvent.ShowText(Component.literal("MCPE-28723")));
+-    public final List<CombatEntry> entries = Lists.newArrayList();
++    public final List<CombatEntry> entries = new net.minecraft.util.ArrayListDeque<>(); // Paper - Fix mem leak (MC-301114); Use ArrayListDeque
+     public final LivingEntity mob;
+     private int lastDamageTime;
+     private int combatStartTime;
      private int combatEndTime;
      public boolean inCombat;
      public boolean takingDamage;
@@ -22,6 +30,15 @@
 +    public void recordDamageAndCheckCombatState(final CombatEntry entry) {
 +        final DamageSource source = entry.source();
 +    // Paper end - Combat tracker API
++        // Paper start - Fix mem leak (MC-301114)
++        final io.papermc.paper.configuration.type.number.IntOr.Disabled maxTrackingCombatEntries;
++        if (!this.entries.isEmpty() && (maxTrackingCombatEntries = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxTrackingCombatEntries).enabled()) {
++            final int maxEntries = maxTrackingCombatEntries.intValue();
++            while (this.entries.size() > maxEntries) {
++                this.entries.removeFirst();
++            }
++        }
++        // Paper end - Fix mem leak (MC-301114)
          this.entries.add(entry);
          this.lastDamageTime = this.mob.tickCount;
          this.takingDamage = true;
