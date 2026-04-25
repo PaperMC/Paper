@@ -15,51 +15,51 @@
      private final Codec<PlayerAdvancements.Data> codec;
 +    public final Map<net.minecraft.advancements.criterion.SimpleCriterionTrigger<?>, Set<CriterionTrigger.Listener<?>>> criterionData = new java.util.IdentityHashMap<>(); // Paper - fix advancement data player leakage
  
-     public PlayerAdvancements(DataFixer dataFixer, PlayerList playerList, ServerAdvancementManager manager, Path playerSavePath, ServerPlayer player) {
-         this.playerList = playerList;
-@@ -126,6 +_,7 @@
+     public PlayerAdvancements(
+         final DataFixer dataFixer, final PlayerList playerList, final ServerAdvancementManager manager, final Path playerSavePath, final ServerPlayer player
+@@ -128,6 +_,7 @@
      }
  
      public void save() {
 +        if (org.spigotmc.SpigotConfig.disableAdvancementSaving) return; // Spigot
-         JsonElement jsonElement = this.codec.encodeStart(JsonOps.INSTANCE, this.asData()).getOrThrow();
+         JsonElement json = this.codec.encodeStart(JsonOps.INSTANCE, this.asData()).getOrThrow();
  
          try {
-@@ -143,6 +_,7 @@
-         data.forEach((path, progress) -> {
-             AdvancementHolder advancementHolder = advancementManager.get(path);
-             if (advancementHolder == null) {
-+                if (!path.getNamespace().equals(Identifier.DEFAULT_NAMESPACE)) return; // CraftBukkit
-                 LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", path, this.playerSavePath);
+@@ -145,6 +_,7 @@
+         data.forEach((id, progress) -> {
+             AdvancementHolder advancement = manager.get(id);
+             if (advancement == null) {
++                if (!id.getNamespace().equals(Identifier.DEFAULT_NAMESPACE)) return; // CraftBukkit
+                 LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", id, this.playerSavePath);
              } else {
-                 this.startProgress(advancementHolder, progress);
-@@ -167,14 +_,31 @@
-         AdvancementProgress orStartProgress = this.getOrStartProgress(advancement);
-         boolean isDone = orStartProgress.isDone();
-         if (orStartProgress.grantProgress(criterionKey)) {
+                 this.startProgress(advancement, progress);
+@@ -169,14 +_,31 @@
+         AdvancementProgress progress = this.getOrStartProgress(holder);
+         boolean wasDone = progress.isDone();
+         if (progress.grantProgress(criterion)) {
 +            // Paper start - Add PlayerAdvancementCriterionGrantEvent
-+            if (!new com.destroystokyo.paper.event.player.PlayerAdvancementCriterionGrantEvent(this.player.getBukkitEntity(), advancement.toBukkit(), criterionKey).callEvent()) {
-+                orStartProgress.revokeProgress(criterionKey);
++            if (!new com.destroystokyo.paper.event.player.PlayerAdvancementCriterionGrantEvent(this.player.getBukkitEntity(), holder.toBukkit(), criterion).callEvent()) {
++                progress.revokeProgress(criterion);
 +                return false;
 +            }
 +            // Paper end - Add PlayerAdvancementCriterionGrantEvent
-             this.unregisterListeners(advancement);
-             this.progressChanged.add(advancement);
-             flag = true;
-             if (!isDone && orStartProgress.isDone()) {
+             this.unregisterListeners(holder);
+             this.progressChanged.add(holder);
+             result = true;
+             if (!wasDone && progress.isDone()) {
 +                // Paper start - Add Adventure message to PlayerAdvancementDoneEvent
-+                final net.kyori.adventure.text.Component message = advancement.value().display().flatMap(info -> {
++                final net.kyori.adventure.text.Component message = holder.value().display().flatMap(info -> {
 +                    return java.util.Optional.ofNullable(
-+                        info.shouldAnnounceChat() ? io.papermc.paper.adventure.PaperAdventure.asAdventure(info.getType().createAnnouncement(advancement, this.player)) : null
++                        info.shouldAnnounceChat() ? io.papermc.paper.adventure.PaperAdventure.asAdventure(info.getType().createAnnouncement(holder, this.player)) : null
 +                    );
 +                }).orElse(null);
-+                final org.bukkit.event.player.PlayerAdvancementDoneEvent event = new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancement.toBukkit(), message);
++                final org.bukkit.event.player.PlayerAdvancementDoneEvent event = new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), holder.toBukkit(), message);
 +                this.player.level().getCraftServer().getPluginManager().callEvent(event); // CraftBukkit
 +                // Paper end
-                 advancement.value().rewards().grant(this.player);
-                 advancement.value().display().ifPresent(displayInfo -> {
--                    if (displayInfo.shouldAnnounceChat() && this.player.level().getGameRules().get(GameRules.SHOW_ADVANCEMENT_MESSAGES)) {
--                        this.playerList.broadcastSystemMessage(displayInfo.getType().createAnnouncement(advancement, this.player), false);
+                 holder.value().rewards().grant(this.player);
+                 holder.value().display().ifPresent(display -> {
+-                    if (display.shouldAnnounceChat() && this.player.level().getGameRules().get(GameRules.SHOW_ADVANCEMENT_MESSAGES)) {
+-                        this.playerList.broadcastSystemMessage(display.getType().createAnnouncement(holder, this.player), false);
 +                    // Paper start - Add Adventure message to PlayerAdvancementDoneEvent
 +                    if (event.message() != null && this.player.level().getGameRules().get(GameRules.SHOW_ADVANCEMENT_MESSAGES)) {
 +                        this.playerList.broadcastSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.message()), false);
@@ -67,12 +67,12 @@
                      }
                  });
              }
-@@ -245,7 +_,7 @@
-     public void flushDirty(ServerPlayer player, boolean showAdvancements) {
+@@ -247,7 +_,7 @@
+     public void flushDirty(final ServerPlayer player, final boolean showAdvancements) {
          if (this.isFirstPacket || !this.rootsToUpdate.isEmpty() || !this.progressChanged.isEmpty()) {
-             Map<Identifier, AdvancementProgress> map = new HashMap<>();
--            Set<AdvancementHolder> set = new HashSet<>();
-+            Set<AdvancementHolder> set = new java.util.TreeSet<>(java.util.Comparator.comparing(adv -> adv.id().toString())); // Paper - Changed from HashSet to TreeSet ordered alphabetically.
-             Set<Identifier> set1 = new HashSet<>();
+             Map<Identifier, AdvancementProgress> progress = new HashMap<>();
+-            Set<AdvancementHolder> added = new HashSet<>();
++            Set<AdvancementHolder> added = new java.util.TreeSet<>(java.util.Comparator.comparing(adv -> adv.id().toString())); // Paper - Changed from HashSet to TreeSet ordered alphabetically.
+             Set<Identifier> removed = new HashSet<>();
  
-             for (AdvancementNode advancementNode : this.rootsToUpdate) {
+             for (AdvancementNode root : this.rootsToUpdate) {

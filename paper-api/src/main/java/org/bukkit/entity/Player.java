@@ -17,6 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
+import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.BanEntry;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
@@ -45,6 +46,7 @@ import org.bukkit.block.Sign;
 import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.sign.Side;
+import org.bukkit.command.CommandException;
 import org.bukkit.conversations.Conversable;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
@@ -471,10 +473,12 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Makes the player perform the given command
      *
-     * @param command Command to perform
-     * @return true if the command was successful, otherwise false
+     * @param command the command to perform. Example: <code>test abc 123</code>
+     * @return {@code true} if the command was successful, otherwise {@code false}
+     * @throws CommandException thrown when the executor for the given command fails with an unhandled exception
+     * @see Server#dispatchCommand(org.bukkit.command.CommandSender, String)
      */
-    public boolean performCommand(String command);
+    boolean performCommand(String command) throws CommandException;
 
     /**
      * Returns true if the entity is supported by a block.
@@ -648,7 +652,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.6.2")
     default void playNote(Location loc, byte instrument, byte note) {
-        this.playNote(loc, Instrument.getByType(instrument), new Note(note));
+        this.playNote(loc, ArrayUtils.get(Instrument.values(), instrument), new Note(note));
     }
 
     /**
@@ -1794,15 +1798,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param time The current player's perceived time or the player's time
      *     offset from the server time.
-     * @param relative When true the player time is kept relative to its world
-     *     time.
+     * @param tickTime if true, the player time keeps ticking up relative to its world time.
      */
-    public void setPlayerTime(long time, boolean relative);
+    public void setPlayerTime(long time, boolean tickTime);
 
     /**
      * Returns the player's current timestamp.
      *
-     * @return The player's time
+     * @return The player's time, or {@code 0} if the current world does not have a world clock.
      */
     public long getPlayerTime();
 

@@ -2938,6 +2938,13 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> GOLD_ORE = create(key("gold_ore"));
 
     /**
+     * {@code minecraft:golden_dandelion}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> GOLDEN_DANDELION = create(key("golden_dandelion"));
+
+    /**
      * {@code minecraft:granite}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5512,6 +5519,13 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> POTTED_FLOWERING_AZALEA_BUSH = create(key("potted_flowering_azalea_bush"));
+
+    /**
+     * {@code minecraft:potted_golden_dandelion}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POTTED_GOLDEN_DANDELION = create(key("potted_golden_dandelion"));
 
     /**
      * {@code minecraft:potted_jungle_sapling}

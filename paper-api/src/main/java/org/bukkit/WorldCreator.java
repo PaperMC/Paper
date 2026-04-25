@@ -1,20 +1,19 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
-import java.nio.file.Path;
 import java.util.Random;
 import io.papermc.paper.math.Position;
 import org.bukkit.command.CommandSender;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents various types of options that may be used to create a world.
  */
-@NullMarked
 public class WorldCreator {
     private final NamespacedKey key; // Paper
     private final String name;
@@ -32,19 +31,19 @@ public class WorldCreator {
     private @Nullable Float spawnYawOverride;
     private @Nullable Float spawnPitchOverride;
 
-    private Path parentDirectory = Bukkit.getWorldContainer().toPath();
-
     /**
-     * Creates an empty WorldCreationOptions for the given world name
+     * Creates an empty WorldCreationOptions for the given world name.
+     *
+     * <p>Prefer {@link #ofKey(NamespacedKey)} for new or already-migrated worlds.</p>
      *
      * @param name Name of the world that will be created
      */
-    public WorldCreator(String name) {
-        // Paper start
-        this(name, getWorldKey(name));
+    @ApiStatus.Obsolete
+    public WorldCreator(@NotNull String name) {
+        this(name, null);
     }
 
-    private static NamespacedKey getWorldKey(String name) {
+    private static NamespacedKey defaultWorldKey(String name) {
         final String mainLevelName = Bukkit.getUnsafe().getMainLevelName();
         if (name.equals(mainLevelName)) {
             return NamespacedKey.minecraft("overworld");
@@ -57,29 +56,46 @@ public class WorldCreator {
         }
     }
 
+    private static String nameFromKey(NamespacedKey key) {
+        if (key.getNamespace().equals("minecraft")) {
+            // This way, plugins can load legacy worlds by the 'minecraft:<name>' key.
+            return key.getKey();
+        }
+        return key.getNamespace() + "_" + key.getKey();
+    }
+
     /**
-     * Creates an empty WorldCreator for the given world name and key
+     * Creates an empty WorldCreator for the given world name or key.
      *
      * @param levelName LevelName of the world that will be created
      * @param worldKey NamespacedKey of the world that will be created
+     * @deprecated To load unconverted pre-26.1 worlds identified by their name (custom key was never persisted), use
+     * {@link #WorldCreator(String)}. For new worlds and already-converted worlds, prefer {@link #ofKey(NamespacedKey)}.
      */
-    public WorldCreator(String levelName, NamespacedKey worldKey) {
-        if (levelName == null || worldKey == null) {
-            throw new IllegalArgumentException("World name and key cannot be null");
+    @Deprecated(since = "26.1")
+    public WorldCreator(@Nullable String levelName, @Nullable NamespacedKey worldKey) {
+        if (levelName == null && worldKey == null) {
+            throw new IllegalArgumentException("World name and key cannot both be null");
         }
-        this.name = levelName;
+        if (levelName != null && worldKey != null) {
+            throw new IllegalArgumentException("World name and key cannot both be specified");
+        }
+        this.name = levelName == null ? nameFromKey(worldKey) : levelName;
         this.seed = (new Random()).nextLong();
-        this.key = worldKey;
+        this.key = worldKey == null ? defaultWorldKey(levelName) : worldKey;
     }
 
     /**
      * Creates an empty WorldCreator for the given key.
-     * LevelName will be the Key part of the NamespacedKey.
+     *
+     * <p>Note: Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
+     * with this method, use {@link #WorldCreator(String)} with {@link NamespacedKey#getKey()}, or use this method
+     * with {@link NamespacedKey#minecraft(String)} and {@link NamespacedKey#getKey()}.</p>
      *
      * @param worldKey NamespacedKey of the world that will be created
      */
-    public WorldCreator(NamespacedKey worldKey) {
-        this(worldKey.getKey(), worldKey);
+    public WorldCreator(@NotNull NamespacedKey worldKey) {
+        this(null, worldKey);
     }
 
     /**
@@ -87,6 +103,7 @@ public class WorldCreator {
      *
      * @return the key
      */
+    @NotNull
     public NamespacedKey key() {
         return key;
     }
@@ -96,21 +113,31 @@ public class WorldCreator {
      *
      * @param levelName LevelName of the world that will be created
      * @param worldKey NamespacedKey of the world that will be created
+     * @deprecated Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
+     * with this method, use {@link #WorldCreator(String)} with the name.
      */
-    public static WorldCreator ofNameAndKey(String levelName, NamespacedKey worldKey) {
-        return new WorldCreator(levelName, worldKey);
+    @Deprecated(since = "26.1")
+    @NotNull
+    public static WorldCreator ofNameAndKey(@NotNull String levelName, @NotNull NamespacedKey worldKey) {
+        if (!defaultWorldKey(levelName).equals(worldKey)) {
+            throw new IllegalArgumentException("Cannot create world with mismatched name and key identities.");
+        }
+        return new WorldCreator(levelName, null);
     }
 
     /**
      * Creates an empty WorldCreator for the given key.
-     * LevelName will be the Key part of the NamespacedKey.
+     *
+     * <p>Note: Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
+     * with this method, use {@link #WorldCreator(String)} with {@link NamespacedKey#getKey()}, or use this method
+     * with {@link NamespacedKey#minecraft(String)} and {@link NamespacedKey#getKey()}.</p>
      *
      * @param worldKey NamespacedKey of the world that will be created
      */
-    public static WorldCreator ofKey(NamespacedKey worldKey) {
+    @NotNull
+    public static WorldCreator ofKey(@NotNull NamespacedKey worldKey) {
         return new WorldCreator(worldKey);
     }
-    // Paper end
 
     /**
      * Copies the options from the specified world
@@ -118,7 +145,8 @@ public class WorldCreator {
      * @param world World to copy options from
      * @return This object, for chaining
      */
-    public WorldCreator copy(World world) {
+    @NotNull
+    public WorldCreator copy(@NotNull World world) {
         Preconditions.checkArgument(world != null, "World cannot be null");
 
         seed = world.getSeed();
@@ -139,7 +167,8 @@ public class WorldCreator {
      * @param creator World creator to copy options from
      * @return This object, for chaining
      */
-    public WorldCreator copy(WorldCreator creator) {
+    @NotNull
+    public WorldCreator copy(@NotNull WorldCreator creator) {
         Preconditions.checkArgument(creator != null, "Creator cannot be null");
 
         seed = creator.seed();
@@ -156,10 +185,15 @@ public class WorldCreator {
     }
 
     /**
-     * Gets the name of the world that is to be loaded or created.
+     * Gets the legacy Bukkit name of the world that is to be loaded or created.
      *
-     * @return World name
+     * <p>This method is considered obsolete and is a candidate for future deprecation.
+     * Prefer using {@link #key()}.</p>
+     *
+     * @return legacy Bukkit world name
      */
+    @ApiStatus.Obsolete
+    @NotNull
     public String name() {
         return name;
     }
@@ -179,6 +213,7 @@ public class WorldCreator {
      * @param seed World seed
      * @return This object, for chaining
      */
+    @NotNull
     public WorldCreator seed(long seed) {
         this.seed = seed;
 
@@ -190,6 +225,7 @@ public class WorldCreator {
      *
      * @return World environment
      */
+    @NotNull
     public World.Environment environment() {
         return environment;
     }
@@ -200,33 +236,11 @@ public class WorldCreator {
      * @param env World environment
      * @return This object, for chaining
      */
-    public WorldCreator environment(World.Environment env) {
+    @NotNull
+    public WorldCreator environment(@NotNull World.Environment env) {
         this.environment = env;
 
         return this;
-    }
-
-    /**
-     * Sets the directory that this world's data will be stored in.
-     * <p>
-     * The provided file represents the <strong>parent folder</strong> used for
-     * storing all world data (region files, player data, level data, etc.).
-     *
-     * @param parentDirectory the parent directory to store this world's data in
-     * @return this object, for chaining
-     */
-    public WorldCreator parentDirectory(Path parentDirectory) {
-        this.parentDirectory = parentDirectory;
-        return this;
-    }
-
-    /**
-     * Gets the directory used for storing this world's data.
-     *
-     * @return the parent directory used for world storage
-     */
-    public Path parentDirectory() {
-        return this.parentDirectory;
     }
 
     /**
@@ -234,6 +248,7 @@ public class WorldCreator {
      *
      * @return World type
      */
+    @NotNull
     public WorldType type() {
         return type;
     }
@@ -244,7 +259,8 @@ public class WorldCreator {
      * @param type World type
      * @return This object, for chaining
      */
-    public WorldCreator type(WorldType type) {
+    @NotNull
+    public WorldCreator type(@NotNull WorldType type) {
         this.type = type;
 
         return this;
@@ -330,7 +346,8 @@ public class WorldCreator {
      *
      * @return Chunk generator
      */
-    public @Nullable ChunkGenerator generator() {
+    @Nullable
+    public ChunkGenerator generator() {
         return generator;
     }
 
@@ -343,6 +360,7 @@ public class WorldCreator {
      * @param generator Chunk generator
      * @return This object, for chaining
      */
+    @NotNull
     public WorldCreator generator(@Nullable ChunkGenerator generator) {
         this.generator = generator;
 
@@ -362,6 +380,7 @@ public class WorldCreator {
      * @param generator Name of the generator to use, in "plugin:id" notation
      * @return This object, for chaining
      */
+    @NotNull
     public WorldCreator generator(@Nullable String generator) {
         this.generator = getGeneratorForName(name, generator, Bukkit.getConsoleSender());
 
@@ -383,6 +402,7 @@ public class WorldCreator {
      *     messages
      * @return This object, for chaining
      */
+    @NotNull
     public WorldCreator generator(@Nullable String generator, @Nullable CommandSender output) {
         this.generator = getGeneratorForName(name, generator, output);
 
@@ -398,7 +418,8 @@ public class WorldCreator {
      *
      * @return Biome provider
      */
-    public @Nullable BiomeProvider biomeProvider() {
+    @Nullable
+    public BiomeProvider biomeProvider() {
         return biomeProvider;
     }
 
@@ -412,6 +433,7 @@ public class WorldCreator {
      * @param biomeProvider Biome provider
      * @return This object, for chaining
      */
+    @NotNull
     public WorldCreator biomeProvider(@Nullable BiomeProvider biomeProvider) {
         this.biomeProvider = biomeProvider;
 
@@ -434,6 +456,7 @@ public class WorldCreator {
      * notation
      * @return This object, for chaining
      */
+    @NotNull
     public WorldCreator biomeProvider(@Nullable String biomeProvider) {
         this.biomeProvider = getBiomeProviderForName(name, biomeProvider, Bukkit.getConsoleSender());
 
@@ -457,6 +480,7 @@ public class WorldCreator {
      * @param output {@link CommandSender} that will receive any error messages
      * @return This object, for chaining
      */
+    @NotNull
     public WorldCreator biomeProvider(@Nullable String biomeProvider, @Nullable CommandSender output) {
         this.biomeProvider = getBiomeProviderForName(name, biomeProvider, output);
 
@@ -478,7 +502,8 @@ public class WorldCreator {
      * dimension</a> (scroll to "When the generator ID type is
      * <code>minecraft:flat</code>)"
      */
-    public WorldCreator generatorSettings(String generatorSettings) {
+    @NotNull
+    public WorldCreator generatorSettings(@NotNull String generatorSettings) {
         this.generatorSettings = generatorSettings;
 
         return this;
@@ -490,6 +515,7 @@ public class WorldCreator {
      * @return The settings that should be used by the generator
      * @see #generatorSettings(java.lang.String)
      */
+    @NotNull
     public String generatorSettings() {
         return generatorSettings;
     }
@@ -501,6 +527,7 @@ public class WorldCreator {
      * @param generate Whether to generate structures
      * @return This object, for chaining
      */
+    @NotNull
     public WorldCreator generateStructures(boolean generate) {
         this.generateStructures = generate;
 
@@ -524,6 +551,7 @@ public class WorldCreator {
      * @param hardcore Whether the world will be hardcore
      * @return This object, for chaining
      */
+    @NotNull
     public WorldCreator hardcore(boolean hardcore) {
         this.hardcore = hardcore;
 
@@ -547,6 +575,7 @@ public class WorldCreator {
      * @param bonusChest indicating whether the bonus chest should be generated
      * @return This object, for chaining
      */
+    @NotNull
     public WorldCreator bonusChest(final boolean bonusChest) {
         this.bonusChest = bonusChest;
         return this;
@@ -569,7 +598,8 @@ public class WorldCreator {
      *
      * @return Newly created or loaded world
      */
-    public @Nullable World createWorld() {
+    @Nullable
+    public World createWorld() {
         return Bukkit.createWorld(this);
     }
 
@@ -579,7 +609,8 @@ public class WorldCreator {
      * @param name Name of the world to load or create
      * @return Resulting WorldCreator
      */
-    public static WorldCreator name(String name) {
+    @NotNull
+    public static WorldCreator name(@NotNull String name) {
         return new WorldCreator(name);
     }
 
@@ -599,7 +630,8 @@ public class WorldCreator {
      * @param output Where to output if errors are present
      * @return Resulting generator, or null
      */
-    public static @Nullable ChunkGenerator getGeneratorForName(String world, @Nullable String name, @Nullable CommandSender output) {
+    @Nullable
+    public static ChunkGenerator getGeneratorForName(@NotNull String world, @Nullable String name, @Nullable CommandSender output) {
         Preconditions.checkArgument(world != null, "World name must be specified");
         ChunkGenerator result = null;
 
@@ -640,7 +672,8 @@ public class WorldCreator {
      * @param output Where to output if errors are present
      * @return Resulting biome provider, or null
      */
-    public static @Nullable BiomeProvider getBiomeProviderForName(String world, @Nullable String name, @Nullable CommandSender output) {
+    @Nullable
+    public static BiomeProvider getBiomeProviderForName(@NotNull String world, @Nullable String name, @Nullable CommandSender output) {
         Preconditions.checkArgument(world != null, "World name must be specified");
         BiomeProvider result = null;
 
@@ -665,13 +698,13 @@ public class WorldCreator {
         return result;
     }
 
-    // Paper start - keep spawn loaded tristate
     /**
      * Returns the current intent to keep the world loaded, @see {@link WorldCreator#keepSpawnLoaded(net.kyori.adventure.util.TriState)}
      *
      * @return the current tristate value
      * @deprecated completely unfunctional as the server no longer has always loaded spawn chunks.
      */
+    @NotNull
     @Deprecated(forRemoval = true, since = "1.21.9")
     public net.kyori.adventure.util.TriState keepSpawnLoaded() {
         return net.kyori.adventure.util.TriState.FALSE;
@@ -685,9 +718,9 @@ public class WorldCreator {
      * @return This object, for chaining
      * @deprecated completely unfunctional as the server no longer has always loaded spawn chunks.
      */
+    @NotNull
     @Deprecated(forRemoval = true, since = "1.21.9")
-    public WorldCreator keepSpawnLoaded(net.kyori.adventure.util.TriState keepSpawnLoaded) {
+    public WorldCreator keepSpawnLoaded(@NotNull net.kyori.adventure.util.TriState keepSpawnLoaded) {
         return this;
     }
-    // Paper end - keep spawn loaded tristate
 }

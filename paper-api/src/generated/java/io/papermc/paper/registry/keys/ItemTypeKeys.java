@@ -3960,6 +3960,13 @@ public final class ItemTypeKeys {
     public static final TypedKey<ItemType> GOLDEN_CHESTPLATE = create(key("golden_chestplate"));
 
     /**
+     * {@code minecraft:golden_dandelion}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<ItemType> GOLDEN_DANDELION = create(key("golden_dandelion"));
+
+    /**
      * {@code minecraft:golden_helmet}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

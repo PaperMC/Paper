@@ -21,10 +21,6 @@ public class PaperFluidData implements FluidData {
         this.state = state;
     }
 
-    /**
-     * Provides the internal server representation of this fluid data.
-     * @return the fluid state.
-     */
     public FluidState getState() {
         return this.state;
     }
@@ -48,7 +44,7 @@ public class PaperFluidData implements FluidData {
         Preconditions.checkArgument(location.getWorld() != null, "Cannot compute flow direction on world-less location");
         return CraftVector.toBukkit(this.state.getFlow(
             ((CraftWorld) location.getWorld()).getHandle(),
-            CraftLocation.toBlockPosition(location)
+            CraftLocation.toBlockPos(location)
         ));
     }
 
@@ -60,7 +56,7 @@ public class PaperFluidData implements FluidData {
     @Override
     public float computeHeight(@NotNull final Location location) {
         Preconditions.checkArgument(location.getWorld() != null, "Cannot compute height on world-less location");
-        return this.state.getHeight(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toBlockPosition(location));
+        return this.state.getHeight(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toBlockPos(location));
     }
 
     @Override

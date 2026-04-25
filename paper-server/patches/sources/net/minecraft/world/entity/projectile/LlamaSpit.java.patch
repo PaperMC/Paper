@@ -2,15 +2,15 @@
 +++ b/net/minecraft/world/entity/projectile/LlamaSpit.java
 @@ -43,16 +_,16 @@
          super.tick();
-         Vec3 deltaMovement = this.getDeltaMovement();
-         HitResult hitResultOnMoveVector = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
--        this.hitTargetOrDeflectSelf(hitResultOnMoveVector);
-+        this.preHitTargetOrDeflectSelf(hitResultOnMoveVector); // CraftBukkit - projectile hit event
-         double d = this.getX() + deltaMovement.x;
-         double d1 = this.getY() + deltaMovement.y;
-         double d2 = this.getZ() + deltaMovement.z;
+         Vec3 movement = this.getDeltaMovement();
+         HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
+-        this.hitTargetOrDeflectSelf(hitResult);
++        this.preHitTargetOrDeflectSelf(hitResult); // CraftBukkit - projectile hit event
+         double x = this.getX() + movement.x;
+         double y = this.getY() + movement.y;
+         double z = this.getZ() + movement.z;
          this.updateRotation();
-         float f = 0.99F;
+         float inertia = 0.99F;
          if (this.level().getBlockStates(this.getBoundingBox()).noneMatch(BlockBehaviour.BlockStateBase::isAir)) {
 -            this.discard();
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
@@ -18,11 +18,11 @@
 -            this.discard();
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else {
-             this.setDeltaMovement(deltaMovement.scale(0.99F));
+             this.setDeltaMovement(movement.scale(0.99F));
              this.applyGravity();
 @@ -76,7 +_,7 @@
-     protected void onHitBlock(BlockHitResult result) {
-         super.onHitBlock(result);
+     protected void onHitBlock(final BlockHitResult hitResult) {
+         super.onHitBlock(hitResult);
          if (!this.level().isClientSide()) {
 -            this.discard();
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause

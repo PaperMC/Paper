@@ -1,38 +1,39 @@
 --- a/net/minecraft/world/item/component/BundleContents.java
 +++ b/net/minecraft/world/item/component/BundleContents.java
-@@ -25,6 +_,7 @@
-         .flatXmap(BundleContents::checkAndCreate, bundleContents -> DataResult.success(bundleContents.items));
-     public static final StreamCodec<RegistryFriendlyByteBuf, BundleContents> STREAM_CODEC = ItemStack.STREAM_CODEC
+@@ -28,6 +_,7 @@
+     public static final Codec<BundleContents> CODEC = ItemStackTemplate.CODEC.listOf().xmap(BundleContents::new, contents -> contents.items);
+     public static final StreamCodec<RegistryFriendlyByteBuf, BundleContents> STREAM_CODEC = ItemStackTemplate.STREAM_CODEC
          .apply(ByteBufCodecs.list())
 +        .apply(ByteBufCodecs::increaseDepth) // Paper - Track codec depth
          .map(BundleContents::new, contents -> contents.items);
      private static final Fraction BUNDLE_IN_BUNDLE_WEIGHT = Fraction.getFraction(1, 16);
      private static final int NO_STACK_INDEX = -1;
-@@ -76,6 +_,12 @@
-         return !stack.isEmpty() && stack.getItem().canFitInsideContainerItems();
+@@ -80,6 +_,13 @@
+         return !itemToAdd.isEmpty() && itemToAdd.getItem().canFitInsideContainerItems();
      }
  
 +    // Paper start - correct bundle inventory action
 +    public int getMaxAmountToAdd(final ItemStack stack) {
-+        return Mutable.getMaxAmountToAdd(stack, this.weight);
++        DataResult<Fraction> weight = this.weight();
++        return weight.isError() ? 0 : Mutable.getMaxAmountToAdd(stack, weight.getOrThrow());
 +    }
 +    // Paper end - correct bundle inventory action
 +
      public int getNumberOfItemsToShow() {
-         int size = this.size();
-         int i = size > 12 ? 11 : 12;
-@@ -171,7 +_,13 @@
+         int numberOfItemStacks = this.size();
+         int availableItemsToShow = numberOfItemStacks > 12 ? 11 : 12;
+@@ -179,6 +_,14 @@
+             Fraction remainingWeight = Fraction.ONE.subtract(this.weight);
+             return Math.max(remainingWeight.divideBy(itemWeight).intValue(), 0);
          }
- 
-         public int getMaxAmountToAdd(ItemStack stack) {
--            Fraction fraction = Fraction.ONE.subtract(this.weight);
++
 +        // Paper start - correct bundle inventory action
 +        // Static overload to easily compute this value without the need for an instance of mutable.
-+            return getMaxAmountToAdd(stack, this.weight);
-+        }
 +        static int getMaxAmountToAdd(final ItemStack stack, final Fraction weight) {
-+            Fraction fraction = Fraction.ONE.subtract(weight);
++            Fraction remainingWeight = Fraction.ONE.subtract(weight);
++            return Math.max(remainingWeight.divideBy(BundleContents.getWeight(stack).getOrThrow()).intValue(), 0);
++        }
 +        // Paper end - correct bundle inventory action
-             return Math.max(fraction.divideBy(BundleContents.getWeight(stack)).intValue(), 0);
-         }
  
+         public int tryInsert(final ItemStack itemsToAdd) {
+             if (!BundleContents.canItemBeInBundle(itemsToAdd)) {

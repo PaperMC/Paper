@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import io.papermc.paper.world.MoonPhase;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
@@ -526,12 +527,12 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     @NotNull
     public <T extends Entity> T addEntity(@NotNull T entity);
 
-    // Paper start
     /**
      * @return the current moon phase at the current time in the world
+     * @apiNote the returned value may be inaccurate in custom biome using environmental attribute override
      */
     @NotNull
-    io.papermc.paper.world.MoonPhase getMoonPhase();
+    MoonPhase getMoonPhase();
 
     /**
      * Get the world's key
@@ -559,5 +560,4 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @return collides or not
      */
     boolean hasCollisionsIn(@NotNull org.bukkit.util.BoundingBox boundingBox);
-    // Paper end
 }

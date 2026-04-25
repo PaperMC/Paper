@@ -3,9 +3,9 @@
 @@ -256,7 +_,9 @@
      protected void ageBoundaryReached() {
          super.ageBoundaryReached();
-         if (!this.isBaby() && this.level() instanceof ServerLevel serverLevel && serverLevel.getGameRules().get(GameRules.MOB_DROPS)) {
+         if (!this.isBaby() && this.level() instanceof ServerLevel level && level.getGameRules().get(GameRules.MOB_DROPS)) {
 +            this.forceDrops = true; // CraftBukkit
-             this.dropFromGiftLootTable(serverLevel, BuiltInLootTables.TURTLE_GROW, this::spawnAtLocation);
+             this.dropFromGiftLootTable(level, BuiltInLootTables.TURTLE_GROW, this::spawnAtLocation);
 +            this.forceDrops = false; // CraftBukkit
          }
      }
@@ -13,9 +13,9 @@
 @@ -277,7 +_,7 @@
  
      @Override
-     public void thunderHit(ServerLevel level, LightningBolt lightning) {
+     public void thunderHit(final ServerLevel level, final LightningBolt lightningBolt) {
 -        this.hurtServer(level, this.damageSources().lightningBolt(), Float.MAX_VALUE);
-+        this.hurtServer(level, this.damageSources().lightningBolt().eventEntityDamager(lightning), Float.MAX_VALUE); // CraftBukkit // Paper - fix DamageSource API
++        this.hurtServer(level, this.damageSources().lightningBolt().eventEntityDamager(lightningBolt), Float.MAX_VALUE); // CraftBukkit // Paper - fix DamageSource API
      }
  
      @Override
@@ -49,7 +49,7 @@
  
          @Override
 @@ -448,14 +_,20 @@
-             BlockPos blockPos = this.turtle.blockPosition();
+             BlockPos turtlePos = this.turtle.blockPosition();
              if (!this.turtle.isInWater() && this.isReachedTarget()) {
                  if (this.turtle.layEggCounter < 1) {
 -                    this.turtle.setLayingEgg(true);
@@ -61,12 +61,12 @@
 +                    if (layEggEvent.callEvent() && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount()))) {
 +                    // Paper end - Turtle API
                      Level level = this.turtle.level();
-                     level.playSound(null, blockPos, SoundEvents.TURTLE_LAY_EGG, SoundSource.BLOCKS, 0.3F, 0.9F + level.random.nextFloat() * 0.2F);
-                     BlockPos blockPos1 = this.blockPos.above();
--                    BlockState blockState = Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, this.turtle.random.nextInt(4) + 1);
-+                    BlockState blockState = Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount()); // Paper
-                     level.setBlock(blockPos1, blockState, Block.UPDATE_ALL);
-                     level.gameEvent(GameEvent.BLOCK_PLACE, blockPos1, GameEvent.Context.of(this.turtle, blockState));
+                     level.playSound(null, turtlePos, SoundEvents.TURTLE_LAY_EGG, SoundSource.BLOCKS, 0.3F, 0.9F + level.getRandom().nextFloat() * 0.2F);
+                     BlockPos eggPos = this.blockPos.above();
+-                    BlockState eggState = Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, this.turtle.random.nextInt(4) + 1);
++                    BlockState eggState = Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount()); // Paper
+                     level.setBlock(eggPos, eggState, Block.UPDATE_ALL);
+                     level.gameEvent(GameEvent.BLOCK_PLACE, eggPos, GameEvent.Context.of(this.turtle, eggState));
 +                    } // CraftBukkit
                      this.turtle.setHasEgg(false);
                      this.turtle.setLayingEgg(false);

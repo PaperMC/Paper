@@ -6,16 +6,16 @@
      protected static final EntityDataAccessor<BlockPos> DATA_START_POS = SynchedEntityData.defineId(FallingBlockEntity.class, EntityDataSerializers.BLOCK_POS);
 +    public boolean autoExpire = true; // Paper - Expand FallingBlock API
  
-     public FallingBlockEntity(EntityType<? extends FallingBlockEntity> type, Level level) {
+     public FallingBlockEntity(final EntityType<? extends FallingBlockEntity> type, final Level level) {
          super(type, level);
 @@ -96,6 +_,7 @@
              pos.getZ() + 0.5,
              state.hasProperty(BlockStateProperties.WATERLOGGED) ? state.setValue(BlockStateProperties.WATERLOGGED, false) : state
          );
-+        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(fallingBlockEntity, pos, state.getFluidState().createLegacyBlock())) return fallingBlockEntity; // CraftBukkit
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, state.getFluidState().createLegacyBlock())) return entity; // CraftBukkit
          level.setBlock(pos, state.getFluidState().createLegacyBlock(), Block.UPDATE_ALL);
-         level.addFreshEntity(fallingBlockEntity);
-         return fallingBlockEntity;
+         level.addFreshEntity(entity);
+         return entity;
 @@ -146,13 +_,22 @@
      @Override
      public void tick() {
@@ -39,13 +39,13 @@
 +            // Paper end - Configurable falling blocks height nerf
              this.handlePortal();
              if (this.level() instanceof ServerLevel serverLevel && (this.isAlive() || this.forceTickAfterTeleportToDuplicate)) {
-                 BlockPos blockPos = this.blockPosition();
+                 BlockPos pos = this.blockPosition();
 @@ -173,12 +_,12 @@
                  }
  
-                 if (!this.onGround() && !flag1) {
--                    if (this.time > 100 && (blockPos.getY() <= this.level().getMinY() || blockPos.getY() > this.level().getMaxY()) || this.time > 600) {
-+                    if ((this.time > 100 && autoExpire) && (blockPos.getY() <= this.level().getMinY() || blockPos.getY() > this.level().getMaxY()) || (this.time > 600 && autoExpire)) { // Paper - Expand FallingBlock API
+                 if (!this.onGround() && !isStuckInWater) {
+-                    if (this.time > 100 && (pos.getY() <= this.level().getMinY() || pos.getY() > this.level().getMaxY()) || this.time > 600) {
++                    if ((this.time > 100 && this.autoExpire) && (pos.getY() <= this.level().getMinY() || pos.getY() > this.level().getMaxY()) || (this.time > 600 && this.autoExpire)) { // Paper - Expand FallingBlock API
                          if (this.dropItem && serverLevel.getGameRules().get(GameRules.ENTITY_DROPS)) {
                              this.spawnAtLocation(serverLevel, block);
                          }
@@ -54,50 +54,50 @@
 +                        this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
                      }
                  } else {
-                     BlockState blockState = this.level().getBlockState(blockPos);
-@@ -196,11 +_,17 @@
+                     BlockState currentState = this.level().getBlockState(pos);
+@@ -195,11 +_,17 @@
                                      this.blockState = this.blockState.setValue(BlockStateProperties.WATERLOGGED, true);
                                  }
  
 +                                // CraftBukkit start
-+                                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, blockPos, this.blockState)) {
++                                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this, pos, this.blockState)) {
 +                                    this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // SPIGOT-6586 called before the event in previous versions
 +                                    return;
 +                                }
 +                                // CraftBukkit end
-                                 if (this.level().setBlock(blockPos, this.blockState, Block.UPDATE_ALL)) {
+                                 if (this.level().setBlock(pos, this.blockState, Block.UPDATE_ALL)) {
                                      serverLevel.getChunkSource()
                                          .chunkMap
-                                         .sendToTrackingPlayers(this, new ClientboundBlockUpdatePacket(blockPos, this.level().getBlockState(blockPos)));
+                                         .sendToTrackingPlayers(this, new ClientboundBlockUpdatePacket(pos, this.level().getBlockState(pos)));
 -                                    this.discard();
 +                                    this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
                                      if (block instanceof Fallable fallable) {
-                                         fallable.onLand(this.level(), blockPos, this.blockState, blockState, this);
+                                         fallable.onLand(this.level(), pos, this.blockState, currentState, this);
                                      }
-@@ -225,19 +_,19 @@
+@@ -224,19 +_,19 @@
                                          }
                                      }
                                  } else if (this.dropItem && serverLevel.getGameRules().get(GameRules.ENTITY_DROPS)) {
 -                                    this.discard();
 +                                    this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
-                                     this.callOnBrokenAfterFall(block, blockPos);
+                                     this.callOnBrokenAfterFall(block, pos);
                                      this.spawnAtLocation(serverLevel, block);
                                  }
                              } else {
 -                                this.discard();
 +                                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
                                  if (this.dropItem && serverLevel.getGameRules().get(GameRules.ENTITY_DROPS)) {
-                                     this.callOnBrokenAfterFall(block, blockPos);
+                                     this.callOnBrokenAfterFall(block, pos);
                                      this.spawnAtLocation(serverLevel, block);
                                  }
                              }
                          } else {
 -                            this.discard();
 +                            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-                             this.callOnBrokenAfterFall(block, blockPos);
+                             this.callOnBrokenAfterFall(block, pos);
                          }
                      }
-@@ -297,6 +_,7 @@
+@@ -296,6 +_,7 @@
          }
  
          output.putBoolean("CancelDrop", this.cancelDrop);
@@ -105,7 +105,7 @@
      }
  
      @Override
-@@ -308,8 +_,9 @@
+@@ -307,8 +_,9 @@
          this.fallDamagePerDistance = input.getFloatOr("FallHurtAmount", 0.0F);
          this.fallDamageMax = input.getIntOr("FallHurtMax", 40);
          this.dropItem = input.getBooleanOr("DropItem", true);
@@ -115,13 +115,13 @@
 +        this.autoExpire = input.getBooleanOr("Paper.AutoExpire", true); // Paper - Expand FallingBlock API
      }
  
-     public void setHurtsEntities(float fallDamagePerDistance, int fallDamageMax) {
-@@ -365,7 +_,7 @@
-         ResourceKey<Level> resourceKey1 = this.level().dimension();
-         boolean flag = (resourceKey1 == Level.END || resourceKey == Level.END) && resourceKey1 != resourceKey;
-         Entity entity = super.teleport(teleportTransition);
--        this.forceTickAfterTeleportToDuplicate = entity != null && flag;
-+        this.forceTickAfterTeleportToDuplicate = entity != null && flag && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowUnsafeEndPortalTeleportation; // Paper
-         return entity;
+     public void setHurtsEntities(final float damagePerDistance, final int damageMax) {
+@@ -364,7 +_,7 @@
+         ResourceKey<Level> oldDimension = this.level().dimension();
+         boolean fromOrToEnd = (oldDimension == Level.END || newDimension == Level.END) && oldDimension != newDimension;
+         Entity newEntity = super.teleport(transition);
+-        this.forceTickAfterTeleportToDuplicate = newEntity != null && fromOrToEnd;
++        this.forceTickAfterTeleportToDuplicate = newEntity != null && fromOrToEnd && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowUnsafeEndPortalTeleportation; // Paper
+         return newEntity;
      }
  }

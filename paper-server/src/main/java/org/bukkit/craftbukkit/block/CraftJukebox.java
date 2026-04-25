@@ -43,7 +43,7 @@ public class CraftJukebox extends CraftBlockEntityState<JukeboxBlockEntity> impl
         boolean result = super.update(force, applyPhysics);
 
         if (result && this.isPlaced() && this.getType() == Material.JUKEBOX) {
-            this.getWorldHandle().setBlock(this.getPosition(), this.data, Block.UPDATE_ALL);
+            this.getWorldHandle().setBlock(this.getPosition(), this.block, Block.UPDATE_ALL);
 
             BlockEntity blockEntity = this.getBlockEntityFromWorld();
             if (blockEntity instanceof JukeboxBlockEntity jukebox) {
@@ -70,7 +70,7 @@ public class CraftJukebox extends CraftBlockEntityState<JukeboxBlockEntity> impl
 
     @Override
     public boolean hasRecord() {
-        return this.data.getValueOrElse(JukeboxBlock.HAS_RECORD, false) && !this.getPlaying().isAir();
+        return this.block.getValueOrElse(JukeboxBlock.HAS_RECORD, false) && !this.getPlaying().isAir();
     }
 
     @Override
@@ -86,7 +86,7 @@ public class CraftJukebox extends CraftBlockEntityState<JukeboxBlockEntity> impl
         JukeboxBlockEntity snapshot = this.getSnapshot();
         snapshot.setSongItemWithoutPlaying(nms, snapshot.getSongPlayer().getTicksSinceSongStarted());
 
-        this.data = this.data.trySetValue(JukeboxBlock.HAS_RECORD, !nms.isEmpty());
+        this.block = this.block.trySetValue(JukeboxBlock.HAS_RECORD, !nms.isEmpty());
     }
 
     @Override

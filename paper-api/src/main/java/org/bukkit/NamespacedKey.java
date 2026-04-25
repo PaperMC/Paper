@@ -81,7 +81,7 @@ public final class NamespacedKey implements Key, com.destroystokyo.paper.Namespa
 
     private void validate() {
         Preconditions.checkArgument(this.namespace.length() + 1 + this.key.length() <= Short.MAX_VALUE, "NamespacedKey must be less than 32768 characters");
-        checkError("[a-z0-9_-.]", "namespace", this.namespace, Key.checkNamespace(this.namespace));
+        checkError("[a-z0-9_-.]", "namespace", this.namespace, Key.checkNamespace(this.namespace)); // note: for now we will pretend ".." is a valid namespace like adventure to not break conversion
         checkError("[a-z0-9_-./]", "key", this.key, Key.checkValue(this.key));
     }
 

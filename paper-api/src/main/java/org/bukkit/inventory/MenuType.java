@@ -1,8 +1,9 @@
 package org.bukkit.inventory;
 
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.view.AnvilView;
@@ -234,7 +235,8 @@ public interface MenuType extends Keyed, io.papermc.paper.world.flag.FeatureDepe
      */
     Class<? extends InventoryView> getInventoryViewClass();
 
-    private static <T extends MenuType> T get(final String key) {
-        return (T) Registry.MENU.getOrThrow(NamespacedKey.minecraft(key));
+    @SuppressWarnings("unchecked")
+    private static <T extends MenuType> T get(final @KeyPattern.Value String key) {
+        return (T) Registry.MENU.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 }

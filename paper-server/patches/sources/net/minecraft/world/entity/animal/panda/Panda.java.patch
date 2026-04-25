@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/entity/animal/panda/Panda.java
 +++ b/net/minecraft/world/entity/animal/panda/Panda.java
-@@ -130,6 +_,7 @@
+@@ -133,6 +_,7 @@
      }
  
-     public void sit(boolean sitting) {
-+        if (!new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return; // Paper - Add EntityToggleSitEvent
-         this.setFlag(FLAG_SIT, sitting);
+     public void sit(final boolean value) {
++        if (!new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), value).callEvent()) return; // Paper - Add EntityToggleSitEvent
+         this.setFlag(FLAG_SIT, value);
      }
  
-@@ -518,24 +_,28 @@
+@@ -517,24 +_,28 @@
  
          for (Panda panda : level.getEntitiesOfClass(Panda.class, this.getBoundingBox().inflate(10.0))) {
              if (!panda.isBaby() && panda.onGround() && !panda.isInWater() && panda.canPerformAction()) {
@@ -26,56 +26,56 @@
      }
  
      @Override
-     protected void pickUpItem(ServerLevel level, ItemEntity entity) {
+     protected void pickUpItem(final ServerLevel level, final ItemEntity entity) {
 -        if (this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() && canPickUpAndEat(entity)) {
 +        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entity, 0, !(this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() && Panda.canPickUpAndEat(entity))).isCancelled()) { // CraftBukkit
              this.onItemPickup(entity);
-             ItemStack item = entity.getItem();
-             this.setItemSlot(EquipmentSlot.MAINHAND, item);
+             ItemStack itemStack = entity.getItem();
+             this.setItemSlot(EquipmentSlot.MAINHAND, itemStack);
              this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
-             this.take(entity, item.getCount());
+             this.take(entity, itemStack.getCount());
 -            entity.discard();
 +            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
          }
      }
  
-@@ -625,8 +_,9 @@
-                 this.usePlayerItem(player, hand, itemInHand);
-                 this.ageUp((int)(-this.getAge() / 20 * 0.1F), true);
-             } else if (!this.level().isClientSide() && this.getAge() == 0 && this.canFallInLove()) {
-+                final ItemStack breedCopy = itemInHand.copy(); // Paper - Fix EntityBreedEvent copying
-                 this.usePlayerItem(player, hand, itemInHand);
--                this.setInLove(player);
-+                this.setInLove(player, breedCopy); // Paper - Fix EntityBreedEvent copying
-             } else {
-                 if (!(this.level() instanceof ServerLevel serverLevel) || this.isSitting() || this.isInWater()) {
-                     return InteractionResult.PASS;
-@@ -636,7 +_,9 @@
-                 this.eat(true);
-                 ItemStack itemBySlot = this.getItemBySlot(EquipmentSlot.MAINHAND);
-                 if (!itemBySlot.isEmpty() && !player.hasInfiniteMaterials()) {
-+                    this.forceDrops = true; // Paper - Add missing forceDrop toggles
-                     this.spawnAtLocation(serverLevel, itemBySlot);
-+                    this.forceDrops = false; // Paper - Add missing forceDrop toggles
+@@ -629,8 +_,9 @@
                  }
  
-                 this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(itemInHand.getItem(), 1));
-@@ -855,7 +_,7 @@
+                 if (!this.level().isClientSide() && this.getAge() == 0 && this.canFallInLove()) {
++                    final ItemStack breedCopy = interactionItemStack.copy(); // Paper - Fix EntityBreedEvent copying
+                     this.usePlayerItem(player, hand, interactionItemStack);
+-                    this.setInLove(player);
++                    this.setInLove(player, breedCopy); // Paper - Fix EntityBreedEvent copying
+                 } else {
+                     if (!(this.level() instanceof ServerLevel level) || this.isSitting() || this.isInWater()) {
+                         return InteractionResult.PASS;
+@@ -640,7 +_,9 @@
+                     this.eat(true);
+                     ItemStack pandasCurrentItem = this.getItemBySlot(EquipmentSlot.MAINHAND);
+                     if (!pandasCurrentItem.isEmpty() && !player.hasInfiniteMaterials()) {
++                        this.forceDrops = true; // Paper - Add missing forceDrop toggles
+                         this.spawnAtLocation(level, pandasCurrentItem);
++                        this.forceDrops = false; // Paper - Add missing forceDrop toggles
+                     }
+ 
+                     this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(interactionItemStack.getItem(), 1));
+@@ -862,7 +_,7 @@
          @Override
-         protected void alertOther(Mob mob, LivingEntity target) {
-             if (mob instanceof Panda && mob.isAggressive()) {
--                mob.setTarget(target);
-+                mob.setTarget(target, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY); // CraftBukkit
+         protected void alertOther(final Mob other, final LivingEntity hurtByMob) {
+             if (other instanceof Panda && other.isAggressive()) {
+-                other.setTarget(hurtByMob);
++                other.setTarget(hurtByMob, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY); // CraftBukkit
              }
          }
      }
-@@ -1084,7 +_,9 @@
+@@ -1093,7 +_,9 @@
          public void stop() {
-             ItemStack itemBySlot = Panda.this.getItemBySlot(EquipmentSlot.MAINHAND);
-             if (!itemBySlot.isEmpty()) {
+             ItemStack itemStack = Panda.this.getItemBySlot(EquipmentSlot.MAINHAND);
+             if (!itemStack.isEmpty()) {
 +                Panda.this.forceDrops = true; // Paper - Add missing forceDrop toggles
-                 Panda.this.spawnAtLocation(getServerLevel(Panda.this.level()), itemBySlot);
+                 Panda.this.spawnAtLocation(getServerLevel(Panda.this.level()), itemStack);
 +                Panda.this.forceDrops = false; // Paper - Add missing forceDrop toggles
                  Panda.this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-                 int i = Panda.this.isLazy() ? Panda.this.random.nextInt(50) + 10 : Panda.this.random.nextInt(150) + 10;
-                 this.cooldown = Panda.this.tickCount + i * 20;
+                 int waitSeconds = Panda.this.isLazy() ? Panda.this.random.nextInt(50) + 10 : Panda.this.random.nextInt(150) + 10;
+                 this.cooldown = Panda.this.tickCount + waitSeconds * 20;

@@ -100,7 +100,7 @@ interface ItemComponentTypesBridge {
 
     UseCooldown.Builder useCooldown(final float seconds);
 
-    DamageResistant damageResistant(TagKey<DamageType> types);
+    DamageResistant damageResistant(RegistryKeySet<DamageType> types);
 
     Enchantable enchantable(int level);
 

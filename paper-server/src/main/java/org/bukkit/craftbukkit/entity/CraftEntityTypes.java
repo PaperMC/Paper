@@ -16,9 +16,9 @@ import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
-import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.EyeOfEnder;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEgg;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownLingeringPotion;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplashPotion;
@@ -383,21 +383,18 @@ public final class CraftEntityTypes {
 
         // Hanging
         register(new EntityTypeData<>(EntityType.PAINTING, Painting.class, CraftPainting::new, createHanging(Painting.class, (spawnData, hangingData) -> {
-                    if (spawnData.normalWorld && hangingData.randomize()) {
-                        // Paper start - if randomizeData fails, force it
-                        final net.minecraft.world.entity.decoration.painting.Painting entity = net.minecraft.world.entity.decoration.painting.Painting.create(spawnData.minecraftWorld(), hangingData.position(), hangingData.direction()).orElse(null);
-                        if (entity != null) {
-                            return entity;
-                        }
-                    } /*else*/ {
-                        // Paper end - if randomizeData fails, force it
-                        net.minecraft.world.entity.decoration.painting.Painting entity = new net.minecraft.world.entity.decoration.painting.Painting(net.minecraft.world.entity.EntityType.PAINTING, spawnData.minecraftWorld());
-                        entity.absSnapTo(spawnData.x(), spawnData.y(), spawnData.z(), spawnData.yaw(), spawnData.pitch());
-                        entity.setDirection(hangingData.direction());
-                        return entity;
-                    }
+            if (spawnData.normalWorld && hangingData.randomize()) {
+                final net.minecraft.world.entity.decoration.painting.Painting entity = net.minecraft.world.entity.decoration.painting.Painting.create(spawnData.minecraftWorld(), hangingData.position(), hangingData.direction()).orElse(null);
+                if (entity != null) {
+                    return entity;
                 }
-        )));
+            }
+
+            net.minecraft.world.entity.decoration.painting.Painting entity = new net.minecraft.world.entity.decoration.painting.Painting(net.minecraft.world.entity.EntityType.PAINTING, spawnData.minecraftWorld());
+            entity.absSnapTo(spawnData.x(), spawnData.y(), spawnData.z(), spawnData.yaw(), spawnData.pitch());
+            entity.setDirection(hangingData.direction());
+            return entity;
+        })));
         register(new EntityTypeData<>(EntityType.ITEM_FRAME, ItemFrame.class, CraftItemFrame::new, createHanging(ItemFrame.class, (spawnData, hangingData) -> new net.minecraft.world.entity.decoration.ItemFrame(spawnData.minecraftWorld(), hangingData.position(), hangingData.direction()))));
         register(new EntityTypeData<>(EntityType.GLOW_ITEM_FRAME, GlowItemFrame.class, CraftGlowItemFrame::new, createHanging(GlowItemFrame.class, (spawnData, hangingData) -> new net.minecraft.world.entity.decoration.GlowItemFrame(spawnData.minecraftWorld(), hangingData.position(), hangingData.direction()))));
 
@@ -449,7 +446,7 @@ public final class CraftEntityTypes {
             // and that the item stack should probably be changed.
             net.minecraft.world.item.ItemStack itemStack = new net.minecraft.world.item.ItemStack(Items.STONE);
             ItemEntity item = new ItemEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), itemStack);
-            item.setPickUpDelay(10);
+            item.setDefaultPickUpDelay();
             CLEAR_MOVE_IF_NOT_RANDOMIZED.accept(spawnData, item); // Paper - respect randomizeData
 
             return item;
@@ -524,7 +521,7 @@ public final class CraftEntityTypes {
             if (spawnData.normalWorld()) {
                 return AbstractMinecart.createMinecart(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), entityTypes, EntitySpawnReason.TRIGGERED, ItemStack.EMPTY, null);
             } else {
-                return CraftEntityTypes.combine(CraftEntityTypes.fromEntityType(entityTypes), (spawnData2, entity) -> entity.setInitialPos(spawnData.x(), spawnData.y(), spawnData.z())).apply(spawnData);
+                return CraftEntityTypes.combine(CraftEntityTypes.fromEntityType(entityTypes), (_, entity) -> entity.setInitialPos(spawnData.x(), spawnData.y(), spawnData.z())).apply(spawnData);
             }
         };
     }

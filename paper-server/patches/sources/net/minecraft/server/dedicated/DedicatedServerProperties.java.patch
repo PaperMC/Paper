@@ -1,7 +1,7 @@
 --- a/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/net/minecraft/server/dedicated/DedicatedServerProperties.java
 @@ -50,6 +_,7 @@
-     static final Logger LOGGER = LogUtils.getLogger();
+     private static final Logger LOGGER = LogUtils.getLogger();
      private static final Pattern SHA1 = Pattern.compile("^[a-fA-F0-9]{40}$");
      private static final Splitter COMMA_SPLITTER = Splitter.on(',').trimResults();
 +    public final boolean debug = this.get("debug", false); // CraftBukkit
@@ -11,7 +11,7 @@
 @@ -106,7 +_,7 @@
      public final boolean broadcastRconToOps = this.get("broadcast-rcon-to-ops", true);
      public final boolean broadcastConsoleToOps = this.get("broadcast-console-to-ops", true);
-     public final int maxWorldSize = this.get("max-world-size", property -> Mth.clamp(property, 1, 29999984), 29999984);
+     public final int maxWorldSize = this.get("max-world-size", v -> Mth.clamp(v, 1, 29999984), 29999984);
 -    public final boolean syncChunkWrites = this.get("sync-chunk-writes", true);
 +    public final boolean syncChunkWrites = this.get("sync-chunk-writes", true) && Boolean.getBoolean("Paper.enable-sync-chunk-writes"); // Paper - Hide sync chunk writes behind flag
      public final String regionFileComression = this.get("region-file-compression", "deflate");
@@ -25,19 +25,19 @@
 +    public Settings<DedicatedServerProperties>.MutableValue<Integer> pauseWhenEmptySeconds = this.getMutable("pause-when-empty-seconds", -1); // Paper - disable tick sleeping by default
      private final DedicatedServerProperties.WorldDimensionData worldDimensionData;
      public final WorldOptions worldOptions;
-     public Settings<DedicatedServerProperties>.MutableValue<Boolean> acceptsTransfers = this.getMutable("accepts-transfers", false);
+     public final Settings<DedicatedServerProperties>.MutableValue<Boolean> acceptsTransfers = this.getMutable("accepts-transfers", false);
 +    public final String rconIp; // Paper - Configurable rcon ip
  
--    public DedicatedServerProperties(Properties properties) {
--        super(properties);
+-    public DedicatedServerProperties(final Properties settings) {
+-        super(settings);
 +    // CraftBukkit start
-+    public DedicatedServerProperties(Properties properties, joptsimple.OptionSet optionset) {
-+        super(properties, optionset);
++    public DedicatedServerProperties(final Properties settings, final joptsimple.OptionSet options) {
++        super(settings, options);
 +        // CraftBukkit end
-         String string = this.get("level-seed", "");
-         boolean flag = this.get("generate-structures", true);
-         long l = WorldOptions.parseSeed(string).orElse(WorldOptions.randomSeed());
-@@ -150,15 +_,21 @@
+         String levelSeed = this.get("level-seed", "");
+         boolean generateStructures = this.get("generate-structures", true);
+         long seed = WorldOptions.parseSeed(levelSeed).orElse(WorldOptions.randomSeed());
+@@ -150,15 +_,23 @@
              this.get("initial-enabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getEnabled())),
              this.get("initial-disabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getDisabled()))
          );
@@ -47,19 +47,21 @@
 +        // Paper end - Configurable rcon ip
      }
  
--    public static DedicatedServerProperties fromFile(Path path) {
--        return new DedicatedServerProperties(loadFromFile(path));
+-    public static DedicatedServerProperties fromFile(final Path file) {
+-        return new DedicatedServerProperties(loadFromFile(file));
 +    // CraftBukkit start
-+    public static DedicatedServerProperties fromFile(Path path, joptsimple.OptionSet optionset) {
-+        return new DedicatedServerProperties(loadFromFile(path), optionset);
++    public static DedicatedServerProperties fromFile(final Path file, final joptsimple.OptionSet options) {
++        return new DedicatedServerProperties(loadFromFile(file), options);
++        // CraftBukkit end
      }
  
      @Override
--    protected DedicatedServerProperties reload(RegistryAccess registryAccess, Properties properties) {
+-    protected DedicatedServerProperties reload(final RegistryAccess registryAccess, final Properties properties) {
 -        return new DedicatedServerProperties(properties);
-+    public DedicatedServerProperties reload(RegistryAccess registryAccess, Properties properties, joptsimple.OptionSet options) {
++    // CraftBukkit start
++    public DedicatedServerProperties reload(final RegistryAccess registryAccess, final Properties properties, final joptsimple.OptionSet options) {
 +        return new DedicatedServerProperties(properties, options);
 +        // CraftBukkit end
      }
  
-     private static @Nullable Component parseResourcePackPrompt(String json) {
+     private static @Nullable Component parseResourcePackPrompt(final String prompt) {
