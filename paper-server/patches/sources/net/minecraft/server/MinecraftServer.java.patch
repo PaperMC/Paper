@@ -300,7 +300,7 @@
          if (profiledDuration != null) {
              profiledDuration.finish(true);
          }
-@@ -422,33 +_,140 @@
+@@ -422,33 +_,150 @@
          }
      }
  
@@ -430,9 +430,9 @@
 +            );
 +        }
 +        this.addLevel(serverLevel);
-+        this.initWorld(serverLevel);
++        this.initWorld(serverLevel, null);
 +    }
-+    public void initWorld(ServerLevel overworld) {
++    public void initWorld(ServerLevel overworld, org.bukkit.@Nullable WorldCreator worldCreator) {
 +        final net.minecraft.world.level.storage.ServerLevelData levelData = overworld.serverLevelData;
 +        final WorldOptions worldOptions = overworld.worldGenSettings.options();
 +        final boolean isDebug = this.worldData.isDebugWorld();
@@ -447,7 +447,17 @@
          if (!levelData.isInitialized()) {
              try {
 -                setInitialSpawn(overworld, levelData, worldOptions.generateBonusChest(), isDebug, this.levelLoadListener);
-+                setInitialSpawn(overworld, levelData, worldOptions.generateBonusChest(), isDebug, overworld.levelLoadListener); // Paper - per world level load listener
++                // Paper start - Allow direct setting spawn location
++                if (worldCreator != null && worldCreator.forcedSpawnPosition() != null) {
++                    levelData.setSpawn(LevelData.RespawnData.of(overworld.dimension(),
++                        io.papermc.paper.util.MCUtil.toBlockPos(worldCreator.forcedSpawnPosition()),
++                        Objects.requireNonNullElse(worldCreator.forcedSpawnYaw(), LevelData.RespawnData.DEFAULT.yaw()),
++                        Objects.requireNonNullElse(worldCreator.forcedSpawnPitch(), LevelData.RespawnData.DEFAULT.pitch())
++                    ));
++                } else {
++                    setInitialSpawn(overworld, levelData, worldOptions.generateBonusChest(), isDebug, overworld.levelLoadListener); // Paper - per world level load listener
++                }
++                // Paper end - Allow direct setting spawn location
                  levelData.setInitialized(true);
                  if (isDebug) {
 -                    this.setupDebugLevel(this.worldData);

@@ -1303,7 +1303,7 @@ public final class CraftServer implements Server {
         }
 
         this.console.addLevel(serverLevel);
-        this.console.initWorld(serverLevel);
+        this.console.initWorld(serverLevel, creator);
 
         serverLevel.setSpawnSettings(true);
 
