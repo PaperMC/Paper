@@ -1,7 +1,6 @@
 package io.papermc.paper.configuration;
 
 import com.mojang.logging.LogUtils;
-import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.serializer.collection.map.WriteKeyBack;
 import io.papermc.paper.configuration.type.number.DoubleOr;
@@ -183,19 +182,10 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean allowHeadlessPistons = false;
         @Comment("This setting controls if the vanilla damage tick should be skipped if damage was blocked via a shield.")
         public boolean skipVanillaDamageTickWhenShieldBlocked = false;
-        @Comment("This setting controls what compression format is used for region files.")
-        public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
         @Comment("This setting controls if equipment should be updated when handling certain player actions.")
         public boolean updateEquipmentOnPlayerActions = true;
         @Comment("This setting controls what item data components don't need to be sanitized in oversized item obfuscation. Adding them re-enables exploits, but may be needed for certain resource packs. (Expected: minecraft:container, minecraft:charged_projectiles and minecraft:bundle_contents)")
         public OversizedItemComponentSanitizer.AssetOversizedItemComponentSanitizerConfiguration oversizedItemComponentSanitizer = new OversizedItemComponentSanitizer.AssetOversizedItemComponentSanitizerConfiguration(Set.of());
-
-        public enum CompressionFormat {
-            GZIP,
-            ZLIB,
-            LZ4,
-            NONE
-        }
     }
 
     public Commands commands;
@@ -205,12 +195,6 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean timeCommandAffectsAllWorlds = false;
         @Comment("Allow mounting entities to a player in the Vanilla '/ride' command.")
         public boolean rideCommandAllowPlayerAsVehicle = false;
-    }
-
-    public Logging logging;
-
-    public class Logging extends ConfigurationPart {
-        public boolean deobfuscateStacktraces = true;
     }
 
     public Scoreboards scoreboards;
@@ -350,6 +334,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean enableNether = true;
         @Comment("Keeps Paper's fix for MC-159283 enabled. Disable to use vanilla End ring terrain.")
         public boolean fixFarEndTerrainGeneration = true;
+        @Comment("Fix for MC-301114. This removes the oldest combat entry when it hits the cap, to fix a memory leak on constant entity damage.")
+        public IntOr.Disabled maxTrackingCombatEntries = new IntOr.Disabled(OptionalInt.of(10240));
     }
 
     public BlockUpdates blockUpdates;

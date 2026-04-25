@@ -1,0 +1,53 @@
+--- a/net/minecraft/world/clock/ServerClockManager.java
++++ b/net/minecraft/world/clock/ServerClockManager.java
+@@ -97,7 +_,16 @@
+         return set.booleanValue();
+     }
+ 
+-    public void addTicks(final Holder<WorldClock> clock, final int ticks) {
++    // Paper start - time skip event
++    public java.util.OptionalLong getTotalTicksToTimeMarker(final Holder<WorldClock> clock, final ResourceKey<ClockTimeMarker> timeMarkerId) {
++        final ServerClockManager.ClockInstance instance = this.getInstance(clock);
++        final ClockTimeMarker timeMarker = instance.timeMarkers.get(timeMarkerId);
++
++        return timeMarker != null ? java.util.OptionalLong.of(timeMarker.resolveTimeToMoveTo(instance.totalTicks)) : java.util.OptionalLong.empty();
++    }
++    // Paper end - time skip event
++
++    public void addTicks(final Holder<WorldClock> clock, final long ticks) { // Paper
+         this.modifyClock(clock, instance -> instance.totalTicks = Math.max(instance.totalTicks + ticks, 0L));
+     }
+ 
+@@ -113,7 +_,7 @@
+         ServerClockManager.ClockInstance instance = this.getInstance(clock);
+         action.accept(instance);
+         Map<Holder<WorldClock>, ClockNetworkState> updates = Map.of(clock, instance.packNetworkState(this.server));
+-        this.server.getPlayerList().broadcastAll(new ClientboundSetTimePacket(this.getGameTime(), updates));
++        this.server.getPlayerList().broadcastAll(new ClientboundSetTimePacket(this.getGameTime(), updates)); // TODO 26.1 per-player time
+         this.setDirty();
+ 
+         for (ServerLevel level : this.server.getAllLevels()) {
+@@ -126,7 +_,23 @@
+         return this.getInstance(definition).totalTicks;
+     }
+ 
++    // Paper start
++    // TODO - snapshot: just make the inner class, fields and getter public
++    public boolean isPaused(final Holder<WorldClock> definition) {
++        return this.getInstance(definition).paused;
++    }
++
++    public float partialTick(final Holder<WorldClock> definition) {
++        return this.getInstance(definition).partialTick;
++    }
++
++    public float rate(final Holder<WorldClock> definition) {
++        return this.getInstance(definition).rate;
++    }
++    // Paper end
++
+     public ClientboundSetTimePacket createFullSyncPacket() {
++        // TODO - snapshot: 26.1 per-player time
+         return new ClientboundSetTimePacket(this.getGameTime(), Util.mapValues(this.clocks, clock -> clock.packNetworkState(this.server)));
+     }
+ 

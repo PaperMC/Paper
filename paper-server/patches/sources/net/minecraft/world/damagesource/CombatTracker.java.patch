@@ -1,34 +1,51 @@
 --- a/net/minecraft/world/damagesource/CombatTracker.java
 +++ b/net/minecraft/world/damagesource/CombatTracker.java
-@@ -29,15 +_,24 @@
+@@ -22,22 +_,40 @@
+     private static final Style INTENTIONAL_GAME_DESIGN_STYLE = Style.EMPTY
+         .withClickEvent(new ClickEvent.OpenUrl(CommonLinks.INTENTIONAL_GAME_DESIGN_BUG))
+         .withHoverEvent(new HoverEvent.ShowText(Component.literal("MCPE-28723")));
+-    public final List<CombatEntry> entries = Lists.newArrayList();
++    public final List<CombatEntry> entries = new net.minecraft.util.ArrayListDeque<>(); // Paper - Fix mem leak (MC-301114); Use ArrayListDeque
+     public final LivingEntity mob;
+     private int lastDamageTime;
+     private int combatStartTime;
      private int combatEndTime;
      public boolean inCombat;
      public boolean takingDamage;
 +    public final io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper paperCombatTracker; // Paper - Combat tracker API
  
-     public CombatTracker(LivingEntity mob) {
+     public CombatTracker(final LivingEntity mob) {
          this.mob = mob;
 +        this.paperCombatTracker = new io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper(this); // Paper - Combat tracker API
      }
  
-     public void recordDamage(DamageSource source, float damage) {
+     public void recordDamage(final DamageSource source, final float damage) {
          this.recheckStatus();
-         FallLocation currentFallLocation = FallLocation.getCurrentFallLocation(this.mob);
-         CombatEntry combatEntry = new CombatEntry(source, damage, currentFallLocation, (float)this.mob.fallDistance);
+         FallLocation fallLocation = FallLocation.getCurrentFallLocation(this.mob);
+         CombatEntry entry = new CombatEntry(source, damage, fallLocation, (float)this.mob.fallDistance);
 +    // Paper start - Combat tracker API
-+        recordDamageAndCheckCombatState(combatEntry);
++        recordDamageAndCheckCombatState(entry);
 +    }
 +
-+    public void recordDamageAndCheckCombatState(final CombatEntry combatEntry) {
-+        final DamageSource source = combatEntry.source();
++    public void recordDamageAndCheckCombatState(final CombatEntry entry) {
++        final DamageSource source = entry.source();
 +    // Paper end - Combat tracker API
-         this.entries.add(combatEntry);
++        // Paper start - Fix mem leak (MC-301114)
++        final io.papermc.paper.configuration.type.number.IntOr.Disabled maxTrackingCombatEntries;
++        if (!this.entries.isEmpty() && (maxTrackingCombatEntries = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxTrackingCombatEntries).enabled()) {
++            final int maxEntries = maxTrackingCombatEntries.intValue();
++            while (this.entries.size() > maxEntries) {
++                this.entries.removeFirst();
++            }
++        }
++        // Paper end - Fix mem leak (MC-301114)
+         this.entries.add(entry);
          this.lastDamageTime = this.mob.tickCount;
          this.takingDamage = true;
-@@ -145,6 +_,13 @@
+@@ -147,6 +_,13 @@
      public void recheckStatus() {
-         int i = this.inCombat ? 300 : 100;
-         if (this.takingDamage && (!this.mob.isAlive() || this.mob.tickCount - this.lastDamageTime > i)) {
+         int reset = this.inCombat ? 300 : 100;
+         if (this.takingDamage && (!this.mob.isAlive() || this.mob.tickCount - this.lastDamageTime > reset)) {
 +    // Paper start - Combat tracker API
 +            resetCombatState();
 +        }
@@ -36,6 +53,6 @@
 +
 +    public void resetCombatState() {{
 +    // Paper end - Combat tracker API
-             boolean flag = this.inCombat;
+             boolean wasInCombat = this.inCombat;
              this.takingDamage = false;
              this.inCombat = false;

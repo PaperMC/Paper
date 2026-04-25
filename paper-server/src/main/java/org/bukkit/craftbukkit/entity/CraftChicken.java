@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.HolderableBase;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.entity.animal.chicken.ChickenSoundVariant;
 import net.minecraft.world.entity.animal.chicken.ChickenVariant;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
@@ -34,6 +35,18 @@ public class CraftChicken extends CraftAnimals implements Chicken {
         this.getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
     }
 
+    @Override
+    public SoundVariant getSoundVariant() {
+        return CraftSoundVariant.minecraftHolderToBukkit(this.getHandle().getSoundVariant());
+    }
+
+    @Override
+    public void setSoundVariant(final SoundVariant variant) {
+        Preconditions.checkArgument(variant != null, "variant cannot be null");
+
+        this.getHandle().setSoundVariant(CraftSoundVariant.bukkitToMinecraftHolder(variant));
+    }
+
     public static class CraftVariant extends HolderableBase<ChickenVariant> implements Variant {
 
         public static Variant minecraftHolderToBukkit(Holder<ChickenVariant> minecraft) {
@@ -44,8 +57,22 @@ public class CraftChicken extends CraftAnimals implements Chicken {
             return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
 
-
         public CraftVariant(Holder<ChickenVariant> holder) {
+            super(holder);
+        }
+    }
+
+    public static class CraftSoundVariant extends HolderableBase<ChickenSoundVariant> implements SoundVariant {
+
+        public static SoundVariant minecraftHolderToBukkit(Holder<ChickenSoundVariant> minecraft) {
+            return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.CHICKEN_SOUND_VARIANT);
+        }
+
+        public static Holder<ChickenSoundVariant> bukkitToMinecraftHolder(SoundVariant bukkit) {
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
+        }
+
+        public CraftSoundVariant(final Holder<ChickenSoundVariant> holder) {
             super(holder);
         }
     }

@@ -8,7 +8,7 @@ public interface CommandMinecart extends Minecart, io.papermc.paper.command.Comm
 
     /**
      * Gets the command that this CommandMinecart will run when activated.
-     * This will never return null.  If the CommandMinecart does not have a
+     * This will never return null. If the CommandMinecart does not have a
      * command, an empty String will be returned instead.
      *
      * @return Command that this CommandMinecart will run when powered.
@@ -27,9 +27,8 @@ public interface CommandMinecart extends Minecart, io.papermc.paper.command.Comm
     public void setCommand(@Nullable String command);
 
     /**
-     * Sets the name of this CommandMinecart.  The name is used with commands
-     * that this CommandMinecart executes.  Setting the name to null is the
-     * same as setting it to "@".
+     * Sets the name of this CommandMinecart. The name is used with commands
+     * that this CommandMinecart executes.
      *
      * @param name New name for this CommandMinecart.
      * @deprecated in favour of {@link #customName(net.kyori.adventure.text.Component)}

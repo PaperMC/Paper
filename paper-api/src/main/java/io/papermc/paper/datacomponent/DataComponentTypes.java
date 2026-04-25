@@ -45,15 +45,15 @@ import io.papermc.paper.datacomponent.item.Weapon;
 import io.papermc.paper.datacomponent.item.WritableBookContent;
 import io.papermc.paper.datacomponent.item.WrittenBookContent;
 import io.papermc.paper.item.MapPostProcessing;
-import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.List;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Art;
 import org.bukkit.DyeColor;
 import org.bukkit.FireworkEffect;
 import org.bukkit.MusicInstrument;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.damage.DamageType;
@@ -81,8 +81,6 @@ import org.checkerframework.checker.index.qual.Positive;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * All the different types of data that {@link org.bukkit.inventory.ItemStack ItemStacks}
@@ -239,8 +237,9 @@ public final class DataComponentTypes {
      * @see #ENCHANTMENTS
      */
     public static final DataComponentType.Valued<ItemEnchantments> STORED_ENCHANTMENTS = valued("stored_enchantments");
+    public static final DataComponentType.Valued<DyeColor> DYE = valued("dye");
     /**
-     * Represents a color applied to a dyeable item (in the {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys#DYEABLE} item tag).
+     * Represents a color applied to a dyeable item.
      */
     public static final DataComponentType.Valued<DyedItemColor> DYED_COLOR = valued("dyed_color");
     /**
@@ -306,7 +305,7 @@ public final class DataComponentTypes {
      */
     public static final DataComponentType.Valued<OminousBottleAmplifier> OMINOUS_BOTTLE_AMPLIFIER = valued("ominous_bottle_amplifier");
     public static final DataComponentType.Valued<JukeboxPlayable> JUKEBOX_PLAYABLE = valued("jukebox_playable");
-    public static final DataComponentType.Valued<TagKey<PatternType>> PROVIDES_BANNER_PATTERNS = valued("provides_banner_patterns");
+    public static final DataComponentType.Valued<RegistryKeySet<PatternType>> PROVIDES_BANNER_PATTERNS = valued("provides_banner_patterns");
     /**
      * List of recipes that should be unlocked when using the Knowledge Book item.
      */
@@ -378,9 +377,11 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<MushroomCow.Variant> MOOSHROOM_VARIANT = valued("mooshroom/variant");
     public static final DataComponentType.Valued<Rabbit.Type> RABBIT_VARIANT = valued("rabbit/variant");
     public static final DataComponentType.Valued<Pig.Variant> PIG_VARIANT = valued("pig/variant");
+    public static final DataComponentType.Valued<Pig.SoundVariant> PIG_SOUND_VARIANT = valued("pig/sound_variant");
     public static final DataComponentType.Valued<Cow.Variant> COW_VARIANT = valued("cow/variant");
+    public static final DataComponentType.Valued<Cow.SoundVariant> COW_SOUND_VARIANT = valued("cow/sound_variant");
     public static final DataComponentType.Valued<Chicken.Variant> CHICKEN_VARIANT = valued("chicken/variant");
-    // This is a eitherholder? Why specifically the chicken?? Oh wait this is prolly for chicken egg cause legacy item loading
+    public static final DataComponentType.Valued<Chicken.SoundVariant> CHICKEN_SOUND_VARIANT = valued("chicken/sound_variant");
     public static final DataComponentType.Valued<Frog.Variant> FROG_VARIANT = valued("frog/variant");
     public static final DataComponentType.Valued<Horse.Color> HORSE_VARIANT = valued("horse/variant");
     public static final DataComponentType.Valued<Art> PAINTING_VARIANT = valued("painting/variant");
@@ -388,26 +389,26 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<Axolotl.Variant> AXOLOTL_VARIANT = valued("axolotl/variant");
     public static final DataComponentType.Valued<ZombieNautilus.Variant> ZOMBIE_NAUTILUS_VARIANT = valued("zombie_nautilus/variant");
     public static final DataComponentType.Valued<Cat.Type> CAT_VARIANT = valued("cat/variant");
+    public static final DataComponentType.Valued<Cat.SoundVariant> CAT_SOUND_VARIANT = valued("cat/sound_variant");
     public static final DataComponentType.Valued<DyeColor> CAT_COLLAR = valued("cat/collar");
     public static final DataComponentType.Valued<DyeColor> SHEEP_COLOR = valued("sheep/color");
     public static final DataComponentType.Valued<DyeColor> SHULKER_COLOR = valued("shulker/color");
 
-    private static DataComponentType.NonValued unvalued(final String name) {
-        final DataComponentType dataComponentType = requireNonNull(Registry.DATA_COMPONENT_TYPE.get(NamespacedKey.minecraft(name)), name + " unvalued data component type couldn't be found, this is a bug.");
+    private static DataComponentType.NonValued unvalued(final @KeyPattern.Value String key) {
+        final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         if (dataComponentType instanceof DataComponentType.NonValued) {
             return (DataComponentType.NonValued) dataComponentType;
         }
-        throw new IllegalStateException(name + " is not a valid unvalued type, it is a " + dataComponentType.getClass().getTypeName());
+        throw new IllegalStateException(key + " is not a valid unvalued type, it is a " + dataComponentType.getClass().getTypeName());
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> DataComponentType.Valued<T> valued(final String name) {
-        DataComponentType dataComponentType =  requireNonNull(Registry.DATA_COMPONENT_TYPE.get(NamespacedKey.minecraft(name)), name + " valued data component type couldn't be found, this is a bug.");
+    private static <T> DataComponentType.Valued<T> valued(final @KeyPattern.Value String key) {
+        final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         if (dataComponentType instanceof DataComponentType.Valued) {
             return (DataComponentType.Valued<T>) dataComponentType;
         }
-        throw new IllegalStateException(name + " is not a valid valued type, it is a " + dataComponentType.getClass().getTypeName());
-
+        throw new IllegalStateException(key + " is not a valid valued type, it is a " + dataComponentType.getClass().getTypeName());
     }
 
     private DataComponentTypes() {

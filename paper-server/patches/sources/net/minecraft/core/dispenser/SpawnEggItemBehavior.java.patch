@@ -1,0 +1,42 @@
+--- a/net/minecraft/core/dispenser/SpawnEggItemBehavior.java
++++ b/net/minecraft/core/dispenser/SpawnEggItemBehavior.java
+@@ -18,14 +_,37 @@
+         if (type == null) {
+             return dispensed;
+         } else {
++            // Paper start - block dispense event
++            ItemStack singleDispensed = dispensed.copyWithCount(1);
++            final org.bukkit.craftbukkit.inventory.CraftItemStack eventItemCopy = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(singleDispensed);
++            final org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(
++                org.bukkit.craftbukkit.block.CraftBlock.at(source.level(), source.pos()),
++                eventItemCopy,
++                new org.bukkit.util.Vector(0, 0, 0)
++            );
++            if (!event.callEvent()) return dispensed;
++
++            final boolean shrink = event.getItem().equals(eventItemCopy);
++            if (!shrink) {
++                final ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getItem());
++                final DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(source, eventStack);
++                if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) {
++                    dispenseBehavior.dispense(source, eventStack);
++                    return dispensed;
++                }
++
++                type = SpawnEggItem.getType(eventStack);
++                singleDispensed = eventStack;
++            }
++            // Paper end - block dispense event
+             try {
+-                type.spawn(source.level(), dispensed, null, source.pos().relative(direction), EntitySpawnReason.DISPENSER, direction != Direction.UP, false);
++                type.spawn(source.level(), singleDispensed, null, source.pos().relative(direction), EntitySpawnReason.DISPENSER, direction != Direction.UP, false); // Paper - block dispense event - update used item stack
+             } catch (Exception var6) {
+                 LOGGER.error("Error while dispensing spawn egg from dispenser at {}", source.pos(), var6);
+                 return ItemStack.EMPTY;
+             }
+ 
+-            dispensed.shrink(1);
++            if (shrink) dispensed.shrink(1); // Paper - block dispense event - only shrink if above logic requires it.
+             source.level().gameEvent(null, GameEvent.ENTITY_PLACE, source.pos());
+             return dispensed;
+         }

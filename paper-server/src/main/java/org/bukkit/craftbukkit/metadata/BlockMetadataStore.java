@@ -46,7 +46,7 @@ public class BlockMetadataStore extends MetadataStoreBase<Block> implements Meta
      */
     @Override
     public List<MetadataValue> getMetadata(Block block, String metadataKey) {
-        Preconditions.checkArgument(block.getWorld() == this.owningWorld, "Block does not belong to world %s", this.owningWorld.getName());
+        Preconditions.checkArgument(block.getWorld() == this.owningWorld, "Block does not belong to world %s", this.owningWorld.getKey().toString());
         return super.getMetadata(block, metadataKey);
     }
 
@@ -58,7 +58,7 @@ public class BlockMetadataStore extends MetadataStoreBase<Block> implements Meta
      */
     @Override
     public boolean hasMetadata(Block block, String metadataKey) {
-        Preconditions.checkArgument(block.getWorld() == this.owningWorld, "Block does not belong to world %s", this.owningWorld.getName());
+        Preconditions.checkArgument(block.getWorld() == this.owningWorld, "Block does not belong to world %s", this.owningWorld.getKey().toString());
         return super.hasMetadata(block, metadataKey);
     }
 
@@ -70,7 +70,7 @@ public class BlockMetadataStore extends MetadataStoreBase<Block> implements Meta
      */
     @Override
     public void removeMetadata(Block block, String metadataKey, Plugin owningPlugin) {
-        Preconditions.checkArgument(block.getWorld() == this.owningWorld, "Block does not belong to world %s", this.owningWorld.getName());
+        Preconditions.checkArgument(block.getWorld() == this.owningWorld, "Block does not belong to world %s", this.owningWorld.getKey().toString());
         super.removeMetadata(block, metadataKey, owningPlugin);
     }
 
@@ -82,7 +82,7 @@ public class BlockMetadataStore extends MetadataStoreBase<Block> implements Meta
      */
     @Override
     public void setMetadata(Block block, String metadataKey, MetadataValue newMetadataValue) {
-        Preconditions.checkArgument(block.getWorld() == this.owningWorld, "Block does not belong to world %s", this.owningWorld.getName());
+        Preconditions.checkArgument(block.getWorld() == this.owningWorld, "Block does not belong to world %s", this.owningWorld.getKey().toString());
         super.setMetadata(block, metadataKey, newMetadataValue);
     }
 }

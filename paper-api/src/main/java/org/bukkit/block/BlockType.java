@@ -1024,6 +1024,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> GOLD_ORE = getBlockType("gold_ore");
 
+    BlockType.Typed<BlockData> GOLDEN_DANDELION = getBlockType("golden_dandelion");
+
     BlockType.Typed<BlockData> GRANITE = getBlockType("granite");
 
     BlockType.Typed<Slab> GRANITE_SLAB = getBlockType("granite_slab");
@@ -1759,6 +1761,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<BlockData> POTTED_FERN = getBlockType("potted_fern");
 
     BlockType.Typed<BlockData> POTTED_FLOWERING_AZALEA_BUSH = getBlockType("potted_flowering_azalea_bush");
+
+    BlockType.Typed<BlockData> POTTED_GOLDEN_DANDELION = getBlockType("potted_golden_dandelion");
 
     BlockType.Typed<BlockData> POTTED_JUNGLE_SAPLING = getBlockType("potted_jungle_sapling");
 

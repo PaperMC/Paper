@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -37,6 +_,10 @@
+@@ -40,6 +_,10 @@
  import org.slf4j.Logger;
  
- public abstract class BlockEntity implements DebugValueSource {
+ public abstract class BlockEntity implements DebugValueSource, TypedInstance<BlockEntityType<?>> {
 +    // CraftBukkit start - data containers
 +    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
 +    public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer;
@@ -11,34 +11,39 @@
      private static final Codec<BlockEntityType<?>> TYPE_CODEC = BuiltInRegistries.BLOCK_ENTITY_TYPE.byNameCodec();
      private static final Logger LOGGER = LogUtils.getLogger();
      private final BlockEntityType<?> type;
-@@ -51,6 +_,7 @@
-         this.worldPosition = pos.immutable();
+@@ -54,6 +_,7 @@
+         this.worldPosition = worldPosition.immutable();
          this.validateBlockState(blockState);
          this.blockState = blockState;
 +        this.persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY); // Paper - always init
      }
  
-     private void validateBlockState(BlockState state) {
-@@ -67,6 +_,7 @@
-         int intOr = tag.getIntOr("x", 0);
-         int intOr1 = tag.getIntOr("y", 0);
-         int intOr2 = tag.getIntOr("z", 0);
-+        if (chunkPos != null) { // Paper - allow reading non-validated pos from tag - used to parse block entities on items
-         int sectionPosCoord = SectionPos.blockToSectionCoord(intOr);
-         int sectionPosCoord1 = SectionPos.blockToSectionCoord(intOr2);
-         if (sectionPosCoord != chunkPos.x || sectionPosCoord1 != chunkPos.z) {
-@@ -74,6 +_,7 @@
-             intOr = chunkPos.getBlockX(SectionPos.sectionRelative(intOr));
-             intOr2 = chunkPos.getBlockZ(SectionPos.sectionRelative(intOr2));
+     private void validateBlockState(final BlockState blockState) {
+@@ -66,10 +_,11 @@
+         return this.type.isValid(blockState);
+     }
+ 
+-    public static BlockPos getPosFromTag(final ChunkPos base, final CompoundTag entityTag) {
++    public static BlockPos getPosFromTag(final @Nullable ChunkPos base, final CompoundTag entityTag) { // Paper - allow reading non-validated pos from tag - nullable
+         int x = entityTag.getIntOr("x", 0);
+         int y = entityTag.getIntOr("y", 0);
+         int z = entityTag.getIntOr("z", 0);
++        if (base != null) { // Paper - allow reading non-validated pos from tag - used to parse block entities on items
+         int sectionX = SectionPos.blockToSectionCoord(x);
+         int sectionZ = SectionPos.blockToSectionCoord(z);
+         if (sectionX != base.x() || sectionZ != base.z()) {
+@@ -77,6 +_,7 @@
+             x = base.getBlockX(SectionPos.sectionRelative(x));
+             z = base.getBlockZ(SectionPos.sectionRelative(z));
          }
 +        } // Paper - allow reading non-validated pos from tag - used to parse block entities on items
  
-         return new BlockPos(intOr, intOr1, intOr2);
+         return new BlockPos(x, y, z);
      }
-@@ -91,6 +_,12 @@
+@@ -94,6 +_,12 @@
      }
  
-     protected void loadAdditional(ValueInput input) {
+     protected void loadAdditional(final ValueInput input) {
 +        // Paper start - read persistent data container
 +        this.persistentDataContainer.clear(); // Paper - clear instead of init
 +
@@ -47,9 +52,9 @@
 +        // Paper end - read persistent data container
      }
  
-     public final void loadWithComponents(ValueInput input) {
-@@ -140,6 +_,11 @@
-     public void saveWithoutMetadata(ValueOutput output) {
+     public final void loadWithComponents(final ValueInput input) {
+@@ -143,6 +_,11 @@
+     public void saveWithoutMetadata(final ValueOutput output) {
          this.saveAdditional(output);
          output.store("components", DataComponentMap.CODEC, this.components);
 +        // CraftBukkit start - store container
@@ -59,10 +64,10 @@
 +        // CraftBukkit end
      }
  
-     public final CompoundTag saveCustomOnly(HolderLookup.Provider registries) {
-@@ -155,6 +_,11 @@
+     public final CompoundTag saveCustomOnly(final HolderLookup.Provider registries) {
+@@ -158,6 +_,11 @@
  
-     public void saveCustomOnly(ValueOutput output) {
+     public void saveCustomOnly(final ValueOutput output) {
          this.saveAdditional(output);
 +        // Paper start - store PDC here as well
 +        if (!this.persistentDataContainer.isEmpty()) {
@@ -71,34 +76,34 @@
 +        // Paper end
      }
  
-     public void saveId(ValueOutput output) {
-@@ -285,6 +_,12 @@
+     public void saveId(final ValueOutput output) {
+@@ -293,6 +_,12 @@
      }
  
-     public final void applyComponents(DataComponentMap components, DataComponentPatch patch) {
+     public final void applyComponents(final DataComponentMap prototype, final DataComponentPatch patch) {
 +        // CraftBukkit start
-+        this.applyComponentsSet(components, patch);
++        this.applyComponentsSet(prototype, patch);
 +    }
 +
-+    public final Set<DataComponentType<?>> applyComponentsSet(DataComponentMap components, DataComponentPatch patch) {
++    public final Set<DataComponentType<?>> applyComponentsSet(final DataComponentMap prototype, final DataComponentPatch patch) {
 +        // CraftBukkit end
-         final Set<DataComponentType<?>> set = new HashSet<>();
-         set.add(DataComponents.BLOCK_ENTITY_DATA);
-         set.add(DataComponents.BLOCK_STATE);
-@@ -304,6 +_,10 @@
+         final Set<DataComponentType<?>> implicitComponents = new HashSet<>();
+         implicitComponents.add(DataComponents.BLOCK_ENTITY_DATA);
+         implicitComponents.add(DataComponents.BLOCK_STATE);
+@@ -316,6 +_,10 @@
          });
-         DataComponentPatch dataComponentPatch = patch.forget(set::contains);
-         this.components = dataComponentPatch.split().added();
+         DataComponentPatch newPatch = patch.forget(implicitComponents::contains);
+         this.components = newPatch.split().added();
 +        // CraftBukkit start
-+        set.remove(DataComponents.BLOCK_ENTITY_DATA); // Remove as never actually added by applyImplicitComponents
-+        return set;
++        implicitComponents.remove(DataComponents.BLOCK_ENTITY_DATA); // Remove as never actually added by applyImplicitComponents
++        return implicitComponents;
 +        // CraftBukkit end
      }
  
-     protected void collectImplicitComponents(DataComponentMap.Builder components) {
-@@ -339,6 +_,27 @@
+     protected void collectImplicitComponents(final DataComponentMap.Builder components) {
+@@ -351,6 +_,27 @@
      @Override
-     public void registerDebugValues(ServerLevel level, DebugValueSource.Registration registrar) {
+     public void registerDebugValues(final ServerLevel level, final DebugValueSource.Registration registration) {
      }
 +
 +    // CraftBukkit start - add method
@@ -122,5 +127,5 @@
 +    }
 +    // Paper end - Sanitize sent data
  
-     record BlockEntityPathElement(BlockEntity blockEntity) implements ProblemReporter.PathElement {
+     private record BlockEntityPathElement(BlockEntity blockEntity) implements ProblemReporter.PathElement {
          @Override

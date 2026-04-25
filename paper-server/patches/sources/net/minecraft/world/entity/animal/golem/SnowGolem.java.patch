@@ -10,23 +10,23 @@
  
              if (!serverLevel.getGameRules().get(GameRules.MOB_GRIEFING)) {
 @@ -107,7 +_,7 @@
-                 int floor2 = Mth.floor(this.getZ() + (i / 2 % 2 * 2 - 1) * 0.25F);
-                 BlockPos blockPos = new BlockPos(floor, floor1, floor2);
-                 if (this.level().getBlockState(blockPos).isAir() && blockState.canSurvive(this.level(), blockPos)) {
--                    this.level().setBlockAndUpdate(blockPos, blockState);
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level(), blockPos, blockState, net.minecraft.world.level.block.Block.UPDATE_ALL, this)) continue; // CraftBukkit
-                     this.level().gameEvent(GameEvent.BLOCK_PLACE, blockPos, GameEvent.Context.of(this, blockState));
+                 int zz = Mth.floor(this.getZ() + (i / 2 % 2 * 2 - 1) * 0.25F);
+                 BlockPos snowPos = new BlockPos(xx, yy, zz);
+                 if (this.level().getBlockState(snowPos).isAir() && snow.canSurvive(this.level(), snowPos)) {
+-                    this.level().setBlockAndUpdate(snowPos, snow);
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level(), snowPos, snow, net.minecraft.world.level.block.Block.UPDATE_ALL, this)) continue; // CraftBukkit
+                     this.level().gameEvent(GameEvent.BLOCK_PLACE, snowPos, GameEvent.Context.of(this, snow));
                  }
              }
-@@ -135,7 +_,19 @@
-         ItemStack itemInHand = player.getItemInHand(hand);
-         if (itemInHand.is(Items.SHEARS) && this.readyForShearing()) {
-             if (this.level() instanceof ServerLevel serverLevel) {
--                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand);
+@@ -138,7 +_,19 @@
+         ItemStack itemStack = player.getItemInHand(hand);
+         if (itemStack.is(Items.SHEARS) && this.readyForShearing()) {
+             if (this.level() instanceof ServerLevel level) {
+-                this.shear(level, SoundSource.PLAYERS, itemStack);
 +                // CraftBukkit start
 +                // Paper start - custom shear drops
-+                java.util.List<ItemStack> drops = this.generateDefaultDrops(serverLevel, itemInHand);
-+                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemInHand, hand, drops);
++                java.util.List<ItemStack> drops = this.generateDefaultDrops(level, itemStack);
++                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemStack, hand, drops);
 +                if (event != null) {
 +                    if (event.isCancelled()) {
 +                        return InteractionResult.PASS;
@@ -35,40 +35,40 @@
 +                    // Paper end - custom shear drops
 +                }
 +                // CraftBukkit end
-+                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand, drops); // Paper - custom shear drops
++                this.shear(level, SoundSource.PLAYERS, itemStack, drops); // Paper - custom shear drops
                  this.gameEvent(GameEvent.SHEAR, player);
-                 itemInHand.hurtAndBreak(1, player, hand.asEquipmentSlot());
+                 itemStack.hurtAndBreak(1, player, hand.asEquipmentSlot());
              }
-@@ -148,11 +_,29 @@
+@@ -151,9 +_,31 @@
  
      @Override
-     public void shear(ServerLevel level, SoundSource source, ItemStack shears) {
+     public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool) {
 +        // Paper start - custom shear drops
-+        this.shear(level, source, shears, this.generateDefaultDrops(level, shears));
++        this.shear(level, soundSource, tool, this.generateDefaultDrops(level, tool));
 +    }
 +
 +    @Override
-+    public java.util.List<ItemStack> generateDefaultDrops(final ServerLevel level, final ItemStack shears) {
++    public java.util.List<ItemStack> generateDefaultDrops(final ServerLevel level, final ItemStack tool) {
 +        final java.util.List<ItemStack> drops = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
-+        this.dropFromShearingLootTable(level, BuiltInLootTables.SHEAR_SNOW_GOLEM, shears, (ignored, stack) -> {
++        this.dropFromShearingLootTable(level, BuiltInLootTables.SHEAR_SNOW_GOLEM, tool, (ignored, stack) -> {
 +            drops.add(stack);
 +        });
 +        return drops;
 +    }
 +
 +    @Override
-+    public void shear(ServerLevel level, SoundSource source, ItemStack shears, java.util.List<ItemStack> drops) {
++    public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool, final java.util.List<ItemStack> drops) {
 +        // Paper end - custom shear drops
-         level.playSound(null, this, SoundEvents.SNOW_GOLEM_SHEAR, source, 1.0F, 1.0F);
+         level.playSound(null, this, SoundEvents.SNOW_GOLEM_SHEAR, soundSource, 1.0F, 1.0F);
          this.setPumpkin(false);
--        this.dropFromShearingLootTable(
--            level, BuiltInLootTables.SHEAR_SNOW_GOLEM, shears, (serverLevel, itemStack) -> this.spawnAtLocation(serverLevel, itemStack, this.getEyeHeight())
--        );
-+        drops.forEach(itemStack -> { // Paper - custom shear drops
+-        this.dropFromShearingLootTable(level, BuiltInLootTables.SHEAR_SNOW_GOLEM, tool, (l, drop) -> this.spawnAtLocation(l, drop, this.getEyeHeight()));
++        // Paper start - custom shear drops
++        drops.forEach(drop -> {
 +            this.forceDrops = true; // CraftBukkit
-+            this.spawnAtLocation(level, itemStack, this.getEyeHeight());
++            this.spawnAtLocation(level, drop, this.getEyeHeight());
 +            this.forceDrops = false; // CraftBukkit
 +        });
++        // Paper end - custom shear drops
      }
  
      @Override

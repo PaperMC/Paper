@@ -3,7 +3,6 @@ package com.destroystokyo.paper.entity.ai;
 import com.destroystokyo.paper.entity.RangedEntity;
 import com.google.common.base.CaseFormat;
 import io.papermc.paper.entity.SchoolableFish;
-import io.papermc.paper.util.ObfHelper;
 import it.unimi.dsi.fastutil.ints.Int2BooleanFunction;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
@@ -249,9 +248,6 @@ public class MobGoalHelper {
         Class<T> type = getGenericType(goalClass);
 
         String name = goalClass.getName();
-        if (io.papermc.paper.util.MappingEnvironment.reobf()) {
-            name = ObfHelper.INSTANCE.deobfClassName(name);
-        }
 
         Class<?> holderClass = getTopLevelClass(goalClass);
         name = getPathName(type, holderClass, name);

@@ -46,7 +46,7 @@ public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends
     @Override
     public void setBurnTime(short burnTime) {
         this.getSnapshot().litTimeRemaining = burnTime;
-        this.data = this.data.trySetValue(AbstractFurnaceBlock.LIT, burnTime > 0);
+        this.block = this.block.trySetValue(AbstractFurnaceBlock.LIT, burnTime > 0);
         // only try, block data might have changed to something different that would not allow this property
     }
 

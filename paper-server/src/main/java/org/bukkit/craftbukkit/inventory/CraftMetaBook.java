@@ -2,13 +2,15 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -20,11 +22,6 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.WritableBookMeta;
-
-// Spigot start
-import java.util.AbstractList;
-import net.md_5.bungee.api.chat.BaseComponent;
-// Spigot end
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBookMeta {
@@ -61,11 +58,11 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
         }
     }
 
-    CraftMetaBook(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaBook(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaBook.BOOK_CONTENT).ifPresent((writable) -> {
-            List<Filterable<String>> pages = writable.pages();
+        getOrEmpty(patch, CraftMetaBook.BOOK_CONTENT).ifPresent((bookContent) -> {
+            List<Filterable<String>> pages = bookContent.pages();
             this.pages = new ArrayList<>(pages.size());
 
             // Note: We explicitly check for and truncate oversized books and pages,

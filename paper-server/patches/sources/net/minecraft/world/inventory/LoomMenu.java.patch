@@ -1,10 +1,14 @@
 --- a/net/minecraft/world/inventory/LoomMenu.java
 +++ b/net/minecraft/world/inventory/LoomMenu.java
-@@ -38,21 +_,23 @@
+@@ -39,29 +_,23 @@
      private final Slot patternSlot;
      private final Slot resultSlot;
-     long lastSoundTime;
+     private long lastSoundTime;
 -    private final Container inputContainer = new SimpleContainer(3) {
+-        {
+-            Objects.requireNonNull(LoomMenu.this);
+-        }
+-
 -        @Override
 -        public void setChanged() {
 -            super.setChanged();
@@ -13,6 +17,10 @@
 -        }
 -    };
 -    private final Container outputContainer = new SimpleContainer(1) {
+-        {
+-            Objects.requireNonNull(LoomMenu.this);
+-        }
+-
 -        @Override
 -        public void setChanged() {
 -            super.setChanged();
@@ -22,7 +30,7 @@
 +    private final Container inputContainer; // Paper - Add missing InventoryHolders - move down
 +    private final Container outputContainer; // Paper - Add missing InventoryHolders - move down
 +    // CraftBukkit start
-+    private @javax.annotation.Nullable org.bukkit.craftbukkit.inventory.view.CraftLoomView view = null;
++    private org.bukkit.craftbukkit.inventory.view.@org.jspecify.annotations.Nullable CraftLoomView view = null;
 +    private final org.bukkit.entity.Player player;
 +
 +    @Override
@@ -37,10 +45,10 @@
 +    }
 +    // CraftBukkit end
  
-     public LoomMenu(int containerId, Inventory playerInventory) {
-         this(containerId, playerInventory, ContainerLevelAccess.NULL);
-@@ -61,6 +_,28 @@
-     public LoomMenu(int containerId, Inventory playerInventory, final ContainerLevelAccess access) {
+     public LoomMenu(final int containerId, final Inventory inventory) {
+         this(containerId, inventory, ContainerLevelAccess.NULL);
+@@ -70,6 +_,28 @@
+     public LoomMenu(final int containerId, final Inventory inventory, final ContainerLevelAccess access) {
          super(MenuType.LOOM, containerId);
          this.access = access;
 +        // CraftBukkit start
@@ -66,28 +74,31 @@
 +        };
 +        // CraftBukkit end
          this.bannerSlot = this.addSlot(new Slot(this.inputContainer, 0, 13, 26) {
-             @Override
-             public boolean mayPlace(ItemStack stack) {
-@@ -106,18 +_,44 @@
-         this.addStandardInventorySlots(playerInventory, 8, 84);
+             {
+                 Objects.requireNonNull(LoomMenu.this);
+@@ -131,6 +_,7 @@
+         this.addStandardInventorySlots(inventory, 8, 84);
          this.addDataSlot(this.selectedBannerPatternIndex);
-         this.patternGetter = playerInventory.player.registryAccess().lookupOrThrow(Registries.BANNER_PATTERN);
-+        this.player = (org.bukkit.entity.Player) playerInventory.player.getBukkitEntity(); // CraftBukkit
+         this.patternGetter = inventory.player.registryAccess().lookupOrThrow(Registries.BANNER_PATTERN);
++        this.player = (org.bukkit.entity.Player) inventory.player.getBukkitEntity(); // CraftBukkit
      }
  
+     private static boolean isPatternItem(final ItemStack itemStack) {
+@@ -143,14 +_,39 @@
+ 
      @Override
-     public boolean stillValid(Player player) {
+     public boolean stillValid(final Player player) {
 +        if (!this.checkReachable) return true; // CraftBukkit
          return stillValid(this.access, player, Blocks.LOOM);
      }
  
      @Override
-     public boolean clickMenuButton(Player player, int id) {
-         if (id >= 0 && id < this.selectablePatterns.size()) {
--            this.selectedBannerPatternIndex.set(id);
--            this.setupResultSlot(this.selectablePatterns.get(id));
+     public boolean clickMenuButton(final Player player, final int buttonId) {
+         if (buttonId >= 0 && buttonId < this.selectablePatterns.size()) {
+-            this.selectedBannerPatternIndex.set(buttonId);
+-            this.setupResultSlot(this.selectablePatterns.get(buttonId));
 +            // Paper start - Add PlayerLoomPatternSelectEvent
-+            int selectablePatternIndex = id;
++            int selectablePatternIndex = buttonId;
 +            io.papermc.paper.event.player.PlayerLoomPatternSelectEvent event = new io.papermc.paper.event.player.PlayerLoomPatternSelectEvent((org.bukkit.entity.Player) player.getBukkitEntity(), this.getBukkitView().getTopInventory(), org.bukkit.craftbukkit.block.banner.CraftPatternType.minecraftHolderToBukkit(this.selectablePatterns.get(selectablePatternIndex)));
 +            if (!event.callEvent()) {
 +                player.containerMenu.sendAllDataToRemote();
@@ -115,7 +126,7 @@
              return true;
          } else {
              return false;
-@@ -181,7 +_,8 @@
+@@ -212,7 +_,8 @@
                  this.resultSlot.set(ItemStack.EMPTY);
              }
  
@@ -125,19 +136,19 @@
          } else {
              this.resultSlot.set(ItemStack.EMPTY);
              this.selectablePatterns = List.of();
-@@ -270,7 +_,14 @@
-             itemStack.update(
-                 DataComponents.BANNER_PATTERNS,
-                 BannerPatternLayers.EMPTY,
--                bannerPatternLayers -> new BannerPatternLayers.Builder().addAll(bannerPatternLayers).add(pattern, dyeColor).build()
-+                // CraftBukkit start
-+                bannerPatternLayers -> {
-+                    if (bannerPatternLayers.layers().size() > 20) {
-+                        bannerPatternLayers = new BannerPatternLayers(List.copyOf(bannerPatternLayers.layers().subList(0, 20)));
+@@ -302,7 +_,14 @@
+                 result.update(
+                     DataComponents.BANNER_PATTERNS,
+                     BannerPatternLayers.EMPTY,
+-                    layers -> new BannerPatternLayers.Builder().addAll(layers).add(pattern, patternColor).build()
++                    // CraftBukkit start
++                    layers -> {
++                        if (layers.layers().size() > 20) {
++                            layers = new BannerPatternLayers(List.copyOf(layers.layers().subList(0, 20)));
++                        }
++                        return new BannerPatternLayers.Builder().addAll(layers).add(pattern, patternColor).build();
 +                    }
-+                    return new BannerPatternLayers.Builder().addAll(bannerPatternLayers).add(pattern, dyeColor).build();
-+                }
-+                // CraftBukkit end
-             );
++                    // CraftBukkit end
+                 );
+             }
          }
- 

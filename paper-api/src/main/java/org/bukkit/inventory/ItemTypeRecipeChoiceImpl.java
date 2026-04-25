@@ -31,8 +31,17 @@ final class ItemTypeRecipeChoiceImpl extends RecipeChoice.MaterialChoice impleme
     }
 
     @Override
+    @Deprecated(since = "1.13.1")
     public ItemStack getItemStack() {
-        throw new UnsupportedOperationException("ItemTypeChoice does not support this");
+        final ItemType type = Registry.ITEM.getOrThrow(this.itemTypes.iterator().next());
+        final ItemStack item = type.createItemStack();
+
+        // legacy compat
+        if (this.itemTypes.size() > 1) {
+            item.setDurability(Short.MAX_VALUE);
+        }
+
+        return item;
     }
 
     @Override

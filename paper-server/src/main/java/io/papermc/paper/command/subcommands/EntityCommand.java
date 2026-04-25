@@ -23,6 +23,7 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Bukkit;
 import org.bukkit.HeightMap;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -85,18 +86,19 @@ public final class EntityCommand implements PaperSubcommand {
             if (args.length > 2) {
                 worldName = args[2];
             } else if (sender instanceof Player) {
-                worldName = ((Player) sender).getWorld().getName();
+                worldName = ((Player) sender).getWorld().getKey().toString();
             } else {
                 sender.sendMessage(text("Please specify the name of a world", RED));
                 sender.sendMessage(text("To do so without a filter, specify '*' as the filter", RED));
-                sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
+                sender.sendMessage(text("Usage: /paper entity list [filter] [worldKey]", RED));
                 return;
             }
             Map<Identifier, MutablePair<Integer, Map<ChunkPos, Integer>>> list = Maps.newHashMap();
-            @Nullable World bukkitWorld = Bukkit.getWorld(worldName);
-            if (bukkitWorld == null) {
+            @Nullable NamespacedKey worldKey = NamespacedKey.fromString(worldName);
+            @Nullable World bukkitWorld;
+            if (worldKey == null || (bukkitWorld = Bukkit.getWorld(worldKey)) == null) {
                 sender.sendMessage(text("Could not load world for " + worldName + ". Please select a valid world.", RED));
-                sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
+                sender.sendMessage(text("Usage: /paper entity list [filter] [worldKey]", RED));
                 return;
             }
             ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
@@ -125,9 +127,9 @@ public final class EntityCommand implements PaperSubcommand {
                 info.getRight().entrySet().stream()
                     .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
                     .limit(10).forEach(e -> {
-                        final int x = (e.getKey().x << 4) + 8;
-                        final int z = (e.getKey().z << 4) + 8;
-                        final Component message = text("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isPositionTicking(e.getKey().toLong()) ? " (Ticking)" : " (Non-Ticking)"))
+                        final int x = (e.getKey().x() << 4) + 8;
+                        final int z = (e.getKey().z() << 4) + 8;
+                        final Component message = text("  " + e.getValue() + ": " + e.getKey().x() + ", " + e.getKey().z() + (chunkProviderServer.isPositionTicking(e.getKey().pack()) ? " (Ticking)" : " (Non-Ticking)"))
                             .hoverEvent(HoverEvent.showText(text("Click to teleport to chunk", GREEN)))
                             .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/minecraft:execute as @s in " + world.getWorld().getKey() + " run tp " + x + " " + (world.getWorld().getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING) + 1) + " " + z));
                         sender.sendMessage(message);

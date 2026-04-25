@@ -1,28 +1,28 @@
 --- a/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownExperienceBottle.java
 +++ b/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownExperienceBottle.java
 @@ -40,16 +_,25 @@
-     protected void onHit(HitResult result) {
-         super.onHit(result);
-         if (this.level() instanceof ServerLevel serverLevel) {
--            serverLevel.levelEvent(LevelEvent.PARTICLES_SPELL_POTION_SPLASH, this.blockPosition(), -13083194);
+     protected void onHit(final HitResult hitResult) {
+         super.onHit(hitResult);
+         if (this.level() instanceof ServerLevel level) {
+-            level.levelEvent(LevelEvent.PARTICLES_SPELL_POTION_SPLASH, this.blockPosition(), -13083194);
 +            // CraftBukkit - moved to after event
-             int i = 3 + serverLevel.random.nextInt(5) + serverLevel.random.nextInt(5);
+             int xpCount = 3 + this.random.nextInt(5) + this.random.nextInt(5);
 +            // Paper start - exp bottle event
-+            org.bukkit.event.entity.ExpBottleEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callExpBottleEvent(this, result, i);
-+            i = event.getExperience();
++            org.bukkit.event.entity.ExpBottleEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callExpBottleEvent(this, hitResult, xpCount);
++            xpCount = event.getExperience();
 +            // Paper end - exp bottle event
-             if (result instanceof BlockHitResult blockHitResult) {
-                 Vec3 unitVec3 = blockHitResult.getDirection().getUnitVec3();
--                ExperienceOrb.awardWithDirection(serverLevel, result.getLocation(), unitVec3, i);
-+                ExperienceOrb.awardWithDirection(serverLevel, result.getLocation(), unitVec3, i, org.bukkit.entity.ExperienceOrb.SpawnReason.EXP_BOTTLE, this.getOwner(), this); // Paper
+             if (hitResult instanceof BlockHitResult blockHitResult) {
+                 Vec3 blockNormalHit = blockHitResult.getDirection().getUnitVec3();
+-                ExperienceOrb.awardWithDirection(level, hitResult.getLocation(), blockNormalHit, xpCount);
++                ExperienceOrb.awardWithDirection(level, hitResult.getLocation(), blockNormalHit, xpCount, org.bukkit.entity.ExperienceOrb.SpawnReason.EXP_BOTTLE, this.getOwner(), this); // Paper
              } else {
--                ExperienceOrb.awardWithDirection(serverLevel, result.getLocation(), this.getDeltaMovement().scale(-1.0), i);
+-                ExperienceOrb.awardWithDirection(level, hitResult.getLocation(), this.getDeltaMovement().scale(-1.0), xpCount);
 -            }
-+                ExperienceOrb.awardWithDirection(serverLevel, result.getLocation(), this.getDeltaMovement().scale(-1.0), i, org.bukkit.entity.ExperienceOrb.SpawnReason.EXP_BOTTLE, this.getOwner(), this); // Paper
++                ExperienceOrb.awardWithDirection(level, hitResult.getLocation(), this.getDeltaMovement().scale(-1.0), xpCount, org.bukkit.entity.ExperienceOrb.SpawnReason.EXP_BOTTLE, this.getOwner(), this); // Paper
 +            }
 +            // Paper start - exp bottle event
 +            if (event.getShowEffect()) {
-+                this.level().levelEvent(LevelEvent.PARTICLES_SPELL_POTION_SPLASH, this.blockPosition(), net.minecraft.world.item.alchemy.PotionContents.BASE_POTION_COLOR);
++                level.levelEvent(LevelEvent.PARTICLES_SPELL_POTION_SPLASH, this.blockPosition(), net.minecraft.world.item.alchemy.PotionContents.BASE_POTION_COLOR);
 +            }
 +            // Paper end - exp bottle event
  

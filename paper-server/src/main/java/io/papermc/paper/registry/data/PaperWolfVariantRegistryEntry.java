@@ -17,6 +17,9 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
     protected ClientAsset.@Nullable ResourceTexture angryClientTextureAsset;
     protected ClientAsset.@Nullable ResourceTexture wildClientTextureAsset;
     protected ClientAsset.@Nullable ResourceTexture tameClientTextureAsset;
+    protected ClientAsset.@Nullable ResourceTexture babyAngryClientTextureAsset;
+    protected ClientAsset.@Nullable ResourceTexture babyWildClientTextureAsset;
+    protected ClientAsset.@Nullable ResourceTexture babyTameClientTextureAsset;
     protected SpawnPrioritySelectors spawnConditions;
 
     protected final Conversions conversions;
@@ -31,9 +34,12 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
             return;
         }
 
-        this.angryClientTextureAsset = internal.assetInfo().angry();
-        this.wildClientTextureAsset = internal.assetInfo().wild();
-        this.tameClientTextureAsset = internal.assetInfo().tame();
+        this.angryClientTextureAsset = internal.adultInfo().angry();
+        this.wildClientTextureAsset = internal.adultInfo().wild();
+        this.tameClientTextureAsset = internal.adultInfo().tame();
+        this.babyAngryClientTextureAsset = internal.babyInfo().angry();
+        this.babyWildClientTextureAsset = internal.babyInfo().wild();
+        this.babyTameClientTextureAsset = internal.babyInfo().tame();
         this.spawnConditions = internal.spawnConditions();
     }
 
@@ -50,6 +56,21 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
     @Override
     public ClientTextureAsset tameClientTextureAsset() {
         return this.conversions.asBukkit(asConfigured(this.tameClientTextureAsset, "tameClientTextureAsset"));
+    }
+
+    @Override
+    public ClientTextureAsset babyAngryClientTextureAsset() {
+        return this.conversions.asBukkit(asConfigured(this.babyAngryClientTextureAsset, "babyAngryClientTextureAsset"));
+    }
+
+    @Override
+    public ClientTextureAsset babyWildClientTextureAsset() {
+        return this.conversions.asBukkit(asConfigured(this.babyWildClientTextureAsset, "babyWildClientTextureAsset"));
+    }
+
+    @Override
+    public ClientTextureAsset babyTameClientTextureAsset() {
+        return this.conversions.asBukkit(asConfigured(this.babyTameClientTextureAsset, "babyTameClientTextureAsset"));
     }
 
     public static final class PaperBuilder extends PaperWolfVariantRegistryEntry implements Builder, PaperRegistryBuilder<WolfVariant, Wolf.Variant> {
@@ -77,12 +98,35 @@ public class PaperWolfVariantRegistryEntry implements WolfVariantRegistryEntry {
         }
 
         @Override
+        public Builder babyAngryClientTextureAsset(final ClientTextureAsset babyAngryClientTextureAsset) {
+            this.babyAngryClientTextureAsset = this.conversions.asVanilla(asArgument(babyAngryClientTextureAsset, "babyAngryClientTextureAsset"));
+            return this;
+        }
+
+        @Override
+        public Builder babyWildClientTextureAsset(final ClientTextureAsset babyWildClientTextureAsset) {
+            this.babyWildClientTextureAsset = this.conversions.asVanilla(asArgument(babyWildClientTextureAsset, "babyWildClientTextureAsset"));
+            return this;
+        }
+
+        @Override
+        public Builder babyTameClientTextureAsset(final ClientTextureAsset babyTameClientTextureAsset) {
+            this.babyTameClientTextureAsset = this.conversions.asVanilla(asArgument(babyTameClientTextureAsset, "babyTameClientTextureAsset"));
+            return this;
+        }
+
+        @Override
         public WolfVariant build() {
             return new WolfVariant(
                 new WolfVariant.AssetInfo(
                     asConfigured(this.wildClientTextureAsset, "wildClientTextureAsset"),
                     asConfigured(this.tameClientTextureAsset, "tameClientTextureAsset"),
                     asConfigured(this.angryClientTextureAsset, "angryClientTextureAsset")
+                ),
+                new WolfVariant.AssetInfo(
+                    asConfigured(this.babyWildClientTextureAsset, "babyWildClientTextureAsset"),
+                    asConfigured(this.babyTameClientTextureAsset, "babyTameClientTextureAsset"),
+                    asConfigured(this.babyAngryClientTextureAsset, "babyAngryClientTextureAsset")
                 ),
                 asConfigured(this.spawnConditions, "spawnConditions")
             );

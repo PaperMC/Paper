@@ -1,35 +1,38 @@
 --- a/net/minecraft/gametest/framework/GameTestServer.java
 +++ b/net/minecraft/gametest/framework/GameTestServer.java
-@@ -146,6 +_,8 @@
-         boolean verify
+@@ -155,6 +_,8 @@
+         final int repeatCount
      ) {
          super(
 +            null, // Paper
 +            null, // Paper
              serverThread,
-             storageSource,
+             levelStorageSource,
              packRepository,
-@@ -161,9 +_,17 @@
+@@ -173,13 +_,21 @@
  
      @Override
-     public boolean initServer() {
--        this.setPlayerList(new PlayerList(this, this.registries(), this.playerDataStorage, new EmptyNotificationService()) {});
+     protected boolean initServer() {
 +        // Paper start
-+        this.setPlayerList(new PlayerList(this, this.registries(), this.playerDataStorage, new EmptyNotificationService()) {
+         this.setPlayerList(new PlayerList(this, this.registries(), this.playerDataStorage, new EmptyNotificationService()) {
+             {
+                 Objects.requireNonNull(GameTestServer.this);
+             }
++
 +            @Override
 +            public void loadAndSaveFiles() {
 +                throw new UnsupportedOperationException("Should not be called in a GameTestServer");
 +            }
-+        });
+         });
 +        this.initPostWorld();
          Gizmos.withCollector(GizmoCollector.NOOP);
 -        this.loadLevel();
 +        this.loadLevel("blah");
 +        // Paper end
-         ServerLevel serverLevel = this.overworld();
-         this.testBatches = this.evaluateTestsToRun(serverLevel);
+         ServerLevel level = this.overworld();
+         this.testBatches = this.evaluateTestsToRun(level);
          LOGGER.info("Started game test server");
-@@ -348,6 +_,13 @@
+@@ -385,6 +_,13 @@
          return false;
      }
  
@@ -41,9 +44,9 @@
 +    // Paper end
 +
      @Override
-     public boolean isSingleplayerOwner(NameAndId nameAndId) {
+     public boolean isSingleplayerOwner(final NameAndId nameAndId) {
          return false;
-@@ -395,5 +_,16 @@
+@@ -432,5 +_,16 @@
          @Override
          public void save() {
          }

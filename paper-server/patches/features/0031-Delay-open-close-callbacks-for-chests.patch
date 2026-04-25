@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 20 Apr 2026 02:56:22 -0700
+Subject: [PATCH] Delay open/close callbacks for chests
+
+The logic for chests may invoke block updates, which may not
+be safe to perform. For example, inventory closing due to
+player logout (which restricts chunk loading due to being
+inside an entity status callback) or during shutdown (which has
+chunk loading restrictions due to the chunk system being halted).
+
+diff --git a/net/minecraft/world/level/block/entity/BarrelBlockEntity.java b/net/minecraft/world/level/block/entity/BarrelBlockEntity.java
+index 9eb6cb86ff70f04863cae3def1006f82bcb4fa6b..da5fdf77dd26d97c8b92bac9a6af8d922c31eb9c 100644
+--- a/net/minecraft/world/level/block/entity/BarrelBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BarrelBlockEntity.java
+@@ -66,6 +66,13 @@ public class BarrelBlockEntity extends RandomizableContainerBlockEntity {
+             Objects.requireNonNull(BarrelBlockEntity.this);
+         }
+ 
++        // Paper start - delay open/close callbacks
++        @Override
++        public boolean delayCallbacks() {
++            return true;
++        }
++        // Paper end - delay open/close callbacks
++
+         @Override
+         protected void onOpen(final Level level, final BlockPos pos, final BlockState state) {
+             BarrelBlockEntity.this.playSound(state, SoundEvents.BARREL_OPEN);
+diff --git a/net/minecraft/world/level/block/entity/ChestBlockEntity.java b/net/minecraft/world/level/block/entity/ChestBlockEntity.java
+index 81a293cc13653a9a0336cb25d75273969fee4d16..8ebcce4c4971a11d367fb39e9c7fd280f63594e3 100644
+--- a/net/minecraft/world/level/block/entity/ChestBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/ChestBlockEntity.java
+@@ -35,6 +35,13 @@ public class ChestBlockEntity extends RandomizableContainerBlockEntity implement
+             Objects.requireNonNull(ChestBlockEntity.this);
+         }
+ 
++        // Paper start - delay open/close callbacks
++        @Override
++        public boolean delayCallbacks() {
++            return true;
++        }
++        // Paper end - delay open/close callbacks
++
+         @Override
+         protected void onOpen(final Level level, final BlockPos pos, final BlockState blockState) {
+             if (blockState.getBlock() instanceof ChestBlock chestBlock) {
+diff --git a/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java b/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
+index 9af046cbe2c5024040057118a0e9ecd539815781..aa8b384b05738139fa3492b3c09084cda09448ce 100644
+--- a/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
++++ b/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
+@@ -37,11 +37,23 @@ public abstract class ContainerOpenersCounter {
+ 
+     protected abstract void openerCountChanged(final Level level, final BlockPos pos, final BlockState blockState, int previous, int current);
+ 
++    // Paper start - delay open/close callbacks
++    public boolean delayCallbacks() {
++        return false;
++    }
++    // Paper end - delay open/close callbacks
++
+     public abstract boolean isOwnContainer(final Player player);
+ 
+     public void incrementOpeners(
+         final LivingEntity entity, final Level level, final BlockPos pos, final BlockState blockState, final double maxInteractionRange
+     ) {
++        // Paper start - delay open/close callbacks
++        if (this.delayCallbacks()) {
++            scheduleRecheck(level, pos, blockState, 1);
++            return;
++        }
++        // Paper end - delay open/close callbacks
+         int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
+         int previous = this.openCount++;
+ 
+@@ -66,6 +78,12 @@ public abstract class ContainerOpenersCounter {
+     }
+ 
+     public void decrementOpeners(final LivingEntity entity, final Level level, final BlockPos pos, final BlockState blockState) {
++        // Paper start - delay open/close callbacks
++        if (this.delayCallbacks()) {
++            scheduleRecheck(level, pos, blockState, 1);
++            return;
++        }
++        // Paper end - delay open/close callbacks
+         int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
+         if (this.openCount == 0) return; // Paper - Prevent ContainerOpenersCounter openCount from going negative
+         int previous = this.openCount--;
+@@ -151,6 +169,11 @@ public abstract class ContainerOpenersCounter {
+     }
+ 
+     private static void scheduleRecheck(final Level level, final BlockPos blockPos, final BlockState blockState) {
+-        level.scheduleTick(blockPos, blockState.getBlock(), 5);
++        // Paper start - delay open/close callbacks
++        scheduleRecheck(level, blockPos, blockState, 5);
++    }
++    private static void scheduleRecheck(final Level level, final BlockPos blockPos, final BlockState blockState, final int delay) {
++        level.scheduleTick(blockPos, blockState.getBlock(), delay);
++        // Paper end - delay open/close callbacks
+     }
+ }
+diff --git a/net/minecraft/world/level/block/entity/EnderChestBlockEntity.java b/net/minecraft/world/level/block/entity/EnderChestBlockEntity.java
+index eeac644f60760570244380d3c454fd33e37b5a7f..751625124a87de63d933d9c7809e46361e3136a5 100644
+--- a/net/minecraft/world/level/block/entity/EnderChestBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/EnderChestBlockEntity.java
+@@ -18,6 +18,13 @@ public class EnderChestBlockEntity extends BlockEntity implements LidBlockEntity
+             Objects.requireNonNull(EnderChestBlockEntity.this);
+         }
+ 
++        // Paper start - delay open/close callbacks
++        @Override
++        public boolean delayCallbacks() {
++            return true;
++        }
++        // Paper end - delay open/close callbacks
++
+         @Override
+         protected void onOpen(final Level level, final BlockPos pos, final BlockState blockState) {
+             level.playSound(

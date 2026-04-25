@@ -1,37 +1,67 @@
 --- a/net/minecraft/server/commands/TimeCommand.java
 +++ b/net/minecraft/server/commands/TimeCommand.java
-@@ -56,8 +_,15 @@
+@@ -170,23 +_,61 @@
      }
  
-     public static int setTime(CommandSourceStack source, int time) {
--        for (ServerLevel serverLevel : source.getServer().getAllLevels()) {
--            serverLevel.setDayTime(time);
-+        for (ServerLevel serverLevel : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) { // CraftBukkit - SPIGOT-6496: Only set the time for the world the command originates in // Paper - add config option for spigot's change
-+            // serverLevel.setDayTime(time);
-+            // CraftBukkit start
-+            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(serverLevel.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, time - serverLevel.getDayTime());
-+            org.bukkit.Bukkit.getPluginManager().callEvent(event);
-+            if (!event.isCancelled()) {
-+                serverLevel.setDayTime(serverLevel.getDayTime() + event.getSkipAmount());
+     private static int setTotalTicks(final CommandSourceStack source, final Holder<WorldClock> clock, final int totalTicks) {
++        // Paper start
++        // TODO - snapshot - 26.1
++        for (net.minecraft.server.level.ServerLevel level : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) {
++            long currentTime = level.clockManager().getTotalTicks(clock);
++            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(level.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, totalTicks - currentTime);
++            if (event.callEvent()) {
++                level.clockManager().setTotalTicks(clock, currentTime + event.getSkipAmount());
 +            }
-+            // CraftBukkit end
-         }
- 
-         source.getServer().forceTimeSynchronization();
-@@ -66,8 +_,14 @@
++        }
++        // Paper end
+         ServerClockManager clockManager = source.getServer().clockManager();
+-        clockManager.setTotalTicks(clock, totalTicks);
++        // clockManager.setTotalTicks(clock, totalTicks);
+         source.sendSuccess(() -> Component.translatable("commands.time.set.absolute", clock.getRegisteredName(), totalTicks), true);
+         return totalTicks;
      }
  
-     public static int addTime(CommandSourceStack source, int amount) {
--        for (ServerLevel serverLevel : source.getServer().getAllLevels()) {
--            serverLevel.setDayTime(serverLevel.getDayTime() + amount);
-+        for (ServerLevel serverLevel : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) { // CraftBukkit - SPIGOT-6496: Only set the time for the world the command originates in // Paper - add config option for spigot's change
-+            // CraftBukkit start
-+            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(serverLevel.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, amount);
-+            org.bukkit.Bukkit.getPluginManager().callEvent(event);
-+            if (!event.isCancelled()) {
-+                serverLevel.setDayTime(serverLevel.getDayTime() + event.getSkipAmount());
+     private static int addTime(final CommandSourceStack source, final Holder<WorldClock> clock, final int time) {
++        // Paper start
++        // TODO - snapshot - 26.1
++        for (net.minecraft.server.level.ServerLevel level : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) {
++            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(level.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, time);;
++            if (event.callEvent()) {
++                level.clockManager().addTicks(clock, event.getSkipAmount());
 +            }
-+            // CraftBukkit end
-         }
++        }
++        // Paper end
+         ServerClockManager clockManager = source.getServer().clockManager();
+-        clockManager.addTicks(clock, time);
++        // Paper - move up
+         long totalTicks = clockManager.getTotalTicks(clock);
+         source.sendSuccess(() -> Component.translatable("commands.time.set.absolute", clock.getRegisteredName(), totalTicks), true);
+         return wrapTime(totalTicks);
+     }
  
-         source.getServer().forceTimeSynchronization();
+     private static int setTimeToTimeMarker(final CommandSourceStack source, final Holder<WorldClock> clock, final ResourceKey<ClockTimeMarker> timeMarkerId) throws CommandSyntaxException {
++        // Paper start
++        // TODO - snapshot - 26.1
++        boolean foundMarker = false;
++        for (net.minecraft.server.level.ServerLevel level : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) {
++            java.util.OptionalLong targetTime = level.clockManager().getTotalTicksToTimeMarker(clock, timeMarkerId);
++            if (targetTime.isEmpty()) {
++                continue;
++            }
++
++            foundMarker = true;
++            long currentTime = level.clockManager().getTotalTicks(clock);
++            long delta = targetTime.getAsLong() - currentTime;
++            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(level.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, delta);
++            if (event.callEvent()) {
++                level.clockManager().setTotalTicks(clock, currentTime + event.getSkipAmount());
++            }
++        }
++        // Paper end
++
+         ServerClockManager clockManager = source.getServer().clockManager();
+-        if (!clockManager.moveToTimeMarker(clock, timeMarkerId)) {
++        if (!foundMarker) { // Paper
+             throw ERROR_NO_TIME_MARKER_FOUND.create(clock.getRegisteredName(), timeMarkerId);
+         } else {
+             source.sendSuccess(

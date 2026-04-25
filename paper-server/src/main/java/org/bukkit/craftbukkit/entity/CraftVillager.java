@@ -1,15 +1,20 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.destroystokyo.paper.entity.villager.Reputation;
+import com.destroystokyo.paper.entity.villager.ReputationType;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.util.OldEnumHolderable;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ai.gossip.GossipContainer;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.npc.villager.VillagerData;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.level.block.BedBlock;
@@ -70,7 +75,11 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public void setVillagerLevel(int level) {
-        Preconditions.checkArgument(1 <= level && level <= 5, "level (%s) must be between [1, 5]", level);
+        Preconditions.checkArgument(
+            VillagerData.MIN_VILLAGER_LEVEL <= level && level <= VillagerData.MAX_VILLAGER_LEVEL,
+            "level (%s) must be between [%s, %s]",
+            level, VillagerData.MIN_VILLAGER_LEVEL, VillagerData.MAX_VILLAGER_LEVEL
+        );
 
         this.getHandle().setVillagerData(this.getHandle().getVillagerData().withLevel(level));
     }
@@ -87,21 +96,15 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         this.getHandle().setVillagerXp(experience);
     }
 
-    // Paper start
     @Override
     public boolean increaseLevel(int amount) {
         Preconditions.checkArgument(amount > 0, "Level earned must be positive");
-        int supposedFinalLevel = this.getVillagerLevel() + amount;
-        Preconditions.checkArgument(net.minecraft.world.entity.npc.villager.VillagerData.MIN_VILLAGER_LEVEL <= supposedFinalLevel && supposedFinalLevel <= net.minecraft.world.entity.npc.villager.VillagerData.MAX_VILLAGER_LEVEL,
-            "Final level reached after the donation (%d) must be between [%d, %d]".formatted(supposedFinalLevel, net.minecraft.world.entity.npc.villager.VillagerData.MIN_VILLAGER_LEVEL, net.minecraft.world.entity.npc.villager.VillagerData.MAX_VILLAGER_LEVEL));
-
-        it.unimi.dsi.fastutil.ints.Int2ObjectMap<net.minecraft.world.entity.npc.villager.VillagerTrades.ItemListing[]> trades =
-            net.minecraft.world.entity.npc.villager.VillagerTrades.TRADES.get((this.getHandle().getVillagerData().profession().unwrapKey().orElseThrow()));
-
-        if (trades == null || trades.isEmpty()) {
-            this.getHandle().setVillagerData(this.getHandle().getVillagerData().withLevel(supposedFinalLevel));
+        int currentLevel = this.getVillagerLevel();
+        int newLevel = Math.clamp(currentLevel + amount, VillagerData.MIN_VILLAGER_LEVEL, VillagerData.MAX_VILLAGER_LEVEL);
+        if (currentLevel == newLevel) {
             return false;
         }
+        amount = newLevel - currentLevel;
 
         while (amount > 0) {
             this.getHandle().increaseMerchantCareer((ServerLevel) this.getHandle().level());
@@ -113,7 +116,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     @Override
     public boolean addTrades(int amount) {
         Preconditions.checkArgument(amount > 0, "Number of trades unlocked must be positive");
-        return this.getHandle().updateTrades(amount);
+        return this.getHandle().updateTrades((ServerLevel) this.getHandle().level(), amount);
     }
 
     @Override
@@ -125,7 +128,6 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
     public void setRestocksToday(int restocksToday) {
         getHandle().numberOfRestocksToday = restocksToday;
     }
-    // Paper end
 
     @Override
     public boolean sleep(Location location) {
@@ -134,7 +136,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         Preconditions.checkArgument(location.getWorld().equals(this.getWorld()), "Cannot sleep across worlds");
         Preconditions.checkState(!this.getHandle().generation, "Cannot sleep during world generation");
 
-        BlockPos position = CraftLocation.toBlockPosition(location);
+        BlockPos position = CraftLocation.toBlockPos(location);
         BlockState state = this.getHandle().level().getBlockState(position);
         if (!(state.getBlock() instanceof BedBlock)) {
             return false;
@@ -159,8 +161,8 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public ZombieVillager zombify() {
-        net.minecraft.world.entity.monster.zombie.ZombieVillager entityzombievillager = Zombie.convertVillagerToZombieVillager(this.getHandle().level().getMinecraftWorld(), this.getHandle(), this.getHandle().blockPosition(), this.isSilent(), EntityTransformEvent.TransformReason.INFECTION, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        return (entityzombievillager != null) ? (ZombieVillager) entityzombievillager.getBukkitEntity() : null;
+        net.minecraft.world.entity.monster.zombie.ZombieVillager zombie = Zombie.convertVillagerToZombieVillager(this.getHandle().level().getMinecraftWorld(), this.getHandle(), this.getHandle().blockPosition(), this.isSilent(), EntityTransformEvent.TransformReason.INFECTION, CreatureSpawnEvent.SpawnReason.CUSTOM);
+        return (zombie != null) ? (ZombieVillager) zombie.getBukkitEntity() : null;
     }
 
     public static class CraftType extends OldEnumHolderable<Type, VillagerType> implements Type {
@@ -197,50 +199,48 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public Reputation getReputation(UUID uniqueId) {
-        net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips rep = getHandle().getGossips().gossips.get(uniqueId);
-        if (rep == null) {
-            return new Reputation(new java.util.EnumMap<>(com.destroystokyo.paper.entity.villager.ReputationType.class));
+        GossipContainer.EntityGossips gossips = this.getHandle().getGossips().gossips.get(uniqueId);
+        if (gossips == null) {
+            return new Reputation(new EnumMap<>(ReputationType.class));
         }
 
-        return rep.getPaperReputation();
+        return gossips.asReputation();
     }
 
     @Override
     public Map<UUID, Reputation> getReputations() {
-        return getHandle().getGossips().gossips.entrySet()
+        return this.getHandle().getGossips().gossips.entrySet()
             .stream()
-            .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getPaperReputation()));
+            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().asReputation()));
     }
 
     @Override
     public void setReputation(UUID uniqueId, Reputation reputation) {
-        net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips nmsReputation =
-            getHandle().getGossips().gossips.computeIfAbsent(
-                uniqueId,
-                key -> new net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips()
-            );
-        nmsReputation.assignFromPaperReputation(reputation);
+        GossipContainer.EntityGossips gossips = this.getHandle().getGossips().gossips.computeIfAbsent(
+            uniqueId, _ -> new GossipContainer.EntityGossips()
+        );
+        gossips.assignFromReputation(reputation);
     }
 
     @Override
     public void setReputations(Map<UUID, Reputation> reputations) {
         for (Map.Entry<UUID, Reputation> entry : reputations.entrySet()) {
-            setReputation(entry.getKey(), entry.getValue());
+            this.setReputation(entry.getKey(), entry.getValue());
         }
     }
 
     @Override
     public void clearReputations() {
-        getHandle().getGossips().gossips.clear();
+        this.getHandle().getGossips().gossips.clear();
     }
 
     @Override
     public void updateDemand() {
-        getHandle().updateDemand();
+        this.getHandle().updateDemand();
     }
 
     @Override
     public void restock() {
-        getHandle().restock();
+        this.getHandle().restock();
     }
 }

@@ -185,6 +185,7 @@ public class EntityTypesTest {
     public void testEntityType(EntityType entityType) {
         CraftEntityTypes.EntityTypeData<?, ?> entityTypeData = CraftEntityTypes.getEntityTypeData(entityType);
         assertNotNull(entityTypeData, String.format("Entity type %s does not have an entity type data, please add on to CraftEntityTypes.", entityType));
+        assertEquals(entityTypeData.entityClass(), entityType.getEntityClass(), String.format("Entity type class for %s does not match CraftEntityTypes.", entityType));
     }
 
     @AfterAll
