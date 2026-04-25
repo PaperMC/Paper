@@ -83,7 +83,7 @@
  
      public ServerGamePacketListenerImpl(final MinecraftServer server, final Connection connection, final ServerPlayer player, final CommonListenerCookie cookie) {
          super(server, connection, cookie);
-@@ -284,11 +_,26 @@
+@@ -284,8 +_,22 @@
          player.connection = this;
          player.getTextFilter().join();
          this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(player.getUUID(), server::enforceSecureProfile);
@@ -108,10 +108,6 @@
  
      @Override
      public void tick() {
-+        if (this.isDisconnected()) return; // Paper
-         if (this.ackBlockChangesUpTo > -1) {
-             this.send(new ClientboundBlockChangedAckPacket(this.ackBlockChangesUpTo));
-             this.ackBlockChangesUpTo = -1;
 @@ -298,11 +_,13 @@
              this.keepConnectionAlive();
              this.chatSpamThrottler.tick();
@@ -1356,17 +1352,9 @@
                      return;
                  }
              }
-@@ -1453,24 +_,50 @@
- 
+@@ -1454,23 +_,42 @@
      @Override
      public void onDisconnect(final DisconnectionDetails details) {
-+        // CraftBukkit start - Rarely it would send a disconnect line twice
-+        if (this.processedDisconnect) {
-+            return;
-+        } else {
-+            this.processedDisconnect = true;
-+        }
-+        // CraftBukkit end
          LOGGER.info("{} lost connection: {}", this.player.getPlainTextName(), details.reason().getString());
 -        this.removePlayerFromWorld();
 +        // Paper start - Fix kick event leave message not being sent
@@ -2664,7 +2652,7 @@
 +    }
 +
 +    public final boolean isDisconnected() {
-+        return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper - Fix duplication bugs
++        return (!this.player.joining && !this.connection.isConnected());
 +    }
 +
 +    @Override

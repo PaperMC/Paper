@@ -12,11 +12,12 @@
      private volatile @Nullable PacketListener disconnectListener;
      private volatile @Nullable PacketListener packetListener;
      private @Nullable DisconnectionDetails disconnectionDetails;
-@@ -81,6 +_,43 @@
+@@ -81,6 +_,44 @@
      private boolean handlingFault;
      private volatile @Nullable DisconnectionDetails delayedDisconnect;
      private @Nullable BandwidthDebugMonitor bandwidthDebugMonitor;
 +    public String hostname = ""; // CraftBukkit - add field
++    public boolean handleConnectionDisconnectOnNextTick = false; // Paper - Force kill connection ticking
 +    // Paper start - NetworkClient implementation
 +    public int protocolVersion;
 +    public java.net.InetSocketAddress virtualHost;
@@ -220,7 +221,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -391,12 +_,13 @@
+@@ -391,6 +_,7 @@
      }
  
      public void disconnect(final DisconnectionDetails details) {
@@ -228,13 +229,6 @@
          if (this.channel == null) {
              this.delayedDisconnect = details;
          }
- 
-         if (this.isConnected()) {
--            this.channel.close().awaitUninterruptibly();
-+            this.channel.close(); // We can't wait as this may be called from an event loop.
-             this.disconnectionDetails = details;
-         }
-     }
 @@ -543,6 +_,14 @@
          }
      }
