@@ -278,8 +278,8 @@ public class WorldCreator {
      * @return this object, for chaining
      */
     @NotNull
-    public WorldCreator forcedSpawnPosition(@Nullable Position position, float yaw, float pitch) {
-        this.spawnPositionOverride = position;
+    public WorldCreator forcedSpawnPosition(@NotNull Position position, float yaw, float pitch) {
+        this.spawnPositionOverride = position; // If you set this to null, it wont do anything!
         this.spawnYawOverride = yaw;
         this.spawnPitchOverride = pitch;
         return this;
