@@ -16,8 +16,8 @@ public interface ServerLevelPaperCapturingWorldLevel extends PaperCapturingWorld
     }
 
     @Override
-    default void sendBlockUpdated(BlockPos pos, BlockState oldState, BlockState newState, @Block.UpdateFlags int flags) {
-        this.getLevel().sendBlockUpdated(pos, oldState, newState, flags);
+    default void sendBlockUpdated(BlockPos pos, BlockState old, BlockState current, @Block.UpdateFlags int updateFlags) {
+        this.getLevel().sendBlockUpdated(pos, old, current, updateFlags);
     }
 
     @Override
@@ -26,13 +26,13 @@ public interface ServerLevelPaperCapturingWorldLevel extends PaperCapturingWorld
     }
 
     @Override
-    default boolean setBlockSilent(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
-        return this.getLevel().setBlock(pos, state, flags, recursionLeft);
+    default boolean setBlockSilent(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags, int updateLimit) {
+        return this.getLevel().setBlock(pos, blockState, updateFlags, updateLimit);
     }
 
     @Override
-    default boolean setBlockAndUpdate(BlockPos pos, BlockState state) {
-        return this.getLevel().setBlockAndUpdate(pos, state);
+    default boolean setBlockAndUpdate(BlockPos pos, BlockState blockState) {
+        return this.getLevel().setBlockAndUpdate(pos, blockState);
     }
 
     @Override

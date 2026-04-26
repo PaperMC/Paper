@@ -13,52 +13,51 @@ class SimpleBlockPlacementPredictor implements BlockPlacementPredictor {
 
     private final CaptureRecordMap guesstimationMap = new CaptureRecordMap();
 
-    public boolean setBlockState(BlockPlacementPredictor layer, BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
-        BlockState blockState = layer.getLatestBlockAt(pos).orElse(Blocks.AIR.defaultBlockState());
+    public boolean setBlockState(BlockPlacementPredictor layer, BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags) {
+        BlockState oldState = layer.getLatestBlockAt(pos).orElse(Blocks.AIR.defaultBlockState());
         // Don't do any processing if the same
-        if (blockState == state) {
+        if (oldState == blockState) {
             return false;
         } else {
-            Block block = state.getBlock();
+            Block newBlock = blockState.getBlock();
 
-            this.setLatestBlockAt(pos, state, flags);
+            this.setLatestBlockAt(pos, blockState, updateFlags);
 
             // TODO: local heightmaps?
-//            this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING).update(i, y, i2, state);
-//            this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES).update(i, y, i2, state);
-//            this.heightmaps.get(Heightmap.Types.OCEAN_FLOOR).update(i, y, i2, state);
-//            this.heightmaps.get(Heightmap.Types.WORLD_SURFACE).update(i, y, i2, state);
+//            this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING).update(i, y, i2, blockState);
+//            this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES).update(i, y, i2, blockState);
+//            this.heightmaps.get(Heightmap.Types.OCEAN_FLOOR).update(i, y, i2, blockState);
+//            this.heightmaps.get(Heightmap.Types.WORLD_SURFACE).update(i, y, i2, blockState);
 
             // LIGHT ENGINE CALCULATIONS
 
-            boolean differentState = !blockState.is(block);
-            if (differentState && blockState.hasBlockEntity() && !state.shouldChangedStateKeepBlockEntity(blockState)) {
+            boolean blockChanged = !oldState.is(newBlock);
+            if (blockChanged && oldState.hasBlockEntity() && !blockState.shouldChangedStateKeepBlockEntity(oldState)) {
                 this.removeBlockEntity(pos);
             }
 
-//            if ((differentState || block instanceof BaseRailBlock) && ((flags & Block.UPDATE_NEIGHBORS) != 0 || updateMoveByPiston)) {
-//                BlockState finalBlockState = blockState;
+//            if ((blockChanged || newBlock instanceof BaseRailBlock) && ((updateFlags & Block.UPDATE_NEIGHBORS) != 0 || updateMoveByPiston)) {
+//                BlockState finalOldState = oldState;
 //                this.capturingWorldLevel.addTask((level) -> {
-//                    finalBlockState.affectNeighborsAfterRemoval(level, pos, updateMoveByPiston);
+//                    finalOldState.affectNeighborsAfterRemoval(level, pos, updateMoveByPiston);
 //                });
 //            }
 
-            if (state.hasBlockEntity()) {
+            if (blockState.hasBlockEntity()) {
                 BlockEntity blockEntity = this.getLatestBlockEntityAt(pos).map(BlockEntityPlacement::blockEntity).orElse(null);
-                if (blockEntity != null && !blockEntity.isValidBlockState(state)) {
+                if (blockEntity != null && !blockEntity.isValidBlockState(blockState)) {
                     blockEntity = null;
                 }
 
                 if (blockEntity == null) {
-                    blockEntity = ((EntityBlock) block).newBlockEntity(pos, state);
+                    blockEntity = ((EntityBlock) newBlock).newBlockEntity(pos, blockState);
                     if (blockEntity != null) {
                         this.addAndRegisterBlockEntity(blockEntity);
                     }
                 } else {
-                    blockEntity.setBlockState(state);
+                    blockEntity.setBlockState(blockState);
                 }
             }
-
         }
 
         return true;
@@ -100,8 +99,8 @@ class SimpleBlockPlacementPredictor implements BlockPlacementPredictor {
                 .map((state) -> new LoadedBlockState(true, state));
     }
 
-    public void setLatestBlockAt(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
-        this.guesstimationMap.setLatestBlockStateAt(pos, state, flags);
+    public void setLatestBlockAt(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags) {
+        this.guesstimationMap.setLatestBlockStateAt(pos, blockState, updateFlags);
     }
 
     public CaptureRecordMap getRecordMap() {

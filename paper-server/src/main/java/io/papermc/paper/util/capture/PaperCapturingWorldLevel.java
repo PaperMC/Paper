@@ -14,15 +14,15 @@ public interface PaperCapturingWorldLevel extends WorldGenLevel {
 
     GameRules getGameRules();
 
-    void sendBlockUpdated(BlockPos pos, BlockState oldState, BlockState newState, @Block.UpdateFlags int flags);
+    void sendBlockUpdated(BlockPos pos, BlockState old, BlockState current, @Block.UpdateFlags int updateFlags);
 
     void setBlockEntity(BlockEntity blockEntity);
 
-    boolean setBlockSilent(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft);
+    boolean setBlockSilent(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags, int updateLimit);
 
     ServerChunkCache getChunkSource();
 
-    boolean setBlockAndUpdate(BlockPos pos, BlockState state);
+    boolean setBlockAndUpdate(BlockPos pos, BlockState blockState);
 
     void addTask(Consumer<ServerLevel> level);
 

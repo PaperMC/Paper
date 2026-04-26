@@ -9,7 +9,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.particles.ParticleOptions;
@@ -119,8 +118,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public boolean setBlockAndUpdate(BlockPos pos, BlockState state) {
-        return this.setBlock(pos, state, Block.UPDATE_ALL);
+    public boolean setBlockAndUpdate(BlockPos pos, BlockState blockState) {
+        return this.setBlock(pos, blockState, Block.UPDATE_ALL);
     }
 
     @Override
@@ -150,28 +149,23 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public void playSound(@Nullable Entity entity, BlockPos pos, SoundEvent sound, SoundSource source, float volume, float pitch) {
-        this.addTask((level) -> level.playSound(entity, pos, sound, source, volume, pitch));
+    public void playSound(@Nullable Entity except, BlockPos pos, SoundEvent sound, SoundSource source, float volume, float pitch) {
+        this.addTask((level) -> level.playSound(except, pos, sound, source, volume, pitch));
     }
 
     @Override
-    public void addParticle(ParticleOptions options, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-        this.addTask((level) -> level.addParticle(options, x, y, z, xSpeed, ySpeed, zSpeed));
+    public void addParticle(ParticleOptions particle, double x, double y, double z, double xd, double yd, double zd) {
+        this.addTask((level) -> level.addParticle(particle, x, y, z, xd, yd, zd));
     }
 
     @Override
-    public void levelEvent(@Nullable Entity entity, int type, BlockPos pos, int data) {
-        this.addTask((level) -> level.levelEvent(entity, type, pos, data));
+    public void levelEvent(@Nullable Entity source, int type, BlockPos pos, int data) {
+        this.addTask((level) -> level.levelEvent(source, type, pos, data));
     }
 
     @Override
-    public void gameEvent(Holder<GameEvent> gameEvent, Vec3 pos, GameEvent.Context context) {
-        this.addTask((level) -> level.gameEvent(gameEvent, pos, context));
-    }
-
-    @Override
-    public float getShade(Direction direction, boolean shade) {
-        return this.parent.getShade(direction, shade);
+    public void gameEvent(Holder<GameEvent> gameEvent, Vec3 position, GameEvent.Context context) {
+        this.addTask((level) -> level.gameEvent(gameEvent, position, context));
     }
 
     @Override
@@ -212,13 +206,13 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public List<Entity> getEntities(@Nullable Entity entity, AABB area, Predicate<? super Entity> predicate) {
-        return this.parent.getEntities(entity, area, predicate);
+    public List<Entity> getEntities(@Nullable Entity except, AABB bb, Predicate<? super Entity> selector) {
+        return this.parent.getEntities(except, bb, selector);
     }
 
     @Override
-    public <T extends Entity> List<T> getEntities(EntityTypeTest<Entity, T> entityTypeTest, AABB bounds, Predicate<? super T> predicate) {
-        return this.parent.getEntities(entityTypeTest, bounds, predicate);
+    public <T extends Entity> List<T> getEntities(EntityTypeTest<Entity, T> entityTypeTest, AABB bb, Predicate<? super T> selector) {
+        return this.parent.getEntities(entityTypeTest, bb, selector);
     }
 
     @Override
@@ -227,8 +221,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public @Nullable ChunkAccess getChunk(int x, int z, ChunkStatus chunkStatus, boolean requireChunk) {
-        return this.parent.getChunk(x, z, chunkStatus, requireChunk);
+    public @Nullable ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus status, boolean loadOrGenerate) {
+        return this.parent.getChunk(chunkX, chunkZ, status, loadOrGenerate);
     }
 
     @Override
@@ -237,8 +231,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public int getHeight(Heightmap.Types heightmapType, int x, int z) {
-        return this.parent.getHeight(heightmapType, x, z); // TODO?
+    public int getHeight(Heightmap.Types type, int x, int z) {
+        return this.parent.getHeight(type, x, z); // TODO?
     }
 
     @Override
@@ -252,8 +246,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public Holder<Biome> getUncachedNoiseBiome(int x, int y, int z) {
-        return this.parent.getUncachedNoiseBiome(x, y, z);
+    public Holder<Biome> getUncachedNoiseBiome(int quartX, int quartY, int quartZ) {
+        return this.parent.getUncachedNoiseBiome(quartX, quartY, quartZ);
     }
 
     @Override
@@ -287,8 +281,8 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public boolean isStateAtPosition(BlockPos pos, Predicate<BlockState> state) {
-        return state.test(this.getBlockState(pos));
+    public boolean isStateAtPosition(BlockPos pos, Predicate<BlockState> predicate) {
+        return predicate.test(this.getBlockState(pos));
     }
 
     @Override
@@ -296,16 +290,16 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         return predicate.test(this.getFluidState(pos));
     }
 
-    public boolean silentSet(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
-        return this.writeLayer.setBlockState(this.effectiveReadLayer, pos, state, flags);
+    public boolean silentSet(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags) {
+        return this.writeLayer.setBlockState(this.effectiveReadLayer, pos, blockState, updateFlags);
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
+    public boolean setBlock(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags, int updateLimit) {
         BlockPos copy = pos.immutable();
-        this.addTask((level) -> level.setBlock(copy, state, flags, recursionLeft));
+        this.addTask((level) -> level.setBlock(copy, blockState, updateFlags, updateLimit));
 
-        return this.writeLayer.setBlockState(this.effectiveReadLayer, copy, state, flags);
+        return this.writeLayer.setBlockState(this.effectiveReadLayer, copy, blockState, updateFlags);
     }
 
     @Override
@@ -318,9 +312,9 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public boolean destroyBlock(BlockPos pos, boolean dropBlock, @Nullable Entity entity, int recursionLeft) {
+    public boolean destroyBlock(BlockPos pos, boolean dropResources, @Nullable Entity breaker, int updateLimit) {
         BlockPos copy = pos.immutable();
-        this.addTask((level) -> level.destroyBlock(copy, dropBlock, entity, recursionLeft));
+        this.addTask((level) -> level.destroyBlock(copy, dropResources, breaker, updateLimit));
 
         BlockState blockState = this.getBlockState(copy);
         if (blockState.isAir()) {
@@ -333,9 +327,9 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public void sendBlockUpdated(BlockPos pos, BlockState oldState, BlockState newState, @Block.UpdateFlags int flags) {
+    public void sendBlockUpdated(BlockPos pos, BlockState old, BlockState current, @Block.UpdateFlags int updateFlags) {
         BlockPos copy = pos.immutable();
-        this.addTask((level) -> level.sendBlockUpdated(copy, oldState, newState, flags));
+        this.addTask((level) -> level.sendBlockUpdated(copy, old, current, updateFlags));
     }
 
     @Override
@@ -344,9 +338,9 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public boolean setBlockSilent(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
+    public boolean setBlockSilent(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags, int updateLimit) {
         BlockPos copy = pos.immutable();
-        return this.silentSet(copy, state, flags);
+        return this.silentSet(copy, blockState, updateFlags);
     }
 
     @Override
@@ -369,7 +363,7 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
         this.sink.accept(() -> level.accept(this.parent));
     }
 
-    public net.minecraft.world.level.block.state.@Nullable BlockState getLatestBlockState(BlockPos pos) {
+    public @Nullable BlockState getLatestBlockState(BlockPos pos) {
         return this.effectiveReadLayer.getLatestBlockAt(pos).orElse(null);
     }
 
