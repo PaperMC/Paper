@@ -54,13 +54,13 @@ public record NumberRangeDialogInputImpl(
 
         @Override
         public BuilderImpl initial(final @Nullable Float initial) {
-            this.initial = (initial == null ? null : requireRange(initial, "initial", this.start, this.end));
+            this.initial = initial == null ? null : requireRange(initial, "initial", this.start, this.end);
             return this;
         }
 
         @Override
         public BuilderImpl step(final @Nullable Float step) {
-            this.step = (step == null ? null : requirePositive(step, "step"));
+            this.step = step == null ? null : requirePositive(step, "step");
             return this;
         }
 

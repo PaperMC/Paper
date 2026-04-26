@@ -90,8 +90,7 @@ public final class CraftToolComponent implements ToolComponent {
 
     @Override
     public void setDamagePerBlock(int damage) {
-        requireNonNegative(damage, "damage");
-        this.handle = new Tool(this.handle.rules(), this.handle.defaultMiningSpeed(), damage, this.handle.canDestroyBlocksInCreative());
+        this.handle = new Tool(this.handle.rules(), this.handle.defaultMiningSpeed(), requireNonNegative(damage, "damage"), this.handle.canDestroyBlocksInCreative());
     }
 
     @Override
@@ -135,10 +134,7 @@ public final class CraftToolComponent implements ToolComponent {
     @Override
     public ToolRule addRule(Tag<Material> tag, Float speed, Boolean correctForDrops) {
         Preconditions.checkArgument(tag instanceof CraftBlockTag, "tag must be a block tag");
-        if (speed != null) {
-            requirePositive(speed, "speed");
-        }
-        return this.addRule(((CraftBlockTag) tag).getHandle(), speed, correctForDrops);
+        return this.addRule(((CraftBlockTag) tag).getHandle(), speed == null ? null : requirePositive(speed, "speed"), correctForDrops);
     }
 
     private ToolRule addRule(HolderSet<Block> blocks, Float speed, Boolean correctForDrops) {
@@ -267,10 +263,7 @@ public final class CraftToolComponent implements ToolComponent {
 
         @Override
         public void setSpeed(Float speed) {
-            if (speed != null) {
-                requirePositive(speed, "speed");
-            }
-            this.handle = new Tool.Rule(this.handle.blocks(), Optional.ofNullable(speed), this.handle.correctForDrops());
+            this.handle = new Tool.Rule(this.handle.blocks(), speed == null ? Optional.empty() : Optional.of(requirePositive(speed, "speed")), this.handle.correctForDrops());
         }
 
         @Override

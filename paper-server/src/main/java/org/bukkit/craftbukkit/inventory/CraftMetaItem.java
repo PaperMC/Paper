@@ -1429,10 +1429,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void setEnchantable(Integer enchantable) {
-        if (enchantable != null) {
-            requirePositive(enchantable, "enchantable");
-        }
-        this.enchantableValue = enchantable;
+        this.enchantableValue = enchantable == null ? null : requirePositive(enchantable, "enchantable");
     }
 
     @Override

@@ -60,7 +60,7 @@ public record PaperItemTool(
     record PaperRule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops) implements Rule {
 
         public static PaperRule fromUnsafe(final RegistryKeySet<BlockType> blocks, final @Nullable Float speed, final TriState correctForDrops) {
-            return new PaperRule(blocks, (speed == null) ? null : requirePositive(speed, "speed"), correctForDrops);
+            return new PaperRule(blocks, speed == null ? null : requirePositive(speed, "speed"), correctForDrops);
         }
     }
 
