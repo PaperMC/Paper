@@ -10,8 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Called when a block is ignited. If you want to catch when a Player places
- * fire, you need to use {@link BlockPlaceEvent}.
+ * Called when a block is ignited.
  * <p>
  * If this event is cancelled, the block will not be ignited.
  */

@@ -8,6 +8,7 @@ public final class TestPlugin extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         this.getServer().getPluginManager().registerEvents(this, this);
+        this.getServer().getPluginManager().registerEvents(OwenPlayground.INSTANCE, this);
 
         // io.papermc.testplugin.brigtests.Registration.registerViaOnEnable(this);
     }
