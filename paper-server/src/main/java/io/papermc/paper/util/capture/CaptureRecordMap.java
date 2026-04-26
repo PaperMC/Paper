@@ -27,8 +27,8 @@ public final class CaptureRecordMap {
 
     private final Map<BlockPos, CaptureRecord> recordsByPos = new HashMap<>();
 
-    public void setLatestBlockStateAt(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
-        this.add(new CaptureRecord(pos, state, flags));
+    public void setLatestBlockStateAt(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags) {
+        this.add(new CaptureRecord(pos, blockState, updateFlags));
     }
 
     public void setLatestBlockEntityAt(BlockPos pos, boolean clearPreviousBlockEntity, @Nullable BlockEntity add) {
@@ -52,7 +52,7 @@ public final class CaptureRecordMap {
             return null;
         }
 
-        return record.state;
+        return record.blockState;
     }
 
     // Null indicates that it's not present, no override
@@ -87,7 +87,7 @@ public final class CaptureRecordMap {
 
         for (Map.Entry<BlockPos, CaptureRecord> entry : this.recordsByPos.entrySet()) {
             CaptureRecord captureRecord = entry.getValue();
-            out.add(CraftBlockStates.getBlockState(level.getWorld(), entry.getKey(), captureRecord.state, captureRecord.blockEntity));
+            out.add(CraftBlockStates.getBlockState(level.getWorld(), entry.getKey(), captureRecord.blockState, captureRecord.blockEntity));
         }
         return out;
     }
@@ -100,21 +100,21 @@ public final class CaptureRecordMap {
 
         private final BlockPos pos;
 
-        private BlockState state;
+        private BlockState blockState;
         private @Nullable BlockEntity blockEntity;
         private boolean clearPreviousBlockEntity;
-        private @Block.UpdateFlags int flags;
+        private @Block.UpdateFlags int updateFlags;
 
-        public CaptureRecord(BlockPos pos, BlockState state, BlockEntity blockEntity) {
+        public CaptureRecord(BlockPos pos, BlockState blockState, BlockEntity blockEntity) {
             this.pos = pos;
-            this.state = state;
+            this.blockState = blockState;
             this.blockEntity = blockEntity;
         }
 
-        public CaptureRecord(BlockPos pos, BlockState state, @Block.UpdateFlags int flags) {
+        public CaptureRecord(BlockPos pos, BlockState blockState, @Block.UpdateFlags int updateFlags) {
             this.pos = pos;
-            this.state = state;
-            this.flags = flags;
+            this.blockState = blockState;
+            this.updateFlags = updateFlags;
         }
 
         public CaptureRecord(boolean remove, @Nullable BlockEntity add, BlockPos pos) {
@@ -128,7 +128,7 @@ public final class CaptureRecordMap {
                 level.removeBlockEntity(this.pos);
             }
 
-            level.setBlock(this.pos, this.state, this.flags);
+            level.setBlock(this.pos, this.blockState, this.updateFlags);
             if (this.blockEntity != null) {
                 level.setBlockEntity(this.blockEntity);
             }

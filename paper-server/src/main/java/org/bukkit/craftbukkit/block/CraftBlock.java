@@ -521,41 +521,10 @@ public class CraftBlock implements Block {
         Direction direction = blockFaceToNotch(face);
         Preconditions.checkArgument(direction != null, face + " is not a valid cartesian face");
 
-        BlockFertilizeEvent event = null;
         ServerLevel world = this.getCraftWorld().getHandle();
         UseOnContext context = new UseOnContext(world, null, InteractionHand.MAIN_HAND, Items.BONE_MEAL.getDefaultInstance(), new BlockHitResult(Vec3.ZERO, direction, this.getPosition(), false));
 
-        // SPIGOT-6895: Call StructureGrowEvent and BlockFertilizeEvent
-        world.captureTreeGeneration = true;
-        InteractionResult result = BoneMealItem.applyBonemeal(context);
-        world.captureTreeGeneration = false;
-
-        if (!world.capturedBlockStates.isEmpty()) {
-            TreeType treeType = SaplingBlock.treeType;
-            SaplingBlock.treeType = null;
-            List<org.bukkit.block.BlockState> states = new ArrayList<>(world.capturedBlockStates.values());
-            world.capturedBlockStates.clear();
-            StructureGrowEvent structureEvent = null;
-
-            if (treeType != null) {
-                structureEvent = new StructureGrowEvent(this.getLocation(), treeType, true, null, states);
-                Bukkit.getPluginManager().callEvent(structureEvent);
-            }
-
-            event = new BlockFertilizeEvent(CraftBlock.at(world, this.getPosition()), null, states);
-            event.setCancelled(structureEvent != null && structureEvent.isCancelled());
-            Bukkit.getPluginManager().callEvent(event);
-
-            if (!event.isCancelled()) {
-                for (org.bukkit.block.BlockState state : states) {
-                    CraftBlockState craftBlockState = (CraftBlockState) state;
-                    craftBlockState.place(craftBlockState.getFlags());
-                    world.checkCapturedTreeStateForObserverNotify(this.position, craftBlockState);
-                }
-            }
-        }
-
-        return result == InteractionResult.SUCCESS && (event == null || !event.isCancelled());
+        return BoneMealItem.applyBonemeal(context) == InteractionResult.SUCCESS;
     }
 
     @Override

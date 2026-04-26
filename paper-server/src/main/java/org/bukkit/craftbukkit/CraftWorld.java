@@ -62,14 +62,12 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.NullOps;
-import net.minecraft.util.TriState;
 import net.minecraft.world.attribute.BedRule;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
-import net.minecraft.world.entity.ai.village.poi.PoiRecord;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.raid.Raids;
@@ -751,16 +749,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
        try (SimpleBlockCapture capture = this.world.forkCaptureSession()) {
            MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
 
-           BlockPos pos = CraftLocation.toBlockPosition(loc);
-           boolean res = this.generateTree(captureTreeGeneration, this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(CraftWorld.rand), type);
-           if (res) {
+           BlockPos pos = CraftLocation.toBlockPos(loc);
+           boolean generated = this.generateTree(captureTreeGeneration, this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(CraftWorld.rand), type);
+           if (generated) {
                List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(this.world);
                for (BlockState state : blocks) {
                    delegate.setBlockData(state.getX(), state.getY(), state.getZ(), state.getBlockData());
                }
            }
 
-           return res;
+           return generated;
        }
     }
 
