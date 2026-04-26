@@ -1,14 +1,14 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.math.FinePosition;
+import io.papermc.paper.math.Rotation;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
-import io.papermc.paper.math.FinePosition;
-import io.papermc.paper.math.Rotation;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Entity;
@@ -574,7 +574,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         } else if (o.getWorld() == null || getWorld() == null) {
             throw new IllegalArgumentException("Cannot measure distance to a null world");
         } else if (o.getWorld() != getWorld()) {
-            throw new IllegalArgumentException("Cannot measure distance between " + getWorld().getKey() + " and " + o.getWorld().getKey());
+            throw new IllegalArgumentException("Cannot measure distance between " + getWorld().key().asString() + " and " + o.getWorld().key().asString());
         }
 
         return NumberConversions.square(x - o.x) + NumberConversions.square(y - o.y) + NumberConversions.square(z - o.z);
@@ -1186,10 +1186,11 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     @Utility
     @NotNull
     public Map<String, Object> serialize() {
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
 
-        if (this.world != null) {
-            data.put("world_key", getWorld().getKey().toString());
+        World world = this.getWorld();
+        if (world != null) {
+            data.put("world_key", world.key().asString());
         }
 
         data.put("x", this.x);
@@ -1219,14 +1220,14 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
             requiresWorld = true;
         }
         if (args.containsKey("world_key")) {
-            world = Bukkit.getWorld(NamespacedKey.fromString((String) args.get("world_key")));
+            NamespacedKey key = NamespacedKey.fromString((String) args.get("world_key"));
+            world = key == null ? null : Bukkit.getWorld(key);
             requiresWorld = true;
         }
 
         if (requiresWorld && world == null) {
             throw new IllegalArgumentException("unknown world");
         }
-
 
         return new Location(world, NumberConversions.toDouble(args.get("x")), NumberConversions.toDouble(args.get("y")), NumberConversions.toDouble(args.get("z")), NumberConversions.toFloat(args.get("yaw")), NumberConversions.toFloat(args.get("pitch")));
     }

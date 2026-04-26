@@ -60,7 +60,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.NullOps;
-import net.minecraft.util.TriState;
 import net.minecraft.world.attribute.BedRule;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -126,7 +125,6 @@ import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftBiomeSearchResult;
 import org.bukkit.craftbukkit.util.CraftDifficulty;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
 import org.bukkit.craftbukkit.util.CraftStructureSearchResult;
@@ -175,6 +173,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
     private static final PointersSupplier<World> POINTERS_SUPPLIER = PointersSupplier.<World>builder()
         .resolving(net.kyori.adventure.identity.Identity.NAME, World::getName)
+        // todo key pointer
         .resolving(net.kyori.adventure.identity.Identity.UUID, World::getUID)
         .build();
 
@@ -304,9 +303,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     private static final Random rand = new Random();
 
-    public CraftWorld(ServerLevel world, Identifier identifier, @Nullable BiomeProvider biomeProvider, Environment environment) {
+    public CraftWorld(ServerLevel world, NamespacedKey key, @Nullable BiomeProvider biomeProvider, Environment environment) {
         this.world = world;
-        this.key = CraftNamespacedKey.fromMinecraft(identifier);
+        this.key = key;
         this.biomeProvider = biomeProvider;
 
         this.environment = environment;
@@ -786,7 +785,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public String toString() {
-        return "CraftWorld{key=" + this.getKey().toString() + '}';
+        return "CraftWorld{key=" + this.key().asString() + '}';
     }
 
     @Override

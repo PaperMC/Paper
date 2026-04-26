@@ -23277,10 +23277,10 @@ index 1cd5901c8e4eb4114ab347a393fc37095c8642d2..fadce1c051e6c7bc0c3d041c0cc8ecd7
 +}
 diff --git a/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..09f1a74740f898559edc8892ae59aca9b89a6fb3
+index 0000000000000000000000000000000000000000..d86bd11e0155f767c3bf66ac05fa4acf6d2bfccb
 --- /dev/null
 +++ b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
-@@ -0,0 +1,277 @@
+@@ -0,0 +1,269 @@
 +package io.papermc.paper.command.subcommands;
 +
 +import ca.spottedleaf.moonrise.common.util.JsonUtil;
@@ -23301,6 +23301,8 @@ index 0000000000000000000000000000000000000000..09f1a74740f898559edc8892ae59aca9
 +import net.minecraft.world.level.chunk.LevelChunk;
 +import net.minecraft.world.level.chunk.ProtoChunk;
 +import org.bukkit.Bukkit;
++import org.bukkit.NamespacedKey;
++import org.bukkit.World;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.craftbukkit.CraftWorld;
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -23327,44 +23329,33 @@ index 0000000000000000000000000000000000000000..09f1a74740f898559edc8892ae59aca9
 +
 +    @Override
 +    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
-+        switch (subCommand) {
-+            case "debug" -> {
++        return switch (subCommand) {
++            case "debug":
 +                if (args.length == 1) {
-+                    return CommandUtil.getListMatchingLast(sender, args, "help", "chunks");
++                    yield CommandUtil.getListMatchingLast(sender, args, "help", "chunks");
 +                }
-+            }
-+            case "holderinfo" -> {
-+                List<String> worldNames = new ArrayList<>();
-+                worldNames.add("*");
-+                for (org.bukkit.World world : Bukkit.getWorlds()) {
-+                    worldNames.add(world.getKey().toString());
++            case "chunkinfo", "holderinfo":
++                if (args.length >= 1 && (args.length == 1 || !args[0].equals("*"))) {
++                    yield CommandUtil.getListMatchingLast(
++                        sender,
++                        args,
++                        CommandUtil.getWorldSuggestions(sender.getServer(), args.length == 1)
++                    );
 +                }
-+                if (args.length == 1) {
-+                    return CommandUtil.getListMatchingLast(sender, args, worldNames);
-+                }
-+            }
-+            case "chunkinfo" -> {
-+                List<String> worldNames = new ArrayList<>();
-+                worldNames.add("*");
-+                for (org.bukkit.World world : Bukkit.getWorlds()) {
-+                    worldNames.add(world.getKey().toString());
-+                }
-+                if (args.length == 1) {
-+                    return CommandUtil.getListMatchingLast(sender, args, worldNames);
-+                }
-+            }
-+        }
-+        return Collections.emptyList();
++            default:
++                yield Collections.emptyList();
++        };
 +    }
 +
 +    private void doChunkInfo(final CommandSender sender, final String[] args) {
-+        List<org.bukkit.World> worlds;
++        List<World> worlds;
 +        if (args.length < 1 || args[0].equals("*")) {
-+            worlds = Bukkit.getWorlds();
++            worlds = Bukkit.getServer().getWorlds();
 +        } else {
 +            worlds = new ArrayList<>(args.length);
 +            for (final String arg : args) {
-+                org.bukkit.@Nullable World world = Bukkit.getWorld(arg);
++                @Nullable NamespacedKey key = NamespacedKey.fromString(arg);
++                @Nullable World world = key == null ? null : sender.getServer().getWorld(key);
 +                if (world == null) {
 +                    sender.sendMessage(text("World '" + arg + "' is invalid", RED));
 +                    return;
@@ -23379,7 +23370,7 @@ index 0000000000000000000000000000000000000000..09f1a74740f898559edc8892ae59aca9
 +        int accumulatedTicking = 0;
 +        int accumulatedEntityTicking = 0;
 +
-+        for (final org.bukkit.World bukkitWorld : worlds) {
++        for (final World bukkitWorld : worlds) {
 +            final ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
 +
 +            int total = 0;
@@ -23390,7 +23381,7 @@ index 0000000000000000000000000000000000000000..09f1a74740f898559edc8892ae59aca9
 +
 +            for (final NewChunkHolder holder : ((ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolders()) {
 +                final NewChunkHolder.ChunkCompletion completion = holder.getLastChunkCompletion();
-+                final ChunkAccess chunk = completion == null ? null : completion.chunk();
++                final @Nullable ChunkAccess chunk = completion == null ? null : completion.chunk();
 +
 +                if (!(chunk instanceof LevelChunk fullChunk)) {
 +                    continue;
@@ -23424,7 +23415,7 @@ index 0000000000000000000000000000000000000000..09f1a74740f898559edc8892ae59aca9
 +            accumulatedTicking += blockTicking;
 +            accumulatedEntityTicking += entityTicking;
 +
-+            sender.sendMessage(text().append(text("Chunks in ", BLUE), text(bukkitWorld.key().toString(), GREEN), text(":")));
++            sender.sendMessage(text().append(text("Chunks in ", BLUE), text(bukkitWorld.key().asString(), GREEN), text(":")));
 +            sender.sendMessage(text().color(DARK_AQUA).append(
 +                text("Total: ", BLUE), text(total),
 +                text(" Inactive: ", BLUE), text(inactive),
@@ -23446,13 +23437,14 @@ index 0000000000000000000000000000000000000000..09f1a74740f898559edc8892ae59aca9
 +    }
 +
 +    private void doHolderInfo(final CommandSender sender, final String[] args) {
-+        List<org.bukkit.World> worlds;
++        List<World> worlds;
 +        if (args.length < 1 || args[0].equals("*")) {
-+            worlds = Bukkit.getWorlds();
++            worlds = Bukkit.getServer().getWorlds();
 +        } else {
 +            worlds = new ArrayList<>(args.length);
 +            for (final String arg : args) {
-+                org.bukkit.@Nullable World world = Bukkit.getWorld(arg);
++                @Nullable NamespacedKey key = NamespacedKey.fromString(arg);
++                @Nullable World world = key == null ? null : sender.getServer().getWorld(key);
 +                if (world == null) {
 +                    sender.sendMessage(text("World '" + arg + "' is invalid", RED));
 +                    return;
@@ -23468,7 +23460,7 @@ index 0000000000000000000000000000000000000000..09f1a74740f898559edc8892ae59aca9
 +        int accumulatedProtoChunk = 0;
 +        int accumulatedFullChunk = 0;
 +
-+        for (final org.bukkit.World bukkitWorld : worlds) {
++        for (final World bukkitWorld : worlds) {
 +            final ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
 +
 +            int total = 0;
@@ -23480,7 +23472,7 @@ index 0000000000000000000000000000000000000000..09f1a74740f898559edc8892ae59aca9
 +
 +            for (final NewChunkHolder holder : ((ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolders()) {
 +                final NewChunkHolder.ChunkCompletion completion = holder.getLastChunkCompletion();
-+                final ChunkAccess chunk = completion == null ? null : completion.chunk();
++                final @Nullable ChunkAccess chunk = completion == null ? null : completion.chunk();
 +
 +                ++total;
 +
@@ -23506,7 +23498,7 @@ index 0000000000000000000000000000000000000000..09f1a74740f898559edc8892ae59aca9
 +            accumulatedProtoChunk += protoChunk;
 +            accumulatedFullChunk += fullChunk;
 +
-+            sender.sendMessage(text().append(text("Chunks in ", BLUE), text(bukkitWorld.getKey().toString(), GREEN), text(":")));
++            sender.sendMessage(text().append(text("Chunks in ", BLUE), text(bukkitWorld.key().asString(), GREEN), text(":")));
 +            sender.sendMessage(text().color(DARK_AQUA).append(
 +                text("Total: ", BLUE), text(total),
 +                text(" Unloadable: ", BLUE), text(canUnload),
@@ -23838,7 +23830,7 @@ index 3c1490ac7c259da04031db2f170e0c0a5f512191..470d7c770ae9d045b97e2df145cfe3cf
          }
      }
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index aebc47b0ed5c5a47b3e70e0c94ab5f7abaca523d..7c6a23408d7fe9cb11891678af97b5b7761d6bbc 100644
+index d22f55c63eb950e1b979280612eb9f155e986406..93690b360e5eb1b8d2f8ab2198aa087c9be7ffe2 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -191,7 +191,7 @@ import net.minecraft.world.scores.ScoreboardSaveData;
@@ -30053,7 +30045,7 @@ index e07a7bda45146686a6ac2d20507df9fc8630514f..f84e651e2a34e76a0a71993332e4be1b
  
      // Paper start - Affects Spawning API
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 2fd4e73ed16d2d11267156840d7d9859d040317e..b8d56c7a14521cb77ba2cf619be826fb06be81da 100644
+index 838bad640b7f8e42fc8972918cfc7c1d9807e2b3..c0f901c4ac61a0aa2b480f102feb3669b111f4c0 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -87,6 +87,7 @@ import net.minecraft.world.level.storage.LevelData;
@@ -30725,10 +30717,10 @@ index 2fd4e73ed16d2d11267156840d7d9859d040317e..b8d56c7a14521cb77ba2cf619be826fb
 +        this.maxSectionY = this.maxY >> 4;
 +        this.sectionsCount = this.maxSectionY - this.minSectionY + 1;
 +        // Paper end - getblock optimisations - cache world height/sections
-         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(bukkitName, CraftNamespacedKey.fromMinecraft(dimension.identifier())); // Spigot
+         final org.bukkit.NamespacedKey worldKey = CraftNamespacedKey.fromMinecraft(dimension.identifier()); // Paper
+         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(bukkitName, worldKey); // Spigot
          this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
-         this.generator = generator;
-@@ -230,6 +863,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -231,6 +864,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.registryAccess = registryAccess;
          this.palettedContainerFactory = PalettedContainerFactory.create(registryAccess);
          this.damageSources = new DamageSources(registryAccess);
@@ -30736,7 +30728,7 @@ index 2fd4e73ed16d2d11267156840d7d9859d040317e..b8d56c7a14521cb77ba2cf619be826fb
      }
  
      // Paper start - Cancel hit for vanished players
-@@ -511,7 +1145,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -512,7 +1146,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
                  this.setBlocksDirty(pos, blockState, blockState1);
              }
  
@@ -30745,7 +30737,7 @@ index 2fd4e73ed16d2d11267156840d7d9859d040317e..b8d56c7a14521cb77ba2cf619be826fb
                  this.sendBlockUpdated(pos, blockState, state, flags);
              }
  
-@@ -845,6 +1479,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -846,6 +1480,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          // Paper - Fix MC-117075 use removeAll - remove iterator in favour of indexed for loop, ensuring compile error if something uses iter incorrectly
          boolean tickBlockEntities = this.tickRateManager().runsNormally();
  
@@ -30753,7 +30745,7 @@ index 2fd4e73ed16d2d11267156840d7d9859d040317e..b8d56c7a14521cb77ba2cf619be826fb
          // Paper start - Fix MC-117075 use removeAll
          final it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<@Nullable TickingBlockEntity> toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>();
          toRemove.add(null);
-@@ -855,6 +1490,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -856,6 +1491,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
                  toRemove.add(ticker); // Paper - Fix MC-117075 use removeAll
              } else if (tickBlockEntities && this.shouldTickBlocksAt(ticker.getPos())) {
                  ticker.tick();
@@ -30765,7 +30757,7 @@ index 2fd4e73ed16d2d11267156840d7d9859d040317e..b8d56c7a14521cb77ba2cf619be826fb
              }
          }
  
-@@ -873,6 +1513,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -874,6 +1514,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
              // Paper end - Prevent block entity and entity crashes
          }
@@ -30773,7 +30765,7 @@ index 2fd4e73ed16d2d11267156840d7d9859d040317e..b8d56c7a14521cb77ba2cf619be826fb
      }
  
      // Paper start - Option to prevent armor stands from doing entity lookups
-@@ -880,7 +1521,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -881,7 +1522,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public boolean noCollision(@Nullable Entity entity, AABB box) {
          if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups)
              return false;
@@ -30789,7 +30781,7 @@ index 2fd4e73ed16d2d11267156840d7d9859d040317e..b8d56c7a14521cb77ba2cf619be826fb
      }
      // Paper end - Option to prevent armor stands from doing entity lookups
  
-@@ -1025,7 +1673,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1026,7 +1674,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          if (!this.isInValidBounds(pos)) {
              return null;
          } else {
@@ -30798,7 +30790,7 @@ index 2fd4e73ed16d2d11267156840d7d9859d040317e..b8d56c7a14521cb77ba2cf619be826fb
                  ? null
                  : this.getChunkAt(pos).getBlockEntity(pos, LevelChunk.EntityCreationType.IMMEDIATE);
          }
-@@ -1105,20 +1753,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1106,20 +1754,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      @Override
      public List<Entity> getEntities(final @Nullable Entity except, final AABB bb, final Predicate<? super Entity> selector) {
          Profiler.get().incrementCounter("getEntities");
@@ -30826,7 +30818,7 @@ index 2fd4e73ed16d2d11267156840d7d9859d040317e..b8d56c7a14521cb77ba2cf619be826fb
      }
  
      @Override
-@@ -1134,33 +1777,94 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1135,33 +1778,94 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.getEntities(type, bb, selector, output, Integer.MAX_VALUE);
      }
  
@@ -30941,7 +30933,7 @@ index 2fd4e73ed16d2d11267156840d7d9859d040317e..b8d56c7a14521cb77ba2cf619be826fb
  
      public <T extends Entity> boolean hasEntities(final EntityTypeTest<Entity, T> type, final AABB bb, final Predicate<? super T> selector) {
          Profiler.get().incrementCounter("hasEntities");
-@@ -1465,13 +2169,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1466,13 +2170,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      // Paper start - allow patching this logic
      public final int getEntityCount() {

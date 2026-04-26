@@ -4,7 +4,9 @@ import com.google.common.collect.Maps;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.command.CommandUtil;
 import io.papermc.paper.command.PaperSubcommand;
+import io.papermc.paper.util.MCUtil;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -21,7 +23,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.bukkit.Bukkit;
 import org.bukkit.HeightMap;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -48,8 +49,12 @@ public final class EntityCommand implements PaperSubcommand {
     public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
         if (args.length == 1) {
             return CommandUtil.getListMatchingLast(sender, args, "help", "list");
-        } else if (args.length == 2) {
-            return CommandUtil.getListMatchingLast(sender, args, BuiltInRegistries.ENTITY_TYPE.keySet());
+        } else if (args.length > 1 && args[0].toLowerCase(Locale.ROOT).equals("list")) {
+            if (args.length == 2) {
+                return CommandUtil.getListMatchingLast(sender, args, BuiltInRegistries.ENTITY_TYPE.keySet());
+            } else if (args.length == 3) {
+                return CommandUtil.getListMatchingLast(sender, args, CommandUtil.getWorldSuggestions(sender.getServer(), false));
+            }
         }
         return Collections.emptyList();
     }
@@ -60,58 +65,55 @@ public final class EntityCommand implements PaperSubcommand {
     private void listEntities(final CommandSender sender, final String[] args) {
         // help
         if (args.length < 1 || !args[0].toLowerCase(Locale.ROOT).equals("list")) {
-            sender.sendMessage(text("Use /paper entity [list] help for more information on a specific command", RED));
+            sender.sendMessage(text("Use /paper entity list [filter] [world] to get entity info that matches the optional filter.", RED));
             return;
         }
 
         if ("list".equals(args[0].toLowerCase(Locale.ROOT))) {
             String filter = "*";
             if (args.length > 1) {
-                if (args[1].toLowerCase(Locale.ROOT).equals("help")) {
-                    sender.sendMessage(text("Use /paper entity list [filter] [worldName] to get entity info that matches the optional filter.", RED));
-                    return;
-                }
                 filter = args[1];
             }
-            final String cleanfilter = filter.replace("?", ".?").replace("*", ".*?");
+            final String cleanFilter = filter.replace("?", ".?").replace("*", ".*?");
             Set<Identifier> names = BuiltInRegistries.ENTITY_TYPE.keySet().stream()
-                .filter(n -> n.toString().matches(cleanfilter))
+                .filter(n -> n.toString().matches(cleanFilter))
                 .collect(Collectors.toSet());
             if (names.isEmpty()) {
                 sender.sendMessage(text("Invalid filter, does not match any entities. Use /paper entity list for a proper list", RED));
-                sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
+                sender.sendMessage(text("Usage: /paper entity list [filter] [world]", RED));
                 return;
             }
-            String worldName;
+
+            final @Nullable World world;
             if (args.length > 2) {
-                worldName = args[2];
-            } else if (sender instanceof Player) {
-                worldName = ((Player) sender).getWorld().getKey().toString();
+                @Nullable NamespacedKey key = NamespacedKey.fromString(args[2]);
+                world = key == null ? null : sender.getServer().getWorld(key);
+                if (world == null) {
+                    sender.sendMessage(text("Could not load world for " + args[2] + ". Please select a valid world.", RED));
+                    sender.sendMessage(text("Usage: /paper entity list [filter] [world]", RED));
+                    return;
+                }
+            } else if (sender instanceof Player player) {
+                world = player.getWorld();
             } else {
-                sender.sendMessage(text("Please specify the name of a world", RED));
+                sender.sendMessage(text("Please specify the key of a world", RED));
                 sender.sendMessage(text("To do so without a filter, specify '*' as the filter", RED));
-                sender.sendMessage(text("Usage: /paper entity list [filter] [worldKey]", RED));
+                sender.sendMessage(text("Usage: /paper entity list [filter] [world]", RED));
                 return;
             }
-            Map<Identifier, MutablePair<Integer, Map<ChunkPos, Integer>>> list = Maps.newHashMap();
-            @Nullable NamespacedKey worldKey = NamespacedKey.fromString(worldName);
-            @Nullable World bukkitWorld;
-            if (worldKey == null || (bukkitWorld = Bukkit.getWorld(worldKey)) == null) {
-                sender.sendMessage(text("Could not load world for " + worldName + ". Please select a valid world.", RED));
-                sender.sendMessage(text("Usage: /paper entity list [filter] [worldKey]", RED));
-                return;
-            }
-            ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
-            Map<Identifier, Integer> nonEntityTicking = Maps.newHashMap();
-            ServerChunkCache chunkProviderServer = world.getChunkSource();
-            FeatureHooks.getAllEntities(world).forEach(e -> {
+
+            Map<Identifier, MutablePair<Integer, Map<ChunkPos, Integer>>> list = new HashMap<>();
+            ServerLevel level = ((CraftWorld) world).getHandle();
+            Map<Identifier, Integer> nonEntityTicking = new HashMap<>();
+            ServerChunkCache chunkProviderServer = level.getChunkSource();
+            FeatureHooks.getAllEntities(level).forEach(e -> {
                 Identifier key = EntityType.getKey(e.getType());
 
                 MutablePair<Integer, Map<ChunkPos, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
                 ChunkPos chunk = e.chunkPosition();
                 info.left++;
                 info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
-                if (!world.isPositionEntityTicking(e.blockPosition()) || (e instanceof net.minecraft.world.entity.Marker && !world.paperConfig().entities.markers.tick)) { // Paper - Configurable marker ticking
+                if (!level.isPositionEntityTicking(e.blockPosition()) || (e instanceof net.minecraft.world.entity.Marker && !level.paperConfig().entities.markers.tick)) { // Paper - Configurable marker ticking
                     nonEntityTicking.merge(key, 1, Integer::sum);
                 }
             });
@@ -131,7 +133,7 @@ public final class EntityCommand implements PaperSubcommand {
                         final int z = (e.getKey().z() << 4) + 8;
                         final Component message = text("  " + e.getValue() + ": " + e.getKey().x() + ", " + e.getKey().z() + (chunkProviderServer.isPositionTicking(e.getKey().pack()) ? " (Ticking)" : " (Non-Ticking)"))
                             .hoverEvent(HoverEvent.showText(text("Click to teleport to chunk", GREEN)))
-                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/minecraft:execute as @s in " + world.getWorld().getKey() + " run tp " + x + " " + (world.getWorld().getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING) + 1) + " " + z));
+                            .clickEvent(ClickEvent.runCommand("/minecraft:execute as @s in " + MCUtil.getLevelName(level) + " run tp " + x + " " + (level.getWorld().getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING) + 1) + " " + z));
                         sender.sendMessage(message);
                     });
             } else {

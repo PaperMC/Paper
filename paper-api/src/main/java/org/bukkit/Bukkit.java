@@ -857,13 +857,13 @@ public final class Bukkit {
     }
 
     /**
-     * Gets the world with the given name.
+     * Gets the world with the given legacy Bukkit name.
      *
      * <p>This method is considered obsolete and is a candidate for future deprecation.
      * Prefer using {@link #getWorld(NamespacedKey)}.</p>
      *
-     * @param name the name of the world to retrieve
-     * @return a world with the given name, or null if none exists
+     * @param name the legacy Bukkit name of the world to retrieve
+     * @return a world with the given legacy Bukkit name, or null if none exists
      */
     @ApiStatus.Obsolete
     @Nullable
