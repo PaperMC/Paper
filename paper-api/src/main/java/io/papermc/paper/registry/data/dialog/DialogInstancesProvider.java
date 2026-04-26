@@ -24,6 +24,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.inventory.ItemStack;
+import org.intellij.lang.annotations.Pattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
@@ -62,15 +63,15 @@ public interface DialogInstancesProvider {
     PlainMessageDialogBody plainMessageDialogBody(Component component, int width);
 
     // inputs
-    BooleanDialogInput.Builder booleanBuilder(String key, Component label);
+    BooleanDialogInput.Builder booleanBuilder(@Pattern("^[a-zA-Z0-9_]+$") String key, Component label);
 
-    NumberRangeDialogInput.Builder numberRangeBuilder(String key, Component label, float start, float end);
+    NumberRangeDialogInput.Builder numberRangeBuilder(@Pattern("^[a-zA-Z0-9_]+$") String key, Component label, float start, float end);
 
-    SingleOptionDialogInput.Builder singleOptionBuilder(String key, Component label, List<SingleOptionDialogInput.OptionEntry> entries);
+    SingleOptionDialogInput.Builder singleOptionBuilder(@Pattern("^[a-zA-Z0-9_]+$") String key, Component label, List<SingleOptionDialogInput.OptionEntry> entries);
 
     SingleOptionDialogInput.OptionEntry singleOptionEntry(String id, @Nullable Component display, boolean initial);
 
-    TextDialogInput.Builder textBuilder(String key, Component label);
+    TextDialogInput.Builder textBuilder(@Pattern("^[a-zA-Z0-9_]+$") String key, Component label);
 
     TextDialogInput.MultilineOptions multilineOptions(@Nullable Integer maxLines, @Nullable Integer height);
 
