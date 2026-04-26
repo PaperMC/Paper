@@ -1089,6 +1089,14 @@
          if (this.hasClientLoaded()) {
              BlockPos pos = packet.getPos();
              this.player.resetLastActionTime();
+@@ -1282,6 +_,7 @@
+                         PiercingWeapon piercingWeapon = itemInHand.get(DataComponents.PIERCING_WEAPON);
+                         if (piercingWeapon != null) {
+                             piercingWeapon.attack(this.player, EquipmentSlot.MAINHAND);
++                            fireRayTracedInteractEvent();
+                         }
+ 
+                         return;
 @@ -1289,32 +_,95 @@
                  case SWAP_ITEM_WITH_OFFHAND:
                      if (!this.player.isSpectator()) {
@@ -1692,31 +1700,13 @@
              }
          }
      }
-@@ -1694,7 +_,34 @@
+@@ -1694,14 +_,60 @@
      @Override
      public void handleAnimate(final ServerboundSwingPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
 +        if (this.player.isImmobile()) return; // CraftBukkit
          this.player.resetLastActionTime();
-+        // CraftBukkit start - Raytrace to look for 'rogue armswings'
-+        Location origin = CraftLocation.toBukkit(this.player.getEyePosition(), this.player.level(), this.player.getYRot(), this.player.getXRot());
-+        double maxRange = Math.max(this.player.blockInteractionRange(), this.player.entityInteractionRange()); // todo flawed
-+        // SPIGOT-5607: Only call interact event if no block or entity is being clicked. Use bukkit ray trace method, because it handles blocks and entities at the same time
-+        // SPIGOT-7429: Make sure to call PlayerInteractEvent for spectators and non-pickable entities
-+        org.bukkit.util.RayTraceResult result = this.player.level().getWorld().rayTrace(origin, origin.getDirection(), maxRange, org.bukkit.FluidCollisionMode.NEVER, false, 0.0, entity -> { // Paper - Call interact event; change raySize from 0.1 to 0.0
-+            Entity handle = ((CraftEntity) entity).getHandle();
-+            return entity != this.player.getBukkitEntity() && this.player.getBukkitEntity().canSee(entity) && !handle.isSpectator() && handle.isPickable() && !handle.isPassengerOfSameVehicle(this.player);
-+        });
-+        if (result == null) {
-+            CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.getInventory().getSelectedItem(), InteractionHand.MAIN_HAND);
-+        } else { // Paper start - Call interact event
-+            GameType gameType = this.player.gameMode.getGameModeForPlayer();
-+            if ((gameType == GameType.ADVENTURE || this.player.getInventory().getSelectedItem().has(DataComponents.PIERCING_WEAPON)) && result.getHitBlock() != null) {
-+                CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, ((org.bukkit.craftbukkit.block.CraftBlock) result.getHitBlock()).getPosition(), org.bukkit.craftbukkit.block.CraftBlock.blockFaceToNotch(result.getHitBlockFace()), this.player.getInventory().getSelectedItem(), InteractionHand.MAIN_HAND);
-+            } else if (gameType != GameType.CREATIVE && result.getHitEntity() != null && origin.toVector().distanceSquared(result.getHitPosition()) > this.player.entityInteractionRange() * this.player.entityInteractionRange()) {
-+                CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.getInventory().getSelectedItem(), InteractionHand.MAIN_HAND);
-+            }
-+        } // Paper end - Call interact event
++        fireRayTracedInteractEvent();
 +
 +        // Arm swing animation
 +        io.papermc.paper.event.player.PlayerArmSwingEvent event = new io.papermc.paper.event.player.PlayerArmSwingEvent(this.getCraftPlayer(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(packet.getHand())); // Paper - Add PlayerArmSwingEvent
@@ -1727,7 +1717,29 @@
          this.player.swing(packet.getHand());
      }
  
-@@ -1702,6 +_,21 @@
++    private void fireRayTracedInteractEvent() { // Paper start - Extract interact ray trace
++        // CraftBukkit start - Raytrace to look for 'rogue armswings'
++        org.bukkit.Location origin = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(this.player.getEyePosition(), this.player.level(), this.player.getYRot(), this.player.getXRot());
++        double maxRange = Math.max(this.player.blockInteractionRange(), this.player.entityInteractionRange()); // todo flawed
++        // SPIGOT-5607: Only call interact event if no block or entity is being clicked. Use bukkit ray trace method, because it handles blocks and entities at the same time
++        // SPIGOT-7429: Make sure to call PlayerInteractEvent for spectators and non-pickable entities
++        org.bukkit.util.RayTraceResult result = this.player.level().getWorld().rayTrace(origin, origin.getDirection(), maxRange, org.bukkit.FluidCollisionMode.NEVER, false, 0.0, entity -> { // Paper - Call interact event; change raySize from 0.1 to 0.0
++            net.minecraft.world.entity.Entity handle = ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle();
++            return entity != this.player.getBukkitEntity() && this.player.getBukkitEntity().canSee(entity) && !handle.isSpectator() && handle.isPickable() && !handle.isPassengerOfSameVehicle(this.player);
++        });
++        if (result == null) {
++            org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(this.player, org.bukkit.event.block.Action.LEFT_CLICK_AIR, this.player.getInventory().getSelectedItem(), net.minecraft.world.InteractionHand.MAIN_HAND);
++        } else { // Paper start - Call interact event
++            net.minecraft.world.level.GameType gameType = this.player.gameMode.getGameModeForPlayer();
++            if (gameType == net.minecraft.world.level.GameType.ADVENTURE && result.getHitBlock() != null) {
++                org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(this.player, org.bukkit.event.block.Action.LEFT_CLICK_BLOCK, ((org.bukkit.craftbukkit.block.CraftBlock) result.getHitBlock()).getPosition(), org.bukkit.craftbukkit.block.CraftBlock.blockFaceToNotch(result.getHitBlockFace()), this.player.getInventory().getSelectedItem(), net.minecraft.world.InteractionHand.MAIN_HAND);
++            } else if (gameType != net.minecraft.world.level.GameType.CREATIVE && result.getHitEntity() != null && origin.toVector().distanceSquared(result.getHitPosition()) > this.player.entityInteractionRange() * this.player.entityInteractionRange()) {
++                org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(this.player, org.bukkit.event.block.Action.LEFT_CLICK_AIR, this.player.getInventory().getSelectedItem(), net.minecraft.world.InteractionHand.MAIN_HAND);
++            }
++        } // Paper end - Call interact event
++    } // Paper end - Extract interact ray trace
++
+     @Override
      public void handlePlayerCommand(final ServerboundPlayerCommandPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          if (this.hasClientLoaded()) {
