@@ -170,11 +170,6 @@ public class MinecraftCaptureBridge implements PaperCapturingWorldLevel {
     }
 
     @Override
-    public float getShade(Direction direction, boolean shade) {
-        return this.parent.getShade(direction, shade);
-    }
-
-    @Override
     public LevelLightEngine getLightEngine() {
         return this.parent.getLightEngine();
     }

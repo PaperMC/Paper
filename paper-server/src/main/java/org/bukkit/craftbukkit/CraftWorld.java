@@ -751,7 +751,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
        try (SimpleBlockCapture capture = this.world.forkCaptureSession()) {
            MinecraftCaptureBridge captureTreeGeneration = capture.capturingWorldLevel();
 
-           BlockPos pos = CraftLocation.toBlockPosition(loc);
+           BlockPos pos = CraftLocation.toBlockPos(loc);
            boolean res = this.generateTree(captureTreeGeneration, this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(CraftWorld.rand), type);
            if (res) {
                List<BlockState> blocks = captureTreeGeneration.calculateLatestSnapshots(this.world);

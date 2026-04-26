@@ -23,6 +23,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import io.papermc.paper.util.capture.GrowthContext;
+import io.papermc.paper.util.capture.MinecraftCaptureBridge;
+import io.papermc.paper.util.capture.PaperCapturingWorldLevel;
+import io.papermc.paper.util.capture.SimpleBlockCapture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
