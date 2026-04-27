@@ -64,7 +64,7 @@
          return stillValid(this.access, player, Blocks.BEACON);
      }
  
-@@ -143,13 +_,30 @@
+@@ -143,13 +_,53 @@
      public @Nullable Holder<MobEffect> getSecondaryEffect() {
          return decodeEffect(this.beaconData.get(2));
      }
@@ -75,10 +75,33 @@
 +    // Paper end - Add PlayerChangeBeaconEffectEvent
  
 -    public void updateEffects(final Optional<Holder<MobEffect>> primary, final Optional<Holder<MobEffect>> secondary) {
-+    public void updateEffects(final Optional<Holder<MobEffect>> primary, Optional<Holder<MobEffect>> secondary) { // Paper - fix MC-174630 - make non-final
-+        // Paper start - fix MC-174630 - validate secondary power
-+        if (secondary.isPresent() && secondary.get() != net.minecraft.world.effect.MobEffects.REGENERATION && (primary.isPresent() && secondary.get() != primary.get())) {
++    public void updateEffects(Optional<Holder<MobEffect>> primary, Optional<Holder<MobEffect>> secondary) { // Paper - make non-final
++        // Paper start
++        if (!(this.access.getWorld().getBlockEntity(this.access.getPosition()) instanceof net.minecraft.world.level.block.entity.BeaconBlockEntity beaconEntity)) {
++            return;
++        }
++        if (secondary.isPresent() && secondary.get() != net.minecraft.world.effect.MobEffects.REGENERATION && (primary.isPresent() && secondary.get() != primary.get())) { // fix MC-174630 - validate secondary power
 +            secondary = Optional.empty();
++        }
++        // Only max level beacon is allowed to have a secondary effect
++        if (beaconEntity.levels != net.minecraft.world.level.block.entity.BeaconBlockEntity.MAX_LEVELS) {
++            secondary = Optional.empty();
++        }
++        if (primary.isPresent()) {
++            boolean primaryAllowed = false;
++            // Regeneration can never be the primary effect, so we only check up until the second to last level
++            for (int i = 0; i < Math.min(beaconEntity.levels, net.minecraft.world.level.block.entity.BeaconBlockEntity.MAX_LEVELS - 1); i++) {
++                java.util.List<Holder<MobEffect>> allowedEffects = net.minecraft.world.level.block.entity.BeaconBlockEntity.BEACON_EFFECTS.get(i);
++                if (allowedEffects.contains(primary.get())) {
++                    primaryAllowed = true;
++                    break;
++                }
++            }
++            if (!primaryAllowed) {
++                // Secondary must always be cleared: a beacon can't have just a secondary effect
++                primary = Optional.empty();
++                secondary = Optional.empty();
++            }
 +        }
 +        // Paper end
          if (this.paymentSlot.hasItem()) {
