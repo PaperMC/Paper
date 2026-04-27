@@ -1,5 +1,6 @@
 package io.papermc.paper.event.player;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.connection.PlayerConfigurationConnection;
 import org.bukkit.Location;
 import org.bukkit.Server;
@@ -61,6 +62,8 @@ public class AsyncPlayerSpawnLocationEvent extends Event {
      * @param location the spawn location
      */
     public void setSpawnLocation(final Location location) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "World cannot be null");
         this.spawnLocation = location.clone();
     }
 
