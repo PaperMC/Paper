@@ -10,12 +10,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
 import io.papermc.paper.world.PaperWorldLoader;
 import io.papermc.paper.world.migration.WorldFolderMigration;
-import io.papermc.paper.world.saveddata.PaperLevelOverrides;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -1173,6 +1173,9 @@ public final class CraftServer implements Server {
         Preconditions.checkState(this.console.getAllLevels().iterator().hasNext(), "Cannot create additional worlds on STARTUP");
         //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot create a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
         Preconditions.checkArgument(creator != null, "WorldCreator cannot be null");
+        if (creator.environment() == Environment.CUSTOM) {
+            Preconditions.checkArgument(creator.customEnvironmentKey() != null, "Custom environment key cannot be null when environment is CUSTOM");
+        }
 
         String name = creator.name();
         ChunkGenerator chunkGenerator = creator.generator();
@@ -1195,12 +1198,16 @@ public final class CraftServer implements Server {
             biomeProvider = this.getBiomeProvider(name);
         }
 
-        ResourceKey<LevelStem> actualDimension = switch (creator.environment()) {
-            case NORMAL -> LevelStem.OVERWORLD;
-            case NETHER -> LevelStem.NETHER;
-            case THE_END -> LevelStem.END;
-            default -> throw new IllegalArgumentException("Illegal dimension (" + creator.environment() + ")");
-        };
+        ResourceKey<LevelStem> actualDimension;
+        if (creator.environment() == Environment.NORMAL) {
+            actualDimension = LevelStem.OVERWORLD;
+        } else if (creator.environment() == Environment.NETHER) {
+            actualDimension = LevelStem.NETHER;
+        } else if (creator.environment() == Environment.THE_END) {
+            actualDimension = LevelStem.END;
+        } else {
+            actualDimension = PaperAdventure.asVanilla(Registries.LEVEL_STEM, creator.customEnvironmentKey());
+        }
 
         final ResourceKey<net.minecraft.world.level.Level> dimensionKey = PaperWorldLoader.dimensionKey(creator.key());
         WorldLoader.DataLoadContext context = this.console.worldLoaderContext;
