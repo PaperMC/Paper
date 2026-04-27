@@ -55,17 +55,15 @@ public final class MobcapsCommand implements PaperSubcommand {
     @Override
     public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
         return switch (subCommand) {
-            case "mobcaps" -> CommandUtil.getListMatchingLast(sender, args, this.suggestMobcaps(args));
+            case "mobcaps" -> CommandUtil.getListMatchingLast(sender, args, this.suggestMobcaps(sender, args));
             case "playermobcaps" -> CommandUtil.getListMatchingLast(sender, args, this.suggestPlayerMobcaps(sender, args));
             default -> throw new IllegalArgumentException();
         };
     }
 
-    private List<String> suggestMobcaps(final String[] args) {
+    private List<String> suggestMobcaps(final CommandSender sender, String[] args) {
         if (args.length == 1) {
-            final List<String> worlds = new ArrayList<>(Bukkit.getWorlds().stream().map(World::getKey).map(NamespacedKey::toString).toList());
-            worlds.add("*");
-            return worlds;
+            return CommandUtil.getWorldSuggestions(sender.getServer(), true);
         }
 
         return Collections.emptyList();
@@ -91,15 +89,16 @@ public final class MobcapsCommand implements PaperSubcommand {
             if (sender instanceof Player player) {
                 worlds = List.of(player.getWorld());
             } else {
-                sender.sendMessage(Component.text("Must specify a world! ex: '/paper mobcaps world'", NamedTextColor.RED));
+                sender.sendMessage(Component.text("Must specify a world! ex: '/paper mobcaps minecraft:overworld'", NamedTextColor.RED));
                 return;
             }
         } else if (args.length == 1) {
             final String input = args[0];
             if (input.equals("*")) {
-                worlds = Bukkit.getWorlds();
+                worlds = Bukkit.getServer().getWorlds();
             } else {
-                final @Nullable World world = Bukkit.getWorld(input);
+                final @Nullable NamespacedKey worldKey = NamespacedKey.fromString(input);
+                final @Nullable World world = worldKey == null ? null : sender.getServer().getWorld(worldKey);
                 if (world == null) {
                     sender.sendMessage(Component.text("'" + input + "' is not a valid world!", NamedTextColor.RED));
                     return;
@@ -124,7 +123,7 @@ public final class MobcapsCommand implements PaperSubcommand {
             }
             sender.sendMessage(Component.join(JoinConfiguration.noSeparators(),
                 Component.text("Mobcaps for world: "),
-                Component.text(world.getKey().toString(), NamedTextColor.AQUA),
+                Component.text(world.key().asString(), NamedTextColor.AQUA),
                 Component.text(" (" + chunks + " spawnable chunks)")
             ));
 

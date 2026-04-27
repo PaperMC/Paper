@@ -76,7 +76,7 @@
      protected Level(
          final WritableLevelData levelData,
          final ResourceKey<Level> dimension,
-@@ -141,7 +_,24 @@
+@@ -141,7 +_,25 @@
          final boolean isDebug,
          final long biomeZoomSeed,
          final int maxChainedNeighborUpdates
@@ -87,10 +87,11 @@
 +        java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
 +        io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator // Paper - create paper world config
      ) {
-+        this.spigotConfig = new org.spigotmc.SpigotWorldConfig(bukkitName, CraftNamespacedKey.fromMinecraft(dimension.identifier())); // Spigot
++        final org.bukkit.NamespacedKey worldKey = CraftNamespacedKey.fromMinecraft(dimension.identifier()); // Paper
++        this.spigotConfig = new org.spigotmc.SpigotWorldConfig(bukkitName, worldKey); // Spigot
 +        this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
 +        this.generator = generator;
-+        this.world = new CraftWorld((ServerLevel) this, generator, biomeProvider, environment);
++        this.world = new CraftWorld((ServerLevel) this, worldKey, biomeProvider, environment);
 +
 +        for (SpawnCategory spawnCategory : SpawnCategory.values()) {
 +            if (org.bukkit.craftbukkit.util.CraftSpawnCategory.isValidForLimits(spawnCategory)) {
@@ -445,7 +446,15 @@
              return chunk.getBlockState(pos);
          }
      }
-@@ -533,31 +_,48 @@
+@@ -523,6 +_,7 @@
+     }
+ 
+     public void addBlockEntityTicker(final TickingBlockEntity ticker) {
++        if (!this.paperConfig().unsupportedSettings.ticking.blockEntities) return; // Paper - option to disable ticking
+         (this.tickingBlockEntities ? this.pendingBlockEntityTickers : this.blockEntityTickers).add(ticker);
+     }
+ 
+@@ -533,18 +_,23 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -471,10 +480,9 @@
  
 +        this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075 use removeAll
          this.tickingBlockEntities = false;
-+        this.spigotConfig.currentPrimedTnt = 0; // Spigot
      }
  
-     public <T extends Entity> void guardEntityTick(final Consumer<T> tick, final T entity) {
+@@ -552,12 +_,23 @@
          try {
              tick.accept(entity);
          } catch (Throwable var6) {

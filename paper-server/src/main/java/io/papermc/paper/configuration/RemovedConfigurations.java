@@ -87,6 +87,7 @@ interface RemovedConfigurations {
         path("chunk-system", "gen-parallelism"),
         path("logging"), // server is no longer obfuscated since 26.1
         path("unsupported-settings", "compression-format"),
+        path("commands", "time-command-affects-all-worlds") // replaced with time.affects-all-worlds
     };
 
 }

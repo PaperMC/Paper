@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
-import java.util.Set;
 import com.mojang.logging.LogUtils;
+import java.util.Set;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
@@ -54,13 +54,10 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
         // Paper end
         // Paper start - Show blockstate location if we failed to read it
         } catch (Throwable thr) {
-            if (thr instanceof ThreadDeath) {
-                throw (ThreadDeath)thr;
-            }
             throw new RuntimeException(
                 world == null
                     ? "Failed to read non-placed BlockState"
-                    : "Failed to read BlockState at: world: " + world.getKey() + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")",
+                    : "Failed to read BlockState at: world: " + world.key().asString() + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")",
                 thr
             );
         }

@@ -134,7 +134,7 @@ public class TimingHistory {
                     }
                 }
                 return pair(
-                    worldMap.get(world.getKey().toString()),
+                    worldMap.get(world.key().asString()),
                     toArrayMapper(regions.values(),new Function<RegionData, Object>() {
                         @NotNull
                         @Override

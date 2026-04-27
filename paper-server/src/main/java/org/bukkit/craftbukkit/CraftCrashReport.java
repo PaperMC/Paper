@@ -37,8 +37,8 @@ public class CraftCrashReport implements Supplier<String> {
             }
             value.append("}\n   ").append(Bukkit.getScheduler().toString());
             value.append("\n   Force Loaded Chunks: {");
-            for (World world : Bukkit.getWorlds()) {
-                value.append(' ').append(world.getKey().toString()).append(": {");
+            for (World world : Bukkit.getServer().getWorlds()) {
+                value.append(' ').append(world.key().asString()).append(": {");
                 for (Map.Entry<Plugin, Collection<Chunk>> entry : world.getPluginChunkTickets().entrySet()) {
                     value.append(' ').append(entry.getKey().getDescription().getFullName()).append(": ").append(Integer.toString(entry.getValue().size())).append(',');
                 }

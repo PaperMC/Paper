@@ -4,6 +4,7 @@ import io.papermc.generator.utils.ClassHelper;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.entity.poi.PoiTypes;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
@@ -175,7 +176,8 @@ public final class RegistryEntries {
         entry(Registries.FLUID, Fluids.class, Fluid.class),
         entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS").apiRegistryBuilder(SoundEventRegistryEntry.Builder.class, "PaperSoundEventRegistryEntry.PaperBuilder", RegistryEntry.RegistryModificationApiSupport.NONE),
         entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of"),
-        entry(Registries.GAME_RULE, GameRules.class, GameRule.class).genericArgCount(1)/*.preload(org.bukkit.GameRules.class)*/ // only preload once the old names are removed
+        entry(Registries.GAME_RULE, GameRules.class, GameRule.class).genericArgCount(1)/*.preload(org.bukkit.GameRules.class)*/, // only preload once the old names are removed
+        entry(Registries.POINT_OF_INTEREST_TYPE, PoiTypes.class, io.papermc.paper.entity.poi.PoiType.class, "Paper").preload(io.papermc.paper.entity.poi.PoiTypes.class)
     );
 
     public static final List<RegistryEntry<?>> DATA_DRIVEN = List.of(

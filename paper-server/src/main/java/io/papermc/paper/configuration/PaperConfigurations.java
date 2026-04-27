@@ -11,9 +11,9 @@ import io.papermc.paper.configuration.mapping.InnerClassFieldDiscoverer;
 import io.papermc.paper.configuration.mapping.MergeMap;
 import io.papermc.paper.configuration.serializer.ComponentSerializer;
 import io.papermc.paper.configuration.serializer.EnumValueSerializer;
+import io.papermc.paper.configuration.serializer.IdentifierSerializer;
 import io.papermc.paper.configuration.serializer.NbtPathSerializer;
 import io.papermc.paper.configuration.serializer.ServerboundPacketClassSerializer;
-import io.papermc.paper.configuration.serializer.IdentifierSerializer;
 import io.papermc.paper.configuration.serializer.StringRepresentableSerializer;
 import io.papermc.paper.configuration.serializer.collection.TableSerializer;
 import io.papermc.paper.configuration.serializer.collection.map.FastutilMapSerializer;
@@ -51,9 +51,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentType;
@@ -63,8 +63,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.bukkit.configuration.ConfigurationSection;
@@ -150,7 +150,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         """;
 
     @VisibleForTesting
-    public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255), Key.key(RandomStringUtils.randomAlphabetic(255).toLowerCase())) {
+    public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255), Key.key(RandomStringUtils.randomAlphabetic(255).toLowerCase(Locale.ROOT))) {
         @Override // override to ensure "verbose" is false
         public void init() {
             SpigotConfig.readConfig(SpigotWorldConfig.class, this);

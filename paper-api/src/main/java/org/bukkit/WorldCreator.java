@@ -2,6 +2,7 @@ package org.bukkit;
 
 import com.google.common.base.Preconditions;
 import java.util.Random;
+import io.papermc.paper.math.Position;
 import org.bukkit.command.CommandSender;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
@@ -25,6 +26,10 @@ public class WorldCreator {
     private String generatorSettings = "";
     private boolean hardcore = false;
     private boolean bonusChest = false;
+
+    private @Nullable Position spawnPositionOverride;
+    private @Nullable Float spawnYawOverride;
+    private @Nullable Float spawnPitchOverride;
 
     /**
      * Creates an empty WorldCreationOptions for the given world name.
@@ -259,6 +264,80 @@ public class WorldCreator {
         this.type = type;
 
         return this;
+    }
+
+    /**
+     * Sets the forced spawn position for the world created by this {@link WorldCreator}.
+     * <p>
+     * This overrides vanilla and custom generator behavior without loading any chunks.
+     * When a forced spawn is specified, the bonus chest will not be generated.
+     *
+     * @param position the spawn position
+     * @param yaw      the yaw rotation at spawn
+     * @param pitch    the pitch rotation at spawn
+     * @return this object, for chaining
+     */
+    @NotNull
+    public WorldCreator forcedSpawnPosition(@NotNull Position position, float yaw, float pitch) {
+        this.spawnPositionOverride = position; // If you set this to null, it wont do anything!
+        this.spawnYawOverride = yaw;
+        this.spawnPitchOverride = pitch;
+        return this;
+    }
+
+    /**
+     * Clears any previously forced spawn position.
+     * <p>
+     * After calling this, vanilla spawn selection behavior is used.
+     *
+     * @return this object, for chaining
+     */
+    @NotNull
+    public WorldCreator clearForcedSpawnPosition() {
+        this.spawnPositionOverride = null;
+        this.spawnYawOverride = null;
+        this.spawnPitchOverride = null;
+        return this;
+    }
+
+    /**
+     * Gets the forced spawn position that will be applied when this world is created.
+     * <p>
+     * If this returns {@code null}, vanilla or custom generator behavior will be used
+     * to determine the spawn position.
+     *
+     * @return the forced spawn position, or {@code null} for the vanilla behavior
+     */
+    public @Nullable Position forcedSpawnPosition() {
+        return this.spawnPositionOverride;
+    }
+
+    /**
+     * Gets the forced spawn yaw that will be applied when this world is created.
+     * <p>
+     * If this returns {@code null}, the spawn yaw will be determined by vanilla behavior
+     * or the world generator.
+     * <p>
+     * This value is only meaningful if a forced spawn position is present.
+     *
+     * @return the forced spawn yaw, or {@code null} for the vanilla behavior
+     */
+    public @Nullable Float forcedSpawnYaw() {
+        return this.spawnYawOverride;
+    }
+
+    /**
+     * Gets the forced spawn pitch that will be applied when this world is created.
+     * <p>
+     * If this returns {@code null}, the spawn pitch will be determined by vanilla behavior
+     * or the world generator.
+     * <p>
+     * This value is only meaningful if a forced spawn position is present.
+     *
+     * @return the forced spawn pitch, or {@code null} for the vanilla behavior
+     */
+    public @Nullable Float forcedSpawnPitch() {
+        return this.spawnPitchOverride;
     }
 
     /**

@@ -857,11 +857,15 @@ public final class Bukkit {
     }
 
     /**
-     * Gets the world with the given name.
+     * Gets the world with the given legacy Bukkit name.
      *
-     * @param name the name of the world to retrieve
-     * @return a world with the given name, or null if none exists
+     * <p>This method is considered obsolete and is a candidate for future deprecation.
+     * Prefer using {@link #getWorld(NamespacedKey)}.</p>
+     *
+     * @param name the legacy Bukkit name of the world to retrieve
+     * @return a world with the given legacy Bukkit name, or null if none exists
      */
+    @ApiStatus.Obsolete
     @Nullable
     public static World getWorld(@NotNull String name) {
         return server.getWorld(name);
@@ -877,7 +881,7 @@ public final class Bukkit {
     public static World getWorld(@NotNull UUID uid) {
         return server.getWorld(uid);
     }
-    // Paper start
+
     /**
      * Gets the world from the given NamespacedKey
      *
@@ -899,7 +903,6 @@ public final class Bukkit {
     public static World getWorld(@NotNull net.kyori.adventure.key.Key worldKey) {
         return server.getWorld(worldKey);
     }
-    // Paper end
 
     /**
      * Create a new virtual {@link WorldBorder}.

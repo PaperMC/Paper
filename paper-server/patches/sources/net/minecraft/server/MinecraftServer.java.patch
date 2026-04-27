@@ -300,7 +300,7 @@
          if (profiledDuration != null) {
              profiledDuration.finish(true);
          }
-@@ -422,33 +_,140 @@
+@@ -422,33 +_,150 @@
          }
      }
  
@@ -430,9 +430,9 @@
 +            );
 +        }
 +        this.addLevel(serverLevel);
-+        this.initWorld(serverLevel);
++        this.initWorld(serverLevel, null);
 +    }
-+    public void initWorld(ServerLevel overworld) {
++    public void initWorld(ServerLevel overworld, org.bukkit.@Nullable WorldCreator worldCreator) {
 +        final net.minecraft.world.level.storage.ServerLevelData levelData = overworld.serverLevelData;
 +        final WorldOptions worldOptions = overworld.worldGenSettings.options();
 +        final boolean isDebug = this.worldData.isDebugWorld();
@@ -447,7 +447,17 @@
          if (!levelData.isInitialized()) {
              try {
 -                setInitialSpawn(overworld, levelData, worldOptions.generateBonusChest(), isDebug, this.levelLoadListener);
-+                setInitialSpawn(overworld, levelData, worldOptions.generateBonusChest(), isDebug, overworld.levelLoadListener); // Paper - per world level load listener
++                // Paper start - Allow direct setting spawn location
++                if (worldCreator != null && worldCreator.forcedSpawnPosition() != null) {
++                    levelData.setSpawn(LevelData.RespawnData.of(overworld.dimension(),
++                        io.papermc.paper.util.MCUtil.toBlockPos(worldCreator.forcedSpawnPosition()),
++                        Objects.requireNonNullElse(worldCreator.forcedSpawnYaw(), LevelData.RespawnData.DEFAULT.yaw()),
++                        Objects.requireNonNullElse(worldCreator.forcedSpawnPitch(), LevelData.RespawnData.DEFAULT.pitch())
++                    ));
++                } else {
++                    setInitialSpawn(overworld, levelData, worldOptions.generateBonusChest(), isDebug, overworld.levelLoadListener); // Paper - per world level load listener
++                }
++                // Paper end - Allow direct setting spawn location
                  levelData.setInitialized(true);
                  if (isDebug) {
 -                    this.setupDebugLevel(this.worldData);
@@ -491,9 +501,9 @@
 +                java.util.Random rand = new java.util.Random(level.getSeed());
 +                org.bukkit.Location spawn = level.generator.getFixedSpawnLocation(level.getWorld(), rand);
 +
-+                if (spawn != null) {
++                if (spawn != null && spawn.getWorld() != null) {
 +                    if (spawn.getWorld() != level.getWorld()) {
-+                        throw new IllegalStateException("Cannot set spawn point for " + levelData.getLevelName() + " to be in another world (" + io.papermc.paper.util.MCUtil.getLevelName(level) + ")");
++                        throw new IllegalStateException("Cannot set spawn point for " + levelData.getLevelName() + " to be in another world (" + spawn.getWorld().key().asString() + ")");
 +                    } else {
 +                        levelData.setSpawn(
 +                            net.minecraft.world.level.storage.LevelData.RespawnData.of(
@@ -1086,7 +1096,7 @@
              ObjectArrayList<NameAndId> sample = new ObjectArrayList<>(sampleSize);
              int offset = Mth.nextInt(this.random, 0, players.size() - sampleSize);
  
-@@ -1104,6 +_,32 @@
+@@ -1104,12 +_,46 @@
      protected void tickChildren(final BooleanSupplier haveTime) {
          ProfilerFiller profiler = Profiler.get();
          this.getPlayerList().getPlayers().forEach(playerx -> playerx.connection.suspendFlushing());
@@ -1119,25 +1129,31 @@
          profiler.push("commandFunctions");
          this.getFunctions().tick();
          profiler.pop();
-@@ -1115,14 +_,28 @@
- 
-         if (this.tickCount % 20 == 0) {
-             profiler.push("timeSync");
--            this.forceGameTimeSynchronization();
-+            // Paper start - per-world game time
-+            for (final ServerLevel level : this.getAllLevels()) {
-+                this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
+         if (this.tickRateManager.runsNormally()) {
+             profiler.push("clocks");
+-            this.clockManager.tick();
++            // Paper start - per-world time
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().time.affectsAllWorlds) {
++                this.clockManager.tick();
++            } else {
++                for (ServerLevel level : this.getAllLevels()) {
++                    level.clockManager().tick();
++                }
 +            }
-+            // Paper end - per-world game time
++            // Paper end - per-world time
              profiler.pop();
-+        }
-+
+         }
+ 
+@@ -1119,10 +_,20 @@
+             profiler.pop();
+         }
+ 
 +        // CraftBukkit start
 +        // Run tasks that are waiting on processing
 +        while (!this.processQueue.isEmpty()) {
 +            this.processQueue.remove().run();
-         }
- 
++        }
++
          profiler.push("levels");
          this.updateEffectiveRespawnData();
  
@@ -1172,6 +1188,19 @@
 +        this.worldData.overworldData().setSpawn(respawnData); // Sync back to level.dat for Paper->Vanilla spawn integrity
 +        // Paper end - per world respawn data
          this.effectiveRespawnData = respawnLevel.getWorldBorderAdjustedRespawnData(respawnData);
+     }
+ 
+@@ -1179,7 +_,11 @@
+     public void forceGameTimeSynchronization() {
+         ProfilerFiller profiler = Profiler.get();
+         profiler.push("timeSync");
+-        this.playerList.broadcastAll(new ClientboundSetTimePacket(this.overworld().getGameTime(), Map.of()));
++        // Paper start - per-world time
++        for (ServerLevel level : this.getAllLevels()) {
++            this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
++        }
++        // Paper end - per-world time
+         profiler.pop();
      }
  
 @@ -1207,6 +_,22 @@
@@ -1534,7 +1563,7 @@
                  player.connection.send(new ClientboundEntityEventPacket(player, event));
              }
          } else if (rule == GameRules.LIMITED_CRAFTING || rule == GameRules.IMMEDIATE_RESPAWN) {
-@@ -2131,19 +_,21 @@
+@@ -2131,20 +_,21 @@
                  ? ClientboundGameEventPacket.LIMITED_CRAFTING
                  : ClientboundGameEventPacket.IMMEDIATE_RESPAWN;
              ClientboundGameEventPacket packet = new ClientboundGameEventPacket(eventType, (Boolean)value ? 1.0F : 0.0F);
@@ -1556,10 +1585,11 @@
 -            this.updateMobSpawningFlags();
 +            level.setSpawnSettings(level.isSpawningMonsters()); // Paper - per-world game rules
          } else if (rule == GameRules.ADVANCE_TIME) {
-+            // TODO - snapshot - time handling
-             this.getPlayerList().broadcastAll(this.clockManager().createFullSyncPacket());
+-            this.getPlayerList().broadcastAll(this.clockManager().createFullSyncPacket());
++            level.players().forEach(player -> player.connection.send(level.clockManager().createFullSyncPacket(player))); // Paper - per-world time; per-player time
          }
      }
+ 
 @@ -2157,12 +_,14 @@
          return this.savedDataStorage;
      }

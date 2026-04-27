@@ -8,6 +8,8 @@ import org.bukkit.block.Campfire;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 
+import static io.papermc.paper.util.BoundChecker.requireRange;
+
 public class CraftCampfire extends CraftBlockEntityState<CampfireBlockEntity> implements Campfire {
 
     public CraftCampfire(World world, CampfireBlockEntity blockEntity) {
@@ -78,7 +80,7 @@ public class CraftCampfire extends CraftBlockEntityState<CampfireBlockEntity> im
 
     @Override
     public boolean stopCooking(int index) {
-        Preconditions.checkArgument(-1 < index && index < 4, "Slot index must be between 0 (incl) to 3 (incl)");
+        requireRange(index, "index", 0, 3);
         boolean previous = this.isCookingDisabled(index);
         this.getSnapshot().stopCooking[index] = true;
         return previous;
@@ -86,7 +88,7 @@ public class CraftCampfire extends CraftBlockEntityState<CampfireBlockEntity> im
 
     @Override
     public boolean startCooking(int index) {
-        Preconditions.checkArgument(-1 < index && index < 4, "Slot index must be between 0 (incl) to 3 (incl)");
+        requireRange(index, "index", 0, 3);
         boolean previous = this.isCookingDisabled(index);
         this.getSnapshot().stopCooking[index] = false;
         return previous;
@@ -94,7 +96,7 @@ public class CraftCampfire extends CraftBlockEntityState<CampfireBlockEntity> im
 
     @Override
     public boolean isCookingDisabled(int index) {
-        Preconditions.checkArgument(-1 < index && index < 4, "Slot index must be between 0 (incl) to 3 (incl)");
+        requireRange(index, "index", 0, 3);
         return this.getSnapshot().stopCooking[index];
     }
 }
