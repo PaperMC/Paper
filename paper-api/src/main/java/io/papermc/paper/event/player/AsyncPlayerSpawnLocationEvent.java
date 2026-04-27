@@ -53,7 +53,7 @@ public class AsyncPlayerSpawnLocationEvent extends Event {
      * @return the spawn location
      */
     public Location getSpawnLocation() {
-        return this.spawnLocation;
+        return this.spawnLocation.clone();
     }
 
     /**
