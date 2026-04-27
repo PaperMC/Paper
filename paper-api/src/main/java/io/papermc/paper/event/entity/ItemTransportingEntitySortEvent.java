@@ -21,10 +21,15 @@ import org.jspecify.annotations.NullMarked;
 public class ItemTransportingEntitySortEvent extends EntityEvent {
     protected static final HandlerList HANDLER_LIST = new HandlerList();
 
+    public enum ItemTransportingEntityDecision {
+        ALLOW_DESTINATION,
+        REJECT_DESTINATION,
+        USE_VANILLA_BEHAVIOUR
+    }
+
     private final ItemStack itemStack;
     private final Inventory containerInventory;
-    private boolean overrideDefaultBehaviour = false;
-    private boolean itemBelongs = true;
+    private ItemTransportingEntityDecision decision;
 
     @ApiStatus.Internal
     public ItemTransportingEntitySortEvent(
@@ -35,37 +40,25 @@ public class ItemTransportingEntitySortEvent extends EntityEvent {
         super(entity);
         this.containerInventory = containerInventory;
         this.itemStack = itemStack;
+        this.decision = ItemTransportingEntityDecision.USE_VANILLA_BEHAVIOUR;
     }
 
     /**
      * Sets if the item belongs in the container.
      *
-     * @param belongs Whether the item belongs or not
+     * @param d Whether the item belongs in the chest.
      */
-    public void setItemBelongs(boolean belongs) {
-        this.overrideDefaultBehaviour = true;
-        this.itemBelongs = belongs;
+    public void setDecision(boolean d) {
+        this.decision = d ? ItemTransportingEntityDecision.ALLOW_DESTINATION : ItemTransportingEntityDecision.REJECT_DESTINATION;
     }
 
     /**
      * Gets if the held item stack belongs in the container.
      *
-     * @return Whether the item stack belongs.
+     * @return Whether the item stack belongs in the chest.
      */
-    public boolean itemBelongs() {
-        return this.itemBelongs;
-    }
-
-    /**
-     * Whether this event will override the default behavior of the entity.
-     * For example, if {@link ItemTransportingEntitySortEvent#setItemBelongs(boolean)} is not called, the entity
-     * will use the default behavior of adding to empty chests and chests containing a matching item stack.
-     * Once the function is called, the entity will defer to the plugin's decision.
-     *
-     * @return Whether the default behavior is being overridden.
-     */
-    public boolean isOverridingDefaultBehaviour() {
-        return this.overrideDefaultBehaviour;
+    public ItemTransportingEntityDecision getDecision() {
+        return this.decision;
     }
 
     /**
