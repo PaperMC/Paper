@@ -22,7 +22,7 @@ public final class ApiVersion implements Comparable<ApiVersion>, Serializable {
         FLATTENING = getOrCreateVersion("1.13");
         FIELD_NAME_PARITY = getOrCreateVersion("1.20.5");
         ABSTRACT_COW = getOrCreateVersion("1.21.5");
-        CLASS_TO_INTERFACE = getOrCreateVersion("1.21.11");
+        CLASS_TO_INTERFACE = getOrCreateVersion("26.1.2");
         NONE = getOrCreateVersion("none");
     }
 

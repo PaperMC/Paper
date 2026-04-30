@@ -67,8 +67,8 @@ public interface InternalAPIBridge {
      *
      * @return the created biome.
      */
-    @Deprecated(forRemoval = true, since = "1.21.5")
-    @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
+    @Deprecated(since = "1.21.5", forRemoval = true)
+    @ApiStatus.ScheduledForRemoval(inVersion = "26.3")
     Biome constructLegacyCustomBiome();
 
     /**
@@ -76,8 +76,8 @@ public interface InternalAPIBridge {
      *
      * @return the created entity type.
      */
-    @Deprecated(forRemoval = true, since = "1.21.11")
-    @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
+    @Deprecated(since = "26.1.2", forRemoval = true)
+    @ApiStatus.ScheduledForRemoval(inVersion = "26.3")
     EntityType<?> constructLegacyUnknownEntityType();
 
     /**
