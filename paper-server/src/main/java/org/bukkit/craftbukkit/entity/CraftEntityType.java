@@ -77,7 +77,7 @@ public class CraftEntityType<E extends Entity> extends LegacyEnumHolderable<net.
      * As per {@link #bukkitToMinecraftHolder(EntityType)} and {@link #bukkitToMinecraft(EntityType)}
      * it cannot be converted into an internal entity type and only serves backwards compatibility reasons.
      */
-    @Deprecated(since = "26.1.2", forRemoval = true)
+    @Deprecated(since = "26.1", forRemoval = true)
     @ApiStatus.ScheduledForRemoval(inVersion = "26.3")
     public static class LegacyUnknownImpl implements LegacyEnum<LegacyUnknownImpl>, EntityType<Entity> {
 

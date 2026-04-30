@@ -178,7 +178,7 @@ public final class RegistryEntries {
         entry(Registries.SOUND_EVENT, SoundEvents.class, Sound.class).allowDirect().apiRegistryField("SOUNDS").apiRegistryBuilder(SoundEventRegistryEntry.Builder.class, "PaperSoundEventRegistryEntry.PaperBuilder", RegistryEntry.RegistryModificationApiSupport.NONE),
         entry(Registries.DATA_COMPONENT_TYPE, DataComponents.class, DataComponentType.class, "Paper").preload(DataComponentTypes.class).apiAccessName("of"),
         entry(Registries.GAME_RULE, GameRules.class, GameRule.class).genericArgCount(1)/*.preload(org.bukkit.GameRules.class)*/, // only preload once the old names are removed
-        entry(Registries.POINT_OF_INTEREST_TYPE, PoiTypes.class, PoiType.class, "Paper").preload(io.papermc.paper.entity.poi.PoiTypes.class)
+        entry(Registries.POINT_OF_INTEREST_TYPE, PoiTypes.class, PoiType.class, "Paper").preload(io.papermc.paper.entity.poi.PoiTypes.class),
         entry(Registries.ENTITY_TYPE, net.minecraft.world.entity.EntityType.class, EntityType.class).genericArgCount(1).serializationUpdater("ENTITY_TYPE_RENAME")
     );
 

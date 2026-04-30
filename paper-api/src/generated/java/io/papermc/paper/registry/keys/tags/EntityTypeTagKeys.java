@@ -149,7 +149,7 @@ public final class EntityTypeTagKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TagKey<EntityType> CANNOT_BE_AGE_LOCKED = create(key("cannot_be_age_locked"));
+    public static final TagKey<EntityType<?>> CANNOT_BE_AGE_LOCKED = create(key("cannot_be_age_locked"));
 
     /**
      * {@code #minecraft:cannot_be_pushed_onto_boats}

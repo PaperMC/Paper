@@ -345,7 +345,7 @@ public interface EntityType<E extends Entity> extends Keyed, Translatable, net.k
     /**
      * An unknown entity without an Entity Class
      */
-    @Deprecated(since = "1.21.11", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+    @Deprecated(since = "26.1", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static EntityType<?> getUnknownInstance() {
         return InternalAPIBridge.get().constructLegacyUnknownEntityType();
     }
@@ -368,7 +368,7 @@ public interface EntityType<E extends Entity> extends Keyed, Translatable, net.k
      *
      * @deprecated do not rely on a concrete implementation
      */
-    @Deprecated(since = "1.21.11")
+    @Deprecated(since = "26.1")
     boolean isAlive();
 
     /**
@@ -415,7 +415,7 @@ public interface EntityType<E extends Entity> extends Keyed, Translatable, net.k
      * @return the entity type's name
      * @deprecated no longer needed as the entity type hold the entity class as a generic
      */
-    @Deprecated(since = "1.21.11", forRemoval = true)
+    @Deprecated(since = "26.1", forRemoval = true)
     @Nullable Class<? extends Entity> getEntityClass();
 
     /**
@@ -435,7 +435,7 @@ public interface EntityType<E extends Entity> extends Keyed, Translatable, net.k
      * @deprecated only for backwards compatibility, use {@link Registry#get(Key)} instead.
      */
     @Contract("null -> null")
-    @Deprecated(since = "1.21.11", forRemoval = true)
+    @Deprecated(since = "26.1", forRemoval = true)
     static @Nullable EntityType<?> fromName(@Nullable String name) {
         if (name == null) {
             return null;

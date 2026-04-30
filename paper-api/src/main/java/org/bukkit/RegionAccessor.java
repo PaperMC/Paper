@@ -337,7 +337,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @deprecated use {@link #createEntity(Location, EntityType)}
      */
     @NotNull
-    @Deprecated(since = "1.21.11")
+    @Deprecated(since = "26.1")
     <E extends Entity> E createEntity(@NotNull Location location, @NotNull Class<E> clazz);
 
     /**
@@ -370,7 +370,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @deprecated use {@link #spawnEntity(Location, EntityType)}
      */
     @NotNull
-    @Deprecated(since = "1.21.11")
+    @Deprecated(since = "26.1")
     default <E extends Entity> E spawn(@NotNull Location location, @NotNull Class<E> clazz) throws IllegalArgumentException {
         return this.spawn(location, clazz, null, CreatureSpawnEvent.SpawnReason.CUSTOM);
     }
@@ -392,7 +392,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      *     {@link Entity} requested cannot be spawned
      * @deprecated use {@link #spawnEntity(Location, EntityType, Consumer)}
      */
-    @Deprecated(since = "1.21.11")
+    @Deprecated(since = "26.1")
     default <E extends Entity> @NotNull E spawn(final @NotNull Location location, final @NotNull Class<E> clazz, final @Nullable Consumer<? super E> function) throws IllegalArgumentException {
         return this.spawn(location, clazz, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CUSTOM, function);
     }
@@ -400,7 +400,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     /**
      * @deprecated use {@link #spawnEntity(Location, EntityType, CreatureSpawnEvent.SpawnReason)}
      */
-    @Deprecated(since = "1.21.11")
+    @Deprecated(since = "26.1")
     default @NotNull <E extends Entity> E spawn(final @NotNull Location location, final @NotNull Class<E> clazz, final org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason) throws IllegalArgumentException {
         return this.spawn(location, clazz, reason, null);
     }
@@ -408,7 +408,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     /**
      * @deprecated use {@link #spawnEntity(Location, EntityType, Consumer, CreatureSpawnEvent.SpawnReason)}
      */
-    @Deprecated(since = "1.21.11")
+    @Deprecated(since = "26.1")
     default @NotNull <E extends Entity> E spawn(final @NotNull Location location, final @NotNull Class<E> clazz, final org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason, final @Nullable Consumer<? super E> function) throws IllegalArgumentException {
         return this.spawn(location, clazz, function, reason);
     }
@@ -416,7 +416,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     /**
      * @deprecated use {@link #spawnEntity(Location, EntityType, CreatureSpawnEvent.SpawnReason, Consumer)}
      */
-    @Deprecated(since = "1.21.11")
+    @Deprecated(since = "26.1")
     <E extends Entity> @NotNull E spawn(@NotNull Location location, @NotNull Class<E> clazz, @Nullable Consumer<? super E> function, org.bukkit.event.entity.CreatureSpawnEvent.@NotNull SpawnReason reason) throws IllegalArgumentException;
 
     /**
@@ -456,7 +456,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @deprecated use {@link #spawnEntity(Location, EntityType, boolean, Consumer)}
      */
     @NotNull
-    @Deprecated(since = "1.21.11")
+    @Deprecated(since = "26.1")
     <E extends Entity> E spawn(@NotNull Location location, @NotNull Class<E> clazz, boolean randomizeData, @Nullable Consumer<? super E> function);
 
     /**

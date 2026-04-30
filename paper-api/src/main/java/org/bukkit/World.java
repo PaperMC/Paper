@@ -738,7 +738,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated use {@link #spawnArrow(Location, EntityType, Vector, float, float)}
      */
     @NotNull
-    @Deprecated(since = "1.21.11")
+    @Deprecated(since = "26.1")
     public <E extends AbstractArrow> E spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread, @NotNull Class<E> clazz);
 
     /**
