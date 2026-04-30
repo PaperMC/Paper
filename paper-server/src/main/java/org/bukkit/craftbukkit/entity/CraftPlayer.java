@@ -3361,4 +3361,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
             entity.remove();
         }
     }
+
+    @Override
+    public void knockback(final double strength, final double directionX, final double directionZ) {
+        super.knockback(strength, directionX, directionZ);
+        this.entity.hurtMarked = true;
+    }
 }
