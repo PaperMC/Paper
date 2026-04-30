@@ -24,7 +24,7 @@ public class ItemTransportingEntitySortEvent extends EntityEvent {
     public enum ItemTransportingEntityDecision {
         ALLOW_DESTINATION,
         REJECT_DESTINATION,
-        USE_VANILLA_BEHAVIOUR
+        DEFAULT
     }
 
     private final ItemStack itemStack;
@@ -40,7 +40,7 @@ public class ItemTransportingEntitySortEvent extends EntityEvent {
         super(entity);
         this.containerInventory = containerInventory;
         this.itemStack = itemStack;
-        this.decision = ItemTransportingEntityDecision.USE_VANILLA_BEHAVIOUR;
+        this.decision = ItemTransportingEntityDecision.DEFAULT;
     }
 
     /**
