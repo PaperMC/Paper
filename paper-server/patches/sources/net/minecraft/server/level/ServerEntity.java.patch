@@ -61,15 +61,14 @@
                  Packet<ClientGamePacketListener> packet = null;
                  boolean pos = positionChanged || this.tickCount % 60 == 0;
                  boolean sentPosition = false;
-@@ -218,6 +_,25 @@
+@@ -218,7 +_,22 @@
  
          this.tickCount++;
          if (this.entity.hurtMarked) {
 +            // CraftBukkit start - Create PlayerVelocity event
 +            boolean cancelled = false;
 +
-+            if (this.entity instanceof ServerPlayer) {
-+                org.bukkit.entity.Player player = (org.bukkit.entity.Player) this.entity.getBukkitEntity();
++            if (this.entity.getBukkitEntity() instanceof org.bukkit.entity.Player player) {
 +                org.bukkit.util.Vector velocity = player.getVelocity();
 +
 +                org.bukkit.event.player.PlayerVelocityEvent event = new org.bukkit.event.player.PlayerVelocityEvent(player, velocity.clone());
@@ -79,14 +78,12 @@
 +                    player.setVelocity(event.getVelocity());
 +                }
 +            }
-+
-+            if (cancelled) {
-+                return;
-+            }
 +            // CraftBukkit end
              this.entity.hurtMarked = false;
++            if (cancelled) return; // Paper - if PlayerVelocity was cancel then we skip the sendToTrackingPlayersAndSelf
              this.synchronizer.sendToTrackingPlayersAndSelf(new ClientboundSetEntityMotionPacket(this.entity));
          }
+     }
 @@ -269,7 +_,10 @@
      public void sendPairingData(final ServerPlayer player, final Consumer<Packet<ClientGamePacketListener>> broadcast) {
          this.entity.updateDataBeforeSync();
