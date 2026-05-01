@@ -1,15 +1,13 @@
 package org.bukkit.craftbukkit.util;
 
 import com.google.common.base.Predicates;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
+import io.papermc.paper.plugin.entrypoint.classloader.bytecode.EntityTypeRules;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -215,12 +213,18 @@ public class Commodore {
         ClassReader cr = new ClassReader(b);
         ClassWriter cw = new ClassWriter(cr, 0);
 
+        ClassVisitor visitor = cw;
+
+        if (pluginVersion.isOlderThanOrSameAs(ApiVersion.CLASS_TO_INTERFACE)) {
+            visitor = EntityTypeRules.visitor(visitor);
+        }
+
         Map<String, String> renames = new HashMap<>(RENAMES);
         if (pluginVersion.isOlderThan(ApiVersion.ABSTRACT_COW)) {
             renames.put("org/bukkit/entity/Cow", "org/bukkit/entity/AbstractCow");
         }
 
-        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, cw) {
+        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, visitor) {
             final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
             String className;
             boolean isInterface;

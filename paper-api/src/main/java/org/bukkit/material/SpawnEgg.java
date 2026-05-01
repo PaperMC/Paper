@@ -47,7 +47,9 @@ public class SpawnEgg extends MaterialData {
      */
     @Deprecated(since = "1.9")
     public EntityType getSpawnedType() {
-        return EntityType.fromId(getData());
+        return null;
+        //return EntityType.UNKNOWN; // todo asm-utils
+        //return EntityType.fromId(getData());
     }
 
     /**

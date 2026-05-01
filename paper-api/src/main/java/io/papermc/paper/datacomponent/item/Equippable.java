@@ -70,7 +70,7 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
      * @return the set of allowed entities
      */
     @Contract(pure = true)
-    @Nullable RegistryKeySet<EntityType> allowedEntities();
+    @Nullable RegistryKeySet<EntityType<?>> allowedEntities();
 
     /**
      * Checks if the item is dispensable.
@@ -161,7 +161,7 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
          * @return the builder for chaining
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder allowedEntities(@Nullable RegistryKeySet<EntityType> allowedEntities);
+        Builder allowedEntities(@Nullable RegistryKeySet<EntityType<?>> allowedEntities);
 
         /**
          * Sets whether the item is dispensable.

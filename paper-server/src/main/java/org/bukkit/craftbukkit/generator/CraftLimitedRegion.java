@@ -256,9 +256,15 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     }
 
     @Override
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
+    public <E extends Entity> E spawnEntity(Location location, org.bukkit.entity.EntityType<E> type, boolean randomizeData, CreatureSpawnEvent.SpawnReason reason, Consumer<? super E> function) throws IllegalArgumentException {
         Preconditions.checkArgument(this.isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        return super.spawn(location, clazz, function, reason);
+        return super.spawnEntity(location, type, randomizeData, reason, function);
+    }
+
+    @Override
+    protected <E extends Entity> E spawn0(Location location, Class<E> clazz, Consumer<? super E> function, CreatureSpawnEvent.SpawnReason reason, boolean randomizeData) throws IllegalArgumentException {
+        Preconditions.checkArgument(this.isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return super.spawn0(location, clazz, function, reason, randomizeData);
     }
 
     @Override
