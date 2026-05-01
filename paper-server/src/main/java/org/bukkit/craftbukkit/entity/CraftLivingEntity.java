@@ -1030,7 +1030,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void knockback(final double strength, final double directionX, final double directionZ) {
         Preconditions.checkArgument(strength > 0, "Knockback strength must be > 0");
         this.getHandle().knockback(strength, directionX, directionZ);
-    };
+    }
 
     public void broadcastSlotBreak(final org.bukkit.inventory.EquipmentSlot slot) {
         this.getHandle().level().broadcastEntityEvent(this.getHandle(), net.minecraft.world.entity.LivingEntity.entityEventForEquipmentBreak(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot)));
