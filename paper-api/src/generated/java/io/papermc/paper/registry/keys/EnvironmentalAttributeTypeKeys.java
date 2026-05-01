@@ -194,11 +194,25 @@ public final class EnvironmentalAttributeTypeKeys {
     public static final TypedKey<EnvironmentalAttributeType<?>> GAMEPLAY_WATER_EVAPORATES = create(key("gameplay/water_evaporates"));
 
     /**
+     * {@code minecraft:visual/ambient_light_color}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<EnvironmentalAttributeType<?>> VISUAL_AMBIENT_LIGHT_COLOR = create(key("visual/ambient_light_color"));
+
+    /**
      * {@code minecraft:visual/ambient_particles}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<EnvironmentalAttributeType<?>> VISUAL_AMBIENT_PARTICLES = create(key("visual/ambient_particles"));
+
+    /**
+     * {@code minecraft:visual/block_light_tint}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<EnvironmentalAttributeType<?>> VISUAL_BLOCK_LIGHT_TINT = create(key("visual/block_light_tint"));
 
     /**
      * {@code minecraft:visual/cloud_color}
@@ -262,6 +276,13 @@ public final class EnvironmentalAttributeTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<EnvironmentalAttributeType<?>> VISUAL_MOON_PHASE = create(key("visual/moon_phase"));
+
+    /**
+     * {@code minecraft:visual/night_vision_color}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<EnvironmentalAttributeType<?>> VISUAL_NIGHT_VISION_COLOR = create(key("visual/night_vision_color"));
 
     /**
      * {@code minecraft:visual/sky_color}

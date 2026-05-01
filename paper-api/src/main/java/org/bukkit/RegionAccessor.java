@@ -562,7 +562,6 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @return collides or not
      */
     boolean hasCollisionsIn(@NotNull org.bukkit.util.BoundingBox boundingBox);
-    // Paper end
 
     <T> @NotNull EnvironmentalAttribute<T> getEnvironmentalAttribute(@NotNull EnvironmentalAttributeType<T> type);
 }

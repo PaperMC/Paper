@@ -396,7 +396,7 @@ public final class PaperAdventure {
             if (entry.getKey().isTransient()) continue;
             @Subst("key:value") final String typeKey = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(entry.getKey())).toString();
             if (entry.getValue().isEmpty()) {
-                   map.put(Key.key(typeKey), DataComponentValue.removed());
+                map.put(Key.key(typeKey), DataComponentValue.removed());
             } else {
                 map.put(Key.key(typeKey), new DataComponentValueImpl(entry.getKey().codec(), entry.getValue().get()));
             }
@@ -482,7 +482,7 @@ public final class PaperAdventure {
     }
 
     public static TriState asAdventure(final net.minecraft.util.TriState value) {
-        return switch(value) {
+        return switch (value) {
             case TRUE -> TriState.TRUE;
             case FALSE -> TriState.FALSE;
             case DEFAULT -> TriState.NOT_SET;

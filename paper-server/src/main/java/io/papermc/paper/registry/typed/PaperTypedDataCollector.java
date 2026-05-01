@@ -1,11 +1,13 @@
 package io.papermc.paper.registry.typed;
 
 import io.papermc.paper.util.converter.Converter;
+import io.papermc.paper.util.converter.Converters;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 
@@ -44,6 +46,14 @@ public class PaperTypedDataCollector<T> implements TypedDataCollector<T> {
     @Override
     public <M, A> void register(final ResourceKey<T> type, final Converter<M, A> converter) {
         this.registerInternal(type, converter);
+    }
+
+    private <M, A> void maybeRegister(final Supplier<ResourceKey<T>> type, final Converter<M, A> converter) {
+        if (converter == Converters.unimplemented()) {
+            return;
+        }
+
+        this.register(type.get(), converter);
     }
 
     @Override
@@ -85,7 +95,7 @@ public class PaperTypedDataCollector<T> implements TypedDataCollector<T> {
                 if (valueType == null) {
                     continue;
                 }
-                PaperTypedDataCollector.this.register(PaperTypedDataCollector.this.getKey(value), converter.apply(valueType));
+                PaperTypedDataCollector.this.maybeRegister(() -> PaperTypedDataCollector.this.getKey(value), converter.apply(valueType));
             }
         };
     }

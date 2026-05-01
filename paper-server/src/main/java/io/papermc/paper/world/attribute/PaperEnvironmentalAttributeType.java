@@ -58,7 +58,10 @@ public final class PaperEnvironmentalAttributeType<A, M> extends HolderableBase<
                 EnvironmentAttributes.SKY_COLOR,
                 EnvironmentAttributes.SKY_LIGHT_COLOR,
                 EnvironmentAttributes.SUNRISE_SUNSET_COLOR,
-                EnvironmentAttributes.WATER_FOG_COLOR
+                EnvironmentAttributes.WATER_FOG_COLOR,
+                EnvironmentAttributes.BLOCK_LIGHT_TINT,
+                EnvironmentAttributes.AMBIENT_LIGHT_COLOR,
+                EnvironmentAttributes.NIGHT_VISION_COLOR
                 // EnvironmentAttributes.VILLAGER_ACTIVITY
                 // EnvironmentAttributes.AMBIENT_PARTICLES
                 // EnvironmentAttributes.DEFAULT_DRIPSTONE_PARTICLE

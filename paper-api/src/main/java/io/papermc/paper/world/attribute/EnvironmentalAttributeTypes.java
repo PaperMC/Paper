@@ -89,6 +89,8 @@ public final class EnvironmentalAttributeTypes {
 
     public static final EnvironmentalAttributeType<MoonPhase> MOON_PHASE = get("visual/moon_phase");
 
+    public static final EnvironmentalAttributeType<Color> BLOCK_LIGHT_TINT = get("visual/block_light_tint");
+
     public static final EnvironmentalAttributeType<Color> SKY_COLOR = get("visual/sky_color");
 
     public static final EnvironmentalAttributeType<Float> SKY_FOG_END_DISTANCE = get("visual/sky_fog_end_distance");
@@ -96,6 +98,10 @@ public final class EnvironmentalAttributeTypes {
     public static final EnvironmentalAttributeType<Color> SKY_LIGHT_COLOR = get("visual/sky_light_color");
 
     public static final EnvironmentalAttributeType<Float> SKY_LIGHT_FACTOR = get("visual/sky_light_factor");
+
+    public static final EnvironmentalAttributeType<Color> NIGHT_VISION_COLOR = get("visual/night_vision_color");
+
+    public static final EnvironmentalAttributeType<Color> AMBIENT_LIGHT_COLOR = get("visual/ambient_light_color");
 
     public static final EnvironmentalAttributeType<Float> STAR_ANGLE = get("visual/star_angle");
 

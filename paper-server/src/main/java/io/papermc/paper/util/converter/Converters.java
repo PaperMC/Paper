@@ -75,15 +75,15 @@ public final class Converters {
         );
     }
 
-    private static final Converter<?, ?> UNIMPLEMENTED = Converter.direct($ -> {
+    private static final Converter<?, ?> UNIMPLEMENTED = Converter.direct(_ -> {
         throw new UnsupportedOperationException("Cannot convert an unimplemented type to an API value");
-    }, $ -> {
+    }, _ -> {
         throw new UnsupportedOperationException("Cannot convert an API value to an unimplemented type");
     });
 
-    private static final Converter<Unit, ?> UNVALUED = Converter.direct($ -> {
+    private static final Converter<Unit, ?> UNVALUED = Converter.direct(_ -> {
         throw new UnsupportedOperationException("Cannot convert the Unit type to an API value");
-    }, $ -> Unit.INSTANCE);
+    }, _ -> Unit.INSTANCE);
 
     @SuppressWarnings("unchecked")
     public static <A, M> Converter<A, M> unimplemented() {
