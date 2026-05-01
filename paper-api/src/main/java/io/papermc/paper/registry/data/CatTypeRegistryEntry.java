@@ -21,11 +21,19 @@ public interface CatTypeRegistryEntry {
     ClientTextureAsset clientTextureAsset();
 
     /**
+     * Provides the client texture asset of the cat type for baby cats.
+     *
+     * @return the baby client texture asset.
+     */
+    ClientTextureAsset babyClientTextureAsset();
+
+    /**
      * A mutable builder for the {@link CatTypeRegistryEntry} plugins may change in applicable registry events.
      * <p>
      * The following values are required for each builder:
      * <ul>
      *     <li>{@link #clientTextureAsset(ClientTextureAsset)}</li>
+     *     <li>{@link #babyClientTextureAsset(ClientTextureAsset)}</li>
      * </ul>
      */
     @ApiStatus.Experimental
@@ -41,5 +49,15 @@ public interface CatTypeRegistryEntry {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder clientTextureAsset(ClientTextureAsset clientTextureAsset);
+
+        /**
+         * Sets the client texture asset of the cat type for baby cats.
+         *
+         * @param babyClientTextureAsset the baby client texture asset.
+         * @return this builder instance.
+         * @see CatTypeRegistryEntry#babyClientTextureAsset()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder babyClientTextureAsset(ClientTextureAsset babyClientTextureAsset);
     }
 }

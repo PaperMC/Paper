@@ -1,27 +1,30 @@
 --- a/net/minecraft/world/entity/monster/warden/Warden.java
 +++ b/net/minecraft/world/entity/monster/warden/Warden.java
-@@ -395,7 +_,7 @@
+@@ -404,7 +_,7 @@
  
-     public static void applyDarknessAround(ServerLevel level, Vec3 pos, @Nullable Entity source, int radius) {
-         MobEffectInstance mobEffectInstance = new MobEffectInstance(MobEffects.DARKNESS, 260, 0, false, false);
--        MobEffectUtil.addEffectToPlayersAround(level, source, pos, radius, mobEffectInstance, 200);
-+        MobEffectUtil.addEffectToPlayersAround(level, source, pos, radius, mobEffectInstance, 200, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.WARDEN); // CraftBukkit - Add EntityPotionEffectEvent.Cause
+     public static void applyDarknessAround(final ServerLevel level, final Vec3 position, final @Nullable Entity source, final int darknessRadius) {
+         MobEffectInstance darkness = new MobEffectInstance(MobEffects.DARKNESS, 260, 0, false, false);
+-        MobEffectUtil.addEffectToPlayersAround(level, source, position, darknessRadius, darkness, 200);
++        MobEffectUtil.addEffectToPlayersAround(level, source, position, darknessRadius, darkness, 200, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.WARDEN); // CraftBukkit - Add EntityPotionEffectEvent.Cause
      }
  
      @Override
-@@ -439,6 +_,15 @@
+@@ -446,8 +_,17 @@
+     }
+ 
      @VisibleForTesting
-     public void increaseAngerAt(@Nullable Entity entity, int offset, boolean playListeningSound) {
+-    public void increaseAngerAt(final @Nullable Entity entity, final int amount, final boolean playSound) {
++    public void increaseAngerAt(final @Nullable Entity entity, int amount, final boolean playSound) { // Paper - Add WardenAngerChangeEvent
          if (!this.isNoAi() && this.canTargetEntity(entity)) {
 +            // Paper start - Add WardenAngerChangeEvent
 +            int activeAnger = this.angerManagement.getActiveAnger(entity);
-+            io.papermc.paper.event.entity.WardenAngerChangeEvent event = new io.papermc.paper.event.entity.WardenAngerChangeEvent((org.bukkit.entity.Warden) this.getBukkitEntity(), entity.getBukkitEntity(), activeAnger, Math.min(150, activeAnger + offset));
++            io.papermc.paper.event.entity.WardenAngerChangeEvent event = new io.papermc.paper.event.entity.WardenAngerChangeEvent((org.bukkit.entity.Warden) this.getBukkitEntity(), entity.getBukkitEntity(), activeAnger, Math.min(150, activeAnger + amount));
 +            this.level().getCraftServer().getPluginManager().callEvent(event);
 +            if (event.isCancelled()) {
 +                return;
 +            }
-+            offset = event.getNewAnger() - activeAnger;
++            amount = event.getNewAnger() - activeAnger;
 +            // Paper end - Add WardenAngerChangeEvent
              WardenAi.setDigCooldown(this);
-             boolean flag = !(this.getTarget() instanceof Player);
-             int i = this.angerManagement.increaseAnger(entity, offset);
+             boolean maybeSwitchTarget = !(this.getTarget() instanceof Player);
+             int newAnger = this.angerManagement.increaseAnger(entity, amount);

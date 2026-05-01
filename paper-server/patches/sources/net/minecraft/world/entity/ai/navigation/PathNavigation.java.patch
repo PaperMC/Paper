@@ -1,41 +1,41 @@
 --- a/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 +++ b/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-@@ -124,7 +_,12 @@
+@@ -122,7 +_,12 @@
      }
  
-     public @Nullable Path createPath(BlockPos pos, int reachRange) {
+     public @Nullable Path createPath(final BlockPos pos, final int reachRange) {
 -        return this.createPath(ImmutableSet.of(pos), 8, false, reachRange);
 +        // Paper start - EntityPathfindEvent
 +        return this.createPath(pos, null, reachRange);
 +    }
-+    public @Nullable Path createPath(BlockPos target, @Nullable Entity entity, int reachRange) {
-+        return this.createPath(ImmutableSet.of(target), entity, 8, false, reachRange);
++    public @Nullable Path createPath(BlockPos pos, @Nullable Entity entity, int reachRange) {
++        return this.createPath(ImmutableSet.of(pos), entity, 8, false, reachRange);
 +        // Paper end - EntityPathfindEvent
      }
  
-     public @Nullable Path createPath(BlockPos pos, int reachRange, int followRange) {
-@@ -132,7 +_,7 @@
+     public @Nullable Path createPath(final BlockPos pos, final int reachRange, final int maxPathLength) {
+@@ -130,7 +_,7 @@
      }
  
-     public @Nullable Path createPath(Entity entity, int reachRange) {
--        return this.createPath(ImmutableSet.of(entity.blockPosition()), 16, true, reachRange);
-+        return this.createPath(ImmutableSet.of(entity.blockPosition()), entity, 16, true, reachRange); // Paper - EntityPathfindEvent
+     public @Nullable Path createPath(final Entity target, final int reachRange) {
+-        return this.createPath(ImmutableSet.of(target.blockPosition()), 16, true, reachRange);
++        return this.createPath(ImmutableSet.of(target.blockPosition()), target, 16, true, reachRange); // Paper - EntityPathfindEvent
      }
  
-     protected @Nullable Path createPath(Set<BlockPos> targets, int regionOffset, boolean offsetUpward, int reachRange) {
+     protected @Nullable Path createPath(final Set<BlockPos> targets, final int radiusOffset, final boolean above, final int reachRange) {
 @@ -140,6 +_,16 @@
-     }
- 
-     protected @Nullable Path createPath(Set<BlockPos> targets, int regionOffset, boolean offsetUpward, int reachRange, float followRange) {
+     protected @Nullable Path createPath(
+         final Set<BlockPos> targets, final int radiusOffset, final boolean above, final int reachRange, final float maxPathLength
+     ) {
 +        // Paper start - EntityPathfindEvent
-+        return this.createPath(targets, null, regionOffset, offsetUpward, reachRange, followRange);
++        return this.createPath(targets, null, radiusOffset, above, reachRange, maxPathLength);
 +    }
 +
-+    protected @Nullable Path createPath(Set<BlockPos> targets, @Nullable Entity target, int regionOffset, boolean offsetUpward, int reachRange) {
-+        return this.createPath(targets, target, regionOffset, offsetUpward, reachRange, this.getMaxPathLength());
++    protected @Nullable Path createPath(Set<BlockPos> targets, @Nullable Entity target, int radiusOffset, boolean above, int reachRange) {
++        return this.createPath(targets, target, radiusOffset, above, reachRange, this.getMaxPathLength());
 +    }
 +
-+    protected @Nullable Path createPath(Set<BlockPos> targets, @Nullable Entity target, int regionOffset, boolean offsetUpward, int reachRange, float followRange) {
++    protected @Nullable Path createPath(Set<BlockPos> targets, @Nullable Entity target, int radiusOffset, boolean above, int reachRange, float maxPathLength) {
 +        // Paper end - EntityPathfindEvent
          if (targets.isEmpty()) {
              return null;
@@ -61,10 +61,10 @@
 +                }
 +            }
 +            // Paper end - EntityPathfindEvent
-             ProfilerFiller profilerFiller = Profiler.get();
-             profilerFiller.push("pathfind");
-             BlockPos blockPos = offsetUpward ? this.mob.blockPosition().above() : this.mob.blockPosition();
-@@ -166,6 +_,11 @@
+             ProfilerFiller profiler = Profiler.get();
+             profiler.push("pathfind");
+             BlockPos fromPos = above ? this.mob.blockPosition().above() : this.mob.blockPosition();
+@@ -168,6 +_,11 @@
          }
      }
  
@@ -73,22 +73,22 @@
 +    private int pathfindFailures = 0;
 +    // Paper end - Perf: Optimise pathfinding
 +
-     public boolean moveTo(double x, double y, double z, double speedModifier) {
+     public boolean moveTo(final double x, final double y, final double z, final double speedModifier) {
          return this.moveTo(this.createPath(x, y, z, 1), speedModifier);
      }
-@@ -175,8 +_,23 @@
+@@ -177,8 +_,23 @@
      }
  
-     public boolean moveTo(Entity entity, double speedModifier) {
+     public boolean moveTo(final Entity target, final double speedModifier) {
 +        // Paper start - Perf: Optimise pathfinding
 +        if (this.pathfindFailures > 10 && this.path == null && net.minecraft.server.MinecraftServer.currentTick < this.lastFailure + 40) {
 +            return false;
 +        }
 +        // Paper end - Perf: Optimise pathfinding
-         Path path = this.createPath(entity, 1);
--        return path != null && this.moveTo(path, speedModifier);
+         Path newPath = this.createPath(target, 1);
+-        return newPath != null && this.moveTo(newPath, speedModifier);
 +        // Paper start - Perf: Optimise pathfinding
-+        if (path != null && this.moveTo(path, speedModifier)) {
++        if (newPath != null && this.moveTo(newPath, speedModifier)) {
 +            this.lastFailure = 0;
 +            this.pathfindFailures = 0;
 +            return true;
@@ -100,4 +100,4 @@
 +        // Paper end - Perf: Optimise pathfinding
      }
  
-     public boolean moveTo(@Nullable Path path, double speedModifier) {
+     public boolean moveTo(final @Nullable Path newPath, final double speedModifier) {

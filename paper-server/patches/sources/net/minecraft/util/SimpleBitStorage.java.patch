@@ -10,54 +10,54 @@
 +    private final int divideAdd; private final long divideAddUnsigned; // Paper - Perf: Optimize SimpleBitStorage
      private final int divideShift;
  
-     public SimpleBitStorage(int bits, int size, int[] data) {
+     public SimpleBitStorage(final int bits, final int size, final int[] values) {
 @@ -248,8 +_,8 @@
          this.mask = (1L << bits) - 1L;
          this.valuesPerLong = (char)(64 / bits);
-         int i = 3 * (this.valuesPerLong - 1);
--        this.divideMul = MAGIC[i + 0];
--        this.divideAdd = MAGIC[i + 1];
-+        this.divideMul = MAGIC[i + 0]; this.divideMulUnsigned = Integer.toUnsignedLong(this.divideMul); // Paper - Perf: Optimize SimpleBitStorage
-+        this.divideAdd = MAGIC[i + 1]; this.divideAddUnsigned = Integer.toUnsignedLong(this.divideAdd); // Paper - Perf: Optimize SimpleBitStorage
-         this.divideShift = MAGIC[i + 2];
-         int i1 = (size + this.valuesPerLong - 1) / this.valuesPerLong;
+         int row = 3 * (this.valuesPerLong - 1);
+-        this.divideMul = MAGIC[row + 0];
+-        this.divideAdd = MAGIC[row + 1];
++        this.divideMul = MAGIC[row + 0]; this.divideMulUnsigned = Integer.toUnsignedLong(this.divideMul); // Paper - Perf: Optimize SimpleBitStorage
++        this.divideAdd = MAGIC[row + 1]; this.divideAddUnsigned = Integer.toUnsignedLong(this.divideAdd); // Paper - Perf: Optimize SimpleBitStorage
+         this.divideShift = MAGIC[row + 2];
+         int requiredLength = (size + this.valuesPerLong - 1) / this.valuesPerLong;
          if (data != null) {
 @@ -264,15 +_,11 @@
      }
  
-     private int cellIndex(int index) {
--        long l = Integer.toUnsignedLong(this.divideMul);
--        long l1 = Integer.toUnsignedLong(this.divideAdd);
--        return (int)(index * l + l1 >> 32 >> this.divideShift);
-+        return (int)(index * this.divideMulUnsigned + this.divideAddUnsigned >> 32 >> this.divideShift); // Paper - Perf: Optimize SimpleBitStorage
+     private int cellIndex(final int bitIndex) {
+-        long mul = Integer.toUnsignedLong(this.divideMul);
+-        long add = Integer.toUnsignedLong(this.divideAdd);
+-        return (int)(bitIndex * mul + add >> 32 >> this.divideShift);
++        return (int)(bitIndex * this.divideMulUnsigned + this.divideAddUnsigned >> 32 >> this.divideShift); // Paper - Perf: Optimize SimpleBitStorage
      }
  
      @Override
--    public int getAndSet(int index, int value) {
+-    public int getAndSet(final int index, final int value) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
 -        Validate.inclusiveBetween(0L, this.mask, (long)value);
-+    public final int getAndSet(int index, int value) { // Paper - Perf: Optimize SimpleBitStorage
-         int i = this.cellIndex(index);
-         long l = this.data[i];
-         int i1 = (index - i * this.valuesPerLong) * this.bits;
++    public final int getAndSet(final int index, final int value) { // Paper - Perf: Optimize SimpleBitStorage
+         int cellIndex = this.cellIndex(index);
+         long cellValue = this.data[cellIndex];
+         int bitIndex = (index - cellIndex * this.valuesPerLong) * this.bits;
 @@ -282,9 +_,7 @@
      }
  
      @Override
--    public void set(int index, int value) {
+-    public void set(final int index, final int value) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
 -        Validate.inclusiveBetween(0L, this.mask, (long)value);
-+    public final void set(int index, int value) { // Paper - Perf: Optimize SimpleBitStorage
-         int i = this.cellIndex(index);
-         long l = this.data[i];
-         int i1 = (index - i * this.valuesPerLong) * this.bits;
++    public final void set(final int index, final int value) { // Paper - Perf: Optimize SimpleBitStorage
+         int cellIndex = this.cellIndex(index);
+         long cellValue = this.data[cellIndex];
+         int bitIndex = (index - cellIndex * this.valuesPerLong) * this.bits;
 @@ -292,8 +_,7 @@
      }
  
      @Override
--    public int get(int index) {
+-    public int get(final int index) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
-+    public final int get(int index) { // Paper - Perf: Optimize SimpleBitStorage
-         int i = this.cellIndex(index);
-         long l = this.data[i];
-         int i1 = (index - i * this.valuesPerLong) * this.bits;
++    public final int get(final int index) { // Paper - Perf: Optimize SimpleBitStorage
+         int cellIndex = this.cellIndex(index);
+         long cellValue = this.data[cellIndex];
+         int bitIndex = (index - cellIndex * this.valuesPerLong) * this.bits;

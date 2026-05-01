@@ -40,7 +40,7 @@ public final class DummyServerHelper {
 
         when(instance.getUnsafe()).then(mock -> CraftMagicNumbers.INSTANCE);
 
-        when(instance.createBlockData(any(Material.class))).then(mock -> CraftBlockData.newData(((Material) mock.getArgument(0)).asBlockType(), null));
+        when(instance.createBlockData(any(Material.class))).then(mock -> CraftBlockData.fromString(((Material) mock.getArgument(0)).asBlockType(), null));
 
         when(instance.getLootTable(any())).then(mock -> new CraftLootTable(mock.getArgument(0),
                 RegistryHelper.context().datapack().fullRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(mock.getArgument(0))))));

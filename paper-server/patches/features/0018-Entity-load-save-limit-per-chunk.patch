@@ -9,7 +9,7 @@ defaults are only included for certain entites, this allows setting
 limits for any entity type.
 
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
-index c2363cfa5e93942fe837efd9f39478698f6d1a98..2dfd412344a0e57f25a08d9c65656a13113baa4e 100644
+index 0cfdbdee091f43ca011bc68f7479eb7b84801b09..8d9ce3d301d5f7e4106587ae00adb8dd5b8b6f88 100644
 --- a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
 @@ -116,8 +116,19 @@ public final class ChunkEntitySlices {
@@ -18,7 +18,7 @@ index c2363cfa5e93942fe837efd9f39478698f6d1a98..2dfd412344a0e57f25a08d9c65656a13
          final ListTag entitiesTag = new ListTag();
 +        final java.util.Map<net.minecraft.world.entity.EntityType<?>, Integer> savedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
          try (final ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(ChunkAccess.problemPath(chunkPos), LOGGER)) {
-             for (final Entity entity : PlatformHooks.get().modifySavedEntities(world, chunkPos.x, chunkPos.z, entities)) {
+             for (final Entity entity : PlatformHooks.get().modifySavedEntities(world, chunkPos.x(), chunkPos.z(), entities)) {
 +                // Paper start - Entity load/save limit per chunk
 +                final EntityType<?> entityType = entity.getType();
 +                final int saveLimit = world.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
@@ -33,15 +33,15 @@ index c2363cfa5e93942fe837efd9f39478698f6d1a98..2dfd412344a0e57f25a08d9c65656a13
                      scopedCollector.forChild(entity.problemPath()), entity.registryAccess()
                  );
 diff --git a/net/minecraft/world/entity/EntityType.java b/net/minecraft/world/entity/EntityType.java
-index 3cf2378a2ccf117fab9fc6fc60fcb0ecdf638d45..abccad13c2bb3a33e98ad8eb6d7f08c0ef021811 100644
+index 2cdbb5f9bace96a8c4ad7fc4de17678ec0db8a6c..6b19f8cd8655cc52a0d8deadb9ca9f24473637a4 100644
 --- a/net/minecraft/world/entity/EntityType.java
 +++ b/net/minecraft/world/entity/EntityType.java
-@@ -1615,7 +1615,18 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+@@ -1647,7 +1647,18 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
      }
  
-     public static Stream<Entity> loadEntitiesRecursive(ValueInput.ValueInputList input, Level level, EntitySpawnReason spawnReason) {
+     public static Stream<Entity> loadEntitiesRecursive(final ValueInput.ValueInputList entities, final Level level, final EntitySpawnReason reason) {
 +        final java.util.Map<EntityType<?>, Integer> loadedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
-         return input.stream().mapMulti((valueInput, consumer) -> loadEntityRecursive(valueInput, level, spawnReason, entity -> {
+         return entities.stream().mapMulti((tag, output) -> loadEntityRecursive(tag, level, reason, entity -> {
 +            // Paper start - Entity load/save limit per chunk
 +            final EntityType<?> entityType = entity.getType();
 +            final int saveLimit = level.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
@@ -52,21 +52,21 @@ index 3cf2378a2ccf117fab9fc6fc60fcb0ecdf638d45..abccad13c2bb3a33e98ad8eb6d7f08c0
 +                loadedEntityCounts.merge(entityType, 1, Integer::sum);
 +            }
 +            // Paper end - Entity load/save limit per chunk
-             consumer.accept(entity);
+             output.accept(entity);
              return entity;
          }));
 diff --git a/net/minecraft/world/level/chunk/storage/EntityStorage.java b/net/minecraft/world/level/chunk/storage/EntityStorage.java
-index bfba76d8f442905e4d3a62b65edabbca12fdb10e..2ce9caafffc86fee82abf0a33423a172a8158e37 100644
+index 04045397dff89870316d0d374b9e472540c3298d..b1cd822c114b99a25fad2e649ca44596109aa0e5 100644
 --- a/net/minecraft/world/level/chunk/storage/EntityStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/EntityStorage.java
 @@ -95,7 +95,18 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
          } else {
-             try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(ChunkAccess.problemPath(pos), LOGGER)) {
-                 ListTag listTag = new ListTag();
+             try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(ChunkAccess.problemPath(pos), LOGGER)) {
+                 ListTag entities = new ListTag();
 +                final java.util.Map<net.minecraft.world.entity.EntityType<?>, Integer> savedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
-                 entities.getEntities().forEach(entity -> {
+                 chunk.getEntities().forEach(e -> {
 +                    // Paper start - Entity load/save limit per chunk
-+                    final EntityType<?> entityType = entity.getType();
++                    final EntityType<?> entityType = e.getType();
 +                    final int saveLimit = this.level.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
 +                    if (saveLimit > -1) {
 +                        if (savedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
@@ -75,6 +75,6 @@ index bfba76d8f442905e4d3a62b65edabbca12fdb10e..2ce9caafffc86fee82abf0a33423a172
 +                        savedEntityCounts.merge(entityType, 1, Integer::sum);
 +                    }
 +                    // Paper end - Entity load/save limit per chunk
-                     TagValueOutput tagValueOutput = TagValueOutput.createWithContext(scopedCollector.forChild(entity.problemPath()), entity.registryAccess());
-                     if (entity.save(tagValueOutput)) {
-                         CompoundTag compoundTag1 = tagValueOutput.buildResult();
+                     TagValueOutput output = TagValueOutput.createWithContext(reporter.forChild(e.problemPath()), e.registryAccess());
+                     if (e.save(output)) {
+                         CompoundTag result = output.buildResult();

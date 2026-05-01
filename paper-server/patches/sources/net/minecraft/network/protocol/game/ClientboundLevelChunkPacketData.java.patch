@@ -1,19 +1,19 @@
 --- a/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 +++ b/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
-@@ -50,7 +_,7 @@
-     public ClientboundLevelChunkPacketData(RegistryFriendlyByteBuf buffer, int x, int z) {
-         this.heightmaps = HEIGHTMAPS_STREAM_CODEC.decode(buffer);
-         int varInt = buffer.readVarInt();
--        if (varInt > 2097152) {
-+        if (varInt > 2097152) { // Paper - diff on change - if this changes, update PacketEncoder
-             throw new RuntimeException("Chunk Packet trying to allocate too much memory on read.");
-         } else {
-             this.buffer = new byte[varInt];
+@@ -28,7 +_,7 @@
+     private static final StreamCodec<ByteBuf, Map<Heightmap.Types, long[]>> HEIGHTMAPS_STREAM_CODEC = ByteBufCodecs.map(
+         size -> new EnumMap<>(Heightmap.Types.class), Heightmap.Types.STREAM_CODEC, ByteBufCodecs.LONG_ARRAY
+     );
+-    private static final int TWO_MEGABYTES = 2097152;
++    private static final int TWO_MEGABYTES = 2097152; // Paper - diff on change - if this changes, update PacketEncoder
+     private final Map<Heightmap.Types, long[]> heightmaps;
+     private final byte[] buffer;
+     private final List<ClientboundLevelChunkPacketData.BlockEntityInfo> blockEntitiesData;
 @@ -154,6 +_,7 @@
-             CompoundTag updateTag = blockEntity.getUpdateTag(blockEntity.getLevel().registryAccess());
-             BlockPos blockPos = blockEntity.getBlockPos();
-             int i = SectionPos.sectionRelative(blockPos.getX()) << 4 | SectionPos.sectionRelative(blockPos.getZ());
-+            blockEntity.sanitizeSentNbt(updateTag); // Paper - Sanitize sent data
-             return new ClientboundLevelChunkPacketData.BlockEntityInfo(i, blockPos.getY(), blockEntity.getType(), updateTag.isEmpty() ? null : updateTag);
+             CompoundTag tag = blockEntity.getUpdateTag(blockEntity.getLevel().registryAccess());
+             BlockPos pos = blockEntity.getBlockPos();
+             int xz = SectionPos.sectionRelative(pos.getX()) << 4 | SectionPos.sectionRelative(pos.getZ());
++            blockEntity.sanitizeSentNbt(tag); // Paper - Sanitize sent data
+             return new ClientboundLevelChunkPacketData.BlockEntityInfo(xz, pos.getY(), blockEntity.getType(), tag.isEmpty() ? null : tag);
          }
      }

@@ -39,15 +39,15 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
         this.bucketEntityTag = tropicalFishBucketMeta.bucketEntityTag;
     }
 
-    CraftMetaTropicalFishBucket(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaTropicalFishBucket(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaTropicalFishBucket.ENTITY_TAG).ifPresent((nbt) -> {
-            this.entityTag = nbt.copyTagWithEntityId();
+        getOrEmpty(patch, CraftMetaTropicalFishBucket.ENTITY_TAG).ifPresent((entityData) -> {
+            this.entityTag = entityData.copyTagWithEntityId();
             this.entityTag.getInt(CraftMetaTropicalFishBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
         });
-        getOrEmpty(tag, CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG).ifPresent((nbt) -> {
-            this.bucketEntityTag = nbt.copyTag();
+        getOrEmpty(patch, CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG).ifPresent((customData) -> {
+            this.bucketEntityTag = customData.copyTag();
             this.bucketEntityTag.getInt(CraftMetaTropicalFishBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
         });
     }

@@ -31,10 +31,10 @@ this fix, as the data will remain in the oversized file. Once the server returns
 to a jar with this fix, the data will be restored.
 
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 99bbae1f8f681950f410b2bfe9af037164d8dcb7..944a01c34d19225d8366f6f97cbc3cacbb5d5498 100644
+index 5149635679ec03d881e63effbd79fc193d7e52c8..d628e06a8dbf11b491b323c10a512fde22e72a12 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -68,6 +68,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -69,6 +69,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
          this.info = info;
          this.path = path;
          this.version = version;
@@ -42,8 +42,8 @@ index 99bbae1f8f681950f410b2bfe9af037164d8dcb7..944a01c34d19225d8366f6f97cbc3cac
          if (!Files.isDirectory(externalFileDir)) {
              throw new IllegalArgumentException("Expected directory, got " + externalFileDir.toAbsolutePath());
          } else {
-@@ -464,4 +465,75 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
-     interface CommitOp {
+@@ -465,4 +466,75 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+     private interface CommitOp {
          void run() throws IOException;
      }
 +
@@ -119,10 +119,10 @@ index 99bbae1f8f681950f410b2bfe9af037164d8dcb7..944a01c34d19225d8366f6f97cbc3cac
 +    // Paper end
  }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 5d9168242f7a7ca4dd888f32fecb27457fd89456..98b3f20c720d70293c6fcf77fdc081b44c71dd6b 100644
+index e9316cc08fe4cb4af28583a8cb1ec658243bffd0..aa36e241d49725eb13f00e57d020d4da24add53d 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -237,6 +237,43 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -241,6 +241,43 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          // Paper end - rewrite chunk system
      }
  
@@ -134,7 +134,7 @@ index 5d9168242f7a7ca4dd888f32fecb27457fd89456..98b3f20c720d70293c6fcf77fdc081b4
 +    private static CompoundTag readOversizedChunk(RegionFile regionfile, ChunkPos chunkCoordinate) throws IOException {
 +        synchronized (regionfile) {
 +            try (DataInputStream datainputstream = regionfile.getChunkDataInputStream(chunkCoordinate)) {
-+                CompoundTag oversizedData = regionfile.getOversizedData(chunkCoordinate.x, chunkCoordinate.z);
++                CompoundTag oversizedData = regionfile.getOversizedData(chunkCoordinate.x(), chunkCoordinate.z());
 +                CompoundTag chunk = NbtIo.read(datainputstream);
 +                if (oversizedData == null) {
 +                    return chunk;
@@ -163,27 +163,27 @@ index 5d9168242f7a7ca4dd888f32fecb27457fd89456..98b3f20c720d70293c6fcf77fdc081b4
 +    }
 +    // Paper end
 +
-     public @Nullable CompoundTag read(ChunkPos chunkPos) throws IOException {
+     public @Nullable CompoundTag read(final ChunkPos pos) throws IOException {
          // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-         RegionFile regionFile = this.getRegionFile(chunkPos, true);
-@@ -244,6 +281,12 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+         RegionFile region = this.getRegionFile(pos, true);
+@@ -248,6 +285,12 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
              return null;
          }
          // CraftBukkit end
 +        // Paper start
-+        if (regionFile.isOversized(chunkPos.x, chunkPos.z)) {
-+            printOversizedLog("Loading Oversized Chunk!", regionFile.getPath(), chunkPos.x, chunkPos.z);
-+            return readOversizedChunk(regionFile, chunkPos);
++        if (region.isOversized(pos.x(), pos.z())) {
++            printOversizedLog("Loading Oversized Chunk!", region.getPath(), pos.x(), pos.z());
++            return readOversizedChunk(region, pos);
 +        }
 +        // Paper end
  
          CompoundTag var4;
-         try (DataInputStream chunkDataInputStream = regionFile.getChunkDataInputStream(chunkPos)) {
-@@ -286,6 +329,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+         try (DataInputStream regionChunkInputStream = region.getChunkDataInputStream(pos)) {
+@@ -290,6 +333,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
              } else {
-                 try (DataOutputStream chunkDataOutputStream = regionFile.getChunkDataOutputStream(chunkPos)) {
-                     NbtIo.write(chunkData, chunkDataOutputStream);
-+                    regionFile.setOversized(chunkPos.x, chunkPos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
+                 try (DataOutputStream output = region.getChunkDataOutputStream(pos)) {
+                     NbtIo.write(value, output);
++                    region.setOversized(pos.x(), pos.z(), false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
                  }
              }
          }

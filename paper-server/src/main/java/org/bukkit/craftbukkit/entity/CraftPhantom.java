@@ -50,6 +50,6 @@ public class CraftPhantom extends CraftMob implements Phantom, CraftEnemy {
 
     @Override
     public void setAnchorLocation(Location location) {
-        this.getHandle().anchorPoint = location == null ? null : CraftLocation.toBlockPosition(location);
+        this.getHandle().anchorPoint = location == null ? null : CraftLocation.toBlockPos(location);
     }
 }

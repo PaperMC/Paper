@@ -6,6 +6,8 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.authlib.yggdrasil.ProfileResult;
+import com.mojang.datafixers.util.Either;
+import io.papermc.paper.profile.MutablePropertyMap;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -15,12 +17,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-import com.mojang.datafixers.util.Either;
-import io.papermc.paper.profile.MutablePropertyMap;
-import net.minecraft.util.Util;
 import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.players.NameAndId;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.apache.commons.lang3.StringUtils;
@@ -37,24 +36,6 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 @SerializableAs("PlayerProfile")
 public final class CraftPlayerProfile implements PlayerProfile, com.destroystokyo.paper.profile.SharedPlayerProfile, com.destroystokyo.paper.profile.PlayerProfile { // Paper
-
-    public static GameProfile validateSkullProfile(GameProfile gameProfile) {
-        // The GameProfile needs to contain either both a uuid and textures, or a name.
-        // The GameProfile always has a name or a uuid, so checking if it has a name is sufficient.
-        boolean isValidSkullProfile = (gameProfile.name() != null)
-                || gameProfile.properties().containsKey(CraftPlayerTextures.PROPERTY_NAME);
-        Preconditions.checkArgument(isValidSkullProfile, "The skull profile is missing a name or textures!");
-        Preconditions.checkArgument(gameProfile.name().length() <= 16, "The name of the profile is longer than 16 characters");
-        Preconditions.checkArgument(net.minecraft.util.StringUtil.isValidPlayerName(gameProfile.name()), "The name of the profile contains invalid characters: %s", gameProfile.name());
-        final PropertyMap properties = gameProfile.properties();
-        Preconditions.checkArgument(properties.size() <= 16, "The profile contains more than 16 properties");
-        for (final Property property : properties.values()) {
-            Preconditions.checkArgument(property.name().length() <= 64, "The name of a property is longer than 64 characters");
-            Preconditions.checkArgument(property.value().length() <= Short.MAX_VALUE, "The value of a property is longer than 32767 characters");
-            Preconditions.checkArgument(property.signature() == null || property.signature().length() <= 1024, "The signature of a property is longer than 1024 characters");
-        }
-        return gameProfile;
-    }
 
     public static @Nullable Property getProperty(GameProfile profile, String propertyName) {
         return Iterables.getFirst(profile.properties().get(propertyName), null);
@@ -213,20 +194,8 @@ public final class CraftPlayerProfile implements PlayerProfile, com.destroystoky
         builder.append(", name=");
         builder.append(this.getName());
         builder.append(", properties=");
-        builder.append(CraftPlayerProfile.toString(this.properties));
+        builder.append(this.properties);
         builder.append("]");
-        return builder.toString();
-    }
-
-    public static String toString(PropertyMap propertyMap) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("{");
-        propertyMap.asMap().forEach((propertyName, properties) -> {
-            builder.append(propertyName);
-            builder.append("=");
-            builder.append(properties.stream().map(CraftProfileProperty::toString).collect(Collectors.joining(",", "[", "]")));
-        });
-        builder.append("}");
         return builder.toString();
     }
 

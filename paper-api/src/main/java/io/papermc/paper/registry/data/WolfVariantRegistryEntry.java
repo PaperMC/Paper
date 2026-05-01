@@ -35,6 +35,27 @@ public interface WolfVariantRegistryEntry {
     ClientTextureAsset tameClientTextureAsset();
 
     /**
+     * Provides the client texture asset of the wolf variant for when it is an angry baby.
+     *
+     * @return the baby angry client texture asset.
+     */
+    ClientTextureAsset babyAngryClientTextureAsset();
+
+    /**
+     * Provides the client texture asset of the wolf variant for when it is a wild baby.
+     *
+     * @return the baby wild client texture asset.
+     */
+    ClientTextureAsset babyWildClientTextureAsset();
+
+    /**
+     * Provides the client texture asset of the wolf variant for when it is a tame baby.
+     *
+     * @return the baby tame client texture asset.
+     */
+    ClientTextureAsset babyTameClientTextureAsset();
+
+    /**
      * A mutable builder for the {@link WolfVariantRegistryEntry} plugins may change in applicable registry events.
      * <p>
      * The following values are required for each builder:
@@ -42,6 +63,9 @@ public interface WolfVariantRegistryEntry {
      *     <li>{@link #angryClientTextureAsset(ClientTextureAsset)}</li>
      *     <li>{@link #wildClientTextureAsset(ClientTextureAsset)}</li>
      *     <li>{@link #tameClientTextureAsset(ClientTextureAsset)}</li>
+     *     <li>{@link #babyAngryClientTextureAsset(ClientTextureAsset)}</li>
+     *     <li>{@link #babyWildClientTextureAsset(ClientTextureAsset)}</li>
+     *     <li>{@link #babyTameClientTextureAsset(ClientTextureAsset)}</li>
      * </ul>
      */
     @ApiStatus.Experimental
@@ -77,5 +101,35 @@ public interface WolfVariantRegistryEntry {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder tameClientTextureAsset(ClientTextureAsset tameClientTextureAsset);
+
+        /**
+         * Sets the client texture asset of the wolf variant for when it is an angry baby.
+         *
+         * @param babyAngryClientTextureAsset the baby angry client texture asset.
+         * @return this builder instance.
+         * @see WolfVariantRegistryEntry#babyAngryClientTextureAsset()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder babyAngryClientTextureAsset(ClientTextureAsset babyAngryClientTextureAsset);
+
+        /**
+         * Sets the client texture asset of the wolf variant for when it is a wild baby.
+         *
+         * @param babyWildClientTextureAsset the baby wild client texture asset.
+         * @return this builder instance.
+         * @see WolfVariantRegistryEntry#babyWildClientTextureAsset()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder babyWildClientTextureAsset(ClientTextureAsset babyWildClientTextureAsset);
+
+        /**
+         * Sets the client texture asset of the wolf variant for when it is a tame baby.
+         *
+         * @param babyTameClientTextureAsset the baby tame client texture asset.
+         * @return this builder instance.
+         * @see WolfVariantRegistryEntry#babyTameClientTextureAsset()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder babyTameClientTextureAsset(ClientTextureAsset babyTameClientTextureAsset);
     }
 }

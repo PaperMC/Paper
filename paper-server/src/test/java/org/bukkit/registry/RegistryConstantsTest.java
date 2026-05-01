@@ -57,7 +57,8 @@ public class RegistryConstantsTest {
             DataComponents.BLOCK_ENTITY_DATA,
             DataComponents.BUCKET_ENTITY_DATA,
             DataComponents.LOCK,
-            DataComponents.CREATIVE_SLOT_LOCK
+            DataComponents.CREATIVE_SLOT_LOCK,
+            DataComponents.ADDITIONAL_TRADE_COST
         ));
         ignore(Registries.ENVIRONMENT_ATTRIBUTE, Set.of(
             EnvironmentAttributes.AMBIENT_SOUNDS,

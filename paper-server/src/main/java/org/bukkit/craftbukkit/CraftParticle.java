@@ -82,7 +82,7 @@ public abstract class CraftParticle<D> implements Keyed {
 
     public static <T> T convertLegacy(T object) {
         if (object instanceof MaterialData mat) {
-            return (T) CraftBlockData.fromData(CraftMagicNumbers.getBlock(mat));
+            return (T) CraftMagicNumbers.getBlock(mat).asBlockData();
         }
 
         return object;
@@ -132,7 +132,7 @@ public abstract class CraftParticle<D> implements Keyed {
             BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> itemStackFunction = (name, particle) -> new CraftParticle<>(name, particle, ItemStack.class) {
                 @Override
                 public ParticleOptions createParticleParam(ItemStack data) {
-                    return new ItemParticleOption((net.minecraft.core.particles.ParticleType<ItemParticleOption>) this.getHandle(), CraftItemStack.asNMSCopy(data));
+                    return new ItemParticleOption((net.minecraft.core.particles.ParticleType<ItemParticleOption>) this.getHandle(), CraftItemStack.asTemplate(data));
                 }
             };
 
@@ -158,7 +158,7 @@ public abstract class CraftParticle<D> implements Keyed {
                     PositionSource source;
                     if (data.getDestination() instanceof Vibration.Destination.BlockDestination) {
                         Location destination = ((Vibration.Destination.BlockDestination) data.getDestination()).getLocation();
-                        source = new BlockPositionSource(CraftLocation.toBlockPosition(destination));
+                        source = new BlockPositionSource(CraftLocation.toBlockPos(destination));
                     } else if (data.getDestination() instanceof Vibration.Destination.EntityDestination) {
                         Entity destination = ((CraftEntity) ((Vibration.Destination.EntityDestination) data.getDestination()).getEntity()).getHandle();
                         source = new EntityPositionSource(destination, destination.getEyeHeight());

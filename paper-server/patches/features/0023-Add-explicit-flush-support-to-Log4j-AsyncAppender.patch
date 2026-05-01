@@ -1,0 +1,162 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Mon, 9 Feb 2026 19:09:12 -0700
+Subject: [PATCH] Add explicit flush support to Log4j AsyncAppender
+
+
+diff --git a/org/apache/logging/log4j/core/appender/AsyncAppender.java b/org/apache/logging/log4j/core/appender/AsyncAppender.java
+index f84870712345cd688a90ea53ad47eb33fe658863..126a5d1bc4239ba83565600a060877c22e39e06b 100644
+--- a/org/apache/logging/log4j/core/appender/AsyncAppender.java
++++ b/org/apache/logging/log4j/core/appender/AsyncAppender.java
+@@ -446,6 +446,23 @@ public final class AsyncAppender extends AbstractAppender {
+         return dispatcher.getAppenders();
+     }
+ 
++    // Paper start - add explicit flush method
++    public boolean flush(final long timeout, final TimeUnit timeUnit) {
++        if (!isStarted() || dispatcher == null) {
++            return true;
++        }
++
++        final long timeoutMillis = timeout <= 0L ? 0L : timeUnit.toMillis(timeout);
++        try {
++            return dispatcher.flush(timeoutMillis);
++        } catch (final InterruptedException ignored) {
++            Thread.currentThread().interrupt();
++            LOGGER.warn("Interrupted while flushing AsyncAppender {}", getName());
++            return false;
++        }
++    }
++    // Paper end - add explicit flush method
++
+     /**
+      * Returns the name of the appender that any errors are logged to or {@code null}.
+      *
+diff --git a/org/apache/logging/log4j/core/appender/AsyncAppenderEventDispatcher.java b/org/apache/logging/log4j/core/appender/AsyncAppenderEventDispatcher.java
+index ed962f5952c0861809d2558e709e8dd683751383..a12872c42a26d469e5b7004f7fe7ae535071a633 100644
+--- a/org/apache/logging/log4j/core/appender/AsyncAppenderEventDispatcher.java
++++ b/org/apache/logging/log4j/core/appender/AsyncAppenderEventDispatcher.java
+@@ -33,6 +33,25 @@ class AsyncAppenderEventDispatcher extends Log4jThread {
+ 
+     private static final LogEvent STOP_EVENT = new Log4jLogEvent();
+ 
++    // Paper start - add explicit flush method
++    private static final class FlushEvent extends Log4jLogEvent {
++
++        private final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
++
++        private void done() {
++            this.latch.countDown();
++        }
++
++        private boolean await(final long timeoutMillis) throws InterruptedException {
++            if (timeoutMillis <= 0L) {
++                this.latch.await();
++                return true;
++            }
++            return this.latch.await(timeoutMillis, java.util.concurrent.TimeUnit.MILLISECONDS);
++        }
++    }
++    // Paper end - add explicit flush method
++
+     private static final AtomicLong THREAD_COUNTER = new AtomicLong(0);
+ 
+     private static final Logger LOGGER = StatusLogger.getLogger();
+@@ -87,6 +106,13 @@ class AsyncAppenderEventDispatcher extends Log4jThread {
+             if (event == STOP_EVENT) {
+                 break;
+             }
++            // Paper start - add explicit flush method
++            if (event instanceof FlushEvent flushEvent) {
++                this.flushAppenderOutputStreams();
++                flushEvent.done();
++                continue;
++            }
++            // Paper end - add explicit flush method
+             event.setEndOfBatch(queue.isEmpty());
+             dispatch(event);
+         }
+@@ -105,6 +131,13 @@ class AsyncAppenderEventDispatcher extends Log4jThread {
+             if (event == STOP_EVENT) {
+                 continue;
+             }
++            // Paper start - add explicit flush method
++            if (event instanceof FlushEvent flushEvent) {
++                this.flushAppenderOutputStreams();
++                flushEvent.done();
++                continue;
++            }
++            // Paper end - add explicit flush method
+             event.setEndOfBatch(queue.isEmpty());
+             dispatch(event);
+             eventCount++;
+@@ -112,6 +145,24 @@ class AsyncAppenderEventDispatcher extends Log4jThread {
+         LOGGER.trace("{} has processed the last {} remaining event(s).", getName(), eventCount);
+     }
+ 
++    // Paper start - add explicit flush method
++    private void flushAppenderOutputStreams() {
++        for (int appenderIndex = 0; appenderIndex < appenders.size(); appenderIndex++) {
++            flushAppender(appenders.get(appenderIndex));
++        }
++        if (errorAppender != null) {
++            flushAppender(errorAppender);
++        }
++    }
++
++    private void flushAppender(final AppenderControl appenderControl) {
++        final Appender appender = appenderControl.getAppender();
++        if (appender instanceof AbstractOutputStreamAppender<?> outputStreamAppender) {
++            outputStreamAppender.getManager().flush();
++        }
++    }
++    // Paper end - add explicit flush method
++
+     /**
+      * Dispatches the given {@code event} to the registered appenders <b>in the
+      * current thread</b>.
+@@ -178,4 +229,44 @@ class AsyncAppenderEventDispatcher extends Log4jThread {
+         // Wait for the completion.
+         join(timeoutMillis);
+     }
++
++    // Paper start - add explicit flush method
++    boolean flush(final long timeoutMillis) throws InterruptedException {
++        if (stoppedRef.get()) {
++            flushAppenderOutputStreams();
++            return true;
++        }
++
++        // If the dispatcher thread has not started yet, fail fast
++        if (Thread.State.NEW.equals(getState())) {
++            return false;
++        }
++
++        final FlushEvent flushEvent = new FlushEvent();
++
++        final long startNanos = timeoutMillis > 0L ? System.nanoTime() : 0L;
++        final boolean enqueued;
++        if (timeoutMillis <= 0L) {
++            queue.put(flushEvent);
++            enqueued = true;
++        } else {
++            enqueued = queue.offer(flushEvent, timeoutMillis, java.util.concurrent.TimeUnit.MILLISECONDS);
++        }
++
++        if (!enqueued) {
++            return false;
++        }
++
++        if (timeoutMillis <= 0L) {
++            return flushEvent.await(0L);
++        }
++
++        final long elapsedMillis = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
++        final long remainingMillis = timeoutMillis - elapsedMillis;
++        if (remainingMillis <= 0L) {
++            return false;
++        }
++        return flushEvent.await(remainingMillis);
++    }
++    // Paper end - add explicit flush method
+ }

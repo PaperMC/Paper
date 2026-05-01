@@ -2,49 +2,49 @@
 +++ b/net/minecraft/world/entity/animal/cow/MushroomCow.java
 @@ -116,7 +_,17 @@
              return InteractionResult.SUCCESS;
-         } else if (itemInHand.is(Items.SHEARS) && this.readyForShearing()) {
-             if (this.level() instanceof ServerLevel serverLevel) {
--                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand);
+         } else if (itemStack.is(Items.SHEARS) && this.readyForShearing()) {
+             if (this.level() instanceof ServerLevel level) {
+-                this.shear(level, SoundSource.PLAYERS, itemStack);
 +                // CraftBukkit start
 +                // Paper start - custom shear drops
-+                java.util.List<ItemStack> drops = this.generateDefaultDrops(serverLevel, itemInHand);
-+                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemInHand, hand, drops);
++                java.util.List<ItemStack> drops = this.generateDefaultDrops(level, itemStack);
++                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemStack, hand, drops);
 +                if (event != null) {
 +                    if (event.isCancelled()) return InteractionResult.PASS;
 +                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
 +                    // Paper end - custom shear drops
 +                }
 +                // CraftBukkit end
-+                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand, drops); // Paper - custom shear drops
++                this.shear(level, SoundSource.PLAYERS, itemStack, drops); // Paper - custom shear drops
                  this.gameEvent(GameEvent.SHEAR, player);
-                 itemInHand.hurtAndBreak(1, player, hand.asEquipmentSlot());
+                 itemStack.hurtAndBreak(1, player, hand.asEquipmentSlot());
              }
 @@ -170,15 +_,31 @@
  
      @Override
-     public void shear(ServerLevel level, SoundSource source, ItemStack shears) {
+     public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool) {
 +        // Paper start - custom shear drops
-+        this.shear(level, source, shears, this.generateDefaultDrops(level, shears));
++        this.shear(level, soundSource, tool, this.generateDefaultDrops(level, tool));
 +    }
 +
 +    @Override
-+    public java.util.List<ItemStack> generateDefaultDrops(final ServerLevel level, final ItemStack shears) {
++    public java.util.List<ItemStack> generateDefaultDrops(final ServerLevel level, final ItemStack tool) {
 +        final java.util.List<ItemStack> drops = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
-+        this.dropFromShearingLootTable(level, BuiltInLootTables.SHEAR_MOOSHROOM, shears, (ignored, stack) -> {
++        this.dropFromShearingLootTable(level, BuiltInLootTables.SHEAR_MOOSHROOM, tool, (ignored, stack) -> {
 +            for (int i = 0; i < stack.getCount(); ++i) drops.add(stack.copyWithCount(1));
 +        });
 +        return drops;
 +    }
 +
 +    @Override
-+    public void shear(ServerLevel level, SoundSource source, ItemStack shears, java.util.List<ItemStack> drops) {
++    public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool, java.util.List<ItemStack> drops) {
 +        // Paper end
-         level.playSound(null, this, SoundEvents.MOOSHROOM_SHEAR, source, 1.0F, 1.0F);
+         level.playSound(null, this, SoundEvents.MOOSHROOM_SHEAR, soundSource, 1.0F, 1.0F);
          this.convertTo(EntityType.COW, ConversionParams.single(this, false, false), cow -> {
              level.sendParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY(0.5), this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
--            this.dropFromShearingLootTable(level, BuiltInLootTables.SHEAR_MOOSHROOM, shears, (serverLevel, stack) -> {
--                for (int i = 0; i < stack.getCount(); i++) {
--                    serverLevel.addFreshEntity(new ItemEntity(this.level(), this.getX(), this.getY(1.0), this.getZ(), stack.copyWithCount(1)));
+-            this.dropFromShearingLootTable(level, BuiltInLootTables.SHEAR_MOOSHROOM, tool, (l, drop) -> {
+-                for (int i = 0; i < drop.getCount(); i++) {
+-                    l.addFreshEntity(new ItemEntity(this.level(), this.getX(), this.getY(1.0), this.getZ(), drop.copyWithCount(1)));
 -                }
 +            // Paper start - custom shear drops; moved drop generation to separate method
 +            drops.forEach(drop -> {

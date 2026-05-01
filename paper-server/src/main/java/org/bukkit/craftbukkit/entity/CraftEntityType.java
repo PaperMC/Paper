@@ -33,6 +33,7 @@ public class CraftEntityType {
                 .getOptional(KEY_CACHE.computeIfAbsent(bukkit, type -> net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, CraftNamespacedKey.toMinecraft(type.getKey())))).orElseThrow();
     }
 
+    @Deprecated // for now until this is a proper registry type
     public static Holder<net.minecraft.world.entity.EntityType<?>> bukkitToMinecraftHolder(EntityType bukkit) {
         Preconditions.checkArgument(bukkit != null);
 

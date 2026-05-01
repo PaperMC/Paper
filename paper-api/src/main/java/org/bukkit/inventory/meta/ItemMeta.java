@@ -1,13 +1,15 @@
 package org.bukkit.inventory.meta;
 
 import com.google.common.collect.Multimap;
+import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.ItemAdventurePredicate;
+import io.papermc.paper.registry.keys.tags.DamageTypeTagKeys;
+import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import io.papermc.paper.datacomponent.DataComponentType;
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import io.papermc.paper.datacomponent.item.ItemAdventurePredicate;
 import net.kyori.adventure.text.Component;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
@@ -29,7 +31,6 @@ import org.bukkit.inventory.meta.components.ToolComponent;
 import org.bukkit.inventory.meta.components.UseCooldownComponent;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.persistence.PersistentDataHolder;
-import org.bukkit.tag.DamageTypeTags;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -634,8 +635,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * or lava.
      *
      * @return fire_resistant
-     * @deprecated use {@link #getDamageResistant()} and
-     * {@link DamageTypeTags#IS_FIRE}
+     * @deprecated use {@link #getDamageResistantTypes()} and check if it matches any {@link DamageTypeTagKeys#IS_FIRE fire damage type}
      */
     @Deprecated(since = "1.21.2")
     boolean isFireResistant();
@@ -645,8 +645,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * or lava.
      *
      * @param fireResistant fire_resistant
-     * @deprecated use {@link #setDamageResistant(org.bukkit.Tag)} and
-     * {@link DamageTypeTags#IS_FIRE}
+     * @deprecated use {@link #setDamageResistantTypes(RegistryKeySet)} with {@link DamageTypeTagKeys#IS_FIRE}
      */
     @Deprecated(since = "1.21.2")
     void setFireResistant(boolean fireResistant);
@@ -662,12 +661,11 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets the type of damage this item will be resistant to when in entity
      * form.
      *
-     * Plugins should check {@link #hasDamageResistant()} before calling this
-     * method.
-     *
-     * @return damage type
+     * @return damage type tag
+     * @deprecated use {@link #getDamageResistantTypes()}
      */
     @Nullable
+    @Deprecated(since = "26.1")
     Tag<DamageType> getDamageResistant();
 
     /**
@@ -675,8 +673,26 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * form.
      *
      * @param tag the tag, or null to clear
+     * @deprecated use {@link #setDamageResistantTypes(RegistryKeySet)}
      */
+    @Deprecated(since = "26.1")
     void setDamageResistant(@Nullable Tag<DamageType> tag);
+
+    /**
+     * Gets the type of damage this item will be resistant to when in entity
+     * form.
+     *
+     * @return the registry key set holding the respective damage types.
+     */
+    @Nullable RegistryKeySet<DamageType> getDamageResistantTypes();
+
+    /**
+     * Sets the type of damage this item will be resistant to when in entity
+     * form.
+     *
+     * @param types the registry key set, or null to clear
+     */
+    void setDamageResistantTypes(@Nullable RegistryKeySet<DamageType> types);
 
     /**
      * Gets if the max_stack_size is set.
@@ -1039,9 +1055,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * assert itemStack.isSimilar(recreatedItemStack); // Should be true*
      * </pre>
      * <p>
-     * *Components not represented or explicitly overridden by this ItemMeta instance
-     * will not be included in the resulting string and therefore may result in ItemStacks
-     * that do not match <em>exactly</em>. For example, if {@link #setDisplayName(String)}
+     * *Components not represented or explicitly overridden by this ItemMeta instance and
+     * transient components will not be included in the resulting string and therefore may
+     * result in ItemStacks that do not match <em>exactly</em>. For example, if {@link #setDisplayName(String)}
      * is not set, then the custom name component will not be included. Or if this ItemMeta
      * is a PotionMeta, it will not include any components related to lodestone compasses,
      * banners, or books, etc., only components modifiable by a PotionMeta instance.
