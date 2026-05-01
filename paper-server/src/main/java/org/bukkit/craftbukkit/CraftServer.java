@@ -1173,8 +1173,8 @@ public final class CraftServer implements Server {
         Preconditions.checkState(this.console.getAllLevels().iterator().hasNext(), "Cannot create additional worlds on STARTUP");
         //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot create a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
         Preconditions.checkArgument(creator != null, "WorldCreator cannot be null");
-        if (creator.environment() == Environment.CUSTOM) {
-            Preconditions.checkArgument(creator.customEnvironmentKey() != null, "Custom environment key cannot be null when environment is CUSTOM");
+        if ((creator.environment() == Environment.CUSTOM) == (creator.customEnvironmentKey() == null)) {
+            throw new IllegalArgumentException("Custom environment key cannot be null when environment is CUSTOM and vice versa");
         }
 
         String name = creator.name();
@@ -1198,16 +1198,12 @@ public final class CraftServer implements Server {
             biomeProvider = this.getBiomeProvider(name);
         }
 
-        ResourceKey<LevelStem> actualDimension;
-        if (creator.environment() == Environment.NORMAL) {
-            actualDimension = LevelStem.OVERWORLD;
-        } else if (creator.environment() == Environment.NETHER) {
-            actualDimension = LevelStem.NETHER;
-        } else if (creator.environment() == Environment.THE_END) {
-            actualDimension = LevelStem.END;
-        } else {
-            actualDimension = PaperAdventure.asVanilla(Registries.LEVEL_STEM, creator.customEnvironmentKey());
-        }
+        ResourceKey<LevelStem> actualDimension = switch (creator.environment()) {
+            case NORMAL -> LevelStem.OVERWORLD;
+            case NETHER -> LevelStem.NETHER;
+            case THE_END -> LevelStem.END;
+            case CUSTOM -> PaperAdventure.asVanilla(Registries.LEVEL_STEM, creator.customEnvironmentKey());
+        };
 
         final ResourceKey<net.minecraft.world.level.Level> dimensionKey = PaperWorldLoader.dimensionKey(creator.key());
         WorldLoader.DataLoadContext context = this.console.worldLoaderContext;
