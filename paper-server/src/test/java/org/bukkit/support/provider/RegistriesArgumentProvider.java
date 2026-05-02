@@ -32,6 +32,7 @@ import net.minecraft.world.entity.decoration.painting.PaintingVariant;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.npc.villager.VillagerType;
 import net.minecraft.world.item.Instrument;
+import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.level.saveddata.maps.MapDecorationType;
 import org.bukkit.Art;
@@ -76,6 +77,7 @@ import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
 import org.bukkit.craftbukkit.map.CraftMapCursor;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
+import org.bukkit.craftbukkit.potion.CraftPotionType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Cat;
@@ -94,6 +96,7 @@ import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
@@ -161,6 +164,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.DIALOG, Dialog.class, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
         register(Registries.GAME_RULE, GameRule.class, GameRules.class, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
         register(Registries.POINT_OF_INTEREST_TYPE, PoiType.class, PoiTypes.class, PaperPoiType.class, net.minecraft.world.entity.ai.village.poi.PoiType.class);
+        register(Registries.POTION, PotionType.class, CraftPotionType.class, Potion.class);
     }
 
     private static <M, B extends Keyed> void register(ResourceKey<? extends Registry<? extends M>> registryKey, Class<B> api, Class<? extends B> impl, Class<M> internal) {
