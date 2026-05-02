@@ -125,10 +125,11 @@ public class MaterialTags {
 
     /**
      * Covers all dyes.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_DYES}
      */
-    public static final MaterialSetTag DYES = new MaterialSetTag(keyFor("dyes"))
-        .endsWith("_DYE")
-        .ensureSize("DYES", 16).lock();
+    @Deprecated(since = "26.1")
+    public static final MaterialSetTag DYES = replacedBy(Tag.ITEMS_DYES);
 
     /**
      * Covers all variants of gates.
