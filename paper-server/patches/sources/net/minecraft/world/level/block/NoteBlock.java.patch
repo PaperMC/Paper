@@ -16,7 +16,7 @@
          boolean neighborDirectionSetsInstrument = directionToNeighbour.getAxis() == Direction.Axis.Y;
          return neighborDirectionSetsInstrument
              ? this.setInstrument(level, pos, state)
-@@ -86,12 +_,14 @@
+@@ -86,12 +_,19 @@
  
      @Override
      protected void neighborChanged(
@@ -26,6 +26,11 @@
 +        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) return; // Paper - prevent noteblock powered-state from updating
          boolean signal = level.hasNeighborSignal(pos);
          if (signal != state.getValue(POWERED)) {
++            // Paper start - Call BlockRedstoneEvent
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, signal)) {
++                return;
++            }
++            // Paper end - Call BlockRedstoneEvent
              if (signal) {
                  this.playNote(null, state, level, pos);
 +                state = level.getBlockState(pos); // CraftBukkit - SPIGOT-5617: update in case changed in event

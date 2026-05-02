@@ -1,25 +1,27 @@
 --- a/net/minecraft/world/level/block/ButtonBlock.java
 +++ b/net/minecraft/world/level/block/ButtonBlock.java
-@@ -92,6 +_,19 @@
+@@ -92,6 +_,11 @@
          if (state.getValue(POWERED)) {
              return InteractionResult.CONSUME;
          } else {
-+            // CraftBukkit start
-+            boolean powered = state.getValue(ButtonBlock.POWERED);
-+            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
-+            int old = (powered) ? 15 : 0;
-+            int current = (!powered) ? 15 : 0;
-+
-+            org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(block, old, current);
-+            level.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+
-+            if ((eventRedstone.getNewCurrent() > 0) != (!powered)) {
++            // Paper start - Call BlockRedstoneEvent
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, true)) {
 +                return InteractionResult.SUCCESS;
 +            }
-+            // CraftBukkit end
++            // Paper end - Call BlockRedstoneEvent
              this.press(state, level, pos, player);
              return InteractionResult.SUCCESS;
          }
+@@ -102,7 +_,9 @@
+         final BlockState state, final ServerLevel level, final BlockPos pos, final Explosion explosion, final BiConsumer<ItemStack, BlockPos> onHit
+     ) {
+         if (explosion.canTriggerBlocks() && !state.getValue(POWERED)) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, true)) { // Paper - Call BlockRedstoneEvent
+             this.press(state, level, pos, null);
++            } // Paper - Call BlockRedstoneEvent
+         }
+ 
+         super.onExplosionHit(state, level, pos, explosion, onHit);
 @@ -162,6 +_,7 @@
          final InsideBlockEffectApplier effectApplier,
          final boolean isPrecise
@@ -28,7 +30,7 @@
          if (!level.isClientSide() && this.type.canButtonBeActivatedByArrows() && !state.getValue(POWERED)) {
              this.checkPressed(state, level, pos);
          }
-@@ -173,7 +_,31 @@
+@@ -173,7 +_,21 @@
              : null;
          boolean shouldBePressed = firstArrow != null;
          boolean wasPressed = state.getValue(POWERED);
@@ -36,27 +38,17 @@
 +        if (wasPressed != shouldBePressed && shouldBePressed) {
 +            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +            org.bukkit.event.entity.EntityInteractEvent event = new org.bukkit.event.entity.EntityInteractEvent(firstArrow.getBukkitEntity(), block);
-+            level.getCraftServer().getPluginManager().callEvent(event);
-+
-+            if (event.isCancelled()) {
++            if (!event.callEvent()) {
 +                return;
 +            }
 +        }
 +        // CraftBukkit end
          if (shouldBePressed != wasPressed) {
-+            // CraftBukkit start
-+            boolean powered = wasPressed;
-+            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
-+            int old = (powered) ? 15 : 0;
-+            int current = (!powered) ? 15 : 0;
-+
-+            org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(block, old, current);
-+            level.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+
-+            if ((shouldBePressed && eventRedstone.getNewCurrent() <= 0) || (!shouldBePressed && eventRedstone.getNewCurrent() > 0)) {
++            // Paper start - Call BlockRedstoneEvent
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, shouldBePressed)) {
 +                return;
 +            }
-+            // CraftBukkit end
++            // Paper end - Call BlockRedstoneEvent
              level.setBlock(pos, state.setValue(POWERED, shouldBePressed), Block.UPDATE_ALL);
              this.updateNeighbours(state, level, pos);
              this.playSound(null, level, pos, shouldBePressed);

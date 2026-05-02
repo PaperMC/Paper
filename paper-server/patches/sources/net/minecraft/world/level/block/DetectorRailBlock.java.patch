@@ -8,7 +8,7 @@
          if (!level.isClientSide()) {
              if (!state.getValue(POWERED)) {
                  this.checkPressed(level, pos, state);
-@@ -87,6 +_,7 @@
+@@ -87,12 +_,21 @@
  
      private void checkPressed(final Level level, final BlockPos pos, final BlockState state) {
          if (this.canSurvive(state, level, pos)) {
@@ -16,20 +16,17 @@
              boolean wasPressed = state.getValue(POWERED);
              boolean shouldBePressed = false;
              List<AbstractMinecart> entities = this.getInteractingMinecartOfType(level, pos, AbstractMinecart.class, e -> true);
-@@ -94,6 +_,16 @@
+             if (!entities.isEmpty()) {
                  shouldBePressed = true;
              }
- 
-+            // CraftBukkit start
++
++            // Paper start - Call BlockRedstoneEvent
 +            if (wasPressed != shouldBePressed) {
-+                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
-+
-+                org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(block, shouldBePressed ? 15 : 0, shouldBePressed ? 15 : 0);
-+                level.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+
-+                shouldBePressed = eventRedstone.getNewCurrent() > 0;
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, shouldBePressed)) {
++                    return;
++                }
 +            }
-+            // CraftBukkit end
++            // Paper end - Call BlockRedstoneEvent
+ 
              if (shouldBePressed && !wasPressed) {
                  BlockState newState = state.setValue(POWERED, true);
-                 level.setBlock(pos, newState, Block.UPDATE_ALL);

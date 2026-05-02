@@ -1,20 +1,14 @@
 --- a/net/minecraft/world/level/block/FenceGateBlock.java
 +++ b/net/minecraft/world/level/block/FenceGateBlock.java
-@@ -188,6 +_,17 @@
-     ) {
+@@ -189,6 +_,11 @@
          if (!level.isClientSide()) {
              boolean hasPower = level.hasNeighborSignal(pos);
-+            // CraftBukkit start
-+            boolean oldPowered = state.getValue(FenceGateBlock.POWERED);
-+            if (oldPowered != hasPower) {
-+                int newPower = hasPower ? 15 : 0;
-+                int oldPower = oldPowered ? 15 : 0;
-+                org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
-+                org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(bukkitBlock, oldPower, newPower);
-+                level.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+                hasPower = eventRedstone.getNewCurrent() > 0;
-+            }
-+            // CraftBukkit end
              if (state.getValue(POWERED) != hasPower) {
++                // Paper start - Call BlockRedstoneEvent
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, hasPower)) {
++                    return;
++                }
++                // Paper end - Call BlockRedstoneEvent
                  level.setBlock(pos, state.setValue(POWERED, hasPower).setValue(OPEN, hasPower), Block.UPDATE_CLIENTS);
                  if (state.getValue(OPEN) != hasPower) {
+                     level.playSound(
