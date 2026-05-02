@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.command.MessageCommandSender;
 import org.bukkit.command.RemoteConsoleCommandSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,7 +16,7 @@ import java.util.List;
  */
 @Deprecated(forRemoval = true)
 @SuppressWarnings("WeakerAccess")
-public class TimingsReportListener implements net.kyori.adventure.audience.ForwardingAudience, MessageCommandSender {
+public class TimingsReportListener implements net.kyori.adventure.audience.ForwardingAudience {
     private final List<CommandSender> senders;
     private final Runnable onDone;
     private String timingsURL;
@@ -71,7 +70,6 @@ public class TimingsReportListener implements net.kyori.adventure.audience.Forwa
         return this.senders;
     }
 
-    @Override
     public void sendMessage(@NotNull String message) {
         senders.forEach((sender) -> sender.sendMessage(message));
     }

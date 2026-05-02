@@ -282,16 +282,6 @@ public final class Timings {
         requestingReport.add(sender);
     }
 
-    /**
-     * Generates a report and sends it to the specified listener.
-     * Use with {@link org.bukkit.command.BufferedCommandSender} to get full response when done!
-     * @param sender The listener to send responses too.
-     */
-    public static void generateReport(@NotNull TimingsReportListener sender) {
-        Preconditions.checkNotNull(sender);
-        requestingReport.add(sender);
-    }
-
     /*
     =================
     Protected API: These are for internal use only in Bukkit/CraftBukkit
