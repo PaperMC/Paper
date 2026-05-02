@@ -18,18 +18,6 @@ public class PlayerBucketEmptyEvent extends PlayerBucketEvent {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     @ApiStatus.Internal
-    @Deprecated(since = "1.14.4", forRemoval = true)
-    public PlayerBucketEmptyEvent(@NotNull final Player player, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
-        super(player, blockClicked, blockFace, bucket, itemInHand);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.19.2", forRemoval = true)
-    public PlayerBucketEmptyEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
-        super(player, block, blockClicked, blockFace, bucket, itemInHand);
-    }
-
-    @ApiStatus.Internal
     public PlayerBucketEmptyEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @NotNull final EquipmentSlot hand) {
         super(player, block, blockClicked, blockFace, bucket, itemInHand, hand);
     }

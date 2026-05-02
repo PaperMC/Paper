@@ -24,12 +24,6 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    @Deprecated(since = "1.14.1", forRemoval = true)
-    public PortalCreateEvent(@NotNull final List<BlockState> blocks, @NotNull final World world, @NotNull CreateReason reason) {
-        this(blocks, world, null, reason);
-    }
-
-    @ApiStatus.Internal
     public PortalCreateEvent(@NotNull final List<BlockState> blocks, @NotNull final World world, @Nullable Entity entity, @NotNull CreateReason reason) {
         super(world);
 

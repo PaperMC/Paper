@@ -34,30 +34,6 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
         this.side = side;
     }
 
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public SignChangeEvent(@NotNull final Block sign, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines) {
-        this(sign, player, adventure$lines, Side.FRONT);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.19.4", forRemoval = true)
-    public SignChangeEvent(@NotNull final Block sign, @NotNull final Player thePlayer, @NotNull final String[] theLines) {
-        this(sign, thePlayer, theLines, Side.FRONT);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public SignChangeEvent(@NotNull final Block sign, @NotNull final Player thePlayer, @NotNull final String[] theLines, @NotNull Side side) {
-        super(sign);
-        this.player = thePlayer;
-        this.adventure$lines = new java.util.ArrayList<>();
-        for (String theLine : theLines) {
-            this.adventure$lines.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(theLine));
-        }
-        this.side = side;
-    }
-
     /**
      * Gets the player changing the sign involved in this event.
      *

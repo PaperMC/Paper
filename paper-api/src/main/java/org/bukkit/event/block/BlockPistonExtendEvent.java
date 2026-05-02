@@ -21,14 +21,6 @@ public class BlockPistonExtendEvent extends BlockPistonEvent {
     private List<Block> blocks;
 
     @ApiStatus.Internal
-    @Deprecated(since = "1.8", forRemoval = true)
-    public BlockPistonExtendEvent(@NotNull final Block block, final int length, @NotNull final BlockFace direction) {
-        super(block, direction);
-
-        this.length = length;
-    }
-
-    @ApiStatus.Internal
     public BlockPistonExtendEvent(@NotNull final Block block, @NotNull final List<Block> blocks, @NotNull final BlockFace direction) {
         super(block, direction);
 

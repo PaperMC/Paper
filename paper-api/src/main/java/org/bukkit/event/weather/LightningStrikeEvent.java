@@ -20,12 +20,6 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    @Deprecated(since = "1.13.1", forRemoval = true)
-    public LightningStrikeEvent(@NotNull final World world, @NotNull final LightningStrike bolt) {
-        this(world, bolt, Cause.UNKNOWN);
-    }
-
-    @ApiStatus.Internal
     public LightningStrikeEvent(@NotNull final World world, @NotNull final LightningStrike bolt, @NotNull final Cause cause) {
         super(world);
         this.bolt = bolt;

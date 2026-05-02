@@ -20,12 +20,6 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
     private final Block ignitingBlock;
     private boolean cancelled;
 
-    @Deprecated(since = "1.11.2", forRemoval = true)
-    @ApiStatus.Internal
-    public BlockBurnEvent(@NotNull final Block block) {
-        this(block, null);
-    }
-
     @ApiStatus.Internal
     public BlockBurnEvent(@NotNull final Block block, @Nullable final Block ignitingBlock) {
         super(block);

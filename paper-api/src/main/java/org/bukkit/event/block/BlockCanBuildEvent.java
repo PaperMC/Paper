@@ -29,18 +29,6 @@ public class BlockCanBuildEvent extends BlockEvent {
     protected BlockData blockData;
     protected boolean buildable;
 
-    @Deprecated(since = "1.13.2", forRemoval = true)
-    @ApiStatus.Internal
-    public BlockCanBuildEvent(@NotNull final Block block, @NotNull final BlockData type, final boolean canBuild) {
-        this(block, null, type, canBuild, org.bukkit.inventory.EquipmentSlot.HAND); // Paper - expose hand
-    }
-
-    @Deprecated(forRemoval = true)
-    @ApiStatus.Internal
-    public BlockCanBuildEvent(@NotNull final Block block, @Nullable final Player player, @NotNull final BlockData type, final boolean canBuild) {
-        this(block, player, type, canBuild, org.bukkit.inventory.EquipmentSlot.HAND); // Paper start - expose hand
-    }
-
     @ApiStatus.Internal
     public BlockCanBuildEvent(@NotNull final Block block, @Nullable final Player player, @NotNull final BlockData type, final boolean canBuild, @NotNull final org.bukkit.inventory.EquipmentSlot hand) { // Paper end - expose hand
         super(block);

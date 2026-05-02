@@ -25,12 +25,6 @@ public class ThunderChangeEvent extends WeatherEvent implements Cancellable {
         this.cause = cause;
     }
 
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public ThunderChangeEvent(@NotNull final World world, final boolean newThunderState) {
-        this(world, newThunderState, Cause.UNKNOWN);
-    }
-
     /**
      * Gets the state of thunder that the world is being set to
      *

@@ -14,12 +14,6 @@ import org.jetbrains.annotations.Nullable;
 public class SheepDyeWoolEvent extends EntityDyeEvent {
 
     @ApiStatus.Internal
-    @Deprecated(since = "1.17.1", forRemoval = true)
-    public SheepDyeWoolEvent(@NotNull final Sheep sheep, @NotNull final DyeColor color) {
-        this(sheep, color, null);
-    }
-
-    @ApiStatus.Internal
     public SheepDyeWoolEvent(@NotNull final Sheep sheep, @NotNull final DyeColor color, @Nullable Player player) {
         super(sheep, color, player);
     }

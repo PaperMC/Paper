@@ -37,12 +37,6 @@ public class PlayerPreLoginEvent extends Event {
     private Component message;
 
     @ApiStatus.Internal
-    @Deprecated(since = "1.7.5", forRemoval = true)
-    public PlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
-        this(name, ipAddress, null);
-    }
-
-    @ApiStatus.Internal
     public PlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
         this.result = Result.ALLOWED;
         this.message = Component.empty();

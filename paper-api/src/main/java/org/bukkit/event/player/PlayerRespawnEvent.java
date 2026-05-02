@@ -7,8 +7,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Unmodifiable;
-import java.util.Set;
 
 /**
  * Called when a player respawns.
@@ -19,18 +17,6 @@ import java.util.Set;
 public class PlayerRespawnEvent extends AbstractRespawnEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.16.1", forRemoval = true)
-    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn) {
-        this(respawnPlayer, respawnLocation, isBedSpawn, false);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.19.4", forRemoval = true)
-    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn) {
-        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, false, RespawnReason.PLUGIN);
-    }
 
     @ApiStatus.Internal
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, final boolean missingRespawnBlock, @NotNull final RespawnReason respawnReason) {

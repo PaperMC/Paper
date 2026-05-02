@@ -27,26 +27,6 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    @Deprecated(since = "1.14", forRemoval = true)
-    public BroadcastMessageEvent(@NotNull String message, @NotNull Set<CommandSender> recipients) {
-        this(false, message, recipients);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public BroadcastMessageEvent(boolean isAsync, @NotNull String message, @NotNull Set<CommandSender> recipients) {
-        super(isAsync);
-        this.message = LegacyComponentSerializer.legacySection().deserialize(message);
-        this.recipients = recipients;
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public BroadcastMessageEvent(@NotNull Component message, @NotNull Set<CommandSender> recipients) {
-        this(false, message, recipients);
-    }
-
-    @ApiStatus.Internal
     public BroadcastMessageEvent(boolean isAsync, @NotNull Component message, @NotNull Set<CommandSender> recipients) {
         super(isAsync);
         this.message = message;

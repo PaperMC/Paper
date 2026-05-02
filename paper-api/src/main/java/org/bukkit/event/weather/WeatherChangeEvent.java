@@ -25,12 +25,6 @@ public class WeatherChangeEvent extends WeatherEvent implements Cancellable {
         this.cause = cause;
     }
 
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public WeatherChangeEvent(@NotNull final World world, final boolean newWeatherState) {
-        this(world, newWeatherState, Cause.UNKNOWN);
-    }
-
     /**
      * Gets the state of weather that the world is being set to
      *

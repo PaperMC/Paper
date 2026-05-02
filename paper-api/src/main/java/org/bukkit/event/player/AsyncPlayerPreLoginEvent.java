@@ -40,35 +40,6 @@ public class AsyncPlayerPreLoginEvent extends Event {
     private final PlayerLoginConnection playerLoginConnection;
 
     @ApiStatus.Internal
-    @Deprecated(since = "1.7.5", forRemoval = true)
-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
-        this(name, ipAddress, null);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.20.5", forRemoval = true)
-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
-        this(name, ipAddress, uniqueId, false);
-    }
-
-    @ApiStatus.Internal
-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, boolean transferred) {
-        this(name, ipAddress, uniqueId, transferred, org.bukkit.Bukkit.createProfile(uniqueId, name));
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
-        this(name, ipAddress, ipAddress, uniqueId, transferred, profile);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
-        this(name, ipAddress, rawAddress, uniqueId, transferred, profile, "", null);
-    }
-
-    @ApiStatus.Internal
     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile, @NotNull String hostname, final PlayerLoginConnection playerLoginConnection) {
         super(true);
         this.result = Result.ALLOWED;
