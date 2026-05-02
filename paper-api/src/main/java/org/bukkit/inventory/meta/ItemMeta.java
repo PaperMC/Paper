@@ -1142,48 +1142,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     void setCanPlaceOn(Set<org.bukkit.Material> canPlaceOn);
 
     /**
-     * Gets the collection of namespaced keys that the item can destroy in {@link org.bukkit.GameMode#ADVENTURE}
-     *
-     * @return Set of {@link com.destroystokyo.paper.Namespaced}
-     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
-     * Please use {@link ItemStack#getData(DataComponentType.Valued)} with {@link DataComponentTypes#CAN_BREAK} instead of this.
-     */
-    @Deprecated(forRemoval = true, since = "1.20.6")
-    @NotNull
-    Set<com.destroystokyo.paper.Namespaced> getDestroyableKeys();
-
-    /**
-     * Sets the collection of namespaced keys that the item can destroy in {@link org.bukkit.GameMode#ADVENTURE}
-     *
-     * @param canDestroy Collection of {@link com.destroystokyo.paper.Namespaced}
-     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
-     * Please use {@link ItemStack#setData(DataComponentType.Valued, Object)} with {@link DataComponentTypes#CAN_BREAK} instead of this.
-     */
-    @Deprecated(forRemoval = true, since = "1.20.6")
-    void setDestroyableKeys(@NotNull Collection<com.destroystokyo.paper.Namespaced> canDestroy);
-
-    /**
-     * Gets the collection of namespaced keys that the item can be placed on in {@link org.bukkit.GameMode#ADVENTURE}
-     *
-     * @return Set of {@link com.destroystokyo.paper.Namespaced}
-     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
-     * Please use {@link ItemStack#getData(DataComponentType.Valued)} with {@link DataComponentTypes#CAN_PLACE_ON} instead of this.
-     */
-    @NotNull
-    @Deprecated(forRemoval = true, since = "1.20.6")
-    Set<com.destroystokyo.paper.Namespaced> getPlaceableKeys();
-
-    /**
-     * Sets the set of namespaced keys that the item can be placed on in {@link org.bukkit.GameMode#ADVENTURE}
-     *
-     * @param canPlaceOn Collection of {@link com.destroystokyo.paper.Namespaced}
-     * @deprecated this API part has been replaced by the {@link ItemAdventurePredicate} API.
-     * Please use {@link ItemStack#setData(DataComponentType.Valued, Object)} with {@link DataComponentTypes#CAN_PLACE_ON} instead of this.
-     */
-    @Deprecated(forRemoval = true, since = "1.20.6")
-    void setPlaceableKeys(@NotNull Collection<com.destroystokyo.paper.Namespaced> canPlaceOn);
-
-    /**
      * Checks for the existence of any keys that the item can be placed on
      *
      * @return true if this item has placeable keys

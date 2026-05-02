@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
  * underscores, hyphens, and forward slashes.
  *
  */
-public final class NamespacedKey implements Key, com.destroystokyo.paper.Namespaced {
+public final class NamespacedKey implements Key {
 
     /**
      * The namespace representing all inbuilt keys.
@@ -93,13 +93,11 @@ public final class NamespacedKey implements Key, com.destroystokyo.paper.Namespa
     }
 
     @NotNull
-    @Override
     public String getNamespace() {
         return this.namespace;
     }
 
     @NotNull
-    @Override
     public String getKey() {
         return this.key;
     }
