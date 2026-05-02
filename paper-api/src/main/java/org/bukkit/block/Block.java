@@ -780,23 +780,26 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
 
     // Paper start
     /**
-     * Gets the {@link com.destroystokyo.paper.block.BlockSoundGroup} for this block.
+     * Gets the {@link org.bukkit.SoundGroup} for this block.
      * <p>
      * This object contains the block, step, place, hit, and fall sounds.
      *
      * @return the sound group for this block
-     * @deprecated use {@link #getBlockSoundGroup()}
      */
     @NotNull
-    @Deprecated(forRemoval = true, since = "1.18.2")
-    com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup();
+    org.bukkit.SoundGroup getSoundGroup();
 
     /**
      * Gets the {@link org.bukkit.SoundGroup} for this block.
      *
      * @return the sound group for this block
+     * @deprecated use {@link #getSoundGroup()}
      */
-    @NotNull org.bukkit.SoundGroup getBlockSoundGroup();
+    @Deprecated(forRemoval = true, since = "26.1.2")
+    @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "26.2")
+    default @NotNull org.bukkit.SoundGroup getBlockSoundGroup() {
+        return this.getSoundGroup();
+    }
 
     /**
      * @deprecated use {@link #translationKey()}

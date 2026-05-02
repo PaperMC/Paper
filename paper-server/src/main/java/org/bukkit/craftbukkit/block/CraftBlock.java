@@ -678,12 +678,7 @@ public class CraftBlock implements Block {
     }
 
     @Override
-    public com.destroystokyo.paper.block.BlockSoundGroup getSoundGroup() {
-        return new com.destroystokyo.paper.block.CraftBlockSoundGroup(this.getBlockState().getSoundType());
-    }
-
-    @Override
-    public org.bukkit.SoundGroup getBlockSoundGroup() {
+    public org.bukkit.SoundGroup getSoundGroup() {
         return org.bukkit.craftbukkit.CraftSoundGroup.getSoundGroup(this.getBlockState().getSoundType());
     }
 
