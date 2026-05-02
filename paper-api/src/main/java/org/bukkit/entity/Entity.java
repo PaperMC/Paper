@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
+import java.util.function.Predicate;
 import net.kyori.adventure.util.TriState;
 import org.bukkit.Chunk; // Paper
 import org.bukkit.EntityEffect;
@@ -1322,4 +1323,31 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     void broadcastHurtAnimation(@NotNull java.util.Collection<Player> players);
     // Paper end - broadcast hurt animation
+
+    /**
+     * Gets if the entity is allied to the given entity.
+     *
+     * @param other the other entity
+     * @return true if the entity is allied to the given entity
+     */
+    boolean isAlliedTo(@NotNull Entity other);
+
+    /**
+     * Gets the current additional rule of alliance with any entity.
+     * <br>
+     * This is an additional rule from the vanilla behaviour for any entity, like share a team.
+     * <br>
+     * This rule is not (currently) persistent.
+     *
+     * @return additional rule of alliance
+     * @see #setAdditionalAlliedRule(Predicate)
+     */
+    @Nullable Predicate<Entity> getAdditionalAlliedRule();
+
+    /**
+     * Sets the current additional rule of alliance with any entity.
+     *
+     * @param predicate the additional rule of alliance with any entity
+     */
+    void setAdditionalAlliedRule(@Nullable Predicate<Entity> predicate);
 }

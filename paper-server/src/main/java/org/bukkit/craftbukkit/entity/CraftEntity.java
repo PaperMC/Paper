@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -1329,6 +1330,22 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public boolean hasData(final @NotNull DataComponentType type) {
         return this.entity.get(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type)) != null;
+    }
+
+    @Override
+    public boolean isAlliedTo(@NotNull org.bukkit.entity.Entity other) {
+        Preconditions.checkArgument(other != null, "other cannot be null");
+        return this.getHandle().isAlliedTo(((CraftEntity)other).getHandle());
+    }
+
+    @Override
+    public Predicate<org.bukkit.entity.Entity> getAdditionalAlliedRule() {
+        return this.getHandle().alliesPredicate;
+    }
+
+    @Override
+    public void setAdditionalAlliedRule(Predicate<org.bukkit.entity.Entity> predicate) {
+        this.getHandle().alliesPredicate = predicate;
     }
 
 }
