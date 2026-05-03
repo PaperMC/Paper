@@ -6,6 +6,7 @@ import java.util.UUID;
 import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
 import java.util.function.Predicate;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.TriState;
 import org.bukkit.Chunk; // Paper
 import org.bukkit.EntityEffect;
@@ -1340,14 +1341,22 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * This rule is not (currently) persistent.
      *
      * @return additional rule of alliance
-     * @see #setAdditionalAlliedRule(Predicate)
+     * @see #addAdditionalAlliedRule(Key, Predicate)
      */
-    @Nullable Predicate<Entity> getAdditionalAlliedRule();
+    @Nullable Predicate<Entity> getAdditionalAlliedRule(@NotNull Key key);
 
     /**
      * Sets the current additional rule of alliance with any entity.
      *
+     * @param key the key of the additional rule
      * @param predicate the additional rule of alliance with any entity
      */
-    void setAdditionalAlliedRule(@Nullable Predicate<Entity> predicate);
+    void addAdditionalAlliedRule(@NotNull Key key, @NotNull Predicate<Entity> predicate);
+
+    /**
+     * Remove the additional rule of alliance with any entity.
+     *
+     * @param key the key of the additional rule
+     */
+    void removeAdditionalAlliedRule(@NotNull Key key);
 }
