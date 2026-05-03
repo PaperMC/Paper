@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Equippable;
+import io.papermc.paper.inventory.CreativeModeTab;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.List;
@@ -13,7 +14,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import io.papermc.paper.inventory.CreativeModeTab;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Block;
@@ -93,7 +93,6 @@ import org.bukkit.block.data.type.MangrovePropagule;
 import org.bukkit.block.data.type.MossyCarpet;
 import org.bukkit.block.data.type.NoteBlock;
 import org.bukkit.block.data.type.Observer;
-import org.bukkit.block.data.type.PinkPetals;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.block.data.type.PistonHead;
 import org.bukkit.block.data.type.PitcherCrop;
@@ -3561,25 +3560,23 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      * Get the {@link CreativeCategory} to which this material belongs.
      *
      * @return the creative category. null if it does not belong to a category
-     * @deprecated items can belong to multiple creative categories, use {@link #getCreativeModeTabs()} instead
-     * and check the type.
+     * @deprecated items can belong to multiple creative categories, use {@link #getCreativeCategories()} instead
      */
-    @Deprecated(since = "26.1.2", forRemoval = true)
+    @Deprecated(since = "26.1", forRemoval = true)
     public @Nullable CreativeCategory getCreativeCategory() {
         ItemType type = asItemType();
         return type == null ? null : type.getCreativeCategory();
     }
 
     /**
-     * Gets the {@linkplain CreativeModeTab}s to which this material belongs.
+     * Gets the creative categories to which this item belongs.
      *
-     * @return a collection of creative mode tabs to which this material belongs, which
-     * can be empty.
+     * @return a collection of creative mode tabs to which this material belongs
      */
     @NotNull
-    public @Unmodifiable Collection<CreativeModeTab> getCreativeModeTabs() {
+    public @Unmodifiable Collection<CreativeModeTab> getCreativeCategories() {
         ItemType type = asItemType();
-        return type == null ? List.of() : type.getCreativeModeTabs();
+        return type == null ? List.of() : type.getCreativeCategories();
     }
 
     /**

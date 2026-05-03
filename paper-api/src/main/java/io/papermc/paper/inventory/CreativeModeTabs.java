@@ -67,9 +67,7 @@ public final class CreativeModeTabs {
      */
     public static final CreativeModeTab OP_BLOCKS = getTab(CreativeModeTabKeys.OP_BLOCKS);
 
-    /*
-     * Non-category tabs
-     */
+    // Non-category tabs
 
     /**
      * The survival inventory tab, does not contain items.
@@ -82,12 +80,12 @@ public final class CreativeModeTabs {
     public static final CreativeModeTab HOTBAR = getTab(CreativeModeTabKeys.HOTBAR);
 
     /**
-     * The search tab, contains all items.
+     * The search tab, contains all items from the other categories.
      */
     public static final CreativeModeTab SEARCH = getTab(CreativeModeTabKeys.SEARCH);
 
-    private static CreativeModeTab getTab(TypedKey<CreativeModeTab> typed) {
-        return Registry.CREATIVE_MODE_TAB.getOrThrow(typed.key());
+    private static CreativeModeTab getTab(TypedKey<CreativeModeTab> key) {
+        return Registry.CREATIVE_MODE_TAB.getOrThrow(key);
     }
 
     private CreativeModeTabs() {

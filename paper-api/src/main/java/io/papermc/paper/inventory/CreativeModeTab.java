@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Represents a tab in the creative inventory.
+ * Represents a tab in the creative inventory GUI.
  *
  * @see CreativeModeTabs
  */
@@ -22,20 +22,20 @@ public interface CreativeModeTab extends Keyed {
     Component displayName();
 
     /**
-     * {@return the item that is used as the icon in the creative inventory}
+     * {@return the item that is used as the icon in the creative inventory GUI}
      */
     ItemStack iconItem();
 
     /**
-     * @return {@code true} if the scrollbar is visible on the right while this tab is focused
+     * {@return the position where the tab icon is located in the creative inventory GUI}
      */
-    boolean scrollbarShown();
+    Position iconPosition();
 
     /**
-     * @param type the item type
+     * @param item the item type
      * @return {@code true} if this tab contains an item with the specified item type
      */
-    boolean containsItem(ItemType type);
+    boolean containsItem(ItemType item);
 
     /**
      * @param item the item
@@ -49,22 +49,18 @@ public interface CreativeModeTab extends Keyed {
     @Unmodifiable Collection<ItemStack> getContents();
 
     /**
-     * {@return the row that this tab is in}
-     */
-    Row getRow();
-
-    /**
      * {@return the tab's type}
      */
     Type getType();
 
-    enum Row {
-        // Start generate - CreativeModeTabRow
-        TOP,
-        BOTTOM;
-        // End generate - CreativeModeTabRow
-    }
-
+    /**
+     * The type of the tab.
+     * <p>
+     * Creative categories split items by common similarities while
+     * the search tab hold all the items in those categories.
+     * The hotbar saves and survival inventory belongs to the player and
+     * are always considered empty by the server.
+     */
     enum Type {
         // Start generate - CreativeModeTabType
         CATEGORY,
@@ -72,5 +68,26 @@ public interface CreativeModeTab extends Keyed {
         HOTBAR,
         SEARCH;
         // End generate - CreativeModeTabType
+    }
+
+    /**
+     * The position of the tab icon in the creative inventory GUI.
+     */
+    interface Position {
+
+        /**
+         * {@return the row where the tab icon is located in, 0-indexed from top}
+         */
+        int row();
+
+        /**
+         * {@return the column where the tab icon is located in, 0-indexed from left}
+         */
+        int column();
+
+        /**
+         * {@return whether the tab icon is aligned at right}
+         */
+        boolean anchoredAtRight();
     }
 }

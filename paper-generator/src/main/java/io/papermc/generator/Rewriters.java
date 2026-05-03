@@ -161,6 +161,7 @@ public final class Rewriters {
                     }
                 })
             ))
+            .register("CreativeModeTabType", CreativeModeTab.Type.class, new EnumCloneRewriter<>(net.minecraft.world.item.CreativeModeTab.Type.class))
             .register("ItemUseAnimation", ItemUseAnimation.class, new EnumCloneRewriter<>(net.minecraft.world.item.ItemUseAnimation.class))
             .register("SwingAnimationType", SwingAnimation.Animation.class, new EnumCloneRewriter<>(SwingAnimationType.class))
             .register("MapPostProcessing", MapPostProcessing.class, new EnumCloneRewriter<>(net.minecraft.world.item.component.MapPostProcessing.class))
@@ -172,10 +173,6 @@ public final class Rewriters {
                     );
                 }
             })
-            .register(CreativeModeTab.class, composite(
-                holder("CreativeModeTabRow", CreativeModeTab.Row.class, new EnumCloneRewriter<>(net.minecraft.world.item.CreativeModeTab.Row.class)),
-                holder("CreativeModeTabType", CreativeModeTab.Type.class, new EnumCloneRewriter<>(net.minecraft.world.item.CreativeModeTab.Type.class))
-            ))
             .register(Material.class, composite(
                 holder("Blocks", new MaterialRewriter.Blocks()),
                 //holder("Material#isTransparent", MaterialRewriter.IsTransparent()),

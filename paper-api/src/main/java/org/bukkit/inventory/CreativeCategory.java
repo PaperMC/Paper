@@ -7,7 +7,7 @@ import io.papermc.paper.inventory.CreativeModeTab;
  *
  * @deprecated Replaced by {@link CreativeModeTab}
  */
-@Deprecated(since = "26.1.2")
+@Deprecated(since = "26.1")
 public enum CreativeCategory implements net.kyori.adventure.translation.Translatable { // Paper
 
     /**

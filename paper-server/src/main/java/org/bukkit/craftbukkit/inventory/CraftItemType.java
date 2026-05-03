@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import io.papermc.paper.inventory.CreativeModeTab;
 import io.papermc.paper.inventory.PaperCreativeModeTab;
@@ -226,19 +225,18 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public @Nullable CreativeCategory getCreativeCategory() {
-        return this.getCreativeModeTabs().stream()
-            .filter(tab -> tab.getType() == CreativeModeTab.Type.CATEGORY)
+        return this.getCreativeCategories().stream()
             .findFirst()
             .map(tab -> ((PaperCreativeModeTab) tab).toLegacy())
             .orElse(null);
     }
 
     @Override
-    public Collection<CreativeModeTab> getCreativeModeTabs() {
+    public Collection<CreativeModeTab> getCreativeCategories() {
         final ImmutableSet.Builder<CreativeModeTab> builder = ImmutableSet.builder();
 
         for (final CreativeModeTab tab : Registry.CREATIVE_MODE_TAB) {
-            if (tab.containsItem(this)) {
+            if (tab.getType() == CreativeModeTab.Type.CATEGORY && tab.containsItem(this)) {
                 builder.add(tab);
             }
         }

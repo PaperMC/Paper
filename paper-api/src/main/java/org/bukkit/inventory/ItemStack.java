@@ -1376,17 +1376,16 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     // Paper end - data component API
 
     /**
-     * Gets the creative mode tabs to which this item stack belongs.
+     * Gets the creative categories to which this itemstack belongs.
      * <p>
-     * This method is different from {@link ItemType#getCreativeModeTabs()}, as data components
+     * This method is different from {@link ItemType#getCreativeCategories()}, as data components
      * on items can cause them to be put into different tabs, such as ominous banners.
      *
-     * @return A collection of creative mode tabs to which this item stack belongs, which
-     * can be empty.
-     * @see ItemType#getCreativeModeTabs()
+     * @return a collection of creative categories to which this item stack belongs
+     * @see ItemType#getCreativeCategories()
      */
     @NotNull
-    public @Unmodifiable Collection<CreativeModeTab> getCreativeModeTabs() {
-        return this.craftDelegate.getCreativeModeTabs();
+    public @Unmodifiable Collection<CreativeModeTab> getCreativeCategories() {
+        return this.craftDelegate.getCreativeCategories();
     }
 }

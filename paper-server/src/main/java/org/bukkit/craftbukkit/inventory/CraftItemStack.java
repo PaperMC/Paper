@@ -683,18 +683,17 @@ public final class CraftItemStack extends ItemStack {
         // Check the patch by first stripping excluded types and then compare the trimmed patches
         return left.getComponentsPatch().forget(skippingTypes::contains).equals(right.getComponentsPatch().forget(skippingTypes::contains));
     }
-
     // Paper end - data component API
 
     @Override
-    public @NotNull Collection<CreativeModeTab> getCreativeModeTabs() {
+    public @NotNull Collection<CreativeModeTab> getCreativeCategories() {
         if (this.handle == null) {
             return ImmutableSet.of();
         }
 
         final ImmutableSet.Builder<CreativeModeTab> builder = ImmutableSet.builder();
         for (final CreativeModeTab tab : Registry.CREATIVE_MODE_TAB) {
-            if (tab.containsItem(this)) {
+            if (tab.getType() == CreativeModeTab.Type.CATEGORY && tab.containsItem(this)) {
                 builder.add(tab);
             }
         }
