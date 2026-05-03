@@ -18,7 +18,7 @@ import org.jspecify.annotations.NullMarked;
  * So there is no way for the server to control this.
  */
 @NullMarked
-@Deprecated(since = "1.26.1", forRemoval = true)
+@Deprecated(since = "26.1", forRemoval = true)
 public class PlayerAttackEntityCooldownResetEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
