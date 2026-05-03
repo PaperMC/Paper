@@ -71,12 +71,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
     private AbstractContainerMenu buildFakeBlockEntity(final ServerPlayer player) {
         final MenuProvider inventory = this.builder.build(this.position, this.block.defaultBlockState());
         if (inventory instanceof final BlockEntity blockEntity) {
-            blockEntity.setLevel(this.world);
             super.defaultTitle = inventory.getDisplayName();
-        }
-
-        if (!this.useFakeBlockEntity) { // gets around open noise for chest
-            return handle.create(player.nextContainerCounter(), player.getInventory());
         }
 
         return inventory.createMenu(player.nextContainerCounter(), player.getInventory(), player);
