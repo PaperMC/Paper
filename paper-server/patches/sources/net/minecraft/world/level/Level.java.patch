@@ -1,7 +1,10 @@
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -91,6 +_,16 @@
+@@ -89,8 +_,19 @@
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.scores.Scoreboard;
  import org.apache.commons.lang3.mutable.MutableBoolean;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
  import org.jspecify.annotations.Nullable;
  
 +// CraftBukkit start
@@ -73,7 +76,7 @@
      protected Level(
          final WritableLevelData levelData,
          final ResourceKey<Level> dimension,
-@@ -141,7 +_,24 @@
+@@ -141,7 +_,25 @@
          final boolean isDebug,
          final long biomeZoomSeed,
          final int maxChainedNeighborUpdates
@@ -84,10 +87,11 @@
 +        java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
 +        io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator // Paper - create paper world config
      ) {
-+        this.spigotConfig = new org.spigotmc.SpigotWorldConfig(bukkitName); // Spigot
++        final org.bukkit.NamespacedKey worldKey = CraftNamespacedKey.fromMinecraft(dimension.identifier()); // Paper
++        this.spigotConfig = new org.spigotmc.SpigotWorldConfig(bukkitName, worldKey); // Spigot
 +        this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
 +        this.generator = generator;
-+        this.world = new CraftWorld((ServerLevel) this, generator, biomeProvider, environment);
++        this.world = new CraftWorld((ServerLevel) this, worldKey, biomeProvider, environment);
 +
 +        for (SpawnCategory spawnCategory : SpawnCategory.values()) {
 +            if (org.bukkit.craftbukkit.util.CraftSpawnCategory.isValidForLimits(spawnCategory)) {
@@ -442,7 +446,15 @@
              return chunk.getBlockState(pos);
          }
      }
-@@ -533,31 +_,48 @@
+@@ -523,6 +_,7 @@
+     }
+ 
+     public void addBlockEntityTicker(final TickingBlockEntity ticker) {
++        if (!this.paperConfig().unsupportedSettings.ticking.blockEntities) return; // Paper - option to disable ticking
+         (this.tickingBlockEntities ? this.pendingBlockEntityTickers : this.blockEntityTickers).add(ticker);
+     }
+ 
+@@ -533,18 +_,23 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -468,10 +480,9 @@
  
 +        this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075 use removeAll
          this.tickingBlockEntities = false;
-+        this.spigotConfig.currentPrimedTnt = 0; // Spigot
      }
  
-     public <T extends Entity> void guardEntityTick(final Consumer<T> tick, final T entity) {
+@@ -552,12 +_,23 @@
          try {
              tick.accept(entity);
          } catch (Throwable var6) {
@@ -480,7 +491,7 @@
 -            entity.fillCrashReportCategory(category);
 -            throw new ReportedException(report);
 +            // Paper start - Prevent block entity and entity crashes
-+            final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
++            final String msg = String.format("Entity threw exception at %s:%s,%s,%s", io.papermc.paper.util.MCUtil.getLevelName(entity.level()), entity.getX(), entity.getY(), entity.getZ());
 +            MinecraftServer.LOGGER.error(msg, var6);
 +            getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, var6))); // Paper - ServerExceptionEvent
 +            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);

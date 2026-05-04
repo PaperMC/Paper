@@ -1,20 +1,17 @@
 --- a/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
 +++ b/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
-@@ -20,7 +_,16 @@
+@@ -20,7 +_,13 @@
          final Level level, final BlockPos pos, final BlockState state, final @Nullable Orientation orientation, final boolean skipShapeUpdates
      ) {
          int targetStrength = this.calculateTargetStrength(level, pos);
 -        if (state.getValue(RedStoneWireBlock.POWER) != targetStrength) {
-+        // CraftBukkit start
-+        int oldPower = state.getValue(RedStoneWireBlock.POWER);
-+        if (oldPower != targetStrength) {
-+            org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), oldPower, targetStrength);
-+            level.getCraftServer().getPluginManager().callEvent(event);
-+
-+            targetStrength = event.getNewCurrent();
++        // Paper start - Call BlockRedstoneEvent
++        int previousStrength = state.getValue(RedStoneWireBlock.POWER);
++        if (previousStrength != targetStrength && level.getBlockState(pos) == state) {
++            targetStrength = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(level, pos, previousStrength, targetStrength).getNewCurrent();
 +        }
-+        if (oldPower != targetStrength) {
-+            // CraftBukkit end
++        if (previousStrength != targetStrength) {
++            // Paper end - Call BlockRedstoneEvent
              if (level.getBlockState(pos) == state) {
                  level.setBlock(pos, state.setValue(RedStoneWireBlock.POWER, targetStrength), Block.UPDATE_CLIENTS);
              }

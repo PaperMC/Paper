@@ -15,10 +15,10 @@ import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.util.Util;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -41,6 +41,7 @@ public class EntityTypeRewriter extends EnumRegistryRewriter<EntityType<?>> {
         .put("EndCrystal", "EnderCrystal")
         .put("FireworkRocket", "Firework")
         .put("FishingBobber", "FishHook")
+        .put("Fireball", "LargeFireball")
         .put("LeashKnot", "LeashHitch")
         .put("LightningBolt", "LightningStrike")
         .put("Tnt", "TNTPrimed")

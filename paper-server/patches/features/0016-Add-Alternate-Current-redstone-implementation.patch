@@ -22,30 +22,25 @@ Alternate Current's wire handler.
 
 diff --git a/alternate/current/wire/LevelHelper.java b/alternate/current/wire/LevelHelper.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ff663d3089627e75221aa128aff4bf5cc459addb
+index 0000000000000000000000000000000000000000..dd533953f33aacfc91a8acad6c9a9d601df0bd86
 --- /dev/null
 +++ b/alternate/current/wire/LevelHelper.java
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,61 @@
 +package alternate.current.wire;
-+
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.event.block.BlockRedstoneEvent;
 +
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.chunk.ChunkAccess;
-+import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import net.minecraft.world.level.chunk.LevelChunkSection;
++import net.minecraft.world.level.chunk.status.ChunkStatus;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +
 +class LevelHelper {
 +
 +    static int doRedstoneEvent(ServerLevel level, BlockPos pos, int prevPower, int newPower) {
-+        BlockRedstoneEvent event = new BlockRedstoneEvent(CraftBlock.at(level, pos), prevPower, newPower);
-+        level.getCraftServer().getPluginManager().callEvent(event);
-+
-+        return event.getNewCurrent();
++        return CraftEventFactory.callRedstoneChange(level, pos, prevPower, newPower).getNewCurrent();
 +    }
 +
 +    /**
@@ -2326,18 +2321,18 @@ index 0000000000000000000000000000000000000000..298076a0db4e6ee6e4775ac43bf749d9
 +    }
 +}
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index a0477b407d41ab7391f764b3d21352f410dde9a5..8d691aab8eb8db16074d2f46c448f5366d850b8c 100644
+index f4bbccee849ee3711a3b838884e4bcf4e24da039..0b9fbf0ae658f0b3e9c6106a42fb70948b6fb9be 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -232,6 +232,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-     public final WorldGenSettings worldGenSettings;
+@@ -233,6 +233,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     private @Nullable ServerClockManager clockManager;
      public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
      public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
 +    private final alternate.current.wire.WireHandler wireHandler = new alternate.current.wire.WireHandler(this); // Paper - optimize redstone (Alternate Current)
  
      @Override
      public @Nullable LevelChunk getChunkIfLoaded(int x, int z) {
-@@ -2766,6 +2767,13 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -2775,6 +2776,13 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
          return this.debugSynchronizers;
      }
  
@@ -2352,10 +2347,10 @@ index a0477b407d41ab7391f764b3d21352f410dde9a5..8d691aab8eb8db16074d2f46c448f536
          return toLevel.dimension() != Level.NETHER || this.getGameRules().get(GameRules.ALLOW_ENTERING_NETHER_USING_PORTALS);
      }
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 83041532ee49be800c66995ad64d570270349fb6..ae9bc7cb3ebb245d78e50b69702facec8f0b75ac 100644
+index 07c301ba02c7f2c032a29a0ae3bdf95fc522c03b..7e4cf8a13e0ff2198cb7b6d80fb3fa343339943b 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -2151,6 +2151,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -2153,6 +2153,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          return this.palettedContainerFactory;
      }
  
@@ -2374,7 +2369,7 @@ index 83041532ee49be800c66995ad64d570270349fb6..ae9bc7cb3ebb245d78e50b69702facec
          NONE("none"),
          BLOCK("block"),
 diff --git a/net/minecraft/world/level/block/RedStoneWireBlock.java b/net/minecraft/world/level/block/RedStoneWireBlock.java
-index a677c3bfddfa0b7947394a3975ec43794be07d7e..ed471efa3ab705de62aec81c3940c1b9c5acdbc5 100644
+index a00002774755eb90a0b772fe742b30a5e09452cf..1e863e97bd1dc99ed6e2c0602f78f457ac618965 100644
 --- a/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
 @@ -269,7 +269,7 @@ public class RedStoneWireBlock extends Block {
@@ -2386,7 +2381,7 @@ index a677c3bfddfa0b7947394a3975ec43794be07d7e..ed471efa3ab705de62aec81c3940c1b9
      // The bulk of the new functionality is found in RedstoneWireTurbo.java
      io.papermc.paper.redstone.RedstoneWireTurbo turbo = new io.papermc.paper.redstone.RedstoneWireTurbo(this);
  
-@@ -357,7 +357,13 @@ public class RedStoneWireBlock extends Block {
+@@ -353,7 +353,13 @@ public class RedStoneWireBlock extends Block {
      @Override
      protected void onPlace(final BlockState state, final Level level, final BlockPos pos, final BlockState oldState, final boolean movedByPiston) {
          if (!oldState.is(state.getBlock()) && !level.isClientSide()) {
@@ -2401,7 +2396,7 @@ index a677c3bfddfa0b7947394a3975ec43794be07d7e..ed471efa3ab705de62aec81c3940c1b9
  
              for (Direction direction : Direction.Plane.VERTICAL) {
                  level.updateNeighborsAt(pos.relative(direction), this);
-@@ -374,7 +380,13 @@ public class RedStoneWireBlock extends Block {
+@@ -370,7 +376,13 @@ public class RedStoneWireBlock extends Block {
                  level.updateNeighborsAt(pos.relative(direction), this);
              }
  
@@ -2416,7 +2411,7 @@ index a677c3bfddfa0b7947394a3975ec43794be07d7e..ed471efa3ab705de62aec81c3940c1b9
              this.updateNeighborsOfNeighboringWires(level, pos);
          }
      }
-@@ -399,9 +411,15 @@ public class RedStoneWireBlock extends Block {
+@@ -395,9 +407,15 @@ public class RedStoneWireBlock extends Block {
          final BlockState state, final Level level, final BlockPos pos, final Block block, final @Nullable Orientation orientation, final boolean movedByPiston
      ) {
          if (!level.isClientSide()) {

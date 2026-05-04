@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.datafix.DataFixers;
+import net.minecraft.world.clock.ServerClockManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gamerules.GameRuleMap;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
@@ -64,6 +65,7 @@ final class VanillaWorldMigration {
         WorldMigrationSupport.copySavedDataIfPresent(sourceDataRoots, context.targetDataRoot(), WorldGenSettings.TYPE, false);
         WorldMigrationSupport.copySavedDataIfPresent(sourceDataRoots, context.targetDataRoot(), GameRuleMap.TYPE, false);
         WorldMigrationSupport.copySavedDataIfPresent(sourceDataRoots, context.targetDataRoot(), WeatherData.TYPE, false);
+        WorldMigrationSupport.copySavedDataIfPresent(sourceDataRoots, context.targetDataRoot(), ServerClockManager.TYPE, false);
         if (context.dimensionKey() == Level.OVERWORLD) {
             WorldMigrationSupport.copySavedDataIfPresent(sourceDataRoots, context.targetDataRoot(), TimerQueue.TYPE, false);
             WorldMigrationSupport.copySavedDataIfPresent(sourceDataRoots, context.targetDataRoot(), WanderingTraderData.TYPE, false);
@@ -71,6 +73,7 @@ final class VanillaWorldMigration {
             deleteLegacyRootCopyIfMigrated(context, WorldGenSettings.TYPE);
             deleteLegacyRootCopyIfMigrated(context, GameRuleMap.TYPE);
             deleteLegacyRootCopyIfMigrated(context, WeatherData.TYPE);
+            deleteLegacyRootCopyIfMigrated(context, ServerClockManager.TYPE);
             deleteLegacyRootCopyIfMigrated(context, TimerQueue.TYPE);
             deleteLegacyRootCopyIfMigrated(context, WanderingTraderData.TYPE);
         }

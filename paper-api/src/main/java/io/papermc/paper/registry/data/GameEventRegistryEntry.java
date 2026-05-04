@@ -2,9 +2,9 @@ package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.RegistryBuilder;
 import org.bukkit.GameEvent;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Range;
 
 /**
  * A data-centric version-specific registry entry for the {@link GameEvent} type.
@@ -19,7 +19,7 @@ public interface GameEventRegistryEntry {
      * @return the range of blocks, represented as an int.
      * @see GameEvent#getRange()
      */
-    @Range(from = 0, to = Integer.MAX_VALUE) int range();
+    @NonNegative int range();
 
     /**
      * A mutable builder for the {@link GameEventRegistryEntry} plugins may change in applicable registry events.
@@ -42,6 +42,6 @@ public interface GameEventRegistryEntry {
          * @see GameEvent#getRange()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder range(@Range(from = 0, to = Integer.MAX_VALUE) int range);
+        Builder range(@NonNegative int range);
     }
 }

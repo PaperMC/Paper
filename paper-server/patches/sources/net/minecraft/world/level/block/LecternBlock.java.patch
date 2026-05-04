@@ -26,20 +26,17 @@
              resetBookState(sourceEntity, level, pos, state, true);
              level.playSound(null, pos, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1.0F, 1.0F);
          }
-@@ -162,6 +_,16 @@
+@@ -162,6 +_,13 @@
      }
  
      private static void changePowered(final Level level, final BlockPos pos, final BlockState state, final boolean isPowered) {
-+        // Paper start - Call BlockRedstoneEvent properly
-+        final int currentRedstoneLevel = state.getValue(LecternBlock.POWERED) ? 15 : 0, targetRedstoneLevel = isPowered ? 15 : 0;
-+        if (currentRedstoneLevel != targetRedstoneLevel) {
-+            final org.bukkit.event.block.BlockRedstoneEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(level, pos, currentRedstoneLevel, targetRedstoneLevel);
-+
-+            if (event.getNewCurrent() != targetRedstoneLevel) {
++        // Paper start - Call BlockRedstoneEvent
++        if (state.getValue(POWERED) != isPowered) {
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, isPowered)) {
 +                return;
 +            }
 +        }
-+        // Paper end - Call BlockRedstoneEvent properly
++        // Paper end - Call BlockRedstoneEvent
          level.setBlock(pos, state.setValue(POWERED, isPowered), Block.UPDATE_ALL);
          updateBelow(level, pos, state);
      }

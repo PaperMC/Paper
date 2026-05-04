@@ -1,21 +1,15 @@
 --- a/net/minecraft/world/level/block/TrapDoorBlock.java
 +++ b/net/minecraft/world/level/block/TrapDoorBlock.java
-@@ -133,7 +_,37 @@
+@@ -133,7 +_,31 @@
          if (!level.isClientSide()) {
              boolean signal = level.hasNeighborSignal(pos);
              if (signal != state.getValue(POWERED)) {
 -                if (state.getValue(OPEN) != signal) {
-+                // CraftBukkit start
-+                org.bukkit.block.Block bblock = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
-+                int power = bblock.getBlockPower();
-+                int oldPower = state.getValue(TrapDoorBlock.OPEN) ? 15 : 0;
-+
-+                if (oldPower == 0 ^ power == 0 || block.defaultBlockState().isSignalSource()) {
-+                    org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(bblock, oldPower, power);
-+                    level.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+                    signal = eventRedstone.getNewCurrent() > 0;
++                // Paper start - Call BlockRedstoneEvent
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, signal)) {
++                    return;
 +                }
-+                // CraftBukkit end
++                // Paper end - Call BlockRedstoneEvent
 +                // Paper start - break redstone on trapdoors early
 +                boolean open = state.getValue(TrapDoorBlock.OPEN) != signal;
 +                // note: this must run before any state for this block/its neighbours are written to the world
@@ -26,7 +20,7 @@
 +                    BlockState above = level.getBlockState(abovePos);
 +                    if (above.getBlock() instanceof RedStoneWireBlock) {
 +                        level.setBlock(abovePos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_NEIGHBORS);
-+                        Block.popResource(level, abovePos, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.REDSTONE));
++                        Block.popResource(level, abovePos, new ItemStack(net.minecraft.world.item.Items.REDSTONE));
 +                        // now check that this didn't change our state
 +                        if (level.getBlockState(pos) != state) {
 +                            // our state was changed, so we cannot propagate this update

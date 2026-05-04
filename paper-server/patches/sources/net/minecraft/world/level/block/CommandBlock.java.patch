@@ -1,24 +1,21 @@
 --- a/net/minecraft/world/level/block/CommandBlock.java
 +++ b/net/minecraft/world/level/block/CommandBlock.java
-@@ -69,8 +_,17 @@
+@@ -69,9 +_,14 @@
          }
      }
  
 -    private void setPoweredAndUpdate(final Level level, final BlockPos pos, final CommandBlockEntity commandBlock, final boolean isPowered) {
 +    private void setPoweredAndUpdate(final Level level, final BlockPos pos, final CommandBlockEntity commandBlock, boolean isPowered) { // Paper - remove final from isPowered
          boolean wasPowered = commandBlock.isPowered();
-+        // CraftBukkit start
-+        org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
-+        int old = wasPowered ? 15 : 0;
-+        int current = isPowered ? 15 : 0;
-+
-+        org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(bukkitBlock, old, current);
-+        level.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+        isPowered = eventRedstone.getNewCurrent() > 0;
-+        // CraftBukkit end
          if (isPowered != wasPowered) {
++            // Paper start - Call BlockRedstoneEvent
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, isPowered)) {
++                return;
++            }
++            // Paper end - Call BlockRedstoneEvent
              commandBlock.setPowered(isPowered);
              if (isPowered) {
+                 if (commandBlock.isAutomatic() || commandBlock.getMode() == CommandBlockEntity.Mode.SEQUENCE) {
 @@ -129,7 +_,7 @@
          final BlockState state, final Level level, final BlockPos pos, final Player player, final BlockHitResult hitResult
      ) {

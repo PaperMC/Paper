@@ -4,6 +4,9 @@ import com.google.common.collect.Lists;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
+import io.papermc.paper.entity.poi.PaperPoiType;
+import io.papermc.paper.entity.poi.PoiType;
+import io.papermc.paper.entity.poi.PoiTypes;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.List;
@@ -157,6 +160,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilus.Variant.class, CraftZombieNautilus.CraftVariant.class, ZombieNautilusVariant.class);
         register(Registries.DIALOG, Dialog.class, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
         register(Registries.GAME_RULE, GameRule.class, GameRules.class, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
+        register(Registries.POINT_OF_INTEREST_TYPE, PoiType.class, PoiTypes.class, PaperPoiType.class, net.minecraft.world.entity.ai.village.poi.PoiType.class);
     }
 
     private static <M, B extends Keyed> void register(ResourceKey<? extends Registry<? extends M>> registryKey, Class<B> api, Class<? extends B> impl, Class<M> internal) {

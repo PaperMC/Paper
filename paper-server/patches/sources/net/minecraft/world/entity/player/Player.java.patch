@@ -240,8 +240,9 @@
              float attackStrengthScale = this.getAttackStrengthScale(0.5F);
              float magicBoost = attackStrengthScale * (this.getEnchantedDamage(entity, baseDamage, damageSource) - baseDamage);
              baseDamage *= this.baseDamageScaleFactor();
-             this.onAttack();
+-            this.onAttack();
 -            if (!this.deflectProjectile(entity)) {
++            this.onAttack(entity); // Paper
 +            final float dmgFinal = magicBoost; // Paper - damage events
 +            if (!this.deflectProjectile(entity, () -> !org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(entity, dmgSourceFinal, dmgFinal, false))) {
                  if (baseDamage > 0.0F || magicBoost > 0.0F) {
@@ -480,15 +481,27 @@
              }
          }
      }
-@@ -1808,10 +_,31 @@
- 
-     @Override
-     public void onAttack() {
--        this.resetOnlyAttackStrengthTicker();
-+        // this.resetOnlyAttackStrengthTicker(); // CraftBukkit - Moved to EntityLiving to reset the cooldown after the damage is dealt
-         super.onAttack();
+@@ -1807,10 +_,39 @@
      }
  
+     @Override
+-    public void onAttack() {
+-        this.resetOnlyAttackStrengthTicker();
+-        super.onAttack();
+-    }
++    // Paper start
++    public void onAttack(@Nullable Entity entity) {
++        if (entity != null) {
++            if (new com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent((org.bukkit.entity.Player) this.getBukkitEntity(), entity.getBukkitEntity(), this.getAttackStrengthScale(0F)).callEvent()) {
++                this.resetOnlyAttackStrengthTicker();
++            }
++        } else {
++            this.resetOnlyAttackStrengthTicker();
++        }
++        super.onAttack(entity);
++    // Paper end
++    }
++
 +    // Paper start - Force update attributes.
 +    @Override
 +    public void detectEquipmentUpdates() {
@@ -509,10 +522,9 @@
 +        }
 +    }
 +    // Paper end - Force update attributes.
-+
+ 
      public void resetOnlyAttackStrengthTicker() {
          this.attackStrengthTicker = 0;
-     }
 @@ -1843,17 +_,32 @@
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
      }

@@ -8,7 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Called when a living entity tries to lunge with a spear
+ * Called when a living entity tries to lunge with a spear.
  */
 @NullMarked
 public class EntityLungeEvent extends EntityEvent implements Cancellable {
@@ -19,7 +19,7 @@ public class EntityLungeEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public EntityLungeEvent(final LivingEntity entity, int lungePower) {
+    public EntityLungeEvent(final LivingEntity entity, final int lungePower) {
         super(entity);
         this.lungePower = lungePower;
     }
@@ -30,7 +30,7 @@ public class EntityLungeEvent extends EntityEvent implements Cancellable {
      * @return the lunge power
      */
     public int getLungePower() {
-        return lungePower;
+        return this.lungePower;
     }
 
     /**
@@ -38,6 +38,7 @@ public class EntityLungeEvent extends EntityEvent implements Cancellable {
      * <p>
      * If set higher than 3, the power of the lunge will continue to scale like normal, as if the max enchantment
      * level is higher.
+     *
      * @param lungePower the new lunge power
      */
     public void setLungePower(final int lungePower) {
@@ -46,11 +47,12 @@ public class EntityLungeEvent extends EntityEvent implements Cancellable {
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     /**
      * Set whether to cancel the lunge. If cancelled, the living entity will not lunge forward.
+     *
      * @param cancel {@code true} if you wish to cancel this event
      */
     @Override
