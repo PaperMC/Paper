@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -1763,6 +1764,20 @@ public final class Bukkit {
     @NotNull
     public static File getWorldContainer() {
         return server.getWorldContainer();
+    }
+
+    /**
+     * Gets the level directory.
+     *
+     * <p>This is the {@code ./world} directory in a fresh default server. Contains player data, dimensions, datapacks,
+     * and other world data.</p>
+     *
+     * @return the level directory
+     */
+    @ApiStatus.Experimental
+    @NotNull
+    public static Path getLevelDirectory() {
+        return server.getLevelDirectory();
     }
 
     /**
