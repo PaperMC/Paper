@@ -8,15 +8,22 @@
      protected final Fluid content;
  
      public BucketItem(final Fluid content, final Item.Properties properties) {
-@@ -57,7 +_,7 @@
+@@ -57,8 +_,13 @@
          if (level.mayInteract(player, pos) && player.mayUseItemAt(directionOffsetPos, direction, itemStack)) {
              BlockState clicked = level.getBlockState(pos);
              BlockPos placePos = clicked.getBlock() instanceof LiquidBlockContainer && this.content == Fluids.WATER ? pos : directionOffsetPos;
 -            if (this.emptyContents(player, level, placePos, hitResult)) {
+-                this.checkExtraContent(player, level, itemStack, placePos);
 +            if (this.emptyContents(player, level, placePos, hitResult, hitResult.getDirection(), pos, itemStack, hand)) { // CraftBukkit
-                 this.checkExtraContent(player, level, itemStack, placePos);
++                // Paper start - Call EntityPlaceEvent
++                java.util.function.Function<net.minecraft.world.entity.Mob, Boolean> eventOp = mob -> {
++                    return !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(level, placePos, hitResult.getDirection(), player, mob, hand, itemStack).isCancelled();
++                };
++                this.checkExtraContent(player, level, itemStack, placePos, eventOp);
++                // Paper end - Call EntityPlaceEvent
                  if (player instanceof ServerPlayer serverPlayer && this.content != Fluids.EMPTY) {
                      CriteriaTriggers.PLACED_BLOCK.trigger(serverPlayer, placePos, itemStack);
+                 }
 @@ -70,12 +_,22 @@
                  if (this.content == Fluids.EMPTY) {
                      BlockState blockState = level.getBlockState(pos);
@@ -41,7 +48,7 @@
                              if (!level.isClientSide()) {
                                  CriteriaTriggers.FILLED_BUCKET.trigger((ServerPlayer)player, taken);
                              }
-@@ -97,6 +_,13 @@
+@@ -97,15 +_,26 @@
      }
  
      public static ItemStack getEmptySuccessItem(final ItemStack itemStack, final Player player) {
@@ -55,16 +62,17 @@
          return !player.hasInfiniteMaterials() ? new ItemStack(Items.BUCKET) : itemStack;
      }
  
-@@ -105,7 +_,13 @@
-     }
- 
++    // Paper - delete checkExtraContents
++
      @Override
--    public boolean emptyContents(final @Nullable LivingEntity user, final Level level, final BlockPos pos, final @Nullable BlockHitResult hitResult) {
+-    public void checkExtraContent(final @Nullable LivingEntity user, final Level level, final ItemStack itemStack, final BlockPos pos) {
 +    // CraftBukkit start
 +    public final boolean emptyContents(final @Nullable LivingEntity user, final Level level, final BlockPos pos, final @Nullable BlockHitResult hitResult) {
 +        return this.emptyContents(user, level, pos, hitResult, null, null, null, InteractionHand.MAIN_HAND);
-+    }
-+
+     }
+ 
+-    @Override
+-    public boolean emptyContents(final @Nullable LivingEntity user, final Level level, final BlockPos pos, final @Nullable BlockHitResult hitResult) {
 +    public boolean emptyContents(final @Nullable LivingEntity user, final Level level, final BlockPos pos, final @Nullable BlockHitResult hitResult, final Direction direction, final BlockPos clicked, final ItemStack itemStack, final InteractionHand hand) {
 +        // CraftBukkit end
          if (!(this.content instanceof FlowingFluid flowingFluid)) {

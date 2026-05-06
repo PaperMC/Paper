@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/dispenser/SpawnEggItemBehavior.java
 +++ b/net/minecraft/core/dispenser/SpawnEggItemBehavior.java
-@@ -20,9 +_,32 @@
+@@ -20,10 +_,40 @@
              return dispensed;
          }
  
@@ -30,10 +30,19 @@
          try {
              Entity spawned = type.spawn(
 -                source.level(), dispensed, null, source.pos().relative(direction), EntitySpawnReason.DISPENSER, direction != Direction.UP, false
-+                source.level(), singleDispensed, null, source.pos().relative(direction), EntitySpawnReason.DISPENSER, direction != Direction.UP, false // Paper - block dispense event - update used item stack
-             );
+-            );
++                source.level(), singleDispensed, null, source.pos().relative(direction), EntitySpawnReason.DISPENSER, direction != Direction.UP, false, // Paper - block dispense event - update used item stack
++                // Paper start - Call BlockPlaceEntityEvent
++                org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG,
++                entity -> {
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEntityEvent(source, entity, dispensed)) {
++                        entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
++                    }
++                });
++            // Paper end - Call BlockPlaceEntityEvent
              if (spawned == null) {
                  return dispensed;
+             }
 @@ -32,7 +_,7 @@
              return ItemStack.EMPTY;
          }
