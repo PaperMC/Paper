@@ -1,10 +1,32 @@
 --- a/net/minecraft/world/item/MobBucketItem.java
 +++ b/net/minecraft/world/item/MobBucketItem.java
-@@ -49,7 +_,7 @@
+@@ -28,9 +_,9 @@
+     }
+ 
+     @Override
+-    public void checkExtraContent(final @Nullable LivingEntity user, final Level level, final ItemStack itemStack, final BlockPos pos) {
++    public void checkExtraContent(final @Nullable LivingEntity user, final Level level, final ItemStack itemStack, final BlockPos pos, final java.util.function.Function<net.minecraft.world.entity.Mob, Boolean> eventOp) { // Paper
+         if (level instanceof ServerLevel) {
+-            this.spawn((ServerLevel)level, itemStack, pos);
++            this.spawn((ServerLevel)level, itemStack, pos, eventOp); // Paper - add parameters
+             level.gameEvent(user, GameEvent.ENTITY_PLACE, pos);
+         }
+     }
+@@ -40,7 +_,7 @@
+         level.playSound(user, pos, this.emptySound, SoundSource.NEUTRAL, 1.0F, 1.0F);
+     }
+ 
+-    private void spawn(final ServerLevel level, final ItemStack itemStack, final BlockPos spawnPos) {
++    private void spawn(final ServerLevel level, final ItemStack itemStack, final BlockPos spawnPos, final java.util.function.@Nullable Function<net.minecraft.world.entity.Mob, Boolean> eventOp) { // Paper
+         Mob mob = this.type.create(level, EntityType.createDefaultStackConfig(level, itemStack, null), spawnPos, EntitySpawnReason.BUCKET, true, false);
+         if (mob instanceof Bucketable bucketable) {
+             CustomData entityData = itemStack.getOrDefault(DataComponents.BUCKET_ENTITY_DATA, CustomData.EMPTY);
+@@ -49,7 +_,8 @@
          }
  
          if (mob != null) {
 -            level.addFreshEntityWithPassengers(mob);
++            if (eventOp != null && !eventOp.apply(mob)) return; // Paper - mob doesn't exist yet, no need to discard
 +            level.addFreshEntityWithPassengers(mob, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BUCKET); // Paper - Add SpawnReason
              mob.playAmbientSound();
          }

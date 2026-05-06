@@ -32,16 +32,23 @@
                          if (!level.isClientSide()) {
                              CriteriaTriggers.FILLED_BUCKET.trigger((ServerPlayer)player, taken);
                          }
-@@ -74,7 +_,7 @@
+@@ -74,8 +_,13 @@
              } else {
                  BlockState clicked = level.getBlockState(pos);
                  BlockPos placePos = clicked.getBlock() instanceof LiquidBlockContainer && this.content == Fluids.WATER ? pos : directionOffsetPos;
 -                if (this.emptyContents(player, level, placePos, hitResult)) {
+-                    this.checkExtraContent(player, level, itemStack, placePos);
 +                if (this.emptyContents(player, level, placePos, hitResult, hitResult.getDirection(), pos, itemStack, hand)) { // CraftBukkit
-                     this.checkExtraContent(player, level, itemStack, placePos);
++                    // Paper start - Call EntityPlaceEvent
++                    java.util.function.Function<net.minecraft.world.entity.Mob, Boolean> eventOp = mob -> {
++                        return !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(level, placePos, hitResult.getDirection(), player, mob, hand, itemStack).isCancelled();
++                    };
++                    this.checkExtraContent(player, level, itemStack, placePos, eventOp);
++                    // Paper end - Call EntityPlaceEvent
                      if (player instanceof ServerPlayer) {
                          CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer)player, placePos, itemStack);
-@@ -91,6 +_,13 @@
+                     }
+@@ -91,15 +_,26 @@
      }
  
      public static ItemStack getEmptySuccessItem(final ItemStack itemStack, final Player player) {
@@ -55,7 +62,10 @@
          return !player.hasInfiniteMaterials() ? new ItemStack(Items.BUCKET) : itemStack;
      }
  
-@@ -100,6 +_,12 @@
+-    @Override
+-    public void checkExtraContent(final @Nullable LivingEntity user, final Level level, final ItemStack itemStack, final BlockPos pos) {
+-    }
++    // Paper - delete checkExtraContents
  
      @Override
      public boolean emptyContents(final @Nullable LivingEntity user, final Level level, final BlockPos pos, final @Nullable BlockHitResult hitResult) {

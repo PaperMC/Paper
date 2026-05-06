@@ -12,6 +12,8 @@ import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
+import io.papermc.paper.event.entity.BlockPlaceEntityEvent;
+import io.papermc.paper.event.entity.ItemSpawnEntityEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
@@ -26,6 +28,7 @@ import java.util.stream.Stream;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
@@ -65,6 +68,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
@@ -553,18 +557,31 @@ public class CraftEventFactory {
     }
 
     public static EntityPlaceEvent callEntityPlaceEvent(UseOnContext context, Entity entity) {
-        return CraftEventFactory.callEntityPlaceEvent(context.getLevel(), context.getClickedPos(), context.getClickedFace(), context.getPlayer(), entity, context.getHand());
+        return CraftEventFactory.callEntityPlaceEvent(context.getLevel(), context.getClickedPos(), context.getClickedFace(), context.getPlayer(), entity, context.getHand(), context.getItemInHand());
     }
 
-    public static EntityPlaceEvent callEntityPlaceEvent(Level level, BlockPos clickedPos, Direction clickedFace, net.minecraft.world.entity.player.Player player, Entity entity, InteractionHand hand) {
-        Player cplayer = (player == null) ? null : (Player) player.getBukkitEntity();
+    public static EntityPlaceEvent callEntityPlaceEvent(final Level level, final BlockPos clickedPos, final Direction clickedFace, final net.minecraft.world.entity.player.@Nullable Player player, final Entity entity, final InteractionHand hand, final ItemStack spawningItem) {
+        Player bukkitPlayer = player == null ? null : (Player) player.getBukkitEntity();
         org.bukkit.block.Block clickedBlock = CraftBlock.at(level, clickedPos);
         org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(clickedFace);
 
-        EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), cplayer, clickedBlock, blockFace, CraftEquipmentSlot.getHand(hand));
-        entity.level().getCraftServer().getPluginManager().callEvent(event);
-
+        final EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), bukkitPlayer, clickedBlock, blockFace, CraftEquipmentSlot.getHand(hand), CraftItemStack.asBukkitCopy(spawningItem));
+        event.callEvent();
         return event;
+    }
+
+    public static boolean callBlockPlaceEntityEvent(final BlockSource source, final Entity entity, final ItemStack spawningItem) {
+        final Direction fromFace = source.state().getValue(DispenserBlock.FACING);
+        return callBlockPlaceEntityEvent(source.level(), source.pos(), fromFace, entity, spawningItem);
+    }
+
+    private static boolean callBlockPlaceEntityEvent(final Level level, final BlockPos sourcePos, final Direction fromFace, final Entity entity, final ItemStack spawningItem) {
+        final Block targetBlock = CraftBlock.at(level, sourcePos.relative(fromFace));
+        final BlockFace blockFace = CraftBlock.notchToBlockFace(fromFace);
+        final org.bukkit.block.Dispenser dispenser = (org.bukkit.block.Dispenser) CraftBlockStates.getBlockState(CraftBlock.at(level, sourcePos));
+
+        final BlockPlaceEntityEvent event = new BlockPlaceEntityEvent(entity.getBukkitEntity(), targetBlock, blockFace, CraftItemStack.asBukkitCopy(spawningItem), dispenser);
+        return event.callEvent();
     }
 
     public static PlayerBucketEmptyEvent callPlayerBucketEmptyEvent(Level level, net.minecraft.world.entity.player.Player player, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemInHand, InteractionHand hand) {
