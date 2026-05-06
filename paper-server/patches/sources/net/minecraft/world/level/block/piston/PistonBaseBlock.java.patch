@@ -13,13 +13,22 @@
          BlockState extendedState = state.setValue(EXTENDED, true);
          if (!level.isClientSide()) {
              boolean extend = this.getNeighborSignal(level, pos, direction);
-@@ -182,10 +_,17 @@
+@@ -165,7 +_,7 @@
+ 
+         RandomSource random = level.getRandom();
+         if (b0 == 0) {
+-            if (!this.moveBlocks(level, pos, direction, true)) {
++            if (this.moveBlocks(level, state, pos, direction, true) != MoveBlocksResult.SUCCESS) { // Paper - Fix sticky piston retract event
+                 return false;
+             }
+ 
+@@ -182,13 +_,21 @@
                  .defaultBlockState()
                  .setValue(MovingPistonBlock.FACING, direction)
                  .setValue(MovingPistonBlock.TYPE, this.isSticky ? PistonType.STICKY : PistonType.DEFAULT);
 +            // Paper start - Fix sticky pistons and BlockPistonRetractEvent; Move empty piston retract call to fix multiple event fires
 +            if (!this.isSticky) {
-+                if (!new org.bukkit.event.block.BlockPistonRetractEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), java.util.Collections.emptyList(), org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(direction)).callEvent()) {
++                if (!new org.bukkit.event.block.BlockPistonRetractEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), java.util.Collections.emptyList(), org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(direction.getOpposite())).callEvent()) {
 +                    return false;
 +                }
 +            }
@@ -32,20 +41,41 @@
                  )
              );
              level.updateNeighborsAt(pos, movingPistonState.getBlock());
-@@ -209,13 +_,27 @@
++            if (!this.isSticky) movingPistonState.updateNeighbourShapes(level, pos, Block.UPDATE_CLIENTS); // Paper - move sticky update down until after piston event
+             movingPistonState.updateNeighbourShapes(level, pos, Block.UPDATE_CLIENTS);
+             if (this.isSticky) {
+                 BlockPos twoPos = pos.offset(direction.getStepX() * 2, direction.getStepY() * 2, direction.getStepZ() * 2);
+@@ -202,6 +_,7 @@
+                     pistonPiece = true;
+                 }
+ 
++                if (pistonPiece) movingPistonState.updateNeighbourShapes(level, pos, Block.UPDATE_CLIENTS); // Paper - Fix sticky piston retract event; Move update to after event call
+                 if (!pistonPiece) {
+                     if (b0 != 1
+                         || movingState.isAir()
+@@ -209,13 +_,35 @@
                          || movingState.getPistonPushReaction() != PushReaction.NORMAL
                              && !movingState.is(Blocks.PISTON)
                              && !movingState.is(Blocks.STICKY_PISTON)) {
-+                        // Paper start - Fix sticky pistons and BlockPistonRetractEvent; fire BlockPistonRetractEvent for sticky pistons retracting nothing (air)
-+                        if (b0 == TRIGGER_CONTRACT && movingState.isAir()) {
-+                            if (!new org.bukkit.event.block.BlockPistonRetractEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), java.util.Collections.emptyList(), org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(direction)).callEvent()) {
++                        // Paper start - Fix sticky pistons and BlockPistonRetractEvent; fire BlockPistonRetractEvent for sticky pistons retracting un-pushable block or air
++                        if (b0 == TRIGGER_CONTRACT) {
++                            if (!new org.bukkit.event.block.BlockPistonRetractEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), java.util.Collections.emptyList(), org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(direction.getOpposite())).callEvent()) {
++                                level.removeBlockEntity(pos);
++                                level.setBlock(pos, state, Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SKIP_ON_PLACE);
 +                                return false;
 +                            }
 +                        }
++                        movingPistonState.updateNeighbourShapes(level, pos, Block.UPDATE_CLIENTS); // move this from right after creating the moving piston block entity to after the event call
 +                        // Paper end - Fix sticky pistons and BlockPistonRetractEvent
                          level.removeBlock(pos.relative(direction), false);
                      } else {
-                         this.moveBlocks(level, pos, direction, false);
+-                        this.moveBlocks(level, pos, direction, false);
++                        // Paper start - Fix sticky piston retract event
++                        if (this.moveBlocks(level, state, pos, direction, false) == MoveBlocksResult.CANCEL) {
++                            return false;
++                        }
++                        movingPistonState.updateNeighbourShapes(level, pos, Block.UPDATE_CLIENTS); // move this from right after creating the moving piston block entity to after the event call
++                        // Paper end - Fix sticky piston retract event
                      }
                  }
              } else {
@@ -70,9 +100,47 @@
              return false;
          } else if (state.isAir()) {
              return true;
-@@ -289,12 +_,58 @@
+@@ -265,15 +_,31 @@
+         }
+     }
+ 
+-    private boolean moveBlocks(final Level level, final BlockPos pistonPos, final Direction direction, final boolean extending) {
++    private enum MoveBlocksResult { FAIL, CANCEL, SUCCESS } // Paper - Fix sticky piston retract event
++
++    private MoveBlocksResult moveBlocks(final Level level, final BlockState previousState, final BlockPos pistonPos, final Direction direction, final boolean extending) { // Paper - Fix sticky piston retract event
+         BlockPos armPos = pistonPos.relative(direction);
+-        if (!extending && level.getBlockState(armPos).is(Blocks.PISTON_HEAD)) {
++        // Paper start - Fix sticky piston retract event
++        final BlockState pistonHead = level.getBlockState(armPos);
++        if (!extending && pistonHead.is(Blocks.PISTON_HEAD)) {
++            // Paper end - Fix sticky piston retract event
+             level.setBlock(armPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_NONE | Block.UPDATE_KNOWN_SHAPE);
+         }
+ 
++        Direction pushDirection = extending ? direction : direction.getOpposite(); // Paper - Fix sticky piston retract event; moved from below
+         PistonStructureResolver resolver = new PistonStructureResolver(level, pistonPos, direction, extending);
+         if (!resolver.resolve()) {
+-            return false;
++            // Paper start - Fix sticky piston retract event; Fire event if piston retracts without moving blocks
++            if (!extending) {
++                if (!new org.bukkit.event.block.BlockPistonRetractEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pistonPos), java.util.Collections.emptyList(), org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(pushDirection)).callEvent()) {
++                    level.removeBlockEntity(pistonPos);
++                    level.setBlock(pistonPos, previousState, Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SKIP_ON_PLACE);
++                    level.setBlock(armPos, pistonHead, Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SKIP_ON_PLACE);
++                    return MoveBlocksResult.CANCEL;
++                }
++            }
++            return MoveBlocksResult.FAIL;
++            // Paper end - Fix sticky piston retract event
+         } else {
+             Map<BlockPos, BlockState> deleteAfterMove = Maps.newHashMap();
+             List<BlockPos> toPush = resolver.getToPush();
+@@ -287,14 +_,65 @@
+ 
+             List<BlockPos> toDestroy = resolver.getToDestroy();
              BlockState[] toUpdate = new BlockState[toPush.size() + toDestroy.size()];
-             Direction pushDirection = extending ? direction : direction.getOpposite();
+-            Direction pushDirection = extending ? direction : direction.getOpposite();
++            // Paper - Fix sticky piston retract event; moved up
              int updateIndex = 0;
 +            // CraftBukkit start
 +            final org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, pistonPos);
@@ -109,6 +177,11 @@
 +                );
 +            }
 +            if (!event.callEvent()) {
++                if (!extending) {
++                    level.removeBlockEntity(pistonPos);
++                    level.setBlock(pistonPos, previousState, Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SKIP_ON_PLACE);
++                    level.setBlock(armPos, pistonHead, Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SKIP_ON_PLACE);
++                }
 +                for (BlockPos brokenPos : broken) {
 +                    level.sendBlockUpdated(brokenPos, Blocks.AIR.defaultBlockState(), level.getBlockState(brokenPos), Block.UPDATE_ALL);
 +                }
@@ -117,7 +190,7 @@
 +                    movedPos = movedPos.relative(pushDirection);
 +                    level.sendBlockUpdated(movedPos, Blocks.AIR.defaultBlockState(), level.getBlockState(movedPos), Block.UPDATE_ALL);
 +                }
-+                return false;
++                return MoveBlocksResult.CANCEL;
 +            }
 +            // CraftBukkit end
  
@@ -161,4 +234,13 @@
 +                // Paper end - fix a variety of piston desync dupes
                  toUpdate[updateIndex++] = blockState;
              }
+ 
+@@ -363,7 +_,7 @@
+                 level.updateNeighborsAt(armPos, Blocks.PISTON_HEAD, orientation);
+             }
+ 
+-            return true;
++            return MoveBlocksResult.SUCCESS; // Paper - Fix sticky piston retract event
+         }
+     }
  
