@@ -109,5 +109,15 @@ public abstract class PaperCommonConnection<T extends ServerCommonPacketListener
         this.packetListener.send(new ClientboundStoreCookiePacket(CraftNamespacedKey.toMinecraft(key), value));
     }
 
+    @Override
+    public int getPing() {
+        return this.packetListener.latency();
+    }
+
+    @Override
+    public int getLastPing() {
+        return this.packetListener.lastLatency;
+    }
+
     public abstract ClientInformation getClientInformation();
 }

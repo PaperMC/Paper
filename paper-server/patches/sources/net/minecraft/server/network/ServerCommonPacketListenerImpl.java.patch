@@ -9,9 +9,11 @@
      private final boolean transferred;
      private long keepAliveTime;
      private boolean keepAlivePending;
-@@ -46,6 +_,16 @@
+@@ -45,15 +_,38 @@
+     private long closedListenerTime;
      private boolean closed = false;
      private int latency;
++    public int lastLatency; // Paper - Keep most recent latency in millis
      private volatile boolean suspendFlushingOnServerThread = false;
 +    // CraftBukkit start
 +    public final org.bukkit.craftbukkit.CraftServer cserver;
@@ -26,9 +28,10 @@
  
      public ServerCommonPacketListenerImpl(final MinecraftServer server, final Connection connection, final CommonListenerCookie cookie) {
          this.server = server;
-@@ -53,7 +_,18 @@
+         this.connection = connection;
          this.keepAliveTime = Util.getMillis();
          this.latency = cookie.latency();
++        this.lastLatency = this.latency; // Paper - Keep most recent latency in millis
          this.transferred = cookie.transferred();
 +        // Paper start
 +        this.playerBrand = cookie.brandName();
@@ -45,8 +48,11 @@
  
      private void close() {
          if (!this.closed) {
-@@ -83,7 +_,7 @@
+@@ -81,9 +_,10 @@
+         if (this.keepAlivePending && packet.getId() == this.keepAliveChallenge) {
+             int time = (int)(Util.getMillis() - this.keepAliveTime);
              this.latency = (this.latency * 3 + time) / 4;
++            this.lastLatency = time; // Paper - Keep most recent latency in millis
              this.keepAlivePending = false;
          } else if (!this.isSingleplayerOwner()) {
 -            this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE);
