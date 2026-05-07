@@ -186,7 +186,7 @@ public final class ChatProcessor {
         final ChatRenderer renderer = event.renderer();
 
         final Set<Audience> viewers = event.viewers();
-        final ResourceKey<ChatType> chatTypeKey = renderer instanceof ChatRenderer.Default ? ChatType.CHAT : PAPER_RAW;
+        final ResourceKey<ChatType> chatTypeKey = renderer instanceof ChatRenderer.Default && !this.flags.get(FORMAT_CHANGED) ? ChatType.CHAT : PAPER_RAW;
         final ChatType.Bound chatType = ChatType.bind(chatTypeKey, this.player.level().registryAccess(), PaperAdventure.asVanilla(displayName(player)));
 
         OutgoingChat outgoingChat = viewers instanceof LazyChatAudienceSet lazyAudienceSet && lazyAudienceSet.isLazy() ? new ServerOutgoingChat() : new ViewersOutgoingChat();
