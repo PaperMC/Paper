@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.NbtException;
@@ -88,6 +90,9 @@ final class WorldMigrationSupport {
             return;
         }
 
+        boolean pathsWithConflits = false;
+        final HashMap<Path, Path> migrationPaths = new HashMap<>();
+
         for (final String directory : DIMENSION_DIRECTORIES) {
             final Path source = sourceDimensionRoot.resolve(directory);
             if (!Files.exists(source)) {
@@ -95,8 +100,20 @@ final class WorldMigrationSupport {
             }
 
             final Path target = targetDimensionPath.resolve(directory);
-            LOGGER.info("Migrating world directory from {} to {}", source, target);
-            mergeMove(source, target);
+            if (Files.exists(target)) {
+                pathsWithConflits = true;
+                LOGGER.error("The folder {} already exists for world dimension {}", directory, targetDimensionPath);
+                continue;
+            }
+            migrationPaths.put(source, target);
+        }
+
+        if (pathsWithConflits) {
+            throw new IOException("Refusing to overwrite dimension directories in " + targetDimensionPath + " while migrating from " + sourceDimensionRoot);
+        }
+
+        for (Map.Entry<Path, Path> entry : migrationPaths.entrySet()) {
+            mergeMove(entry.getKey(), entry.getValue());
         }
     }
 
