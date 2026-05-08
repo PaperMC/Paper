@@ -1,7 +1,9 @@
 package io.papermc.paper.math.provider;
 
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Represents a provider of a random integer.
@@ -55,6 +57,17 @@ public sealed interface IntProvider permits IntProvider.Constant, IntProvider.Un
     @Contract(pure = true, value = "_, _, _ -> new")
     static IntProvider.Clamped clamped(final IntProvider source, final int min, final int max) {
         return IntProviderProvider.get().clamped(source, min, max);
+    }
+
+    /**
+     * Creates a weighted list provider of a given distribution.
+     *
+     * @param distribution the distribution of weighted providers
+     * @return a weighted list provider of the given distribution
+     */
+    @Contract(pure = true, value = "_ -> new")
+    static IntProvider.WeightedList weightedList(final List<WeightedIntProvider> distribution) {
+        return IntProviderProvider.get().weightedList(distribution);
     }
 
     /**
@@ -173,7 +186,15 @@ public sealed interface IntProvider permits IntProvider.Constant, IntProvider.Un
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     non-sealed interface WeightedList extends IntProvider {
-        // TODO implement later when we have more need for "weighted" API
+
+        /**
+         * Returns the distribution of this weighted list provider.
+         *
+         * @return the distribution
+         */
+        @Contract(pure = true)
+        @Unmodifiable
+        List<WeightedIntProvider> distribution();
     }
 
     /**
