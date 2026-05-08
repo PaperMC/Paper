@@ -113,24 +113,8 @@ final class WorldMigrationSupport {
         }
 
         for (Map.Entry<Path, Path> entry : migrationPaths.entrySet()) {
-            mergeMove(entry.getKey(), entry.getValue());
+            Files.move(entry.getKey(), entry.getValue());
         }
-    }
-
-    private static void mergeMove(final Path source, final Path target) throws IOException {
-        if (Files.isDirectory(source)) {
-            Files.createDirectories(target);
-            try (final var entries = Files.list(source)) {
-                for (final Path child : entries.toList()) {
-                    mergeMove(child, target.resolve(child.getFileName().toString()));
-                }
-            }
-            tryDeleteIfEmpty(source);
-            return;
-        }
-
-        Files.createDirectories(target.getParent());
-        Files.move(source, target);
     }
 
     private static void tryDeleteIfEmpty(final Path path) throws IOException {
