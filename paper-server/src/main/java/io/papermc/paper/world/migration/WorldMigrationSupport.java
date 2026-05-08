@@ -102,7 +102,7 @@ final class WorldMigrationSupport {
             final Path target = targetDimensionPath.resolve(directory);
             if (Files.exists(target)) {
                 pathsWithConflits = true;
-                LOGGER.error("The folder {} already exists for dimension {}", directory, targetDimensionPath);
+                LOGGER.error("The folder '{}' already exists for dimension {}", directory, targetDimensionPath);
                 continue;
             }
             migrationPaths.put(source, target);
