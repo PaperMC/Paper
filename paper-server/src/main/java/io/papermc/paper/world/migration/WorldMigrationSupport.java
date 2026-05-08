@@ -90,7 +90,7 @@ final class WorldMigrationSupport {
             return;
         }
 
-        boolean pathsWithConflits = false;
+        boolean pathsWithConflicts = false;
         final HashMap<Path, Path> migrationPaths = new HashMap<>();
 
         for (final String directory : DIMENSION_DIRECTORIES) {
@@ -101,14 +101,14 @@ final class WorldMigrationSupport {
 
             final Path target = targetDimensionPath.resolve(directory);
             if (Files.exists(target)) {
-                pathsWithConflits = true;
+                pathsWithConflicts = true;
                 LOGGER.error("The folder '{}' already exists for dimension {}", directory, targetDimensionPath);
                 continue;
             }
             migrationPaths.put(source, target);
         }
 
-        if (pathsWithConflits) {
+        if (pathsWithConflicts) {
             throw new IOException("Refusing to overwrite dimension directories in " + targetDimensionPath + " while migrating from " + sourceDimensionRoot);
         }
 
