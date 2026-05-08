@@ -9,7 +9,14 @@ import org.jetbrains.annotations.Unmodifiable;
  * Represents a provider of a random integer.
  */
 @ApiStatus.Experimental
-public sealed interface IntProvider permits IntProvider.Constant, IntProvider.Uniform, IntProvider.BiasedToBottom, IntProvider.Clamped, IntProvider.WeightedList, IntProvider.ClampedNormal {
+public sealed interface IntProvider permits
+    IntProvider.Constant,
+    IntProvider.Uniform,
+    IntProvider.BiasedToBottom,
+    IntProvider.Clamped,
+    IntProvider.WeightedList,
+    IntProvider.ClampedNormal,
+    IntProvider.Trapezoid {
 
     /**
      * Creates a constant provider of a given value.
@@ -82,6 +89,19 @@ public sealed interface IntProvider permits IntProvider.Constant, IntProvider.Un
     @Contract(pure = true, value = "_, _, _, _ -> new")
     static IntProvider.ClampedNormal clampedNormal(final float mean, final float deviation, final int min, final int max) {
         return IntProviderProvider.get().clampedNormal(mean, deviation, min, max);
+    }
+
+    /**
+     * Creates a trapezoid provider of a given plateau and range.
+     *
+     * @param plateau the width of the plateau
+     * @param min     the minimum value of the range (inclusive)
+     * @param max     the maximum value of the range (inclusive)
+     * @return a trapezoid provider of the given range and plateau
+     */
+    @Contract(pure = true, value = "_, _, _ -> new")
+    static IntProvider.Trapezoid trapezoid(final int plateau, final int min, final int max) {
+        return IntProviderProvider.get().trapezoid(plateau, min, max);
     }
 
     /**
@@ -219,6 +239,38 @@ public sealed interface IntProvider permits IntProvider.Constant, IntProvider.Un
          */
         @Contract(pure = true)
         float deviation();
+
+        /**
+         * Returns the minimum value of the range of this clamped-normal provider.
+         *
+         * @return the minimum value
+         */
+        @Contract(pure = true)
+        int minInclusive();
+
+        /**
+         * Returns the maximum value of the range of this clamped-normal provider.
+         *
+         * @return the maximum value
+         */
+        @Contract(pure = true)
+        int maxInclusive();
+    }
+
+    /**
+     * Represents a trapezoid provider of a given plateau and range.
+     */
+    @ApiStatus.Experimental
+    @ApiStatus.NonExtendable
+    non-sealed interface Trapezoid extends IntProvider {
+
+        /**
+         * Returns the width of the plateau of this trapezoid provider.
+         *
+         * @return the width of the plateau
+         */
+        @Contract(pure = true)
+        int plateau();
 
         /**
          * Returns the minimum value of the range of this clamped-normal provider.

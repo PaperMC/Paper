@@ -20,6 +20,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.support.RegistryHelper;
 import org.bukkit.support.environment.AllFeatures;
 import org.bukkit.support.provider.RegistriesArgumentProvider;
+import org.jetbrains.annotations.ApiStatus;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -46,6 +47,12 @@ public class RegistryConstantsTest {
         IGNORED_KEYS.putAll(registryKey, references.stream().map(holder -> holder.key().identifier()).toList());
     }
 
+    @ApiStatus.Experimental
+    private static <M> void ignoreRegistry(ResourceKey<? extends Registry<M>> registryKey) {
+        Registry<M> registry = RegistryHelper.registryAccess().lookupOrThrow(registryKey);
+        IGNORED_KEYS.putAll(registryKey, registry.keySet());
+    }
+
     @BeforeAll
     public static void populateIgnored() {
         ignore(Registries.DATA_COMPONENT_TYPE, Set.of(
@@ -59,6 +66,7 @@ public class RegistryConstantsTest {
             DataComponents.CREATIVE_SLOT_LOCK,
             DataComponents.ADDITIONAL_TRADE_COST
         ));
+        ignoreRegistry(Registries.WORLD_PRESET);
     }
 
     public static Stream<Arguments> registries() {

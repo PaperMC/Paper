@@ -2,30 +2,33 @@ package io.papermc.paper.math.provider;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.random.Weighted;
 import net.minecraft.util.valueproviders.BiasedToBottomInt;
 import net.minecraft.util.valueproviders.ClampedInt;
 import net.minecraft.util.valueproviders.ClampedNormalInt;
 import net.minecraft.util.valueproviders.ConstantInt;
+import net.minecraft.util.valueproviders.TrapezoidInt;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.util.valueproviders.WeightedListInt;
 import org.jetbrains.annotations.Unmodifiable;
 
 public interface PaperIntProvider {
 
-    static IntProvider fromMinecraft(final net.minecraft.util.valueproviders.IntProvider nms) {
-        return switch (nms) {
+    static IntProvider fromVanilla(final net.minecraft.util.valueproviders.IntProvider provider) {
+        return switch (provider) {
             case final ConstantInt constantInt -> new PaperConstant(constantInt);
             case final UniformInt uniformInt -> new PaperUniform(uniformInt);
             case final BiasedToBottomInt biasedToBottomInt -> new PaperBiasedToBottom(biasedToBottomInt);
             case final ClampedInt clampedInt -> new PaperClamped(clampedInt);
             case final WeightedListInt weightedListInt -> new PaperWeightedList(weightedListInt);
             case final ClampedNormalInt clampedNormalInt -> new PaperClampedNormal(clampedNormalInt);
-            default -> throw new IllegalArgumentException("Unknown int provider type: " + nms);
+            case final TrapezoidInt trapezoidInt -> new PaperTrapezoid(trapezoidInt);
+            default -> throw new IllegalArgumentException("Unknown int provider type: " + BuiltInRegistries.INT_PROVIDER_TYPE.getKey(provider.codec()));
         };
     }
 
-    static net.minecraft.util.valueproviders.IntProvider toMinecraft(final IntProvider provider) {
+    static net.minecraft.util.valueproviders.IntProvider toVanilla(final IntProvider provider) {
         return ((PaperIntProvider) provider).handle();
     }
 
@@ -34,48 +37,48 @@ public interface PaperIntProvider {
     record PaperConstant(ConstantInt handle) implements IntProvider.Constant, PaperIntProvider {
         @Override
         public int value() {
-            return this.handle.getValue();
+            return this.handle.value();
         }
     }
 
     record PaperUniform(UniformInt handle) implements IntProvider.Uniform, PaperIntProvider {
         @Override
         public int minInclusive() {
-            return this.handle.getMinValue();
+            return this.handle.minInclusive();
         }
 
         @Override
         public int maxInclusive() {
-            return this.handle.getMaxValue();
+            return this.handle.maxInclusive();
         }
     }
 
     record PaperBiasedToBottom(BiasedToBottomInt handle) implements IntProvider.BiasedToBottom, PaperIntProvider {
         @Override
         public int minInclusive() {
-            return this.handle.getMinValue();
+            return this.handle.minInclusive();
         }
 
         @Override
         public int maxInclusive() {
-            return this.handle.getMaxValue();
+            return this.handle.maxInclusive();
         }
     }
 
     record PaperClamped(ClampedInt handle) implements IntProvider.Clamped, PaperIntProvider {
         @Override
         public IntProvider source() {
-            return PaperIntProvider.fromMinecraft(this.handle.source);
+            return PaperIntProvider.fromVanilla(this.handle.source());
         }
 
         @Override
         public int minInclusive() {
-            return this.handle.getMinValue();
+            return this.handle.minInclusive();
         }
 
         @Override
         public int maxInclusive() {
-            return this.handle.getMaxValue();
+            return this.handle.maxInclusive();
         }
     }
 
@@ -85,7 +88,7 @@ public interface PaperIntProvider {
         public @Unmodifiable List<WeightedIntProvider> distribution() {
             final ImmutableList.Builder<WeightedIntProvider> builder = ImmutableList.builder();
             for (final Weighted<net.minecraft.util.valueproviders.IntProvider> weighted : this.handle.distribution.unwrap()) {
-                builder.add(WeightedIntProvider.create(weighted.weight(), PaperIntProvider.fromMinecraft(weighted.value())));
+                builder.add(WeightedIntProvider.create(weighted.weight(), PaperIntProvider.fromVanilla(weighted.value())));
             }
             return builder.build();
         }
@@ -94,22 +97,39 @@ public interface PaperIntProvider {
     record PaperClampedNormal(ClampedNormalInt handle) implements IntProvider.ClampedNormal, PaperIntProvider {
         @Override
         public float mean() {
-            return this.handle.mean;
+            return this.handle.mean();
         }
 
         @Override
         public float deviation() {
-            return this.handle.deviation;
+            return this.handle.deviation();
         }
 
         @Override
         public int minInclusive() {
-            return this.handle.getMinValue();
+            return this.handle.minInclusive();
         }
 
         @Override
         public int maxInclusive() {
-            return this.handle.getMaxValue();
+            return this.handle.maxInclusive();
+        }
+    }
+
+    record PaperTrapezoid(TrapezoidInt handle) implements IntProvider.Trapezoid, PaperIntProvider {
+        @Override
+        public int plateau() {
+            return this.handle.plateau();
+        }
+
+        @Override
+        public int minInclusive() {
+            return this.handle.minInclusive();
+        }
+
+        @Override
+        public int maxInclusive() {
+            return this.handle.maxInclusive();
         }
     }
 }

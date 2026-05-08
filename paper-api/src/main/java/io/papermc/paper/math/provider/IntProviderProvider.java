@@ -8,7 +8,7 @@ interface IntProviderProvider {
 
     static IntProviderProvider get() {
         final class Holder {
-            static final Optional<IntProviderProvider> INSTANCE = ServiceLoader.load(IntProviderProvider.class).findFirst();
+            static final Optional<IntProviderProvider> INSTANCE = ServiceLoader.load(IntProviderProvider.class, IntProviderProvider.class.getClassLoader()).findFirst();
         }
 
         return Holder.INSTANCE.orElseThrow();
@@ -25,4 +25,6 @@ interface IntProviderProvider {
     IntProvider.WeightedList weightedList(List<WeightedIntProvider> distribution);
 
     IntProvider.ClampedNormal clampedNormal(float mean, float deviation, int min, int max);
+
+    IntProvider.Trapezoid trapezoid(int plateau, int min, int max);
 }

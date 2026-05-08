@@ -30,7 +30,7 @@ public final class BoundChecker {
         if (Float.compare(value, min) >= 0 && Float.compare(value, max) <= 0) {
             return value;
         }
-        throw new IllegalArgumentException("argument " + field + " must be in [" + min + "," + max +"]: " + value);
+        throw new IllegalArgumentException("argument " + field + " must be in [" + min + "," + max + "]: " + value);
     }
 
     public static float requireNonNegative(final float value, final String field) {
@@ -42,6 +42,27 @@ public final class BoundChecker {
 
     public static float requirePositive(final float value, final String field) {
         if (Float.compare(value, 0.0F) > 0 && Float.compare(value, Float.MAX_VALUE) <= 0) {
+            return value;
+        }
+        throw new IllegalArgumentException("argument " + field + " must be positive: " + value);
+    }
+
+    public static double requireRange(final double value, final String field, final double min, final double max) {
+        if (Double.compare(value, min) >= 0 && Double.compare(value, max) <= 0) {
+            return value;
+        }
+        throw new IllegalArgumentException("argument " + field + " must be in [" + min + "," + max + "]: " + value);
+    }
+
+    public static double requireNonNegative(final double value, final String field) {
+        if (Double.compare(value, 0.0F) >= 0 && Double.compare(value, Double.MAX_VALUE) <= 0) {
+            return value;
+        }
+        throw new IllegalArgumentException("argument " + field + " must be non-negative: " + value);
+    }
+
+    public static double requirePositive(final double value, final String field) {
+        if (Double.compare(value, 0.0F) > 0 && Double.compare(value, Double.MAX_VALUE) <= 0) {
             return value;
         }
         throw new IllegalArgumentException("argument " + field + " must be positive: " + value);

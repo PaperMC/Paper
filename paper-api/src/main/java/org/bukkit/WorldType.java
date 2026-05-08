@@ -8,7 +8,10 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents various types of worlds that may exist
+ *
+ * @deprecated use {@link io.papermc.paper.world.WorldPreset}
  */
+@Deprecated(since = "26.1.2")
 public enum WorldType {
     NORMAL("DEFAULT"),
     FLAT("FLAT"),

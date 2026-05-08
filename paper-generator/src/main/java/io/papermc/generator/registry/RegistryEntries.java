@@ -75,6 +75,7 @@ import net.minecraft.world.item.equipment.trim.TrimPatterns;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BannerPatterns;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
@@ -213,7 +214,7 @@ public final class RegistryEntries {
         entry(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilusVariants.class, ZombieNautilus.Variant.class).writableApiRegistryBuilder(ZombieNautilusVariantRegistryEntry.Builder.class, "PaperZombieNautilusVariantRegistryEntry.PaperBuilder"),
         entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder"),
         entry(Registries.WORLD_PRESET, WorldPresets.class, WorldPreset.class, "Paper"),
-        entry(Registries.DIMENSION_TYPE, DimensionTypes.class, DimensionType.class, "Paper").writableApiRegistryBuilder(DimensionTypeRegistryEntry.Builder.class, "PaperDimensionTypeRegistryEntry.PaperBuilder"),
+        entry(Registries.DIMENSION_TYPE, BuiltinDimensionTypes.class, DimensionType.class, "Paper").writableApiRegistryBuilder(DimensionTypeRegistryEntry.Builder.class, "PaperDimensionTypeRegistryEntry.PaperBuilder"),
         entry(Registries.LEVEL_STEM, net.minecraft.world.level.dimension.LevelStem.class, LevelStem.class, "Paper").writableApiRegistryBuilder(LevelStemRegistryEntry.Builder.class, "PaperLevelStemRegistryEntry.PaperBuilder")
     );
 
