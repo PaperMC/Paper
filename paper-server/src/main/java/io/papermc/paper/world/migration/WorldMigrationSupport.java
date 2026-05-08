@@ -90,7 +90,7 @@ final class WorldMigrationSupport {
             return;
         }
 
-        boolean pathsWithConflits = false;
+        boolean pathsWithConflicts = false;
         final HashMap<Path, Path> migrationPaths = new HashMap<>();
 
         for (final String directory : DIMENSION_DIRECTORIES) {
