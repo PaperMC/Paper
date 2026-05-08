@@ -38,7 +38,7 @@ public class PaperIntProviderProvider implements IntProviderProvider {
 
     @Override
     public IntProvider.WeightedList weightedList(final List<WeightedIntProvider> distribution) {
-        // todo empty check
+        Preconditions.checkArgument(!distribution.isEmpty(), "distribution cannot be empty");
         final WeightedList.Builder<net.minecraft.util.valueproviders.IntProvider> builder = WeightedList.builder();
         for (final WeightedIntProvider weightedIntProvider : distribution) {
             builder.add(PaperIntProvider.toVanilla(weightedIntProvider.provider()), weightedIntProvider.weight());
@@ -48,7 +48,7 @@ public class PaperIntProviderProvider implements IntProviderProvider {
 
     @Override
     public IntProvider.ClampedNormal clampedNormal(final float mean, final float deviation, final int min, final int max) {
-        Preconditions.checkArgument(min <= max, "min <= max"); // todo check inclusive?
+        Preconditions.checkArgument(min <= max, "min <= max");
         return new PaperIntProvider.PaperClampedNormal(ClampedNormalInt.of(mean, deviation, min, max));
     }
 

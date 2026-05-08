@@ -10,6 +10,7 @@ import io.papermc.paper.registry.tag.TagKey;
 import java.util.Optional;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.util.Mth;
 import net.minecraft.world.attribute.EnvironmentAttributeMap;
 import net.minecraft.world.clock.WorldClock;
 import net.minecraft.world.level.CardinalLighting;
@@ -27,6 +28,7 @@ import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEntry {
 
+    protected final Conversions conversions;
     protected boolean hasFixedTime = false;
     protected @Nullable Boolean hasSkylight;
     protected @Nullable Boolean hasCeiling;
@@ -44,8 +46,6 @@ public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEnt
     protected EnvironmentAttributeMap attributes = EnvironmentAttributeMap.EMPTY;
     protected HolderSet<Timeline> timelines = HolderSet.empty();
     protected Optional<Holder<WorldClock>> defaultClock = Optional.empty();
-
-    protected final Conversions conversions;
 
     public PaperDimensionTypeRegistryEntry(final Conversions conversions, final @Nullable DimensionType internal) {
         this.conversions = conversions;
@@ -180,12 +180,14 @@ public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEnt
 
         @Override
         public Builder minY(final @Range(from = DimensionType.MIN_Y, to = DimensionType.MAX_Y) int minY) {
+            Preconditions.checkArgument(Mth.isMultipleOf(minY, 16), "minY has to be multiple of 16");
             this.minY = requireRange(minY, "minY", DimensionType.MIN_Y, DimensionType.MAX_Y);
             return this;
         }
 
         @Override
         public Builder height(final @Range(from = DimensionType.MIN_HEIGHT, to = DimensionType.Y_SIZE) int height) {
+            Preconditions.checkArgument(Mth.isMultipleOf(height, 16), "height has to be multiple of 16");
             this.height = requireRange(height, "height", DimensionType.MIN_HEIGHT, DimensionType.Y_SIZE);
             return this;
         }

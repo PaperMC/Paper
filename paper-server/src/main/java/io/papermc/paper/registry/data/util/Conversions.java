@@ -38,8 +38,8 @@ public class Conversions {
     }
 
     private final RegistryOps.RegistryInfoLookup lookup;
-    private final WrapperAwareSerializer serializer;
     private final RegistryOps<Object> javaOps;
+    private final WrapperAwareSerializer serializer;
 
     public Conversions(final RegistryOps.RegistryInfoLookup lookup) {
         this.lookup = lookup;
