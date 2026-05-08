@@ -11,7 +11,9 @@ import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.world.PaperWorldPreset;
 import io.papermc.paper.world.WorldPreset;
+import io.papermc.paper.world.WorldPresets;
 import io.papermc.paper.world.worldgen.DimensionType;
+import io.papermc.paper.world.worldgen.DimensionTypes;
 import io.papermc.paper.world.worldgen.LevelStem;
 import io.papermc.paper.world.worldgen.PaperDimensionType;
 import io.papermc.paper.world.worldgen.PaperLevelStem;
@@ -167,8 +169,8 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.DIALOG, Dialog.class, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
         register(Registries.GAME_RULE, GameRule.class, GameRules.class, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
         register(Registries.POINT_OF_INTEREST_TYPE, PoiType.class, PoiTypes.class, PaperPoiType.class, net.minecraft.world.entity.ai.village.poi.PoiType.class);
-        register(Registries.WORLD_PRESET, WorldPreset.class, PaperWorldPreset.class, net.minecraft.world.level.levelgen.presets.WorldPreset.class);
-        register(Registries.DIMENSION_TYPE, DimensionType.class, PaperDimensionType.class, net.minecraft.world.level.dimension.DimensionType.class);
+        register(Registries.WORLD_PRESET, WorldPreset.class, WorldPresets.class, PaperWorldPreset.class, net.minecraft.world.level.levelgen.presets.WorldPreset.class);
+        register(Registries.DIMENSION_TYPE, DimensionType.class, DimensionTypes.class, PaperDimensionType.class, net.minecraft.world.level.dimension.DimensionType.class);
         register(Registries.LEVEL_STEM, LevelStem.class, PaperLevelStem.class, net.minecraft.world.level.dimension.LevelStem.class);
     }
 
