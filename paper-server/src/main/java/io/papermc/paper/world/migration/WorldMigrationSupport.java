@@ -117,15 +117,6 @@ final class WorldMigrationSupport {
         }
     }
 
-    private static void tryDeleteIfEmpty(final Path path) throws IOException {
-        try (final var entries = Files.list(path)) {
-            if (entries.findAny().isPresent()) {
-                return;
-            }
-        }
-        Files.deleteIfExists(path);
-    }
-
     record LevelDataResult(@Nullable Dynamic<?> dataTag, boolean fatalError) {}
 
     static LevelDataResult readFixedLevelData(final LevelStorageSource.LevelStorageAccess access) {
