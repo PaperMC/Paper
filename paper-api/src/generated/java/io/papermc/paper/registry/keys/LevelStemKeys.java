@@ -7,7 +7,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.world.worldgen.LevelStem;
 import net.kyori.adventure.key.Key;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -25,7 +24,6 @@ import org.jspecify.annotations.NullMarked;
 })
 @NullMarked
 @GeneratedClass
-@ApiStatus.Experimental
 public final class LevelStemKeys {
     private LevelStemKeys() {
     }
@@ -36,7 +34,6 @@ public final class LevelStemKeys {
      * @param key the value's key in the registry
      * @return a new typed key
      */
-    @ApiStatus.Experimental
     public static TypedKey<LevelStem> create(final Key key) {
         return TypedKey.create(RegistryKey.LEVEL_STEM, key);
     }
