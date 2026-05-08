@@ -129,10 +129,6 @@ final class WorldMigrationSupport {
             return;
         }
 
-        if (Files.exists(target)) {
-            throw new IOException("Refusing to overwrite existing migrated file " + target + " while moving " + source);
-        }
-
         Files.createDirectories(target.getParent());
         Files.move(source, target);
     }
