@@ -3,6 +3,7 @@ package io.papermc.paper.registry;
 import com.google.common.collect.Sets;
 import java.util.Set;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.intellij.lang.annotations.Subst;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -23,7 +24,7 @@ record RegistryKeyImpl<T>(Key key) implements RegistryKey<T> {
         return System.identityHashCode(this);
     }
 
-    static <T> RegistryKey<T> create(@Subst("some_key") final String key) {
+    static <T> RegistryKey<T> create(@KeyPattern.Value final String key) {
         final RegistryKey<T> registryKey = createInternal(key);
         REGISTRY_KEYS.add(registryKey);
         return registryKey;
