@@ -26,9 +26,12 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
-import io.papermc.paper.item.MapPostProcessing;
 import io.papermc.paper.entity.poi.PoiTypes;
+import io.papermc.paper.item.MapPostProcessing;
+import io.papermc.paper.registry.data.DimensionTypeRegistryEntry;
 import io.papermc.paper.world.WeatheringCopperState;
+import io.papermc.paper.world.WorldPresets;
+import io.papermc.paper.world.worldgen.DimensionTypes;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
 import io.papermc.typewriter.replace.SearchMetadata;
@@ -46,7 +49,9 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.SwingAnimationType;
+import net.minecraft.world.level.CardinalLighting;
 import net.minecraft.world.level.block.WeatheringCopper;
+import net.minecraft.world.level.dimension.DimensionType;
 import org.bukkit.Art;
 import org.bukkit.FeatureFlag;
 import org.bukkit.Fluid;
@@ -146,6 +151,10 @@ public final class Rewriters {
             .register("AttributeSentiment", Attribute.Sentiment.class, new EnumCloneRewriter<>(net.minecraft.world.entity.ai.attributes.Attribute.Sentiment.class))
             .register("WeatheringCopperState", WeatheringCopperState.class, new EnumCloneRewriter<>(WeatheringCopper.WeatherState.class))
             .register("CopperGolemState", CopperGolem.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.golem.CopperGolemState.class))
+            .register(DimensionTypeRegistryEntry.class, composite(
+                holder("DimensionTypeSkybox", DimensionTypeRegistryEntry.Skybox.class, new EnumCloneRewriter<>(DimensionType.Skybox.class)),
+                holder("DimensionTypeCardinalLightType", DimensionTypeRegistryEntry.CardinalLightType.class, new EnumCloneRewriter<>(CardinalLighting.Type.class))
+            ))
             .register(ClientOption.class, composite(
                 holder("ChatVisibility", ClientOption.ChatVisibility.class, new EnumCloneRewriter<>(ChatVisiblity.class) {
                     @Override
@@ -233,6 +242,8 @@ public final class Rewriters {
             .register("ZombieNautilusVariant", ZombieNautilus.Variant.class, new RegistryFieldRewriter<>(Registries.ZOMBIE_NAUTILUS_VARIANT, "getVariant"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
             .register("PoiTypes", PoiTypes.class, new RegistryFieldRewriter<>(Registries.POINT_OF_INTEREST_TYPE, "get"))
+            .register("WorldPresets", WorldPresets.class, new RegistryFieldRewriter<>(Registries.WORLD_PRESET, "getPreset"))
+            .register("DimensionTypes", DimensionTypes.class, new RegistryFieldRewriter<>(Registries.DIMENSION_TYPE, "getType"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
             // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) - disable for now, lynx want the generic type
             .register("BlockType", BlockType.class, new BlockTypeRewriter())

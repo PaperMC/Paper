@@ -25,6 +25,7 @@ import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
 import io.papermc.paper.world.WorldPreset;
 import io.papermc.paper.world.worldgen.DimensionType;
+import io.papermc.paper.world.worldgen.DimensionTypes;
 import io.papermc.paper.world.worldgen.LevelStem;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -42,7 +43,6 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.DimensionTypes;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.dialog.Dialogs;
 import net.minecraft.sounds.SoundEvents;
@@ -75,6 +75,7 @@ import net.minecraft.world.item.equipment.trim.TrimPatterns;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BannerPatterns;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
@@ -115,7 +116,6 @@ import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public final class RegistryEntries {
@@ -212,8 +212,8 @@ public final class RegistryEntries {
         entry(Registries.PIG_SOUND_VARIANT, PigSoundVariants.class, Pig.SoundVariant.class),
         entry(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilusVariants.class, ZombieNautilus.Variant.class).writableApiRegistryBuilder(ZombieNautilusVariantRegistryEntry.Builder.class, "PaperZombieNautilusVariantRegistryEntry.PaperBuilder"),
         entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder"),
-        entry(Registries.WORLD_PRESET, WorldPresets.class, WorldPreset.class, "Paper"),
-        entry(Registries.DIMENSION_TYPE, DimensionTypes.class, DimensionType.class, "Paper").writableApiRegistryBuilder(DimensionTypeRegistryEntry.Builder.class, "PaperDimensionTypeRegistryEntry.PaperBuilder"),
+        entry(Registries.WORLD_PRESET, WorldPresets.class, WorldPreset.class, "Paper").preload(io.papermc.paper.world.WorldPresets.class),
+        entry(Registries.DIMENSION_TYPE, BuiltinDimensionTypes.class, DimensionType.class, "Paper").preload(DimensionTypes.class).writableApiRegistryBuilder(DimensionTypeRegistryEntry.Builder.class, "PaperDimensionTypeRegistryEntry.PaperBuilder"),
         entry(Registries.LEVEL_STEM, net.minecraft.world.level.dimension.LevelStem.class, LevelStem.class, "Paper").writableApiRegistryBuilder(LevelStemRegistryEntry.Builder.class, "PaperLevelStemRegistryEntry.PaperBuilder")
     );
 

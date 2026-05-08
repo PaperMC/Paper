@@ -13,19 +13,11 @@ public final class PaperWorldPreset extends HolderableBase<net.minecraft.world.l
         super(holder);
     }
 
-    public static WorldPreset minecraftToBukkit(final net.minecraft.world.level.levelgen.presets.WorldPreset minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.WORLD_PRESET);
-    }
-
     public static WorldPreset minecraftHolderToBukkit(final Holder<net.minecraft.world.level.levelgen.presets.WorldPreset> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.WORLD_PRESET);
     }
 
-    public static net.minecraft.world.level.levelgen.presets.WorldPreset bukkitToMinecraft(final WorldPreset bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
-    }
-
     public static Holder<net.minecraft.world.level.levelgen.presets.WorldPreset> bukkitToMinecraftHolder(final WorldPreset bukkit) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.WORLD_PRESET);
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 }

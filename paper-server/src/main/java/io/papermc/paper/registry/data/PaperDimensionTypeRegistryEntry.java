@@ -1,7 +1,6 @@
 package io.papermc.paper.registry.data;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.math.provider.IntProvider;
 import io.papermc.paper.math.provider.PaperIntProvider;
 import io.papermc.paper.registry.PaperRegistries;
@@ -9,71 +8,73 @@ import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.tag.TagKey;
 import java.util.Optional;
-import java.util.OptionalLong;
-import net.kyori.adventure.key.Key;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
+import net.minecraft.util.Mth;
+import net.minecraft.world.attribute.EnvironmentAttributeMap;
+import net.minecraft.world.clock.WorldClock;
+import net.minecraft.world.level.CardinalLighting;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.lighting.LightEngine;
+import net.minecraft.world.timeline.Timeline;
 import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentRange;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEntry {
 
-    protected OptionalLong fixedTime = OptionalLong.empty();
+    protected final Conversions conversions;
+    protected boolean hasFixedTime = false;
     protected @Nullable Boolean hasSkylight;
     protected @Nullable Boolean hasCeiling;
-    protected @Nullable Boolean ultraWarm;
-    protected @Nullable Boolean natural;
+    protected @Nullable Boolean hasEnderDragonFight;
     protected @Nullable Double coordinateScale;
-    protected @Nullable Boolean bedWorks;
-    protected @Nullable Boolean respawnAnchorWorks;
     protected @Nullable Integer minY;
     protected @Nullable Integer height;
     protected @Nullable Integer logicalHeight;
     protected net.minecraft.tags.@Nullable TagKey<Block> infiniburn;
-    protected @Nullable ResourceLocation effectsLocation;
     protected @Nullable Float ambientLight;
-    protected Optional<Integer> cloudHeight = Optional.empty();
-    protected @Nullable Boolean piglinSafe;
-    protected @Nullable Boolean hasRaids;
     protected net.minecraft.util.valueproviders.@Nullable IntProvider monsterSpawnLightTest;
     protected @Nullable Integer monsterSpawnBlockLightLimit;
-
-    protected final Conversions conversions;
+    protected DimensionType.Skybox skybox = DimensionType.Skybox.OVERWORLD;
+    protected CardinalLighting.Type cardinalLightType = CardinalLighting.Type.DEFAULT;
+    protected EnvironmentAttributeMap attributes = EnvironmentAttributeMap.EMPTY;
+    protected HolderSet<Timeline> timelines = HolderSet.empty();
+    protected Optional<Holder<WorldClock>> defaultClock = Optional.empty();
 
     public PaperDimensionTypeRegistryEntry(final Conversions conversions, final @Nullable DimensionType internal) {
         this.conversions = conversions;
-        if (internal == null) return;
+        if (internal == null) {
+            return;
+        }
 
-        this.fixedTime = internal.fixedTime();
+        this.hasFixedTime = internal.hasFixedTime();
         this.hasSkylight = internal.hasSkyLight();
         this.hasCeiling = internal.hasCeiling();
-        this.ultraWarm = internal.ultraWarm();
-        this.natural = internal.natural();
+        this.hasEnderDragonFight = internal.hasEnderDragonFight();
         this.coordinateScale = internal.coordinateScale();
-        this.bedWorks = internal.bedWorks();
-        this.respawnAnchorWorks = internal.respawnAnchorWorks();
         this.minY = internal.minY();
         this.height = internal.height();
         this.logicalHeight = internal.logicalHeight();
         this.infiniburn = internal.infiniburn();
-        this.effectsLocation = internal.effectsLocation();
         this.ambientLight = internal.ambientLight();
-        this.cloudHeight = internal.cloudHeight();
-        this.piglinSafe = internal.monsterSettings().piglinSafe();
-        this.hasRaids = internal.monsterSettings().hasRaids();
         this.monsterSpawnLightTest = internal.monsterSettings().monsterSpawnLightTest();
         this.monsterSpawnBlockLightLimit = internal.monsterSettings().monsterSpawnBlockLightLimit();
+        this.skybox = internal.skybox();
+        this.cardinalLightType = internal.cardinalLightType();
+        this.attributes = internal.attributes();
+        this.timelines = internal.timelines();
+        this.defaultClock = internal.defaultClock();
     }
 
     @Override
-    public @Nullable Long fixedTime() {
-        return this.fixedTime.isPresent() ? this.fixedTime.getAsLong() : null;
+    public boolean hasFixedTime() {
+        return this.hasFixedTime;
     }
 
     @Override
@@ -87,13 +88,8 @@ public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEnt
     }
 
     @Override
-    public boolean ultraWarm() {
-        return asConfigured(this.ultraWarm, "ultraWarm");
-    }
-
-    @Override
-    public boolean natural() {
-        return asConfigured(this.natural, "natural");
+    public boolean hasEnderDragonFight() {
+        return asConfigured(this.hasEnderDragonFight, "hasEnderDragonFight");
     }
 
     @Override
@@ -102,27 +98,17 @@ public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEnt
     }
 
     @Override
-    public boolean bedWorks() {
-        return asConfigured(this.bedWorks, "bedWorks");
-    }
-
-    @Override
-    public boolean respawnAnchorWorks() {
-        return asConfigured(this.respawnAnchorWorks, "respawnAnchorWorks");
-    }
-
-    @Override
-    public @Range(from = -2032, to = 2031) int minY() {
+    public @Range(from = DimensionType.MIN_Y, to = DimensionType.MAX_Y) int minY() {
         return asConfigured(this.minY, "minY");
     }
 
     @Override
-    public @Range(from = 16, to = 4064) int height() {
+    public @Range(from = DimensionType.MIN_HEIGHT, to = DimensionType.Y_SIZE) int height() {
         return asConfigured(this.height, "height");
     }
 
     @Override
-    public @Range(from = 0, to = 4096) int logicalHeight() {
+    public @Range(from = 0, to = DimensionType.Y_SIZE) int logicalHeight() {
         return asConfigured(this.logicalHeight, "logicalHeight");
     }
 
@@ -132,38 +118,28 @@ public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEnt
     }
 
     @Override
-    public Key effectsLocation() {
-        return PaperAdventure.asAdventure(asConfigured(this.effectsLocation, "effectsLocation"));
-    }
-
-    @Override
     public float ambientLight() {
         return asConfigured(this.ambientLight, "ambientLight");
     }
 
     @Override
-    public @Nullable Integer cloudHeight() {
-        return this.cloudHeight.orElse(null);
-    }
-
-    @Override
-    public boolean piglinSafe() {
-        return asConfigured(this.piglinSafe, "piglinSafe");
-    }
-
-    @Override
-    public boolean hasRaids() {
-        return asConfigured(this.hasRaids, "hasRaids");
-    }
-
-    @Override
     public IntProvider monsterSpawnLightTest() {
-        return PaperIntProvider.fromMinecraft(asConfigured(this.monsterSpawnLightTest, "monsterSpawnLightTest"));
+        return PaperIntProvider.fromVanilla(asConfigured(this.monsterSpawnLightTest, "monsterSpawnLightTest"));
     }
 
     @Override
-    public @Range(from = 0, to = 15) int monsterSpawnBlockLightLimit() {
+    public @Range(from = 0, to = LightEngine.MAX_LEVEL) int monsterSpawnBlockLightLimit() {
         return asConfigured(this.monsterSpawnBlockLightLimit, "monsterSpawnBlockLightLimit");
+    }
+
+    @Override
+    public Skybox skybox() {
+        return Skybox.valueOf(this.skybox.name());
+    }
+
+    @Override
+    public CardinalLightType cardinalLightType() {
+        return CardinalLightType.valueOf(this.cardinalLightType.name());
     }
 
     public static final class PaperBuilder extends PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEntry.Builder, PaperRegistryBuilder<DimensionType, io.papermc.paper.world.worldgen.DimensionType> {
@@ -173,8 +149,8 @@ public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEnt
         }
 
         @Override
-        public Builder fixedTime(final @Nullable Long fixedTime) {
-            this.fixedTime = fixedTime == null ? OptionalLong.empty() : OptionalLong.of(fixedTime);
+        public Builder hasFixedTime(final boolean hasFixedTime) {
+            this.hasFixedTime = hasFixedTime;
             return this;
         }
 
@@ -191,50 +167,34 @@ public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEnt
         }
 
         @Override
-        public Builder ultraWarm(final boolean ultraWarm) {
-            this.ultraWarm = ultraWarm;
-            return this;
-        }
-
-        @Override
-        public Builder natural(final boolean natural) {
-            this.natural = natural;
+        public Builder hasEnderDragonFight(final boolean hasEnderDragonFight) {
+            this.hasEnderDragonFight = hasEnderDragonFight;
             return this;
         }
 
         @Override
         public Builder coordinateScale(final double coordinateScale) {
-            this.coordinateScale = coordinateScale;
+            this.coordinateScale = requireRange(coordinateScale, "coordinateScale", 1.0E-5F, 3.0E7);
             return this;
         }
 
         @Override
-        public Builder bedWorks(final boolean bedWorks) {
-            this.bedWorks = bedWorks;
+        public Builder minY(final @Range(from = DimensionType.MIN_Y, to = DimensionType.MAX_Y) int minY) {
+            Preconditions.checkArgument(Mth.isMultipleOf(minY, 16), "minY has to be multiple of 16");
+            this.minY = requireRange(minY, "minY", DimensionType.MIN_Y, DimensionType.MAX_Y);
             return this;
         }
 
         @Override
-        public Builder respawnAnchorWorks(final boolean respawnAnchorWorks) {
-            this.respawnAnchorWorks = respawnAnchorWorks;
+        public Builder height(final @Range(from = DimensionType.MIN_HEIGHT, to = DimensionType.Y_SIZE) int height) {
+            Preconditions.checkArgument(Mth.isMultipleOf(height, 16), "height has to be multiple of 16");
+            this.height = requireRange(height, "height", DimensionType.MIN_HEIGHT, DimensionType.Y_SIZE);
             return this;
         }
 
         @Override
-        public Builder minY(final @Range(from = -2032, to = 2031) int minY) {
-            this.minY = asArgumentRange(minY, "minY", -2032, 2031);
-            return this;
-        }
-
-        @Override
-        public Builder height(final @Range(from = 16, to = 4064) int height) {
-            this.height = asArgumentRange(height, "height", 16, 4064);
-            return this;
-        }
-
-        @Override
-        public Builder logicalHeight(final @Range(from = 0, to = 4096) int logicalHeight) {
-            this.logicalHeight = asArgumentRange(logicalHeight, "logicalHeight", 0, 4096);
+        public Builder logicalHeight(final @Range(from = 0, to = DimensionType.Y_SIZE) int logicalHeight) {
+            this.logicalHeight = requireRange(logicalHeight, "logicalHeight", 0, DimensionType.Y_SIZE);
             return this;
         }
 
@@ -245,73 +205,59 @@ public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEnt
         }
 
         @Override
-        public Builder effectsLocation(final Key effectsLocation) {
-            this.effectsLocation = PaperAdventure.asVanilla(asArgument(effectsLocation, "effectsLocation"));
-            return this;
-        }
-
-        @Override
         public Builder ambientLight(final float ambientLight) {
             this.ambientLight = ambientLight;
             return this;
         }
 
         @Override
-        public Builder cloudHeight(final @Nullable Integer cloudHeight) {
-            this.cloudHeight = cloudHeight == null ? Optional.empty() : Optional.of(cloudHeight);
-            return this;
-        }
-
-        @Override
-        public Builder piglinSafe(final boolean piglinSafe) {
-            this.piglinSafe = piglinSafe;
-            return this;
-        }
-
-        @Override
-        public Builder hasRaids(final boolean hasRaids) {
-            this.hasRaids = hasRaids;
-            return this;
-        }
-
-        @Override
         public Builder monsterSpawnLightTest(final IntProvider monsterSpawnLightTest) {
-            final var temp = PaperIntProvider.toMinecraft(asArgument(monsterSpawnLightTest, "monsterSpawnLightTest"));
-            Preconditions.checkArgument(temp.getMinValue() < 0 || temp.getMaxValue() > 15, "monsterSpawnLightTest must be in the range [0, 15]");
+            final var temp = PaperIntProvider.toVanilla(asArgument(monsterSpawnLightTest, "monsterSpawnLightTest"));
+            Preconditions.checkArgument(temp.minInclusive() < 0 || temp.maxInclusive() > LightEngine.MAX_LEVEL, "monsterSpawnLightTest must be in the range [0, %s]", LightEngine.MAX_LEVEL);
             this.monsterSpawnLightTest = temp;
             return this;
         }
 
         @Override
-        public Builder monsterSpawnBlockLightLimit(final @Range(from = 0, to = 15) int monsterSpawnBlockLightLimit) {
-            this.monsterSpawnBlockLightLimit = asArgumentRange(monsterSpawnBlockLightLimit, "monsterSpawnBlockLightLimit", 0, 15);
+        public Builder monsterSpawnBlockLightLimit(final @Range(from = 0, to = LightEngine.MAX_LEVEL) int monsterSpawnBlockLightLimit) {
+            this.monsterSpawnBlockLightLimit = requireRange(monsterSpawnBlockLightLimit, "monsterSpawnBlockLightLimit", 0, LightEngine.MAX_LEVEL);
+            return this;
+        }
+
+        @Override
+        public Builder skybox(final Skybox skybox) {
+            this.skybox = DimensionType.Skybox.valueOf(asArgument(skybox, "skybox").name());
+            return this;
+        }
+
+        @Override
+        public Builder cardinalLight(final CardinalLightType cardinalLightType) {
+            this.cardinalLightType = CardinalLighting.Type.valueOf(asArgument(cardinalLightType, "cardinalLightType").name());
             return this;
         }
 
         @Override
         public DimensionType build() {
             return new DimensionType(
-                this.fixedTime,
+                this.hasFixedTime,
                 this.hasSkyLight(),
                 this.hasCeiling(),
-                this.ultraWarm(),
-                this.natural(),
+                this.hasEnderDragonFight(),
                 this.coordinateScale(),
-                this.bedWorks(),
-                this.respawnAnchorWorks(),
                 this.minY(),
                 this.height(),
                 this.logicalHeight(),
                 asConfigured(this.infiniburn, "infiniburn"),
-                asConfigured(this.effectsLocation, "effectsLocation"),
                 this.ambientLight(),
-                this.cloudHeight,
                 new DimensionType.MonsterSettings(
-                    this.piglinSafe(),
-                    this.hasRaids(),
                     asConfigured(this.monsterSpawnLightTest, "monsterSpawnLightTest"),
                     this.monsterSpawnBlockLightLimit()
-                )
+                ),
+                this.skybox,
+                this.cardinalLightType,
+                this.attributes,
+                this.timelines,
+                this.defaultClock
             );
         }
     }

@@ -18,7 +18,6 @@ import io.papermc.generator.utils.Javadocs;
 import io.papermc.generator.utils.experimental.SingleFlagHolder;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.kyori.adventure.key.Key;
 import org.jspecify.annotations.NullMarked;
 
@@ -31,11 +30,11 @@ import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
 @NullMarked
-public class GeneratedTagKeyType extends SimpleGenerator {
+public class GeneratedTagKeyType<T> extends SimpleGenerator {
 
-    private final RegistryEntry<?> entry;
+    private final RegistryEntry<T> entry;
 
-    public GeneratedTagKeyType(RegistryEntry<?> entry, String packageName) {
+    public GeneratedTagKeyType(RegistryEntry<T> entry, String packageName) {
         super(entry.keyClassName().concat("TagKeys"), packageName);
         this.entry = entry;
     }
@@ -83,8 +82,8 @@ public class GeneratedTagKeyType extends SimpleGenerator {
         TypeSpec.Builder typeBuilder = this.keyHolderType();
         MethodSpec.Builder createMethod = this.createMethod(tagKeyType);
 
-        AtomicBoolean allExperimental = new AtomicBoolean(true);
-        this.entry.registry().listTagIds().sorted(Formatting.TAG_ORDER).forEach(tagKey -> {
+        boolean allExperimental = true;
+        for (net.minecraft.tags.TagKey<T> tagKey : this.entry.registry().listTagIds().sorted(Formatting.TAG_ORDER).toList()) {
             String fieldName = Formatting.formatKeyAsField(tagKey.location().getPath());
             FieldSpec.Builder fieldBuilder = FieldSpec.builder(tagKeyType, fieldName, PUBLIC, STATIC, FINAL)
                 .initializer("$N(key($S))", createMethod.build(), tagKey.location().getPath())
@@ -94,11 +93,16 @@ public class GeneratedTagKeyType extends SimpleGenerator {
             if (featureFlagName != null) {
                 fieldBuilder.addAnnotations(experimentalAnnotations(SingleFlagHolder.fromName(featureFlagName)));
             } else {
-                allExperimental.set(false);
+                allExperimental = false;
             }
             typeBuilder.addField(fieldBuilder.build());
-        });
-        if (allExperimental.get()) {
+        }
+
+        if (allExperimental && typeBuilder.fieldSpecs.isEmpty()) {
+            allExperimental = false;
+        }
+
+        if (allExperimental) {
             typeBuilder.addAnnotation(EXPERIMENTAL_API_ANNOTATION);
             createMethod.addAnnotation(EXPERIMENTAL_API_ANNOTATION);
         }
