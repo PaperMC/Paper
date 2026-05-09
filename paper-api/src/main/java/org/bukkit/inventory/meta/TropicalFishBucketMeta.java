@@ -92,7 +92,7 @@ public interface TropicalFishBucketMeta extends ItemMeta {
      * @return if there is a variant
      * @deprecated the variant tag is no longer used and instead split into its own set of components
      */
-    @Deprecated(since = "26.1.2", forRemoval = true)
+    @Deprecated(since = "26.1", forRemoval = true)
     boolean hasVariant();
 
     @Override
