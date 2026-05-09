@@ -40,6 +40,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemInstance;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -50,6 +51,7 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -159,23 +161,12 @@ public final class CraftItemStack extends ItemStack {
         return stack;
     }
 
-    /**
-     * Copies the NMS stack to return as a strictly-Bukkit stack
-     */
-    public static ItemStack asBukkitCopy(net.minecraft.world.item.ItemStack original) {
-        // no such thing as a "strictly-Bukkit stack" anymore
-        // we copy the stack since it should be a complete copy not a mirror
-        return asCraftMirror(original.copy());
-    }
-
-    public static ItemStack asBukkitCopy(ItemStackTemplate template) {
-        return asCraftMirror(template.create()); // No need to copy the result again
-    }
-
+    // no such thing as a "strictly-Bukkit stack" anymore
+    // we copy the stack since it should be a complete copy not a mirror
     public static ItemStack asBukkitCopy(ItemInstance original) {
         return switch (original) {
-            case ItemStackTemplate template -> asBukkitCopy(template);
-            case net.minecraft.world.item.ItemStack item -> asBukkitCopy(item);
+            case ItemStackTemplate template -> asCraftMirror(template.create());
+            case net.minecraft.world.item.ItemStack item -> asCraftMirror(item.copy());
             default -> throw new AssertionError();
         };
     }
@@ -596,13 +587,15 @@ public final class CraftItemStack extends ItemStack {
     public @NotNull @Unmodifiable List<Component> computeTooltipLines(final TooltipContext tooltipContext, final Player player) {
         Preconditions.checkArgument(tooltipContext != null, "tooltipContext cannot be null");
         net.minecraft.world.item.ItemStack item = this.handle == null ? net.minecraft.world.item.ItemStack.EMPTY : this.handle;
-        net.minecraft.world.item.TooltipFlag.Default flag = tooltipContext.isAdvanced() ? net.minecraft.world.item.TooltipFlag.ADVANCED : net.minecraft.world.item.TooltipFlag.NORMAL;
+        TooltipFlag.Default flag = tooltipContext.isAdvanced() ? TooltipFlag.ADVANCED : TooltipFlag.NORMAL;
         if (tooltipContext.isCreative()) {
             flag = flag.asCreative();
         }
         final List<net.minecraft.network.chat.Component> lines = item.getTooltipLines(
-            net.minecraft.world.item.Item.TooltipContext.of(player == null ? CraftRegistry.getMinecraftRegistry() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
-            player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
+            Item.TooltipContext.of(player == null ? CraftRegistry.getMinecraftRegistry() : ((CraftPlayer) player).getHandle().level().registryAccess()),
+            player == null ? null : ((CraftPlayer) player).getHandle(),
+            flag
+        );
         return lines.stream().map(PaperAdventure::asAdventure).toList();
     }
 
@@ -705,7 +698,7 @@ public final class CraftItemStack extends ItemStack {
         this.setDataInternal((PaperDataComponentType.NonValuedImpl<?, ?>) type, null);
     }
 
-    private <A, V> void setDataInternal(final PaperDataComponentType<A, V> type, final A value) {
+    private <A, V> void setDataInternal(final PaperDataComponentType<A, V> type, final @Nullable A value) {
         final V v = type.getConverter().toVanilla(value);
         if (type.getConverter() instanceof CodecConverter<V, A> codecConverter) {
             codecConverter.validate(v, true).ifPresent(message -> {
