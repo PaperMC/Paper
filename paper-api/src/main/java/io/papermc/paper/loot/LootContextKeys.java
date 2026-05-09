@@ -11,7 +11,6 @@ import org.bukkit.inventory.ItemStack;
 import static io.papermc.paper.loot.LootContextKeyImpl.unvalued;
 import static io.papermc.paper.loot.LootContextKeyImpl.valued;
 
-@SuppressWarnings("unused")
 public final class LootContextKeys {
 
     public static final LootContextKey.Valued<Entity> THIS_ENTITY = valued("this_entity");
