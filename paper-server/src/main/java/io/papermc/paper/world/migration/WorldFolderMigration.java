@@ -7,7 +7,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.filefix.FileFixerUpper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
@@ -91,7 +96,24 @@ public final class WorldFolderMigration {
         if (!context.rootAccess().getLevelId().equals(context.worldName()) && Files.isDirectory(context.rootAccess().parent().getLevelPath(context.worldName()))) {
             return MigrationMode.LEGACY_CRAFTBUKKIT_MIGRATION;
         }
-        return hasCurrentPaperData(context.rootAccess(), context.dimensionKey()) ? MigrationMode.NO_OP : MigrationMode.VANILLA_MIGRATION;
+        if (hasCurrentPaperData(context.rootAccess(), context.dimensionKey())) {
+            return MigrationMode.NO_OP;
+        }
+        // the dimension was deleted
+        if (!Files.isDirectory(context.rootAccess().getDimensionPath(context.dimensionKey()))) {
+            try {
+                final CompoundTag rawLevelData = NbtIo.readCompressed(
+                    context.rootAccess().levelDirectory.dataFile(), NbtAccounter.uncompressedQuota()
+                );
+                final int dataVersion = NbtUtils.getDataVersion(rawLevelData.getCompoundOrEmpty("Data"));
+                if (dataVersion >= FileFixerUpper.FILE_FIXER_INTRODUCTION_VERSION) {
+                    return MigrationMode.NO_OP;
+                }
+            } catch (final IOException ex) {
+                throw new RuntimeException("Failed to read level data for world migration classification", ex);
+            }
+        }
+        return MigrationMode.VANILLA_MIGRATION;
     }
 
     static boolean hasCurrentPaperData(final LevelStorageSource.LevelStorageAccess rootAccess, final ResourceKey<Level> dimensionKey) {
