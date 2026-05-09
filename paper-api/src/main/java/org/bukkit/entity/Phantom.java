@@ -34,7 +34,7 @@ public interface Phantom extends Flying, Enemy {
      * @return True if phantom will burn in sunlight
      * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#burnsInDaylight()} instead.
      */
-    @Deprecated(since = "26.1.2")
+    @Deprecated(since = "26.1")
     boolean shouldBurnInDay();
 
     /**
@@ -43,7 +43,7 @@ public interface Phantom extends Flying, Enemy {
      * @param shouldBurnInDay True to burn in sunlight
      * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#setBurnInDaylightOverride(TriState)} instead.
      */
-    @Deprecated(since = "26.1.2")
+    @Deprecated(since = "26.1")
     void setShouldBurnInDay(boolean shouldBurnInDay);
 
     /**
