@@ -5,8 +5,10 @@ import io.papermc.paper.world.saveddata.PaperLevelOverrides;
 import io.papermc.paper.world.saveddata.PaperWorldMetadata;
 import io.papermc.paper.world.saveddata.PaperWorldPDC;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Locale;
 import java.util.UUID;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.Main;
@@ -118,15 +120,15 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
     }
 
     public void loadInitialWorlds() {
-        final var levelStemRegistry = this.server.registryAccess().lookupOrThrow(Registries.LEVEL_STEM);
-        final boolean hasWorldData = this.server.storageSource.hasWorldData();
+        final Registry<LevelStem> levelStemRegistry = this.server.registryAccess().lookupOrThrow(Registries.LEVEL_STEM);
         final LevelStem overworldStem = requireNonNull(levelStemRegistry.getValue(LevelStem.OVERWORLD), "Overworld stem missing");
+        final boolean hasWorldData = this.hasDimensionData(overworldStem);
         this.loadInitialWorld(overworldStem, hasWorldData);
         for (final LevelStem stem : levelStemRegistry) {
             if (stem == overworldStem) {
                 continue;
             }
-            this.loadInitialWorld(stem, hasWorldData);
+            this.loadInitialWorld(stem, this.hasDimensionData(stem));
         }
 
         // ((DedicatedServer) this.server).forceDifficulty();
@@ -162,6 +164,12 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
         }
 
         this.server.createLevel(stem, loading, worldDataAndGenSettings);
+    }
+
+    private boolean hasDimensionData(final LevelStem stem) {
+        final ResourceKey<LevelStem> stemKey = this.server.registryAccess().lookupOrThrow(Registries.LEVEL_STEM).getResourceKey(stem).orElseThrow();
+        final ResourceKey<Level> dimensionKey = Registries.levelStemToLevel(stemKey);
+        return Files.isDirectory(this.server.storageSource.getDimensionPath(dimensionKey));
     }
 
     public static WorldGenSettings loadWorldGenSettings(
