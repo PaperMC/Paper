@@ -2667,7 +2667,7 @@ public final class LootTables {
     public static final LootTable SPAWNERS_TRIAL_CHAMBER_KEY = getTable("spawners/trial_chamber/key");
     // End generate - LootTables
 
-    private static LootTable getTable(final @KeyPattern.Value String key) {
+    private static LootTable getTable(@KeyPattern.Value final String key) {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.LOOT_TABLE).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
