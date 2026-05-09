@@ -1,7 +1,9 @@
 package org.bukkit.loot;
 
+import io.papermc.paper.loot.LootContextKey;
 import java.util.Collection;
 import java.util.Random;
+import java.util.Set;
 import org.bukkit.Keyed;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -36,4 +38,20 @@ public interface LootTable extends Keyed {
      * @param context context within to populate loot
      */
     void fillInventory(@NotNull Inventory inventory, @Nullable Random random, @NotNull LootContext context);
+
+    /**
+     * Gets the loot context keys required to be set in {@link LootContext} for this loot table.
+     *
+     * @return the required keys
+     */
+    @NotNull
+    Set<LootContextKey> requiredContextKeys();
+
+    /**
+     * Gets the required and optional loot context keys to be set in {@link LootContext} for this loot table.
+     *
+     * @return the allowed keys
+     */
+    @NotNull
+    Set<LootContextKey> allowedContextKeys();
 }

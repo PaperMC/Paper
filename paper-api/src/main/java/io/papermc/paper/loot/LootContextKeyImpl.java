@@ -1,23 +1,33 @@
 package io.papermc.paper.loot;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
-@ApiStatus.Internal
-record LootContextKeyImpl<T>(Key key) implements LootContextKey<T> {
+class LootContextKeyImpl {
 
-    static final Set<LootContextKey<?>> KEYS = new HashSet<>();
+    static final Map<Key, LootContextKey> KEYS = new HashMap<>();
 
-    static <T> LootContextKey<T> create(@KeyPattern final String name) {
-        final LootContextKeyImpl<T> key = new LootContextKeyImpl<>(Key.key(name));
-        if (!KEYS.add(key)) {
+    static <T> LootContextKey.Valued<T> valued(@KeyPattern.Value final String name) {
+        record ValuedImpl<T>(Key key) implements LootContextKey.Valued<T> {
+        }
+
+        final ValuedImpl<T> contextKey = new ValuedImpl<>(Key.key(Key.MINECRAFT_NAMESPACE, name));
+        if (KEYS.put(contextKey.key(), contextKey) != null) {
             throw new IllegalStateException("Already registered " + name);
         }
-        return key;
+        return contextKey;
+    }
+
+    static LootContextKey.NonValued unvalued(@KeyPattern.Value final String name) {
+        record NonValuedImpl(Key key) implements LootContextKey.NonValued {
+        }
+
+        final NonValuedImpl contextKey = new NonValuedImpl(Key.key(Key.MINECRAFT_NAMESPACE, name));
+        if (KEYS.put(contextKey.key(), contextKey) != null) {
+            throw new IllegalStateException("Already registered " + name);
+        }
+        return contextKey;
     }
 }

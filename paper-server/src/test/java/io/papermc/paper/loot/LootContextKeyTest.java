@@ -2,49 +2,53 @@ package io.papermc.paper.loot;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import net.minecraft.util.context.ContextKey;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @VanillaFeature
-class LootContextKeyTest { // todo do not fail on first error
-
-    static Map<String, ContextKey<?>> vanillaParams = new HashMap<>();
+class LootContextKeyTest {
 
     @BeforeAll
-    static void collectVanillaContextParams() throws ReflectiveOperationException {
-        Class.forName(LootContextKey.class.getName()); // force-load class
-        for (final Field field : LootContextParams.class.getDeclaredFields()) {
+    static void setup() throws ClassNotFoundException {
+        Class.forName(LootContextKeys.class.getName()); // force-load class
+    }
+
+    static Set<ContextKey<?>> contextParams() throws ReflectiveOperationException {
+        final Set<ContextKey<?>> keys = new HashSet<>();
+        for (final Field field : LootContextParams.class.getDeclaredFields()) { // SlotDisplayContext keys are only used by the client
             if (Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers()) && field.getType().equals(ContextKey.class)) {
-                vanillaParams.put(field.getName(), (ContextKey<?>) field.get(null));
+                keys.add((ContextKey<?>) field.get(null));
             }
         }
+
+        assertFalse(keys.isEmpty());
+        return keys;
     }
 
-    @Test
-    void testMinecraftToApi() {
-        assertFalse(vanillaParams.isEmpty());
-        vanillaParams.forEach((fieldName, lootContextParam) -> {
-            final List<LootContextKey<?>> matching = LootContextKeyImpl.KEYS.stream().filter(k -> k.key().asString().equals(lootContextParam.name().toString())).toList();
-            assertEquals(1, matching.size(), "Did not find 1 matching context key for " + lootContextParam.name());
-        });
+    static Collection<LootContextKey> contextKeys() {
+        assertFalse(LootContextKeyImpl.KEYS.isEmpty());
+        return LootContextKeyImpl.KEYS.values();
     }
 
-    @Test
-    void testApiToMinecraft() {
-        assertNotEquals(0, LootContextKeyImpl.KEYS.size());
-        LootContextKeyImpl.KEYS.forEach(lootContextKey -> {
-            final List<ContextKey<?>> matching = vanillaParams.values().stream().filter(p -> p.name().toString().equals(lootContextKey.key().asString())).toList();
-            assertEquals(1, matching.size(), "Did not find 1 matching loot param for " + lootContextKey.key());
-        });
+    @ParameterizedTest
+    @MethodSource("contextParams")
+    void testVanillaToApi(final ContextKey<?> key) {
+        assertTrue(PaperLootContextKey.KEY_BRIDGE.containsKey(key), "Did not find api equivalent for context key " + key.name());
+    }
+
+    @ParameterizedTest
+    @MethodSource("contextKeys")
+    void testApiToVanilla(final LootContextKey key) {
+        assertTrue(PaperLootContextKey.KEY_BRIDGE.inverse().containsKey(key), "Did not find internal equivalent for context key " + key.key().asString());
     }
 }

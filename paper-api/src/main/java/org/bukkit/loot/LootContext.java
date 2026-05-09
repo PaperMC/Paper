@@ -2,14 +2,19 @@ package org.bukkit.loot;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.loot.LootContextKey;
+import io.papermc.paper.loot.LootContextKeys;
 import io.papermc.paper.math.Position;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
 import org.jetbrains.annotations.ApiStatus;
@@ -19,76 +24,82 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Represents additional information a {@link LootTable} can use to modify it's
+ * Represents additional information a {@link LootTable} can use to modify its
  * generated loot.
  */
 @NullMarked
 public final class LootContext {
 
+    /**
+     * @deprecated no longer functional
+     */
+    @Deprecated
     public static final int DEFAULT_LOOT_MODIFIER = -1;
 
     private final World world;
     private final float luck;
     private final Random random;
-    private final Map<LootContextKey<?>, Object> contextMap;
-    // TODO dynamic drops API
-    @Deprecated
-    private @Nullable Location legacyLocation;
-    @Deprecated // has no functionality
-    private int lootingModifier;
-    private final boolean isLegacy;
+    private final Map<LootContextKey, Optional<?>> contextMap;
+    // TODO dynamic drops API when lootTable is finally a registry
 
-    private LootContext(World world, float luck, Random random, Map<LootContextKey<?>, Object> contextMap, boolean isLegacy, @Deprecated int lootingModifier) {
+    private LootContext(World world, float luck, Random random, Map<LootContextKey, Optional<?>> contextMap) {
         this.world = world;
         this.luck = luck;
         this.random = random;
-        this.contextMap = java.util.Map.copyOf(contextMap);
-        this.isLegacy = isLegacy;
-        this.lootingModifier = lootingModifier;
-    }
-
-    @ApiStatus.Internal
-    public boolean isLegacy() {
-        return this.isLegacy;
+        this.contextMap = contextMap;
     }
 
     /**
-     * Checks if this context contains a value for the key
+     * Gets keys populated in this loot context
      *
-     * @param contextKey the key to check
-     * @return true if this context has a value for that key
+     * @return the keys explicitly set
      */
-    public boolean hasKey(final LootContextKey<?> contextKey) {
-        return this.contextMap.containsKey(contextKey);
+    public Set<LootContextKey> keySet() {
+        return this.contextMap.keySet();
+    }
+
+    /**
+     * Checks if this context contains this key (often with a linked value)
+     *
+     * @param key the key to check
+     * @return true if this context contains this key
+     * @see #get(LootContextKey.Valued)
+     * @see #getOrThrow(LootContextKey.Valued)
+     */
+    public boolean has(final LootContextKey key) {
+        return this.contextMap.containsKey(key);
     }
 
     /**
      * Gets the value for a context key
      *
-     * @param contextKey the key for the value
-     * @return the value or null if this context doesn't have a value for the key
      * @param <T> value type
-     * @see #hasKey(LootContextKey)
-     * @see #getOrThrow(LootContextKey)
+     * @param key the key for the value
+     * @return the value or null if this context doesn't have a value for the key
+     * @see #has(LootContextKey)
+     * @see #getOrThrow(LootContextKey.Valued)
      */
     @SuppressWarnings("unchecked")
-    public <T> @Nullable T get(final LootContextKey<T> contextKey) {
-        return (T) this.contextMap.get(contextKey);
+    public <T> @Nullable T get(final LootContextKey.Valued<T> key) {
+        Optional<?> value = this.contextMap.get(key);
+        return value == null ? null : (T) value.orElseThrow();
     }
 
     /**
      * Gets the value of a context key, throwing an exception
      * if one isn't found
      *
-     * @param contextKey the key for the value
-     * @return the value
      * @param <T> value type
+     * @param key the key for the value
+     * @return the value
      * @throws NoSuchElementException if no value is found for that key
+     * @see #has(LootContextKey)
+     * @see #get(LootContextKey.Valued)
      */
-    public <T> T getOrThrow(final LootContextKey<T> contextKey) {
-        final T value = this.get(contextKey);
+    public <T> T getOrThrow(final LootContextKey.Valued<T> key) {
+        final T value = this.get(key);
         if (value == null) {
-            throw new NoSuchElementException("No value found for " + contextKey);
+            throw new NoSuchElementException("No value found for " + key);
         }
         return value;
     }
@@ -111,13 +122,8 @@ public final class LootContext {
         return this.world;
     }
 
-    /**
-     * Gets the context map for this loot context.
-     *
-     * @return an unmodifiable map
-     */
-
-    public @Unmodifiable Map<LootContextKey<?>, Object> getContextMap() {
+    @ApiStatus.Internal
+    public @Unmodifiable Map<LootContextKey, Optional<?>> getContextMap() {
         return this.contextMap;
     }
 
@@ -125,21 +131,18 @@ public final class LootContext {
      * The {@link Location} to store where the loot will be generated.
      *
      * @return the Location of where the loot will be generated
-     * @deprecated use {@link #get(LootContextKey)} methods
+     * @deprecated use {@link #get(LootContextKey.Valued)} methods
      */
-    @Deprecated(since = "26.1.2")
+    @Deprecated(since = "26.1")
     public Location getLocation() {
-        if (this.legacyLocation == null) { // fallback to legacy location
-            if (this.contextMap.containsKey(LootContextKey.ORIGIN)) {
-                Position pos = this.getOrThrow(LootContextKey.ORIGIN);
-                this.legacyLocation = new Location(this.world, pos.x(), pos.y(), pos.z());
-            } else if (this.contextMap.containsKey(LootContextKey.THIS_ENTITY)) {
-                this.legacyLocation = this.getOrThrow(LootContextKey.THIS_ENTITY).getLocation();
-            } else {
-                throw new IllegalStateException("All known context key sets require \"origin\" or \"this_entity\" and this one doesn't have either");
-            }
+        if (this.contextMap.containsKey(LootContextKeys.ORIGIN)) {
+            Position pos = this.getOrThrow(LootContextKeys.ORIGIN);
+            return pos.toLocation(this.world);
+        } else if (this.contextMap.containsKey(LootContextKeys.THIS_ENTITY)) {
+            return this.getOrThrow(LootContextKeys.THIS_ENTITY).getLocation();
+        } else {
+            throw new IllegalStateException("All known context key sets require \"origin\" or \"this_entity\" and this one doesn't have either");
         }
-        return this.legacyLocation.clone();
     }
 
     /**
@@ -162,22 +165,22 @@ public final class LootContext {
      * be used instead.
      *
      * @return the looting level
-     * @deprecated no longer functional
+     * @deprecated no longer functional, wall always be {@link #DEFAULT_LOOT_MODIFIER}
      */
     @Deprecated(since = "1.21", forRemoval = true)
     public int getLootingModifier() {
-        return this.lootingModifier;
+        return DEFAULT_LOOT_MODIFIER;
     }
 
     /**
      * Get the {@link Entity} that was killed. Can be null.
      *
      * @return the looted entity or null
-     * @deprecated use {@link #get(LootContextKey)} methods
+     * @deprecated use {@link #get(LootContextKey.Valued)} methods
      */
-    @Deprecated(since = "26.1.2")
+    @Deprecated(since = "26.1")
     public @Nullable Entity getLootedEntity() {
-        return this.get(LootContextKey.THIS_ENTITY);
+        return this.get(LootContextKeys.THIS_ENTITY);
     }
 
     /**
@@ -185,11 +188,21 @@ public final class LootContext {
      * Can be null.
      *
      * @return the killer entity, or null.
-     * @deprecated use {@link #get(LootContextKey)} methods
+     * @deprecated use {@link #get(LootContextKey.Valued)} methods
      */
-    @Deprecated(since = "26.1.2")
+    @Deprecated(since = "26.1")
     public @Nullable HumanEntity getKiller() {
-        return this.get(LootContextKey.ATTACKING_ENTITY) instanceof HumanEntity humanEntity ? humanEntity : null;
+        return this.get(LootContextKeys.ATTACKING_ENTITY) instanceof HumanEntity humanEntity ? humanEntity : null;
+    }
+
+    /**
+     * Creates a new Builder instance to facilitate easy
+     * creation of {@linkplain LootContext}s.
+     *
+     * @param world the world the LootContext should use
+     */
+    public static Builder builder(World world) {
+        return new Builder(world);
     }
 
     /**
@@ -200,27 +213,29 @@ public final class LootContext {
 
         private final World world;
         private float luck;
-        @Deprecated // not functional
-        private int lootingModifier = LootContext.DEFAULT_LOOT_MODIFIER;
         private Random random = ThreadLocalRandom.current();
-        private final Map<LootContextKey<?>, Object> contextMap = new IdentityHashMap<>();
-        private boolean isLegacy = false;
+        private final Map<LootContextKey, Optional<?>> contextMap = new IdentityHashMap<>();
 
         /**
-         * Creates a new LootContext.Builder instance to facilitate easy
-         * creation of {@link LootContext}s.
+         * Creates a new Builder instance to facilitate easy
+         * creation of {@linkplain LootContext}s.
          *
          * @param location the location the LootContext should use
-         * @deprecated not all loot contexts have locations
+         * @deprecated not all loot contexts have locations, use {@link LootContext#builder(World)}
          */
-        @Deprecated(since = "26.1.2")
+        @Deprecated(since = "26.1")
         public Builder(Location location) {
             Preconditions.checkArgument(location.getWorld() != null, "location missing world");
             this.world = location.getWorld();
-            this.contextMap.put(LootContextKey.ORIGIN, Position.fine(location));
-            this.isLegacy = true;
+            this.with(LootContextKeys.ORIGIN, location);
         }
 
+        /**
+         * Creates a new Builder instance to facilitate easy
+         * creation of {@linkplain LootContext}s.
+         *
+         * @param world the world the LootContext should use
+         */
         public Builder(World world) {
             this.world = world;
         }
@@ -239,20 +254,40 @@ public final class LootContext {
         }
 
         /**
-         * Sets or clears context values.
+         * Sets a context key with an associated value
          *
-         * @param contextKey the key to set or clear for
-         * @param context the value to set, or null to clear
          * @param <T> the value type
+         * @param key the key to set
+         * @param value the value to set
          * @return the builder
          */
         @Contract(value = "_, _ -> this", mutates = "this")
-        public <T> Builder with(LootContextKey<T> contextKey, @Nullable T context) {
-            if (context == null) {
-                this.contextMap.remove(contextKey);
-            } else {
-                this.contextMap.put(contextKey, context);
-            }
+        public <T> Builder with(LootContextKey.Valued<T> key, T value) {
+            this.contextMap.put(key, Optional.of(value));
+            return this;
+        }
+
+        /**
+         * Sets a context key without an associated value.
+         *
+         * @param key the key to set
+         * @return the builder
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        public Builder with(LootContextKey.NonValued key) {
+            this.contextMap.put(key, Optional.empty());
+            return this;
+        }
+
+        /**
+         * Removes a context key with its associated value from this builder.
+         *
+         * @param key the key to clear for
+         * @return the builder
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        public Builder without(LootContextKey key) {
+            this.contextMap.remove(key);
             return this;
         }
 
@@ -260,7 +295,7 @@ public final class LootContext {
          * Set how much luck to have when generating loot.
          *
          * @param luck the luck level
-         * @return the Builder
+         * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
         public Builder luck(float luck) {
@@ -275,13 +310,11 @@ public final class LootContext {
          * {@link org.bukkit.inventory.ItemStack} per pool.
          *
          * @param modifier the looting level modifier
-         * @return the Builder
+         * @return the builder
          * @deprecated no longer functional
          */
         @Deprecated(since = "1.21", forRemoval = true)
         public Builder lootingModifier(int modifier) {
-            this.isLegacy = true;
-            this.lootingModifier = modifier;
             return this;
         }
 
@@ -289,14 +322,22 @@ public final class LootContext {
          * The entity that was killed.
          *
          * @param lootedEntity the looted entity
-         * @return the Builder
-         * @deprecated use {@link #with(LootContextKey, Object)}
+         * @return the builder
+         * @deprecated use {@link #with(LootContextKey.Valued, Object)}
          */
-        @Deprecated(since = "26.1.2")
+        @Deprecated(since = "26.1")
         @Contract(value = "_ -> this", mutates = "this")
         public Builder lootedEntity(@Nullable Entity lootedEntity) {
-            this.isLegacy = true;
-            return this.with(LootContextKey.THIS_ENTITY, lootedEntity);
+            if (lootedEntity == null) {
+                this.without(LootContextKeys.THIS_ENTITY)
+                    .without(LootContextKeys.DAMAGE_SOURCE)
+                    .without(LootContextKeys.ORIGIN);
+            } else {
+                this.with(LootContextKeys.THIS_ENTITY, lootedEntity)
+                    .with(LootContextKeys.DAMAGE_SOURCE, DamageSource.builder(DamageType.GENERIC).build())
+                    .with(LootContextKeys.ORIGIN, lootedEntity.getLocation());
+            }
+            return this;
         }
 
         /**
@@ -305,14 +346,27 @@ public final class LootContext {
          * looting level if {@link #lootingModifier(int)} is not set.
          *
          * @param killer the killer entity
-         * @return the Builder
-         * @deprecated use {@link #with(LootContextKey, Object)}
+         * @return the builder
+         * @deprecated use {@link #with(LootContextKey.Valued, Object)}
          */
-        @Deprecated(since = "26.1.2")
+        @Deprecated(since = "26.1")
         @Contract(value = "_ -> this", mutates = "this")
         public Builder killer(@Nullable HumanEntity killer) {
-            this.isLegacy = true;
-            return this.with(LootContextKey.ATTACKING_ENTITY, killer);
+            if (killer == null) {
+                this.without(LootContextKeys.ATTACKING_ENTITY)
+                    .without(LootContextKeys.DAMAGE_SOURCE)
+                    .without(LootContextKeys.LAST_DAMAGE_PLAYER)
+                    .without(LootContextKeys.TOOL);
+            } else {
+                this.with(LootContextKeys.ATTACKING_ENTITY, killer)
+                    .with(LootContextKeys.DAMAGE_SOURCE, DamageSource.builder(DamageType.PLAYER_ATTACK)
+                        .withCausingEntity(killer)
+                        .withDirectEntity(killer) // damage source api is outdated...
+                        .build())
+                    .with(LootContextKeys.LAST_DAMAGE_PLAYER, killer)
+                    .with(LootContextKeys.TOOL, killer.getActiveItem());
+            }
+            return this;
         }
 
         /**
@@ -327,9 +381,7 @@ public final class LootContext {
                 this.world,
                 this.luck,
                 this.random,
-                this.contextMap,
-                this.isLegacy,
-                this.lootingModifier
+                Map.copyOf(this.contextMap)
             );
         }
     }

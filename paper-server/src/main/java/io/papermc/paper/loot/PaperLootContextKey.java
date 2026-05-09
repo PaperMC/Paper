@@ -3,13 +3,15 @@ package io.papermc.paper.loot;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import io.papermc.paper.util.MCUtil;
-import java.util.HashSet;
+import io.papermc.paper.util.converter.Converter;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
+import net.minecraft.util.Unit;
 import net.minecraft.util.context.ContextKey;
-import net.minecraft.util.context.ContextKeySet;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
@@ -19,98 +21,74 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.entity.Entity;
+import org.bukkit.loot.LootContext;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.jspecify.annotations.NullMarked;
+
+import static io.papermc.paper.util.converter.Converter.direct;
+import static io.papermc.paper.util.converter.Converter.identity;
+import static io.papermc.paper.util.converter.Converters.entity;
+import static io.papermc.paper.util.converter.Converters.unvalued;
+import static io.papermc.paper.util.converter.Converters.wrapper;
 
 @NullMarked
 public final class PaperLootContextKey {
 
-    public static final BiMap<ContextKey<?>, LootContextKey<?>> KEY_BI_MAP = HashBiMap.create();
-    private static final Set<Converter<?, ?>> CONVERTERS = new HashSet<>();
-    private static final Map<ContextKey<?>, Converter<?, ?>> NMS_KEY_MAP = new IdentityHashMap<>();
-    private static final Map<LootContextKey<?>, Converter<?, ?>> API_KEY_MAP = new IdentityHashMap<>();
+    @VisibleForTesting
+    public static final BiMap<ContextKey<?>, LootContextKey> KEY_BRIDGE = HashBiMap.create();
+    private static final Map<ContextKey<?>, Converter<?, ?>> CONVERTER_BY_KEY = new IdentityHashMap<>();
+    private static final Map<LootContextKey, Converter<?, ?>> CONVERTER_BY_API_KEY = new IdentityHashMap<>();
 
     static {
-        CONVERTERS.add(entity(LootContextParams.THIS_ENTITY, LootContextKey.THIS_ENTITY));
-        CONVERTERS.add(entity(LootContextParams.INTERACTING_ENTITY, LootContextKey.INTERACTING_ENTITY));
-        CONVERTERS.add(entity(LootContextParams.TARGET_ENTITY, LootContextKey.TARGET_ENTITY));
-        CONVERTERS.add(entity(LootContextParams.LAST_DAMAGE_PLAYER, LootContextKey.LAST_DAMAGE_PLAYER));
-        CONVERTERS.add(new LambdaConverter<>(LootContextParams.DAMAGE_SOURCE, LootContextKey.DAMAGE_SOURCE, ds -> ((CraftDamageSource) ds).getHandle(), CraftDamageSource::new));
-        CONVERTERS.add(entity(LootContextParams.ATTACKING_ENTITY, LootContextKey.ATTACKING_ENTITY));
-        CONVERTERS.add(entity(LootContextParams.DIRECT_ATTACKING_ENTITY, LootContextKey.DIRECT_ATTACKING_ENTITY));
-        CONVERTERS.add(new LambdaConverter<>(LootContextParams.ORIGIN, LootContextKey.ORIGIN, MCUtil::toVec3, MCUtil::toPosition));
-        CONVERTERS.add(new LambdaConverter<>(LootContextParams.BLOCK_STATE, LootContextKey.BLOCK_DATA, bd -> ((CraftBlockData) bd).getState(), BlockState::createCraftBlockData));
-        CONVERTERS.add(new LambdaConverter<>(LootContextParams.BLOCK_ENTITY, LootContextKey.TILE_STATE, ts -> ((CraftBlockEntityState<?>) ts).getBlockEntity(), CraftBlockStates::getTileState));
-        CONVERTERS.add(new LambdaConverter<>(LootContextParams.TOOL, LootContextKey.TOOL, CraftItemStack::asNMSCopy, net.minecraft.world.item.ItemStack::asBukkitCopy));
-        CONVERTERS.add(identity(LootContextParams.EXPLOSION_RADIUS, LootContextKey.EXPLOSION_RADIUS));
-        CONVERTERS.add(identity(LootContextParams.ENCHANTMENT_LEVEL, LootContextKey.ENCHANTMENT_LEVEL));
-        CONVERTERS.add(identity(LootContextParams.ENCHANTMENT_ACTIVE, LootContextKey.ENCHANTMENT_ACTIVE));
-        for (final Converter<?, ?> converter : CONVERTERS) {
-            KEY_BI_MAP.put(converter.nmsKey, converter.apiKey);
-            NMS_KEY_MAP.put(converter.nmsKey, converter);
-            API_KEY_MAP.put(converter.apiKey, converter);
-        }
+        final Converter<Entity, CraftEntity> entity = entity(Entity.class, org.bukkit.craftbukkit.entity.CraftEntity.class);
+        register(LootContextParams.THIS_ENTITY, LootContextKeys.THIS_ENTITY, entity);
+        register(LootContextParams.INTERACTING_ENTITY, LootContextKeys.INTERACTING_ENTITY, entity);
+        register(LootContextParams.TARGET_ENTITY, LootContextKeys.TARGET_ENTITY, entity);
+        register(LootContextParams.LAST_DAMAGE_PLAYER, LootContextKeys.LAST_DAMAGE_PLAYER, entity(Player.class, org.bukkit.craftbukkit.entity.CraftHumanEntity.class));
+        register(LootContextParams.DAMAGE_SOURCE, LootContextKeys.DAMAGE_SOURCE, wrapper(CraftDamageSource::new));
+        register(LootContextParams.ATTACKING_ENTITY, LootContextKeys.ATTACKING_ENTITY, entity);
+        register(LootContextParams.DIRECT_ATTACKING_ENTITY, LootContextKeys.DIRECT_ATTACKING_ENTITY, entity);
+        register(LootContextParams.ORIGIN, LootContextKeys.ORIGIN, direct(MCUtil::toPosition, MCUtil::toVec3));
+        register(LootContextParams.BLOCK_STATE, LootContextKeys.BLOCK_DATA, direct(BlockState::asBlockData, CraftBlockData::getState));
+        register(LootContextParams.BLOCK_ENTITY, LootContextKeys.BLOCK_ENTITY, direct(CraftBlockStates::getTileState, state -> ((CraftBlockEntityState<?>) state).getSnapshot()));
+        register(LootContextParams.TOOL, LootContextKeys.TOOL, direct(CraftItemStack::asBukkitCopy, CraftItemStack::asNMSCopy));
+        register(LootContextParams.EXPLOSION_RADIUS, LootContextKeys.EXPLOSION_RADIUS, identity());
+        register(LootContextParams.ENCHANTMENT_LEVEL, LootContextKeys.ENCHANTMENT_LEVEL, identity());
+        register(LootContextParams.ENCHANTMENT_ACTIVE, LootContextKeys.ENCHANTMENT_ACTIVE, identity());
+        register(LootContextParams.ADDITIONAL_COST_COMPONENT_ALLOWED, LootContextKeys.ADDITIONAL_COST_COMPONENT_ALLOWED, unvalued());
+    }
+
+    private static <M, A> void register(final ContextKey<M> key, final LootContextKey.Valued<A> apiKey, final Converter<M, ? extends A> converter) {
+        registerInternal(key, apiKey, converter);
+    }
+
+    private static <M, A> void register(final ContextKey<M> key, final LootContextKey.NonValued apiKey, final Converter<M, ?> converter) {
+        registerInternal(key, apiKey, converter);
+    }
+
+    private static <M, A> void registerInternal(final ContextKey<M> key, final LootContextKey apiKey, final Converter<?, ?> converter) {
+        KEY_BRIDGE.put(key, apiKey);
+        CONVERTER_BY_KEY.put(key, converter);
+        CONVERTER_BY_API_KEY.put(apiKey, converter);
     }
 
     private PaperLootContextKey() {
     }
 
     @SuppressWarnings("unchecked")
-    public static <API, MINECRAFT> void applyToNmsBuilder(final ContextKeySet paramSet, final LootParams.Builder builder, final LootContextKey<API> apiKey, final Object object) {
-        final ContextKey<MINECRAFT> nmsParam = (ContextKey<MINECRAFT>) KEY_BI_MAP.inverse().get(apiKey);
-        if (paramSet.allowed().contains(nmsParam) || paramSet.required().contains(nmsParam)) {
-            builder.withOptionalParameter(nmsParam, ((Converter<MINECRAFT, API>) API_KEY_MAP.get(apiKey)).toMinecraft((API) object));
+    public static <API> void applyToBuilder(final Set<ContextKey<?>> allowedKeys, final LootParams.Builder builder, final LootContextKey key, final Optional<?> value) {
+        final ContextKey<Object> param = (ContextKey<Object>) KEY_BRIDGE.inverse().get(key);
+        if (allowedKeys.contains(param)) {
+            builder.withParameter(param, value.map(v -> ((Converter<Object, API>) CONVERTER_BY_API_KEY.get(key)).toVanilla((API) v)).orElse(Unit.INSTANCE));
         }
     }
 
     @SuppressWarnings("unchecked")
-    public static <API, MINECRAFT> void applyToApiBuilder(final org.bukkit.loot.LootContext.Builder builder, final ContextKey<MINECRAFT> nmsKey, final Object object) {
-        builder.with(((LootContextKey<API>) KEY_BI_MAP.get(nmsKey)), ((Converter<MINECRAFT, API>) NMS_KEY_MAP.get(nmsKey)).toApi((MINECRAFT) object));
-    }
-
-    abstract static class Converter<MINECRAFT, API> {
-
-        final ContextKey<MINECRAFT> nmsKey;
-        final LootContextKey<API> apiKey;
-
-        private Converter(final ContextKey<MINECRAFT> nmsKey, final LootContextKey<API> apiKey) {
-            this.nmsKey = nmsKey;
-            this.apiKey = apiKey;
+    public static <API, MINECRAFT> void applyToApiBuilder(final LootContext.Builder builder, final ContextKey<MINECRAFT> key, final Object object) {
+        if (object == Unit.INSTANCE) {
+            builder.with((LootContextKey.NonValued) KEY_BRIDGE.get(key));
+        } else {
+            builder.with((LootContextKey.Valued<API>) KEY_BRIDGE.get(key), ((Converter<MINECRAFT, API>) CONVERTER_BY_KEY.get(key)).fromVanilla((MINECRAFT) object));
         }
-
-        protected abstract MINECRAFT toMinecraft(API api);
-
-        protected abstract API toApi(MINECRAFT minecraft);
-    }
-
-    static class LambdaConverter<MINECRAFT, API> extends Converter<MINECRAFT, API> {
-
-        private final Function<API, MINECRAFT> toMinecraft;
-        private final Function<MINECRAFT, API> toApi;
-
-        private LambdaConverter(final ContextKey<MINECRAFT> nmsKey, final LootContextKey<API> apiKey, final Function<API, MINECRAFT> toMinecraft, final Function<MINECRAFT, API> toApi) {
-            super(nmsKey, apiKey);
-            this.toMinecraft = toMinecraft;
-            this.toApi = toApi;
-        }
-
-        @Override
-        protected MINECRAFT toMinecraft(final API api) {
-            return this.toMinecraft.apply(api);
-        }
-
-        @Override
-        protected API toApi(final MINECRAFT minecraft) {
-            return this.toApi.apply(minecraft);
-        }
-    }
-
-    private static <T> LambdaConverter<T, T> identity(final ContextKey<T> nmsKey, final LootContextKey<T> apiKey) {
-        return new LambdaConverter<>(nmsKey, apiKey, Function.identity(), Function.identity());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <MINECRAFT extends net.minecraft.world.entity.Entity, API extends Entity> LambdaConverter<MINECRAFT, API> entity(final ContextKey<MINECRAFT> nmsKey, final LootContextKey<API> apiKey) {
-        return new LambdaConverter<>(nmsKey, apiKey, e -> (MINECRAFT) ((CraftEntity) e).getHandle(), e -> (API) e.getBukkitEntity());
     }
 }

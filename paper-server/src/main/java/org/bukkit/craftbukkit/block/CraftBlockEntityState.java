@@ -121,7 +121,7 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
     }
 
     // gets the cloned BlockEntity which is used to store the captured data
-    protected T getSnapshot() {
+    public T getSnapshot() {
         return this.snapshot;
     }
 
