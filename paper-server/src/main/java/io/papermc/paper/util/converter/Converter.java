@@ -47,30 +47,21 @@ public interface Converter<M, A> {
         return new CodecConverter<>(this, serializer);
     }
 
-    default Converter<Collection<? extends M>, Collection<? extends A>> collection() {
-        if (this instanceof CodecConverter<M, A> codecConverter) {
-            return codecConverter.converter().collection();
-        }
+    default Converter<Collection<M>, Collection<A>> collectionOf() {
         return Converter.direct(
             collection -> transformUnmodifiable(collection, this::fromVanilla),
             collection -> transformUnmodifiable(collection, this::toVanilla)
         );
     }
 
-    default Converter<List<? extends M>, List<? extends A>> list() {
-        if (this instanceof CodecConverter<M, A> codecConverter) {
-            return codecConverter.converter().list();
-        }
+    default Converter<List<M>, List<A>> listOf() {
         return Converter.direct(
             list -> transformUnmodifiable(list, this::fromVanilla),
             list -> transformUnmodifiable(list, this::toVanilla)
         );
     }
 
-    default Converter<Set<? extends M>, Set<? extends A>> set() {
-        if (this instanceof CodecConverter<M, A> codecConverter) {
-            return codecConverter.converter().set();
-        }
+    default Converter<Set<M>, Set<A>> setOf() {
         return Converter.direct(
             set -> set.stream().map(this::fromVanilla).collect(Collectors.toUnmodifiableSet()),
             set -> set.stream().map(this::toVanilla).collect(Collectors.toUnmodifiableSet())

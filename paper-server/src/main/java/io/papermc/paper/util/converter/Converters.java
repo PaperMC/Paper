@@ -35,21 +35,21 @@ public final class Converters {
         );
     }
 
-    public static <M, A> Converter<Collection<? extends M>, Collection<? extends A>> collection(final Function<M, A> vanillaToApi, final Function<A, M> apiToVanilla) {
+    public static <M, A> Converter<Collection<M>, Collection<A>> collectionOf(final Function<M, A> vanillaToApi, final Function<A, M> apiToVanilla) {
         return Converter.direct(
             collection -> transformUnmodifiable(collection, vanillaToApi),
             collection -> transformUnmodifiable(collection, apiToVanilla)
         );
     }
 
-    public static <M, A> Converter<List<? extends M>, List<? extends A>> list(final Function<M, A> vanillaToApi, final Function<A, M> apiToVanilla) {
+    public static <M, A> Converter<List<M>, List<A>> listOf(final Function<M, A> vanillaToApi, final Function<A, M> apiToVanilla) {
         return Converter.direct(
             list -> transformUnmodifiable(list, vanillaToApi),
             list -> transformUnmodifiable(list, apiToVanilla)
         );
     }
 
-    public static <M, A> Converter<Set<? extends M>, Set<? extends A>> set(final Function<M, A> vanillaToApi, final Function<A, M> apiToVanilla) {
+    public static <M, A> Converter<Set<M>, Set<A>> setOf(final Function<M, A> vanillaToApi, final Function<A, M> apiToVanilla) {
         return Converter.direct(
             set -> set.stream().map(vanillaToApi).collect(Collectors.toUnmodifiableSet()),
             set -> set.stream().map(apiToVanilla).collect(Collectors.toUnmodifiableSet())

@@ -81,7 +81,7 @@ import org.bukkit.inventory.ItemRarity;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.util.converter.Converter.direct;
-import static io.papermc.paper.util.converter.Converters.list;
+import static io.papermc.paper.util.converter.Converters.listOf;
 import static io.papermc.paper.util.converter.Converters.registryElement;
 import static io.papermc.paper.util.converter.Converters.sameName;
 import static io.papermc.paper.util.converter.Converters.sameOrder;
@@ -166,7 +166,7 @@ public abstract class PaperDataComponentType<A, M> extends HolderableBase<net.mi
             collector.register(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, wrapper(PaperOminousBottleAmplifier::new));
             collector.register(DataComponents.JUKEBOX_PLAYABLE, wrapper(PaperJukeboxPlayable::new));
             register(collector, DataComponents.PROVIDES_BANNER_PATTERNS, set -> PaperRegistrySets.convertToApi(RegistryKey.BANNER_PATTERN, set), set -> PaperRegistrySets.convertToNms(Registries.BANNER_PATTERN, Conversions.global().lookup(), set));
-            collector.register(DataComponents.RECIPES, list(PaperAdventure::asAdventureKey, key -> PaperAdventure.asVanilla(Registries.RECIPE, key)));
+            collector.register(DataComponents.RECIPES, listOf(PaperAdventure::asAdventureKey, key -> PaperAdventure.asVanilla(Registries.RECIPE, key)));
             collector.register(DataComponents.LODESTONE_TRACKER, wrapper(PaperLodestoneTracker::new));
             collector.register(DataComponents.FIREWORK_EXPLOSION, CraftMetaFirework::getEffect, CraftMetaFirework::getExplosion);
             collector.register(DataComponents.FIREWORKS, wrapper(PaperFireworks::new));
