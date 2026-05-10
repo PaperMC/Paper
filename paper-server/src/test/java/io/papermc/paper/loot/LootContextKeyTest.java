@@ -13,7 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @VanillaFeature
 class LootContextKeyTest {
@@ -43,12 +43,12 @@ class LootContextKeyTest {
     @ParameterizedTest
     @MethodSource("contextParams")
     void testVanillaToApi(final ContextKey<?> key) {
-        assertTrue(PaperLootContextKey.KEY_BRIDGE.containsKey(key), "Did not find api equivalent for context key " + key.name());
+        assertNotNull(PaperLootContext.Key.CONVERTER.fromVanilla(key), "Did not find api equivalent for context key " + key.name());
     }
 
     @ParameterizedTest
     @MethodSource("contextKeys")
     void testApiToVanilla(final LootContextKey key) {
-        assertTrue(PaperLootContextKey.KEY_BRIDGE.inverse().containsKey(key), "Did not find internal equivalent for context key " + key.key().asString());
+        assertNotNull(PaperLootContext.Key.CONVERTER.toVanilla(key), "Did not find internal equivalent for context key " + key.key().asString());
     }
 }

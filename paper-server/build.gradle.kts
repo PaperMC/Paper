@@ -224,7 +224,7 @@ tasks.jar {
 }
 
 tasks.test {
-    include("**/**TestSuite.class") // todo find a way to run individual test in idea
+    include("**/**TestSuite.class")
     workingDir = temporaryDir
     useJUnitPlatform {
         forkEvery = 1

@@ -10,16 +10,13 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -38,11 +35,11 @@ public final class LootContext {
 
     private final World world;
     private final float luck;
-    private final Random random;
+    private final @Nullable Random random;
     private final Map<LootContextKey, Optional<?>> contextMap;
-    // TODO dynamic drops API when lootTable is finally a registry
+    // TODO dynamic drops API when loot table is finally a registry
 
-    private LootContext(World world, float luck, Random random, Map<LootContextKey, Optional<?>> contextMap) {
+    private LootContext(final World world, final float luck, final @Nullable Random random, final Map<LootContextKey, Optional<?>> contextMap) {
         this.world = world;
         this.luck = luck;
         this.random = random;
@@ -75,13 +72,13 @@ public final class LootContext {
      *
      * @param <T> value type
      * @param key the key for the value
-     * @return the value or null if this context doesn't have a value for the key
+     * @return the value or {@code null} if this context doesn't have a value for the key
      * @see #has(LootContextKey)
      * @see #getOrThrow(LootContextKey.Valued)
      */
     @SuppressWarnings("unchecked")
     public <T> @Nullable T get(final LootContextKey.Valued<T> key) {
-        Optional<?> value = this.contextMap.get(key);
+        final Optional<?> value = this.contextMap.get(key);
         return value == null ? null : (T) value.orElseThrow();
     }
 
@@ -99,17 +96,19 @@ public final class LootContext {
     public <T> T getOrThrow(final LootContextKey.Valued<T> key) {
         final T value = this.get(key);
         if (value == null) {
-            throw new NoSuchElementException("No value found for " + key);
+            throw new NoSuchElementException("No value found for " + key.key().asString());
         }
         return value;
     }
 
     /**
      * Gets the random instance used for this context.
+     * Can be {@code null} when sourced from the random sequence defined in
+     * the loot table.
      *
      * @return the random
      */
-    public Random getRandom() {
+    public @Nullable Random getRandom() {
         return this.random;
     }
 
@@ -122,11 +121,6 @@ public final class LootContext {
         return this.world;
     }
 
-    @ApiStatus.Internal
-    public @Unmodifiable Map<LootContextKey, Optional<?>> getContextMap() {
-        return this.contextMap;
-    }
-
     /**
      * The {@link Location} to store where the loot will be generated.
      *
@@ -135,10 +129,10 @@ public final class LootContext {
      */
     @Deprecated(since = "26.1")
     public Location getLocation() {
-        if (this.contextMap.containsKey(LootContextKeys.ORIGIN)) {
-            Position pos = this.getOrThrow(LootContextKeys.ORIGIN);
+        if (this.has(LootContextKeys.ORIGIN)) {
+            final Position pos = this.getOrThrow(LootContextKeys.ORIGIN);
             return pos.toLocation(this.world);
-        } else if (this.contextMap.containsKey(LootContextKeys.THIS_ENTITY)) {
+        } else if (this.has(LootContextKeys.THIS_ENTITY)) {
             return this.getOrThrow(LootContextKeys.THIS_ENTITY).getLocation();
         } else {
             throw new IllegalStateException("All known context key sets require \"origin\" or \"this_entity\" and this one doesn't have either");
@@ -165,7 +159,7 @@ public final class LootContext {
      * be used instead.
      *
      * @return the looting level
-     * @deprecated no longer functional, wall always be {@link #DEFAULT_LOOT_MODIFIER}
+     * @deprecated no longer functional, will always be {@link #DEFAULT_LOOT_MODIFIER}
      */
     @Deprecated(since = "1.21", forRemoval = true)
     public int getLootingModifier() {
@@ -173,9 +167,9 @@ public final class LootContext {
     }
 
     /**
-     * Get the {@link Entity} that was killed. Can be null.
+     * Get the {@link Entity} that was killed.
      *
-     * @return the looted entity or null
+     * @return the looted entity or {@code null}
      * @deprecated use {@link #get(LootContextKey.Valued)} methods
      */
     @Deprecated(since = "26.1")
@@ -185,14 +179,13 @@ public final class LootContext {
 
     /**
      * Get the {@link HumanEntity} who killed the {@link #getLootedEntity()}.
-     * Can be null.
      *
-     * @return the killer entity, or null.
+     * @return the killer entity, or {@code null}.
      * @deprecated use {@link #get(LootContextKey.Valued)} methods
      */
     @Deprecated(since = "26.1")
     public @Nullable HumanEntity getKiller() {
-        return this.get(LootContextKeys.ATTACKING_ENTITY) instanceof HumanEntity humanEntity ? humanEntity : null;
+        return this.get(LootContextKeys.ATTACKING_ENTITY) instanceof final HumanEntity humanEntity ? humanEntity : null;
     }
 
     /**
@@ -201,7 +194,7 @@ public final class LootContext {
      *
      * @param world the world the LootContext should use
      */
-    public static Builder builder(World world) {
+    public static Builder builder(final World world) {
         return new Builder(world);
     }
 
@@ -213,7 +206,7 @@ public final class LootContext {
 
         private final World world;
         private float luck;
-        private Random random = ThreadLocalRandom.current();
+        private @Nullable Random random = null;
         private final Map<LootContextKey, Optional<?>> contextMap = new IdentityHashMap<>();
 
         /**
@@ -224,31 +217,24 @@ public final class LootContext {
          * @deprecated not all loot contexts have locations, use {@link LootContext#builder(World)}
          */
         @Deprecated(since = "26.1")
-        public Builder(Location location) {
+        public Builder(final Location location) {
             Preconditions.checkArgument(location.getWorld() != null, "location missing world");
-            this.world = location.getWorld();
+            this(location.getWorld());
             this.with(LootContextKeys.ORIGIN, location);
         }
 
-        /**
-         * Creates a new Builder instance to facilitate easy
-         * creation of {@linkplain LootContext}s.
-         *
-         * @param world the world the LootContext should use
-         */
-        public Builder(World world) {
+        private Builder(final World world) {
             this.world = world;
         }
 
         /**
          * Sets the random instance to use for this context.
-         * Defaults to {@link ThreadLocalRandom#current()}.
          *
          * @param random the random to use
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        public Builder withRandom(Random random) {
+        public Builder withRandom(final @Nullable Random random) {
             this.random = random;
             return this;
         }
@@ -262,7 +248,7 @@ public final class LootContext {
          * @return the builder
          */
         @Contract(value = "_, _ -> this", mutates = "this")
-        public <T> Builder with(LootContextKey.Valued<T> key, T value) {
+        public <T> Builder with(final LootContextKey.Valued<T> key, final T value) {
             this.contextMap.put(key, Optional.of(value));
             return this;
         }
@@ -274,7 +260,7 @@ public final class LootContext {
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        public Builder with(LootContextKey.NonValued key) {
+        public Builder with(final LootContextKey.NonValued key) {
             this.contextMap.put(key, Optional.empty());
             return this;
         }
@@ -286,7 +272,7 @@ public final class LootContext {
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        public Builder without(LootContextKey key) {
+        public Builder without(final LootContextKey key) {
             this.contextMap.remove(key);
             return this;
         }
@@ -298,7 +284,7 @@ public final class LootContext {
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        public Builder luck(float luck) {
+        public Builder luck(final float luck) {
             this.luck = luck;
             return this;
         }
@@ -314,7 +300,7 @@ public final class LootContext {
          * @deprecated no longer functional
          */
         @Deprecated(since = "1.21", forRemoval = true)
-        public Builder lootingModifier(int modifier) {
+        public Builder lootingModifier(final int modifier) {
             return this;
         }
 
@@ -327,7 +313,7 @@ public final class LootContext {
          */
         @Deprecated(since = "26.1")
         @Contract(value = "_ -> this", mutates = "this")
-        public Builder lootedEntity(@Nullable Entity lootedEntity) {
+        public Builder lootedEntity(final @Nullable Entity lootedEntity) {
             if (lootedEntity == null) {
                 this.without(LootContextKeys.THIS_ENTITY)
                     .without(LootContextKeys.DAMAGE_SOURCE)
@@ -351,7 +337,7 @@ public final class LootContext {
          */
         @Deprecated(since = "26.1")
         @Contract(value = "_ -> this", mutates = "this")
-        public Builder killer(@Nullable HumanEntity killer) {
+        public Builder killer(final @Nullable HumanEntity killer) {
             if (killer == null) {
                 this.without(LootContextKeys.ATTACKING_ENTITY)
                     .without(LootContextKeys.DAMAGE_SOURCE)
