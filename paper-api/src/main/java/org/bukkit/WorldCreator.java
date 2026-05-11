@@ -153,6 +153,9 @@ public class WorldCreator {
 
         seed = world.getSeed();
         environment = world.getEnvironment();
+        if (environment == World.Environment.CUSTOM) {
+            customEnvironmentKey = world.getEnvironmentKey();
+        }
         generator = world.getGenerator();
         biomeProvider = world.getBiomeProvider();
         type = world.getWorldType();

@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.generator;
 
 import java.util.UUID;
+import net.kyori.adventure.key.Key;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.chunk.ChunkGenerator;
@@ -17,6 +18,7 @@ public class CraftWorldInfo implements WorldInfo {
     private final NamespacedKey dimension;
     private final UUID uuid;
     private final World.Environment environment;
+    private final Key environmentKey;
     private final long seed;
     private final int minHeight;
     private final int maxHeight;
@@ -30,6 +32,7 @@ public class CraftWorldInfo implements WorldInfo {
         long seed,
         FeatureFlagSet enabledFeatures,
         World.Environment environment,
+        Key environmentKey,
         DimensionType dimensionType,
         ChunkGenerator vanillaChunkGenerator,
         RegistryAccess.Frozen registryAccess,
@@ -40,6 +43,7 @@ public class CraftWorldInfo implements WorldInfo {
         this.seed = seed;
         this.enabledFeatures = enabledFeatures;
         this.environment = environment;
+        this.environmentKey = environmentKey;
         this.minHeight = dimensionType.minY();
         this.maxHeight = dimensionType.minY() + dimensionType.height();
         this.vanillaChunkGenerator = vanillaChunkGenerator;
@@ -60,6 +64,11 @@ public class CraftWorldInfo implements WorldInfo {
     @Override
     public World.Environment getEnvironment() {
         return this.environment;
+    }
+
+    @Override
+    public Key getEnvironmentKey() {
+        return this.environmentKey;
     }
 
     @Override

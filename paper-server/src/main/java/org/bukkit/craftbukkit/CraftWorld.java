@@ -7,6 +7,7 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.entity.poi.PaperPoiSearchResult;
 import io.papermc.paper.entity.poi.PaperPoiType;
 import io.papermc.paper.entity.poi.PoiSearchResult;
@@ -34,6 +35,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
@@ -876,6 +878,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public @NotNull Environment getEnvironment() {
         return this.environment;
+    }
+
+    @Override
+    public @NotNull Key getEnvironmentKey() {
+        return PaperAdventure.asAdventureKey(this.getHandle().getTypeKey());
     }
 
     @Override
