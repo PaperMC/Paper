@@ -72,7 +72,6 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
 
     public Collection<ItemStack> populateLoot0(@Nullable Random random, LootContext context) {
         Preconditions.checkArgument(context != null, "context cannot be null");
-        Preconditions.checkArgument(context.getWorld() != null, "World in loot context cannot be null");
         if (random == null) {
             random = context.getRandom();
         }
@@ -105,7 +104,6 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     public void fillInventory0(Inventory inventory, Random random, LootContext context) {
         Preconditions.checkArgument(inventory != null, "inventory cannot be null");
         Preconditions.checkArgument(context != null, "context cannot be null");
-        Preconditions.checkArgument(context.getWorld() != null, "World in loot context cannot be null");
         if (random == null) {
             random = context.getRandom();
         }

@@ -103,8 +103,6 @@ public final class LootContext {
 
     /**
      * Gets the random instance used for this context.
-     * Can be {@code null} when sourced from the random sequence defined in
-     * the loot table.
      *
      * @return the random
      */
@@ -218,17 +216,19 @@ public final class LootContext {
          */
         @Deprecated(since = "26.1")
         public Builder(final Location location) {
-            Preconditions.checkArgument(location.getWorld() != null, "location missing world");
             this(location.getWorld());
             this.with(LootContextKeys.ORIGIN, location);
         }
 
         private Builder(final World world) {
+            Preconditions.checkArgument(world != null, "world cannot be null");
             this.world = world;
         }
 
         /**
          * Sets the random instance to use for this context.
+         * Can be {@code null} when sourced from the random sequence defined in
+         * the loot table.
          *
          * @param random the random to use
          * @return the builder
