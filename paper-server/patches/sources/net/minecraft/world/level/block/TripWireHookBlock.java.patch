@@ -1,14 +1,6 @@
-From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/block/TripWireHookBlock.java b/net/minecraft/world/level/block/TripWireHookBlock.java
-index 2d902d97fbbc9b18faea9a31c8093fbc659a7983..31f8b7225ae5804ed66e7b17862ee56ac6ae5237 100644
 --- a/net/minecraft/world/level/block/TripWireHookBlock.java
 +++ b/net/minecraft/world/level/block/TripWireHookBlock.java
-@@ -119,10 +119,10 @@ public class TripWireHookBlock extends Block {
+@@ -119,10 +_,10 @@
          if (facingOptional.isPresent()) {
              Direction direction = facingOptional.get();
              boolean wasAttached = state.getOptionalValue(ATTACHED).orElse(false);
@@ -21,32 +13,33 @@ index 2d902d97fbbc9b18faea9a31c8093fbc659a7983..31f8b7225ae5804ed66e7b17862ee56a
              int receiverPos = 0;
              BlockState[] wireStates = new BlockState[42];
  
-@@ -158,8 +158,15 @@ public class TripWireHookBlock extends Block {
+@@ -158,8 +_,15 @@
              attached &= receiverPos > 1;
              powered &= attached;
              BlockState newState = block.defaultBlockState().trySetValue(ATTACHED, attached).trySetValue(POWERED, powered);
 +            boolean cancelledEmitterHook = false, cancelledReceiverHook = false; // Paper - Call BlockRedstoneEvent
              if (receiverPos > 0) {
-                 BlockPos testPosx = pos.relative(direction, receiverPos);
+                 BlockPos testPos = pos.relative(direction, receiverPos);
 +                // Paper start - Call BlockRedstoneEvent
 +                if (wasPowered != powered) {
-+                    cancelledReceiverHook = !org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, testPosx, powered);
++                    cancelledReceiverHook = !org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, testPos, powered);
 +                }
 +                if (!cancelledReceiverHook) { // always trigger two events even when the first hook current change is cancelled
 +                // Paper end - Call BlockRedstoneEvent
                  Direction opposite = direction.getOpposite();
-                 level.setBlock(testPosx, newState.setValue(FACING, opposite), Block.UPDATE_ALL);
-                 notifyNeighbors(block, level, testPosx, opposite);
-@@ -169,15 +176,24 @@ public class TripWireHookBlock extends Block {
+                 level.setBlock(testPos, newState.setValue(FACING, opposite), Block.UPDATE_ALL);
+                 notifyNeighbors(block, level, testPos, opposite);
+@@ -169,15 +_,24 @@
                  }
  
-                 emitState(level, testPosx, attached, powered, wasAttached, wasPowered);
+                 emitState(level, testPos, attached, powered, wasAttached, wasPowered);
+-            }
 +                } // Paper - Call BlockRedstoneEvent
 +            }
 +            // Paper start - Call BlockRedstoneEvent
 +            if (wasPowered != powered) {
 +                cancelledEmitterHook = !org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, powered);
-             }
++            }
 +            // Paper end - Call BlockRedstoneEvent
  
 +            if (!cancelledEmitterHook) { // Paper - Call BlockRedstoneEvent
@@ -62,12 +55,12 @@ index 2d902d97fbbc9b18faea9a31c8093fbc659a7983..31f8b7225ae5804ed66e7b17862ee56a
  
              if (wasAttached != attached) {
                  for (int i = 1; i < receiverPos; i++) {
-@@ -186,7 +202,7 @@ public class TripWireHookBlock extends Block {
+@@ -186,7 +_,7 @@
                      if (wireData != null) {
-                         BlockState testPosState = level.getBlockState(testPosx);
+                         BlockState testPosState = level.getBlockState(testPos);
                          if (testPosState.is(Blocks.TRIPWIRE) || testPosState.is(Blocks.TRIPWIRE_HOOK)) {
--                            level.setBlock(testPosx, wireData.trySetValue(ATTACHED, attached), Block.UPDATE_ALL);
-+                            if (!io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates || !testPosState.is(Blocks.TRIPWIRE)) level.setBlock(testPosx, wireData.trySetValue(ATTACHED, attached), Block.UPDATE_ALL); // Paper - prevent tripwire from updating
+-                            level.setBlock(testPos, wireData.trySetValue(ATTACHED, attached), Block.UPDATE_ALL);
++                            if (!io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates || !testPosState.is(Blocks.TRIPWIRE)) level.setBlock(testPos, wireData.trySetValue(ATTACHED, attached), Block.UPDATE_ALL); // Paper - prevent tripwire from updating
                          }
                      }
                  }
