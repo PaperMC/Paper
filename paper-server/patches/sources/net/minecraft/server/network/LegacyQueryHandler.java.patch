@@ -53,15 +53,22 @@
  
                      if (in.isReadable()) {
 -                        if (!readCustomPayloadPacket(in)) {
+-                            return;
 +                        // Paper start - Replace below
 +                        if (in.readUnsignedByte() != LegacyProtocolUtils.CUSTOM_PAYLOAD_PACKET_ID) {
 +                            body = this.readLegacy1_6(ctx, in);
 +                            if (body == null) {
 +                                return;
 +                            }
-+                        }
+                         }
+-
+-                        LOGGER.debug("Ping: (1.6) from {}", socket);
 +                        // Paper end - Replace below
-+                    } else {
+                     } else {
+-                        LOGGER.debug("Ping: (1.4-1.5.x) from {}", socket);
+-                    }
+-
+-                    String body = createVersion1Response(this.server);
 +                        LOGGER.debug("Ping: (1.4-1.5.x) from {}", net.minecraft.server.MinecraftServer.getServer().logIPs() ? socket : "<ip address withheld>"); // Paper - Respect logIPs option
 +                    }
 +
@@ -72,12 +79,9 @@
 +                            ctx.close();
 +                            in.release();
 +                            connectNormally = false;
-                             return;
-                         }
- 
--                        LOGGER.debug("Ping: (1.6) from {}", socket);
--                    } else {
--                        LOGGER.debug("Ping: (1.4-1.5.x) from {}", socket);
++                            return;
++                        }
++
 +                        // See createVersion1Response
 +                        body = String.format(
 +                            Locale.ROOT,
@@ -88,9 +92,7 @@
 +                            event.getMaxPlayers()
 +                        );
 +                        // Paper end - Call PaperServerListPingEvent and use results
-                     }
--
--                    String body = createVersion1Response(this.server);
++                    }
                      sendFlushAndClose(ctx, createLegacyDisconnectPacket(ctx.alloc(), body));
                  }
  

@@ -1,0 +1,73 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/ProjectileWeaponItem.java b/net/minecraft/world/item/ProjectileWeaponItem.java
+index 84e108fe5520e3d44f916e981f7a5f4805751898..9abc52c653f8416c62ca8b14c4794233d84ead59 100644
+--- a/net/minecraft/world/item/ProjectileWeaponItem.java
++++ b/net/minecraft/world/item/ProjectileWeaponItem.java
+@@ -50,6 +50,7 @@ public abstract class ProjectileWeaponItem extends Item {
+         final float uncertainty,
+         final boolean isCrit,
+         final @Nullable LivingEntity targetOverride
++        , final float drawStrength // Paper - Pass draw strength
+     ) {
+         float maxAngle = EnchantmentHelper.processProjectileSpread(level, weapon, shooter, 0.0F);
+         float angleStep = projectiles.size() == 1 ? 0.0F : 2.0F * maxAngle / (projectiles.size() - 1);
+@@ -62,12 +63,26 @@ public abstract class ProjectileWeaponItem extends Item {
+                 float angle = angleOffset + direction * ((i + 1) / 2) * angleStep;
+                 direction = -direction;
+                 int index = i;
+-                Projectile.spawnProjectile(
+-                    this.createProjectile(level, shooter, weapon, projectile, isCrit),
+-                    level,
+-                    projectile,
+-                    projectileEntity -> this.shootProjectile(shooter, projectileEntity, index, power, uncertainty, angle, targetOverride)
+-                );
++                // CraftBukkit start
++                Projectile projectileEntity = this.createProjectile(level, shooter, weapon, projectile, isCrit);
++                this.shootProjectile(shooter, projectileEntity, index, power, uncertainty, angle, targetOverride);
++
++                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, weapon, projectile, projectileEntity, hand, drawStrength, true);
++                if (event.isCancelled()) {
++                    event.getProjectile().remove();
++                    return;
++                }
++
++                if (event.getProjectile() == projectileEntity.getBukkitEntity()) {
++                    if (Projectile.spawnProjectile(
++                        projectileEntity,
++                        level,
++                        projectile
++                    ).isRemoved()) {
++                        return;
++                    }
++                }
++                // CraftBukkit end
+                 weapon.hurtAndBreak(this.getDurabilityUse(projectile), shooter, hand.asEquipmentSlot());
+                 if (weapon.isEmpty()) {
+                     break;
+@@ -103,6 +118,12 @@ public abstract class ProjectileWeaponItem extends Item {
+     }
+ 
+     protected static List<ItemStack> draw(final ItemStack weapon, final ItemStack projectile, final LivingEntity shooter) {
++        // Paper start
++        return draw(weapon, projectile, shooter, true);
++    }
++
++    protected static List<ItemStack> draw(final ItemStack weapon, final ItemStack projectile, final LivingEntity shooter, final boolean consume) {
++        // Paper end
+         if (projectile.isEmpty()) {
+             return List.of();
+         } else {
+@@ -113,7 +134,7 @@ public abstract class ProjectileWeaponItem extends Item {
+             ItemStack projectileCopy = projectile.copy();
+ 
+             for (int i = 0; i < numProjectiles; i++) {
+-                ItemStack drawnStack = useAmmo(weapon, i == 0 ? projectile : projectileCopy, shooter, i > 0);
++                ItemStack drawnStack = useAmmo(weapon, i == 0 ? projectile : projectileCopy, shooter, i > 0 || !consume); // Paper
+                 if (!drawnStack.isEmpty()) {
+                     drawn.add(drawnStack);
+                 }

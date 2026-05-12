@@ -1,0 +1,47 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/raid/Raids.java b/net/minecraft/world/entity/raid/Raids.java
+index e5f7c6ada9102345b2e86bc24797686dd325b3fd..d5d3c86327d8feefb9fa2a3330bcb4dbdc629342 100644
+--- a/net/minecraft/world/entity/raid/Raids.java
++++ b/net/minecraft/world/entity/raid/Raids.java
+@@ -52,6 +52,7 @@ public class Raids extends SavedData {
+     private Raids(final List<Raids.RaidWithId> raids, final int nextId, final int tick) {
+         for (Raids.RaidWithId raid : raids) {
+             this.raidMap.put(raid.id, raid.raid);
++            raid.raid.idOrNegativeOne = raid.id; // Paper - expose id of raids while method is kept around as deprecated for removal
+         }
+ 
+         this.nextId = nextId;
+@@ -130,11 +131,23 @@ public class Raids extends SavedData {
+                 }
+ 
+                 Raid raid = this.getOrCreateRaid(level, raidCenterPos);
+-                if (!raid.isStarted() && !this.raidMap.containsValue(raid)) {
+-                    this.raidMap.put(this.getUniqueId(), raid);
+-                }
+-
+-                if (!raid.isStarted() || raid.getRaidOmenLevel() < raid.getMaxRaidOmenLevel()) {
++                // CraftBukkit - moved down
++                // if (!raid.isStarted() && !this.raidMap.containsValue(raid)) {
++                //     this.raidMap.put(this.getUniqueId(), raid);
++                // }
++
++                if (!raid.isStarted() || (raid.isInProgress() && raid.getRaidOmenLevel() < raid.getMaxRaidOmenLevel())) { // CraftBukkit - fixed a bug with raid: players could add up Bad Omen level even when the raid had finished
++                    // CraftBukkit start
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callRaidTriggerEvent(level, raid, player)) {
++                        player.removeEffect(net.minecraft.world.effect.MobEffects.RAID_OMEN);
++                        return null;
++                    }
++
++                    if (!raid.isStarted() && !this.raidMap.containsValue(raid)) {
++                        this.raidMap.put(this.getUniqueId(), raid);
++                        raid.idOrNegativeOne = this.nextId; // Paper - expose id of raids while method is kept around as deprecated for removal
++                    }
++                    // CraftBukkit end
+                     raid.absorbRaidOmen(player);
+                 }
+ 

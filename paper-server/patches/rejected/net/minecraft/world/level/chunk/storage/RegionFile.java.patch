@@ -1,0 +1,59 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
+index 985d64ce5aa8513f8fdc9877d2296e90bbb25c43..9409cc5c8dbd12ce6bdf34843da70170ebce41bd 100644
+--- a/net/minecraft/world/level/chunk/storage/RegionFile.java
++++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -83,6 +83,14 @@ public class RegionFile implements AutoCloseable {
+                     if (offset != 0) {
+                         int sectorNumber = getSectorNumber(offset);
+                         int numSectors = getNumSectors(offset);
++                        // Spigot start
++                        if (numSectors == 255) {
++                            // We're maxed out, so we need to read the proper length from the section
++                            ByteBuffer realLen = ByteBuffer.allocate(4);
++                            this.file.read(realLen, sectorNumber * 4096);
++                            numSectors = (realLen.getInt(0) + 4) / 4096 + 1;
++                        }
++                        // Spigot end
+                         if (sectorNumber < 2) {
+                             LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", path, i, sectorNumber);
+                             this.offsets.put(i, 0);
+@@ -117,6 +125,13 @@ public class RegionFile implements AutoCloseable {
+         } else {
+             int sectorNumber = getSectorNumber(offset);
+             int numSectors = getNumSectors(offset);
++            // Spigot start
++            if (numSectors == 255) {
++                ByteBuffer realLen = ByteBuffer.allocate(4);
++                this.file.read(realLen, sectorNumber * 4096);
++                numSectors = (realLen.getInt(0) + 4) / 4096 + 1;
++            }
++            // Spigot end
+             int sectorsLength = numSectors * 4096;
+             ByteBuffer buffer = ByteBuffer.allocate(sectorsLength);
+             this.file.read(buffer, sectorNumber * 4096);
+@@ -258,6 +273,7 @@ public class RegionFile implements AutoCloseable {
+                     return true;
+                 }
+             } catch (IOException var9) {
++                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(var9); // Paper - ServerExceptionEvent
+                 return false;
+             }
+         }
+@@ -329,6 +345,11 @@ public class RegionFile implements AutoCloseable {
+         try (FileChannel extFile = FileChannel.open(tmpPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+             data.position(5);
+             extFile.write(data);
++            // Paper start - ServerExceptionEvent
++        } catch (Throwable throwable) {
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable);
++            throw throwable;
++            // Paper end - ServerExceptionEvent
+         }
+ 
+         return () -> Files.move(tmpPath, path, StandardCopyOption.REPLACE_EXISTING);

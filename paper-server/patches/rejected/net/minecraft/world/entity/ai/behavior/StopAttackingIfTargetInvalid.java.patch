@@ -1,0 +1,41 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java b/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
+index 1dde3a2dd288b038107814900305d37434392a3f..f21e21a6a70b1f7409d350d157c457b06b17a00e 100644
+--- a/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
++++ b/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
+@@ -40,6 +40,30 @@ public class StopAttackingIfTargetInvalid {
+                             && !stopAttackingWhen.test(level, target)) {
+                             return true;
+                         } else {
++                        // Paper start - better track target change reason
++                        final org.bukkit.event.entity.EntityTargetEvent.TargetReason reason;
++                        if (!body.canAttack(target)) {
++                            reason = org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID;
++                        } else if (canGrowTiredOfTryingToReachTarget && StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget(body, i.tryGet(cantReachSince))) {
++                            reason = org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET;
++                        } else if (!target.isAlive()) {
++                            reason = org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_DIED;
++                        } else if (target.level() != body.level()) {
++                            reason = org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_OTHER_LEVEL;
++                        } else {
++                            reason = org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID;
++                        }
++                        // Paper end
++                        // CraftBukkit start
++                        org.bukkit.event.entity.EntityTargetEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(body, null, reason); // Paper
++                        if (event.isCancelled()) {
++                            return false;
++                        }
++                        if (event.getTarget() != null) {
++                            body.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle());
++                            return true;
++                        }
++                        // CraftBukkit end
+                             onTargetErased.accept(level, body, target);
+                             attackTarget.erase();
+                             return true;

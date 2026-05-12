@@ -1,0 +1,1927 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index 0797118778ff3c04701038a746612bb7aed5be9c..8b0abe9c7a3907419f6e4d55ea22fb9bc749f28b 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -140,6 +140,17 @@ import org.jetbrains.annotations.Contract;
+ import org.jspecify.annotations.Nullable;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.entity.EntityDamageEvent;
++import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
++import org.bukkit.event.entity.EntityPotionEffectEvent;
++import org.bukkit.event.entity.EntityRegainHealthEvent;
++import org.bukkit.event.entity.EntityResurrectEvent;
++// CraftBukkit end
++
+ public abstract class LivingEntity extends Entity implements Attackable, WaypointTransmitter {
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final String TAG_ACTIVE_EFFECTS = "active_effects";
+@@ -269,11 +280,25 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     private Waypoint.Icon locatorBarIcon = new Waypoint.Icon();
+     public @Nullable Vec3 currentImpulseImpactPos;
+     public @Nullable Entity currentExplosionCause;
++    // CraftBukkit start
++    public int expToDrop;
++    public List<DefaultDrop> drops = new java.util.ArrayList<>(); // Paper - Restore vanilla drops behavior
++    public final org.bukkit.craftbukkit.attribute.CraftAttributeMap craftAttributes;
++    public boolean collides = true;
++    public Set<UUID> collidableExemptions = new java.util.HashSet<>();
++    public boolean bukkitPickUpLoot;
++    public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitLivingEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
++    public boolean silentDeath = false; // Paper - mark entity as dying silently for cancellable death event
++    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
++    public int invulnerableDuration = LivingEntity.INVULNERABLE_DURATION; // Paper - configurable invulnerable duration
++    // CraftBukkit end
+ 
+     protected LivingEntity(final EntityType<? extends LivingEntity> type, final Level level) {
+         super(type, level);
+         this.attributes = new AttributeMap(DefaultAttributes.getSupplier(type));
+-        this.setHealth(this.getMaxHealth());
++        this.craftAttributes = new org.bukkit.craftbukkit.attribute.CraftAttributeMap(this.attributes); // CraftBukkit
++        // CraftBukkit - this.setHealth(this.getMaxHealth()) inlined and simplified to skip the instanceof check for Player, as getBukkitEntity() is not initialized in constructor
++        this.entityData.set(LivingEntity.DATA_HEALTH_ID, this.getMaxHealth());
+         this.equipment = this.createEquipment();
+         this.blocksBuilding = true;
+         this.reapplyPosition();
+@@ -365,7 +390,13 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+                 double scale = Math.min(0.2F + power / 15.0, 2.5);
+                 int particles = (int)(150.0 * scale);
++                // CraftBukkit start - visibility api
++                if (this instanceof ServerPlayer) {
++                    level.sendParticlesSource((ServerPlayer)this, new BlockParticleOption(ParticleTypes.BLOCK, onState), false, false, x, y, z, particles, 0.0, 0.0, 0.0, 0.15F);
++                } else {
+                 level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, onState), x, y, z, particles, 0.0, 0.0, 0.0, 0.15F);
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -550,7 +581,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         this.deathTime++;
+         if (this.deathTime >= 20 && !this.level().isClientSide() && !this.isRemoved()) {
+             this.level().broadcastEntityEvent(this, EntityEvent.POOF);
+-            this.remove(Entity.RemovalReason.KILLED);
++            this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
+         }
+     }
+ 
+@@ -652,7 +683,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public boolean shouldDiscardFriction() {
+-        return this.discardFriction;
++        return !this.frictionState.toBooleanOrElse(!this.discardFriction); // Paper - Friction API
+     }
+ 
+     public void setDiscardFriction(final boolean discardFriction) {
+@@ -664,10 +695,15 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public void onEquipItem(final EquipmentSlot slot, final ItemStack oldStack, final ItemStack stack) {
++        // CraftBukkit start
++        this.onEquipItem(slot, oldStack, stack, false);
++    }
++    public void onEquipItem(final EquipmentSlot slot, final ItemStack oldStack, final ItemStack stack, final boolean silent) {
++        // CraftBukkit end
+         if (!this.level().isClientSide() && !this.isSpectator()) {
+             if (!ItemStack.isSameItemSameComponents(oldStack, stack) && !this.firstTick) {
+                 Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
+-                if (!this.isSilent() && equippable != null && slot == equippable.slot()) {
++                if (!this.isSilent() && equippable != null && slot == equippable.slot() && !silent) { // CraftBukkit
+                     this.level()
+                         .playSeededSound(
+                             null,
+@@ -694,12 +730,12 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     @Override
+-    public void remove(final Entity.RemovalReason reason) {
++    public void remove(final Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause eventCause) { // CraftBukkit - add Bukkit remove cause
+         if ((reason == Entity.RemovalReason.KILLED || reason == Entity.RemovalReason.DISCARDED) && this.level() instanceof ServerLevel level) {
+             this.triggerOnDeathMobEffects(level, reason);
+         }
+ 
+-        super.remove(reason);
++        super.remove(reason, eventCause); // CraftBukkit
+         this.brain.clearMemories();
+     }
+ 
+@@ -716,11 +752,17 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+             effect.onMobRemoved(level, this, reason);
+         }
+ 
++        this.removeAllEffects(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.DEATH); // CraftBukkit
+         this.activeEffects.clear();
+     }
+ 
+     @Override
+     protected void addAdditionalSaveData(final ValueOutput output) {
++        // Paper start - Friction API
++        if (this.frictionState != net.kyori.adventure.util.TriState.NOT_SET) {
++            output.putString("Paper.FrictionState", this.frictionState.toString());
++        }
++        // Paper end - Friction API
+         output.putFloat("Health", this.getHealth());
+         output.putShort("HurtTime", (short)this.hurtTime);
+         output.putInt("HurtByTimestamp", this.lastHurtByMobTimestamp);
+@@ -755,7 +797,12 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         }
+     }
+ 
+-    public @Nullable ItemEntity drop(final ItemStack itemStack, final boolean randomly, final boolean thrownFromHand) {
++    // Paper start - Extend dropItem API
++    public final @Nullable ItemEntity drop(final ItemStack itemStack, final boolean randomly, final boolean thrownFromHand) {
++        return this.drop(itemStack, randomly, thrownFromHand, true, null);
++    }
++    public @Nullable ItemEntity drop(final ItemStack itemStack, final boolean randomly, final boolean thrownFromHand, final boolean callEvent, final java.util.function.@Nullable Consumer<org.bukkit.entity.Item> entityOperation) {
++        // Paper end - Extend dropItem API
+         if (itemStack.isEmpty()) {
+             return null;
+         } else if (this.level().isClientSide()) {
+@@ -764,6 +811,31 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         } else {
+             ItemEntity entity = this.createItemStackToDrop(itemStack, randomly, thrownFromHand);
+             if (entity != null) {
++                // CraftBukkit start - fire PlayerDropItemEvent
++                if (entityOperation != null) entityOperation.accept((org.bukkit.entity.Item) entity.getBukkitEntity());
++                if (callEvent && this.getBukkitEntity() instanceof org.bukkit.entity.Player player) {
++                    org.bukkit.entity.Item drop = (org.bukkit.entity.Item) entity.getBukkitEntity();
++
++                    org.bukkit.event.player.PlayerDropItemEvent event = new org.bukkit.event.player.PlayerDropItemEvent(player, drop);
++                    this.level().getCraftServer().getPluginManager().callEvent(event);
++
++                    if (event.isCancelled()) {
++                        org.bukkit.inventory.ItemStack inHandItem = player.getInventory().getItemInMainHand();
++                        if (thrownFromHand && inHandItem.getAmount() == 0) {
++                            // The complete stack was dropped
++                            player.getInventory().setItemInMainHand(drop.getItemStack());
++                        } else if (thrownFromHand && inHandItem.isSimilar(drop.getItemStack()) && inHandItem.getAmount() < inHandItem.getMaxStackSize() && drop.getItemStack().getAmount() == 1) {
++                            // Only one item is dropped
++                            inHandItem.setAmount(inHandItem.getAmount() + 1);
++                            player.getInventory().setItemInMainHand(inHandItem);
++                        } else {
++                            // Fallback
++                            player.getInventory().addItem(drop.getItemStack());
++                        }
++                        return null;
++                    }
++                }
++                // CraftBukkit end
+                 this.level().addFreshEntity(entity);
+             }
+ 
+@@ -773,7 +845,22 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+     @Override
+     protected void readAdditionalSaveData(final ValueInput input) {
+-        this.internalSetAbsorptionAmount(input.getFloatOr("AbsorptionAmount", 0.0F));
++        // Paper start - Check for NaN
++        float absorptionAmount = input.getFloatOr("AbsorptionAmount", 0.0F);
++        if (Float.isNaN(absorptionAmount)) {
++            absorptionAmount = 0;
++        }
++        this.internalSetAbsorptionAmount(absorptionAmount);
++        // Paper end - Check for NaN
++        // Paper start - Friction API
++        input.getString("Paper.FrictionState").ifPresent(frictionState -> {
++            try {
++                this.frictionState = net.kyori.adventure.util.TriState.valueOf(frictionState);
++            } catch (Exception ignored) {
++                LOGGER.error("Unknown friction state {} for {}", frictionState, this);
++            }
++        });
++        // Paper end - Friction API
+         if (this.level() != null && !this.level().isClientSide()) {
+             input.read("attributes", AttributeInstance.Packed.LIST_CODEC).ifPresent(this.getAttributes()::apply);
+         }
+@@ -786,6 +873,11 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+             this.effectsDirty = true;
+         }
+ 
++        // CraftBukkit start
++        input.read("Bukkit.MaxHealth", com.mojang.serialization.Codec.DOUBLE).ifPresent(maxHealth -> {
++            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(maxHealth);
++        });
++        // CraftBukkit end
+         this.setHealth(input.getFloatOr("Health", this.getMaxHealth()));
+         this.hurtTime = input.getShortOr("HurtTime", (short)0);
+         this.deathTime = input.getShortOr("DeathTime", (short)0);
+@@ -793,6 +885,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         input.getString("Team").ifPresent(teamName -> {
+             Scoreboard scoreboard = this.level().getScoreboard();
+             PlayerTeam team = scoreboard.getPlayerTeam(teamName);
++            if (!this.level().paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof net.minecraft.world.entity.player.Player)) { team = null; } // Paper - Perf: Disable Scoreboards for non players by default
+             boolean success = team != null && scoreboard.addPlayerToTeam(this.getStringUUID(), team);
+             if (!success) {
+                 LOGGER.warn("Unable to add mob to team \"{}\" (that team probably doesn't exist)", teamName);
+@@ -800,11 +893,13 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         });
+         this.setSharedFlag(Entity.FLAG_FALL_FLYING, input.getBooleanOr("FallFlying", false));
+         input.read("sleeping_pos", BlockPos.CODEC).ifPresentOrElse(sleepingPos -> {
++            if (this.position().distanceToSqr(sleepingPos.getX(), sleepingPos.getY(), sleepingPos.getZ()) < Mth.square(16)) { // Paper - The sleeping pos will always also set the actual pos, so a desync suggests something is wrong
+             this.setSleepingPos(sleepingPos);
+             this.entityData.set(DATA_POSE, Pose.SLEEPING);
+             if (!this.firstTick) {
+                 this.setPosToBed(sleepingPos);
+             }
++            } // Paper - The sleeping pos will always also set the actual pos, so a desync suggests something is wrong
+         }, this::clearSleepingPos);
+         input.read("Brain", Brain.Packed.CODEC).ifPresent(packedBrain -> this.brain = this.makeBrain(packedBrain));
+         this.lastHurtByPlayer = EntityReference.read(input, "last_hurt_by_player");
+@@ -823,15 +918,44 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         this.updateDirtyEffects();
+     }
+ 
++    // CraftBukkit start
++    private boolean isTickingEffects = false;
++    private final List<ProcessableEffect> effectsToProcess = Lists.newArrayList();
++
++    private static class ProcessableEffect {
++
++        private Holder<MobEffect> type;
++        private MobEffectInstance effect;
++        private final EntityPotionEffectEvent.Cause cause;
++
++        private ProcessableEffect(MobEffectInstance effect, EntityPotionEffectEvent.Cause cause) {
++            this.effect = effect;
++            this.cause = cause;
++        }
++
++        private ProcessableEffect(Holder<MobEffect> type, EntityPotionEffectEvent.Cause cause) {
++            this.type = type;
++            this.cause = cause;
++        }
++    }
++    // CraftBukkit end
++
+     protected void tickEffects() {
+         if (this.level() instanceof ServerLevel serverLevel) {
+             Iterator<Holder<MobEffect>> iterator = this.activeEffects.keySet().iterator();
+ 
++            this.isTickingEffects = true; // CraftBukkit
+             try {
+                 while (iterator.hasNext()) {
+                     Holder<MobEffect> mobEffect = iterator.next();
+                     MobEffectInstance effect = this.activeEffects.get(mobEffect);
+                     if (!effect.tickServer(serverLevel, this, () -> this.onEffectUpdated(effect, true, null))) {
++                        // CraftBukkit start
++                        EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, effect, null, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.EXPIRATION);
++                        if (event.isCancelled()) {
++                            continue;
++                        }
++                        // CraftBukkit end
+                         iterator.remove();
+                         this.onEffectsRemoved(List.of(effect));
+                     } else if (effect.getDuration() % 600 == 0) {
+@@ -840,6 +964,18 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+                 }
+             } catch (ConcurrentModificationException var6) {
+             }
++
++            // CraftBukkit start
++            this.isTickingEffects = false;
++            for (ProcessableEffect effect : this.effectsToProcess) {
++                if (effect.effect != null) {
++                    this.addEffect(effect.effect, effect.cause);
++                } else {
++                    this.removeEffect(effect.type, effect.cause);
++                }
++            }
++            this.effectsToProcess.clear();
++            // CraftBukkit end
+         } else {
+             for (MobEffectInstance effect : this.activeEffects.values()) {
+                 effect.tickClient();
+@@ -950,15 +1086,33 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public boolean removeAllEffects() {
++        // CraftBukkit start
++        return this.removeAllEffects(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN);
++    }
++    public boolean removeAllEffects(EntityPotionEffectEvent.Cause cause) {
++        // CraftBukkit end
+         if (this.level().isClientSide()) {
+             return false;
+         } else if (this.activeEffects.isEmpty()) {
+             return false;
+         } else {
+-            Map<Holder<MobEffect>, MobEffectInstance> copy = Maps.newHashMap(this.activeEffects);
+-            this.activeEffects.clear();
+-            this.onEffectsRemoved(copy.values());
+-            return true;
++            // CraftBukkit start
++            List<MobEffectInstance> toRemove = new java.util.LinkedList<>();
++            Iterator<MobEffectInstance> iterator = this.activeEffects.values().iterator();
++            while (iterator.hasNext()) {
++                MobEffectInstance effect = iterator.next();
++                EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, effect, null, cause, EntityPotionEffectEvent.Action.CLEARED);
++                if (event.isCancelled()) {
++                    continue;
++                }
++
++                iterator.remove();
++                toRemove.add(effect);
++            }
++
++            this.onEffectsRemoved(toRemove);
++            return !toRemove.isEmpty();
++            // CraftBukkit end
+         }
+     }
+ 
+@@ -984,23 +1138,71 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public final boolean addEffect(final MobEffectInstance newEffect) {
+-        return this.addEffect(newEffect, null);
++        return this.addEffect(newEffect, (Entity)null); // CraftBukkit
++    }
++
++    // CraftBukkit start
++    public boolean addEffect(final MobEffectInstance newEffect, final EntityPotionEffectEvent.Cause cause) {
++        return this.addEffect(newEffect, (Entity)null, cause);
+     }
+ 
+     public boolean addEffect(final MobEffectInstance newEffect, final @Nullable Entity source) {
++        return this.addEffect(newEffect, source, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN);
++    }
++
++    public boolean addEffect(final MobEffectInstance newEffect, final @Nullable Entity source, final EntityPotionEffectEvent.Cause cause) {
++        // Paper start - Don't fire sync event during generation
++        return this.addEffect(newEffect, source, cause, true);
++    }
++    public boolean addEffect(final MobEffectInstance newEffect, final @Nullable Entity source, final EntityPotionEffectEvent.Cause cause, final boolean fireEvent) {
++        // Paper end - Don't fire sync event during generation
++        // org.spigotmc.AsyncCatcher.catchOp("effect add"); // Spigot // Paper - move to API
++        if (this.isTickingEffects) {
++            this.effectsToProcess.add(new ProcessableEffect(newEffect, cause));
++            return true;
++        }
++        // CraftBukkit end
+         if (!this.canBeAffected(newEffect)) {
+             return false;
+         } else {
+             MobEffectInstance effect = this.activeEffects.get(newEffect.getEffect());
+             boolean changed = false;
++            // CraftBukkit start
++            boolean override = false;
++            // Paper start - Properly update hidden effects
++            boolean addAsHiddenEffect = false;
++            if (effect != null) {
++                override = new MobEffectInstance(effect).update(newEffect);
++                addAsHiddenEffect = effect.getAmplifier() > newEffect.getAmplifier() && effect.isShorterDurationThan(newEffect);
++            // Paper end - Properly update hidden effects
++            }
++
++            if (fireEvent) { // Paper - Don't fire sync event during generation
++            EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, effect, newEffect, cause, override);
++            override = event.isOverride(); // Paper - Don't fire sync event during generation
++            if (event.isCancelled()) {
++                return false;
++            }
++            } // Paper - Don't fire sync event during generation
++            // CraftBukkit end
+             if (effect == null) {
+                 this.activeEffects.put(newEffect.getEffect(), newEffect);
+                 this.onEffectAdded(newEffect, source);
+                 changed = true;
+                 newEffect.onEffectAdded(this);
+-            } else if (effect.update(newEffect)) {
++                // CraftBukkit start
++            } else if (override) { // Paper - Don't fire sync event during generation
++                effect.update(newEffect);
+                 this.onEffectUpdated(effect, true, source);
+                 changed = true;
++                // Paper start - Properly update hidden effects
++            } else if (addAsHiddenEffect) {
++                if (effect.hiddenEffect == null) {
++                    effect.hiddenEffect = new MobEffectInstance(newEffect);
++                } else {
++                    effect.hiddenEffect.update(newEffect);
++                }
++                // Paper end - Properly update hidden effects
+             }
+ 
+             newEffect.onEffectStarted(this);
+@@ -1035,11 +1237,35 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public final @Nullable MobEffectInstance removeEffectNoUpdate(final Holder<MobEffect> effect) {
++        // CraftBukkit start
++        return this.removeEffectNoUpdate(effect, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN);
++    }
++    public @Nullable MobEffectInstance removeEffectNoUpdate(final Holder<MobEffect> effect, final EntityPotionEffectEvent.Cause cause) {
++        if (this.isTickingEffects) {
++            this.effectsToProcess.add(new ProcessableEffect(effect, cause));
++            return null;
++        }
++
++        MobEffectInstance effectInstance = this.activeEffects.get(effect);
++        if (effectInstance == null) {
++            return null;
++        }
++
++        EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, effectInstance, null, cause);
++        if (event.isCancelled()) {
++            return null;
++        }
++        // CraftBukkit end
+         return this.activeEffects.remove(effect);
+     }
+ 
+     public boolean removeEffect(final Holder<MobEffect> effect) {
+-        MobEffectInstance effectInstance = this.removeEffectNoUpdate(effect);
++        return this.removeEffect(effect, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN);
++    }
++
++    public boolean removeEffect(final Holder<MobEffect> effect, final EntityPotionEffectEvent.Cause cause) {
++        MobEffectInstance effectInstance = this.removeEffectNoUpdate(effect, cause);
++        // CraftBukkit end
+         if (effectInstance != null) {
+             this.onEffectsRemoved(List.of(effectInstance));
+             return true;
+@@ -1130,17 +1356,62 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public void heal(final float heal) {
++        // CraftBukkit start - Delegate so we can handle providing a reason for health being regained
++        this.heal(heal, EntityRegainHealthEvent.RegainReason.CUSTOM);
++    }
++
++    public void heal(final float heal, final EntityRegainHealthEvent.RegainReason regainReason) {
++        // Paper start - Forward
++        this.heal(heal, regainReason, false);
++    }
++
++    public void heal(final float heal, final EntityRegainHealthEvent.RegainReason regainReason, final boolean isFastRegen) {
++        // Paper end - Forward
+         float health = this.getHealth();
+         if (health > 0.0F) {
+-            this.setHealth(health + heal);
++            EntityRegainHealthEvent event = new EntityRegainHealthEvent(this.getBukkitEntity(), heal, regainReason, isFastRegen); // Paper
++            // Suppress during worldgen
++            if (this.valid) {
++                this.level().getCraftServer().getPluginManager().callEvent(event);
++            }
++
++            if (!event.isCancelled()) {
++                this.setHealth((float) (this.getHealth() + event.getAmount()));
++            }
++            // CraftBukkit end
+         }
+     }
+ 
+     public float getHealth() {
++        // CraftBukkit start - Use unscaled health
++        if (this instanceof ServerPlayer player) {
++            return (float) player.getBukkitEntity().getHealth();
++        }
++        // CraftBukkit end
+         return this.entityData.get(DATA_HEALTH_ID);
+     }
+ 
+-    public void setHealth(final float health) {
++    // Paper start - Check for NaN
++    public void setHealth(float health) {
++        if (Float.isNaN(health)) { health = getMaxHealth(); if (this.valid) {
++            System.err.println("[NAN-HEALTH] " + getScoreboardName() + " had NaN health set");
++        } } // Paper end - Check for NaN
++        // CraftBukkit start - Handle scaled health
++        if (this instanceof ServerPlayer) {
++            org.bukkit.craftbukkit.entity.CraftPlayer player = ((ServerPlayer) this).getBukkitEntity();
++            // Squeeze
++            if (health < 0.0F) {
++                player.setRealHealth(0.0);
++            } else if (health > player.getMaxHealth()) {
++                player.setRealHealth(player.getMaxHealth());
++            } else {
++                player.setRealHealth(health);
++            }
++
++            player.updateScaledHealth(false);
++            return;
++        }
++        // CraftBukkit end
+         this.entityData.set(DATA_HEALTH_ID, Mth.clamp(health, 0.0F, this.getMaxHealth()));
+     }
+ 
+@@ -1152,7 +1423,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     public boolean hurtServer(final ServerLevel level, final DamageSource source, float damage) {
+         if (this.isInvulnerableTo(level, source)) {
+             return false;
+-        } else if (this.isDeadOrDying()) {
++        } else if (this.isRemoved() || this.dead || this.getHealth() <= 0.0F) { // CraftBukkit - Don't allow entities that got set to dead/killed elsewhere to get damaged and die
+             return false;
+         } else if (source.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
+             return false;
+@@ -1168,35 +1439,58 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+             ItemStack itemInUse = this.getUseItem();
+             float originalDamage = damage;
+-            float damageBlocked = this.applyItemBlocking(level, source, damage);
+-            damage -= damageBlocked;
++            float damageBlocked = this.applyItemBlocking(level, source, damage, true); // Paper
++            // damage -= damageBlocked; // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) to allow modification
+             boolean blocked = damageBlocked > 0.0F;
+-            if (source.is(DamageTypeTags.IS_FREEZING) && this.is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
++            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) to get amount
++            if (false && source.is(DamageTypeTags.IS_FREEZING) && this.is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
+                 damage *= 5.0F;
+             }
+ 
+-            if (source.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
++            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) to get amount and actuallyHurt(DamageSource, float, EntityDamageEvent) for handle damage
++            if (false && source.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
+                 this.hurtHelmet(source, damage);
+                 damage *= 0.75F;
+             }
+ 
++            EntityDamageEvent event; // CraftBukkit // Paper - move this into the actual invuln check....
+             if (Float.isNaN(damage) || Float.isInfinite(damage)) {
+                 damage = Float.MAX_VALUE;
+             }
+ 
+             boolean tookFullDamage = true;
+-            if (this.invulnerableTime > 10.0F && !source.is(DamageTypeTags.BYPASSES_COOLDOWN)) {
++            if (this.invulnerableTime > (float)this.invulnerableDuration / 2.0F && !source.is(DamageTypeTags.BYPASSES_COOLDOWN)) { // CraftBukkit - restore use of maxNoDamageTicks
+                 if (damage <= this.lastHurt) {
+                     return false;
+                 }
+ 
+-                this.actuallyHurt(level, source, damage - this.lastHurt);
++                // Paper start - only call damage event when actuallyHurt will be called - move call logic down
++                event = this.handleEntityDamage(source, damage, this.lastHurt); // Paper - fix invulnerability reduction in EntityDamageEvent - pass lastDamage reduction
++                damage = this.computeAmountFromEntityDamageEvent(event);
++                // Paper end - only call damage event when actuallyHurt will be called - move call logic down
++
++                // CraftBukkit start
++                if (!this.actuallyHurt(level, source, (float)event.getFinalDamage(), event)) { // Paper - fix invulnerability reduction in EntityDamageEvent - no longer subtract lastHurt, that is part of the damage event calc now
++                    return false;
++                }
++                if (this instanceof ServerPlayer && event.getDamage() == 0 && originalDamage == 0) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event.
++                // CraftBukkit end
+                 this.lastHurt = damage;
+                 tookFullDamage = false;
+             } else {
++                // Paper start - only call damage event when actuallyHurt will be called - move call logic down
++                event = this.handleEntityDamage(source, damage, 0); // Paper - fix invulnerability reduction in EntityDamageEvent - pass lastDamage reduction (none in this branch)
++                damage = this.computeAmountFromEntityDamageEvent(event);
++                // Paper end - only call damage event when actuallyHurt will be called - move call logic down
++                // CraftBukkit start
++                if (!this.actuallyHurt(level, source, (float)event.getFinalDamage(), event)) {
++                    return false;
++                }
++                if (this instanceof ServerPlayer && event.getDamage() == 0 && originalDamage == 0) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event.
+                 this.lastHurt = damage;
+-                this.invulnerableTime = 20;
+-                this.actuallyHurt(level, source, damage);
++                this.invulnerableTime = this.invulnerableDuration; // CraftBukkit - restore use of maxNoDamageTicks
++                // this.actuallyHurt(level, source, damage);
++                // CraftBukkit end
+                 this.hurtDuration = 10;
+                 this.hurtTime = this.hurtDuration;
+             }
+@@ -1211,7 +1505,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+                     level.broadcastDamageEvent(this, source);
+                 }
+ 
+-                if (!source.is(DamageTypeTags.NO_IMPACT) && (!blocked || damage > 0.0F)) {
++                if (!source.is(DamageTypeTags.NO_IMPACT) && !blocked) { // CraftBukkit - Prevent marking hurt if the damage is blocked
+                     this.markHurt();
+                 }
+ 
+@@ -1226,8 +1520,16 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+                         xd = source.getSourcePosition().x() - this.getX();
+                         zd = source.getSourcePosition().z() - this.getZ();
+                     }
++                    // Paper start - Check distance in entity interactions; see for loop in knockback method
++                    if (Math.abs(xd) > 200) {
++                        xd = Math.random() - Math.random();
++                    }
++                    if (Math.abs(zd) > 200) {
++                        zd = Math.random() - Math.random();
++                    }
++                    // Paper end - Check distance in entity interactions
+ 
+-                    this.knockback(0.4F, xd, zd);
++                    this.knockback(0.4F, xd, zd, source.getDirectEntity(), source.getDirectEntity() == null ? io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.DAMAGE : io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // CraftBukkit // Paper - knockback events
+                     if (!blocked) {
+                         this.indicateDamage(xd, zd);
+                     }
+@@ -1236,19 +1538,19 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+             if (this.isDeadOrDying()) {
+                 if (!this.checkTotemDeathProtection(source)) {
+-                    if (tookFullDamage) {
+-                        this.makeSound(this.getDeathSound());
+-                        this.playSecondaryHurtSound(source);
+-                    }
++                    // Paper start - moved into CraftEventFactory event caller for cancellable death event
++                    this.silentDeath = !tookFullDamage; // mark entity as dying silently
++                    // Paper end
+ 
+                     this.die(source);
++                    this.silentDeath = false; // Paper - cancellable death event - reset to default
+                 }
+             } else if (tookFullDamage) {
+                 this.playHurtSound(source);
+                 this.playSecondaryHurtSound(source);
+             }
+ 
+-            boolean success = !blocked || damage > 0.0F;
++            boolean success = !blocked; // CraftBukkit - Ensure to return false if damage is blocked
+             if (success) {
+                 this.lastDamageSource = source;
+                 this.lastDamageStamp = this.level().getGameTime();
+@@ -1274,6 +1576,12 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public float applyItemBlocking(final ServerLevel level, final DamageSource source, final float damage) {
++        // Paper start
++        return this.applyItemBlocking(level, source, damage, false);
++    }
++
++    public float applyItemBlocking(final ServerLevel level, final DamageSource source, final float damage, final boolean dryRun) {
++        // Paper end
+         if (damage <= 0.0F) {
+             return 0.0F;
+         } else {
+@@ -1298,10 +1606,12 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+                         }
+ 
+                         float damageBlocked = blocksAttacks.resolveBlockedDamage(source, damage, angle);
++                        if (!dryRun) { // Paper
+                         blocksAttacks.hurtBlockingItem(this.level(), blockingWith, this, this.getUsedItemHand(), damageBlocked);
+-                        if (damageBlocked > 0.0F && !source.is(DamageTypeTags.IS_PROJECTILE) && source.getDirectEntity() instanceof LivingEntity livingEntity) {
++                        if (damageBlocked > 0.0F && !source.is(DamageTypeTags.IS_PROJECTILE) && source.getDirectEntity() instanceof LivingEntity livingEntity && livingEntity.distanceToSqr(this) <= Mth.square(200.0)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
+                             this.blockUsingItem(level, livingEntity);
+                         }
++                        } // Paper
+ 
+                         return damageBlocked;
+                     }
+@@ -1312,6 +1622,59 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         }
+     }
+ 
++    // Paper start - copied from above split by relevant part
++    public boolean canBlockAttack(DamageSource source, float damage) {
++        if (damage <= 0.0F) {
++            return false;
++        } else {
++            ItemStack blockingWith = this.getItemBlockingWith();
++            if (blockingWith == null) {
++                return false;
++            } else {
++                BlocksAttacks blocksAttacks = blockingWith.get(DataComponents.BLOCKS_ATTACKS);
++                if (blocksAttacks != null && !blocksAttacks.bypassedBy().map(t -> t.contains(source.typeHolder())).orElse(false)) {
++                    if (source.getDirectEntity() instanceof AbstractArrow abstractArrow && abstractArrow.getPierceLevel() > 0) {
++                        return false;
++                    } else {
++                        return true;
++                    }
++                } else {
++                    return false;
++                }
++            }
++        }
++    }
++
++    public float resolveBlockedDamage(DamageSource damageSource, float damageAmount) {
++        Vec3 sourcePosition = damageSource.getSourcePosition();
++        double acos;
++        if (sourcePosition != null) {
++            Vec3 vec3 = this.calculateViewVector(0.0F, this.getYHeadRot());
++            Vec3 vec31 = sourcePosition.subtract(this.position());
++            vec31 = new Vec3(vec31.x, 0.0, vec31.z).normalize();
++            acos = Math.acos(vec31.dot(vec3));
++        } else {
++            acos = (float) Math.PI;
++        }
++
++        BlocksAttacks blocksAttacks = this.getItemBlockingWith().get(DataComponents.BLOCKS_ATTACKS);
++        return blocksAttacks.resolveBlockedDamage(damageSource, damageAmount, acos);
++    }
++
++    public void blockingItemEffects(ServerLevel level, DamageSource damageSource, float f) {
++        ItemStack itemBlockingWith = this.getItemBlockingWith();
++        if (itemBlockingWith == null) return;
++
++        BlocksAttacks blocksAttacks = itemBlockingWith.get(DataComponents.BLOCKS_ATTACKS);
++        if (blocksAttacks == null) return;
++
++        blocksAttacks.hurtBlockingItem(this.level(), itemBlockingWith, this, this.getUsedItemHand(), f);
++        if (f > 0.0F && !damageSource.is(DamageTypeTags.IS_PROJECTILE) && damageSource.getDirectEntity() instanceof LivingEntity livingEntity && livingEntity.distanceToSqr(this) <= Mth.square(200.0)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
++            this.blockUsingItem(level, livingEntity);
++        }
++    }
++    // Paper end - copied from above split by relevant part
++
+     public void playSecondaryHurtSound(final DamageSource source) {
+         if (source.is(DamageTypes.THORNS)) {
+             SoundSource soundSource = this instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
+@@ -1343,12 +1706,24 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         return EntityReference.getPlayer(this.lastHurtByPlayer, this.level());
+     }
+ 
++    // Paper start - only call damage event when actuallyHurt will be called - move out amount computation logic
++    private float computeAmountFromEntityDamageEvent(final EntityDamageEvent event) {
++        // Taken from hurtServer()'s craftbukkit diff.
++        float amount = 0;
++        amount += (float) event.getDamage(DamageModifier.BASE);
++        amount += (float) event.getDamage(DamageModifier.BLOCKING);
++        amount += (float) event.getDamage(DamageModifier.FREEZING);
++        amount += (float) event.getDamage(DamageModifier.HARD_HAT);
++        return amount;
++    }
++    // Paper end - only call damage event when actuallyHurt will be called - move out amount computation logic
++
+     protected void blockUsingItem(final ServerLevel level, final LivingEntity attacker) {
+         attacker.blockedByItem(this);
+     }
+ 
+     protected void blockedByItem(final LivingEntity defender) {
+-        defender.knockback(0.5, defender.getX() - this.getX(), defender.getZ() - this.getZ());
++        defender.knockback(0.5, defender.getX() - this.getX(), defender.getZ() - this.getZ(), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SHIELD_BLOCK); // CraftBukkit // Paper - fix attacker & knockback events
+     }
+ 
+     private boolean checkTotemDeathProtection(final DamageSource killingDamage) {
+@@ -1358,18 +1733,39 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+             ItemStack protectionItem = null;
+             DeathProtection protection = null;
+ 
++            // CraftBukkit start
++            InteractionHand usedHand = null;
++            ItemStack itemStack = ItemStack.EMPTY;
+             for (InteractionHand hand : InteractionHand.values()) {
+-                ItemStack itemStack = this.getItemInHand(hand);
++                itemStack = this.getItemInHand(hand);
+                 protection = itemStack.get(DataComponents.DEATH_PROTECTION);
+                 if (protection != null) {
++                    usedHand = hand;
+                     protectionItem = itemStack.copy();
+-                    itemStack.shrink(1);
++                    // itemStack.shrink(1);
+                     break;
+                 }
+             }
+ 
+-            if (protectionItem != null) {
+-                if (this instanceof ServerPlayer player) {
++            final org.bukkit.inventory.EquipmentSlot handSlot = (usedHand != null) ? org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(usedHand) : null;
++            final EntityResurrectEvent event = new EntityResurrectEvent((org.bukkit.entity.LivingEntity) this.getBukkitEntity(), handSlot);
++            event.setCancelled(protectionItem == null);
++            this.level().getCraftServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                // Set death protection to null as the event was cancelled. Prevent any attempt at resurrection.
++                protection = null;
++            } else {
++                if (!itemStack.isEmpty() && protectionItem != null) { // Paper - only reduce item if actual totem was found
++                    itemStack.shrink(1);
++                }
++                // Paper start - fix NPE when pre-cancelled EntityResurrectEvent is uncancelled
++                // restore the previous behavior in that case by defaulting to vanilla's totem of undying effect
++                if (protection == null) {
++                    protection = DeathProtection.TOTEM_OF_UNDYING;
++                }
++                // Paper end - fix NPE when pre-cancelled EntityResurrectEvent is uncancelled
++                if (protectionItem != null && this instanceof final ServerPlayer player) {
++                    // CraftBukkit end
+                     player.awardStat(Stats.ITEM_USED.get(protectionItem.getItem()));
+                     CriteriaTriggers.USED_TOTEM.trigger(player, protectionItem);
+                     protectionItem.causeUseVibration(this, GameEvent.ITEM_INTERACT_FINISH);
+@@ -1420,6 +1816,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         if (!this.isRemoved() && !this.dead) {
+             Entity sourceEntity = source.getEntity();
+             LivingEntity killer = this.getKillCredit();
++            /* // Paper - move down to make death event cancellable - this is the awardKillScore below
+             if (killer != null) {
+                 killer.awardKillScore(this, source);
+             }
+@@ -1430,68 +1827,147 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+             this.stopUsingItem();
+             if (!this.level().isClientSide() && this.hasCustomName()) {
+-                LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString());
++                if (org.spigotmc.SpigotConfig.logNamedDeaths) LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
+             }
++            */ // Paper - move down to make death event cancellable - this is the awardKillScore below
+ 
+             this.dead = true;
+-            this.getCombatTracker().recheckStatus();
++            // Paper - moved into if below
+             if (this.level() instanceof ServerLevel serverLevel) {
+-                if (sourceEntity == null || sourceEntity.killedEntity(serverLevel, this, source)) {
++                // Paper - move below into if for onKill
++                // Paper start
++                if (sourceEntity instanceof net.minecraft.world.entity.monster.Creeper creeper) { // Creeper has logic for drops we need capture
++                    creeper.killedEntity((ServerLevel)this.level(), this, source);
++                }
++                org.bukkit.event.entity.EntityDeathEvent deathEvent = this.dropAllDeathLoot(serverLevel, source);
++                if (deathEvent == null || !deathEvent.isCancelled()) {
++                    //if (killer != null) { // Paper - Fix item duplication and teleport issues; moved to be run earlier in #dropAllDeathLoot before destroying the drop items in CraftEventFactory#callEntityDeathEvent
++                    //    killer.awardKillScore(this, source);
++                    //}
++                    // Paper start - clear equipment if event is not cancelled
++                    if (this instanceof Mob) {
++                        for (EquipmentSlot slot : this.clearedEquipmentSlots) {
++                            this.setItemSlot(slot, ItemStack.EMPTY);
++                        }
++                        this.clearedEquipmentSlots.clear();
++                    }
++                    // Paper end
++
++                    if (this.isSleeping()) {
++                        this.stopSleeping();
++                    }
++
++                    if (!this.level().isClientSide() && this.hasCustomName()) {
++                        if (org.spigotmc.SpigotConfig.logNamedDeaths) LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
++                    }
++
++                    this.getCombatTracker().recheckStatus();
++                    if (sourceEntity != null) {
++                        sourceEntity.killedEntity((ServerLevel)this.level(), this, source);
++                    }
+                     this.gameEvent(GameEvent.ENTITY_DIE);
+-                    this.dropAllDeathLoot(serverLevel, source);
+-                    this.createWitherRose(killer);
++                } else {
++                    this.dead = false;
++                    this.setHealth((float) deathEvent.getReviveHealth());
++                    if (sourceEntity instanceof net.minecraft.world.entity.monster.Creeper creeper && creeper.droppedSkulls) { // Creeper has logic for drops skull and need revert that flag
++                        creeper.droppedSkulls = false;
++                    }
++                }
++                // Paper end
++                this.createWitherRose(killer);
+                 }
+ 
++            // Paper start
++            if (this.dead) { // Paper
+                 this.level().broadcastEntityEvent(this, EntityEvent.DEATH);
+-            }
+ 
+             this.setPose(Pose.DYING);
++            }
++            // Paper end
+         }
+     }
+ 
+     protected void createWitherRose(final @Nullable LivingEntity killer) {
+         if (this.level() instanceof ServerLevel serverLevel) {
+             boolean var6 = false;
+-            if (killer instanceof WitherBoss) {
++            if (this.dead && killer instanceof WitherBoss) { // Paper
+                 if (serverLevel.getGameRules().get(GameRules.MOB_GRIEFING)) {
+                     BlockPos pos = this.blockPosition();
+                     BlockState state = Blocks.WITHER_ROSE.defaultBlockState();
+                     if (this.level().getBlockState(pos).isAir() && state.canSurvive(this.level(), pos)) {
+-                        this.level().setBlock(pos, state, Block.UPDATE_ALL);
+-                        var6 = true;
++                        var6 = CraftEventFactory.handleBlockFormEvent(this.level(), pos, state, Block.UPDATE_ALL, this); // CraftBukkit - call EntityBlockFormEvent for Wither Rose
+                     }
+                 }
+ 
+                 if (!var6) {
+                     ItemEntity itemEntity = new ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), new ItemStack(Items.WITHER_ROSE));
++                    // CraftBukkit start
++                    org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) itemEntity.getBukkitEntity());
++                    if (!event.callEvent()) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     this.level().addFreshEntity(itemEntity);
+                 }
+             }
+         }
+     }
+ 
+-    protected void dropAllDeathLoot(final ServerLevel level, final DamageSource source) {
++    // Paper start
++    protected boolean clearEquipmentSlots = true;
++    protected Set<EquipmentSlot> clearedEquipmentSlots = new java.util.HashSet<>();
++    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(final ServerLevel level, final DamageSource source) {
++        // Paper end
+         boolean playerKilled = this.lastHurtByPlayerMemoryTime > 0;
++        this.dropEquipment(level); // CraftBukkit - from below
+         if (this.shouldDropLoot(level)) {
+             this.dropFromLootTable(level, source, playerKilled);
++            // Paper start
++            final boolean prev = this.clearEquipmentSlots;
++            this.clearEquipmentSlots = false;
++            this.clearedEquipmentSlots.clear();
++            // Paper end
+             this.dropCustomDeathLoot(level, source, playerKilled);
++            this.clearEquipmentSlots = prev; // Paper
+         }
+ 
+-        this.dropEquipment(level);
++        // CraftBukkit start - Call death event // Paper start - call advancement triggers with correct entity equipment
++        org.bukkit.event.entity.EntityDeathEvent deathEvent = CraftEventFactory.callEntityDeathEvent(this, source, this.drops, () -> {
++            final LivingEntity killer = this.getKillCredit();
++            if (killer != null) {
++                killer.awardKillScore(this, source);
++            }
++        }); // Paper end
++        this.postDeathDropItems(deathEvent); // Paper
++        this.drops = new java.util.ArrayList<>();
++        // this.dropEquipment(level); // CraftBukkit - moved up
++        // CraftBukkit end
+         this.dropExperience(level, source.getEntity());
++        return deathEvent; // Paper
+     }
+ 
+     protected void dropEquipment(final ServerLevel level) {
+     }
++    protected void postDeathDropItems(org.bukkit.event.entity.EntityDeathEvent event) {} // Paper - method for post death logic that cannot be ran before the event is potentially cancelled
+ 
+-    protected void dropExperience(final ServerLevel level, final @Nullable Entity killer) {
++    public int getExpReward(final ServerLevel level, final @Nullable Entity killer) { // CraftBukkit
+         if (!this.wasExperienceConsumed()
+             && (
+                 this.isAlwaysExperienceDropper()
+                     || this.lastHurtByPlayerMemoryTime > 0 && this.shouldDropExperience() && level.getGameRules().get(GameRules.MOB_DROPS)
+             )) {
+-            ExperienceOrb.award(level, this.position(), this.getExperienceReward(level, killer));
++            return this.getExperienceReward(level, killer); // CraftBukkit
++        }
++        return 0; // CraftBukkit
++    }
++
++    protected void dropExperience(ServerLevel level, @Nullable Entity entity) {
++        // CraftBukkit start - Update getExpReward() above if the removed if() changes!
++        if (!(this instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon)) { // CraftBukkit - SPIGOT-2420: Special case ender dragon will drop the xp over time
++            ExperienceOrb.awardWithDirection(level, this.position(), net.minecraft.world.phys.Vec3.ZERO, this.expToDrop, this instanceof ServerPlayer ? org.bukkit.entity.ExperienceOrb.SpawnReason.PLAYER_DEATH : org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, entity, this); // Paper
++            this.expToDrop = 0;
+         }
++        // CraftBukkit end
+     }
+ 
+     protected void dropCustomDeathLoot(final ServerLevel level, final DamageSource source, final boolean killedByPlayer) {
+@@ -1603,9 +2079,14 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public void knockback(double power, double xd, double zd) {
++        // CraftBukkit start - EntityKnockbackEvent
++        this.knockback(power, xd, zd, null, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.UNKNOWN); // Paper - knockback events
++    }
++
++    public void knockback(double power, double xd, double zd, @Nullable Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause eventCause) { // Paper - knockback events
+         power *= 1.0 - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
+-        if (!(power <= 0.0)) {
+-            this.needsSync = true;
++        if (true || !(power <= 0.0)) { // CraftBukkit - Call event even when force is 0
++            // this.needsSync = true; // CraftBukkit - Move down
+             Vec3 deltaMovement = this.getDeltaMovement();
+ 
+             while (xd * xd + zd * zd < 1.0E-5F) {
+@@ -1614,11 +2095,22 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+             }
+ 
+             Vec3 deltaVector = new Vec3(xd, 0.0, zd).normalize().scale(power);
+-            this.setDeltaMovement(
++            // Paper start - knockback events
++            Vec3 finalVelocity = new Vec3(
+                 deltaMovement.x / 2.0 - deltaVector.x,
+                 this.onGround() ? Math.min(0.4, deltaMovement.y / 2.0 + power) : deltaMovement.y,
+                 deltaMovement.z / 2.0 - deltaVector.z
+             );
++            Vec3 diff = finalVelocity.subtract(deltaMovement);
++            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity)this.getBukkitEntity(), attacker, attacker, eventCause, power, diff);
++            // Paper end - knockback events
++            if (event.isCancelled()) {
++                return;
++            }
++
++            this.needsSync = true;
++            this.setDeltaMovement(deltaMovement.add(event.getKnockback().getX(), event.getKnockback().getY(), event.getKnockback().getZ())); // Paper - knockback events
++            // CraftBukkit end
+         }
+     }
+ 
+@@ -1709,7 +2201,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+     @Override
+     public boolean isAlive() {
+-        return !this.isRemoved() && this.getHealth() > 0.0F;
++        return !this.isRemoved() && this.getHealth() > 0.0F && !this.dead; // Paper - Check this.dead
+     }
+ 
+     public boolean isLookingAtMe(
+@@ -1764,10 +2256,15 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         boolean damaged = super.causeFallDamage(effectiveFallDistance, damageModifier, damageSource);
+         int dmg = this.calculateFallDamage(effectiveFallDistance, damageModifier);
+         if (dmg > 0) {
++            // CraftBukkit start
++            if (!this.hurtServer((ServerLevel)this.level(), damageSource, (float)dmg)) {
++                return true;
++            }
++            // CraftBukkit end
+             this.resetCurrentImpulseContext();
+             this.playSound(this.getFallDamageSound(dmg), 1.0F, 1.0F);
+             this.playBlockFallSound();
+-            this.hurt(damageSource, dmg);
++            // this.hurt(damageSource, dmg); // CraftBukkit - moved up
+             return true;
+         } else {
+             return damaged;
+@@ -1865,7 +2362,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+     protected float getDamageAfterArmorAbsorb(final DamageSource damageSource, float damage) {
+         if (!damageSource.is(DamageTypeTags.BYPASSES_ARMOR)) {
+-            this.hurtArmor(damageSource, damage);
++            // this.hurtArmor(damageSource, damage); // CraftBukkit - actuallyHurt(DamageSource, float, EntityDamageEvent) for damage handling
+             damage = CombatRules.getDamageAfterAbsorb(
+                 this, damage, damageSource, this.getArmorValue(), (float)this.getAttributeValue(Attributes.ARMOR_TOUGHNESS)
+             );
+@@ -1878,7 +2375,8 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         if (damageSource.is(DamageTypeTags.BYPASSES_EFFECTS)) {
+             return damage;
+         } else {
+-            if (this.hasEffect(MobEffects.RESISTANCE) && !damageSource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
++            // CraftBukkit - Moved to handleEntityDamage(DamageSource, float)
++            if (false && this.hasEffect(MobEffects.RESISTANCE) && !damageSource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
+                 int absorbValue = (this.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
+                 int absorb = 25 - absorbValue;
+                 float v = damage * absorb;
+@@ -1915,24 +2413,181 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         }
+     }
+ 
+-    protected void actuallyHurt(final ServerLevel level, final DamageSource source, float dmg) {
++    // CraftBukkit start
++    private EntityDamageEvent handleEntityDamage(final DamageSource damagesource, float damage, final float invulnerabilityRelatedLastDamage) { // Paper - fix invulnerability reduction in EntityDamageEvent
++        float originalDamage = damage;
++        // Paper start - fix invulnerability reduction in EntityDamageEvent
++        final com.google.common.base.Function<Double, Double> invulnerabilityReductionEquation = mod -> {
++            if (invulnerabilityRelatedLastDamage == 0) return 0.0; // no last damage, no reduction
++            // last damage existed, this means the reduction *technically* is (new damage - last damage).
++            // If the event damage was changed to something less than invul damage, hard lock it at 0.
++            //
++            // Cast the passed in double down to a float as double -> float -> double is lossy.
++            // If last damage is a (float) 3.2 (since the events use doubles), we cannot compare
++            // the new damage value of this damage instance by upcasting it again to a double as 3.2 != (double) (float) 3.2.
++            if (mod.floatValue() < invulnerabilityRelatedLastDamage) return 0.0;
++            return (double) -invulnerabilityRelatedLastDamage;
++        };
++        final float originalInvulnerabilityReduction = invulnerabilityReductionEquation.apply((double) damage).floatValue();
++        damage += originalInvulnerabilityReduction;
++        // Paper end - fix invulnerability reduction in EntityDamageEvent
++
++        com.google.common.base.Function<Double, Double> freezing = mod -> {
++            if (damagesource.is(net.minecraft.tags.DamageTypeTags.IS_FREEZING) && LivingEntity.this.is(net.minecraft.tags.EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
++                return -(mod - mod * 5.0F);
++            }
++            return -0.0;
++        };
++        float freezingModifier = freezing.apply((double) damage).floatValue();
++        damage += freezingModifier;
++
++        com.google.common.base.Function<Double, Double> hardHat = mod -> {
++            if (damagesource.is(net.minecraft.tags.DamageTypeTags.DAMAGES_HELMET) && !LivingEntity.this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
++                return -(mod - mod * 0.75F);
++            }
++            return -0.0;
++        };
++        float hardHatModifier = hardHat.apply((double) damage).floatValue();
++        damage += hardHatModifier;
++
++        com.google.common.base.Function<Double, Double> blocking = mod -> {
++            if (!LivingEntity.this.canBlockAttack(damagesource, mod.floatValue())) {
++                return 0D;
++            }
++            return (double) -LivingEntity.this.resolveBlockedDamage(damagesource, mod.floatValue());
++        };
++        float blockingModifier = blocking.apply((double) damage).floatValue();
++        damage += blockingModifier;
++
++        com.google.common.base.Function<Double, Double> armor = mod -> -(mod - LivingEntity.this.getDamageAfterArmorAbsorb(damagesource, mod.floatValue()));
++        float armorModifier = armor.apply((double) damage).floatValue();
++        damage += armorModifier;
++
++        com.google.common.base.Function<Double, Double> resistance = mod -> {
++            if (!damagesource.is(net.minecraft.tags.DamageTypeTags.BYPASSES_EFFECTS) && LivingEntity.this.hasEffect(net.minecraft.world.effect.MobEffects.RESISTANCE) && !damagesource.is(net.minecraft.tags.DamageTypeTags.BYPASSES_RESISTANCE)) {
++                int absorbValue = (LivingEntity.this.getEffect(net.minecraft.world.effect.MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
++                int absorb = 25 - absorbValue;
++                float v = mod.floatValue() * (float) absorb;
++
++                return -(mod - Math.max(v / 25.0F, 0.0F));
++            }
++            return -0.0;
++        };
++        float resistanceModifier = resistance.apply((double) damage).floatValue();
++        damage += resistanceModifier;
++
++        com.google.common.base.Function<Double, Double> magic = mod -> -(mod - net.minecraft.world.entity.LivingEntity.this.getDamageAfterMagicAbsorb(damagesource, mod.floatValue()));
++        float magicModifier = magic.apply((double) damage).floatValue();
++        damage += magicModifier;
++
++        com.google.common.base.Function<Double, Double> absorption = mod -> -(Math.max(mod - Math.max(mod - net.minecraft.world.entity.LivingEntity.this.getAbsorptionAmount(), 0.0F), 0.0F));
++        float absorptionModifier = absorption.apply((double) damage).floatValue();
++
++        // Paper start - fix invulnerability reduction in EntityDamageEvent
++        return CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, freezingModifier, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, freezing, hardHat, blocking, armor, resistance, magic, absorption, (damageModifierDoubleMap, damageModifierFunctionMap) -> {
++            damageModifierFunctionMap.put(DamageModifier.INVULNERABILITY_REDUCTION, invulnerabilityReductionEquation);
++            damageModifierDoubleMap.put(DamageModifier.INVULNERABILITY_REDUCTION, (double) originalInvulnerabilityReduction);
++        });
++        // Paper end - fix invulnerability reduction in EntityDamageEvent
++    }
++
++    protected boolean actuallyHurt(ServerLevel level, final DamageSource source, float dmg, final EntityDamageEvent event) { // void -> boolean, add final
+         if (!this.isInvulnerableTo(level, source)) {
+-            dmg = this.getDamageAfterArmorAbsorb(source, dmg);
+-            dmg = this.getDamageAfterMagicAbsorb(source, dmg);
+-            float var10 = Math.max(dmg - this.getAbsorptionAmount(), 0.0F);
+-            this.setAbsorptionAmount(this.getAbsorptionAmount() - (dmg - var10));
+-            float absorbedDamage = dmg - var10;
++            if (event.isCancelled()) {
++                return false;
++            }
++
++            // Resistance
++            if (event.getDamage(DamageModifier.RESISTANCE) < 0) {
++                float damageResisted = (float)-event.getDamage(DamageModifier.RESISTANCE);
++                if (damageResisted > 0.0F && damageResisted < 3.4028235E37F) {
++                    if (this instanceof ServerPlayer) {
++                        ((ServerPlayer)this).awardStat(Stats.DAMAGE_RESISTED, Math.round(damageResisted * 10.0F));
++                    } else if (source.getEntity() instanceof ServerPlayer) {
++                        ((ServerPlayer)source.getEntity()).awardStat(Stats.DAMAGE_DEALT_RESISTED, Math.round(damageResisted * 10.0F));
++                    }
++                }
++            }
++
++            // Apply damage to helmet
++            if (source.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
++                float helmetDamage = (float)event.getDamage();
++                helmetDamage += (float)event.getDamage(DamageModifier.INVULNERABILITY_REDUCTION);
++                helmetDamage += (float)event.getDamage(DamageModifier.BLOCKING);
++                helmetDamage += (float)event.getDamage(DamageModifier.FREEZING);
++                this.hurtHelmet(source, helmetDamage);
++            }
++
++            // Apply damage to armor
++            if (!source.is(DamageTypeTags.BYPASSES_ARMOR)) {
++                float armorDamage = (float)event.getDamage();
++                armorDamage += (float)event.getDamage(DamageModifier.INVULNERABILITY_REDUCTION);
++                armorDamage += (float)event.getDamage(DamageModifier.BLOCKING);
++                armorDamage += (float)event.getDamage(DamageModifier.FREEZING);
++                armorDamage += (float)event.getDamage(DamageModifier.HARD_HAT);
++                this.hurtArmor(source, armorDamage);
++            }
++
++            // Apply blocking code
++            if (event.getDamage(DamageModifier.BLOCKING) < 0) {
++                this.blockingItemEffects(level, source, (float)-event.getDamage(DamageModifier.BLOCKING));
++            }
++
++            boolean human = this instanceof net.minecraft.world.entity.player.Player;
++            float originalDamage = (float)event.getDamage();
++            float absorptionModifier = (float)-event.getDamage(DamageModifier.ABSORPTION);
++            this.setAbsorptionAmount(Math.max(this.getAbsorptionAmount() - absorptionModifier, 0.0F));
++            float absorbedDamage = absorptionModifier;
++
++            if (absorbedDamage > 0.0F && absorbedDamage < 3.4028235E37F && this instanceof Player player) {
++                player.awardStat(Stats.DAMAGE_ABSORBED, Math.round(absorbedDamage * 10.0F));
++            }
++            // CraftBukkit end
+             if (absorbedDamage > 0.0F && absorbedDamage < 3.4028235E37F && source.getEntity() instanceof ServerPlayer serverPlayer) {
+                 serverPlayer.awardStat(Stats.DAMAGE_DEALT_ABSORBED, Math.round(absorbedDamage * 10.0F));
+             }
+ 
+-            if (var10 != 0.0F) {
+-                this.getCombatTracker().recordDamage(source, var10);
+-                this.setHealth(this.getHealth() - var10);
+-                this.setAbsorptionAmount(this.getAbsorptionAmount() - var10);
++            // CraftBukkit start
++            if (dmg > 0 || !human) {
++                if (human) {
++                    // PAIL: Be sure to drag all this code from the EntityHuman subclass each update.
++                    ((net.minecraft.world.entity.player.Player)this).causeFoodExhaustion(source.getFoodExhaustion(), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
++                    if (dmg < 3.4028235E37F) {
++                        ((net.minecraft.world.entity.player.Player)this).awardStat(Stats.DAMAGE_TAKEN, Math.round(dmg * 10.0F));
++                    }
++                }
++                // CraftBukkit end
++                this.getCombatTracker().recordDamage(source, dmg);
++                this.setHealth(this.getHealth() - dmg);
++                // CraftBukkit start
++                if (!human) {
++                    this.setAbsorptionAmount(this.getAbsorptionAmount() - dmg);
++                }
+                 this.gameEvent(GameEvent.ENTITY_DAMAGE);
++                return true;
++            } else {
++                // Duplicate triggers if blocking
++                if (event.getDamage(DamageModifier.BLOCKING) < 0) {
++                    if (this instanceof ServerPlayer serverPlayer) {
++                        CriteriaTriggers.ENTITY_HURT_PLAYER.trigger(serverPlayer, source, originalDamage, dmg, true); // Paper - fix taken/dealt param order
++                        float damageBlocked = (float)-event.getDamage(DamageModifier.BLOCKING);
++                        if (damageBlocked > 0.0F && damageBlocked < 3.4028235E37F) {
++                            serverPlayer.awardStat(Stats.DAMAGE_BLOCKED_BY_SHIELD, Math.round(damageBlocked * 10.0F));
++                        }
++                    }
++
++                    if (source.getEntity() instanceof ServerPlayer) {
++                        CriteriaTriggers.PLAYER_HURT_ENTITY.trigger((ServerPlayer)source.getEntity(), this, source, originalDamage, dmg, true); // Paper - fix taken/dealt param order
++                    }
++
++                    return !io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.skipVanillaDamageTickWhenShieldBlocked; // Paper - this should always return true, however expose an unsupported setting to flip this to false to enable "shield stunning".
++                } else {
++                    return true; // Paper - return false ONLY if event was cancelled
++                }
++                // CraftBukkit end
+             }
+         }
++        return true; // CraftBukkit // Paper - return false ONLY if event was cancelled
+     }
+ 
+     public CombatTracker getCombatTracker() {
+@@ -1960,7 +2615,17 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public final void setArrowCount(final int count) {
+-        this.entityData.set(DATA_ARROW_COUNT_ID, count);
++        // CraftBukkit start
++        this.setArrowCount(count, false);
++    }
++
++    public final void setArrowCount(final int count, final boolean reset) {
++        org.bukkit.event.entity.ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, this.getArrowCount(), count, reset);
++        if (event.isCancelled()) {
++            return;
++        }
++        this.entityData.set(DATA_ARROW_COUNT_ID, event.getNewAmount());
++        // CraftBukkit end
+     }
+ 
+     public final int getStingerCount() {
+@@ -2010,7 +2675,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     @Override
+     public void handleDamageEvent(final DamageSource source) {
+         this.walkAnimation.setSpeed(1.5F);
+-        this.invulnerableTime = 20;
++        this.invulnerableTime = this.invulnerableDuration; // Paper - configurable invulnerable duration
+         this.hurtDuration = 10;
+         this.hurtTime = this.hurtDuration;
+         SoundEvent hurtSound = this.getHurtSound(source);
+@@ -2139,7 +2804,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+     @Override
+     protected void onBelowWorld() {
+-        this.hurt(this.damageSources().fellOutOfWorld(), 4.0F);
++        this.hurt(this.damageSources().fellOutOfWorld(), this.level().getWorld().getVoidDamageAmount()); // Paper - use configured void damage amount
+     }
+ 
+     protected void updateSwingTime() {
+@@ -2246,7 +2911,13 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public void setItemSlot(final EquipmentSlot slot, final ItemStack itemStack) {
+-        this.onEquipItem(slot, this.equipment.set(slot, itemStack), itemStack);
++        // Paper start
++        this.setItemSlot(slot, itemStack, false);
++    }
++
++    public void setItemSlot(final EquipmentSlot slot, final ItemStack itemStack, final boolean silent) {
++        this.onEquipItem(slot, this.equipment.set(slot, itemStack), itemStack, silent);
++        // Paper end
+     }
+ 
+     public float getArmorCoverPercentage() {
+@@ -2339,14 +3010,27 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         return this.hasEffect(MobEffects.JUMP_BOOST) ? 0.1F * (this.getEffect(MobEffects.JUMP_BOOST).getAmplifier() + 1.0F) : 0.0F;
+     }
+ 
++    protected long lastJumpTime = 0L; // Paper - Prevent excessive velocity through repeated crits
+     @VisibleForTesting
+     public void jumpFromGround() {
+         float jumpPower = this.getJumpPower();
+         if (!(jumpPower <= 1.0E-5F)) {
+             Vec3 movement = this.getDeltaMovement();
++            // Paper start - Prevent excessive velocity through repeated crits
++            long time = System.nanoTime();
++            boolean canCrit = true;
++            if (this instanceof net.minecraft.world.entity.player.Player) {
++                canCrit = false;
++                if (time - this.lastJumpTime > (long)(0.250e9)) {
++                    this.lastJumpTime = time;
++                    canCrit = true;
++                }
++            }
++            // Paper end - Prevent excessive velocity through repeated crits
+             this.setDeltaMovement(movement.x, Math.max((double)jumpPower, movement.y), movement.z);
+             if (this.isSprinting()) {
+                 float angle = this.getYRot() * Mth.DEG_TO_RAD;
++                if (canCrit) // Paper - Prevent excessive velocity through repeated crits
+                 this.addDeltaMovement(new Vec3(-Mth.sin(angle) * 0.2, 0.0, Mth.cos(angle) * 0.2));
+             }
+ 
+@@ -2533,8 +3217,10 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public void stopFallFlying() {
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) { // Paper
+         this.setSharedFlag(Entity.FLAG_FALL_FLYING, true);
+         this.setSharedFlag(Entity.FLAG_FALL_FLYING, false);
++        } // Paper
+     }
+ 
+     private Vec3 updateFallFlyingMovement(Vec3 movement) {
+@@ -2678,7 +3364,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+     public void causeExtraKnockback(final Entity target, final float knockback, final Vec3 oldMovement) {
+         if (knockback > 0.0F && target instanceof LivingEntity livingTarget) {
+-            livingTarget.knockback(knockback, Mth.sin(this.getYRot() * Mth.DEG_TO_RAD), -Mth.cos(this.getYRot() * Mth.DEG_TO_RAD));
++            livingTarget.knockback(knockback, Mth.sin(this.getYRot() * Mth.DEG_TO_RAD), -Mth.cos(this.getYRot() * Mth.DEG_TO_RAD), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // Paper - knockback events
+             this.setDeltaMovement(this.getDeltaMovement().multiply(0.6, 1.0, 0.6));
+         }
+     }
+@@ -2754,37 +3440,15 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         profiler.pop();
+         profiler.push("rangeChecks");
+ 
+-        while (this.getYRot() - this.yRotO < -180.0F) {
+-            this.yRotO -= 360.0F;
+-        }
+-
+-        while (this.getYRot() - this.yRotO >= 180.0F) {
+-            this.yRotO += 360.0F;
+-        }
++        // Paper start - stop large pitch and yaw changes from crashing the server
++        this.yRotO += Math.round((this.getYRot() - this.yRotO) / 360.0F) * 360.0F;
+ 
+-        while (this.yBodyRot - this.yBodyRotO < -180.0F) {
+-            this.yBodyRotO -= 360.0F;
+-        }
++        this.yBodyRotO += Math.round((this.yBodyRot - this.yBodyRotO) / 360.0F) * 360.0F;
+ 
+-        while (this.yBodyRot - this.yBodyRotO >= 180.0F) {
+-            this.yBodyRotO += 360.0F;
+-        }
++        this.xRotO += Math.round((this.getXRot() - this.xRotO) / 360.0F) * 360.0F;
+ 
+-        while (this.getXRot() - this.xRotO < -180.0F) {
+-            this.xRotO -= 360.0F;
+-        }
+-
+-        while (this.getXRot() - this.xRotO >= 180.0F) {
+-            this.xRotO += 360.0F;
+-        }
+-
+-        while (this.yHeadRot - this.yHeadRotO < -180.0F) {
+-            this.yHeadRotO -= 360.0F;
+-        }
+-
+-        while (this.yHeadRot - this.yHeadRotO >= 180.0F) {
+-            this.yHeadRotO += 360.0F;
+-        }
++        this.yHeadRotO += Math.round((this.yHeadRot - this.yHeadRotO) / 360.0F) * 360.0F;
++        // Paper end - stop large pitch and yaw changes from crashing the server
+ 
+         profiler.pop();
+         if (this.isFallFlying()) {
+@@ -2865,6 +3529,11 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public void onAttack() {
++    // Paper start
++        onAttack(null);
++    }
++    public void onAttack(Entity entity) {
++    // Paper end
+     }
+ 
+     public void detectEquipmentUpdates() {
+@@ -2879,16 +3548,39 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+     private @Nullable Map<EquipmentSlot, ItemStack> collectEquipmentChanges() {
+         Map<EquipmentSlot, ItemStack> changedItems = null;
++        // Paper start - EntityEquipmentChangedEvent
++        record EquipmentChangeImpl(org.bukkit.inventory.ItemStack oldItem, org.bukkit.inventory.ItemStack newItem) implements io.papermc.paper.event.entity.EntityEquipmentChangedEvent.EquipmentChange {
++            @Override
++            public org.bukkit.inventory.ItemStack oldItem() {
++                return this.oldItem.clone();
++            }
++
++            @Override
++            public org.bukkit.inventory.ItemStack newItem() {
++                return this.newItem.clone();
++            }
++        }
++        Map<org.bukkit.inventory.EquipmentSlot, io.papermc.paper.event.entity.EntityEquipmentChangedEvent.EquipmentChange> equipmentChanges = null;
++        // Paper end - EntityEquipmentChangedEvent
+ 
+         for (EquipmentSlot slot : EquipmentSlot.VALUES) {
+             ItemStack previous = this.lastEquipmentItems.get(slot);
+             ItemStack current = this.getItemBySlot(slot);
+             if (this.equipmentHasChanged(previous, current)) {
++                // Paper start - EntityEquipmentChangedEvent, PlayerArmorChangeEvent
++                final org.bukkit.inventory.ItemStack oldItem = CraftItemStack.asBukkitCopy(previous);
++                final org.bukkit.inventory.ItemStack newItem = CraftItemStack.asBukkitCopy(current);
++                if (this instanceof ServerPlayer && slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
++                    new com.destroystokyo.paper.event.player.PlayerArmorChangeEvent((org.bukkit.entity.Player)this.getBukkitEntity(), com.destroystokyo.paper.event.player.PlayerArmorChangeEvent.SlotType.valueOf(slot.name()), oldItem, newItem).callEvent();
++                }
++                // Paper end - EntityEquipmentChangedEvent, PlayerArmorChangeEvent
+                 if (changedItems == null) {
+                     changedItems = Maps.newEnumMap(EquipmentSlot.class);
++                    equipmentChanges = Maps.newEnumMap(org.bukkit.inventory.EquipmentSlot.class); // Paper - EntityEquipmentChangedEvent
+                 }
+ 
+                 changedItems.put(slot, current);
++                equipmentChanges.put(org.bukkit.craftbukkit.CraftEquipmentSlot.getSlot(slot), new EquipmentChangeImpl(oldItem, newItem)); // Paper - EntityEquipmentChangedEvent
+                 AttributeMap attributes = this.getAttributes();
+                 if (!previous.isEmpty()) {
+                     this.stopLocationBasedEffects(previous, slot, attributes);
+@@ -2913,6 +3605,8 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+                     }
+                 }
+             }
++
++            new io.papermc.paper.event.entity.EntityEquipmentChangedEvent(this.getBukkitLivingEntity(), equipmentChanges).callEvent(); // Paper - EntityEquipmentChangedEvent
+         }
+ 
+         return changedItems;
+@@ -2944,7 +3638,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+             itemsToSend.add(Pair.of(slot, newItemToStore));
+             this.lastEquipmentItems.put(slot, newItemToStore);
+         });
+-        ((ServerLevel)this.level()).getChunkSource().sendToTrackingPlayers(this, new ClientboundSetEquipmentPacket(this.getId(), itemsToSend));
++        ((ServerLevel)this.level()).getChunkSource().sendToTrackingPlayers(this, new ClientboundSetEquipmentPacket(this.getId(), itemsToSend, true)); // Paper - data sanitization
+     }
+ 
+     protected void tickHeadTurn(final float yBodyRotT) {
+@@ -3030,8 +3724,10 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+             if (!inWaterAndHasFluidHeight || this.onGround() && !(fluidHeight > fluidJumpThreshold)) {
+                 if (!this.isInLava() || this.onGround() && !(fluidHeight > fluidJumpThreshold)) {
+                     if ((this.onGround() || inWaterAndHasFluidHeight && fluidHeight <= fluidJumpThreshold) && this.noJumpDelay == 0) {
++                        if (new com.destroystokyo.paper.event.entity.EntityJumpEvent(getBukkitLivingEntity()).callEvent()) { // Paper - Entity Jump API
+                         this.jumpFromGround();
+                         this.noJumpDelay = 10;
++                        } else { this.setJumping(false); } // Paper - Entity Jump API; setJumping(false) stops a potential loop
+                     }
+                 } else {
+                     this.jumpInLiquid(FluidTags.LAVA);
+@@ -3072,7 +3768,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         profiler.pop();
+         if (this.level() instanceof ServerLevel serverLevel) {
+             profiler.push("freezing");
+-            if (!this.isInPowderSnow || !this.canFreeze()) {
++            if ((!this.isInPowderSnow || !this.canFreeze()) && !this.freezeLocked) { // Paper - Freeze Tick Lock API
+                 this.setTicksFrozen(Math.max(0, this.getTicksFrozen() - 2));
+             }
+ 
+@@ -3093,6 +3789,20 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+         this.pushEntities();
+         profiler.pop();
++        // Paper start - Add EntityMoveEvent
++        if (((ServerLevel) this.level()).hasEntityMoveEvent && !(this instanceof Player)) {
++            if (this.xo != this.getX() || this.yo != this.getY() || this.zo != this.getZ() || this.yRotO != this.getYRot() || this.xRotO != this.getXRot()) {
++                Location from = new Location(this.level().getWorld(), this.xo, this.yo, this.zo, this.yRotO, this.xRotO);
++                Location to = new Location(this.level().getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
++                io.papermc.paper.event.entity.EntityMoveEvent event = new io.papermc.paper.event.entity.EntityMoveEvent(this.getBukkitLivingEntity(), from, to.clone());
++                if (!event.callEvent()) {
++                    this.absSnapTo(from.getX(), from.getY(), from.getZ(), from.getYaw(), from.getPitch());
++                } else if (!to.equals(event.getTo())) {
++                    this.absSnapTo(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ(), event.getTo().getYaw(), event.getTo().getPitch());
++                }
++            }
++        }
++        // Paper end - Add EntityMoveEvent
+         if (this.level() instanceof ServerLevel serverLevel && this.isSensitiveToWater() && this.isInWaterOrRain()) {
+             this.hurtServer(serverLevel, this.damageSources().drown(), 1.0F);
+         }
+@@ -3115,6 +3825,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         this.checkFallDistanceAccumulation();
+         if (!this.level().isClientSide()) {
+             if (!this.canGlide()) {
++                if (this.getSharedFlag(Entity.FLAG_FALL_FLYING) && !CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) // CraftBukkit
+                 this.setSharedFlag(Entity.FLAG_FALL_FLYING, false);
+                 return;
+             }
+@@ -3151,10 +3862,25 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     protected void pushEntities() {
++        // Paper start - don't run getEntities if we're not going to use its result
++        if (!this.isPushable()) {
++            return;
++        }
++
++        net.minecraft.world.scores.Team team = this.getTeam();
++        if (team != null && team.getCollisionRule() == net.minecraft.world.scores.Team.CollisionRule.NEVER) {
++            return;
++        }
++
++        int maxCramming = ((ServerLevel) this.level()).getGameRules().get(GameRules.MAX_ENTITY_CRAMMING);
++        if (maxCramming <= 0 && this.level().paperConfig().collisions.maxEntityCollisions <= 0) {
++            return;
++        }
++        // Paper end - don't run getEntities if we're not going to use its result
+         List<Entity> pushableEntities = this.level().getPushableEntities(this, this.getBoundingBox());
+         if (!pushableEntities.isEmpty()) {
+             if (this.level() instanceof ServerLevel serverLevel) {
+-                int maxCramming = serverLevel.getGameRules().get(GameRules.MAX_ENTITY_CRAMMING);
++                // Paper - don't run getEntities if we're not going to use its result; moved up
+                 if (maxCramming > 0 && pushableEntities.size() > maxCramming - 1 && this.random.nextInt(4) == 0) {
+                     int count = 0;
+ 
+@@ -3170,7 +3896,16 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+                 }
+             }
+ 
++            // Paper start - Cap entity collisions
++            this.numCollisions = Math.max(0, this.numCollisions - this.level().paperConfig().collisions.maxEntityCollisions);
+             for (Entity entityx : pushableEntities) {
++                if (this.numCollisions >= this.level().paperConfig().collisions.maxEntityCollisions) {
++                    break;
++                }
++
++                entityx.numCollisions++;
++                this.numCollisions++;
++                // Paper end - Cap entity collisions
+                 this.doPush(entityx);
+             }
+         }
+@@ -3179,16 +3914,32 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     protected void checkAutoSpinAttack(final AABB old, final AABB current) {
+         AABB minmax = old.minmax(current);
+         List<Entity> entities = this.level().getEntities(this, minmax);
++        int skippedAttackedEntitiesCounter = 0; // Paper - entity attempt spin attack event / hidden entities - count entities that are retroactively not part of the list
+         if (!entities.isEmpty()) {
+             for (Entity entity : entities) {
++                // Paper start - entity attempt spin attack event / hidden entities - skip hidden entities
++                if (this instanceof final ServerPlayer serverPlayer && !serverPlayer.getBukkitEntity().canSee(entity.getBukkitEntity())) {
++                    ++skippedAttackedEntitiesCounter;
++                    continue;
++                }
++                // Paper end - entity attempt spin attack event / hidden entities - skip hidden entities
+                 if (entity instanceof LivingEntity) {
++                    // Paper start - entity attempt spin attack event / hidden entities - skip hidden entities
++                    if (!new io.papermc.paper.event.entity.EntityAttemptSpinAttackEvent(
++                        getBukkitLivingEntity(),
++                        ((LivingEntity) entity).getBukkitLivingEntity()
++                    ).callEvent()) {
++                        ++skippedAttackedEntitiesCounter;
++                        continue;
++                    }
++                    // Paper end - entity attempt spin attack event / hidden entities - skip hidden entities
+                     this.doAutoAttackOnTouch((LivingEntity)entity);
+                     this.autoSpinAttackTicks = 0;
+                     this.setDeltaMovement(this.getDeltaMovement().scale(-0.2));
+                     break;
+                 }
+             }
+-        } else if (this.horizontalCollision) {
++        } if (this.horizontalCollision && skippedAttackedEntitiesCounter == entities.size()) { // Paper - entity attempt spin attack event - only check if above list was either empty (size is 0, counter is 0 because of it) or filled completely with skipped entities.
+             this.autoSpinAttackTicks = 0;
+         }
+ 
+@@ -3211,10 +3962,10 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     @Override
+-    public void stopRiding() {
++    public void stopRiding(final boolean suppressCancellation) { // Paper - Force entity dismount during teleportation
+         Entity oldVehicle = this.getVehicle();
+-        super.stopRiding();
+-        if (oldVehicle != null && oldVehicle != this.getVehicle() && !this.level().isClientSide()) {
++        super.stopRiding(suppressCancellation); // Paper - Force entity dismount during teleportation
++        if (oldVehicle != null && oldVehicle != this.getVehicle() && !this.level().isClientSide() && oldVehicle.valid) { // Paper - don't process on world gen
+             this.dismountVehicle(oldVehicle);
+         }
+     }
+@@ -3241,7 +3992,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public void onItemPickup(final ItemEntity entity) {
+-        Entity thrower = entity.getOwner();
++        Entity thrower = EntityReference.getEntity(entity.thrower, this.level()::getGlobalPlayerByUUID, Entity.class); // Paper - check global player list where appropriate
+         if (thrower instanceof ServerPlayer) {
+             CriteriaTriggers.THROWN_ITEM_PICKED_UP_BY_ENTITY.trigger((ServerPlayer)thrower, entity.getItem(), this);
+         }
+@@ -3253,7 +4004,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+             && (entity instanceof ItemEntity || entity instanceof AbstractArrow || entity instanceof ExperienceOrb)) {
+             ((ServerLevel)this.level())
+                 .getChunkSource()
+-                .sendToTrackingPlayers(entity, new ClientboundTakeItemEntityPacket(entity.getId(), this.getId(), orgCount));
++                .sendToTrackingPlayersAndSelf(entity, new ClientboundTakeItemEntityPacket(entity.getId(), this.getId(), orgCount)); // Paper - broadcast with collector as source
+         }
+     }
+ 
+@@ -3269,7 +4020,8 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         } else {
+             Vec3 from = new Vec3(this.getX(), this.getEyeY(), this.getZ());
+             Vec3 to = new Vec3(target.getX(), eyeHeight, target.getZ());
+-            return !(to.distanceTo(from) > 128.0)
++            // Paper - diff on change - used in CraftLivingEntity#hasLineOfSight(Location) and CraftWorld#lineOfSightExists
++            return !(to.distanceToSqr(from) > Mth.square(128.0)) // Paper - Perf: Use distance squared
+                 && this.level().clip(new ClipContext(from, to, blockCollidingContext, fluidCollidingContext, this)).getType() == HitResult.Type.MISS;
+         }
+     }
+@@ -3290,14 +4042,28 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+     @Override
+     public boolean isPickable() {
+-        return !this.isRemoved();
++        return !this.isRemoved() && this.collides; // CraftBukkit
+     }
+ 
++    // Paper start - Climbing should not bypass cramming gamerule
+     @Override
+     public boolean isPushable() {
+-        return this.isAlive() && !this.isSpectator() && !this.onClimbable();
++        return this.isCollidable(this.level().paperConfig().collisions.fixClimbingBypassingCrammingRule);
+     }
+ 
++    @Override
++    public boolean isCollidable(boolean ignoreClimbing) {
++        return this.isAlive() && !this.isSpectator() && (ignoreClimbing || !this.onClimbable()) && this.collides; // CraftBukkit
++        // Paper end - Climbing should not bypass cramming gamerule
++    }
++
++    // CraftBukkit start - collidable API
++    @Override
++    public boolean canCollideWithBukkit(Entity entity) {
++        return this.isPushable() && this.collides != this.collidableExemptions.contains(entity.getUUID());
++    }
++    // CraftBukkit end
++
+     @Override
+     public float getYHeadRot() {
+         return this.yHeadRot;
+@@ -3327,7 +4093,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public final void setAbsorptionAmount(final float absorptionAmount) {
+-        this.internalSetAbsorptionAmount(Mth.clamp(absorptionAmount, 0.0F, this.getMaxAbsorption()));
++        this.internalSetAbsorptionAmount(!Float.isNaN(absorptionAmount) ? Mth.clamp(absorptionAmount, 0.0F, this.getMaxAbsorption()) : 0.0F); // Paper - Check for NaN
+     }
+ 
+     protected void internalSetAbsorptionAmount(final float absorptionAmount) {
+@@ -3354,6 +4120,15 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         return (this.entityData.get(DATA_LIVING_ENTITY_FLAGS) & 2) > 0 ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+     }
+ 
++    // Paper start - Properly cancel usable items
++    public void resyncUsingItem(ServerPlayer serverPlayer) {
++        this.resendPossiblyDesyncedDataValues(java.util.List.of(DATA_LIVING_ENTITY_FLAGS), serverPlayer);
++    }
++    // Paper end - Properly cancel usable items
++    // Paper start - lag compensate eating
++    protected long eatStartTime;
++    protected int totalEatTimeTicks;
++    // Paper end - lag compensate eating
+     private void updatingUsingItem() {
+         if (this.isUsingItem()) {
+             if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
+@@ -3401,7 +4176,12 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+     protected void updateUsingItem(final ItemStack useItem) {
+         useItem.onUseTick(this.level(), this, this.getUseItemRemainingTicks());
+-        if (--this.useItemRemaining == 0 && !this.level().isClientSide() && !useItem.useOnRelease()) {
++        // Paper start - lag compensate eating
++        // we add 1 to the expected time to avoid lag compensating when we should not
++        final boolean shouldLagCompensate = this.useItem.has(DataComponents.FOOD) && this.eatStartTime != -1 && (System.nanoTime() - this.eatStartTime) > ((1L + this.totalEatTimeTicks) * 50L * (1000L * 1000L));
++        if ((--this.useItemRemaining == 0 || shouldLagCompensate) && !this.level().isClientSide() && !useItem.useOnRelease()) {
++            this.useItemRemaining = 0;
++            // Paper end - lag compensate eating
+             this.completeUsingItem();
+         }
+     }
+@@ -3427,10 +4207,19 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public void startUsingItem(final InteractionHand hand) {
++        // Paper start - Prevent consuming the wrong itemstack
++        this.startUsingItem(hand, false);
++    }
++
++    public void startUsingItem(final InteractionHand hand, final boolean forceUpdate) {
++        // Paper end - Prevent consuming the wrong itemstack
+         ItemStack itemStack = this.getItemInHand(hand);
+-        if (!itemStack.isEmpty() && !this.isUsingItem()) {
++        if ((!itemStack.isEmpty() && !this.isUsingItem()) || forceUpdate) { // Paper - Prevent consuming the wrong itemstack
+             this.useItem = itemStack;
+-            this.useItemRemaining = itemStack.getUseDuration(this);
++            // Paper start - lag compensate eating
++            this.useItemRemaining = this.totalEatTimeTicks = itemStack.getUseDuration(this);
++            this.eatStartTime = System.nanoTime();
++            // Paper end - lag compensate eating
+             if (!this.level().isClientSide()) {
+                 this.setLivingEntityFlag(LIVING_ENTITY_FLAG_IS_USING, true);
+                 this.setLivingEntityFlag(LIVING_ENTITY_FLAG_OFF_HAND, hand == InteractionHand.OFF_HAND);
+@@ -3457,7 +4246,10 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+                 }
+             } else if (!this.isUsingItem() && !this.useItem.isEmpty()) {
+                 this.useItem = ItemStack.EMPTY;
+-                this.useItemRemaining = 0;
++                // Paper start - lag compensate eating
++                this.useItemRemaining = this.totalEatTimeTicks = 0;
++                this.eatStartTime = -1L;
++                // Paper end - lag compensate eating
+             }
+         }
+     }
+@@ -3500,9 +4292,41 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+                 this.releaseUsingItem();
+             } else {
+                 if (!this.useItem.isEmpty() && this.isUsingItem()) {
+-                    ItemStack result = this.useItem.finishUsingItem(this.level(), this);
++                    this.startUsingItem(this.getUsedItemHand(), true); // Paper - Prevent consuming the wrong itemstack
++                    // CraftBukkit start - fire PlayerItemConsumeEvent
++                    ItemStack result;
++                    org.bukkit.event.player.PlayerItemConsumeEvent event = null; // Paper
++                    if (this instanceof ServerPlayer serverPlayer) {
++                        org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
++                        org.bukkit.inventory.EquipmentSlot handSlot = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand);
++                        event = new org.bukkit.event.player.PlayerItemConsumeEvent((org.bukkit.entity.Player)this.getBukkitEntity(), craftItem, handSlot); // Paper
++                        this.level().getCraftServer().getPluginManager().callEvent(event);
++
++                        if (event.isCancelled()) {
++                            net.minecraft.world.item.component.Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
++                            if (consumable != null) {
++                                consumable.cancelUsingItem(serverPlayer, this.useItem);
++                            }
++                            serverPlayer.containerMenu.forceHeldSlot(hand);
++                            serverPlayer.getBukkitEntity().updateScaledHealth();
++                            this.stopUsingItem(); // Paper - event is using an item, clear active item to reset its use
++                            return;
++                        }
++
++                        result = (craftItem.equals(event.getItem())) ? this.useItem.finishUsingItem(this.level(), this) : CraftItemStack.asNMSCopy(event.getItem()).finishUsingItem(this.level(), this);
++                    } else {
++                        result = this.useItem.finishUsingItem(this.level(), this);
++                    }
++                    // Paper start - save the default replacement item and change it if necessary
++                    final ItemStack defaultReplacement = result;
++                    if (event != null && event.getReplacement() != null) {
++                        result = CraftItemStack.asNMSCopy(event.getReplacement());
++                    }
++                    // Paper end
++                    // CraftBukkit end
+                     if (result != this.useItem) {
+                         this.setItemInHand(hand, result);
++                        if (event != null && event.getReplacement() != null && this instanceof final ServerPlayer player) player.containerMenu.forceHeldSlot(hand); // Paper - Fix inventory desync; Paper#13253
+                     }
+ 
+                     this.stopUsingItem();
+@@ -3534,6 +4358,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         ItemStack itemInUsedHand = this.getItemInHand(this.getUsedItemHand());
+         if (!this.useItem.isEmpty() && ItemStack.isSameItem(itemInUsedHand, this.useItem)) {
+             this.useItem = itemInUsedHand;
++            if (this instanceof ServerPlayer) new io.papermc.paper.event.player.PlayerStopUsingItemEvent((org.bukkit.entity.Player) getBukkitEntity(), useItem.asBukkitMirror(), getTicksUsingItem()).callEvent(); // Paper - Add PlayerStopUsingItemEvent
+             this.useItem.releaseUsing(this.level(), this, this.getUseItemRemainingTicks());
+             if (this.useItem.useOnRelease()) {
+                 this.updatingUsingItem();
+@@ -3554,7 +4379,10 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         }
+ 
+         this.useItem = ItemStack.EMPTY;
+-        this.useItemRemaining = 0;
++        // Paper start - lag compensate eating
++        this.useItemRemaining = this.totalEatTimeTicks = 0;
++        this.eatStartTime = -1L;
++        // Paper end - lag compensate eating
+     }
+ 
+     public boolean isBlocking() {
+@@ -3577,6 +4405,60 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         }
+     }
+ 
++    // CraftBukkit start
++    @Override
++    public float getBukkitYaw() {
++        return this.getYHeadRot();
++    }
++    // CraftBukkit end
++
++    // Paper start
++    public HitResult getRayTrace(int maxDistance, ClipContext.Fluid fluidCollisionOption) {
++        if (maxDistance < 1 || maxDistance > 120) {
++            throw new IllegalArgumentException("maxDistance must be between 1-120");
++        }
++
++        Vec3 start = new Vec3(getX(), getY() + getEyeHeight(), getZ());
++        org.bukkit.util.Vector dir = getBukkitEntity().getLocation().getDirection().multiply(maxDistance);
++        Vec3 end = new Vec3(start.x + dir.getX(), start.y + dir.getY(), start.z + dir.getZ());
++        ClipContext raytrace = new ClipContext(start, end, ClipContext.Block.OUTLINE, fluidCollisionOption, this);
++
++        return this.level().clip(raytrace);
++    }
++
++    public net.minecraft.world.phys.@Nullable EntityHitResult getTargetEntity(int maxDistance) {
++        if (maxDistance < 1 || maxDistance > 120) {
++            throw new IllegalArgumentException("maxDistance must be between 1-120");
++        }
++
++        Vec3 start = this.getEyePosition(1.0F);
++        Vec3 direction = this.getLookAngle();
++        Vec3 end = start.add(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance);
++
++        List<Entity> entityList = this.level().getEntities(this, getBoundingBox().expandTowards(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance).inflate(1.0), EntitySelector.NO_SPECTATORS.and(Entity::isPickable));
++
++        double distance = 0.0;
++        net.minecraft.world.phys.EntityHitResult result = null;
++
++        for (Entity entity : entityList) {
++            final double inflationAmount = entity.getPickRadius();
++            AABB aabb = entity.getBoundingBox().inflate(inflationAmount, inflationAmount, inflationAmount);
++            Optional<Vec3> rayTraceResult = aabb.clip(start, end);
++
++            if (rayTraceResult.isPresent()) {
++                Vec3 rayTrace = rayTraceResult.get();
++                double distanceTo = start.distanceToSqr(rayTrace);
++                if (distanceTo < distance || distance == 0.0) {
++                    result = new net.minecraft.world.phys.EntityHitResult(entity, rayTrace);
++                    distance = distanceTo;
++                }
++            }
++        }
++
++        return result;
++    }
++    // Paper end
++
+     public boolean isSuppressingSlidingDownLadder() {
+         return this.isShiftKeyDown();
+     }
+@@ -3595,6 +4477,12 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public boolean randomTeleport(final double xx, final double yy, final double zz, final boolean showParticles) {
++        // CraftBukkit start
++        return this.randomTeleport(xx, yy, zz, showParticles, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN).orElse(false);
++    }
++
++    public Optional<Boolean> randomTeleport(final double xx, final double yy, final double zz, final boolean showParticles, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
++        // CraftBukkit end
+         double xo = this.getX();
+         double yo = this.getY();
+         double zo = this.getZ();
+@@ -3617,16 +4505,39 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+             }
+ 
+             if (landed) {
+-                this.teleportTo(xx, y, zz);
++                // CraftBukkit start - Teleport event
++                // first set position, to check if the place to teleport is valid
++                this.setPos(xx, y, zz);
+                 if (level.noCollision(this) && !level.containsAnyLiquid(this.getBoundingBox())) {
+                     ok = true;
+                 }
++                // now revert and call event if the teleport place is valid
++                this.setPos(xo, yo, zo);
++
++                if (ok) {
++                    if (!(this instanceof ServerPlayer)) {
++                        org.bukkit.event.entity.EntityTeleportEvent teleport = new org.bukkit.event.entity.EntityTeleportEvent(this.getBukkitEntity(), new Location(this.level().getWorld(), xo, yo, zo), new Location(this.level().getWorld(), xx, y, zz));
++                        this.level().getCraftServer().getPluginManager().callEvent(teleport);
++                        if (!teleport.isCancelled() && teleport.getTo() != null) { // Paper
++                            Location to = teleport.getTo();
++                            this.teleportTo(to.getX(), to.getY(), to.getZ());
++                        } else {
++                            return Optional.empty();
++                        }
++                    } else {
++                        // player teleport event is called in the underlining code
++                        if (!((ServerPlayer) this).connection.teleport(xx, y, zz, this.getYRot(), this.getXRot(), cause)) {
++                            return Optional.empty();
++                        }
++                    }
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+         if (!ok) {
+-            this.teleportTo(xo, yo, zo);
+-            return false;
++            // this.teleportTo(xo, yo, zo); // CraftBukkit - already set the location back
++            return Optional.of(false); // CraftBukkit
+         } else {
+             if (showParticles) {
+                 level.broadcastEntityEvent(this, EntityEvent.TELEPORT);
+@@ -3636,7 +4547,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+                 pathfinderMob.getNavigation().stop();
+             }
+ 
+-            return true;
++            return Optional.of(true); // CraftBukkit
+         }
+     }
+ 

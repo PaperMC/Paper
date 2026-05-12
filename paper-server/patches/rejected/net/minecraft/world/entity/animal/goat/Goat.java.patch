@@ -1,0 +1,54 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/animal/goat/Goat.java b/net/minecraft/world/entity/animal/goat/Goat.java
+index 72854d67bd96eafaa0530df646aad89e476d37c3..e7beaf8f5a1c6c393e158f15da422217976850f0 100644
+--- a/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -213,8 +213,16 @@ public class Goat extends Animal {
+     public InteractionResult mobInteract(final Player player, final InteractionHand hand) {
+         ItemStack heldItem = player.getItemInHand(hand);
+         if (heldItem.is(Items.BUCKET) && !this.isBaby()) {
++            // CraftBukkit start - Got milk?
++            org.bukkit.event.player.PlayerBucketFillEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketFillEvent(player.level(), player, this.blockPosition(), this.blockPosition(), null, heldItem, Items.MILK_BUCKET, hand);
++
++            if (event.isCancelled()) {
++                player.containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
++                return InteractionResult.PASS;
++            }
++            // CraftBukkit end
+             player.playSound(this.getMilkingSound(), 1.0F, 1.0F);
+-            ItemStack bucketOrMilkBucket = ItemUtils.createFilledResult(heldItem, player, Items.MILK_BUCKET.getDefaultInstance());
++            ItemStack bucketOrMilkBucket = ItemUtils.createFilledResult(heldItem, player, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack())); // CraftBukkit
+             player.setItemInHand(hand, bucketOrMilkBucket);
+             return InteractionResult.SUCCESS;
+         } else {
+@@ -328,8 +336,7 @@ public class Goat extends Animal {
+                 double deltaY = Mth.randomBetween(this.random, 0.3F, 0.7F);
+                 double deltaZ = Mth.randomBetween(this.random, -0.2F, 0.2F);
+                 ItemEntity itemEntity = new ItemEntity(this.level(), bodyPosition.x(), bodyPosition.y(), bodyPosition.z(), item, deltaX, deltaY, deltaZ);
+-                this.level().addFreshEntity(itemEntity);
+-                return true;
++                return this.spawnAtLocation((net.minecraft.server.level.ServerLevel) this.level(), itemEntity) != null; // Paper - Call EntityDropItemEvent
+             }
+         }
+     }
+@@ -352,4 +359,15 @@ public class Goat extends Animal {
+     ) {
+         return level.getBlockState(pos.below()).is(BlockTags.GOATS_SPAWNABLE_ON) && isBrightEnoughToSpawn(level, pos);
+     }
++
++    // Paper start - Goat ram API
++    public void ram(net.minecraft.world.entity.LivingEntity entity) {
++        Brain<Goat> brain = this.getBrain();
++        brain.setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.RAM_TARGET, entity.position());
++        brain.eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.RAM_COOLDOWN_TICKS);
++        brain.eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.BREED_TARGET);
++        brain.eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.TEMPTING_PLAYER);
++        brain.setActiveActivityIfPossible(net.minecraft.world.entity.schedule.Activity.RAM);
++    }
++    // Paper end - Goat ram API
+ }

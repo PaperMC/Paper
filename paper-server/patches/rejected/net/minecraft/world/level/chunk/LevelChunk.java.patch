@@ -1,0 +1,302 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index ecdc3f92084ed8d06bafa63197991c92a9b09235..d747e7058f78ac1fd02f3dc8e06670ed484cd42b 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -88,13 +88,21 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+     };
+     private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel = Maps.newHashMap();
+     public boolean loaded;
+-    public final Level level;
++    public final ServerLevel level; // CraftBukkit - type
+     private @Nullable Supplier<FullChunkStatus> fullStatus;
+     private LevelChunk.@Nullable PostLoadProcessor postLoad;
+     private final Int2ObjectMap<GameEventListenerRegistry> gameEventListenerRegistrySections;
+     private final LevelChunkTicks<Block> blockTicks;
+     private final LevelChunkTicks<Fluid> fluidTicks;
+     private LevelChunk.UnsavedListener unsavedListener = chunkPos -> {};
++    // CraftBukkit start
++    public boolean mustNotSave;
++    public boolean needsDecoration;
++    // CraftBukkit end
++
++    // Paper start
++    boolean loadedTicketLevel;
++    // Paper end
+ 
+     public LevelChunk(final Level level, final ChunkPos pos) {
+         this(level, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, null, null, null);
+@@ -112,7 +120,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+         final @Nullable BlendingData blendingData
+     ) {
+         super(pos, upgradeData, level, level.palettedContainerFactory(), inhabitedTime, sections, blendingData);
+-        this.level = level;
++        this.level = (ServerLevel) level; // CraftBukkit - type
+         this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap<>();
+ 
+         for (Heightmap.Types type : Heightmap.Types.values()) {
+@@ -164,6 +172,10 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+         this.skyLightSources = protoChunk.skyLightSources;
+         this.setLightCorrect(protoChunk.isLightCorrect());
+         this.markUnsaved();
++        this.needsDecoration = true; // CraftBukkit
++        // CraftBukkit start
++        this.persistentDataContainer = protoChunk.persistentDataContainer; // SPIGOT-6814: copy PDC to account for 1.17 to 1.18 chunk upgrading.
++        // CraftBukkit end
+     }
+ 
+     public void setUnsavedListener(final LevelChunk.UnsavedListener unsavedListener) {
+@@ -172,6 +184,12 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+             unsavedListener.setUnsaved(this.chunkPos);
+         }
+     }
++    // Paper start
++    @Override
++    public long getInhabitedTime() {
++        return this.level.paperConfig().chunks.fixedChunkInhabitedTime < 0 ? super.getInhabitedTime() : this.level.paperConfig().chunks.fixedChunkInhabitedTime;
++    }
++    // Paper end
+ 
+     @Override
+     public void markUnsaved() {
+@@ -205,8 +223,28 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+             : super.getListenerRegistry(section);
+     }
+ 
++    // Paper start - Perf: Reduce instructions and provide final method
++    @Override
++    public BlockState getBlockState(final int x, final int y, final int z) {
++        return this.getBlockStateFinal(x, y, z);
++    }
++
++    public BlockState getBlockStateFinal(final int x, final int y, final int z) {
++        // Copied and modified from below
++        final int sectionIndex = this.getSectionIndex(y);
++        if (sectionIndex < 0 || sectionIndex >= this.sections.length
++            || this.sections[sectionIndex].nonEmptyBlockCount == 0) {
++            return Blocks.AIR.defaultBlockState();
++        }
++        return this.sections[sectionIndex].states.get((y & 15) << 8 | (z & 15) << 4 | x & 15);
++    }
++
+     @Override
+     public BlockState getBlockState(final BlockPos pos) {
++        if (true) {
++            return this.getBlockStateFinal(pos.getX(), pos.getY(), pos.getZ());
++        }
++        // Paper end - Perf: Reduce instructions and provide final method
+         int x = pos.getX();
+         int y = pos.getY();
+         int z = pos.getZ();
+@@ -241,28 +279,42 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+         }
+     }
+ 
++    // Paper start - If loaded util
++    @Override
++    public final FluidState getFluidIfLoaded(BlockPos pos) {
++        return this.getFluidState(pos);
++    }
++
++    @Override
++    public final BlockState getBlockStateIfLoaded(BlockPos pos) {
++        return this.getBlockState(pos);
++    }
++    // Paper end
++
+     @Override
+     public FluidState getFluidState(final BlockPos pos) {
+         return this.getFluidState(pos.getX(), pos.getY(), pos.getZ());
+     }
+ 
+     public FluidState getFluidState(final int x, final int y, final int z) {
+-        try {
++        // try { // Paper start - Perf: Optimise Chunk#getFluid
+             int sectionIndex = this.getSectionIndex(y);
+             if (sectionIndex >= 0 && sectionIndex < this.sections.length) {
+                 LevelChunkSection currentSection = this.sections[sectionIndex];
+                 if (!currentSection.hasOnlyAir()) {
+-                    return currentSection.getFluidState(x & 15, y & 15, z & 15);
++                    return currentSection.states.get((y & 15) << 8 | (z & 15) << 4 | x & 15).getFluidState(); // Paper - Perf: Optimise Chunk#getFluid
+                 }
+             }
+ 
+             return Fluids.EMPTY.defaultFluidState();
++        /* // Paper - Perf: Optimise Chunk#getFluid
+         } catch (Throwable var7) {
+             CrashReport report = CrashReport.forThrowable(var7, "Getting fluid state");
+             CrashReportCategory category = report.addCategory("Block being got");
+             category.setDetail("Location", () -> CrashReportCategory.formatLocation(this, x, y, z));
+             throw new ReportedException(report);
+         }
++        */ // Paper - Perf: Optimise Chunk#getFluid
+     }
+ 
+     @Override
+@@ -323,7 +375,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+                 if (!section.getBlockState(localX, localY, localZ).is(newBlock)) {
+                     return null;
+                 } else {
+-                    if (!this.level.isClientSide() && (flags & Block.UPDATE_SKIP_ON_PLACE) == 0) {
++                    if (!this.level.isClientSide() && (flags & Block.UPDATE_SKIP_ON_PLACE) == 0 && (!this.level.captureBlockStates || newBlock instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
+                         state.onPlace(this.level, pos, oldState, movedByPiston);
+                     }
+ 
+@@ -369,7 +421,12 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+     }
+ 
+     public @Nullable BlockEntity getBlockEntity(final BlockPos pos, final LevelChunk.EntityCreationType creationType) {
+-        BlockEntity blockEntity = this.blockEntities.get(pos);
++        // CraftBukkit start
++        BlockEntity blockEntity = this.level.capturedTileEntities.get(pos);
++        if (blockEntity == null) {
++            blockEntity = this.blockEntities.get(pos);
++        }
++        // CraftBukkit end
+         if (blockEntity == null) {
+             CompoundTag tag = this.pendingBlockEntities.remove(pos);
+             if (tag != null) {
+@@ -424,7 +481,13 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+         BlockPos pos = blockEntity.getBlockPos();
+         BlockState blockState = this.getBlockState(pos);
+         if (!blockState.hasBlockEntity()) {
+-            LOGGER.warn("Trying to set block entity {} at position {}, but state {} does not allow it", blockEntity, pos, blockState);
++            // Paper start - ServerExceptionEvent
++            com.destroystokyo.paper.exception.ServerInternalException e = new com.destroystokyo.paper.exception.ServerInternalException(
++                "Trying to set block entity %s at position %s, but state %s does not allow it".formatted(blockEntity, pos, blockState)
++            );
++            e.printStackTrace();
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(e);
++            // Paper end - ServerExceptionEvent
+         } else {
+             BlockState cachedBlockState = blockEntity.getBlockState();
+             if (blockState != cachedBlockState) {
+@@ -471,6 +534,11 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+     public void removeBlockEntity(final BlockPos pos) {
+         if (this.isInLevel()) {
+             BlockEntity removeThis = this.blockEntities.remove(pos);
++            // CraftBukkit start - SPIGOT-5561: Also remove from pending map
++            if (!this.pendingBlockEntities.isEmpty()) {
++                this.pendingBlockEntities.remove(pos);
++            }
++            // CraftBukkit end
+             if (removeThis != null) {
+                 if (this.level instanceof ServerLevel serverLevel) {
+                     this.removeGameEventListener(removeThis, serverLevel);
+@@ -514,6 +582,65 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+         }
+     }
+ 
++    // CraftBukkit start
++    public void loadCallback() {
++        // Paper start
++        this.loadedTicketLevel = true;
++        // Paper end
++        org.bukkit.Server server = this.level.getCraftServer();
++        this.level.getChunkSource().addLoadedChunk(this); // Paper
++        if (server != null) {
++            /*
++             * If it's a new world, the first few chunks are generated inside
++             * the World constructor. We can't reliably alter that, so we have
++             * no way of creating a CraftWorld/CraftServer at that point.
++             */
++            org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
++            server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(bukkitChunk, this.needsDecoration));
++
++            if (this.needsDecoration) {
++                this.needsDecoration = false;
++                java.util.Random random = new java.util.Random();
++                random.setSeed(this.level.getSeed());
++                long xRand = random.nextLong() / 2L * 2L + 1L;
++                long zRand = random.nextLong() / 2L * 2L + 1L;
++                random.setSeed((long)this.chunkPos.x() * xRand + (long)this.chunkPos.z() * zRand ^ this.level.getSeed());
++
++                org.bukkit.World world = this.level.getWorld();
++                if (world != null) {
++                    this.level.populating = true;
++                    try {
++                        for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
++                            populator.populate(world, random, bukkitChunk);
++                        }
++                    } finally {
++                        this.level.populating = false;
++                    }
++                }
++                server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
++            }
++        }
++    }
++
++    public void unloadCallback() {
++        org.bukkit.Server server = this.level.getCraftServer();
++        org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
++        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(bukkitChunk, this.isUnsaved());
++        server.getPluginManager().callEvent(unloadEvent);
++        // note: saving can be prevented, but not forced if no saving is actually required
++        this.mustNotSave = !unloadEvent.isSaveChunk();
++        this.level.getChunkSource().removeLoadedChunk(this); // Paper
++        // Paper start
++        this.loadedTicketLevel = false;
++        // Paper end
++    }
++
++    @Override
++    public boolean isUnsaved() {
++        return super.isUnsaved() && !this.mustNotSave;
++    }
++    // CraftBukkit end
++
+     public boolean isEmpty() {
+         return false;
+     }
+@@ -703,6 +830,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+     }
+ 
+     private <T extends BlockEntity> void updateBlockEntityTicker(final T blockEntity) {
++        if (!this.level.paperConfig().unsupportedSettings.ticking.blockEntities) return; // Paper - option to disable ticking
+         BlockState state = blockEntity.getBlockState();
+         BlockEntityTicker<T> ticker = state.getTicker(this.level, (BlockEntityType<T>)blockEntity.getType());
+         if (ticker == null) {
+@@ -752,23 +880,24 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource {
+                         if (this.blockEntity.getType().isValid(blockState)) {
+                             this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), blockState, this.blockEntity);
+                             this.loggedInvalidBlockState = false;
+-                        } else if (!this.loggedInvalidBlockState) {
+-                            this.loggedInvalidBlockState = true;
+-                            LevelChunk.LOGGER
+-                                .warn(
+-                                    "Block entity {} @ {} state {} invalid for ticking:",
+-                                    LogUtils.defer(this::getType),
+-                                    LogUtils.defer(this::getPos),
+-                                    blockState
+-                                );
++                        // Paper start - Remove the Block Entity if it's invalid
++                        } else {
++                            LevelChunk.this.removeBlockEntity(this.getPos());
++                            if (!this.loggedInvalidBlockState) {
++                                this.loggedInvalidBlockState = true;
++                                LevelChunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", LogUtils.defer(this::getType), LogUtils.defer(this::getPos), blockState);
++                            }
++                            // Paper end - Remove the Block Entity if it's invalid
+                         }
+ 
+                         profiler.pop();
+                     } catch (Throwable var5) {
+-                        CrashReport report = CrashReport.forThrowable(var5, "Ticking block entity");
+-                        CrashReportCategory category = report.addCategory("Block entity being ticked");
+-                        this.blockEntity.fillCrashReportCategory(category);
+-                        throw new ReportedException(report);
++                        // Paper start - Prevent block entity and entity crashes
++                        final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", io.papermc.paper.util.MCUtil.getLevelName(LevelChunk.this.getLevel()), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
++                        net.minecraft.server.MinecraftServer.LOGGER.error(msg, var5);
++                        net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, var5))); // Paper - ServerExceptionEvent
++                        LevelChunk.this.removeBlockEntity(this.getPos());
++                        // Paper end - Prevent block entity and entity crashes
+                     }
+                 }
+             }

@@ -1,0 +1,208 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/projectile/Projectile.java b/net/minecraft/world/entity/projectile/Projectile.java
+index 5657ed613e31dd858142ca592763385c4a389bb5..2ee2103e78f2b73d1e6df59b92037f219d82e191 100644
+--- a/net/minecraft/world/entity/projectile/Projectile.java
++++ b/net/minecraft/world/entity/projectile/Projectile.java
+@@ -44,6 +44,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+     private boolean leftOwnerChecked;
+     public boolean hasBeenShot = false;
+     private @Nullable Entity lastDeflectedBy;
++    protected boolean hitCancelled = false; // CraftBukkit
+ 
+     protected Projectile(final EntityType<? extends Projectile> type, final Level level) {
+         super(type, level);
+@@ -83,6 +84,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+     @Override
+     protected void readAdditionalSaveData(final ValueInput input) {
+         this.setOwner(EntityReference.read(input, "Owner"));
++        if (this instanceof net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl && this.level().paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && this.level().paperConfig().misc.legacyEnderPearlBehavior) { this.owner = null; } // Paper - Reset pearls when they stop being ticked; Don't store shooter name for pearls to block enderpearl travel exploit
+         this.leftOwner = input.getBooleanOr("LeftOwner", false);
+         this.hasBeenShot = input.getBooleanOr("HasBeenShot", false);
+     }
+@@ -155,7 +157,14 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+         float zd = Mth.cos(yRot * Mth.DEG_TO_RAD) * Mth.cos(xRot * Mth.DEG_TO_RAD);
+         this.shoot(xd, yd, zd, pow, uncertainty);
+         Vec3 sourceMovement = source.getKnownMovement();
++        // Paper start - allow disabling relative velocity
++        if (!sourceMovement.isFinite()) {
++            sourceMovement = Vec3.ZERO;
++        }
++        if (!source.level().paperConfig().misc.disableRelativeProjectileVelocity) {
+         this.setDeltaMovement(this.getDeltaMovement().add(sourceMovement.x, source.onGround() ? 0.0 : sourceMovement.y, sourceMovement.z));
++        }
++        // Paper end - allow disabling relative velocity
+     }
+ 
+     @Override
+@@ -181,7 +190,20 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+         final float pow,
+         final float uncertainty
+     ) {
+-        return spawnProjectile(
++        // Paper start - PlayerLaunchProjectileEvent
++        return spawnProjectileFromRotationDelayed(creator, serverLevel, itemStack, source, yOffset, pow, uncertainty).spawn();
++    }
++    public static <T extends Projectile> Delayed<T> spawnProjectileFromRotationDelayed(
++        final Projectile.ProjectileFactory<T> creator,
++        final ServerLevel serverLevel,
++        final ItemStack itemStack,
++        final LivingEntity source,
++        final float yOffset,
++        final float pow,
++        final float uncertainty
++    ) {
++        return spawnProjectileDelayed(
++        // Paper end - PlayerLaunchProjectileEvent
+             creator.create(serverLevel, source, itemStack),
+             serverLevel,
+             itemStack,
+@@ -215,7 +237,22 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+         final float pow,
+         final float uncertainty
+     ) {
+-        return spawnProjectile(projectile, serverLevel, itemStack, i -> projectile.shoot(targetX, targetY, targetZ, pow, uncertainty));
++        // Paper start - fixes and addition to spawn reason API
++        return spawnProjectileUsingShootDelayed(projectile, serverLevel, itemStack, targetX, targetY, targetZ, pow, uncertainty).spawn();
++    }
++
++    public static <T extends Projectile> Delayed<T> spawnProjectileUsingShootDelayed(
++        final T projectile,
++        final ServerLevel serverLevel,
++        final ItemStack itemStack,
++        final double targetX,
++        final double targetY,
++        final double targetZ,
++        final float pow,
++        final float uncertainty
++    ) {
++        return spawnProjectileDelayed(projectile, serverLevel, itemStack, i -> projectile.shoot(targetX, targetY, targetZ, pow, uncertainty));
++        // Paper end - fixes and addition to spawn reason API
+     }
+ 
+     public static <T extends Projectile> T spawnProjectile(final T projectile, final ServerLevel serverLevel, final ItemStack itemStack) {
+@@ -225,12 +262,47 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+     public static <T extends Projectile> T spawnProjectile(
+         final T projectile, final ServerLevel serverLevel, final ItemStack itemStack, final Consumer<T> shootFunction
+     ) {
+-        shootFunction.accept(projectile);
+-        serverLevel.addFreshEntity(projectile);
+-        projectile.applyOnProjectileSpawned(serverLevel, itemStack);
+-        return projectile;
++        // Paper start - delayed projectile spawning
++        return spawnProjectileDelayed(projectile, serverLevel, itemStack, shootFunction).spawn();
++    }
++
++    public static <T extends Projectile> Delayed<T> spawnProjectileDelayed(T projectile, ServerLevel serverLevel, ItemStack itemStack, Consumer<T> adapter) {
++        // Paper end - delayed projectile spawning
++        adapter.accept(projectile);
++        return new Delayed<>(projectile, serverLevel, itemStack); // Paper - delayed projectile spawning
+     }
+ 
++    // Paper start - delayed projectile spawning
++    public record Delayed<T extends Projectile>(
++        T projectile,
++        ServerLevel world,
++        ItemStack projectileStack
++    ) {
++        // Taken from net.minecraft.world.entity.projectile.Projectile.spawnProjectile(T, net.minecraft.server.level.ServerLevel, net.minecraft.world.item.ItemStack, java.util.function.Consumer<T>)
++        public boolean attemptSpawn() {
++            if (!this.world.addFreshEntity(this.projectile)) return false;
++            this.projectile.applyOnProjectileSpawned(this.world, this.projectileStack);
++            return true;
++        }
++
++        public T spawn() {
++            this.attemptSpawn();
++            return this.projectile();
++        }
++
++        public boolean attemptSpawn(final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++            if (!this.world.addFreshEntity(this.projectile, reason)) return false;
++            this.projectile.applyOnProjectileSpawned(this.world, this.projectileStack);
++            return true;
++        }
++
++        public T spawn(final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++            this.attemptSpawn(reason);
++            return this.projectile();
++        }
++    }
++    // Paper end - delayed projectile spawning
++
+     public void applyOnProjectileSpawned(final ServerLevel serverLevel, final ItemStack pickupItemStack) {
+         EnchantmentHelper.onProjectileSpawned(serverLevel, pickupItemStack, this, item -> {});
+         if (this instanceof AbstractArrow arrow) {
+@@ -241,6 +313,17 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+         }
+     }
+ 
++    // CraftBukkit start - call projectile hit event
++    public ProjectileDeflection preHitTargetOrDeflectSelf(HitResult hitResult) {
++        org.bukkit.event.entity.ProjectileHitEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, hitResult);
++        this.hitCancelled = event != null && event.isCancelled();
++        if (hitResult.getType() == HitResult.Type.BLOCK || !this.hitCancelled) {
++            return this.hitTargetOrDeflectSelf(hitResult);
++        }
++        return ProjectileDeflection.NONE;
++    }
++    // CraftBukkit end
++
+     protected ProjectileDeflection hitTargetOrDeflectSelf(final HitResult hitResult) {
+         if (hitResult.getType() == HitResult.Type.ENTITY) {
+             EntityHitResult entityHitResult = (EntityHitResult)hitResult;
+@@ -313,15 +396,35 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+     }
+ 
+     protected void onHitBlock(final BlockHitResult hitResult) {
++        // CraftBukkit start - cancellable hit event
++        if (this.hitCancelled) {
++            return;
++        }
++        // CraftBukkit end
+         BlockState state = this.level().getBlockState(hitResult.getBlockPos());
+         state.onProjectileHit(this.level(), state, hitResult, this);
+     }
+ 
++    // Paper start
++    public boolean canHitEntityPublic(final Entity target) {
++        return this.canHitEntity(target);
++    }
++    // Paper end
++
+     protected boolean canHitEntity(final Entity entity) {
+         if (!entity.canBeHitByProjectile()) {
+             return false;
+         } else {
+             Entity owner = this.getOwner();
++            // Paper start - Cancel hit for vanished entities
++            if (owner instanceof net.minecraft.server.level.ServerPlayer) {
++                org.bukkit.entity.Entity collided = entity.getBukkitEntity();
++                org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) owner.getBukkitEntity();
++                if (!shooter.canSee(collided)) {
++                    return false;
++                }
++            }
++            // Paper end - Cancel hit for vanished entities
+             return owner == null || this.leftOwner || !owner.isPassengerOfSameVehicle(entity);
+         }
+     }
+@@ -334,13 +437,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+     }
+ 
+     protected static float lerpRotation(float rotO, final float rot) {
+-        while (rot - rotO < -180.0F) {
+-            rotO -= 360.0F;
+-        }
+-
+-        while (rot - rotO >= 180.0F) {
+-            rotO += 360.0F;
+-        }
++        rotO += Math.round((rot - rotO) / 360.0F) * 360.0F; // Paper - stop large look changes from crashing the server
+ 
+         return Mth.lerp(0.2F, rotO, rot);
+     }

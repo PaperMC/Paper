@@ -1,0 +1,65 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/storage/PlayerDataStorage.java b/net/minecraft/world/level/storage/PlayerDataStorage.java
+index 4671807c1abad46678beb8870e0645b575d18236..41cbb27861f33ad8d7523f3b2fef9a30a69693a9 100644
+--- a/net/minecraft/world/level/storage/PlayerDataStorage.java
++++ b/net/minecraft/world/level/storage/PlayerDataStorage.java
+@@ -31,6 +31,7 @@ public class PlayerDataStorage {
+     }
+ 
+     public void save(final Player player) {
++        if (org.spigotmc.SpigotConfig.disablePlayerDataSaving) return; // Spigot
+         try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(player.problemPath(), LOGGER)) {
+             TagValueOutput output = TagValueOutput.createWithContext(reporter, player.registryAccess());
+             player.saveWithoutId(output);
+@@ -42,7 +43,7 @@ public class PlayerDataStorage {
+             Path oldFile = playerDirPath.resolve(player.getStringUUID() + ".dat_old");
+             Util.safeReplaceFile(realFile, tmpFile, oldFile);
+         } catch (Exception var11) {
+-            LOGGER.warn("Failed to save player data for {}", player.getPlainTextName());
++            LOGGER.warn("Failed to save player data for {}", player.getPlainTextName(), var11); // Paper - Print exception
+         }
+     }
+ 
+@@ -62,9 +63,25 @@ public class PlayerDataStorage {
+ 
+     private Optional<CompoundTag> load(final NameAndId nameAndId, final String suffix) {
+         File realFile = new File(this.playerDir, nameAndId.id() + suffix);
++        // Spigot start
++        boolean usingWrongFile = false;
++        if (org.bukkit.Bukkit.getOnlineMode() && !realFile.exists()) { // Paper - Check online mode first
++            realFile = new File(this.playerDir, net.minecraft.core.UUIDUtil.createOfflinePlayerUUID(nameAndId.name()) + suffix);
++            if (realFile.exists()) {
++                usingWrongFile = true;
++                LOGGER.warn("Using offline mode UUID file for player {} as it is the only copy we can find.", nameAndId.name());
++            }
++        }
++        // Spigot end
+         if (realFile.exists() && realFile.isFile()) {
+             try {
+-                return Optional.of(NbtIo.readCompressed(realFile.toPath(), NbtAccounter.unlimitedHeap()));
++                // Spigot start
++                Optional<CompoundTag> optional = Optional.of(NbtIo.readCompressed(realFile.toPath(), NbtAccounter.unlimitedHeap()));
++                if (usingWrongFile) {
++                    realFile.renameTo(new File(realFile.getPath() + ".offline-read"));
++                }
++                return optional;
++                // Spigot end
+             } catch (Exception var5) {
+                 LOGGER.warn("Failed to load player data for {}", nameAndId.name());
+             }
+@@ -84,4 +101,10 @@ public class PlayerDataStorage {
+             return DataFixTypes.PLAYER.updateToCurrentVersion(this.fixerUpper, tag, version);
+         });
+     }
++
++    // CraftBukkit start
++    public File getPlayerDir() {
++        return this.playerDir;
++    }
++    // CraftBukkit end
+ }

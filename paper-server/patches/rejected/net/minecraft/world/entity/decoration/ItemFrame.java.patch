@@ -1,0 +1,133 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/decoration/ItemFrame.java b/net/minecraft/world/entity/decoration/ItemFrame.java
+index 9dd28b667ea3405f9fa418afe73a79ec6ac07fd9..898f64de427b84cbf9b0e5198098f8e2e9040928 100644
+--- a/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -54,6 +54,7 @@ public class ItemFrame extends HangingEntity {
+     private static final boolean DEFAULT_FIXED = false;
+     public float dropChance = 1.0F;
+     public boolean fixed = false;
++    public @Nullable MapId cachedMapId; // Paper - Perf: Cache map ids on item frames
+ 
+     public ItemFrame(final EntityType<? extends ItemFrame> type, final Level level) {
+         super(type, level);
+@@ -111,6 +112,11 @@ public class ItemFrame extends HangingEntity {
+     }
+ 
+     private AABB createBoundingBox(final BlockPos blockPos, final Direction direction, final boolean hasFramedMap) {
++        // Paper start - add static method
++        return createBoundingBoxStatic(blockPos, direction, hasFramedMap);
++    }
++    public static AABB createBoundingBoxStatic(BlockPos blockPos, Direction direction, boolean hasFramedMap) {
++        // Paper end - add static method
+         float shiftToBlockWall = 0.46875F;
+         Vec3 position = Vec3.atCenterOf(blockPos).relative(direction, -0.46875);
+         float width = hasFramedMap ? 1.0F : 0.75F;
+@@ -142,9 +148,9 @@ public class ItemFrame extends HangingEntity {
+     }
+ 
+     @Override
+-    public void push(final double xa, final double ya, final double za) {
++    public void push(final double xa, final double ya, final double za, @Nullable Entity pushingEntity) { // Paper - add push source entity param
+         if (!this.fixed) {
+-            super.push(xa, ya, za);
++            super.push(xa, ya, za, pushingEntity); // Paper - add push source entity param
+         }
+     }
+ 
+@@ -173,6 +179,18 @@ public class ItemFrame extends HangingEntity {
+             if (this.isInvulnerableToBase(source)) {
+                 return false;
+             } else if (this.shouldDamageDropItem(source)) {
++                // CraftBukkit start - fire EntityDamageEvent
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, damage, false) || this.isRemoved()) {
++                    return true;
++                }
++                // CraftBukkit end
++                // Paper start - Add PlayerItemFrameChangeEvent
++                if (source.getEntity() instanceof Player player) {
++                    var event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE);
++                    if (!event.callEvent()) return true; // return true here because you aren't cancelling the damage, just the change
++                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false);
++                }
++                // Paper end - Add PlayerItemFrameChangeEvent
+                 this.dropItem(level, source.getEntity(), false);
+                 this.gameEvent(GameEvent.BLOCK_CHANGE, source.getEntity());
+                 this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
+@@ -256,6 +274,13 @@ public class ItemFrame extends HangingEntity {
+         return this.getEntityData().get(DATA_ITEM);
+     }
+ 
++    // Paper start - Fix MC-123848 (spawn item frame drops above block)
++    @Override
++    public net.minecraft.world.entity.item.@Nullable ItemEntity spawnAtLocation(ServerLevel serverLevel, ItemStack stack) {
++        return this.spawnAtLocation(serverLevel, stack, this.getDirection() == Direction.DOWN ? -0.6F : 0.0F);
++    }
++    // Paper end
++
+     public @Nullable MapId getFramedMapId(final ItemStack itemStack) {
+         return itemStack.get(DataComponents.MAP_ID);
+     }
+@@ -269,13 +294,19 @@ public class ItemFrame extends HangingEntity {
+     }
+ 
+     public void setItem(ItemStack itemStack, final boolean updateNeighbours) {
++        // CraftBukkit start
++        this.setItem(itemStack, updateNeighbours, true);
++    }
++
++    public void setItem(ItemStack itemStack, final boolean updateNeighbours, boolean playSound) {
++        // CraftBukkit end
+         if (!itemStack.isEmpty()) {
+             itemStack = itemStack.copyWithCount(1);
+         }
+ 
+         this.onItemChanged(itemStack);
+         this.getEntityData().set(DATA_ITEM, itemStack);
+-        if (!itemStack.isEmpty()) {
++        if (!itemStack.isEmpty() && updateNeighbours && playSound) { // CraftBukkit // Paper - only play sound when update flag is set
+             this.playSound(this.getAddItemSound(), 1.0F, 1.0F);
+         }
+ 
+@@ -302,6 +333,7 @@ public class ItemFrame extends HangingEntity {
+     }
+ 
+     private void onItemChanged(final ItemStack item) {
++        this.cachedMapId = item.getComponents().get(net.minecraft.core.component.DataComponents.MAP_ID); // Paper - Perf: Cache map ids on item frames
+         this.recalculateBoundingBox();
+     }
+ 
+@@ -366,7 +398,13 @@ public class ItemFrame extends HangingEntity {
+                     if (data != null && data.isTrackedCountOverLimit(256)) {
+                         return InteractionResult.FAIL;
+                     } else {
+-                        this.setItem(itemStack);
++                        // Paper start - Add PlayerItemFrameChangeEvent
++                        io.papermc.paper.event.player.PlayerItemFrameChangeEvent event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), itemStack.asBukkitCopy(), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
++                        if (!event.callEvent()) {
++                            return InteractionResult.FAIL;
++                        }
++                        this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()));
++                        // Paper end - Add PlayerItemFrameChangeEvent
+                         this.gameEvent(GameEvent.BLOCK_CHANGE, player);
+                         itemStack.consume(1, player);
+                         return InteractionResult.SUCCESS;
+@@ -375,6 +413,13 @@ public class ItemFrame extends HangingEntity {
+                     return InteractionResult.PASS;
+                 }
+             } else {
++                // Paper start - Add PlayerItemFrameChangeEvent
++                io.papermc.paper.event.player.PlayerItemFrameChangeEvent event = new io.papermc.paper.event.player.PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), this.getItem().asBukkitCopy(), io.papermc.paper.event.player.PlayerItemFrameChangeEvent.ItemFrameChangeAction.ROTATE);
++                if (!event.callEvent()) {
++                    return InteractionResult.FAIL;
++                }
++                setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false, false);
++                // Paper end - Add PlayerItemFrameChangeEvent
+                 this.playSound(this.getRotateItemSound(), 1.0F, 1.0F);
+                 this.setRotation(this.getRotation() + 1);
+                 this.gameEvent(GameEvent.BLOCK_CHANGE, player);

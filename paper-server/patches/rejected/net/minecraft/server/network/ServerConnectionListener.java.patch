@@ -1,0 +1,145 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
+index dc817359a74b1c98e4fcc57aa7285e999520b175..4b3490181278e0b652077d8a523138ce26423873 100644
+--- a/net/minecraft/server/network/ServerConnectionListener.java
++++ b/net/minecraft/server/network/ServerConnectionListener.java
+@@ -50,9 +50,31 @@ public class ServerConnectionListener {
+         this.running = true;
+     }
+ 
++    // Paper start - prevent blocking on adding a new connection while the server is ticking
++    private final java.util.Queue<Connection> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
++
++    private final void addPending() {
++        Connection connection;
++        while ((connection = this.pending.poll()) != null) {
++            this.connections.add(connection);
++        }
++    }
++    // Paper end - prevent blocking on adding a new connection while the server is ticking
++
+     public void startTcpServerListener(final @Nullable InetAddress address, final int port) throws IOException {
++        // Paper start - Unix domain socket support
++        this.startTcpServerListener(new java.net.InetSocketAddress(address, port));
++    }
++
++    public void startTcpServerListener(SocketAddress address) throws IOException {
++        // Paper end - Unix domain socket support
+         synchronized (this.channels) {
+-            EventLoopGroupHolder eventLoopGroupHolder = EventLoopGroupHolder.remote(this.server.useNativeTransport());
++            EventLoopGroupHolder eventLoopGroupHolder = EventLoopGroupHolder.remote(address, this.server.useNativeTransport()); // Paper - Unix domain socket support
++            // Paper start - Warn people with console access that HAProxy is in use.
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
++                LOGGER.warn("Using HAProxy, please ensure the server port is adequately firewalled.");
++            }
++            // Paper end - Warn people with console access that HAProxy is in use.
+             this.channels
+                 .add(
+                     new ServerBootstrap()
+@@ -80,22 +102,64 @@ public class ServerConnectionListener {
+                                     Connection connection = (Connection)(rateLimitPacketsPerSecond > 0
+                                         ? new RateKickingConnection(rateLimitPacketsPerSecond)
+                                         : new Connection(PacketFlow.SERVERBOUND));
+-                                    ServerConnectionListener.this.connections.add(connection);
++                                    // Paper start - Add support for Proxy Protocol
++                                    if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
++                                        channel.pipeline().addAfter(HandlerNames.TIMEOUT, "haproxy-decoder", new io.netty.handler.codec.haproxy.HAProxyMessageDecoder());
++                                        channel.pipeline().addAfter("haproxy-decoder", "haproxy-handler", new ChannelInboundHandlerAdapter() {
++                                            @Override
++                                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
++                                                if (msg instanceof io.netty.handler.codec.haproxy.HAProxyMessage message) {
++                                                    if (message.command() == io.netty.handler.codec.haproxy.HAProxyCommand.PROXY) {
++                                                        String realAddress = message.sourceAddress();
++                                                        int realPort = message.sourcePort();
++
++                                                        SocketAddress socketAddr = new java.net.InetSocketAddress(realAddress, realPort);
++
++                                                        Connection connection = (Connection) channel.pipeline().get(HandlerNames.PACKET_HANDLER);
++                                                        connection.address = socketAddr;
++                                                        // Paper start - Add API to get player's proxy address
++                                                        final String proxyAddress = message.destinationAddress();
++                                                        final int proxyPort = message.destinationPort();
++
++                                                        connection.haProxyAddress = new java.net.InetSocketAddress(proxyAddress, proxyPort);
++                                                        // Paper end - Add API to get player's proxy address
++                                                    }
++                                                } else {
++                                                    super.channelRead(ctx, msg);
++                                                }
++                                            }
++                                        });
++                                    }
++                                    // Paper end - Add support for proxy protocol
++                                    // ServerConnectionListener.this.connections.add(connection); // Paper - prevent blocking on adding a new connection while the server is ticking
++                                    ServerConnectionListener.this.pending.add(connection); // Paper - prevent blocking on adding a new connection while the server is ticking
+                                     connection.configurePacketHandler(pipeline);
+                                     connection.setListenerForServerboundHandshake(
+                                         new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, connection)
+                                     );
++                                    io.papermc.paper.network.ChannelInitializeListenerHolder.callListeners(channel); // Paper - Add Channel initialization listeners
+                                 }
+                             }
+                         )
+                         .group(eventLoopGroupHolder.eventLoopGroup())
+-                        .localAddress(address, port)
++                        .localAddress(address) // Paper - Unix domain socket support
++                        .option(ChannelOption.AUTO_READ, false) // CraftBukkit
+                         .bind()
+                         .syncUninterruptibly()
+                 );
+         }
+     }
+ 
++    // CraftBukkit start
++    public void acceptConnections() {
++        synchronized (this.channels) {
++            for (ChannelFuture future : this.channels) {
++                future.channel().config().setAutoRead(true);
++            }
++        }
++    }
++    // CraftBukkit end
++
+     public SocketAddress startMemoryChannel() {
+         ChannelFuture newChannel;
+         synchronized (this.channels) {
+@@ -151,12 +215,26 @@ public class ServerConnectionListener {
+ 
+     public void tick() {
+         synchronized (this.connections) {
++            // Spigot start
++            this.addPending(); // Paper - prevent blocking on adding a new connection while the server is ticking
++            // This prevents players from 'gaming' the server, and strategically relogging to increase their position in the tick order
++            if (org.spigotmc.SpigotConfig.playerShuffle > 0 && MinecraftServer.currentTick % org.spigotmc.SpigotConfig.playerShuffle == 0) {
++                Collections.shuffle(this.connections);
++            }
++            // Spigot end
+             Iterator<Connection> iterator = this.connections.iterator();
+ 
+             while (iterator.hasNext()) {
+                 Connection connection = iterator.next();
+                 if (!connection.isConnecting()) {
+                     if (connection.isConnected()) {
++                        // Paper start - Force kill connection ticking
++                        // also call this multiple times, doesnt matter
++                        // See MC-307764
++                        if (connection.handleConnectionDisconnectOnNextTick) {
++                            continue;
++                        }
++                        // Paper end - Force kill connection ticking
+                         try {
+                             connection.tick();
+                         } catch (Exception var7) {
+@@ -170,6 +248,7 @@ public class ServerConnectionListener {
+                             connection.setReadOnly();
+                         }
+                     } else {
++                        if (connection.preparing) continue; // Spigot - Fix a race condition where a Connection could be unregistered just before connection
+                         iterator.remove();
+                         connection.handleDisconnection();
+                     }

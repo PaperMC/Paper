@@ -1,0 +1,573 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 0d3e379011b40b1dd611aff90cb51f72beae5267..838bad640b7f8e42fc8972918cfc7c1d9807e2b3 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -89,8 +89,19 @@ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.scores.Scoreboard;
+ import org.apache.commons.lang3.mutable.MutableBoolean;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.jspecify.annotations.Nullable;
+ 
++// CraftBukkit start
++import java.util.Map;
++import net.minecraft.server.level.ServerLevel;
++import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.craftbukkit.block.CraftBlockState;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.entity.SpawnCategory;
++// CraftBukkit end
++
+ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
+     public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"));
+@@ -132,6 +143,55 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     private final PalettedContainerFactory palettedContainerFactory;
+     private long subTickCount;
+ 
++    // CraftBukkit start
++    private final CraftWorld world;
++    public org.bukkit.generator.@Nullable ChunkGenerator generator;
++
++    public boolean captureBlockStates = false;
++    public boolean captureTreeGeneration = false;
++    public Map<BlockPos, org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates = new java.util.LinkedHashMap<>(); // Paper
++    public Map<BlockPos, BlockEntity> capturedTileEntities = new java.util.LinkedHashMap<>(); // Paper - Retain block place order when capturing blockstates
++    @Nullable
++    public List<net.minecraft.world.entity.item.ItemEntity> captureDrops;
++    public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
++    public boolean populating;
++    public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
++    // Paper start - add paper world config
++    private final io.papermc.paper.configuration.WorldConfiguration paperConfig;
++    public io.papermc.paper.configuration.WorldConfiguration paperConfig() {
++        return this.paperConfig;
++    }
++    // Paper end - add paper world config
++
++    public static @Nullable BlockPos lastPhysicsProblem; // Spigot
++    public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new java.util.HashMap<>(); // Paper - Optimize explosions
++    public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
++
++    public CraftWorld getWorld() {
++        return this.world;
++    }
++
++    public CraftServer getCraftServer() {
++        return (CraftServer) org.bukkit.Bukkit.getServer();
++    }
++    // Paper start - Use getChunkIfLoadedImmediately
++    @Override
++    public boolean hasChunk(int chunkX, int chunkZ) {
++        return this.getChunkIfLoaded(chunkX, chunkZ) != null;
++    }
++    // Paper end - Use getChunkIfLoadedImmediately
++    // Paper start - per world ticks per spawn
++    private int getTicksPerSpawn(SpawnCategory spawnCategory) {
++        final int perWorld = this.paperConfig().entities.spawning.ticksPerSpawn.getInt(org.bukkit.craftbukkit.util.CraftSpawnCategory.toNMS(spawnCategory));
++        if (perWorld >= 0) {
++            return perWorld;
++        }
++        return this.getCraftServer().getTicksPerSpawns(spawnCategory);
++    }
++    // Paper end
++
++    public abstract ResourceKey<net.minecraft.world.level.dimension.LevelStem> getTypeKey();
++
+     protected Level(
+         final WritableLevelData levelData,
+         final ResourceKey<Level> dimension,
+@@ -141,7 +201,25 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         final boolean isDebug,
+         final long biomeZoomSeed,
+         final int maxChainedNeighborUpdates
++        , String bukkitName, // Paper
++        org.bukkit.generator.@Nullable ChunkGenerator generator, // Paper
++        org.bukkit.generator.@Nullable BiomeProvider biomeProvider, // Paper
++        org.bukkit.World.Environment environment, // Paper
++        java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
++        io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator // Paper - create paper world config
+     ) {
++        final org.bukkit.NamespacedKey worldKey = CraftNamespacedKey.fromMinecraft(dimension.identifier()); // Paper
++        this.spigotConfig = new org.spigotmc.SpigotWorldConfig(bukkitName, worldKey); // Spigot
++        this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
++        this.generator = generator;
++        this.world = new CraftWorld((ServerLevel) this, worldKey, biomeProvider, environment);
++
++        for (SpawnCategory spawnCategory : SpawnCategory.values()) {
++            if (org.bukkit.craftbukkit.util.CraftSpawnCategory.isValidForLimits(spawnCategory)) {
++                this.ticksPerSpawnCategory.put(spawnCategory, this.getTicksPerSpawn(spawnCategory));
++            }
++        }
++        // CraftBukkit end
+         this.levelData = levelData;
+         this.dimensionTypeRegistration = dimensionTypeRegistration;
+         this.dimension = dimension;
+@@ -155,6 +233,46 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         this.damageSources = new DamageSources(registryAccess);
+     }
+ 
++    // Paper start - Cancel hit for vanished players
++    // ret true if no collision
++    public final boolean checkEntityCollision(BlockState state, Entity source, net.minecraft.world.phys.shapes.CollisionContext collisionContext,
++                                              BlockPos position, boolean checkCanSee) {
++        // Copied from CollisionGetter#isUnobstructed(BlockState, BlockPos, CollisionContext) & EntityGetter#isUnobstructed(Entity, VoxelShape)
++        net.minecraft.world.phys.shapes.VoxelShape collisionShape = state.getCollisionShape(this, position, collisionContext);
++        if (collisionShape.isEmpty()) {
++            return true;
++        }
++
++        collisionShape = collisionShape.move((double) position.getX(), (double) position.getY(), (double) position.getZ());
++        if (collisionShape.isEmpty()) {
++            return true;
++        }
++
++        List<Entity> entities = this.getEntities(null, collisionShape.bounds());
++        for (int i = 0, len = entities.size(); i < len; ++i) {
++            Entity entity = entities.get(i);
++
++            if (checkCanSee && source instanceof net.minecraft.server.level.ServerPlayer && entity instanceof net.minecraft.server.level.ServerPlayer
++                && !((net.minecraft.server.level.ServerPlayer) source).getBukkitEntity().canSee(((net.minecraft.server.level.ServerPlayer) entity).getBukkitEntity())) {
++                continue;
++            }
++
++            // !entity1.isRemoved() && entity1.blocksBuilding && (entity == null || !entity1.isPassengerOfSameVehicle(entity))
++            // elide the last check since vanilla calls with entity = null
++            // only we care about the source for the canSee check
++            if (entity.isRemoved() || !entity.blocksBuilding) {
++                continue;
++            }
++
++            if (net.minecraft.world.phys.shapes.Shapes.joinIsNotEmpty(collisionShape, net.minecraft.world.phys.shapes.Shapes.create(entity.getBoundingBox()), net.minecraft.world.phys.shapes.BooleanOp.AND)) {
++                return false;
++            }
++        }
++
++        return true;
++    }
++    // Paper end - Cancel hit for vanished players
++
+     @Override
+     public boolean isClientSide() {
+         return this.isClientSide;
+@@ -165,8 +283,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         return null;
+     }
+ 
++    // Paper start
++    public net.minecraft.world.phys.BlockHitResult.Type clipDirect(Vec3 start, Vec3 end, net.minecraft.world.phys.shapes.CollisionContext context) {
++        // To be patched over
++        return this.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, context)).getType();
++    }
++    // Paper end
++
+     public boolean isInWorldBounds(final BlockPos pos) {
+-        return this.isInsideBuildHeight(pos) && isInWorldBoundsHorizontal(pos);
++        return pos.isInsideBuildHeightAndWorldBoundsHorizontal(this); // Paper - Perf: Optimize isInWorldBounds
+     }
+ 
+     public boolean isInValidBounds(final BlockPos pos) {
+@@ -178,7 +303,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     }
+ 
+     private static boolean isInWorldBoundsHorizontal(final BlockPos pos) {
+-        return pos.getX() >= -30000000 && pos.getZ() >= -30000000 && pos.getX() < 30000000 && pos.getZ() < 30000000;
++        return pos.getX() >= -30000000 && pos.getZ() >= -30000000 && pos.getX() < 30000000 && pos.getZ() < 30000000; // Paper - Diff on change warnUnsafeChunk() and isInsideBuildHeightAndWorldBoundsHorizontal
+     }
+ 
+     private static boolean isInValidBoundsHorizontal(final BlockPos pos) {
+@@ -191,14 +316,79 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         return y < -20000000 || y >= 20000000;
+     }
+ 
+-    public LevelChunk getChunkAt(final BlockPos pos) {
++    public final LevelChunk getChunkAt(final BlockPos pos) { // Paper - help inline
+         return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
+     }
+ 
+     @Override
+-    public LevelChunk getChunk(final int chunkX, final int chunkZ) {
+-        return (LevelChunk)this.getChunk(chunkX, chunkZ, ChunkStatus.FULL);
++    public final LevelChunk getChunk(final int chunkX, final int chunkZ) { // Paper - final to help inline
++        // Paper start - Perf: make sure loaded chunks get the inlined variant of this function
++        net.minecraft.server.level.ServerChunkCache cps = ((ServerLevel)this).getChunkSource();
++        LevelChunk ifLoaded = cps.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
++        if (ifLoaded != null) {
++            return ifLoaded;
++        }
++        return (LevelChunk) cps.getChunk(chunkX, chunkZ, ChunkStatus.FULL, true); // Paper - avoid a method jump
++        // Paper end - Perf: make sure loaded chunks get the inlined variant of this function
++    }
++
++    // Paper start - if loaded
++    @Nullable
++    @Override
++    public final ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
++        return ((ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
++    }
++
++    @Override
++    @Nullable
++    public final BlockState getBlockStateIfLoaded(BlockPos pos) {
++        // CraftBukkit start - tree generation
++        if (this.captureTreeGeneration) {
++            CraftBlockState previous = this.capturedBlockStates.get(pos);
++            if (previous != null) {
++                return previous.getHandle();
++            }
++        }
++        // CraftBukkit end
++        if (this.isOutsideBuildHeight(pos)) {
++            return Blocks.VOID_AIR.defaultBlockState();
++        } else {
++            ChunkAccess chunk = this.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4);
++
++            return chunk == null ? null : chunk.getBlockState(pos);
++        }
++    }
++
++    @Override
++    @Nullable
++    public final FluidState getFluidIfLoaded(BlockPos pos) {
++        ChunkAccess chunk = this.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4);
++
++        return chunk == null ? null : chunk.getFluidState(pos);
++    }
++
++    @Override
++    public final boolean hasChunkAt(BlockPos pos) {
++        return this.getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4) != null; // Paper - Perf: Optimize LevelReader.hasChunkAt(BlockPos)Z
++    }
++
++    public final boolean isLoadedAndInBounds(BlockPos pos) { // Paper - final for inline
++        return this.getWorldBorder().isWithinBounds(pos) && this.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4) != null;
++    }
++
++    public @Nullable LevelChunk getChunkIfLoaded(int x, int z) { // Overridden in ServerLevel for ABI compat which has final
++        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(x, z);
++    }
++
++    public final @Nullable LevelChunk getChunkIfLoaded(BlockPos pos) {
++        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4);
++    }
++
++    //  reduces need to do isLoaded before getType
++    public final @Nullable BlockState getBlockStateIfLoadedAndInBounds(BlockPos pos) {
++        return this.getWorldBorder().isWithinBounds(pos) ? this.getBlockStateIfLoaded(pos) : null;
+     }
++    // Paper end
+ 
+     @Override
+     public @Nullable ChunkAccess getChunk(final int chunkX, final int chunkZ, final ChunkStatus status, final boolean loadOrGenerate) {
+@@ -217,6 +407,22 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+     @Override
+     public boolean setBlock(final BlockPos pos, final BlockState blockState, @Block.UpdateFlags final int updateFlags, final int updateLimit) {
++        // CraftBukkit start - tree generation
++        if (this.captureTreeGeneration) {
++            // Paper start - Protect Bedrock and End Portal/Frames from being destroyed
++            BlockState type = getBlockState(pos);
++            if (!type.isDestroyable()) return false;
++            // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
++            CraftBlockState blockstate = this.capturedBlockStates.get(pos);
++            if (blockstate == null) {
++                blockstate = org.bukkit.craftbukkit.block.CapturedBlockState.getTreeBlockState(this, pos, updateFlags);
++                this.capturedBlockStates.put(pos.immutable(), blockstate);
++            }
++            blockstate.setBlock(blockState);
++            blockstate.setFlags(updateFlags);
++            return true;
++        }
++        // CraftBukkit end
+         if (!this.isInValidBounds(pos)) {
+             return false;
+         } else if (!this.isClientSide() && this.isDebug()) {
+@@ -224,11 +430,31 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         } else {
+             LevelChunk chunk = this.getChunkAt(pos);
+             Block block = blockState.getBlock();
++            // CraftBukkit start - capture blockstates
++            boolean captured = false;
++            if (this.captureBlockStates) {
++                final CraftBlockState snapshot;
++                if (!this.capturedBlockStates.containsKey(pos)) {
++                    snapshot = (CraftBlockState) org.bukkit.craftbukkit.block.CraftBlock.at(this, pos).getState(); // Paper - use CB getState to get a suitable snapshot
++                    this.capturedBlockStates.put(pos.immutable(), snapshot);
++                    captured = true;
++                } else {
++                    snapshot = this.capturedBlockStates.get(pos);
++                }
++                snapshot.setFlags(updateFlags); // Paper - always set the flag of the most recent call to mitigate issues with multiple update at the same pos with different flags
++            }
++            // CraftBukkit end - capture blockstates
+             BlockState oldState = chunk.setBlockState(pos, blockState, updateFlags);
+             if (oldState == null) {
++                // CraftBukkit start - remove blockstate if failed (or the same)
++                if (this.captureBlockStates && captured) {
++                    this.capturedBlockStates.remove(pos);
++                }
++                // CraftBukkit end
+                 return false;
+             } else {
+                 BlockState newState = this.getBlockState(pos);
++                /* // CraftBukkit
+                 if (newState == blockState) {
+                     if (oldState != newState) {
+                         this.setBlocksDirty(pos, oldState, newState);
+@@ -256,12 +482,69 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+                     this.updatePOIOnBlockStateChange(pos, oldState, newState);
+                 }
++                */ // CraftBukkit
++
++                // CraftBukkit start
++                if (!this.captureBlockStates) { // Don't notify clients or update physics while capturing blockstates
++                    // Modularize client and physic updates
++                    // Spigot start
++                    try {
++                        this.notifyAndUpdatePhysics(pos, chunk, oldState, blockState, newState, updateFlags, updateLimit);
++                    } catch (StackOverflowError ex) {
++                        Level.lastPhysicsProblem = pos.immutable();
++                    }
++                    // Spigot end
++                }
++                // CraftBukkit end
+ 
+                 return true;
+             }
+         }
+     }
+ 
++    // CraftBukkit start - Split off from above in order to directly send client and physic updates
++    public void notifyAndUpdatePhysics(BlockPos pos, LevelChunk chunkAt, BlockState oldState, BlockState newState, BlockState currentState, @Block.UpdateFlags int flags, int recursionLeft) {
++        BlockState state = newState;
++        BlockState blockState = oldState;
++        BlockState blockState1 = currentState;
++        if (blockState1 == state) {
++            if (blockState != blockState1) {
++                this.setBlocksDirty(pos, blockState, blockState1);
++            }
++
++            if ((flags & Block.UPDATE_CLIENTS) != 0 && (!this.isClientSide() || (flags & Block.UPDATE_INVISIBLE) == 0) && (this.isClientSide() || chunkAt == null || (chunkAt.getFullStatus() != null && chunkAt.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
++                this.sendBlockUpdated(pos, blockState, state, flags);
++            }
++
++            if ((flags & Block.UPDATE_NEIGHBORS) != 0) {
++                this.updateNeighborsAt(pos, blockState.getBlock());
++                if (!this.isClientSide() && state.hasAnalogOutputSignal()) {
++                    this.updateNeighbourForOutputSignal(pos, newState.getBlock());
++                }
++            }
++
++            if ((flags & Block.UPDATE_KNOWN_SHAPE) == 0 && recursionLeft > 0) {
++                int i = flags & ~(Block.UPDATE_SUPPRESS_DROPS | Block.UPDATE_NEIGHBORS);
++
++                // CraftBukkit start
++                blockState.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1); // Don't call an event for the old block to limit event spam
++                boolean cancelledUpdates = false; // Paper - Fix block place logic
++                if (((ServerLevel)this).hasPhysicsEvent) { // Paper - BlockPhysicsEvent
++                    org.bukkit.event.block.BlockPhysicsEvent event = new org.bukkit.event.block.BlockPhysicsEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), state.asBlockData());
++                    cancelledUpdates = !event.callEvent(); // Paper - Fix block place logic
++                }
++                // CraftBukkit end
++                if (!cancelledUpdates) { // Paper - Fix block place logic
++                    state.updateNeighbourShapes(this, pos, i, recursionLeft - 1);
++                    state.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1);
++                } // Paper - Fix block place logic
++            }
++
++            this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
++        }
++    }
++    // CraftBukkit end
++
+     public void updatePOIOnBlockStateChange(final BlockPos pos, final BlockState oldState, final BlockState newState) {
+     }
+ 
+@@ -272,19 +555,37 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     }
+ 
+     @Override
+-    public boolean destroyBlock(final BlockPos pos, final boolean dropResources, final @Nullable Entity breaker, final int updateLimit) {
++    public boolean destroyBlock(final BlockPos pos, boolean dropResources, final @Nullable Entity breaker, final int updateLimit) { // Paper - make dropResources non-final
+         BlockState blockState = this.getBlockState(pos);
+         if (blockState.isAir()) {
+             return false;
+         } else {
+             FluidState fluidState = this.getFluidState(pos);
+-            if (!(blockState.getBlock() instanceof BaseFireBlock)) {
+-                this.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(blockState));
++            // Paper start - BlockDestroyEvent; while the above removeBlock method looks very similar
++            // they are NOT used with same intent and the above should not fire this event. The above method is more of a BlockSetToAirEvent,
++            // it doesn't imply destruction of a block that plays a sound effect / drops an item.
++            boolean playEffect = true;
++            BlockState effectType = blockState;
++            int xp = blockState.getBlock().getExpDrop(blockState, (ServerLevel) this, pos, ItemStack.EMPTY, true);
++            if (com.destroystokyo.paper.event.block.BlockDestroyEvent.getHandlerList().getRegisteredListeners().length > 0) {
++                com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), fluidState.createLegacyBlock().asBlockData(), effectType.asBlockData(), xp, dropResources);
++                if (!event.callEvent()) {
++                    return false;
++                }
++                effectType = ((CraftBlockData) event.getEffectBlock()).getState();
++                playEffect = event.playEffect();
++                dropResources = event.willDrop();
++                xp = event.getExpToDrop();
++            }
++            // Paper end - BlockDestroyEvent
++            if (playEffect && !(blockState.getBlock() instanceof BaseFireBlock)) { // Paper - BlockDestroyEvent
++                this.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(effectType)); // Paper - BlockDestroyEvent
+             }
+ 
+             if (dropResources) {
+                 BlockEntity blockEntity = blockState.hasBlockEntity() ? this.getBlockEntity(pos) : null;
+-                Block.dropResources(blockState, this, pos, blockEntity, breaker, ItemStack.EMPTY);
++                Block.dropResources(blockState, this, pos, blockEntity, breaker, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
++                blockState.getBlock().popExperience((ServerLevel) this, pos, xp, breaker); // Paper - Properly handle xp dropping; custom amount
+             }
+ 
+             boolean destroyed = this.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL, updateLimit);
+@@ -359,10 +660,18 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+     @Override
+     public BlockState getBlockState(final BlockPos pos) {
++        // CraftBukkit start - tree generation
++        if (this.captureTreeGeneration) {
++            CraftBlockState previous = this.capturedBlockStates.get(pos); // Paper
++            if (previous != null) {
++                return previous.getHandle();
++            }
++        }
++        // CraftBukkit end
+         if (!this.isInValidBounds(pos)) {
+             return Blocks.VOID_AIR.defaultBlockState();
+         } else {
+-            LevelChunk chunk = this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
++            ChunkAccess chunk = this.getChunk(pos.getX() >> 4, pos.getZ() >> 4, ChunkStatus.FULL, true); // Paper - manually inline to reduce hops and avoid unnecessary null check to reduce total byte code size, this should never return null and if it does we will see it the next line but the real stack trace will matter in the chunk engine
+             return chunk.getBlockState(pos);
+         }
+     }
+@@ -523,6 +832,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     }
+ 
+     public void addBlockEntityTicker(final TickingBlockEntity ticker) {
++        if (!this.paperConfig().unsupportedSettings.ticking.blockEntities) return; // Paper - option to disable ticking
+         (this.tickingBlockEntities ? this.pendingBlockEntityTickers : this.blockEntityTickers).add(ticker);
+     }
+ 
+@@ -533,18 +843,23 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             this.pendingBlockEntityTickers.clear();
+         }
+ 
+-        Iterator<TickingBlockEntity> iterator = this.blockEntityTickers.iterator();
++        // Paper - Fix MC-117075 use removeAll - remove iterator in favour of indexed for loop, ensuring compile error if something uses iter incorrectly
+         boolean tickBlockEntities = this.tickRateManager().runsNormally();
+ 
+-        while (iterator.hasNext()) {
+-            TickingBlockEntity ticker = iterator.next();
++        // Paper start - Fix MC-117075 use removeAll
++        final it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<@Nullable TickingBlockEntity> toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>();
++        toRemove.add(null);
++        for (int tickerIndex = 0; tickerIndex < this.blockEntityTickers.size(); tickerIndex++) {
++            final TickingBlockEntity ticker = this.blockEntityTickers.get(tickerIndex);
++        // Paper end - Fix MC-117075 use removeAll
+             if (ticker.isRemoved()) {
+-                iterator.remove();
++                toRemove.add(ticker); // Paper - Fix MC-117075 use removeAll
+             } else if (tickBlockEntities && this.shouldTickBlocksAt(ticker.getPos())) {
+                 ticker.tick();
+             }
+         }
+ 
++        this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075 use removeAll
+         this.tickingBlockEntities = false;
+     }
+ 
+@@ -552,13 +867,24 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         try {
+             tick.accept(entity);
+         } catch (Throwable var6) {
+-            CrashReport report = CrashReport.forThrowable(var6, "Ticking entity");
+-            CrashReportCategory category = report.addCategory("Entity being ticked");
+-            entity.fillCrashReportCategory(category);
+-            throw new ReportedException(report);
++            // Paper start - Prevent block entity and entity crashes
++            final String msg = String.format("Entity threw exception at %s:%s,%s,%s", io.papermc.paper.util.MCUtil.getLevelName(entity.level()), entity.getX(), entity.getY(), entity.getZ());
++            MinecraftServer.LOGGER.error(msg, var6);
++            getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, var6))); // Paper - ServerExceptionEvent
++            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
++            // Paper end - Prevent block entity and entity crashes
+         }
+     }
+ 
++    // Paper start - Option to prevent armor stands from doing entity lookups
++    @Override
++    public boolean noCollision(@Nullable Entity entity, AABB box) {
++        if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups)
++            return false;
++        return LevelAccessor.super.noCollision(entity, box);
++    }
++    // Paper end - Option to prevent armor stands from doing entity lookups
++
+     public boolean shouldTickDeath(final Entity entity) {
+         return true;
+     }
+@@ -691,6 +1017,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+     @Override
+     public @Nullable BlockEntity getBlockEntity(final BlockPos pos) {
++        // Paper start - Perf: Optimize capturedTileEntities lookup
++        net.minecraft.world.level.block.entity.BlockEntity blockEntity;
++        if (!this.capturedTileEntities.isEmpty() && (blockEntity = this.capturedTileEntities.get(pos)) != null) {
++            return blockEntity;
++        }
++        // Paper end - Perf: Optimize capturedTileEntities lookup
+         if (!this.isInValidBounds(pos)) {
+             return null;
+         } else {
+@@ -703,6 +1035,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public void setBlockEntity(final BlockEntity blockEntity) {
+         BlockPos pos = blockEntity.getBlockPos();
+         if (this.isInValidBounds(pos)) {
++            // CraftBukkit start
++            if (this.captureBlockStates) {
++                this.capturedTileEntities.put(pos.immutable(), blockEntity);
++                return;
++            }
++            // CraftBukkit end
+             this.getChunkAt(pos).addAndRegisterBlockEntity(blockEntity);
+         }
+     }
+@@ -1110,7 +1448,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         BLOCK("block"),
+         MOB("mob"),
+         TNT("tnt"),
+-        TRIGGER("trigger");
++        TRIGGER("trigger"),
++        STANDARD("standard"); // CraftBukkit - Add STANDARD which will always use Explosion.Effect.DESTROY
+ 
+         public static final Codec<Level.ExplosionInteraction> CODEC = StringRepresentable.fromEnum(Level.ExplosionInteraction::values);
+         private final String id;
+@@ -1124,4 +1463,16 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             return this.id;
+         }
+     }
++
++    // Paper start - allow patching this logic
++    public final int getEntityCount() {
++        int ret = 0;
++        for (net.minecraft.world.entity.Entity entity : this.getEntities().getAll()) {
++            if (entity.getBukkitEntity().isValid()) {
++                ++ret;
++            }
++        }
++        return ret;
++    }
++    // Paper end - allow patching this logic
+ }

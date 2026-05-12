@@ -1,0 +1,119 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/inventory/CartographyTableMenu.java b/net/minecraft/world/inventory/CartographyTableMenu.java
+index 2ddf938949078e99e671c1196bbf552c5a7d25c0..b6b30a7067485bc28cf804f76deb39e5b43c8a8b 100644
+--- a/net/minecraft/world/inventory/CartographyTableMenu.java
++++ b/net/minecraft/world/inventory/CartographyTableMenu.java
+@@ -16,6 +16,21 @@ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+ 
+ public class CartographyTableMenu extends AbstractContainerMenu {
++    // CraftBukkit start
++    private org.bukkit.craftbukkit.inventory.@org.jspecify.annotations.Nullable CraftInventoryView view = null;
++    private final org.bukkit.entity.Player player;
++
++    @Override
++    public org.bukkit.craftbukkit.inventory.CraftInventoryView getBukkitView() {
++        if (this.view != null) {
++            return this.view;
++        }
++
++        org.bukkit.craftbukkit.inventory.CraftInventoryCartography inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryCartography(this.container, this.resultContainer);
++        this.view = new org.bukkit.craftbukkit.inventory.CraftInventoryView<>(this.player, inventory, this);
++        return this.view;
++    }
++    // CraftBukkit end
+     public static final int MAP_SLOT = 0;
+     public static final int ADDITIONAL_SLOT = 1;
+     public static final int RESULT_SLOT = 2;
+@@ -25,28 +40,8 @@ public class CartographyTableMenu extends AbstractContainerMenu {
+     private static final int USE_ROW_SLOT_END = 39;
+     private final ContainerLevelAccess access;
+     private long lastSoundTime;
+-    public final Container container = new SimpleContainer(2) {
+-        {
+-            Objects.requireNonNull(CartographyTableMenu.this);
+-        }
+-
+-        @Override
+-        public void setChanged() {
+-            CartographyTableMenu.this.slotsChanged(this);
+-            super.setChanged();
+-        }
+-    };
+-    private final ResultContainer resultContainer = new ResultContainer() {
+-        {
+-            Objects.requireNonNull(CartographyTableMenu.this);
+-        }
+-
+-        @Override
+-        public void setChanged() {
+-            CartographyTableMenu.this.slotsChanged(this);
+-            super.setChanged();
+-        }
+-    };
++    public final Container container; // Paper - Add missing InventoryHolders - move down
++    private final ResultContainer resultContainer; // Paper - Add missing InventoryHolders - move down
+ 
+     public CartographyTableMenu(final int containerId, final Inventory inventory) {
+         this(containerId, inventory, ContainerLevelAccess.NULL);
+@@ -54,6 +49,34 @@ public class CartographyTableMenu extends AbstractContainerMenu {
+ 
+     public CartographyTableMenu(final int containerId, final Inventory inventory, final ContainerLevelAccess access) {
+         super(MenuType.CARTOGRAPHY_TABLE, containerId);
++        // Paper start - Add missing InventoryHolders - move down
++        this.container = new SimpleContainer(this.createBlockHolder(access), 2) {
++            @Override
++            public void setChanged() {
++                CartographyTableMenu.this.slotsChanged(this);
++                super.setChanged();
++            }
++            // CraftBukkit start
++            @Override
++            public org.bukkit.Location getLocation() {
++                return access.getLocation();
++            }
++            // CraftBukkit end
++        };
++        this.resultContainer = new ResultContainer(this.createBlockHolder(access)) {
++            @Override
++            public void setChanged() {
++                // CartographyTableMenu.this.slotsChanged(this); // Paper - Add CartographyItemEvent - do not recompute results if the result slot changes - allows to set the result slot via api
++                super.setChanged();
++            }
++            // CraftBukkit start
++            @Override
++            public org.bukkit.Location getLocation() {
++                return access.getLocation();
++            }
++            // CraftBukkit end
++        };
++        // Paper end - Add missing InventoryHolders - move down
+         this.access = access;
+         this.addSlot(new Slot(this.container, 0, 15, 15) {
+             {
+@@ -101,10 +124,12 @@ public class CartographyTableMenu extends AbstractContainerMenu {
+             }
+         });
+         this.addStandardInventorySlots(inventory, 8, 84);
++        this.player = (org.bukkit.entity.Player) inventory.player.getBukkitEntity(); // CraftBukkit
+     }
+ 
+     @Override
+     public boolean stillValid(final Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return stillValid(this.access, player, Blocks.CARTOGRAPHY_TABLE);
+     }
+ 
+@@ -120,6 +145,7 @@ public class CartographyTableMenu extends AbstractContainerMenu {
+         } else {
+             this.resultContainer.removeItemNoUpdate(2);
+         }
++        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, RESULT_SLOT); // Paper - Add PrepareResultEvent
+     }
+ 
+     private void setupResultSlot(final ItemStack mapStack, final ItemStack additionalStack, final ItemStack resultStack) {

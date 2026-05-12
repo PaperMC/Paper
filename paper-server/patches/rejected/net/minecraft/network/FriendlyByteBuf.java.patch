@@ -1,0 +1,55 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/network/FriendlyByteBuf.java b/net/minecraft/network/FriendlyByteBuf.java
+index 8048aaf25ef496470ba948787ae65d3251ebac9a..351e3b891121c42ceb10e2171e2565877aee519b 100644
+--- a/net/minecraft/network/FriendlyByteBuf.java
++++ b/net/minecraft/network/FriendlyByteBuf.java
+@@ -70,14 +70,20 @@ import org.jspecify.annotations.Nullable;
+ 
+ public class FriendlyByteBuf extends ByteBuf {
+     private final ByteBuf source;
++    public final java.util.@Nullable Locale adventure$locale; // Paper - track player's locale for server-side translations
+     public static final short MAX_STRING_LENGTH = 32767;
+     public static final int MAX_COMPONENT_STRING_LENGTH = 262144;
+     private static final int PUBLIC_KEY_SIZE = 256;
+     private static final int MAX_PUBLIC_KEY_HEADER_SIZE = 256;
+     private static final int MAX_PUBLIC_KEY_LENGTH = 512;
+     private static final Gson GSON = new Gson();
++    // Paper start - Track codec depth
++    public boolean trackCodecDepth;
++    public byte codecDepth;
++    // Paper end - Track codec depth
+ 
+     public FriendlyByteBuf(final ByteBuf source) {
++        this.adventure$locale = PacketEncoder.ADVENTURE_LOCALE.get(); // Paper - track player's locale for server-side translations
+         this.source = source;
+     }
+ 
+@@ -106,8 +112,13 @@ public class FriendlyByteBuf extends ByteBuf {
+     }
+ 
+     public <T> void writeJsonWithCodec(final Codec<T> codec, final T value) {
++        // Paper start - Adventure; add max length parameter
++        this.writeJsonWithCodec(codec, value, MAX_STRING_LENGTH);
++    }
++    public <T> void writeJsonWithCodec(Codec<T> codec, T value, int maxLength) {
++        // Paper end - Adventure; add max length parameter
+         DataResult<JsonElement> result = codec.encodeStart(JsonOps.INSTANCE, value);
+-        this.writeUtf(GSON.toJson(result.getOrThrow(error -> new EncoderException("Failed to encode: " + error + " " + value))));
++        this.writeUtf(GSON.toJson(result.getOrThrow(error -> new EncoderException("Failed to encode: " + error + " " + value))), maxLength); // Paper - Adventure; add max length parameter
+     }
+ 
+     public static <T> IntFunction<T> limitValue(final IntFunction<T> original, final int limit) {
+@@ -530,7 +541,7 @@ public class FriendlyByteBuf extends ByteBuf {
+ 
+         try {
+             NbtIo.writeAnyTag(tag, new ByteBufOutputStream(output));
+-        } catch (IOException var3) {
++        } catch (Exception var3) { // CraftBukkit - IOException -> Exception
+             throw new EncoderException(var3);
+         }
+     }

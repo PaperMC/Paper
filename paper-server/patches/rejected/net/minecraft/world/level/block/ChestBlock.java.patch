@@ -1,0 +1,69 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/ChestBlock.java b/net/minecraft/world/level/block/ChestBlock.java
+index 676b3f41a136e036dcaea719bd72a8f4da4b381c..d3f0680d59ec87990b54dc3dbce27706bfadf5f1 100644
+--- a/net/minecraft/world/level/block/ChestBlock.java
++++ b/net/minecraft/world/level/block/ChestBlock.java
+@@ -97,7 +97,7 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+         @Override
+         public Optional<MenuProvider> acceptDouble(final ChestBlockEntity first, final ChestBlockEntity second) {
+             final Container container = new CompoundContainer(first, second);
+-            return Optional.of(new MenuProvider() {
++            return Optional.of(org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest.Provider.wrap(new MenuProvider() { // CraftBukkit - wrap for identification
+                 {
+                     Objects.requireNonNull(container);
+                 }
+@@ -122,10 +122,10 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+                     if (first.hasCustomName()) {
+                         return first.getDisplayName();
+                     } else {
+-                        return (Component)(second.hasCustomName() ? second.getDisplayName() : Component.translatable("container.chestDouble"));
++                        return (Component)(second.hasCustomName() ? second.getDisplayName() : Component.translatable("container.chestDouble")); // Paper - diff on change - CraftDoubleChestInventoryViewBuilder.defaultTitle
+                     }
+                 }
+-            });
++            }, (CompoundContainer) container)); // CraftBukkit - wrap for identification
+         }
+ 
+         @Override
+@@ -268,8 +268,7 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+     ) {
+         if (level instanceof ServerLevel serverLevel) {
+             MenuProvider menuProvider = this.getMenuProvider(state, level, pos);
+-            if (menuProvider != null) {
+-                player.openMenu(menuProvider);
++            if (menuProvider != null && player.openMenu(menuProvider).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+                 player.awardStat(this.getOpenChestStat());
+                 PiglinAi.angerNearbyPiglins(serverLevel, player, true);
+             }
+@@ -310,7 +309,13 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+ 
+     @Override
+     public @Nullable MenuProvider getMenuProvider(final BlockState state, final Level level, final BlockPos pos) {
+-        return this.combine(state, level, pos, false).apply(MENU_PROVIDER_COMBINER).orElse(null);
++    // CraftBukkit start
++        return this.getMenuProvider(state, level, pos, false);
++    }
++
++    public @Nullable MenuProvider getMenuProvider(final BlockState state, final Level level, final BlockPos pos, final boolean ignoreObstructions) {
++        return this.combine(state, level, pos, ignoreObstructions).apply(MENU_PROVIDER_COMBINER).orElse(null);
++    // CraftBukkit end
+     }
+ 
+     public static DoubleBlockCombiner.Combiner<ChestBlockEntity, Float2FloatFunction> opennessCombiner(final LidBlockEntity entity) {
+@@ -352,6 +357,11 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+     }
+ 
+     private static boolean isCatSittingOnChest(final LevelAccessor level, final BlockPos pos) {
++        // Paper start - Option to disable chest cat detection
++        if (level.getMinecraftWorld().paperConfig().entities.behavior.disableChestCatDetection) {
++            return false;
++        }
++        // Paper end - Option to disable chest cat detection
+         List<Cat> cats = level.getEntitiesOfClass(Cat.class, new AABB(pos.getX(), pos.getY() + 1, pos.getZ(), pos.getX() + 1, pos.getY() + 2, pos.getZ() + 1));
+         if (!cats.isEmpty()) {
+             for (Cat cat : cats) {

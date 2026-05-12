@@ -1,0 +1,97 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/core/component/DataComponentPatch.java b/net/minecraft/core/component/DataComponentPatch.java
+index 703570fe930bef64ebdf2c6798565b00c0e6267d..1df1ffe9b19a82d199314935dad82896526417bc 100644
+--- a/net/minecraft/core/component/DataComponentPatch.java
++++ b/net/minecraft/core/component/DataComponentPatch.java
+@@ -106,6 +106,11 @@ public final class DataComponentPatch {
+                     output.writeVarInt(0);
+                     output.writeVarInt(0);
+                 } else {
++                    // Paper start - data sanitization for items
++                    final io.papermc.paper.util.sanitizer.ItemObfuscationSession itemObfuscationSession = patch.map.isEmpty()
++                        ? null // Avoid thread local lookup of current session if it won't be needed anyway.
++                        : io.papermc.paper.util.sanitizer.ItemObfuscationSession.currentSession();
++                    // Paper end - data sanitization for items
+                     int positiveCount = 0;
+                     int negativeCount = 0;
+ 
+@@ -113,7 +118,7 @@ public final class DataComponentPatch {
+                         patch.map
+                     )) {
+                         if (entry.getValue().isPresent()) {
+-                            positiveCount++;
++                            if (!io.papermc.paper.util.sanitizer.ItemComponentSanitizer.shouldDrop(itemObfuscationSession, entry.getKey())) positiveCount++; // Paper - data sanitization for items
+                         } else {
+                             negativeCount++;
+                         }
+@@ -126,6 +131,7 @@ public final class DataComponentPatch {
+                         patch.map
+                     )) {
+                         Optional<?> value = entryx.getValue();
++                        value = io.papermc.paper.util.sanitizer.ItemComponentSanitizer.override(itemObfuscationSession, entryx.getKey(), entryx.getValue()); // Paper - data sanitization for items
+                         if (value.isPresent()) {
+                             DataComponentType<?> type = entryx.getKey();
+                             DataComponentType.STREAM_CODEC.encode(output, type);
+@@ -145,7 +151,13 @@ public final class DataComponentPatch {
+             }
+ 
+             private <T> void encodeComponent(final RegistryFriendlyByteBuf output, final DataComponentType<T> type, final Object value) {
+-                codecGetter.apply(type).encode(output, (T)value);
++                // Paper start - codec errors of random anonymous classes are useless
++                try {
++                    codecGetter.apply(type).encode(output, (T)value);
++                } catch (final Exception e) {
++                    throw new RuntimeException("Error encoding component " + type, e);
++                }
++                // Paper end - codec errors of random anonymous classes are useless
+             }
+         };
+     }
+@@ -256,6 +268,42 @@ public final class DataComponentPatch {
+         private Builder() {
+         }
+ 
++        // CraftBukkit start
++        public void copy(DataComponentPatch orig) {
++            this.map.putAll(orig.map);
++        }
++
++        public void clear(DataComponentType<?> type) {
++            this.map.remove(type);
++        }
++
++        public boolean isSet(DataComponentType<?> type) {
++            return this.map.containsKey(type);
++        }
++
++        public boolean isEmpty() {
++            return this.map.isEmpty();
++        }
++
++        @Override
++        public boolean equals(Object object) {
++            if (this == object) {
++                return true;
++            }
++
++            if (object instanceof DataComponentPatch.Builder patch) {
++                return this.map.equals(patch.map);
++            }
++
++            return false;
++        }
++
++        @Override
++        public int hashCode() {
++            return this.map.hashCode();
++        }
++        // CraftBukkit end
++
+         public <T> DataComponentPatch.Builder set(final DataComponentType<T> type, final T value) {
+             this.map.put(type, Optional.of(value));
+             return this;

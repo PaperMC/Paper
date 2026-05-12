@@ -1,0 +1,50 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/resources/Identifier.java b/net/minecraft/resources/Identifier.java
+index 36d1be7a09ff65ecca69240c5b819292d2e070ed..98ea140232e191f7c0fee8da77d02e957865de2a 100644
+--- a/net/minecraft/resources/Identifier.java
++++ b/net/minecraft/resources/Identifier.java
+@@ -22,6 +22,7 @@ public final class Identifier implements Comparable<Identifier> {
+     public static final String DEFAULT_NAMESPACE = "minecraft";
+     public static final String REALMS_NAMESPACE = "realms";
+     public static final String ALLOWED_NAMESPACE_CHARACTERS = "[a-z0-9_.-]";
++    public static final String PAPER_NAMESPACE = "paper"; // Paper
+     private final String namespace;
+     private final String path;
+ 
+@@ -30,6 +31,13 @@ public final class Identifier implements Comparable<Identifier> {
+ 
+         assert isValidPath(path);
+ 
++        // Paper start - Validate Identifier
++        // Check for the max network string length (capped at Short.MAX_VALUE) as well as the max bytes of a StringTag (length written as an unsigned short)
++        final int length = namespace.length() + path.length() + 1;
++        if (length > Short.MAX_VALUE || io.netty.buffer.ByteBufUtil.utf8MaxBytes(length) > 2 * Short.MAX_VALUE + 1) {
++            throw new IdentifierException("Identifier too long: " + length);
++        }
++        // Paper end - Validate Identifier
+         this.namespace = namespace;
+         this.path = path;
+     }
+@@ -242,7 +250,7 @@ public final class Identifier implements Comparable<Identifier> {
+ 
+     private static String assertValidNamespace(final String namespace, final String path) {
+         if (!isValidNamespace(namespace)) {
+-            throw new IdentifierException("Non [a-z0-9_.-] character in namespace of identifier: " + namespace + ":" + path);
++            throw new IdentifierException("Non [a-z0-9_.-] character in namespace of identifier: " + org.apache.commons.lang3.StringUtils.normalizeSpace(namespace) + ":" + org.apache.commons.lang3.StringUtils.normalizeSpace(path)); // Paper - Sanitize Identifier error logging
+         } else {
+             return namespace;
+         }
+@@ -258,7 +266,7 @@ public final class Identifier implements Comparable<Identifier> {
+ 
+     private static String assertValidPath(final String namespace, final String path) {
+         if (!isValidPath(path)) {
+-            throw new IdentifierException("Non [a-z0-9/._-] character in path of location: " + namespace + ":" + path);
++            throw new IdentifierException("Non [a-z0-9/._-] character in path of location: " + namespace + ":" + org.apache.commons.lang3.StringUtils.normalizeSpace(path)); // Paper - Sanitize Identifier error logging
+         } else {
+             return path;
+         }

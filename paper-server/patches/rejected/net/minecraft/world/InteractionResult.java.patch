@@ -1,0 +1,48 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/InteractionResult.java b/net/minecraft/world/InteractionResult.java
+index 0b28d3cf89a1d354715dd5be9e4edd7c1f54321c..0e1476109ad6c096aad11c896f77da88ac514378 100644
+--- a/net/minecraft/world/InteractionResult.java
++++ b/net/minecraft/world/InteractionResult.java
+@@ -30,18 +30,34 @@ public sealed interface InteractionResult
+     public record Pass() implements InteractionResult {
+     }
+ 
+-    public record Success(InteractionResult.SwingSource swingSource, InteractionResult.ItemContext itemContext) implements InteractionResult {
++    // Paper start - track more context in interaction result
++    public record PaperSuccessContext(net.minecraft.core.@Nullable BlockPos placedPos) {
++        static PaperSuccessContext DEFAULT = new PaperSuccessContext(null);
++
++        public PaperSuccessContext placedBlockAt(final net.minecraft.core.BlockPos pos) {
++            return new PaperSuccessContext(pos);
++        }
++    }
++    public record Success(InteractionResult.SwingSource swingSource, InteractionResult.ItemContext itemContext, PaperSuccessContext paperSuccessContext) implements InteractionResult {
++        public InteractionResult.Success configurePaper(final java.util.function.UnaryOperator<PaperSuccessContext> edit) {
++            return new InteractionResult.Success(this.swingSource, this.itemContext, edit.apply(this.paperSuccessContext));
++        }
++
++        public Success(final InteractionResult.SwingSource swingSource, final InteractionResult.ItemContext itemContext) {
++            this(swingSource, itemContext, PaperSuccessContext.DEFAULT);
++        }
++    // Paper end - track more context in interaction result
+         @Override
+         public boolean consumesAction() {
+             return true;
+         }
+ 
+         public InteractionResult.Success heldItemTransformedTo(final ItemStack itemStack) {
+-            return new InteractionResult.Success(this.swingSource, new InteractionResult.ItemContext(true, itemStack));
++            return new InteractionResult.Success(this.swingSource, new InteractionResult.ItemContext(true, itemStack), this.paperSuccessContext); // Paper - track more context in interaction result
+         }
+ 
+         public InteractionResult.Success withoutItem() {
+-            return new InteractionResult.Success(this.swingSource, InteractionResult.ItemContext.NONE);
++            return new InteractionResult.Success(this.swingSource, InteractionResult.ItemContext.NONE, this.paperSuccessContext); // Paper - track more context in interaction result
+         }
+ 
+         public boolean wasItemInteraction() {

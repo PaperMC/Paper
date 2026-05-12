@@ -1,0 +1,81 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/vehicle/minecart/NewMinecartBehavior.java b/net/minecraft/world/entity/vehicle/minecart/NewMinecartBehavior.java
+index f131e4d63ea59bac6953849f85fcc289fc25f91f..caaac6757512cc187b03562b601ab90b6504b1b9 100644
+--- a/net/minecraft/world/entity/vehicle/minecart/NewMinecartBehavior.java
++++ b/net/minecraft/world/entity/vehicle/minecart/NewMinecartBehavior.java
+@@ -482,6 +482,12 @@ public class NewMinecartBehavior extends MinecartBehavior {
+ 
+     @Override
+     public double getMaxSpeed(final ServerLevel level) {
++        // CraftBukkit start
++        Double maxSpeed = this.minecart.maxSpeed;
++        if (maxSpeed != null) {
++            return this.minecart.isInWater() ? maxSpeed / 2.0 : maxSpeed;
++        }
++        // CraftBukkit end
+         return level.getGameRules().get(GameRules.MAX_MINECART_SPEED).intValue() * (this.minecart.isInWater() ? 0.5 : 1.0) / 20.0;
+     }
+ 
+@@ -497,7 +503,8 @@ public class NewMinecartBehavior extends MinecartBehavior {
+ 
+     @Override
+     public double getSlowdownFactor() {
+-        return this.minecart.isVehicle() ? 0.997 : 0.975;
++        if (this.minecart.frictionState == net.kyori.adventure.util.TriState.FALSE) return 1; // Paper
++        return this.minecart.isVehicle() || !this.minecart.slowWhenEmpty ? 0.997 : 0.975; // CraftBukkit - add !this.slowWhenEmpty
+     }
+ 
+     @Override
+@@ -521,6 +528,13 @@ public class NewMinecartBehavior extends MinecartBehavior {
+                         && !(entity instanceof AbstractMinecart)
+                         && !this.minecart.isVehicle()
+                         && !entity.isPassenger()) {
++                        // CraftBukkit start
++                        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                            (org.bukkit.entity.Vehicle) this.minecart.getBukkitEntity(),
++                            entity.getBukkitEntity()
++                        );
++                        if (!collisionEvent.callEvent()) continue;
++                        // CraftBukkit end
+                         boolean pickedUp = entity.startRiding(this.minecart);
+                         if (pickedUp) {
+                             return true;
+@@ -544,6 +558,17 @@ public class NewMinecartBehavior extends MinecartBehavior {
+                         || entity instanceof AbstractMinecart
+                         || this.minecart.isVehicle()
+                         || entity.isPassenger()) {
++                        // CraftBukkit start
++                        if (!this.minecart.isPassengerOfSameVehicle(entity)) {
++                            org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                                (org.bukkit.entity.Vehicle) this.minecart.getBukkitEntity(),
++                                entity.getBukkitEntity()
++                            );
++                            if (!collisionEvent.callEvent()) {
++                                continue;
++                            }
++                        }
++                        // CraftBukkit end
+                         entity.push(this.minecart);
+                         pushed = true;
+                     }
+@@ -552,6 +577,15 @@ public class NewMinecartBehavior extends MinecartBehavior {
+         } else {
+             for (Entity entityx : this.level().getEntities(this.minecart, hitbox)) {
+                 if (!this.minecart.hasPassenger(entityx) && entityx.isPushable() && entityx instanceof AbstractMinecart) {
++                    // CraftBukkit start
++                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                        (org.bukkit.entity.Vehicle) this.minecart.getBukkitEntity(),
++                        entityx.getBukkitEntity()
++                    );
++                    if (!collisionEvent.callEvent()) {
++                        continue;
++                    }
++                    // CraftBukkit end
+                     entityx.push(this.minecart);
+                     pushed = true;
+                 }

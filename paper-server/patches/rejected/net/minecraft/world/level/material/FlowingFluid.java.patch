@@ -1,0 +1,147 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/material/FlowingFluid.java b/net/minecraft/world/level/material/FlowingFluid.java
+index 91b0379efd3e56d0ee36decd0edc2ac257cdc199..27aa4e640ee29d96a854846bb906c30ebf4854f6 100644
+--- a/net/minecraft/world/level/material/FlowingFluid.java
++++ b/net/minecraft/world/level/material/FlowingFluid.java
+@@ -121,6 +121,15 @@ public abstract class FlowingFluid extends Fluid {
+                 Fluid newBelowFluidType = newBelowFluid.getType();
+                 if (belowFluid.canBeReplacedWith(level, belowPos, newBelowFluidType, Direction.DOWN)
+                     && canHoldSpecificFluid(level, belowPos, belowState, newBelowFluidType)) {
++                    // CraftBukkit start
++                    org.bukkit.block.Block source = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
++                    org.bukkit.event.block.BlockFromToEvent event = new org.bukkit.event.block.BlockFromToEvent(source, org.bukkit.block.BlockFace.DOWN);
++                    level.getCraftServer().getPluginManager().callEvent(event);
++
++                    if (event.isCancelled()) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     this.spreadTo(level, belowPos, belowState, Direction.DOWN, newBelowFluid);
+                     if (this.sourceNeighborCount(level, pos) >= 3) {
+                         this.spreadToSides(level, pos, fluidState, state);
+@@ -149,7 +158,18 @@ public abstract class FlowingFluid extends Fluid {
+                 Direction spread = entry.getKey();
+                 FluidState newNeighborFluid = entry.getValue();
+                 BlockPos neighborPos = pos.relative(spread);
+-                this.spreadTo(level, neighborPos, level.getBlockState(neighborPos), spread, newNeighborFluid);
++                final BlockState neighborState = level.getBlockStateIfLoaded(neighborPos); // Paper - Prevent chunk loading from fluid flowing
++                if (neighborState == null) continue; // Paper - Prevent chunk loading from fluid flowing
++                // CraftBukkit start
++                org.bukkit.block.Block source = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
++                org.bukkit.event.block.BlockFromToEvent event = new org.bukkit.event.block.BlockFromToEvent(source, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(spread));
++                level.getCraftServer().getPluginManager().callEvent(event);
++
++                if (event.isCancelled()) {
++                    continue;
++                }
++                // CraftBukkit end
++                this.spreadTo(level, neighborPos, neighborState, spread, newNeighborFluid); // Paper - Prevent chunk loading from fluid flowing
+             }
+         }
+     }
+@@ -161,7 +181,8 @@ public abstract class FlowingFluid extends Fluid {
+ 
+         for (Direction direction : Direction.Plane.HORIZONTAL) {
+             BlockPos relativePos = mutablePos.setWithOffset(pos, direction);
+-            BlockState blockState = level.getBlockState(relativePos);
++            BlockState blockState = level.getBlockStateIfLoaded(relativePos); // Paper - Prevent chunk loading from fluid flowing
++            if (blockState == null) continue; // Paper - Prevent chunk loading from fluid flowing
+             FluidState fluidState = blockState.getFluidState();
+             if (fluidState.getType().isSame(this) && canPassThroughWall(direction, level, pos, state, relativePos, blockState)) {
+                 if (fluidState.isSource()) {
+@@ -264,13 +285,15 @@ public abstract class FlowingFluid extends Fluid {
+             container.placeLiquid(level, pos, state, target);
+         } else {
+             if (!state.isAir()) {
+-                this.beforeDestroyingBlock(level, pos, state);
++                this.beforeDestroyingBlock(level, pos, state, pos.relative(direction.getOpposite())); // Paper - Add BlockBreakBlockEvent
+             }
+ 
+             level.setBlock(pos, target.createLegacyBlock(), Block.UPDATE_ALL);
+         }
+     }
+ 
++    protected void beforeDestroyingBlock(LevelAccessor level, BlockPos pos, BlockState state, BlockPos source) { beforeDestroyingBlock(level, pos, state); } // Paper - Add BlockBreakBlockEvent
++
+     protected abstract void beforeDestroyingBlock(LevelAccessor level, BlockPos pos, BlockState state);
+ 
+     protected int getSlopeDistance(
+@@ -281,7 +304,8 @@ public abstract class FlowingFluid extends Fluid {
+         for (Direction direction : Direction.Plane.HORIZONTAL) {
+             if (direction != from) {
+                 BlockPos testPos = pos.relative(direction);
+-                BlockState testState = context.getBlockState(testPos);
++                BlockState testState = context.getBlockStateIfLoaded(testPos); // Paper - Prevent chunk loading from fluid flowing
++                if (testState == null) continue; // Paper - Prevent chunk loading from fluid flowing
+                 FluidState testFluidState = testState.getFluidState();
+                 if (this.canPassThrough(level, this.getFlowing(), pos, state, direction, testPos, testState, testFluidState)) {
+                     if (context.isHole(testPos)) {
+@@ -363,7 +387,8 @@ public abstract class FlowingFluid extends Fluid {
+ 
+         for (Direction direction : Direction.Plane.HORIZONTAL) {
+             BlockPos testPos = pos.relative(direction);
+-            BlockState testState = level.getBlockState(testPos);
++            BlockState testState = level.getBlockStateIfLoaded(testPos); // Paper - Prevent chunk loading from fluid flowing
++            if (testState == null) continue; // Paper - Prevent chunk loading from fluid flowing
+             FluidState testFluidState = testState.getFluidState();
+             if (this.canMaybePassThrough(level, pos, state, direction, testPos, testState, testFluidState)) {
+                 FluidState newFluid = this.getNewLiquid(level, testPos, testState);
+@@ -434,10 +459,24 @@ public abstract class FlowingFluid extends Fluid {
+             if (newFluidState.isEmpty()) {
+                 fluidState = newFluidState;
+                 blockState = Blocks.AIR.defaultBlockState();
++                // CraftBukkit start
++                org.bukkit.event.block.FluidLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFluidLevelChangeEvent(level, pos, blockState);
++                if (event.isCancelled()) {
++                    return;
++                }
++                blockState = ((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getNewData()).getState();
++                // CraftBukkit end
+                 level.setBlock(pos, blockState, Block.UPDATE_ALL);
+             } else if (newFluidState != fluidState) {
+                 fluidState = newFluidState;
+                 blockState = newFluidState.createLegacyBlock();
++                // CraftBukkit start
++                org.bukkit.event.block.FluidLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFluidLevelChangeEvent(level, pos, blockState);
++                if (event.isCancelled()) {
++                    return;
++                }
++                blockState = ((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getNewData()).getState();
++                // CraftBukkit end
+                 level.setBlock(pos, blockState, Block.UPDATE_ALL);
+                 level.scheduleTick(pos, newFluidState.getType(), tickDelay);
+             }
+@@ -510,8 +549,27 @@ public abstract class FlowingFluid extends Fluid {
+             return this.getBlockState(pos, this.getCacheKey(pos));
+         }
+ 
++        // Paper start - Prevent chunk loading from fluid flowing
++        public @org.jspecify.annotations.Nullable BlockState getBlockStateIfLoaded(BlockPos pos) {
++            return this.getBlockState(pos, this.getCacheKey(pos), false);
++        }
++        // Paper end - Prevent chunk loading from fluid flowing
++
+         private BlockState getBlockState(final BlockPos pos, final short key) {
+-            return this.stateCache.computeIfAbsent(key, k -> this.level.getBlockState(pos));
++            // Paper start - Prevent chunk loading from fluid flowing
++            return this.getBlockState(pos, key, true);
++        }
++
++        private @org.jspecify.annotations.Nullable BlockState getBlockState(final BlockPos pos, final short key, final boolean load) {
++            BlockState blockState = this.stateCache.get(key);
++            if (blockState == null) {
++                blockState = load ? this.level.getBlockState(pos) : this.level.getBlockStateIfLoaded(pos);
++                if (blockState != null) {
++                    this.stateCache.put(key, blockState);
++                }
++            }
++            return blockState;
++            // Paper end - Prevent chunk loading from fluid flowing
+         }
+ 
+         public boolean isHole(final BlockPos pos) {

@@ -1,0 +1,44 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/server/rcon/thread/RconClient.java b/net/minecraft/server/rcon/thread/RconClient.java
+index ccc9714c9c5f0281f46052f8a5d13f37d238f2c2..4151d3a705539a881c304a906fef40d90ba001fe 100644
+--- a/net/minecraft/server/rcon/thread/RconClient.java
++++ b/net/minecraft/server/rcon/thread/RconClient.java
+@@ -23,11 +23,14 @@ public class RconClient extends GenericThread {
+     private final Socket client;
+     private final byte[] buf = new byte[1460];
+     private final String rconPassword;
+-    private final ServerInterface serverInterface;
++    // CraftBukkit start
++    private final net.minecraft.server.dedicated.DedicatedServer serverInterface;
++    private final net.minecraft.server.rcon.RconConsoleSource rconConsoleSource;
++    // CraftBukkit end
+ 
+     RconClient(final ServerInterface serverInterface, final String rconPassword, final Socket socket) {
+         super("RCON Client " + socket.getInetAddress());
+-        this.serverInterface = serverInterface;
++        this.serverInterface = (net.minecraft.server.dedicated.DedicatedServer) serverInterface; // CraftBukkit
+         this.client = socket;
+ 
+         try {
+@@ -37,6 +40,7 @@ public class RconClient extends GenericThread {
+         }
+ 
+         this.rconPassword = rconPassword;
++        this.rconConsoleSource = new net.minecraft.server.rcon.RconConsoleSource(this.serverInterface, client.getRemoteSocketAddress()); // CraftBukkit
+     }
+ 
+     @Override
+@@ -67,7 +71,7 @@ public class RconClient extends GenericThread {
+                                 String command = PktUtils.stringFromByteArray(this.buf, offset, read);
+ 
+                                 try {
+-                                    this.sendCmdResponse(requestid, this.serverInterface.runCommand(command));
++                                    this.sendCmdResponse(requestid, this.serverInterface.runCommand(this.rconConsoleSource, command)); // CraftBukkit
+                                 } catch (Exception var15) {
+                                     this.sendCmdResponse(requestid, "Error executing: " + command + " (" + var15.getMessage() + ")");
+                                 }

@@ -1,0 +1,105 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/BaseCommandBlock.java b/net/minecraft/world/level/BaseCommandBlock.java
+index 5810ac7e696a8d74e02d4fa60f5327558c5e66b1..ea95136200a320fbebd5ef7dfdf68004787bb6ab 100644
+--- a/net/minecraft/world/level/BaseCommandBlock.java
++++ b/net/minecraft/world/level/BaseCommandBlock.java
+@@ -30,6 +30,10 @@ public abstract class BaseCommandBlock {
+     private @Nullable Component lastOutput;
+     private String command = "";
+     private @Nullable Component customName;
++    // CraftBukkit start
++    protected abstract org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper);
++    public abstract ServerLevel getLevel();
++    // CraftBukkit end
+ 
+     public int getSuccessCount() {
+         return this.successCount;
+@@ -107,7 +111,13 @@ public abstract class BaseCommandBlock {
+                                     this.successCount++;
+                                 }
+                             });
+-                        level.getServer().getCommands().performPrefixedCommand(commandSourceStack, this.command);
++                        // Paper start - ServerCommandEvent
++                        org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(commandSourceStack.getBukkitSender(), net.minecraft.commands.Commands.trimOptionalPrefix(this.command));
++                        if (!event.callEvent()) {
++                            return true;
++                        }
++                        level.getServer().getCommands().performPrefixedCommand(commandSourceStack, event.getCommand());
++                        // Paper end - ServerCommandEvent
+                     }
+                 } catch (Throwable var7) {
+                     CrashReport report = CrashReport.forThrowable(var7, "Executing command block");
+@@ -128,8 +138,8 @@ public abstract class BaseCommandBlock {
+         }
+     }
+ 
+-    private BaseCommandBlock.@Nullable CloseableCommandBlockSource createSource(final ServerLevel level) {
+-        return this.trackOutput ? new BaseCommandBlock.CloseableCommandBlockSource(level) : null;
++    public BaseCommandBlock.CloseableCommandBlockSource createSource(final ServerLevel level) { // Paper - public, remove nullable
++        return new BaseCommandBlock.CloseableCommandBlockSource(level, this.trackOutput); // Paper - add back source when output disabled
+     }
+ 
+     public Component getName() {
+@@ -162,15 +172,23 @@ public abstract class BaseCommandBlock {
+ 
+     public abstract boolean isValid();
+ 
+-    protected class CloseableCommandBlockSource implements CommandSource, AutoCloseable {
++    public class CloseableCommandBlockSource implements CommandSource, AutoCloseable { // Paper - public
+         private final ServerLevel level;
+         private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss", Locale.ROOT);
+         private boolean closed;
+ 
+-        protected CloseableCommandBlockSource(final ServerLevel level) {
++        // Paper start - add back source when output disabled
++        private final boolean trackOutput;
++        public CloseableCommandBlockSource(final ServerLevel level, final boolean trackOutput) {
+             Objects.requireNonNull(BaseCommandBlock.this);
+             super();
+             this.level = level;
++            this.trackOutput = trackOutput;
++        }
++        @io.papermc.paper.annotation.DoNotUse @Deprecated
++        public CloseableCommandBlockSource(final ServerLevel level) { // Paper - public
++            this(level, true);
++            // Paper end - add back source when output disabled
+         }
+ 
+         @Override
+@@ -180,7 +198,7 @@ public abstract class BaseCommandBlock {
+ 
+         @Override
+         public boolean acceptsFailure() {
+-            return !this.closed;
++            return this.trackOutput && !this.closed; // Paper - add back source when output disabled
+         }
+ 
+         @Override
+@@ -190,7 +208,8 @@ public abstract class BaseCommandBlock {
+ 
+         @Override
+         public void sendSystemMessage(final Component message) {
+-            if (!this.closed) {
++            if (this.trackOutput && !this.closed) { // Paper - add back source when output disabled
++                org.spigotmc.AsyncCatcher.catchOp("sendSystemMessage to a command block"); // Paper - Don't broadcast messages to command blocks
+                 BaseCommandBlock.this.lastOutput = Component.literal("[" + TIME_FORMAT.format(ZonedDateTime.now()) + "] ").append(message);
+                 BaseCommandBlock.this.onUpdated(this.level);
+             }
+@@ -200,5 +219,12 @@ public abstract class BaseCommandBlock {
+         public void close() throws Exception {
+             this.closed = true;
+         }
++
++        // CraftBukkit start
++        @Override
++        public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
++            return BaseCommandBlock.this.getBukkitSender(wrapper);
++        }
++        // CraftBukkit end
+     }
+ }

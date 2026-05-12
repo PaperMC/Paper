@@ -1,0 +1,70 @@
+From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+index c2a372e923ea76481adb08af51481c3fc5244db0..4473503da2459016859b2d72ecd7825df23f4be4 100644
+--- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
++++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+@@ -29,18 +29,20 @@ public final class RegionFileStorage implements AutoCloseable {
+         this.info = info;
+     }
+ 
+-    private RegionFile getRegionFile(final ChunkPos pos) throws IOException {
++    @org.jetbrains.annotations.Contract("_, false -> !null") private @Nullable RegionFile getRegionFile(final ChunkPos pos, boolean existingOnly) throws IOException { // CraftBukkit
+         long key = ChunkPos.pack(pos.getRegionX(), pos.getRegionZ());
+         RegionFile region = this.regionCache.getAndMoveToFirst(key);
+         if (region != null) {
+             return region;
+         } else {
+-            if (this.regionCache.size() >= 256) {
++            int cacheSize = io.papermc.paper.configuration.GlobalConfiguration.get() == null ? 256 : io.papermc.paper.configuration.GlobalConfiguration.get().misc.regionFileCacheSize; // Paper - Sanitise RegionFileCache and make configurable - Config not available during initial FileFixerUpper run
++            if (this.regionCache.size() >= cacheSize) { // Paper - Sanitise RegionFileCache and make configurable
+                 this.regionCache.removeLast().close();
+             }
+ 
+             FileUtil.createDirectoriesSafe(this.folder);
+             Path file = this.folder.resolve("r." + pos.getRegionX() + "." + pos.getRegionZ() + ".mca");
++            if (existingOnly && !java.nio.file.Files.exists(file)) return null; // CraftBukkit
+             RegionFile newRegion = new RegionFile(this.info, file, this.folder, this.sync);
+             this.regionCache.putAndMoveToFirst(key, newRegion);
+             return newRegion;
+@@ -48,7 +50,12 @@ public final class RegionFileStorage implements AutoCloseable {
+     }
+ 
+     public @Nullable CompoundTag read(final ChunkPos pos) throws IOException {
+-        RegionFile region = this.getRegionFile(pos);
++        // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
++        RegionFile region = this.getRegionFile(pos, true);
++        if (region == null) {
++            return null;
++        }
++        // CraftBukkit end
+ 
+         CompoundTag var4;
+         try (DataInputStream regionChunkInputStream = region.getChunkDataInputStream(pos)) {
+@@ -63,7 +70,12 @@ public final class RegionFileStorage implements AutoCloseable {
+     }
+ 
+     public void scanChunk(final ChunkPos pos, final StreamTagVisitor scanner) throws IOException {
+-        RegionFile region = this.getRegionFile(pos);
++        // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
++        RegionFile region = this.getRegionFile(pos, true);
++        if (region == null) {
++            return;
++        }
++        // CraftBukkit end
+ 
+         try (DataInputStream regionChunkInputStream = region.getChunkDataInputStream(pos)) {
+             if (regionChunkInputStream != null) {
+@@ -74,7 +86,7 @@ public final class RegionFileStorage implements AutoCloseable {
+ 
+     protected void write(final ChunkPos pos, final @Nullable CompoundTag value) throws IOException {
+         if (!SharedConstants.DEBUG_DONT_SAVE_WORLD) {
+-            RegionFile region = this.getRegionFile(pos);
++            RegionFile region = this.getRegionFile(pos, false); // CraftBukkit
+             if (value == null) {
+                 region.clear(pos);
+             } else {
