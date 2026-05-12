@@ -1,14 +1,6 @@
-From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/network/PacketProcessor.java b/net/minecraft/network/PacketProcessor.java
-index 82bd316d094e2c1a43938313fab2283035610ef3..197adf43de3618fbd4c72bb2a4736b1cd61fbee7 100644
 --- a/net/minecraft/network/PacketProcessor.java
 +++ b/net/minecraft/network/PacketProcessor.java
-@@ -19,15 +19,42 @@ public class PacketProcessor implements AutoCloseable {
+@@ -19,16 +_,42 @@
          this.runningThread = runningThread;
      }
  
@@ -35,25 +27,27 @@ index 82bd316d094e2c1a43938313fab2283035610ef3..197adf43de3618fbd4c72bb2a4736b1c
      public <T extends PacketListener> void scheduleIfPossible(final T listener, final Packet<T> packet) {
          if (this.closed) {
 -            throw new RejectedExecutionException("Server already shutting down");
+-        }
+-
+-        this.packetsToBeHandled.add(new PacketProcessor.ListenerAndPacket<>(listener, packet));
 +            throw new io.papermc.paper.util.ServerStopRejectedExecutionException("Server already shutting down"); // Paper - do not prematurely disconnect players on stop
-         } else {
--            this.packetsToBeHandled.add(new PacketProcessor.ListenerAndPacket<>(listener, packet));
-+            // Paper start - improve tick loop
-+            // wake up main thread inbetween ticks to process packets
-+            final boolean isEmpty = this.packetsToBeHandled.isEmpty();
-+            final ListenerAndPacket<T> toAdd = new PacketProcessor.ListenerAndPacket<>(listener, packet);
-+            this.packetsToBeHandled.add(toAdd);
-+            if (isEmpty || this.packetsToBeHandled.peek() == toAdd) {
-+                // only unpark if we are the first packet OR are at the head of the queue
-+                // we unpark if we are at the head in case the main thread emptied the queue
-+                // immediately before we added but after checking isEmpty
-+                java.util.concurrent.locks.LockSupport.unpark(this.runningThread);
-+            }
-+            // Paper end - improve tick loop
-         }
++        }
++        // Paper start - improve tick loop
++        // wake up main thread inbetween ticks to process packets
++        final boolean isEmpty = this.packetsToBeHandled.isEmpty();
++        final ListenerAndPacket<T> toAdd = new PacketProcessor.ListenerAndPacket<>(listener, packet);
++        this.packetsToBeHandled.add(toAdd);
++        if (isEmpty || this.packetsToBeHandled.peek() == toAdd) {
++            // only unpark if we are the first packet OR are at the head of the queue
++            // we unpark if we are at the head in case the main thread emptied the queue
++            // immediately before we added but after checking isEmpty
++            java.util.concurrent.locks.LockSupport.unpark(this.runningThread);
++        }
++        // Paper end - improve tick loop
      }
  
-@@ -44,8 +71,28 @@ public class PacketProcessor implements AutoCloseable {
+     public void processQueuedPackets() {
+@@ -44,8 +_,28 @@
          this.closed = true;
      }
  
@@ -82,7 +76,7 @@ index 82bd316d094e2c1a43938313fab2283035610ef3..197adf43de3618fbd4c72bb2a4736b1c
              if (this.listener.shouldHandleMessage(this.packet)) {
                  try {
                      this.packet.handle(this.listener);
-@@ -59,6 +106,12 @@ public class PacketProcessor implements AutoCloseable {
+@@ -59,6 +_,12 @@
              } else {
                  PacketProcessor.LOGGER.debug("Ignoring packet due to disconnection: {}", this.packet);
              }

@@ -1,23 +1,14 @@
-From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/ExperienceOrb.java b/net/minecraft/world/entity/ExperienceOrb.java
-index f3db7fc83ec00e7d1a9fb25b932ddb620f87f1b3..e302c6198d71782b524391329aa5c89d2b3e0ccf 100644
 --- a/net/minecraft/world/entity/ExperienceOrb.java
 +++ b/net/minecraft/world/entity/ExperienceOrb.java
-@@ -43,13 +43,57 @@ public class ExperienceOrb extends Entity {
+@@ -43,13 +_,57 @@
      public int count = 1;
      private @Nullable Player followingPlayer;
      private final InterpolationHandler interpolation = new InterpolationHandler(this);
--
 +    // Paper start
 +    public java.util.@Nullable UUID sourceEntityId;
 +    public java.util.@Nullable UUID triggerEntityId;
 +    public org.bukkit.entity.ExperienceOrb.SpawnReason spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN;
-+
+ 
 +    private void loadPaperNBT(ValueInput input) {
 +        input.read("Paper.ExpData", net.minecraft.nbt.CompoundTag.CODEC).ifPresent(expData -> {
 +            this.sourceEntityId = expData.read("source", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
@@ -68,7 +59,7 @@ index f3db7fc83ec00e7d1a9fb25b932ddb620f87f1b3..e302c6198d71782b524391329aa5c89d
          this.setPos(pos);
          if (!level.isClientSide()) {
              this.setYRot(this.random.nextFloat() * 360.0F);
-@@ -146,12 +190,13 @@ public class ExperienceOrb extends Entity {
+@@ -146,12 +_,13 @@
  
              this.age++;
              if (this.age >= 6000) {
@@ -83,7 +74,7 @@ index f3db7fc83ec00e7d1a9fb25b932ddb620f87f1b3..e302c6198d71782b524391329aa5c89d
          if (this.followingPlayer == null || this.followingPlayer.isSpectator() || this.followingPlayer.distanceToSqr(this) > 64.0) {
              Player nearestPlayer = this.level().getNearestPlayer(this, 8.0);
              if (nearestPlayer != null && !nearestPlayer.isSpectator() && !nearestPlayer.isDeadOrDying()) {
-@@ -161,7 +206,24 @@ public class ExperienceOrb extends Entity {
+@@ -161,7 +_,24 @@
              }
          }
  
@@ -109,7 +100,7 @@ index f3db7fc83ec00e7d1a9fb25b932ddb620f87f1b3..e302c6198d71782b524391329aa5c89d
              Vec3 delta = new Vec3(
                  this.followingPlayer.getX() - this.getX(),
                  this.followingPlayer.getY() + this.followingPlayer.getEyeHeight() / 2.0 - this.getY(),
-@@ -191,18 +253,24 @@ public class ExperienceOrb extends Entity {
+@@ -191,18 +_,24 @@
      }
  
      public static void awardWithDirection(final ServerLevel level, final Vec3 pos, final Vec3 roughDirection, int amount) {
@@ -136,7 +127,7 @@ index f3db7fc83ec00e7d1a9fb25b932ddb620f87f1b3..e302c6198d71782b524391329aa5c89d
          List<ExperienceOrb> orbs = level.getEntities(EntityTypeTest.forClass(ExperienceOrb.class), box, orbx -> canMerge(orbx, id, value));
          if (!orbs.isEmpty()) {
              ExperienceOrb orb = orbs.get(0);
-@@ -219,13 +287,18 @@ public class ExperienceOrb extends Entity {
+@@ -219,13 +_,18 @@
      }
  
      private static boolean canMerge(final ExperienceOrb orb, final int id, final int value) {
@@ -157,16 +148,16 @@ index f3db7fc83ec00e7d1a9fb25b932ddb620f87f1b3..e302c6198d71782b524391329aa5c89d
      }
  
      private void setUnderwaterMovement() {
-@@ -250,7 +323,7 @@ public class ExperienceOrb extends Entity {
-             this.markHurt();
-             this.health = (int)(this.health - damage);
-             if (this.health <= 0) {
--                this.discard();
-+                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
-             }
+@@ -251,7 +_,7 @@
+         this.markHurt();
+         this.health = (int)(this.health - damage);
+         if (this.health <= 0) {
+-            this.discard();
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
+         }
  
-             return true;
-@@ -261,32 +334,34 @@ public class ExperienceOrb extends Entity {
+         return true;
+@@ -261,32 +_,34 @@
      protected void addAdditionalSaveData(final ValueOutput output) {
          output.putShort("Health", (short)this.health);
          output.putShort("Age", (short)this.age);
@@ -207,7 +198,7 @@ index f3db7fc83ec00e7d1a9fb25b932ddb620f87f1b3..e302c6198d71782b524391329aa5c89d
                  }
              }
          }
-@@ -298,9 +373,19 @@ public class ExperienceOrb extends Entity {
+@@ -298,9 +_,19 @@
              ItemStack itemStack = selected.get().itemStack();
              int toRepairFromXpAmount = EnchantmentHelper.modifyDurabilityToRepairFromXp(player.level(), itemStack, amount);
              int repair = Math.min(toRepairFromXpAmount, itemStack.getDamageValue());
@@ -228,7 +219,7 @@ index f3db7fc83ec00e7d1a9fb25b932ddb620f87f1b3..e302c6198d71782b524391329aa5c89d
                  if (remaining > 0) {
                      return this.repairPlayerItems(player, remaining);
                  }
-@@ -346,6 +431,24 @@ public class ExperienceOrb extends Entity {
+@@ -346,6 +_,24 @@
      }
  
      public static int getExperienceValue(final int maxValue) {
