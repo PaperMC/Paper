@@ -1,22 +1,10 @@
-From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/inventory/ItemCombinerMenu.java b/net/minecraft/world/inventory/ItemCombinerMenu.java
-index a8e294746a4ece509b4b7587fb39fe9c51d1432e..2ecda29bb90e6c93e7fb3e08a79187df608ef810 100644
 --- a/net/minecraft/world/inventory/ItemCombinerMenu.java
 +++ b/net/minecraft/world/inventory/ItemCombinerMenu.java
-@@ -16,16 +16,7 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
+@@ -15,12 +_,7 @@
      protected final ContainerLevelAccess access;
      protected final Player player;
      protected final Container inputSlots;
 -    protected final ResultContainer resultSlots = new ResultContainer() {
--        {
--            Objects.requireNonNull(ItemCombinerMenu.this);
--        }
--
 -        @Override
 -        public void setChanged() {
 -            ItemCombinerMenu.this.slotsChanged(this);
@@ -26,16 +14,12 @@ index a8e294746a4ece509b4b7587fb39fe9c51d1432e..2ecda29bb90e6c93e7fb3e08a79187df
      private final int resultSlotIndex;
  
      protected boolean mayPickup(final Player player, final boolean hasItem) {
-@@ -45,6 +36,18 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
+@@ -40,6 +_,14 @@
      ) {
          super(menuType, containerId);
          this.access = access;
 +        // Paper start - Add missing InventoryHolders; delay field init
 +        this.resultSlots = new ResultContainer(this.createBlockHolder(this.access)) {
-+            {
-+                Objects.requireNonNull(ItemCombinerMenu.this);
-+            }
-+
 +            @Override
 +            public void setChanged() {
 +                ItemCombinerMenu.this.slotsChanged(this);
@@ -45,7 +29,7 @@ index a8e294746a4ece509b4b7587fb39fe9c51d1432e..2ecda29bb90e6c93e7fb3e08a79187df
          this.player = inventory.player;
          this.inputSlots = this.createContainer(itemInputSlots.getNumOfInputSlots());
          this.resultSlotIndex = itemInputSlots.getResultSlotIndex();
-@@ -54,15 +57,15 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
+@@ -49,11 +_,11 @@
      }
  
      private void createInputSlots(final ItemCombinerMenuSlotDefinition itemInputSlots) {
@@ -53,10 +37,6 @@ index a8e294746a4ece509b4b7587fb39fe9c51d1432e..2ecda29bb90e6c93e7fb3e08a79187df
 -            this.addSlot(new Slot(this.inputSlots, slot.slotIndex(), slot.x(), slot.y()) {
 +        for (final ItemCombinerMenuSlotDefinition.SlotDefinition slotDefinition : itemInputSlots.getSlots()) { // Paper - fix conflicting variable name
 +            this.addSlot(new Slot(this.inputSlots, slotDefinition.slotIndex(), slotDefinition.x(), slotDefinition.y()) { // Paper - fix conflicting variable name
-                 {
-                     Objects.requireNonNull(ItemCombinerMenu.this);
-                 }
- 
                  @Override
                  public boolean mayPlace(final ItemStack itemStack) {
 -                    return slot.mayPlace().test(itemStack);
@@ -64,16 +44,16 @@ index a8e294746a4ece509b4b7587fb39fe9c51d1432e..2ecda29bb90e6c93e7fb3e08a79187df
                  }
              });
          }
-@@ -96,7 +99,7 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
+@@ -83,7 +_,7 @@
      public abstract void createResult();
  
      private SimpleContainer createContainer(final int size) {
 -        return new SimpleContainer(size) {
-+        return new SimpleContainer(this.createBlockHolder(this.access), size) {
-             {
-                 Objects.requireNonNull(ItemCombinerMenu.this);
-             }
-@@ -114,6 +117,7 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
++        return new SimpleContainer(this.createBlockHolder(this.access), size) { // Paper - pass block holder
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+@@ -97,6 +_,7 @@
          super.slotsChanged(container);
          if (container == this.inputSlots) {
              this.createResult();
@@ -81,7 +61,7 @@ index a8e294746a4ece509b4b7587fb39fe9c51d1432e..2ecda29bb90e6c93e7fb3e08a79187df
          }
      }
  
-@@ -125,6 +129,7 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
+@@ -108,6 +_,7 @@
  
      @Override
      public boolean stillValid(final Player player) {
