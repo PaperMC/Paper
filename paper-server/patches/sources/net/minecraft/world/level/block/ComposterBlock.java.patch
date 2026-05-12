@@ -1,14 +1,6 @@
-From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/block/ComposterBlock.java b/net/minecraft/world/level/block/ComposterBlock.java
-index dd416accfb0f535b2d472914339836e16d071c3d..3eb65e5ed0241330ebde3e05f7865e294d4b48e7 100644
 --- a/net/minecraft/world/level/block/ComposterBlock.java
 +++ b/net/minecraft/world/level/block/ComposterBlock.java
-@@ -258,6 +258,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -258,6 +_,11 @@
          if (fillLevel < 8 && COMPOSTABLES.containsKey(itemStack.getItem())) {
              if (fillLevel < 7 && !level.isClientSide()) {
                  BlockState newState = addItem(player, state, level, pos, itemStack);
@@ -20,7 +12,7 @@ index dd416accfb0f535b2d472914339836e16d071c3d..3eb65e5ed0241330ebde3e05f7865e29
                  level.levelEvent(LevelEvent.COMPOSTER_FILL, pos, state != newState ? 1 : 0);
                  player.awardStat(Stats.ITEM_USED.get(itemStack.getItem()));
                  itemStack.consume(1, player);
-@@ -287,7 +292,19 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -287,7 +_,19 @@
      ) {
          int fillLevel = state.getValue(LEVEL);
          if (fillLevel < 7 && COMPOSTABLES.containsKey(itemStack.getItem())) {
@@ -41,7 +33,7 @@ index dd416accfb0f535b2d472914339836e16d071c3d..3eb65e5ed0241330ebde3e05f7865e29
              itemStack.shrink(1);
              return newState;
          } else {
-@@ -296,6 +313,14 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -296,6 +_,14 @@
      }
  
      public static BlockState extractProduce(final Entity sourceEntity, final BlockState state, final Level level, final BlockPos pos) {
@@ -56,14 +48,14 @@ index dd416accfb0f535b2d472914339836e16d071c3d..3eb65e5ed0241330ebde3e05f7865e29
          if (!level.isClientSide()) {
              Vec3 itemPos = Vec3.atLowerCornerWithOffset(pos, 0.5, 1.01, 0.5).offsetRandomXZ(level.getRandom(), 0.7F);
              ItemEntity entity = new ItemEntity(level, itemPos.x(), itemPos.y(), itemPos.z(), new ItemStack(Items.BONE_MEAL));
-@@ -315,16 +340,44 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -315,17 +_,45 @@
          return newState;
      }
  
 +    @Nullable // Paper
      private static BlockState addItem(
          final @Nullable Entity sourceEntity, final BlockState state, final LevelAccessor level, final BlockPos pos, final ItemStack itemStack
-+    ) {
+     ) {
 +        // CraftBukkit start
 +        return ComposterBlock.addItem(sourceEntity, state, level, pos, itemStack, level.getRandom().nextDouble());
 +    }
@@ -71,7 +63,7 @@ index dd416accfb0f535b2d472914339836e16d071c3d..3eb65e5ed0241330ebde3e05f7865e29
 +    private static BlockState addItem(
 +        final @Nullable Entity sourceEntity, final BlockState state, final LevelAccessor level, final BlockPos pos, final ItemStack itemStack, final double rand
 +        // CraftBukkit end
-     ) {
++    ) {
          int fillLevel = state.getValue(LEVEL);
          float chance = COMPOSTABLES.getFloat(itemStack.getItem());
 -        if ((fillLevel != 0 || !(chance > 0.0F)) && !(level.getRandom().nextDouble() < chance)) {
@@ -91,23 +83,24 @@ index dd416accfb0f535b2d472914339836e16d071c3d..3eb65e5ed0241330ebde3e05f7865e29
 +        if (!willRaiseLevel) {
 +            // Paper end - Add CompostItemEvent and EntityCompostItemEvent
              return state;
-         } else {
-             int newLevel = fillLevel + 1;
-             BlockState newState = state.setValue(LEVEL, newLevel);
-+            // Paper start - move the EntityChangeBlockEvent here to avoid conflict later for the compost events
-+            if (sourceEntity != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(sourceEntity, pos, newState)) {
-+                return null;
-+            }
-+            // Paper end
-             level.setBlock(pos, newState, Block.UPDATE_ALL);
-             level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(sourceEntity, newState));
-             if (newLevel == 7) {
-@@ -369,13 +422,14 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+         }
+ 
+         int newLevel = fillLevel + 1;
+         BlockState newState = state.setValue(LEVEL, newLevel);
++        // Paper start - move the EntityChangeBlockEvent here to avoid conflict later for the compost events
++        if (sourceEntity != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(sourceEntity, pos, newState)) {
++            return null;
++        }
++        // Paper end
+         level.setBlock(pos, newState, Block.UPDATE_ALL);
+         level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(sourceEntity, newState));
+         if (newLevel == 7) {
+@@ -369,13 +_,14 @@
          if (contentLevel == 8) {
              return new ComposterBlock.OutputContainer(state, level, pos, new ItemStack(Items.BONE_MEAL));
          } else {
--            return (WorldlyContainer)(contentLevel < 7 ? new ComposterBlock.InputContainer(state, level, pos) : new ComposterBlock.EmptyContainer());
-+            return (WorldlyContainer)(contentLevel < 7 ? new ComposterBlock.InputContainer(state, level, pos) : new ComposterBlock.EmptyContainer(level, pos)); // CraftBukkit - empty levelAccessor, blockPos
+-            return contentLevel < 7 ? new ComposterBlock.InputContainer(state, level, pos) : new ComposterBlock.EmptyContainer();
++            return contentLevel < 7 ? new ComposterBlock.InputContainer(state, level, pos) : new ComposterBlock.EmptyContainer(level, pos); // CraftBukkit - empty levelAccessor, blockPos
          }
      }
  
@@ -119,7 +112,7 @@ index dd416accfb0f535b2d472914339836e16d071c3d..3eb65e5ed0241330ebde3e05f7865e29
          }
  
          @Override
-@@ -402,6 +456,7 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -402,6 +_,7 @@
  
          public InputContainer(final BlockState state, final LevelAccessor level, final BlockPos pos) {
              super(1);
@@ -127,7 +120,7 @@ index dd416accfb0f535b2d472914339836e16d071c3d..3eb65e5ed0241330ebde3e05f7865e29
              this.state = state;
              this.level = level;
              this.pos = pos;
-@@ -433,6 +488,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -433,6 +_,11 @@
              if (!contents.isEmpty()) {
                  this.changed = true;
                  BlockState newState = ComposterBlock.addItem(null, this.state, this.level, this.pos, contents);
@@ -139,7 +132,7 @@ index dd416accfb0f535b2d472914339836e16d071c3d..3eb65e5ed0241330ebde3e05f7865e29
                  this.level.levelEvent(LevelEvent.COMPOSTER_FILL, this.pos, newState != this.state ? 1 : 0);
                  this.removeItemNoUpdate(0);
              }
-@@ -447,6 +507,7 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -447,6 +_,7 @@
  
          public OutputContainer(final BlockState state, final LevelAccessor level, final BlockPos pos, final ItemStack contents) {
              super(contents);
@@ -147,7 +140,7 @@ index dd416accfb0f535b2d472914339836e16d071c3d..3eb65e5ed0241330ebde3e05f7865e29
              this.state = state;
              this.level = level;
              this.pos = pos;
-@@ -474,8 +535,15 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -474,8 +_,15 @@
  
          @Override
          public void setChanged() {

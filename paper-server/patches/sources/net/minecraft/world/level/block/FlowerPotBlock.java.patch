@@ -1,0 +1,41 @@
+--- a/net/minecraft/world/level/block/FlowerPotBlock.java
++++ b/net/minecraft/world/level/block/FlowerPotBlock.java
+@@ -74,7 +_,18 @@
+         if (!this.isEmpty()) {
+             return InteractionResult.CONSUME;
+         }
+-
++        // Paper start - Add PlayerFlowerPotManipulateEvent
++        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
++        org.bukkit.inventory.ItemStack placedStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemStack);
++
++        io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent event = new io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent((org.bukkit.entity.Player) player.getBukkitEntity(), block, placedStack, true);
++        if (!event.callEvent()) {
++            // Update client
++            player.containerMenu.forceHeldSlot(hand);
++
++            return InteractionResult.CONSUME;
++        }
++        // Paper end - Add PlayerFlowerPotManipulateEvent
+         level.setBlock(pos, newContents, Block.UPDATE_ALL);
+         level.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
+         player.awardStat(Stats.POT_FLOWER);
+@@ -91,6 +_,18 @@
+         }
+ 
+         ItemStack plant = new ItemStack(this.potted);
++        // Paper start - Add PlayerFlowerPotManipulateEvent
++        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
++        org.bukkit.inventory.ItemStack pottedStack = new org.bukkit.inventory.ItemStack(org.bukkit.craftbukkit.block.CraftBlockType.minecraftToBukkit(this.potted));
++
++        io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent event = new io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent((org.bukkit.entity.Player) player.getBukkitEntity(), block, pottedStack, false);
++        if (!event.callEvent()) {
++            // Update client
++            player.containerMenu.sendAllDataToRemote();
++
++            return InteractionResult.PASS;
++        }
++        // Paper end - Add PlayerFlowerPotManipulateEvent
+         if (!player.addItem(plant)) {
+             player.drop(plant, false);
+         }
