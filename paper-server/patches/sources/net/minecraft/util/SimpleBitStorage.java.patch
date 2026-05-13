@@ -1,0 +1,63 @@
+--- a/net/minecraft/util/SimpleBitStorage.java
++++ b/net/minecraft/util/SimpleBitStorage.java
+@@ -204,8 +_,8 @@
+     private final long mask;
+     private final int size;
+     private final int valuesPerLong;
+-    private final int divideMul;
+-    private final int divideAdd;
++    private final int divideMul; private final long divideMulUnsigned; // Paper - Perf: Optimize SimpleBitStorage; referenced in b(int) with 2 Integer.toUnsignedLong calls
++    private final int divideAdd; private final long divideAddUnsigned; // Paper - Perf: Optimize SimpleBitStorage
+     private final int divideShift;
+ 
+     public SimpleBitStorage(final int bits, final int size, final int[] values) {
+@@ -248,8 +_,8 @@
+         this.mask = (1L << bits) - 1L;
+         this.valuesPerLong = (char)(64 / bits);
+         int row = 3 * (this.valuesPerLong - 1);
+-        this.divideMul = MAGIC[row + 0];
+-        this.divideAdd = MAGIC[row + 1];
++        this.divideMul = MAGIC[row + 0]; this.divideMulUnsigned = Integer.toUnsignedLong(this.divideMul); // Paper - Perf: Optimize SimpleBitStorage
++        this.divideAdd = MAGIC[row + 1]; this.divideAddUnsigned = Integer.toUnsignedLong(this.divideAdd); // Paper - Perf: Optimize SimpleBitStorage
+         this.divideShift = MAGIC[row + 2];
+         int requiredLength = (size + this.valuesPerLong - 1) / this.valuesPerLong;
+         if (data != null) {
+@@ -264,15 +_,11 @@
+     }
+ 
+     private int cellIndex(final int bitIndex) {
+-        long mul = Integer.toUnsignedLong(this.divideMul);
+-        long add = Integer.toUnsignedLong(this.divideAdd);
+-        return (int)(bitIndex * mul + add >> 32 >> this.divideShift);
++        return (int)(bitIndex * this.divideMulUnsigned + this.divideAddUnsigned >> 32 >> this.divideShift); // Paper - Perf: Optimize SimpleBitStorage
+     }
+ 
+     @Override
+-    public int getAndSet(final int index, final int value) {
+-        Validate.inclusiveBetween(0L, this.size - 1, index);
+-        Validate.inclusiveBetween(0L, this.mask, value);
++    public final int getAndSet(final int index, final int value) { // Paper - Perf: Optimize SimpleBitStorage
+         int cellIndex = this.cellIndex(index);
+         long cellValue = this.data[cellIndex];
+         int bitIndex = (index - cellIndex * this.valuesPerLong) * this.bits;
+@@ -282,9 +_,7 @@
+     }
+ 
+     @Override
+-    public void set(final int index, final int value) {
+-        Validate.inclusiveBetween(0L, this.size - 1, index);
+-        Validate.inclusiveBetween(0L, this.mask, value);
++    public final void set(final int index, final int value) { // Paper - Perf: Optimize SimpleBitStorage
+         int cellIndex = this.cellIndex(index);
+         long cellValue = this.data[cellIndex];
+         int bitIndex = (index - cellIndex * this.valuesPerLong) * this.bits;
+@@ -292,8 +_,7 @@
+     }
+ 
+     @Override
+-    public int get(final int index) {
+-        Validate.inclusiveBetween(0L, this.size - 1, index);
++    public final int get(final int index) { // Paper - Perf: Optimize SimpleBitStorage
+         int cellIndex = this.cellIndex(index);
+         long cellValue = this.data[cellIndex];
+         int bitIndex = (index - cellIndex * this.valuesPerLong) * this.bits;

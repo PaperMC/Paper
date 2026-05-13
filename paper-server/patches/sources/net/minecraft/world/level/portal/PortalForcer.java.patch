@@ -1,0 +1,115 @@
+--- a/net/minecraft/world/level/portal/PortalForcer.java
++++ b/net/minecraft/world/level/portal/PortalForcer.java
+@@ -39,18 +_,32 @@
+         this.level = level;
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+     public Optional<BlockPos> findClosestPortalPosition(final BlockPos approximateExitPos, final boolean toNether, final WorldBorder worldBorder) {
++        // CraftBukkit start
++        return this.findClosestPortalPosition(approximateExitPos, worldBorder, toNether ? 16 : 128); // Search Radius
++    }
++
++    public Optional<BlockPos> findClosestPortalPosition(final BlockPos approximateExitPos, final WorldBorder worldBorder, final int radius) {
+         PoiManager poiManager = this.level.getPoiManager();
+-        int radius = toNether ? 16 : 128;
++        // int radius = toNether ? 16 : 128;
++        // CraftBukkit end
+         poiManager.ensureLoadedAndValid(this.level, approximateExitPos, radius);
+         return poiManager.getInSquare(type -> type.is(PoiTypes.NETHER_PORTAL), approximateExitPos, radius, PoiManager.Occupancy.ANY)
+             .map(PoiRecord::getPos)
+             .filter(worldBorder::isWithinBounds)
++            .filter(pos -> !(this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> pos.getY() >= v))) // Paper - Configurable nether ceiling damage
+             .filter(pos -> this.level.getBlockState(pos).hasProperty(BlockStateProperties.HORIZONTAL_AXIS))
+             .min(Comparator.<BlockPos>comparingDouble(p -> p.distSqr(approximateExitPos)).thenComparingInt(Vec3i::getY));
+     }
+ 
+     public Optional<BlockUtil.FoundRectangle> createPortal(final BlockPos origin, final Direction.Axis portalAxis) {
++        // CraftBukkit start
++        return this.createPortal(origin, portalAxis, null, 16);
++    }
++
++    public Optional<BlockUtil.FoundRectangle> createPortal(final BlockPos origin, final Direction.Axis portalAxis, final net.minecraft.world.entity.@org.jspecify.annotations.Nullable Entity entity, final int createRadius) {
++        // CraftBukkit end
+         Direction direction = Direction.get(Direction.AxisDirection.POSITIVE, portalAxis);
+         double closestFullDistanceSqr = -1.0;
+         BlockPos closestFullPosition = null;
+@@ -58,10 +_,15 @@
+         BlockPos closestPartialPosition = null;
+         WorldBorder worldBorder = this.level.getWorldBorder();
+         int maxPlaceableY = Math.min(this.level.getMaxY(), this.level.getMinY() + this.level.getLogicalHeight() - 1);
++        // Paper start - Configurable nether ceiling damage; make sure the max height doesn't exceed the void damage height
++        if (this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.enabled()) {
++            maxPlaceableY = Math.min(maxPlaceableY, this.level.paperConfig().environment.netherCeilingVoidDamageHeight.intValue() - 1);
++        }
++        // Paper end - Configurable nether ceiling damage
+         int edgeDistance = 1;
+         BlockPos.MutableBlockPos mutable = origin.mutable();
+ 
+-        for (BlockPos.MutableBlockPos columnPos : BlockPos.spiralAround(origin, 16, Direction.EAST, Direction.SOUTH)) {
++        for (BlockPos.MutableBlockPos columnPos : BlockPos.spiralAround(origin, createRadius, Direction.EAST, Direction.SOUTH)) { // CraftBukkit
+             int height = Math.min(maxPlaceableY, this.level.getHeight(Heightmap.Types.MOTION_BLOCKING, columnPos.getX(), columnPos.getZ()));
+             if (worldBorder.isWithinBounds(columnPos) && worldBorder.isWithinBounds(columnPos.move(direction, 1))) {
+                 columnPos.move(direction.getOpposite(), 1);
+@@ -105,6 +_,7 @@
+             closestFullDistanceSqr = closestPartialDistanceSqr;
+         }
+ 
++        org.bukkit.craftbukkit.util.BlockStateListPopulator blockList = new org.bukkit.craftbukkit.util.BlockStateListPopulator(this.level); // CraftBukkit - Use BlockStateListPopulator
+         if (closestFullDistanceSqr == -1.0) {
+             int minStartY = Math.max(this.level.getMinY() - -1, 70);
+             int maxStartY = maxPlaceableY - 9;
+@@ -129,7 +_,7 @@
+                             height,
+                             width * direction.getStepZ() + box * clockWise.getStepZ()
+                         );
+-                        this.level.setBlockAndUpdate(mutable, blockState);
++                        blockList.setBlock(mutable, blockState, Block.UPDATE_ALL); // CraftBukkit
+                     }
+                 }
+             }
+@@ -139,7 +_,7 @@
+             for (int height = -1; height < 4; height++) {
+                 if (width == -1 || width == 2 || height == -1 || height == 3) {
+                     mutable.setWithOffset(closestFullPosition, width * direction.getStepX(), height, width * direction.getStepZ());
+-                    this.level.setBlock(mutable, Blocks.OBSIDIAN.defaultBlockState(), Block.UPDATE_ALL);
++                    blockList.setBlock(mutable, Blocks.OBSIDIAN.defaultBlockState(), Block.UPDATE_ALL); // CraftBukkit
+                 }
+             }
+         }
+@@ -149,10 +_,20 @@
+         for (int width = 0; width < 2; width++) {
+             for (int height = 0; height < 3; height++) {
+                 mutable.setWithOffset(closestFullPosition, width * direction.getStepX(), height, width * direction.getStepZ());
+-                this.level.setBlock(mutable, portalBlockState, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
++                blockList.setBlock(mutable, portalBlockState, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE); // CraftBukkit
+             }
+         }
+ 
++        // CraftBukkit start
++        org.bukkit.World bworld = this.level.getWorld();
++        org.bukkit.event.world.PortalCreateEvent event = new org.bukkit.event.world.PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blockList.getSnapshotBlocks(), bworld, entity == null ? null : entity.getBukkitEntity(), org.bukkit.event.world.PortalCreateEvent.CreateReason.NETHER_PAIR);
++
++        this.level.getCraftServer().getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            return Optional.empty();
++        }
++        blockList.placeBlocks();
++        // CraftBukkit end
+         return Optional.of(new BlockUtil.FoundRectangle(closestFullPosition.immutable(), 2, 3));
+     }
+ 
+@@ -169,6 +_,13 @@
+                 mutable.setWithOffset(
+                     origin, direction.getStepX() * width + clockWise.getStepX() * offset, height, direction.getStepZ() * width + clockWise.getStepZ() * offset
+                 );
++                // Paper start - Protect Bedrock and End Portal/Frames from being destroyed
++                if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits) {
++                    if (!this.level.getBlockState(mutable).isDestroyable()) {
++                        return false;
++                    }
++                }
++                // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
+                 if (height < 0 && !this.level.getBlockState(mutable).isSolid()) {
+                     return false;
+                 }
