@@ -1,14 +1,6 @@
-From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/server/players/CachedUserNameToIdResolver.java b/net/minecraft/server/players/CachedUserNameToIdResolver.java
-index 58d5a1f2da3bb7b63b876cda1dfb3545ad33268e..aecbdddf4cf3ab627477156cd314f2872e7a5dbb 100644
 --- a/net/minecraft/server/players/CachedUserNameToIdResolver.java
 +++ b/net/minecraft/server/players/CachedUserNameToIdResolver.java
-@@ -46,6 +46,10 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
+@@ -46,6 +_,10 @@
      private final Gson gson = new GsonBuilder().create();
      private final File file;
      private final AtomicLong operationCount = new AtomicLong();
@@ -19,7 +11,7 @@ index 58d5a1f2da3bb7b63b876cda1dfb3545ad33268e..aecbdddf4cf3ab627477156cd314f287
  
      public CachedUserNameToIdResolver(final GameProfileRepository profileRepository, final File file) {
          this.profileRepository = profileRepository;
-@@ -54,23 +58,27 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
+@@ -54,10 +_,12 @@
      }
  
      private void safeAdd(final CachedUserNameToIdResolver.GameProfileInfo profileInfo) {
@@ -32,15 +24,15 @@ index 58d5a1f2da3bb7b63b876cda1dfb3545ad33268e..aecbdddf4cf3ab627477156cd314f287
      }
  
      private Optional<NameAndId> lookupGameProfile(final GameProfileRepository profileRepository, final String name) {
-         if (!StringUtil.isValidPlayerName(name)) {
+@@ -65,12 +_,14 @@
              return this.createUnknownProfile(name);
-         } else {
--            Optional<NameAndId> profile = profileRepository.findProfileByName(name).map(NameAndId::new);
-+            final boolean shouldLookup = !org.apache.commons.lang3.StringUtils.isBlank(name) // Paper - Don't lookup a profile with a blank name
-+                && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode(); // Paper - Add setting for proxy online mode status
-+            Optional<NameAndId> profile = shouldLookup ? profileRepository.findProfileByName(name).map(NameAndId::new) : Optional.empty(); // Paper - Don't lookup a profile with a blank name
-             return profile.isEmpty() ? this.createUnknownProfile(name) : profile;
          }
+ 
+-        Optional<NameAndId> profile = profileRepository.findProfileByName(name).map(NameAndId::new);
++        final boolean shouldLookup = !org.apache.commons.lang3.StringUtils.isBlank(name) // Paper - Don't lookup a profile with a blank name
++            && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode(); // Paper - Add setting for proxy online mode status
++        Optional<NameAndId> profile = shouldLookup ? profileRepository.findProfileByName(name).map(NameAndId::new) : Optional.empty(); // Paper - Don't lookup a profile with a blank name
+         return profile.isEmpty() ? this.createUnknownProfile(name) : profile;
      }
  
      private Optional<NameAndId> createUnknownProfile(final String name) {
@@ -49,7 +41,7 @@ index 58d5a1f2da3bb7b63b876cda1dfb3545ad33268e..aecbdddf4cf3ab627477156cd314f287
      }
  
      @Override
-@@ -90,7 +98,7 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
+@@ -90,7 +_,7 @@
          Date expirationDate = c.getTime();
          CachedUserNameToIdResolver.GameProfileInfo profileInfo = new CachedUserNameToIdResolver.GameProfileInfo(profile, expirationDate);
          this.safeAdd(profileInfo);
@@ -58,7 +50,7 @@ index 58d5a1f2da3bb7b63b876cda1dfb3545ad33268e..aecbdddf4cf3ab627477156cd314f287
          return profileInfo;
      }
  
-@@ -98,9 +106,24 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
+@@ -98,9 +_,24 @@
          return this.operationCount.incrementAndGet();
      }
  
@@ -83,7 +75,7 @@ index 58d5a1f2da3bb7b63b876cda1dfb3545ad33268e..aecbdddf4cf3ab627477156cd314f287
          CachedUserNameToIdResolver.GameProfileInfo profileInfo = this.profilesByName.get(userName);
          boolean needsSave = false;
          if (profileInfo != null && new Date().getTime() >= profileInfo.expirationDate.getTime()) {
-@@ -114,8 +137,13 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
+@@ -114,8 +_,13 @@
          if (profileInfo != null) {
              profileInfo.setLastAccess(this.getNextOperation());
              result = Optional.of(profileInfo.nameAndId());
@@ -98,7 +90,7 @@ index 58d5a1f2da3bb7b63b876cda1dfb3545ad33268e..aecbdddf4cf3ab627477156cd314f287
              if (profile.isPresent()) {
                  result = Optional.of(this.addInternal(profile.get()).nameAndId());
                  needsSave = false;
-@@ -124,15 +152,17 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
+@@ -124,15 +_,17 @@
              }
          }
  
@@ -118,27 +110,27 @@ index 58d5a1f2da3bb7b63b876cda1dfb3545ad33268e..aecbdddf4cf3ab627477156cd314f287
          CachedUserNameToIdResolver.GameProfileInfo profileInfo = this.profilesByUUID.get(id);
          if (profileInfo == null) {
              return Optional.empty();
-@@ -140,6 +170,7 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
-             profileInfo.setLastAccess(this.getNextOperation());
-             return Optional.of(profileInfo.nameAndId());
-         }
+@@ -140,6 +_,7 @@
+ 
+         profileInfo.setLastAccess(this.getNextOperation());
+         return Optional.of(profileInfo.nameAndId());
 +        } finally { this.stateLock.unlock(); } // Paper - Fix GameProfileCache concurrency
      }
  
      private static DateFormat createDateFormat() {
-@@ -164,6 +195,11 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
- 
-             return (List<CachedUserNameToIdResolver.GameProfileInfo>)var9;
+@@ -158,6 +_,11 @@
+             DateFormat dateFormat = createDateFormat();
+             entryList.forEach(element -> readGameProfile(element, dateFormat).ifPresent(result::add));
          } catch (FileNotFoundException var7) {
 +            // Spigot start
 +        } catch (com.google.gson.JsonSyntaxException | NullPointerException ex) {
 +            LOGGER.warn("Usercache.json is corrupted or has bad formatting. Deleting it to prevent further issues.");
 +            this.file.delete();
 +            // Spigot end
-         } catch (JsonParseException | IOException var8) {
-             LOGGER.warn("Failed to load profile cache {}", this.file, var8);
+         } catch (IOException | JsonParseException e) {
+             LOGGER.warn("Failed to load profile cache {}", this.file, e);
          }
-@@ -173,23 +209,51 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
+@@ -167,23 +_,51 @@
  
      @Override
      public void save() {
@@ -153,7 +145,7 @@ index 58d5a1f2da3bb7b63b876cda1dfb3545ad33268e..aecbdddf4cf3ab627477156cd314f287
          DateFormat dateFormat = createDateFormat();
 -        this.getTopMRUProfiles(1000).forEach(entry -> entryList.add(writeGameProfile(entry, dateFormat)));
 +        this.listTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach(entry -> entryList.add(writeGameProfile(entry, dateFormat))); // Spigot // Paper - Fix GameProfileCache concurrency
-         String toSave = this.gson.toJson((JsonElement)entryList);
+         String toSave = this.gson.toJson(entryList);
  
 +        Runnable save = () -> { // Paper - Perf: Async GameProfileCache saving
          try (Writer writer = Files.newWriter(this.file, StandardCharsets.UTF_8)) {
@@ -175,6 +167,7 @@ index 58d5a1f2da3bb7b63b876cda1dfb3545ad33268e..aecbdddf4cf3ab627477156cd314f287
 -            .stream()
 -            .sorted(Comparator.comparing(CachedUserNameToIdResolver.GameProfileInfo::lastAccess).reversed())
 -            .limit(limit);
+-    }
 +        // Paper start - Fix GameProfileCache concurrency
 +        return this.listTopMRUProfiles(limit).stream();
 +    }
@@ -190,7 +183,7 @@ index 58d5a1f2da3bb7b63b876cda1dfb3545ad33268e..aecbdddf4cf3ab627477156cd314f287
 +        } finally {
 +            this.stateLock.unlock();
 +        }
-     }
++    }
 +    // Paper end - Fix GameProfileCache concurrency
  
      private static JsonElement writeGameProfile(final CachedUserNameToIdResolver.GameProfileInfo src, final DateFormat dateFormat) {

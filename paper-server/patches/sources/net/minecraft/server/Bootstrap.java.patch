@@ -1,0 +1,96 @@
+--- a/net/minecraft/server/Bootstrap.java
++++ b/net/minecraft/server/Bootstrap.java
+@@ -43,6 +_,7 @@
+         if (!isBootstrapped) {
+             isBootstrapped = true;
+             Instant start = Instant.now();
++            io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.enterBootstrappers(); // Paper - Entrypoint for bootstrapping
+             if (BuiltInRegistries.REGISTRY.keySet().isEmpty()) {
+                 throw new IllegalStateException("Unable to load registries");
+             }
+@@ -56,10 +_,84 @@
+             EntitySelectorOptions.bootStrap();
+             DispenseItemBehavior.bootStrap();
+             CauldronInteractions.bootStrap();
+-            BuiltInRegistries.bootStrap();
++            // Paper start
++            BuiltInRegistries.bootStrap(() -> {
++                io.papermc.paper.world.worldgen.OptionallyFlatBedrockConditionSource.bootstrap(); // Paper - Flat bedrock generator settings
++            });
++            // Paper end
+             CreativeModeTabs.validate();
+             wrapStreams();
+             bootstrapDuration.set(Duration.between(start, Instant.now()).toMillis());
++            // CraftBukkit start
++            // TODO Check what of this is needed, maybe report it to Mojira. if deemed relevant, move to the respective classes
++            //  Used in CraftLegacy
++            for (int i = 0; i <= 15; i++) {
++                net.minecraft.util.datafix.fixes.BlockStateData.register(
++                    1008 + i,
++                    new com.mojang.serialization.Dynamic<>(com.mojang.serialization.JavaOps.INSTANCE, java.util.Map.of(
++                        "Name", "minecraft:oak_sign",
++                        "Properties", java.util.Map.of("rotation", String.valueOf(i))
++                    )).convert(net.minecraft.nbt.NbtOps.INSTANCE),
++                    new com.mojang.serialization.Dynamic<>(com.mojang.serialization.JavaOps.INSTANCE, java.util.Map.of(
++                        "Name", "minecraft:standing_sign",
++                        "Properties", java.util.Map.of("rotation", String.valueOf(i))
++                    )).convert(net.minecraft.nbt.NbtOps.INSTANCE)
++                );
++            }
++
++            net.minecraft.util.datafix.fixes.BlockStateData.register(1440,
++                new com.mojang.serialization.Dynamic<>(com.mojang.serialization.JavaOps.INSTANCE, java.util.Map.of(
++                    "Name", "minecraft:portal",
++                    "Properties", java.util.Map.of("axis", "x")
++                )).convert(net.minecraft.nbt.NbtOps.INSTANCE),
++                new com.mojang.serialization.Dynamic<>(com.mojang.serialization.JavaOps.INSTANCE, java.util.Map.of(
++                    "Name", "minecraft:portal",
++                    "Properties", java.util.Map.of("axis", "x")
++                )).convert(net.minecraft.nbt.NbtOps.INSTANCE)
++            );
++
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(409, "minecraft:prismarine_shard");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(410, "minecraft:prismarine_crystals");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(411, "minecraft:rabbit");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(412, "minecraft:cooked_rabbit");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(413, "minecraft:rabbit_stew");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(414, "minecraft:rabbit_foot");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(415, "minecraft:rabbit_hide");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(416, "minecraft:armor_stand");
++
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(423, "minecraft:mutton");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(424, "minecraft:cooked_mutton");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(425, "minecraft:banner");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(426, "minecraft:end_crystal");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(427, "minecraft:spruce_door");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(428, "minecraft:birch_door");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(429, "minecraft:jungle_door");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(430, "minecraft:acacia_door");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(431, "minecraft:dark_oak_door");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(432, "minecraft:chorus_fruit");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(433, "minecraft:chorus_fruit_popped");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(434, "minecraft:beetroot");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(435, "minecraft:beetroot_seeds");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(436, "minecraft:beetroot_soup");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(437, "minecraft:dragon_breath");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(438, "minecraft:splash_potion");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(439, "minecraft:spectral_arrow");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(440, "minecraft:tipped_arrow");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(441, "minecraft:lingering_potion");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(442, "minecraft:shield");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(443, "minecraft:elytra");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(444, "minecraft:spruce_boat");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(445, "minecraft:birch_boat");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(446, "minecraft:jungle_boat");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(447, "minecraft:acacia_boat");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(448, "minecraft:dark_oak_boat");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(449, "minecraft:totem_of_undying");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(450, "minecraft:shulker_shell");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(452, "minecraft:iron_nugget");
++            net.minecraft.util.datafix.fixes.ItemIdFix.ITEM_NAMES.put(453, "minecraft:knowledge_book");
++
++            net.minecraft.util.datafix.fixes.ItemSpawnEggFix.ID_TO_ENTITY[23] = "Arrow";
++            // CraftBukkit end
+         }
+     }
+ 

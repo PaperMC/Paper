@@ -1,14 +1,6 @@
-From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/chunk/ChunkGenerator.java b/net/minecraft/world/level/chunk/ChunkGenerator.java
-index dcec19060cc3ad05572cc861abf654de803cdc6d..1b0eb74970c4d89ce8de4ca7bb86d420e396540d 100644
 --- a/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -105,8 +105,8 @@ public abstract class ChunkGenerator {
+@@ -105,8 +_,8 @@
  
      protected abstract MapCodec<? extends ChunkGenerator> codec();
  
@@ -19,7 +11,7 @@ index dcec19060cc3ad05572cc861abf654de803cdc6d..1b0eb74970c4d89ce8de4ca7bb86d420
      }
  
      public Optional<Identifier> getTypeNameForDataFixer() {
-@@ -127,11 +127,29 @@ public abstract class ChunkGenerator {
+@@ -127,12 +_,30 @@
      );
  
      public @Nullable Pair<BlockPos, Holder<Structure>> findNearestMapStructure(
@@ -28,37 +20,38 @@ index dcec19060cc3ad05572cc861abf654de803cdc6d..1b0eb74970c4d89ce8de4ca7bb86d420
      ) {
          if (SharedConstants.DEBUG_DISABLE_FEATURES) {
              return null;
-         } else {
-+            // Paper start - StructuresLocateEvent
-+            final org.bukkit.World bukkitWorld = level.getWorld();
-+            final org.bukkit.Location origin = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level);
-+            final List<org.bukkit.generator.structure.Structure> apiStructures = wantedStructures.stream().map(org.bukkit.craftbukkit.generator.structure.CraftStructure::minecraftHolderToBukkit).toList();
-+            if (!apiStructures.isEmpty()) {
-+                final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, apiStructures, maxSearchRadius, createReference);
-+                if (!event.callEvent()) {
-+                    return null;
-+                }
-+                if (event.getResult() != null) {
-+                    return Pair.of(io.papermc.paper.util.MCUtil.toBlockPos(event.getResult().pos()), org.bukkit.craftbukkit.generator.structure.CraftStructure.bukkitToMinecraftHolder(event.getResult().structure()));
-+                }
-+                pos = org.bukkit.craftbukkit.util.CraftLocation.toBlockPos(event.getOrigin());
-+                maxSearchRadius = event.getRadius();
-+                createReference = event.shouldFindUnexplored();
-+                wantedStructures = HolderSet.direct(org.bukkit.craftbukkit.generator.structure.CraftStructure::bukkitToMinecraftHolder, event.getStructures());
+         }
+ 
++        // Paper start - StructuresLocateEvent
++        final org.bukkit.World bukkitWorld = level.getWorld();
++        final org.bukkit.Location origin = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level);
++        final List<org.bukkit.generator.structure.Structure> apiStructures = wantedStructures.stream().map(org.bukkit.craftbukkit.generator.structure.CraftStructure::minecraftHolderToBukkit).toList();
++        if (!apiStructures.isEmpty()) {
++            final io.papermc.paper.event.world.StructuresLocateEvent event = new io.papermc.paper.event.world.StructuresLocateEvent(bukkitWorld, origin, apiStructures, maxSearchRadius, createReference);
++            if (!event.callEvent()) {
++                return null;
 +            }
-+            // Paper end
-             ChunkGeneratorStructureState generatorState = level.getChunkSource().getGeneratorState();
-             Map<StructurePlacement, Set<Holder<Structure>>> placementScans = new Object2ObjectArrayMap<>();
++            if (event.getResult() != null) {
++                return Pair.of(io.papermc.paper.util.MCUtil.toBlockPos(event.getResult().pos()), org.bukkit.craftbukkit.generator.structure.CraftStructure.bukkitToMinecraftHolder(event.getResult().structure()));
++            }
++            pos = org.bukkit.craftbukkit.util.CraftLocation.toBlockPos(event.getOrigin());
++            maxSearchRadius = event.getRadius();
++            createReference = event.shouldFindUnexplored();
++            wantedStructures = HolderSet.direct(org.bukkit.craftbukkit.generator.structure.CraftStructure::bukkitToMinecraftHolder, event.getStructures());
++        }
++        // Paper end
+         ChunkGeneratorStructureState generatorState = level.getChunkSource().getGeneratorState();
+         Map<StructurePlacement, Set<Holder<Structure>>> placementScans = new Object2ObjectArrayMap<>();
  
-@@ -226,6 +244,7 @@ public abstract class ChunkGenerator {
-             BlockPos.MutableBlockPos structurePos = new BlockPos.MutableBlockPos();
+@@ -227,6 +_,7 @@
+         BlockPos.MutableBlockPos structurePos = new BlockPos.MutableBlockPos();
  
-             for (ChunkPos chunkPos : positions) {
-+                if (!level.paperConfig().environment.locateStructuresOutsideWorldBorder && !level.getWorldBorder().isChunkInBounds(chunkPos.x(), chunkPos.z())) { continue; } // Paper - Bound treasure maps to world border
-                 structurePos.set(SectionPos.sectionToBlockCoord(chunkPos.x(), 8), 32, SectionPos.sectionToBlockCoord(chunkPos.z(), 8));
-                 double distSqr = structurePos.distSqr(pos);
-                 boolean isClosest = closestPos == null || distSqr < closest;
-@@ -260,9 +279,12 @@ public abstract class ChunkGenerator {
+         for (ChunkPos chunkPos : positions) {
++            if (!level.paperConfig().environment.locateStructuresOutsideWorldBorder && !level.getWorldBorder().isChunkInBounds(chunkPos.x(), chunkPos.z())) { continue; } // Paper - Bound treasure maps to world border
+             structurePos.set(SectionPos.sectionToBlockCoord(chunkPos.x(), 8), 32, SectionPos.sectionToBlockCoord(chunkPos.z(), 8));
+             double distSqr = structurePos.distSqr(pos);
+             boolean isClosest = closestPos == null || distSqr < closest;
+@@ -258,9 +_,12 @@
          for (int x = -radius; x <= radius; x++) {
              boolean xEdge = x == -radius || x == radius;
  
@@ -74,7 +67,7 @@ index dcec19060cc3ad05572cc861abf654de803cdc6d..1b0eb74970c4d89ce8de4ca7bb86d420
                      int sectorX = chunkOriginX + spacing * x;
                      int sectorZ = chunkOriginZ + spacing * z;
                      ChunkPos chunkTarget = config.getPotentialStructureChunk(seed, sectorX, sectorZ);
-@@ -314,7 +336,7 @@ public abstract class ChunkGenerator {
+@@ -312,7 +_,7 @@
          }
      }
  
@@ -83,7 +76,7 @@ index dcec19060cc3ad05572cc861abf654de803cdc6d..1b0eb74970c4d89ce8de4ca7bb86d420
          ChunkPos centerPos = chunk.getPos();
          if (!SharedConstants.debugVoidTerrain(centerPos)) {
              SectionPos sectionPos = SectionPos.of(centerPos, level.getMinSectionY());
-@@ -388,7 +410,14 @@ public abstract class ChunkGenerator {
+@@ -386,7 +_,14 @@
                              Supplier<String> currentlyGenerating = () -> featureRegistry.getResourceKey(feature)
                                  .map(Object::toString)
                                  .orElseGet(feature::toString);
@@ -99,7 +92,7 @@ index dcec19060cc3ad05572cc861abf654de803cdc6d..1b0eb74970c4d89ce8de4ca7bb86d420
  
                              try {
                                  level.setCurrentlyGenerating(currentlyGenerating);
-@@ -416,6 +445,34 @@ public abstract class ChunkGenerator {
+@@ -414,6 +_,34 @@
              }
          }
      }
@@ -134,7 +127,7 @@ index dcec19060cc3ad05572cc861abf654de803cdc6d..1b0eb74970c4d89ce8de4ca7bb86d420
  
      private static BoundingBox getWritableArea(final ChunkAccess chunk) {
          ChunkPos chunkPos = chunk.getPos();
-@@ -495,7 +552,7 @@ public abstract class ChunkGenerator {
+@@ -493,7 +_,7 @@
                              }
                          }
  
@@ -143,7 +136,7 @@ index dcec19060cc3ad05572cc861abf654de803cdc6d..1b0eb74970c4d89ce8de4ca7bb86d420
                              if (structures.size() == 1) {
                                  this.tryGenerateStructure(
                                      structures.get(0),
-@@ -590,6 +647,14 @@ public abstract class ChunkGenerator {
+@@ -588,6 +_,14 @@
              biomePredicate
          );
          if (start.isValid()) {
