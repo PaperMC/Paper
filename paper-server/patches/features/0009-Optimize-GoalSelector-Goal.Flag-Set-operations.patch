@@ -7,7 +7,7 @@ Optimise the stream.anyMatch statement to move to a bitset
 where we can replace the call with a single bitwise operation.
 
 diff --git a/net/minecraft/world/entity/ai/goal/Goal.java b/net/minecraft/world/entity/ai/goal/Goal.java
-index 5746eefd9e8fa851e74ccf6b5d889a9f8e6fc1e0..81fa892212f586e8cd7938556eeaa9f9dc2654aa 100644
+index aa5f0e00daf26650b943a24676638581e494a112..60e0d618c603caef5e3516c9fdfc63ff45a7cdff 100644
 --- a/net/minecraft/world/entity/ai/goal/Goal.java
 +++ b/net/minecraft/world/entity/ai/goal/Goal.java
 @@ -7,7 +7,15 @@ import net.minecraft.world.entity.Entity;
@@ -69,7 +69,7 @@ index 5746eefd9e8fa851e74ccf6b5d889a9f8e6fc1e0..81fa892212f586e8cd7938556eeaa9f9
      // Paper end - Mob Goal API
  
 diff --git a/net/minecraft/world/entity/ai/goal/GoalSelector.java b/net/minecraft/world/entity/ai/goal/GoalSelector.java
-index 844ced7a271ffb557f3c8f2fcd6a4c6ad499aeae..75d8953845b2e9acb62b19a859d0e39fd63533eb 100644
+index b13bdc2852504903fa054c42f89299a5d33dfbd3..1ddf8796d14d472bec48546f25ac4583d483c8e9 100644
 --- a/net/minecraft/world/entity/ai/goal/GoalSelector.java
 +++ b/net/minecraft/world/entity/ai/goal/GoalSelector.java
 @@ -23,7 +23,8 @@ public class GoalSelector {
@@ -119,27 +119,24 @@ index 844ced7a271ffb557f3c8f2fcd6a4c6ad499aeae..75d8953845b2e9acb62b19a859d0e39f
                  goal.stop();
              }
          }
-@@ -95,11 +96,14 @@ public class GoalSelector {
+@@ -95,8 +96,14 @@ public class GoalSelector {
          profiler.push("goalUpdate");
  
-         for (WrappedGoal goalx : this.availableGoals) {
--            if (!goalx.isRunning()
--                && !goalContainsAnyFlags(goalx, this.disabledFlags)
--                && goalCanBeReplacedForAllFlags(goalx, this.lockedFlags)
--                && goalx.canUse()) {
--                for (Goal.Flag flag : goalx.getFlags()) {
+         for (WrappedGoal goal : this.availableGoals) {
+-            if (!goal.isRunning() && !goalContainsAnyFlags(goal, this.disabledFlags) && goalCanBeReplacedForAllFlags(goal, this.lockedFlags) && goal.canUse()) {
+-                for (Goal.Flag flag : goal.getFlags()) {
 +            // Paper start
-+            if (!goalx.isRunning() && !goalContainsAnyFlags(goalx, this.goalTypes) && goalCanBeReplacedForAllFlags(goalx, this.lockedFlags) && goalx.canUse()) {
-+                long flagIterator = goalx.getFlags().getBackingSet();
-+                int wrappedGoalSize = goalx.getFlags().size();
++            if (!goal.isRunning() && !goalContainsAnyFlags(goal, this.goalTypes) && goalCanBeReplacedForAllFlags(goal, this.lockedFlags) && goal.canUse()) {
++                long flagIterator = goal.getFlags().getBackingSet();
++                int wrappedGoalSize = goal.getFlags().size();
 +                for (int i = 0; i < wrappedGoalSize; ++i) {
 +                    final Goal.Flag flag = GOAL_FLAG_VALUES[Long.numberOfTrailingZeros(flagIterator)];
 +                    flagIterator ^= ca.spottedleaf.concurrentutil.util.IntegerUtil.getTrailingBit(flagIterator);
 +                    // Paper end
                      WrappedGoal currentGoal = this.lockedFlags.getOrDefault(flag, NO_GOAL);
                      currentGoal.stop();
-                     this.lockedFlags.put(flag, goalx);
-@@ -131,11 +135,11 @@ public class GoalSelector {
+                     this.lockedFlags.put(flag, goal);
+@@ -128,11 +135,11 @@ public class GoalSelector {
      }
  
      public void disableControlFlag(final Goal.Flag flag) {

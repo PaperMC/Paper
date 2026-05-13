@@ -16,25 +16,24 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/net/minecraft/world/level/pathfinder/PathFinder.java b/net/minecraft/world/level/pathfinder/PathFinder.java
-index bb36ebf3a57cf1de98506a6391d3273b0f8e0f76..7564a67d2d63c3a7f95e1d6008e7308620653774 100644
+index 53aa6995d18cae5663d392e606c049e2e9138a99..2809bf033f37559ea66f9d6d61130926679d75cc 100644
 --- a/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/net/minecraft/world/level/pathfinder/PathFinder.java
-@@ -54,8 +54,12 @@ public class PathFinder {
-         if (from == null) {
+@@ -55,20 +55,24 @@ public class PathFinder {
              return null;
-         } else {
--            Map<Target, BlockPos> tos = targets.stream()
--                .collect(Collectors.toMap(pos -> this.nodeEvaluator.getTarget(pos.getX(), pos.getY(), pos.getZ()), Function.identity()));
-+            // Paper start - Perf: remove streams and optimize collection
-+            List<Map.Entry<Target, BlockPos>> tos = Lists.newArrayList();
-+            for (BlockPos pos : targets) {
-+                tos.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getTarget(pos.getX(), pos.getY(), pos.getZ()), pos));
-+            }
-+            // Paper end - Perf: remove streams and optimize collection
-             Path path = this.findPath(from, tos, maxPathLength, reachRange, maxVisitedNodesMultiplier);
-             this.nodeEvaluator.done();
-             return path;
-@@ -63,12 +67,12 @@ public class PathFinder {
+         }
+ 
+-        Map<Target, BlockPos> tos = targets.stream()
+-            .collect(Collectors.toMap(pos -> this.nodeEvaluator.getTarget(pos.getX(), pos.getY(), pos.getZ()), Function.identity()));
++        // Paper start - Perf: remove streams and optimize collection
++        List<Map.Entry<Target, BlockPos>> tos = Lists.newArrayList();
++        for (BlockPos pos : targets) {
++            tos.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getTarget(pos.getX(), pos.getY(), pos.getZ()), pos));
++        }
++        // Paper end - Perf: remove streams and optimize collection
+         Path path = this.findPath(from, tos, maxPathLength, reachRange, maxVisitedNodesMultiplier);
+         this.nodeEvaluator.done();
+         return path;
      }
  
      private @Nullable Path findPath(
@@ -81,11 +80,14 @@ index bb36ebf3a57cf1de98506a6391d3273b0f8e0f76..7564a67d2d63c3a7f95e1d6008e73086
  
 -        Optional<Path> optPath = !reachedTargets.isEmpty()
 -            ? reachedTargets.stream()
--                .map(targetx -> this.reconstructPath(targetx.getBestNode(), targetMap.get(targetx), true))
+-                .map(target -> this.reconstructPath(target.getBestNode(), targetMap.get(target), true))
 -                .min(Comparator.comparingInt(Path::getNodeCount))
 -            : targets.stream()
--                .map(targetx -> this.reconstructPath(targetx.getBestNode(), targetMap.get(targetx), false))
+-                .map(target -> this.reconstructPath(target.getBestNode(), targetMap.get(target), false))
 -                .min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
+-        profiler.pop();
+-        if (optPath.isEmpty()) {
+-            return null;
 +        Path best = null;
 +        boolean entryListIsEmpty = reachedTargets.isEmpty();
 +        Comparator<Path> comparator = entryListIsEmpty
@@ -96,23 +98,21 @@ index bb36ebf3a57cf1de98506a6391d3273b0f8e0f76..7564a67d2d63c3a7f95e1d6008e73086
 +            if (best == null || comparator.compare(path, best) < 0) {
 +                best = path;
 +            }
-+        }
-         profiler.pop();
--        if (optPath.isEmpty()) {
--            return null;
--        } else {
--            Path path = optPath.get();
--            if (captureDebug) {
--                path.setDebug(this.openSet.getHeap(), closedSet.toArray(Node[]::new), targets);
+         }
+-
+-        Path path = optPath.get();
+-        if (captureDebug) {
+-            path.setDebug(this.openSet.getHeap(), closedSet.toArray(Node[]::new), targets);
++        profiler.pop();
 +        if (captureDebug && best != null) {
 +            Set<Target> set = Sets.newHashSet();
 +            for(Map.Entry<Target, BlockPos> entry : targets) {
 +                set.add(entry.getKey());
-             }
--
--            return path;
++            }
 +            best.setDebug(this.openSet.getHeap(), closedSet.toArray(Node[]::new), set);
          }
+-
+-        return path;
 +        return best;
 +        // Paper end - Perf: remove streams and optimize collection
      }

@@ -33491,7 +33491,7 @@ index 109d7b563ee799d998a5773c5a36e61ca3607d46..747755082639436731989d3ee4b3c30a
          return structureTemplate.save(new CompoundTag());
      }
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index e11862c7e0617acfb36212cfe349bdade3a5164b..7ae2d491a3b2f379df99ccc649b8bb8cbf2304b9 100644
+index 5bdb7d130cc2e47c9b55f85acae64e83d6ee2546..c3b14d51240b5f6edfc3ecdea04f50774615b98c 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -299,6 +299,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -33503,18 +33503,18 @@ index e11862c7e0617acfb36212cfe349bdade3a5164b..7ae2d491a3b2f379df99ccc649b8bb8c
          Thread thread = new ca.spottedleaf.moonrise.common.util.TickThread(() -> serverReference.get().runServer(), "Server thread");
          thread.setUncaughtExceptionHandler((t, e) -> LOGGER.error("Uncaught exception in server thread", e));
 diff --git a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
-index c206c74acc80c281d06a669eb668239dc61018eb..884fa9545a93008fa92863c845aef8f18d88e25a 100644
+index 4346f3bace176e09d9ffb02e9af29a1281071e2a..df4f03f3a346e0ab0074757b3a077b2407135ac3 100644
 --- a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
-@@ -99,7 +99,7 @@ public class SimpleRegionStorage implements ca.spottedleaf.moonrise.patches.chun
-                 }
-                 // Spigot end
-                 injectDatafixingContext(chunkTag, dataFixContextTag);
--                chunkTag = this.dataFixType.update(this.fixerUpper, chunkTag, version, targetVersion);
-+                chunkTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(this.getDataConverterType(), chunkTag, version, targetVersion); // Paper - rewrite dataconverter system
-                 // Spigot start
-                 if (stopBelowZero) {
-                     chunkTag.putString("Status", net.minecraft.core.registries.BuiltInRegistries.CHUNK_STATUS.getKey(net.minecraft.world.level.chunk.status.ChunkStatus.SPAWN).toString());
+@@ -100,7 +100,7 @@ public class SimpleRegionStorage implements ca.spottedleaf.moonrise.patches.chun
+             }
+             // Spigot end
+             injectDatafixingContext(chunkTag, dataFixContextTag);
+-            chunkTag = this.dataFixType.update(this.fixerUpper, chunkTag, version, targetVersion);
++            chunkTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(this.getDataConverterType(), chunkTag, version, targetVersion); // Paper - rewrite dataconverter system
+             // Spigot start
+             if (stopBelowZero) {
+                 chunkTag.putString("Status", net.minecraft.core.registries.BuiltInRegistries.CHUNK_STATUS.getKey(net.minecraft.world.level.chunk.status.ChunkStatus.SPAWN).toString());
 @@ -118,6 +118,20 @@ public class SimpleRegionStorage implements ca.spottedleaf.moonrise.patches.chun
          }
      }
@@ -33537,23 +33537,23 @@ index c206c74acc80c281d06a669eb668239dc61018eb..884fa9545a93008fa92863c845aef8f1
          return this.upgradeChunkTag(chunkTag, defaultVersion, null, SharedConstants.getCurrentVersion().dataVersion().version());
      }
 diff --git a/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-index 2ab055d5cdfb1e2e7cfb6f8a769c3d571acb2861..a45da98735045d55d3da14271c9bbb7a37f3151c 100644
+index 0d4c26d8a086e54f84413dab9595e210e52a43bf..a725a769f865e9f4506394b2fe57f560837720df 100644
 --- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-@@ -161,7 +161,7 @@ public class StructureCheck {
+@@ -163,7 +163,7 @@ public class StructureCheck {
  
              CompoundTag fixedChunkTag;
              try {
 -                fixedChunkTag = DataFixTypes.CHUNK.updateToCurrentVersion(this.fixerUpper, chunkTag, version);
-+                fixedChunkTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, chunkTag, version, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion()); // Paper - replace chunk converter
-             } catch (Exception var12) {
-                 LOGGER.warn("Failed to partially datafix chunk {}", pos, var12);
++                    fixedChunkTag = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, chunkTag, version, ca.spottedleaf.dataconverter.minecraft.util.Version.getCurrentVersion()); // Paper - replace chunk converter
+             } catch (Exception e) {
+                 LOGGER.warn("Failed to partially datafix chunk {}", pos, e);
                  return StructureCheckResult.CHUNK_LOAD_NEEDED;
 diff --git a/net/minecraft/world/level/levelgen/structure/templatesystem/loader/TemplateSource.java b/net/minecraft/world/level/levelgen/structure/templatesystem/loader/TemplateSource.java
-index 780a3eb08b7fb2c385c8e75e2e5f02a9d67297f4..2c7e4a6288f0c7101755de4be8f14449cdc4e01e 100644
+index e61076a9ff3d9bce5c44e548158716db105db3ee..fe1500ebbfb09bef18989c891a19608ec9d4661c 100644
 --- a/net/minecraft/world/level/levelgen/structure/templatesystem/loader/TemplateSource.java
 +++ b/net/minecraft/world/level/levelgen/structure/templatesystem/loader/TemplateSource.java
-@@ -79,7 +79,7 @@ public abstract class TemplateSource {
+@@ -71,7 +71,7 @@ public abstract class TemplateSource {
      public StructureTemplate readStructure(final CompoundTag tag) {
          StructureTemplate structureTemplate = new StructureTemplate();
          int version = NbtUtils.getDataVersion(tag, 500);
@@ -33563,7 +33563,7 @@ index 780a3eb08b7fb2c385c8e75e2e5f02a9d67297f4..2c7e4a6288f0c7101755de4be8f14449
      }
  }
 diff --git a/net/minecraft/world/level/storage/PlayerDataStorage.java b/net/minecraft/world/level/storage/PlayerDataStorage.java
-index 41cbb27861f33ad8d7523f3b2fef9a30a69693a9..c5898bfb8b4f075b08090cba2e9f980174e0a326 100644
+index 8eda63e1f07f7998875713447c5f39eea3f85ca4..eddb6ebe3fa50a818e54079b73ba117be0abd195 100644
 --- a/net/minecraft/world/level/storage/PlayerDataStorage.java
 +++ b/net/minecraft/world/level/storage/PlayerDataStorage.java
 @@ -98,7 +98,7 @@ public class PlayerDataStorage {
