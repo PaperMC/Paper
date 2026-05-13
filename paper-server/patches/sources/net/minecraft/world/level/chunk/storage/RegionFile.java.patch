@@ -1,0 +1,51 @@
+--- a/net/minecraft/world/level/chunk/storage/RegionFile.java
++++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -83,6 +_,14 @@
+                 if (offset != 0) {
+                     int sectorNumber = getSectorNumber(offset);
+                     int numSectors = getNumSectors(offset);
++                    // Spigot start
++                    if (numSectors == 255) {
++                        // We're maxed out, so we need to read the proper length from the section
++                        ByteBuffer realLen = ByteBuffer.allocate(4);
++                        this.file.read(realLen, sectorNumber * 4096);
++                        numSectors = (realLen.getInt(0) + 4) / 4096 + 1;
++                    }
++                    // Spigot end
+                     if (sectorNumber < 2) {
+                         LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", path, i, sectorNumber);
+                         this.offsets.put(i, 0);
+@@ -117,6 +_,13 @@
+ 
+         int sectorNumber = getSectorNumber(offset);
+         int numSectors = getNumSectors(offset);
++        // Spigot start
++        if (numSectors == 255) {
++            ByteBuffer realLen = ByteBuffer.allocate(4);
++            this.file.read(realLen, sectorNumber * 4096);
++            numSectors = (realLen.getInt(0) + 4) / 4096 + 1;
++        }
++        // Spigot end
+         int sectorsLength = numSectors * 4096;
+         ByteBuffer buffer = ByteBuffer.allocate(sectorsLength);
+         this.file.read(buffer, sectorNumber * 4096);
+@@ -258,6 +_,7 @@
+ 
+             return true;
+         } catch (IOException e) {
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(E); // Paper - ServerExceptionEvent
+             return false;
+         }
+     }
+@@ -328,6 +_,11 @@
+         try (FileChannel extFile = FileChannel.open(tmpPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+             data.position(5);
+             extFile.write(data);
++            // Paper start - ServerExceptionEvent
++        } catch (Throwable throwable) {
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable);
++            throw throwable;
++            // Paper end - ServerExceptionEvent
+         }
+ 
+         return () -> Files.move(tmpPath, path, StandardCopyOption.REPLACE_EXISTING);

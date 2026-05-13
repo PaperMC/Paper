@@ -1,14 +1,6 @@
-From 96e4ace8a69c515c1d75f731dcd6f01e57d19245 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/projectile/Projectile.java b/net/minecraft/world/entity/projectile/Projectile.java
-index 5657ed613e31dd858142ca592763385c4a389bb5..2ee2103e78f2b73d1e6df59b92037f219d82e191 100644
 --- a/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/net/minecraft/world/entity/projectile/Projectile.java
-@@ -44,6 +44,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -44,6 +_,7 @@
      private boolean leftOwnerChecked;
      public boolean hasBeenShot = false;
      private @Nullable Entity lastDeflectedBy;
@@ -16,7 +8,7 @@ index 5657ed613e31dd858142ca592763385c4a389bb5..2ee2103e78f2b73d1e6df59b92037f21
  
      protected Projectile(final EntityType<? extends Projectile> type, final Level level) {
          super(type, level);
-@@ -83,6 +84,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -83,6 +_,7 @@
      @Override
      protected void readAdditionalSaveData(final ValueInput input) {
          this.setOwner(EntityReference.read(input, "Owner"));
@@ -24,7 +16,7 @@ index 5657ed613e31dd858142ca592763385c4a389bb5..2ee2103e78f2b73d1e6df59b92037f21
          this.leftOwner = input.getBooleanOr("LeftOwner", false);
          this.hasBeenShot = input.getBooleanOr("HasBeenShot", false);
      }
-@@ -155,7 +157,14 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -155,7 +_,14 @@
          float zd = Mth.cos(yRot * Mth.DEG_TO_RAD) * Mth.cos(xRot * Mth.DEG_TO_RAD);
          this.shoot(xd, yd, zd, pow, uncertainty);
          Vec3 sourceMovement = source.getKnownMovement();
@@ -39,7 +31,7 @@ index 5657ed613e31dd858142ca592763385c4a389bb5..2ee2103e78f2b73d1e6df59b92037f21
      }
  
      @Override
-@@ -181,7 +190,20 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -181,7 +_,20 @@
          final float pow,
          final float uncertainty
      ) {
@@ -61,7 +53,7 @@ index 5657ed613e31dd858142ca592763385c4a389bb5..2ee2103e78f2b73d1e6df59b92037f21
              creator.create(serverLevel, source, itemStack),
              serverLevel,
              itemStack,
-@@ -215,7 +237,22 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -215,7 +_,22 @@
          final float pow,
          final float uncertainty
      ) {
@@ -85,7 +77,7 @@ index 5657ed613e31dd858142ca592763385c4a389bb5..2ee2103e78f2b73d1e6df59b92037f21
      }
  
      public static <T extends Projectile> T spawnProjectile(final T projectile, final ServerLevel serverLevel, final ItemStack itemStack) {
-@@ -225,12 +262,47 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -225,11 +_,46 @@
      public static <T extends Projectile> T spawnProjectile(
          final T projectile, final ServerLevel serverLevel, final ItemStack itemStack, final Consumer<T> shootFunction
      ) {
@@ -93,6 +85,7 @@ index 5657ed613e31dd858142ca592763385c4a389bb5..2ee2103e78f2b73d1e6df59b92037f21
 -        serverLevel.addFreshEntity(projectile);
 -        projectile.applyOnProjectileSpawned(serverLevel, itemStack);
 -        return projectile;
+-    }
 +        // Paper start - delayed projectile spawning
 +        return spawnProjectileDelayed(projectile, serverLevel, itemStack, shootFunction).spawn();
 +    }
@@ -101,8 +94,8 @@ index 5657ed613e31dd858142ca592763385c4a389bb5..2ee2103e78f2b73d1e6df59b92037f21
 +        // Paper end - delayed projectile spawning
 +        adapter.accept(projectile);
 +        return new Delayed<>(projectile, serverLevel, itemStack); // Paper - delayed projectile spawning
-     }
- 
++    }
++
 +    // Paper start - delayed projectile spawning
 +    public record Delayed<T extends Projectile>(
 +        T projectile,
@@ -133,11 +126,10 @@ index 5657ed613e31dd858142ca592763385c4a389bb5..2ee2103e78f2b73d1e6df59b92037f21
 +        }
 +    }
 +    // Paper end - delayed projectile spawning
-+
+ 
      public void applyOnProjectileSpawned(final ServerLevel serverLevel, final ItemStack pickupItemStack) {
          EnchantmentHelper.onProjectileSpawned(serverLevel, pickupItemStack, this, item -> {});
-         if (this instanceof AbstractArrow arrow) {
-@@ -241,6 +313,17 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -241,6 +_,17 @@
          }
      }
  
@@ -155,7 +147,7 @@ index 5657ed613e31dd858142ca592763385c4a389bb5..2ee2103e78f2b73d1e6df59b92037f21
      protected ProjectileDeflection hitTargetOrDeflectSelf(final HitResult hitResult) {
          if (hitResult.getType() == HitResult.Type.ENTITY) {
              EntityHitResult entityHitResult = (EntityHitResult)hitResult;
-@@ -313,15 +396,35 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -313,16 +_,36 @@
      }
  
      protected void onHitBlock(final BlockHitResult hitResult) {
@@ -177,21 +169,22 @@ index 5657ed613e31dd858142ca592763385c4a389bb5..2ee2103e78f2b73d1e6df59b92037f21
      protected boolean canHitEntity(final Entity entity) {
          if (!entity.canBeHitByProjectile()) {
              return false;
-         } else {
-             Entity owner = this.getOwner();
-+            // Paper start - Cancel hit for vanished entities
-+            if (owner instanceof net.minecraft.server.level.ServerPlayer) {
-+                org.bukkit.entity.Entity collided = entity.getBukkitEntity();
-+                org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) owner.getBukkitEntity();
-+                if (!shooter.canSee(collided)) {
-+                    return false;
-+                }
-+            }
-+            // Paper end - Cancel hit for vanished entities
-             return owner == null || this.leftOwner || !owner.isPassengerOfSameVehicle(entity);
          }
+ 
+         Entity owner = this.getOwner();
++        // Paper start - Cancel hit for vanished entities
++        if (owner instanceof net.minecraft.server.level.ServerPlayer) {
++            org.bukkit.entity.Entity collided = entity.getBukkitEntity();
++            org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) owner.getBukkitEntity();
++            if (!shooter.canSee(collided)) {
++                return false;
++            }
++        }
++        // Paper end - Cancel hit for vanished entities
+         return owner == null || this.leftOwner || !owner.isPassengerOfSameVehicle(entity);
      }
-@@ -334,13 +437,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+ 
+@@ -334,13 +_,7 @@
      }
  
      protected static float lerpRotation(float rotO, final float rot) {
