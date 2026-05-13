@@ -76,9 +76,9 @@ How To (Pull Request)
 ------
 See [Contributing](CONTRIBUTING.md)
 
-Old Versions (1.21.3 and below)
+Old Versions (1.21.4 and below)
 ------
-For branches of versions 1.8-1.21.3, please see our [archive repository](https://github.com/PaperMC/Paper-archive).
+For branches of versions 1.8-1.21.4, please see our [archive repository](https://github.com/PaperMC/Paper-archive).
 
 Support Us
 ------
