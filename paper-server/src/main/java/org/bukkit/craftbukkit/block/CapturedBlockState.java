@@ -15,7 +15,7 @@ public final class CapturedBlockState extends CraftBlockState {
 
     private final boolean treeBlock;
 
-    public CapturedBlockState(Block block, int capturedFlags, boolean treeBlock) {
+    public CapturedBlockState(Block block, @net.minecraft.world.level.block.Block.UpdateFlags int capturedFlags, boolean treeBlock) {
         super(block, capturedFlags);
 
         this.treeBlock = treeBlock;
@@ -38,7 +38,7 @@ public final class CapturedBlockState extends CraftBlockState {
     }
 
     @Override
-    public boolean place(int flags) {
+    public boolean place(@net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         boolean result = super.place(flags);
         this.addBees();
 
@@ -74,7 +74,7 @@ public final class CapturedBlockState extends CraftBlockState {
         return new CapturedBlockState(this, location);
     }
 
-    public static CapturedBlockState getTreeBlockState(Level world, BlockPos pos, int flag) {
-        return new CapturedBlockState(CraftBlock.at(world, pos), flag, true);
+    public static CapturedBlockState getTreeBlockState(Level world, BlockPos pos, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
+        return new CapturedBlockState(CraftBlock.at(world, pos), flags, true);
     }
 }

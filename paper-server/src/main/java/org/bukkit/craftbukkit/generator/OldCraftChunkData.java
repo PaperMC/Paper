@@ -36,10 +36,10 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
     }
 
     public OldCraftChunkData(int minHeight, int maxHeight, PalettedContainerFactory palettedContainerFactory, org.bukkit.World world) {
-        this.world = world;
         this.minHeight = minHeight;
         this.maxHeight = maxHeight;
         this.palettedContainerFactory = palettedContainerFactory;
+        this.world = world;
         this.sections = new LevelChunkSection[(((maxHeight - 1) >> 4) + 1) - (minHeight >> 4)];
     }
 
@@ -90,17 +90,17 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
 
     @Override
     public Material getType(int x, int y, int z) {
-        return CraftBlockType.minecraftToBukkit(this.getTypeId(x, y, z).getBlock());
+        return CraftBlockType.minecraftToBukkit(this.getBlockState(x, y, z).getBlock());
     }
 
     @Override
     public MaterialData getTypeAndData(int x, int y, int z) {
-        return CraftMagicNumbers.getMaterial(this.getTypeId(x, y, z));
+        return CraftMagicNumbers.getMaterial(this.getBlockState(x, y, z));
     }
 
     @Override
     public BlockData getBlockData(int x, int y, int z) {
-        return CraftBlockData.fromData(this.getTypeId(x, y, z));
+        return this.getBlockState(x, y, z).asBlockData();
     }
 
     public void setRegion(int xMin, int yMin, int zMin, int xMax, int yMax, int zMax, BlockState type) {
@@ -140,7 +140,7 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
         }
     }
 
-    public BlockState getTypeId(int x, int y, int z) {
+    public BlockState getBlockState(int x, int y, int z) {
         if (x != (x & 0xf) || y < this.minHeight || y >= this.maxHeight || z != (z & 0xf)) {
             return Blocks.AIR.defaultBlockState();
         }
@@ -154,7 +154,7 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
 
     @Override
     public byte getData(int x, int y, int z) {
-        return CraftMagicNumbers.toLegacyData(this.getTypeId(x, y, z));
+        return CraftMagicNumbers.toLegacyData(this.getBlockState(x, y, z));
     }
 
     private void setBlock(int x, int y, int z, BlockState type) {

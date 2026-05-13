@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagLoader;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -27,13 +27,13 @@ import org.checkerframework.framework.qual.DefaultQualifier;
 @DefaultQualifier(NonNull.class)
 public class PaperPreFlattenTagRegistrar<T> implements PaperRegistrar<BootstrapContext>, PreFlattenTagRegistrar<T> {
 
-    public final Map<ResourceLocation, List<TagLoader.EntryWithSource>> tags;
+    public final Map<Identifier, List<TagLoader.EntryWithSource>> tags;
     private final RegistryKey<T> registryKey;
 
     private @Nullable BootstrapContext owner;
 
     public PaperPreFlattenTagRegistrar(
-        final Map<ResourceLocation, List<TagLoader.EntryWithSource>> tags,
+        final Map<Identifier, List<TagLoader.EntryWithSource>> tags,
         final TagEventConfig<?, T> config
     ) {
         this.tags = new HashMap<>(tags);
@@ -53,7 +53,7 @@ public class PaperPreFlattenTagRegistrar<T> implements PaperRegistrar<BootstrapC
     @Override
     public Map<TagKey<T>, Collection<TagEntry<T>>> getAllTags() {
         final ImmutableMap.Builder<TagKey<T>, Collection<io.papermc.paper.tag.TagEntry<T>>> builder = ImmutableMap.builderWithExpectedSize(this.tags.size());
-        for (final Map.Entry<ResourceLocation, List<TagLoader.EntryWithSource>> entry : this.tags.entrySet()) {
+        for (final Map.Entry<Identifier, List<TagLoader.EntryWithSource>> entry : this.tags.entrySet()) {
             final TagKey<T> key = TagKey.create(this.registryKey, CraftNamespacedKey.fromMinecraft(entry.getKey()));
             builder.put(key, convert(entry.getValue()));
         }
@@ -70,7 +70,7 @@ public class PaperPreFlattenTagRegistrar<T> implements PaperRegistrar<BootstrapC
 
     private TagLoader.EntryWithSource convert(final TagEntry<T> entry) {
         Preconditions.checkState(this.owner != null, "Owner is not set");
-        final ResourceLocation vanilla = PaperAdventure.asVanilla(entry.key());
+        final Identifier vanilla = PaperAdventure.asVanilla(entry.key());
         final net.minecraft.tags.TagEntry nmsEntry;
         if (entry.isTag()) {
             if (entry.isRequired()) {
@@ -94,7 +94,7 @@ public class PaperPreFlattenTagRegistrar<T> implements PaperRegistrar<BootstrapC
     }
 
     private List<TagLoader.EntryWithSource> getNmsTag(final TagKey<T> tagKey, boolean create) {
-        final ResourceLocation vanillaKey = PaperAdventure.asVanilla(tagKey.key());
+        final Identifier vanillaKey = PaperAdventure.asVanilla(tagKey.key());
         List<TagLoader.EntryWithSource> tag = this.tags.get(vanillaKey);
         if (tag == null) {
             if (create) {

@@ -79,18 +79,18 @@
 +    }
 +    // Paper end - add fields and methods
  
-     public Inventory(Player player, EntityEquipment equipment) {
+     public Inventory(final Player player, final EntityEquipment equipment) {
          this.player = player;
 @@ -93,10 +_,39 @@
  
-     private boolean hasRemainingSpaceForItem(ItemStack destination, ItemStack origin) {
-         return !destination.isEmpty()
--            && ItemStack.isSameItemSameComponents(destination, origin)
-             && destination.isStackable()
--            && destination.getCount() < this.getMaxStackSize(destination);
+     private boolean hasRemainingSpaceForItem(final ItemStack slotItemStack, final ItemStack newItemStack) {
+         return !slotItemStack.isEmpty()
+-            && ItemStack.isSameItemSameComponents(slotItemStack, newItemStack)
+             && slotItemStack.isStackable()
+-            && slotItemStack.getCount() < this.getMaxStackSize(slotItemStack);
 -    }
-+            && destination.getCount() < this.getMaxStackSize(destination)
-+            && ItemStack.isSameItemSameComponents(destination, origin); // Paper - check if itemstack is stackable first
++            && slotItemStack.getCount() < this.getMaxStackSize(slotItemStack)
++            && ItemStack.isSameItemSameComponents(slotItemStack, newItemStack); // Paper - check if itemstack is stackable first
 +    }
 +
 +    // CraftBukkit start - Watch method above! :D
@@ -125,28 +125,28 @@
      public int getFreeSlot() {
          for (int i = 0; i < this.items.size(); i++) {
 @@ -108,8 +_,10 @@
-         return -1;
+         return NOT_FOUND_INDEX;
      }
  
--    public void addAndPickItem(ItemStack stack) {
+-    public void addAndPickItem(final ItemStack itemStack) {
 -        this.setSelectedSlot(this.getSuitableHotbarSlot());
 +    // Paper start - Add PlayerPickItemEvent
-+    public void addAndPickItem(ItemStack stack, final int targetSlot) {
++    public void addAndPickItem(final ItemStack itemStack, final int targetSlot) {
 +        this.setSelectedSlot(targetSlot);
 +        // Paper end - Add PlayerPickItemEvent
          if (!this.items.get(this.selected).isEmpty()) {
              int freeSlot = this.getFreeSlot();
-             if (freeSlot != -1) {
+             if (freeSlot != NOT_FOUND_INDEX) {
 @@ -120,8 +_,10 @@
-         this.items.set(this.selected, stack);
+         this.items.set(this.selected, itemStack);
      }
  
--    public void pickSlot(int index) {
+-    public void pickSlot(final int slot) {
 -        this.setSelectedSlot(this.getSuitableHotbarSlot());
 +    // Paper start - Add PlayerPickItemEvent
-+    public void pickSlot(int index, final int targetSlot) {
++    public void pickSlot(final int slot, final int targetSlot) {
 +        this.setSelectedSlot(targetSlot);
 +    // Paper end - Add PlayerPickItemEvent
-         ItemStack itemStack = this.items.get(this.selected);
-         this.items.set(this.selected, this.items.get(index));
-         this.items.set(index, itemStack);
+         ItemStack tmp = this.items.get(this.selected);
+         this.items.set(this.selected, this.items.get(slot));
+         this.items.set(slot, tmp);

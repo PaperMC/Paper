@@ -19,7 +19,7 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.NonExtendable
 public interface ItemEnchantments {
 
-    @Contract(value = "_, _ -> new", pure = true)
+    @Contract(value = "_ -> new", pure = true)
     static ItemEnchantments itemEnchantments(final Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments) {
         return itemEnchantments().addAll(enchantments).build();
     }

@@ -5,11 +5,11 @@ import org.bukkit.Material;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;
-import org.bukkit.support.environment.AllFeatures;
+import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@AllFeatures
+@VanillaFeature
 public class CraftMetaTropicalFishBucketTest {
 
     @Test

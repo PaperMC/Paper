@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
 public class VillagerProfessionRewriter extends RegistryFieldRewriter<VillagerProfession> {
@@ -49,7 +49,7 @@ public class VillagerProfessionRewriter extends RegistryFieldRewriter<VillagerPr
                     })
                     .skip(TokenType.IDENTIFIER)
                     .skipClosure(TokenType.LPAREN, TokenType.RPAREN, true)
-                    .map(TokenType.SECO, $ -> {
+                    .map(TokenType.SECO, _ -> {
                         if (constant.isComplete()) {
                             map.put(constant.name(), constant.javadocs());
                         }
@@ -71,7 +71,7 @@ public class VillagerProfessionRewriter extends RegistryFieldRewriter<VillagerPr
                     })
                     .skipClosure(TokenType.LPAREN, TokenType.RPAREN, true)
                     .skipClosure(TokenType.LSCOPE, TokenType.RSCOPE, true)
-                    .map(endMarkers::contains, $ -> {
+                    .map(endMarkers::contains, _ -> {
                         // this part will probably fail for the last entry for enum without end (,;)
                         if (constant.isComplete()) {
                             map.put(constant.name(), constant.javadocs());

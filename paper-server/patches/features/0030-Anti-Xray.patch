@@ -5,10 +5,10 @@ Subject: [PATCH] Anti-Xray
 
 
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index 045778402404d46610165d15d8d430d6ae968688..695b8b708ffda1a927d865ba9891bb85303d75af 100644
+index fadce1c051e6c7bc0c3d041c0cc8ecd7e1ae43e0..4dd1baf17597d8801a286346a2b74345f4d23dfa 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
-@@ -48,20 +48,25 @@ public final class FeatureHooks {
+@@ -47,20 +47,25 @@ public final class FeatureHooks {
      }
  
      public static LevelChunkSection createSection(final PalettedContainerFactory palettedContainerFactory, final Level level, final ChunkPos chunkPos, final int chunkSection) {
@@ -39,40 +39,40 @@ index 045778402404d46610165d15d8d430d6ae968688..695b8b708ffda1a927d865ba9891bb85
  
      public static Set<Long> getSentChunkKeys(final ServerPlayer player) {
 diff --git a/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java b/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
-index c9086bca5cbb780fd586f667e31a8fe1400ae58a..f828d07018d9a17aaa0142aac67ebed58dd84c3e 100644
+index cde895c776c3077292c1a8381461075b1fbc45c7..b817e30a23a0030f948ff6c12175767fa8c5546c 100644
 --- a/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
 +++ b/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
 @@ -70,8 +70,10 @@ public record ClientboundChunksBiomesPacket(List<ClientboundChunksBiomesPacket.C
          }
  
-         public static void extractChunkData(FriendlyByteBuf buffer, LevelChunk chunk) {
+         public static void extractChunkData(final FriendlyByteBuf buffer, final LevelChunk chunk) {
 +            int chunkSectionIndex = 0; // Paper - Anti-Xray
-             for (LevelChunkSection levelChunkSection : chunk.getSections()) {
--                levelChunkSection.getBiomes().write(buffer);
-+                levelChunkSection.getBiomes().write(buffer, null, chunkSectionIndex); // Paper - Anti-Xray
+             for (LevelChunkSection section : chunk.getSections()) {
+-                section.getBiomes().write(buffer);
++                section.getBiomes().write(buffer, null, chunkSectionIndex); // Paper - Anti-Xray
 +                chunkSectionIndex++; // Paper - Anti-Xray
              }
  
              if (buffer.writerIndex() != buffer.capacity()) {
 diff --git a/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
-index bd9b29da33670afd6ad0ea86927dad8c4a69faca..33ca4c2110673dee34b66c8d05ee83c4df828f2e 100644
+index 488d5654f5414c9950f19e86a791507366366e01..42bfd4b3b626ef66b0f2ef8438add5342b367800 100644
 --- a/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 +++ b/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 @@ -41,13 +41,23 @@ public class ClientboundLevelChunkPacketData {
      }
      // Paper end - Handle oversized block entities in chunks
  
-+    // Paper start - Anti-Xray - Add chunk packet info
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse
-     public ClientboundLevelChunkPacketData(LevelChunk levelChunk) {
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Anti-Xray - Add chunk packet info
+     public ClientboundLevelChunkPacketData(final LevelChunk levelChunk) {
++        // Paper start - Anti-Xray - Add chunk packet info
 +        this(levelChunk, null);
 +    }
-+    public ClientboundLevelChunkPacketData(LevelChunk levelChunk, io.papermc.paper.antixray.ChunkPacketInfo<net.minecraft.world.level.block.state.BlockState> chunkPacketInfo) {
++    public ClientboundLevelChunkPacketData(final LevelChunk levelChunk, final io.papermc.paper.antixray.ChunkPacketInfo<net.minecraft.world.level.block.state.BlockState> chunkPacketInfo) {
 +        // Paper end - Anti-Xray - Add chunk packet info
          this.heightmaps = levelChunk.getHeightmaps()
              .stream()
-             .filter(entry1 -> entry1.getKey().sendToClient())
-             .collect(Collectors.toMap(Entry::getKey, entry1 -> (long[])entry1.getValue().getRawData().clone()));
+             .filter(entryx -> ((Heightmap.Types)entryx.getKey()).sendToClient())
+             .collect(Collectors.toMap(Entry::getKey, entryx -> (long[])((Heightmap)entryx.getValue()).getRawData().clone()));
          this.buffer = new byte[calculateChunkSize(levelChunk)];
 -        extractChunkData(new FriendlyByteBuf(this.getWriteBuffer()), levelChunk);
 +        // Paper start - Anti-Xray - Add chunk packet info
@@ -84,36 +84,35 @@ index bd9b29da33670afd6ad0ea86927dad8c4a69faca..33ca4c2110673dee34b66c8d05ee83c4
          int totalTileEntities = 0; // Paper - Handle oversized block entities in chunks
  
 @@ -100,9 +110,17 @@ public class ClientboundLevelChunkPacketData {
-         return byteBuf;
+         return buffer;
      }
  
-+    // Paper start - Anti-Xray - Add chunk packet info
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse
-     public static void extractChunkData(FriendlyByteBuf buffer, LevelChunk chunk) {
-+        ClientboundLevelChunkPacketData.extractChunkData(buffer, chunk, null);
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Anti-Xray - Add chunk packet info
+     public static void extractChunkData(final FriendlyByteBuf buffer, final LevelChunk chunk) {
++        // Paper start - Anti-Xray - Add chunk packet info
++        extractChunkData(buffer, chunk, null);
 +    }
-+    public static void extractChunkData(FriendlyByteBuf buffer, LevelChunk chunk, io.papermc.paper.antixray.ChunkPacketInfo<net.minecraft.world.level.block.state.BlockState> chunkPacketInfo) {
++    public static void extractChunkData(final FriendlyByteBuf buffer, final LevelChunk chunk, final io.papermc.paper.antixray.ChunkPacketInfo<net.minecraft.world.level.block.state.BlockState> chunkPacketInfo) {
 +        int chunkSectionIndex = 0;
-         for (LevelChunkSection levelChunkSection : chunk.getSections()) {
--            levelChunkSection.write(buffer);
-+            levelChunkSection.write(buffer, chunkPacketInfo, chunkSectionIndex);
+         for (LevelChunkSection section : chunk.getSections()) {
+-            section.write(buffer);
++            section.write(buffer, chunkPacketInfo, chunkSectionIndex);
 +            chunkSectionIndex++;
-+            // Paper end  - Anti-Xray - Add chunk packet info
++            // Paper end - Anti-Xray - Add chunk packet info
          }
  
          if (buffer.writerIndex() != buffer.capacity()) {
 diff --git a/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java b/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
-index fdd164cd45a26c7ef25f1153ab8985ba50c01b14..8578d1f78ddd1bb75f3230f04bfaa35af9f5f822 100644
+index a94e6ca1d396b6b0781de5d550c4a804274ee003..a1018e9ca9dfb978d6e6633577abd7d5d0960fa6 100644
 --- a/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
 +++ b/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
-@@ -18,18 +18,31 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
+@@ -18,23 +18,43 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
      private final int z;
      private final ClientboundLevelChunkPacketData chunkData;
      private final ClientboundLightUpdatePacketData lightData;
 -    // Paper start - Anti-Xray
 +    // Paper start - Async-Anti-Xray - Ready flag for the connection, add chunk packet info
 +    private volatile boolean ready;
-+
 +    @Override
 +    public boolean isReady() {
 +        return this.ready;
@@ -124,92 +123,105 @@ index fdd164cd45a26c7ef25f1153ab8985ba50c01b14..8578d1f78ddd1bb75f3230f04bfaa35a
 +        this.ready = ready;
      }
 -    // Paper end - Anti-Xray
++    // Paper end - Async-Anti-Xray - Ready flag for the connection, add chunk packet info
  
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse
-     public ClientboundLevelChunkWithLightPacket(LevelChunk chunk, LevelLightEngine lightEngine, @Nullable BitSet skyLight, @Nullable BitSet blockLight) {
-+        this(chunk, lightEngine, skyLight, blockLight, true);
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Anti-Xray
+     public ClientboundLevelChunkWithLightPacket(
+         final LevelChunk levelChunk,
+         final LevelLightEngine lightEngine,
+         final @Nullable BitSet skyChangedLightSectionFilter,
+         final @Nullable BitSet blockChangedLightSectionFilter
+     ) {
++        // Paper start - Anti-Xray
++        this(levelChunk, lightEngine, skyChangedLightSectionFilter, blockChangedLightSectionFilter, true);
 +    }
-+    public ClientboundLevelChunkWithLightPacket(LevelChunk chunk, LevelLightEngine lightEngine, @Nullable BitSet skyLight, @Nullable BitSet blockLight, boolean modifyBlocks) {
++    public ClientboundLevelChunkWithLightPacket(
++        final LevelChunk levelChunk,
++        final LevelLightEngine lightEngine,
++        final @Nullable BitSet skyChangedLightSectionFilter,
++        final @Nullable BitSet blockChangedLightSectionFilter,
++        final boolean modifyBlocks
++    ) {
 +        // Paper end - Anti-Xray
-         ChunkPos pos = chunk.getPos();
-         this.x = pos.x;
-         this.z = pos.z;
--        this.chunkData = new ClientboundLevelChunkPacketData(chunk);
-+        io.papermc.paper.antixray.ChunkPacketInfo<net.minecraft.world.level.block.state.BlockState> chunkPacketInfo = modifyBlocks ? chunk.getLevel().chunkPacketBlockController.getChunkPacketInfo(this, chunk) : null; // Paper - Ant-Xray
-+        this.chunkData = new ClientboundLevelChunkPacketData(chunk, chunkPacketInfo); // Paper - Anti-Xray
-         this.lightData = new ClientboundLightUpdatePacketData(pos, lightEngine, skyLight, blockLight);
-+        chunk.getLevel().chunkPacketBlockController.modifyBlocks(this, chunkPacketInfo); // Paper - Anti-Xray - Modify blocks
+         ChunkPos chunkPos = levelChunk.getPos();
+         this.x = chunkPos.x();
+         this.z = chunkPos.z();
+-        this.chunkData = new ClientboundLevelChunkPacketData(levelChunk);
++        io.papermc.paper.antixray.ChunkPacketInfo<net.minecraft.world.level.block.state.BlockState> chunkPacketInfo = modifyBlocks ? levelChunk.getLevel().chunkPacketBlockController.getChunkPacketInfo(this, levelChunk) : null; // Paper - Anti-Xray
++        this.chunkData = new ClientboundLevelChunkPacketData(levelChunk, chunkPacketInfo); // Paper - Anti-Xray
+         this.lightData = new ClientboundLightUpdatePacketData(chunkPos, lightEngine, skyChangedLightSectionFilter, blockChangedLightSectionFilter);
++        levelChunk.getLevel().chunkPacketBlockController.modifyBlocks(this, chunkPacketInfo); // Paper - Anti-Xray - Modify blocks
      }
  
-     private ClientboundLevelChunkWithLightPacket(RegistryFriendlyByteBuf buffer) {
+     private ClientboundLevelChunkWithLightPacket(final RegistryFriendlyByteBuf input) {
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index bf27fe05ee17b2483bb9bfe5a1b52c8d686e3737..5712b2fa9579c9ba92a2f3083ee2fc79c28ffaaf 100644
+index 4ac7ef5a1ed1fac04a9fd246212f59919deb498c..e562aec4366d7724f915e3dd5ae440a77e0947c5 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -609,7 +609,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
-         org.bukkit.generator.BiomeProvider biomeProvider // CraftBukkit
-     ) {
-         // CraftBukkit start
--        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules()))); // Paper - create paper world configs
-+        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules())), dispatcher); // Paper - create paper world configs & Async-Anti-Xray: Pass executor
-         this.levelStorageAccess = levelStorageAccess;
-         this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getOrCreate(levelStorageAccess.levelDirectory.path().toFile());
-         this.levelLoadListener = new net.minecraft.server.level.progress.LoggingLevelLoadListener(false, this);
+@@ -631,7 +631,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         savedDataStorage.set(io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE, loadedWorldData.pdc() == null ? io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE.constructor().get() : loadedWorldData.pdc());
+         final GameRules gameRules = new GameRules(server.getWorldData().enabledFeatures(), savedDataStorage.computeIfAbsent(net.minecraft.world.level.gamerules.GameRuleMap.TYPE));
+         this.gameRules = gameRules;
+-        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), loadedWorldData.bukkitName(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(server.storageSource.getDimensionPath(dimension), dimension.identifier(), spigotConfig, server.registryAccess(), gameRules))); // Paper - create paper world configs
++        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), loadedWorldData.bukkitName(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(server.storageSource.getDimensionPath(dimension), dimension.identifier(), spigotConfig, server.registryAccess(), gameRules)), executor); // Paper - create paper world configs // Paper - Anti-Xray - Pass executor
+         this.weatherData = savedDataStorage.computeIfAbsent(WeatherData.TYPE);
+         this.weatherData.setLevel(this);
+         this.typeKey = typeKey;
 diff --git a/net/minecraft/server/level/ServerPlayerGameMode.java b/net/minecraft/server/level/ServerPlayerGameMode.java
-index c7407319dc4f6c6c34428f7038cca407a0e43c61..7166889bce8065508030ecd5b1400ee9be031bf3 100644
+index f1faa0439bf5bce583e70ce37ade4b7e66daaaa4..f7390b91fe1866c6a11beb93711d0fcde4293164 100644
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -316,6 +316,7 @@ public class ServerPlayerGameMode {
+@@ -321,6 +321,7 @@ public class ServerPlayerGameMode {
                  org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDamageAbortEvent(this.player, pos, this.player.getInventory().getSelectedItem()); // CraftBukkit
              }
          }
-+        this.level.chunkPacketBlockController.onPlayerLeftClickBlock(this, pos, action, face, maxBuildHeight, sequence); // Paper - Anti-Xray
++        this.level.chunkPacketBlockController.onPlayerLeftClickBlock(this, pos, action, direction, maxY, sequence); // Paper - Anti-Xray
      }
  
-     public void destroyAndAck(BlockPos pos, int sequence, String message) {
+     public void destroyAndAck(final BlockPos pos, final int sequence, final String exitId) {
 diff --git a/net/minecraft/server/network/PlayerChunkSender.java b/net/minecraft/server/network/PlayerChunkSender.java
-index c65b274b965b95eae33690e63c5da2d5a9f2981a..644948d64791d0ffa4166375d0f4419f1ffa214a 100644
+index ec40f02032f965f548b0c0a29aa9d9bbad6f439b..373da9d604cfb1614a0618d856aefd2be3c7682b 100644
 --- a/net/minecraft/server/network/PlayerChunkSender.java
 +++ b/net/minecraft/server/network/PlayerChunkSender.java
 @@ -79,7 +79,10 @@ public class PlayerChunkSender {
      }
  
-     public static void sendChunk(ServerGamePacketListenerImpl packetListener, ServerLevel level, LevelChunk chunk) { // Paper - rewrite chunk system - public
--        packetListener.send(new ClientboundLevelChunkWithLightPacket(chunk, level.getLightEngine(), null, null));
+     public static void sendChunk(final ServerGamePacketListenerImpl connection, final ServerLevel level, final LevelChunk chunk) { // Paper - rewrite chunk system - public
+-        connection.send(new ClientboundLevelChunkWithLightPacket(chunk, level.getLightEngine(), null, null));
 +        // Paper start - Anti-Xray
-+        final boolean shouldModify = level.chunkPacketBlockController.shouldModify(packetListener.player, chunk);
-+        packetListener.send(new ClientboundLevelChunkWithLightPacket(chunk, level.getLightEngine(), null, null, shouldModify));
++        final boolean shouldModify = level.chunkPacketBlockController.shouldModify(connection.player, chunk);
++        connection.send(new ClientboundLevelChunkWithLightPacket(chunk, level.getLightEngine(), null, null, shouldModify));
 +        // Paper end - Anti-Xray
          // Paper start - PlayerChunkLoadEvent
          if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
-             new io.papermc.paper.event.packet.PlayerChunkLoadEvent(new org.bukkit.craftbukkit.CraftChunk(chunk), packetListener.getPlayer().getBukkitEntity()).callEvent();
+             new io.papermc.paper.event.packet.PlayerChunkLoadEvent(new org.bukkit.craftbukkit.CraftChunk(chunk), connection.getPlayer().getBukkitEntity()).callEvent();
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index 410be367549a345677c94e9f8d7db0b7fffbf073..015ffd8298989bdb597b18d79adc3debcffc0977 100644
+index 5e11abcfd681d86b1c0e282cf901108822766ce2..3020a3208b14bb483b08cf59a796fb83c2403d1c 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
-@@ -323,7 +323,7 @@ public abstract class PlayerList {
+@@ -331,7 +331,7 @@ public abstract class PlayerList {
                  .getOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS);
              player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket(
-                 new net.minecraft.world.level.chunk.EmptyLevelChunk(serverLevel, player.chunkPosition(), plains),
--                serverLevel.getLightEngine(), (java.util.BitSet)null, (java.util.BitSet) null)
-+                serverLevel.getLightEngine(), (java.util.BitSet)null, (java.util.BitSet) null, true) // Paper - Anti-Xray
+                 new net.minecraft.world.level.chunk.EmptyLevelChunk(level, player.chunkPosition(), plains),
+-                level.getLightEngine(), (java.util.BitSet)null, (java.util.BitSet) null)
++                level.getLightEngine(), (java.util.BitSet)null, (java.util.BitSet) null, true) // Paper - Anti-Xray
              );
          }
          // Paper end - Send empty chunk
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 96fa7390a4bcfa7bdf2cf5346f2de895ac085203..d225267b1b07854b76c88ce461d7817a86d023a0 100644
+index 829bb616e5d72b955248bbc150254c239176ce64..4b228b5c563e40b6f301df22b5c8a7f7988cb072 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -139,6 +139,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -145,6 +145,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      private long subTickCount;
  
      // CraftBukkit start
 +    public final io.papermc.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
      private final CraftWorld world;
-     public net.kyori.adventure.util.TriState pvpMode = net.kyori.adventure.util.TriState.NOT_SET;
-     public @Nullable org.bukkit.generator.ChunkGenerator generator;
-@@ -831,7 +832,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
-         @Nullable org.bukkit.generator.BiomeProvider biomeProvider, // Paper
+     public org.bukkit.generator.@Nullable ChunkGenerator generator;
+ 
+@@ -836,7 +837,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         org.bukkit.generator.@Nullable BiomeProvider biomeProvider, // Paper
          org.bukkit.World.Environment environment, // Paper
          java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
 -        io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator // Paper - create paper world config
@@ -218,7 +230,7 @@ index 96fa7390a4bcfa7bdf2cf5346f2de895ac085203..d225267b1b07854b76c88ce461d7817a
      ) {
          // Paper start - getblock optimisations - cache world height/sections
          final DimensionType dimType = dimensionTypeRegistration.value();
-@@ -866,6 +868,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -871,6 +873,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          this.palettedContainerFactory = PalettedContainerFactory.create(registryAccess);
          this.damageSources = new DamageSources(registryAccess);
          this.entityLookup = new ca.spottedleaf.moonrise.patches.chunk_system.level.entity.dfl.DefaultEntityLookup(this); // Paper - rewrite chunk system
@@ -226,19 +238,19 @@ index 96fa7390a4bcfa7bdf2cf5346f2de895ac085203..d225267b1b07854b76c88ce461d7817a
      }
  
      // Paper start - Cancel hit for vanished players
-@@ -1071,6 +1074,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
-                 snapshot.setFlags(flags); // Paper - always set the flag of the most recent call to mitigate issues with multiple update at the same pos with different flags
+@@ -1085,6 +1088,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
              }
-             BlockState blockState = chunkAt.setBlockState(pos, state, flags);
-+            this.chunkPacketBlockController.onBlockChange(this, pos, state, blockState, flags, recursionLeft); // Paper - Anti-Xray
-             // CraftBukkit end
-             if (blockState == null) {
+             // CraftBukkit end - capture blockstates
+             BlockState oldState = chunk.setBlockState(pos, blockState, updateFlags);
++            this.chunkPacketBlockController.onBlockChange(this, pos, blockState, oldState, updateFlags, updateLimit); // Paper - Anti-Xray
+             if (oldState == null) {
                  // CraftBukkit start - remove blockstate if failed (or the same)
+                 if (this.captureBlockStates && captured) {
 diff --git a/net/minecraft/world/level/chunk/ChunkAccess.java b/net/minecraft/world/level/chunk/ChunkAccess.java
-index 71aa0220309e418fbbda66c2fa14fec498bf443d..22bc09e99b6755db403fad2e1136175737abed7c 100644
+index c974b1c276d29610cb59566afaad19f5bcf0c602..c73b9871faa87493e081cb54e1bf1dce487359c6 100644
 --- a/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/net/minecraft/world/level/chunk/ChunkAccess.java
-@@ -164,7 +164,7 @@ public abstract class ChunkAccess implements BiomeManager.NoiseBiomeSource, Ligh
+@@ -161,7 +161,7 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
              }
          }
  
@@ -247,12 +259,12 @@ index 71aa0220309e418fbbda66c2fa14fec498bf443d..22bc09e99b6755db403fad2e11361757
          // Paper start - rewrite chunk system
          if (!((Object)this instanceof ImposterProtoChunk)) {
              this.starlight$setBlockNibbles(ca.spottedleaf.moonrise.patches.starlight.light.StarLightEngine.getFilledEmptyLight(levelHeightAccessor));
-@@ -177,10 +177,10 @@ public abstract class ChunkAccess implements BiomeManager.NoiseBiomeSource, Ligh
+@@ -174,10 +174,10 @@ public abstract class ChunkAccess implements LightChunk, StructureAccess, BiomeM
          // Paper end - get block chunk optimisation
      }
  
--    private static void replaceMissingSections(PalettedContainerFactory containerFactory, LevelChunkSection[] sections) {
-+    private void replaceMissingSections(PalettedContainerFactory containerFactory, LevelChunkSection[] sections) { // Paper - Anti-Xray - make it a non-static method
+-    private static void replaceMissingSections(final PalettedContainerFactory containerFactory, final LevelChunkSection[] sections) {
++    private void replaceMissingSections(final PalettedContainerFactory containerFactory, final LevelChunkSection[] sections) { // Paper - Anti-Xray - make it a non-static method
          for (int i = 0; i < sections.length; i++) {
              if (sections[i] == null) {
 -                sections[i] = new LevelChunkSection(containerFactory);
@@ -261,110 +273,113 @@ index 71aa0220309e418fbbda66c2fa14fec498bf443d..22bc09e99b6755db403fad2e11361757
          }
      }
 diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
-index 4be0c11b3066bc56ac2b8658e064958038da44bf..de59760d27280555a334bda4f436164568cffbd6 100644
+index b5b514b292f9fdbe410aba5facec1638682c9075..595e97d2772b504eb6a08e84e4f4a138eb7c5f37 100644
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -152,7 +152,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
-         @Nullable LevelChunk.PostLoadProcessor postLoad,
-         @Nullable BlendingData blendingData
+         final LevelChunk.@Nullable PostLoadProcessor postLoad,
+         final @Nullable BlendingData blendingData
      ) {
--        super(pos, data, level, level.palettedContainerFactory(), inhabitedTime, sections, blendingData);
-+        super(pos, data, level, PalettedContainerFactory.create(net.minecraft.server.MinecraftServer.getServer().registryAccess()), inhabitedTime, sections, blendingData); // Paper - Anti-Xray - The world isn't ready yet, use server singleton for registry
+-        super(pos, upgradeData, level, level.palettedContainerFactory(), inhabitedTime, sections, blendingData);
++        super(pos, upgradeData, level, PalettedContainerFactory.create(net.minecraft.server.MinecraftServer.getServer().registryAccess()), inhabitedTime, sections, blendingData); // Paper - Anti-Xray - The world isn't ready yet, use server singleton for registry
          this.level = (ServerLevel) level; // CraftBukkit - type
          this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap<>();
  
 diff --git a/net/minecraft/world/level/chunk/LevelChunkSection.java b/net/minecraft/world/level/chunk/LevelChunkSection.java
-index 5a76746a27d04cc095585655f2ef19ac10528071..201ba8b6ea45f526fbd5292164bb4cb6c066d9a8 100644
+index 398018ad7037669a756f804403fd76cf333a06de..d274149a977ed828b6bd02d88d2850521ede6c60 100644
 --- a/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/net/minecraft/world/level/chunk/LevelChunkSection.java
-@@ -58,9 +58,15 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
+@@ -61,8 +61,14 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
          this.recalcBlockCounts();
      }
  
-+    // Paper start - Anti-Xray - Add parameters
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse
-     public LevelChunkSection(PalettedContainerFactory containerFactory) {
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Anti-Xray
+     public LevelChunkSection(final PalettedContainerFactory containerFactory) {
 -        this.states = containerFactory.createForBlockStates();
++        // Paper start - Anti-Xray - Add parameters
 +        this(containerFactory, null, null, 0);
 +    }
-+    public LevelChunkSection(PalettedContainerFactory containerFactory, net.minecraft.world.level.Level level, net.minecraft.world.level.ChunkPos chunkPos, int chunkSectionY) {
++    public LevelChunkSection(final PalettedContainerFactory containerFactory, final net.minecraft.world.level.Level level, final net.minecraft.world.level.ChunkPos chunkPos, final int chunkSectionY) {
 +        this.states = containerFactory.createForBlockStates(level, chunkPos, chunkSectionY);
++        // Paper end - Anti-Xray - Add parameters
          this.biomes = containerFactory.createForBiomes();
-+        // Paper end - Anti-Xray
      }
  
-     public BlockState getBlockState(int x, int y, int z) {
-@@ -269,10 +275,16 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
-         this.biomes = palettedContainer;
+@@ -284,11 +290,17 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
+         this.biomes = biomes;
      }
  
-+    // Paper start - Anti-Xray - Add chunk packet info
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse
-     public void write(FriendlyByteBuf buffer) {
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Anti-Xray
+     public void write(final FriendlyByteBuf buffer) {
++        // Paper start - Anti-Xray - Add parameters
 +        this.write(buffer, null, 0);
 +    }
-+    public void write(FriendlyByteBuf buffer, io.papermc.paper.antixray.ChunkPacketInfo<BlockState> chunkPacketInfo, int chunkSectionIndex) {
++    public void write(final FriendlyByteBuf buffer, final io.papermc.paper.antixray.ChunkPacketInfo<BlockState> chunkPacketInfo, final int chunkSectionIndex) {
++        // Paper end - Anti-Xray - Add parameters
          buffer.writeShort(this.nonEmptyBlockCount);
+         buffer.writeShort(this.fluidCount);
 -        this.states.write(buffer);
 -        this.biomes.write(buffer);
-+        this.states.write(buffer, chunkPacketInfo, chunkSectionIndex);
-+        this.biomes.write(buffer, null, chunkSectionIndex);
-+    // Paper end - Anti-Xray - Add chunk packet info
++        this.states.write(buffer, chunkPacketInfo, chunkSectionIndex); // Paper - Anti-Xray
++        this.biomes.write(buffer, null, chunkSectionIndex); // Paper - Anti-Xray
      }
  
      public int getSerializedSize() {
 diff --git a/net/minecraft/world/level/chunk/PalettedContainer.java b/net/minecraft/world/level/chunk/PalettedContainer.java
-index 49c00586c1ae55e5e85787fa7cd4b84e8d5c83c7..54d71bd666a946bdf6eece520e080c3f96003452 100644
+index edf2990bfbe3d6b64eed85446eef207d2506efc5..09111c50cb34b643b7717f107a6f5bf6953bf0b2 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -26,6 +26,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
      private static final int MIN_PALETTE_BITS = 0;
      public volatile PalettedContainer.Data<T> data; // Paper - optimise collisions - public
      private final Strategy<T> strategy;
-+    private final T @org.jetbrains.annotations.Nullable [] presetValues; // Paper - Anti-Xray - Add preset values
++    private final T @Nullable [] presetValues; // Paper - Anti-Xray - Add preset values
      //private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer"); // Paper - unused
  
      public void acquire() {
-@@ -36,13 +37,19 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -36,13 +37,20 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          // this.threadingDetector.checkAndUnlock(); // Paper - disable this - use proper synchronization
      }
  
-+    // Paper start - Anti-Xray - Add preset values
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse
-     public static <T> Codec<PalettedContainer<T>> codecRW(Codec<T> valueCodec, Strategy<T> strategy, T defaultValue) {
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Anti-Xray
+     public static <T> Codec<PalettedContainer<T>> codecRW(final Codec<T> elementCodec, final Strategy<T> strategy, final T defaultValue) {
 -        PalettedContainerRO.Unpacker<T, PalettedContainer<T>> unpacker = PalettedContainer::unpack;
--        return codec(valueCodec, strategy, defaultValue, unpacker);
-+        return PalettedContainer.codecRW(valueCodec, strategy, defaultValue, null);
++        // Paper start - Anti-Xray - Add preset values
++        return codecRW(elementCodec, strategy, defaultValue, null);
++    }
++    public static <T> Codec<PalettedContainer<T>> codecRW(final Codec<T> elementCodec, final Strategy<T> strategy, final T defaultValue,
++                                                          final T @Nullable [] presetValues) {
++        // Paper end - Anti-Xray - Add preset values
++        PalettedContainerRO.Unpacker<T, PalettedContainer<T>> unpacker = (strategy1, packedData) -> unpack(strategy1, packedData, defaultValue, presetValues); // Paper - Anti-Xray
+         return codec(elementCodec, strategy, defaultValue, unpacker);
      }
-+    public static <T> Codec<PalettedContainer<T>> codecRW(Codec<T> valueCodec, Strategy strategy, T defaultValue, T @org.jetbrains.annotations.Nullable [] presetValues) {
-+        PalettedContainerRO.Unpacker<T, PalettedContainer<T>> unpacker = (strategy1, packedData) -> unpack(strategy1, packedData, defaultValue, presetValues);
-+        // Paper end - Anti-Xray
-+        return codec(valueCodec, strategy, defaultValue, unpacker);
-+     }
  
-     public static <T> Codec<PalettedContainerRO<T>> codecRO(Codec<T> valueCodec, Strategy<T> strategy, T defaultValue) {
--        PalettedContainerRO.Unpacker<T, PalettedContainerRO<T>> unpacker = (strategy1, packedData) -> unpack(strategy1, packedData)
-+        PalettedContainerRO.Unpacker<T, PalettedContainerRO<T>> unpacker = (strategy1, packedData) -> unpack(strategy1, packedData, defaultValue, null) // Paper - Anti-Xray - Add preset values
-             .map(container -> (PalettedContainerRO<T>)container);
-         return codec(valueCodec, strategy, defaultValue, unpacker);
+     public static <T> Codec<PalettedContainerRO<T>> codecRO(final Codec<T> elementCodec, final Strategy<T> strategy, final T defaultValue) {
+-        PalettedContainerRO.Unpacker<T, PalettedContainerRO<T>> unpacker = (s, data) -> unpack(s, data).map(e -> (PalettedContainerRO<T>)e);
++        PalettedContainerRO.Unpacker<T, PalettedContainerRO<T>> unpacker = (s, data) -> unpack(s, data, defaultValue, null).map(e -> (PalettedContainerRO<T>)e); // Paper - Anti-Xray - Add preset values
+         return codec(elementCodec, strategy, defaultValue, unpacker);
      }
-@@ -90,19 +97,54 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+ 
+@@ -91,19 +99,57 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
      }
      // Paper end - optimise palette reads
  
--    private PalettedContainer(Strategy<T> strategy, Configuration configuration, BitStorage storage, Palette<T> palette) {
+-    private PalettedContainer(final Strategy<T> strategy, final Configuration dataConfiguration, final BitStorage storage, final Palette<T> palette) {
 +    // Paper start - Anti-Xray - Add preset values
-+    private PalettedContainer(Strategy<T> strategy, Configuration configuration, BitStorage storage, Palette<T> palette, List<T> values, T defaultValue, T @org.jetbrains.annotations.Nullable [] presetValues) {
++    private PalettedContainer(final Strategy<T> strategy, final Configuration dataConfiguration, final BitStorage storage, final Palette<T> palette,
++                              final List<T> values, final T defaultValue, final T @Nullable [] presetValues) {
 +        this.presetValues = presetValues;
++        // Paper end - Anti-Xray - Add preset values
          this.strategy = strategy;
-         this.data = new PalettedContainer.Data<>(configuration, storage, palette);
+         this.data = new PalettedContainer.Data<>(dataConfiguration, storage, palette);
++        // Paper start - Anti-Xray
 +        if (presetValues != null
-+            && (configuration instanceof net.minecraft.world.level.chunk.Configuration.Simple simpleFactory && simpleFactory.factory() == Strategy.SINGLE_VALUE_PALETTE_FACTORY
++            && (dataConfiguration instanceof Configuration.Simple simpleFactory && simpleFactory.factory() == Strategy.SINGLE_VALUE_PALETTE_FACTORY
 +            ? this.data.palette.valueFor(0) != defaultValue
-+            : !(configuration instanceof net.minecraft.world.level.chunk.Configuration.Global))) {
++            : !(dataConfiguration instanceof Configuration.Global))) {
 +            // In 1.18 Mojang unfortunately removed code that already handled possible resize operations on read from disk for us
 +            // We readd this here but in a smarter way than it was before
-+            int maxSize = 1 << configuration.bitsInMemory();
++            int maxSize = 1 << dataConfiguration.bitsInMemory();
 +
 +            for (T presetValue : presetValues) {
 +                if (this.data.palette.getSize() >= maxSize) {
@@ -372,7 +387,7 @@ index 49c00586c1ae55e5e85787fa7cd4b84e8d5c83c7..54d71bd666a946bdf6eece520e080c3f
 +                    allValues.addAll(Arrays.asList(presetValues));
 +                    int newBits = net.minecraft.util.Mth.ceillog2(allValues.size());
 +
-+                    if (newBits > configuration.bitsInMemory()) {
++                    if (newBits > dataConfiguration.bitsInMemory()) {
 +                        this.onResize(newBits, null);
 +                    }
 +
@@ -382,86 +397,97 @@ index 49c00586c1ae55e5e85787fa7cd4b84e8d5c83c7..54d71bd666a946bdf6eece520e080c3f
 +                this.data.palette.idFor(presetValue, this);
 +            }
 +        }
-+        // Paper end
++        // Paper end - Anti-Xray
          this.updateData(this.data); // Paper - optimise palette reads
      }
  
--    private PalettedContainer(PalettedContainer<T> other) {
-+    private PalettedContainer(PalettedContainer<T> other, T @org.jetbrains.annotations.Nullable [] presetValues) { // Paper - Anti-Xray - Add preset values
+-    private PalettedContainer(final PalettedContainer<T> source) {
++    private PalettedContainer(final PalettedContainer<T> source, final T @Nullable [] presetValues) { // Paper - Anti-Xray - Add preset values
 +        this.presetValues = presetValues; // Paper - Anti-Xray - Add preset values
-         this.strategy = other.strategy;
-         this.data = other.data.copy();
+         this.strategy = source.strategy;
+         this.data = source.data.copy();
          this.updateData(this.data); // Paper - optimise palette reads
      }
  
-+    // Paper start - Anti-Xray - Add preset values
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse
-     public PalettedContainer(T defaultValue, Strategy<T> strategy) {
-+        this(defaultValue, strategy, null);
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Anti-Xray
+     public PalettedContainer(final T initialValue, final Strategy<T> strategy) {
++        // Paper start - Anti-Xray - Add preset values
++        this(initialValue, strategy, null);
 +    }
-+    public PalettedContainer(T defaultValue, Strategy<T> strategy, T @org.jetbrains.annotations.Nullable [] presetValues) {
++    public PalettedContainer(final T initialValue, final Strategy<T> strategy, final T @Nullable [] presetValues) {
 +        this.presetValues = presetValues;
 +        // Paper end - Anti-Xray
          this.strategy = strategy;
          this.data = this.createOrReuseData(null, 0);
-         this.data.palette.idFor(defaultValue, this);
-@@ -125,12 +167,32 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
-     @Override
-     public synchronized int onResize(int bits, T addedValue) { // Paper - synchronize
-         PalettedContainer.Data<T> data = this.data;
-+        // Paper start - Anti-Xray - Add preset values
-+        if (this.presetValues != null && addedValue != null && data.configuration() instanceof Configuration.Simple simpleFactory && simpleFactory.factory() == Strategy.SINGLE_VALUE_PALETTE_FACTORY) {
-+            int duplicates = 0;
-+            List<T> presetValues = Arrays.asList(this.presetValues);
-+            duplicates += presetValues.contains(addedValue) ? 1 : 0;
-+            duplicates += presetValues.contains(data.palette.valueFor(0)) ? 1 : 0;
-+            final int size = 1 << this.strategy.getConfigurationForBitCount(bits).bitsInMemory();
-+            bits = net.minecraft.util.Mth.ceillog2(size + presetValues.size() - duplicates);
-+        }
-+        // Paper end - Anti-Xray
-         PalettedContainer.Data<T> data1 = this.createOrReuseData(data, bits);
-         data1.copyFrom(data.palette, data.storage);
-         this.data = data1;
-         this.updateData(this.data); // Paper - optimise palette reads
--        return data1.palette.idFor(addedValue, PaletteResize.noResizeExpected());
-+        // Paper start - Anti-Xray
-+        this.addPresetValues();
-+        return addedValue == null ? -1 : data1.palette.idFor(addedValue, PaletteResize.noResizeExpected());
-+    }
+         this.data.palette.idFor(initialValue, this);
+@@ -123,15 +169,39 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+         }
+     }
+ 
++    // Paper start - Anti-Xray
 +    private void addPresetValues() {
 +        if (this.presetValues != null && !(this.data.configuration() instanceof Configuration.Global)) {
 +            for (T presetValue : this.presetValues) {
 +                this.data.palette.idFor(presetValue, this);
 +            }
 +        }
++    }
++    // Paper end - Anti-Xray
++
+     @Override
+-    public synchronized int onResize(final int bits, final T lastAddedValue) { // Paper - synchronize
++    public synchronized int onResize(int bits, final T lastAddedValue) { // Paper - synchronize // Paper start - Anti-Xray - remove final
+         PalettedContainer.Data<T> oldData = this.data;
++        // Paper start - Anti-Xray - Add preset values
++        if (this.presetValues != null && lastAddedValue != null && oldData.configuration() instanceof Configuration.Simple simpleFactory && simpleFactory.factory() == Strategy.SINGLE_VALUE_PALETTE_FACTORY) {
++            int duplicates = 0;
++            List<T> presetValues = Arrays.asList(this.presetValues);
++            duplicates += presetValues.contains(lastAddedValue) ? 1 : 0;
++            duplicates += presetValues.contains(oldData.palette.valueFor(0)) ? 1 : 0;
++            final int size = 1 << this.strategy.getConfigurationForBitCount(bits).bitsInMemory();
++            bits = net.minecraft.util.Mth.ceillog2(size + presetValues.size() - duplicates);
++        }
++        // Paper end - Anti-Xray
+         PalettedContainer.Data<T> newData = this.createOrReuseData(oldData, bits);
+         newData.copyFrom(oldData.palette, oldData.storage);
+         this.data = newData;
+         this.updateData(this.data); // Paper - optimise palette reads
+-        return newData.palette.idFor(lastAddedValue, PaletteResize.noResizeExpected());
++        // Paper start - Anti-Xray
++        this.addPresetValues();
++        return lastAddedValue == null ? -1 : newData.palette.idFor(lastAddedValue, PaletteResize.noResizeExpected());
++        // Paper end - Anti-Xray
      }
 +    // Paper end - Anti-Xray
  
-     public synchronized T getAndSet(int x, int y, int z, T state) { // Paper - synchronize
+     public synchronized T getAndSet(final int x, final int y, final int z, final T value) { // Paper - synchronize
          this.acquire();
-@@ -202,25 +264,35 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
-             data.palette.read(buffer, this.strategy.globalMap());
-             buffer.readFixedSizeLongArray(data.storage.getRaw());
-             this.data = data;
+@@ -203,6 +273,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+             newData.palette.read(buffer, this.strategy.globalMap());
+             buffer.readFixedSizeLongArray(newData.storage.getRaw());
+             this.data = newData;
 +            this.addPresetValues(); // Paper - Anti-Xray - Add preset values (inefficient, but this isn't used by the server)
              this.updateData(this.data); // Paper - optimise palette reads
          } finally {
              this.release();
-         }
+@@ -210,18 +281,31 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
      }
  
-+    // Paper start - Anti-Xray; Add chunk packet info
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse
-+    public void write(FriendlyByteBuf buffer) {
+     @Override
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Anti-Xray
+     public synchronized void write(final FriendlyByteBuf buffer) { // Paper - synchronize
++        // Paper start - Anti-Xray - add parameters
 +        this.write(buffer, null, 0);
 +    }
-     @Override
--    public synchronized void write(FriendlyByteBuf buffer) { // Paper - synchronize
-+    public synchronized void write(FriendlyByteBuf buffer, @Nullable io.papermc.paper.antixray.ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex) { // Paper - synchronize
++    @Override
++    public synchronized void write(final FriendlyByteBuf buffer, final io.papermc.paper.antixray.@Nullable ChunkPacketInfo<T> chunkPacketInfo,
++                                   final int chunkSectionIndex) { // Paper - synchronize
++        // Paper end - Anti-Xray - add parameters
          this.acquire();
  
          try {
 -            this.data.write(buffer, this.strategy.globalMap());
++            // Paper start - Anti-Xray
 +            this.data.write(buffer, this.strategy.globalMap(), chunkPacketInfo, chunkSectionIndex);
 +            if (chunkPacketInfo != null) {
 +                chunkPacketInfo.setPresetValues(chunkSectionIndex, this.presetValues);
@@ -473,21 +499,21 @@ index 49c00586c1ae55e5e85787fa7cd4b84e8d5c83c7..54d71bd666a946bdf6eece520e080c3f
      }
  
      @VisibleForTesting
--    public static <T> DataResult<PalettedContainer<T>> unpack(Strategy<T> strategy, PalettedContainerRO.PackedData<T> packedData) {
-+    public static <T> DataResult<PalettedContainer<T>> unpack(Strategy<T> strategy, PalettedContainerRO.PackedData<T> packedData, T defaultValue, T @org.jetbrains.annotations.Nullable [] presetValues) { // Paper - Anti-Xray
-         List<T> list = packedData.paletteEntries();
+-    public static <T> DataResult<PalettedContainer<T>> unpack(final Strategy<T> strategy, final PalettedContainerRO.PackedData<T> discData) {
++    public static <T> DataResult<PalettedContainer<T>> unpack(final Strategy<T> strategy, final PalettedContainerRO.PackedData<T> discData, final T defaultValue, final T @Nullable [] presetValues) { // Paper - Anti-Xray
+         List<T> paletteEntries = discData.paletteEntries();
          int entryCount = strategy.entryCount();
-         Configuration configurationForPaletteSize = strategy.getConfigurationForPaletteSize(list.size());
-@@ -258,7 +330,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+         Configuration storedConfiguration = strategy.getConfigurationForPaletteSize(paletteEntries.size());
+@@ -259,7 +343,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
                  }
              }
  
--            return DataResult.success(new PalettedContainer<>(strategy, configurationForPaletteSize, bitStorage, palette));
-+            return DataResult.success(new PalettedContainer<>(strategy, configurationForPaletteSize, bitStorage, palette, list, defaultValue, presetValues)); // Paper - Anti-Xray - Add preset values
+-            return DataResult.success(new PalettedContainer<>(strategy, storedConfiguration, storage, palette));
++            return DataResult.success(new PalettedContainer<>(strategy, storedConfiguration, storage, palette, paletteEntries, defaultValue, presetValues)); // Paper - Anti-Xray - Add preset values
          }
      }
  
-@@ -328,12 +400,12 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -329,12 +413,12 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
  
      @Override
      public PalettedContainer<T> copy() {
@@ -502,15 +528,15 @@ index 49c00586c1ae55e5e85787fa7cd4b84e8d5c83c7..54d71bd666a946bdf6eece520e080c3f
      }
  
      @Override
-@@ -403,9 +475,16 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
-             return 1 + this.palette.getSerializedSize(map) + this.storage.getRaw().length * 8;
+@@ -404,9 +488,16 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+             return 1 + this.palette.getSerializedSize(globalMap) + this.storage.getRaw().length * 8;
          }
  
--        public void write(FriendlyByteBuf buffer, IdMap<T> map) {
-+        // Paper start - Anti-Xray - Add chunk packet info
-+        public void write(FriendlyByteBuf buffer, IdMap<T> map, @Nullable io.papermc.paper.antixray.ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex) {
+-        public void write(final FriendlyByteBuf buffer, final IdMap<T> globalMap) {
++        public void write(final FriendlyByteBuf buffer, final IdMap<T> globalMap, final io.papermc.paper.antixray.@Nullable ChunkPacketInfo<T> chunkPacketInfo, final int chunkSectionIndex) { // Paper - Anti-Xray - Add chunk packet info
              buffer.writeByte(this.storage.getBits());
-             this.palette.write(buffer, map);
+             this.palette.write(buffer, globalMap);
++            // Paper start - Anti-Xray - Add chunk packet info
 +            if (chunkPacketInfo != null) {
 +                chunkPacketInfo.setBits(chunkSectionIndex, this.configuration.bitsInMemory());
 +                chunkPacketInfo.setPalette(chunkSectionIndex, this.palette);
@@ -521,20 +547,20 @@ index 49c00586c1ae55e5e85787fa7cd4b84e8d5c83c7..54d71bd666a946bdf6eece520e080c3f
          }
  
 diff --git a/net/minecraft/world/level/chunk/PalettedContainerFactory.java b/net/minecraft/world/level/chunk/PalettedContainerFactory.java
-index 4fb1399bec223a3b898d36766fc0cdbfdc7df87a..4240b4acccce2df627d1b5bde6c447676ff942b8 100644
+index 9977331d182cbc592f00006aabce23f0f69d2393..cd20a791b101548367ed53080f78e78bc7aa5d39 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainerFactory.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainerFactory.java
 @@ -29,19 +29,31 @@ public record PalettedContainerFactory(
          return new PalettedContainerFactory(
-             strategy,
-             blockState,
--            PalettedContainer.codecRW(BlockState.CODEC, strategy, blockState),
-+            PalettedContainer.codecRW(BlockState.CODEC, strategy, blockState, null), // Paper - Anti-Xray
-             strategy1,
-             orThrow,
-             PalettedContainer.codecRO(registry.holderByNameCodec(), strategy1, orThrow)
--            , PalettedContainer.codecRW(registry.holderByNameCodec(), strategy1, orThrow) // Paper
-+            , PalettedContainer.codecRW(registry.holderByNameCodec(), strategy1, orThrow, null) // Paper // Anti-Xray
+             blockStateStrategy,
+             defaultBlockState,
+-            PalettedContainer.codecRW(BlockState.CODEC, blockStateStrategy, defaultBlockState),
++            PalettedContainer.codecRW(BlockState.CODEC, blockStateStrategy, defaultBlockState, null), // Paper - Anti-Xray
+             biomeStrategy,
+             defaultBiome,
+             PalettedContainer.codecRO(biomes.holderByNameCodec(), biomeStrategy, defaultBiome)
+-            , PalettedContainer.codecRW(biomes.holderByNameCodec(), biomeStrategy, defaultBiome) // Paper
++            , PalettedContainer.codecRW(biomes.holderByNameCodec(), biomeStrategy, defaultBiome, null) // Paper // Paper - Anti-Xray
          );
      }
  
@@ -544,7 +570,7 @@ index 4fb1399bec223a3b898d36766fc0cdbfdc7df87a..4240b4acccce2df627d1b5bde6c44767
 +        return new PalettedContainer<>(this.defaultBlockState, this.blockStatesStrategy, null);
 +    }
 +
-+    public PalettedContainer<BlockState> createForBlockStates(@javax.annotation.Nullable net.minecraft.world.level.Level level, net.minecraft.world.level.ChunkPos chunkPos, int chunkSectionY) {
++    public PalettedContainer<BlockState> createForBlockStates(net.minecraft.world.level.@org.jspecify.annotations.Nullable Level level, net.minecraft.world.level.ChunkPos chunkPos, int chunkSectionY) {
 +        net.minecraft.world.level.block.state.BlockState[] states = null;
 +        if (level != null
 +            // This check is needed because of a circular reference in ChunkPacketBlockControllerAntiXray when creating an empty chunk section
@@ -561,23 +587,23 @@ index 4fb1399bec223a3b898d36766fc0cdbfdc7df87a..4240b4acccce2df627d1b5bde6c44767
      }
  }
 diff --git a/net/minecraft/world/level/chunk/PalettedContainerRO.java b/net/minecraft/world/level/chunk/PalettedContainerRO.java
-index 31944df26a55f378e747c120167bd47c37e5c809..44537ad26606e1e45449af04591e241f561b9696 100644
+index d2a2d435d0eda14a04f2c8582abffb8f98092a59..1498e9a760878f444debac9d4257d096731bb3ba 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainerRO.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainerRO.java
-@@ -14,7 +14,10 @@ public interface PalettedContainerRO<T> {
+@@ -14,7 +14,11 @@ public interface PalettedContainerRO<T> {
  
      void getAll(Consumer<T> consumer);
  
--    void write(FriendlyByteBuf buffer);
 +    // Paper start - Anti-Xray - Add chunk packet info
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse void write(FriendlyByteBuf buffer);
-+    void write(FriendlyByteBuf buffer, @javax.annotation.Nullable io.papermc.paper.antixray.ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex);
++    @Deprecated @io.papermc.paper.annotation.DoNotUse
+     void write(FriendlyByteBuf buffer);
++    void write(FriendlyByteBuf buffer, io.papermc.paper.antixray.@org.jspecify.annotations.Nullable ChunkPacketInfo<T> chunkPacketInfo, int chunkSectionIndex);
 +    // Paper end
  
      int getSerializedSize();
  
 diff --git a/net/minecraft/world/level/chunk/Strategy.java b/net/minecraft/world/level/chunk/Strategy.java
-index bcf7d5cca1f6e70222fccbeb259b6e323aa4c21a..787f5173425f617a89033e5b76256688be36b31d 100644
+index 45ff1447312f239154930f748637f413e2ea8f87..a0f8b23612f8315eef2aaf4c036c2ec759aafa66 100644
 --- a/net/minecraft/world/level/chunk/Strategy.java
 +++ b/net/minecraft/world/level/chunk/Strategy.java
 @@ -4,7 +4,7 @@ import net.minecraft.core.IdMap;
@@ -588,29 +614,29 @@ index bcf7d5cca1f6e70222fccbeb259b6e323aa4c21a..787f5173425f617a89033e5b76256688
 +    public static final Palette.Factory SINGLE_VALUE_PALETTE_FACTORY = SingleValuePalette::create; // Paper - Anti-Xray
      private static final Palette.Factory LINEAR_PALETTE_FACTORY = LinearPalette::create;
      private static final Palette.Factory HASHMAP_PALETTE_FACTORY = HashMapPalette::create;
-     static final Configuration ZERO_BITS = new Configuration.Simple(SINGLE_VALUE_PALETTE_FACTORY, 0);
+     private static final Configuration ZERO_BITS = new Configuration.Simple(SINGLE_VALUE_PALETTE_FACTORY, 0);
 diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index 1652513d8a7e6036c82162517948dd22ca98d109..2e8a1898c9ef8bbfd58ea1e9fbd7f6a633822fb9 100644
+index df0bb06176ad5cce3ed8785d22d68b2dcbf5a8ca..9823f20186679d75444eff2b7a7b9cf8bb2ef575 100644
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-@@ -140,6 +140,7 @@ public record SerializableChunkData(
- 
-     @Nullable
-     public static SerializableChunkData parse(LevelHeightAccessor level, PalettedContainerFactory containerFactory, CompoundTag tag) {
-+        net.minecraft.server.level.ServerLevel serverLevel = (net.minecraft.server.level.ServerLevel) level; // Paper - Anti-Xray This is is seemingly only called from ChunkMap, where, we have a server level. We'll fight this later if needed.
-         if (tag.getString("Status").isEmpty()) {
+@@ -141,6 +141,7 @@ public record SerializableChunkData(
+     public static SerializableChunkData parse(
+         final LevelHeightAccessor levelHeight, final PalettedContainerFactory containerFactory, final CompoundTag chunkData
+     ) {
++        net.minecraft.server.level.ServerLevel serverLevel = (net.minecraft.server.level.ServerLevel) levelHeight; // Paper - Anti-Xray This is is seemingly only called from ChunkMap, where, we have a server level. We'll fight this later if needed.
+         if (chunkData.getString("Status").isEmpty()) {
              return null;
          } else {
-@@ -198,9 +199,11 @@ public record SerializableChunkData(
-                     int byteOr = compoundTag.getByteOr("Y", (byte)0);
-                     LevelChunkSection levelChunkSection;
-                     if (byteOr >= level.getMinSectionY() && byteOr <= level.getMaxSectionY()) {
-+                        final BlockState[] presetBlockStates = serverLevel.chunkPacketBlockController.getPresetBlockStates(serverLevel, chunkPos, byteOr); // Paper - Anti-Xray - Add preset block states
-+                        final Codec<PalettedContainer<BlockState>> blockStateCodec = presetBlockStates == null ? codec1 : PalettedContainer.codecRW(BlockState.CODEC, containerFactory.blockStatesStrategy(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), presetBlockStates); // Paper - Anti-Xray
-                         PalettedContainer<BlockState> palettedContainer = compoundTag.getCompound("block_states")
+@@ -201,9 +202,11 @@ public record SerializableChunkData(
+                     int y = sectionTag.getByteOr("Y", (byte)0);
+                     LevelChunkSection section;
+                     if (y >= levelHeight.getMinSectionY() && y <= levelHeight.getMaxSectionY()) {
++                        final BlockState[] presetBlockStates = serverLevel.chunkPacketBlockController.getPresetBlockStates(serverLevel, chunkPos, y); // Paper - Anti-Xray - Add preset block states
++                        final Codec<PalettedContainer<BlockState>> antiXrayBlockStateCodec = presetBlockStates == null ? blockStatesCodec : PalettedContainer.codecRW(BlockState.CODEC, containerFactory.blockStatesStrategy(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), presetBlockStates); // Paper - Anti-Xray
+                         PalettedContainer<BlockState> blocks = sectionTag.getCompound("block_states")
                              .map(
--                                compoundTag1 -> codec1.parse(NbtOps.INSTANCE, compoundTag1)
-+                                compoundTag1 -> blockStateCodec.parse(NbtOps.INSTANCE, compoundTag1) // Paper - Anti-Xray
-                                     .promotePartial(string -> logErrors(chunkPos, byteOr, string))
+-                                container -> blockStatesCodec.parse(NbtOps.INSTANCE, container)
++                                container -> antiXrayBlockStateCodec.parse(NbtOps.INSTANCE, container) // Paper - Anti-Xray
+                                     .promotePartial(msg -> logErrors(chunkPos, y, msg))
                                      .getOrThrow(SerializableChunkData.ChunkReadException::new)
                              )

@@ -1,9 +1,8 @@
 package org.bukkit;
 
-import static org.junit.jupiter.api.Assertions.*;
 import com.mojang.serialization.DataResult;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.Set;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.DustColorTransitionOptions;
@@ -20,33 +19,38 @@ import net.minecraft.core.particles.VibrationParticleOption;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftParticle;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.support.environment.AllFeatures;
+import org.bukkit.support.environment.VanillaFeature;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@AllFeatures
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+@VanillaFeature
 public class ParticleTest {
 
-    public static Stream<Arguments> data() {
-        return CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE).keySet().stream().map(Arguments::of);
+    public static Set<Identifier> data() {
+        return CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE).keySet();
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testBukkitValuesPresent(ResourceLocation minecraft) {
+    public void testBukkitValuesPresent(Identifier minecraft) {
         // TODO: 10/19/23 Remove with enum PR, it is then no longer needed, since the enum PR has a extra test for this
         assertNotNull(Registry.PARTICLE_TYPE.get(CraftNamespacedKey.fromMinecraft(minecraft)), String.format("""
                 No bukkit particle found for minecraft particle %s.
@@ -154,10 +158,10 @@ public class ParticleTest {
     }
 
     private <T extends ParticleOptions> void testItemStack(Particle bukkit, net.minecraft.core.particles.ParticleType<T> minecraft) {
-        ItemStack itemStack = new ItemStack(Material.STONE);
-        ItemParticleOption param = this.createAndTest(bukkit, minecraft, itemStack, ItemParticleOption.class);
+        ItemStack item = ItemStack.of(Material.STONE);
+        ItemParticleOption param = this.createAndTest(bukkit, minecraft, item, ItemParticleOption.class);
 
-        assertEquals(itemStack, CraftItemStack.asBukkitCopy(param.getItem()), String.format("""
+        assertEquals(CraftItemStack.asTemplate(item), param.getItem(), String.format("""
                 ItemStack for particle %s do not match.
                 Did something change in the implementation or minecraft?
                 """, bukkit.getKey()));
@@ -167,7 +171,7 @@ public class ParticleTest {
         BlockData blockData = Bukkit.createBlockData(Material.STONE);
         BlockParticleOption param = this.createAndTest(bukkit, minecraft, blockData, BlockParticleOption.class);
 
-        assertEquals(blockData, CraftBlockData.fromData(param.getState()), String.format("""
+        assertEquals(blockData, param.getState().asBlockData(), String.format("""
                 Block data for particle %s do not match.
                 Did something change in the implementation or minecraft?
                 """, bukkit.getKey()));

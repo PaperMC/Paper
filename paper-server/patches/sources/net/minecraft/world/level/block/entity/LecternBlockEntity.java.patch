@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/LecternBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/LecternBlockEntity.java
-@@ -33,7 +_,53 @@
+@@ -36,11 +_,56 @@
      public static final int NUM_DATA = 1;
      public static final int SLOT_BOOK = 0;
      public static final int NUM_SLOTS = 1;
@@ -8,6 +8,10 @@
 +    // CraftBukkit start - add fields and methods
 +    public final Container bookAccess = new LecternInventory();
 +    public class LecternInventory implements Container {
+         {
+             Objects.requireNonNull(LecternBlockEntity.this);
+         }
+ 
 +        public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
 +        private int maxStack = 1;
 +
@@ -37,7 +41,7 @@
 +        }
 +
 +        @Override
-+        public @Nullable org.bukkit.Location getLocation() {
++        public org.bukkit.@Nullable Location getLocation() {
 +            if (LecternBlockEntity.this.level == null) return null;
 +            return org.bukkit.craftbukkit.util.CraftLocation.toBukkit(LecternBlockEntity.this.worldPosition, LecternBlockEntity.this.level);
 +        }
@@ -51,17 +55,16 @@
 +            return LecternBlockEntity.this;
 +        }
 +        // CraftBukkit end
-+
          @Override
          public int getContainerSize() {
              return 1;
-@@ -77,11 +_,19 @@
+@@ -84,11 +_,19 @@
  
          @Override
-         public void setItem(int slot, ItemStack stack) {
+         public void setItem(final int slot, final ItemStack itemStack) {
 +            // CraftBukkit start
 +            if (slot == 0) {
-+                LecternBlockEntity.this.setBook(stack);
++                LecternBlockEntity.this.setBook(itemStack);
 +                if (LecternBlockEntity.this.getLevel() != null) {
 +                    LecternBlock.resetBookState(null, LecternBlockEntity.this.getLevel(), LecternBlockEntity.this.getBlockPos(), LecternBlockEntity.this.getBlockState(), LecternBlockEntity.this.hasBook());
 +                }
@@ -76,17 +79,17 @@
          }
  
          @Override
-@@ -159,7 +_,7 @@
-         if (i != this.page) {
-             this.page = i;
+@@ -170,7 +_,7 @@
+         if (newPage != this.page) {
+             this.page = newPage;
              this.setChanged();
 -            LecternBlock.signalPageChange(this.getLevel(), this.getBlockPos(), this.getBlockState());
 +            if (this.level != null) LecternBlock.signalPageChange(this.getLevel(), this.getBlockPos(), this.getBlockState()); // CraftBukkit
          }
      }
  
-@@ -180,6 +_,36 @@
-         return stack;
+@@ -192,6 +_,36 @@
+         return book;
      }
  
 +    // CraftBukkit start
@@ -119,24 +122,24 @@
 +        }
 +    };
 +    // CraftBukkit end
-     private CommandSourceStack createCommandSourceStack(@Nullable Player player, ServerLevel level) {
-         String string;
-         Component component;
-@@ -192,7 +_,7 @@
-         }
+     private CommandSourceStack createCommandSourceStack(final @Nullable Player player, final ServerLevel level) {
+         String textName;
+         Component displayName;
+@@ -205,7 +_,7 @@
  
-         Vec3 vec3 = Vec3.atCenterOf(this.worldPosition);
--        return new CommandSourceStack(CommandSource.NULL, vec3, Vec2.ZERO, level, 2, string, component, level.getServer(), player);
-+        return new CommandSourceStack(this.commandSource, vec3, Vec2.ZERO, level, 2, string, component, level.getServer(), player); // CraftBukkit - commandSource
+         Vec3 pos = Vec3.atCenterOf(this.worldPosition);
+         return new CommandSourceStack(
+-            CommandSource.NULL, pos, Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, textName, displayName, level.getServer(), player
++            this.commandSource, pos, Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, textName, displayName, level.getServer(), player // CraftBukkit - commandSource
+         );
      }
  
-     @Override
-@@ -232,7 +_,7 @@
+@@ -246,7 +_,7 @@
  
      @Override
-     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+     public AbstractContainerMenu createMenu(final int containerId, final Inventory inventory, final Player player) {
 -        return new LecternMenu(containerId, this.bookAccess, this.dataAccess);
-+        return new LecternMenu(containerId, this.bookAccess, this.dataAccess, playerInventory); // CraftBukkit
++        return new LecternMenu(containerId, this.bookAccess, this.dataAccess, inventory); // CraftBukkit
      }
  
      @Override

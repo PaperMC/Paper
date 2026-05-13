@@ -5,7 +5,7 @@ import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.util.Conversions;
 import java.util.Optional;
 import net.kyori.adventure.key.Key;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import org.bukkit.Sound;
 import org.jspecify.annotations.Nullable;
@@ -20,7 +20,7 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 public class PaperSoundEventRegistryEntry implements SoundEventRegistryEntry {
 
     protected final Conversions conversions;
-    protected @Nullable ResourceLocation location;
+    protected @Nullable Identifier location;
     protected @Nullable Float fixedRange;
 
     public PaperSoundEventRegistryEntry(final Conversions conversions, final @Nullable SoundEvent soundEvent) {

@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.animal.SnowGolem;
+import net.minecraft.world.entity.animal.golem.SnowGolem;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Snowman;
 

@@ -75,7 +75,7 @@ public final class Formatting {
         return newName;
     }
 
-    public static final Comparator<Holder.Reference<?>> HOLDER_ORDER = alphabeticKeyOrder(reference -> reference.key().location().getPath());
+    public static final Comparator<Holder.Reference<?>> HOLDER_ORDER = alphabeticKeyOrder(reference -> reference.key().identifier().getPath());
     public static final Comparator<TagKey<?>> TAG_ORDER = alphabeticKeyOrder(tagKey -> tagKey.location().getPath());
 
     public static <T> Comparator<T> alphabeticKeyOrder(Function<T, String> pathConverter) {

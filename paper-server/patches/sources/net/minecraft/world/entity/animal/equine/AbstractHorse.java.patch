@@ -1,0 +1,121 @@
+--- a/net/minecraft/world/entity/animal/equine/AbstractHorse.java
++++ b/net/minecraft/world/entity/animal/equine/AbstractHorse.java
+@@ -125,6 +_,7 @@
+     protected boolean canGallop = true;
+     protected int gallopSoundCounter;
+     public @Nullable EntityReference<LivingEntity> owner;
++    public int maxDomestication = 100; // CraftBukkit - store max domestication value
+ 
+     protected AbstractHorse(final EntityType<? extends AbstractHorse> type, final Level level) {
+         super(type, level);
+@@ -253,7 +_,7 @@
+     }
+ 
+     @Override
+-    public boolean isPushable() {
++    public boolean isCollidable(boolean ignoreClimbing) { // Paper - Climbing should not bypass cramming gamerule
+         return !this.isVehicle();
+     }
+ 
+@@ -300,7 +_,7 @@
+ 
+     public void createInventory() {
+         SimpleContainer old = this.inventory;
+-        this.inventory = new SimpleContainer(this.getInventorySize());
++        this.inventory = new SimpleContainer(this.getInventorySize(), (org.bukkit.entity.AbstractHorse) this.getBukkitEntity()); // CraftBukkit
+         if (old != null) {
+             int max = Math.min(old.getContainerSize(), this.inventory.getContainerSize());
+ 
+@@ -392,7 +_,7 @@
+     }
+ 
+     public int getMaxTemper() {
+-        return 100;
++        return this.maxDomestication; // CraftBukkit - return stored max domestication instead
+     }
+ 
+     @Override
+@@ -455,7 +_,7 @@
+             temper = 5;
+             if (!this.level().isClientSide() && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
+                 itemUsed = true;
+-                this.setInLove(player);
++                this.setInLove(player, itemStack.copy()); // Paper - Fix EntityBreedEvent copying
+             }
+         } else if (itemStack.is(Items.GOLDEN_APPLE) || itemStack.is(Items.ENCHANTED_GOLDEN_APPLE)) {
+             heal = 10.0F;
+@@ -463,12 +_,12 @@
+             temper = 10;
+             if (!this.level().isClientSide() && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
+                 itemUsed = true;
+-                this.setInLove(player);
++                this.setInLove(player, itemStack.copy()); // Paper - Fix EntityBreedEvent copying
+             }
+         }
+ 
+         if (this.getHealth() < this.getMaxHealth() && heal > 0.0F) {
+-            this.heal(heal);
++            this.heal(heal, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
+             itemUsed = true;
+         }
+ 
+@@ -539,7 +_,7 @@
+         super.aiStep();
+         if (this.level() instanceof ServerLevel level && this.isAlive()) {
+             if (this.random.nextInt(900) == 0 && this.deathTime == 0) {
+-                this.heal(1.0F);
++                this.heal(1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.REGEN); // CraftBukkit
+             }
+ 
+             if (this.canEatGrass()) {
+@@ -641,6 +_,16 @@
+         }
+     }
+ 
++    // Paper start - Horse API
++    public void setMouthOpen(boolean open) {
++        this.setFlag(FLAG_OPEN_MOUTH, open);
++    }
++
++    public boolean isMouthOpen() {
++        return this.getFlag(FLAG_OPEN_MOUTH);
++    }
++    // Paper end - Horse API
++
+     @Override
+     public InteractionResult mobInteract(final Player player, final InteractionHand hand) {
+         if (this.isVehicle() || this.isBaby()) {
+@@ -792,6 +_,7 @@
+         output.putInt("Temper", this.getTemper());
+         output.putBoolean("Tame", this.isTamed());
+         EntityReference.store(this.owner, output, "Owner");
++        output.putInt("Bukkit.MaxDomestication", this.maxDomestication); // Paper - max domestication
+     }
+ 
+     @Override
+@@ -802,6 +_,7 @@
+         this.setTemper(input.getIntOr("Temper", 0));
+         this.setTamed(input.getBooleanOr("Tame", false));
+         this.owner = EntityReference.readWithOldOwnerConversion(input, "Owner", this.level());
++        this.maxDomestication = input.getIntOr("Bukkit.MaxDomestication", this instanceof Llama ? 30 : 100); // Paper - max domestication
+     }
+ 
+     @Override
+@@ -895,6 +_,17 @@
+ 
+     @Override
+     public void handleStartJump(final int jumpScale) {
++        // CraftBukkit start
++        float power;
++        if (jumpScale >= 90) {
++            power = 1.0F;
++        } else {
++            power = 0.4F + 0.4F * (float) jumpScale / 90.0F;
++        }
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callHorseJumpEvent(this, power)) {
++            return;
++        }
++        // CraftBukkit end
+         this.allowStandSliding = true;
+         this.standIfPossible();
+         this.playJumpSound();

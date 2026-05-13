@@ -3,7 +3,9 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import java.util.Optional;
 import net.kyori.adventure.util.TriState;
+import net.minecraft.Optionull;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.entity.Entity;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftServer;
@@ -66,10 +68,8 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     }
 
     @Override
-    public CraftLivingEntity getTarget() {
-        if (this.getHandle().getTarget() == null) return null;
-
-        return (CraftLivingEntity) this.getHandle().getTarget().getBukkitEntity();
+    public LivingEntity getTarget() {
+        return (LivingEntity) Optionull.map(this.getHandle().getTarget(), Entity::getBukkitEntity);
     }
 
     @Override

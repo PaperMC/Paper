@@ -1,0 +1,73 @@
+--- a/net/minecraft/world/entity/vehicle/minecart/NewMinecartBehavior.java
++++ b/net/minecraft/world/entity/vehicle/minecart/NewMinecartBehavior.java
+@@ -482,6 +_,12 @@
+ 
+     @Override
+     public double getMaxSpeed(final ServerLevel level) {
++        // CraftBukkit start
++        Double maxSpeed = this.minecart.maxSpeed;
++        if (maxSpeed != null) {
++            return this.minecart.isInWater() ? maxSpeed / 2.0 : maxSpeed;
++        }
++        // CraftBukkit end
+         return level.getGameRules().get(GameRules.MAX_MINECART_SPEED).intValue() * (this.minecart.isInWater() ? 0.5 : 1.0) / 20.0;
+     }
+ 
+@@ -497,7 +_,8 @@
+ 
+     @Override
+     public double getSlowdownFactor() {
+-        return this.minecart.isVehicle() ? 0.997 : 0.975;
++        if (this.minecart.frictionState == net.kyori.adventure.util.TriState.FALSE) return 1; // Paper
++        return this.minecart.isVehicle() || !this.minecart.slowWhenEmpty ? 0.997 : 0.975; // CraftBukkit - add !this.slowWhenEmpty
+     }
+ 
+     @Override
+@@ -521,6 +_,13 @@
+                         && !(entity instanceof AbstractMinecart)
+                         && !this.minecart.isVehicle()
+                         && !entity.isPassenger()) {
++                        // CraftBukkit start
++                        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                            (org.bukkit.entity.Vehicle) this.minecart.getBukkitEntity(),
++                            entity.getBukkitEntity()
++                        );
++                        if (!collisionEvent.callEvent()) continue;
++                        // CraftBukkit end
+                         boolean pickedUp = entity.startRiding(this.minecart);
+                         if (pickedUp) {
+                             return true;
+@@ -544,6 +_,17 @@
+                         || entity instanceof AbstractMinecart
+                         || this.minecart.isVehicle()
+                         || entity.isPassenger()) {
++                        // CraftBukkit start
++                        if (!this.minecart.isPassengerOfSameVehicle(entity)) {
++                            org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                                (org.bukkit.entity.Vehicle) this.minecart.getBukkitEntity(),
++                                entity.getBukkitEntity()
++                            );
++                            if (!collisionEvent.callEvent()) {
++                                continue;
++                            }
++                        }
++                        // CraftBukkit end
+                         entity.push(this.minecart);
+                         pushed = true;
+                     }
+@@ -552,6 +_,15 @@
+         } else {
+             for (Entity entityx : this.level().getEntities(this.minecart, hitbox)) {
+                 if (!this.minecart.hasPassenger(entityx) && entityx.isPushable() && entityx instanceof AbstractMinecart) {
++                    // CraftBukkit start
++                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                        (org.bukkit.entity.Vehicle) this.minecart.getBukkitEntity(),
++                        entityx.getBukkitEntity()
++                    );
++                    if (!collisionEvent.callEvent()) {
++                        continue;
++                    }
++                    // CraftBukkit end
+                     entityx.push(this.minecart);
+                     pushed = true;
+                 }

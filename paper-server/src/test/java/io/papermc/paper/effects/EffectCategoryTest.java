@@ -4,13 +4,13 @@ import io.papermc.paper.adventure.PaperAdventure;
 import net.minecraft.world.effect.MobEffectCategory;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.support.environment.AllFeatures;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@AllFeatures
+@Normal
 public class EffectCategoryTest {
 
     @Test

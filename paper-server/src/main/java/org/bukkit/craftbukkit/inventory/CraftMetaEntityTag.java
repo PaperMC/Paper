@@ -40,11 +40,11 @@ public class CraftMetaEntityTag extends CraftMetaItem {
         this.entityTag = entity.entityTag;
     }
 
-    CraftMetaEntityTag(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaEntityTag(DataComponentPatch patch, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaEntityTag.ENTITY_TAG).ifPresent((nbt) -> {
-            this.entityTag = nbt.copyTagWithEntityId();
+        getOrEmpty(patch, CraftMetaEntityTag.ENTITY_TAG).ifPresent((entityData) -> {
+            this.entityTag = entityData.copyTagWithEntityId();
         });
     }
 

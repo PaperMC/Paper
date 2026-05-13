@@ -1,0 +1,74 @@
+--- a/net/minecraft/world/entity/npc/wanderingtrader/WanderingTraderSpawner.java
++++ b/net/minecraft/world/entity/npc/wanderingtrader/WanderingTraderSpawner.java
+@@ -37,30 +_,38 @@
+ 
+     public WanderingTraderSpawner(final SavedDataStorage savedDataStorage) {
+         this.savedDataStorage = savedDataStorage;
+-        this.tickDelay = 1200;
++        this.tickDelay = Integer.MIN_VALUE; // Paper - Add Wandering Trader spawn rate config options
+         this.traderData = null;
+     }
+ 
+     @Override
+     public void tick(final ServerLevel level, final boolean spawnEnemies) {
++        // Paper start - Add Wandering Trader spawn rate config options
++        if (this.tickDelay == Integer.MIN_VALUE) {
++            this.tickDelay = level.paperConfig().entities.spawning.wanderingTrader.spawnMinuteLength;
++            WanderingTraderData data = this.getTraderData();
++            data.setSpawnDelay(level.paperConfig().entities.spawning.wanderingTrader.spawnDayLength);
++            data.setSpawnChance(level.paperConfig().entities.spawning.wanderingTrader.spawnChanceMin);
++        }
+         if (level.getGameRules().get(GameRules.SPAWN_WANDERING_TRADERS)) {
+-            if (--this.tickDelay <= 0) {
+-                this.tickDelay = 1200;
++            if (this.tickDelay - 1 <= 0) { // Paper - Prevent tickDelay going below 0
++                this.tickDelay = level.paperConfig().entities.spawning.wanderingTrader.spawnMinuteLength;
+                 WanderingTraderData data = this.getTraderData();
+-                int spawnDelay = data.spawnDelay() - 1200;
++                int spawnDelay = data.spawnDelay() - level.paperConfig().entities.spawning.wanderingTrader.spawnMinuteLength;
+                 data.setSpawnDelay(spawnDelay);
+                 if (spawnDelay <= 0) {
+-                    data.setSpawnDelay(24000);
++                    data.setSpawnDelay(level.paperConfig().entities.spawning.wanderingTrader.spawnDayLength);
+                     int chanceToSpawn = data.spawnChance();
+-                    int newSpawnChance = Mth.clamp(chanceToSpawn + 25, 25, 75);
++                    int newSpawnChance = Mth.clamp(chanceToSpawn + level.paperConfig().entities.spawning.wanderingTrader.spawnChanceFailureIncrement, level.paperConfig().entities.spawning.wanderingTrader.spawnChanceMin, level.paperConfig().entities.spawning.wanderingTrader.spawnChanceMax);
+                     data.setSpawnChance(newSpawnChance);
+                     if (this.random.nextInt(100) <= chanceToSpawn) {
+                         if (this.spawn(level)) {
+-                            data.setSpawnChance(25);
++                            data.setSpawnChance(level.paperConfig().entities.spawning.wanderingTrader.spawnChanceMin);
++                            // Paper end - Add Wandering Trader spawn rate config options
+                         }
+                     }
+                 }
+-            }
++            } else { this.tickDelay--; } // Paper - Prevent tickDelay going below 0
+         }
+     }
+ 
+@@ -90,13 +_,13 @@
+                     return false;
+                 }
+ 
+-                WanderingTrader trader = EntityType.WANDERING_TRADER.spawn(level, spawnPosition, EntitySpawnReason.EVENT);
++                WanderingTrader trader = EntityType.WANDERING_TRADER.spawn(level, wanderingTrader -> wanderingTrader.setDespawnDelay(48000), spawnPosition, EntitySpawnReason.EVENT, false, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL); // CraftBukkit // Paper - set despawnTimer before spawn events called
+                 if (trader != null) {
+                     for (int i = 0; i < 2; i++) {
+                         this.tryToSpawnLlamaFor(level, trader, 4);
+                     }
+ 
+-                    trader.setDespawnDelay(48000);
++                    // trader.setDespawnDelay(48000); // Paper - moved above, modifiable by plugins on CreatureSpawnEvent
+                     trader.setWanderTarget(referencePos);
+                     trader.setHomeTo(referencePos, 16);
+                     return true;
+@@ -110,7 +_,7 @@
+     private void tryToSpawnLlamaFor(final ServerLevel level, final WanderingTrader trader, final int radius) {
+         BlockPos spawnPosition = this.findSpawnPositionNear(level, trader.blockPosition(), radius);
+         if (spawnPosition != null) {
+-            TraderLlama llama = EntityType.TRADER_LLAMA.spawn(level, spawnPosition, EntitySpawnReason.EVENT);
++            TraderLlama llama = EntityType.TRADER_LLAMA.spawn(level, spawnPosition, EntitySpawnReason.EVENT, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL); // CraftBukkit
+             if (llama != null) {
+                 llama.setLeashedTo(trader, true);
+             }

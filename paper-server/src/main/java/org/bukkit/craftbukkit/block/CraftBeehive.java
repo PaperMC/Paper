@@ -33,7 +33,7 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
     @Override
     public void setFlower(Location location) {
         Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Flower must be in same world");
-        this.getSnapshot().savedFlowerPos = (location == null) ? null : CraftLocation.toBlockPosition(location);
+        this.getSnapshot().savedFlowerPos = (location == null) ? null : CraftLocation.toBlockPos(location);
     }
 
     @Override

@@ -7,15 +7,15 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import net.kyori.adventure.key.Key;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.decoration.PaintingVariant;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.decoration.painting.PaintingVariant;
 import org.bukkit.Art;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentRange;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public class PaperPaintingVariantRegistryEntry implements PaintingVariantRegistryEntry {
 
@@ -23,7 +23,7 @@ public class PaperPaintingVariantRegistryEntry implements PaintingVariantRegistr
     protected OptionalInt height = OptionalInt.empty();
     protected @Nullable Component title;
     protected @Nullable Component author;
-    protected @Nullable ResourceLocation assetId;
+    protected @Nullable Identifier assetId;
 
     protected final Conversions conversions;
 
@@ -74,13 +74,13 @@ public class PaperPaintingVariantRegistryEntry implements PaintingVariantRegistr
 
         @Override
         public Builder width(final @Range(from = 1, to = 16) int width) {
-            this.width = OptionalInt.of(asArgumentRange(width, "width", 1, 16));
+            this.width = OptionalInt.of(requireRange(width, "width", 1, 16));
             return this;
         }
 
         @Override
         public Builder height(final @Range(from = 1, to = 16) int height) {
-            this.height = OptionalInt.of(asArgumentRange(height, "height", 1, 16));
+            this.height = OptionalInt.of(requireRange(height, "height", 1, 16));
             return this;
         }
 

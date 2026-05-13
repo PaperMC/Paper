@@ -3,10 +3,10 @@ package io.papermc.paper.connection;
 import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.util.StackWalkerUtil;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import io.papermc.paper.util.StackWalkerUtil;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 // TODO: DO we even need this? Who mutates the player here? it does nothing anyways.
 // TODO: Make sure player settings are migrated too
 @NullMarked
+@Deprecated
 public class HorriblePlayerLoginEventHack {
 
     private static final Logger LOGGER = LogUtils.getClassLogger();
@@ -57,18 +58,19 @@ public class HorriblePlayerLoginEventHack {
             }
             if (true) {
                 LOGGER.info("You have plugins listening to the PlayerLoginEvent, this will cause re-configuration APIs to be unavailable: {}", plugins);
-            } else
-            LOGGER.warn("""
-                
-                ============================================================
-                WARNING: Legacy PlayerLoginEvent usage detected!
-                
-                This event forces an alternative player loading path that is
-                deprecated and will be removed in a future release.
-                For more information, see: https://go.papermc.io/announcement/1.21.7
-                
-                Please notify the following plugin developers: {}
-                ============================================================""", plugins);
+            } else {
+                LOGGER.warn("""
+                    
+                    ============================================================
+                    WARNING: Legacy PlayerLoginEvent usage detected!
+                    
+                    This event forces an alternative player loading path that is
+                    deprecated and will be removed in a future release.
+                    For more information, see: https://go.papermc.io/announcement/1.21.7
+                    
+                    Please notify the following plugin developers: {}
+                    ============================================================""", plugins);
+            }
             nagged = true;
         }
         // We need to account for the fact that during the config stage we now call this event to mimic the old behavior.

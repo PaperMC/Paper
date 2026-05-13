@@ -476,7 +476,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         CAMPFIRE,
         /**
          * Damage caused when an entity is colliding with too many entities due
-         * to the {@link org.bukkit.GameRule#MAX_ENTITY_CRAMMING}.
+         * to the {@link org.bukkit.GameRules#MAX_ENTITY_CRAMMING}.
          * <p>
          * Damage: 6
          */

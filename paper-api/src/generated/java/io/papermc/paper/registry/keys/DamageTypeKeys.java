@@ -285,6 +285,13 @@ public final class DamageTypeKeys {
     public static final TypedKey<DamageType> SONIC_BOOM = create(key("sonic_boom"));
 
     /**
+     * {@code minecraft:spear}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DamageType> SPEAR = create(key("spear"));
+
+    /**
      * {@code minecraft:spit}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

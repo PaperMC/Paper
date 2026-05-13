@@ -55,6 +55,7 @@ public enum Statistic implements Keyed {
     LEAVE_GAME,
     MINECART_ONE_CM,
     MOB_KILLS,
+    NAUTILUS_ONE_CM,
     OPEN_BARREL,
     CHEST_OPENED,
     ENDERCHEST_OPENED,

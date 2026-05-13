@@ -385,7 +385,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     private ServerStatsCounter getStatisticManager() {
-        return this.server.getHandle().getPlayerStats(this.getUniqueId(), this.getName());
+        return this.server.getHandle().getPlayerStats(this.nameAndId.toUncompletedGameProfile());
     }
 
     @Override

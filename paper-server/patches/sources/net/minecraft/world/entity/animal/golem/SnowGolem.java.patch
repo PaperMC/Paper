@@ -1,0 +1,74 @@
+--- a/net/minecraft/world/entity/animal/golem/SnowGolem.java
++++ b/net/minecraft/world/entity/animal/golem/SnowGolem.java
+@@ -92,7 +_,7 @@
+         super.aiStep();
+         if (this.level() instanceof ServerLevel serverLevel) {
+             if (serverLevel.environmentAttributes().getValue(EnvironmentAttributes.SNOW_GOLEM_MELTS, this.position())) {
+-                this.hurtServer(serverLevel, this.damageSources().onFire(), 1.0F);
++                this.hurtServer(serverLevel, this.damageSources().onFire().knownCause(org.bukkit.event.entity.EntityDamageEvent.DamageCause.MELTING), 1.0F); // CraftBukkit
+             }
+ 
+             if (!serverLevel.getGameRules().get(GameRules.MOB_GRIEFING)) {
+@@ -107,7 +_,7 @@
+                 int zz = Mth.floor(this.getZ() + (i / 2 % 2 * 2 - 1) * 0.25F);
+                 BlockPos snowPos = new BlockPos(xx, yy, zz);
+                 if (this.level().getBlockState(snowPos).isAir() && snow.canSurvive(this.level(), snowPos)) {
+-                    this.level().setBlockAndUpdate(snowPos, snow);
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level(), snowPos, snow, net.minecraft.world.level.block.Block.UPDATE_ALL, this)) continue; // CraftBukkit
+                     this.level().gameEvent(GameEvent.BLOCK_PLACE, snowPos, GameEvent.Context.of(this, snow));
+                 }
+             }
+@@ -138,7 +_,19 @@
+         ItemStack itemStack = player.getItemInHand(hand);
+         if (itemStack.is(Items.SHEARS) && this.readyForShearing()) {
+             if (this.level() instanceof ServerLevel level) {
+-                this.shear(level, SoundSource.PLAYERS, itemStack);
++                // CraftBukkit start
++                // Paper start - custom shear drops
++                java.util.List<ItemStack> drops = this.generateDefaultDrops(level, itemStack);
++                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemStack, hand, drops);
++                if (event != null) {
++                    if (event.isCancelled()) {
++                        return InteractionResult.PASS;
++                    }
++                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++                    // Paper end - custom shear drops
++                }
++                // CraftBukkit end
++                this.shear(level, SoundSource.PLAYERS, itemStack, drops); // Paper - custom shear drops
+                 this.gameEvent(GameEvent.SHEAR, player);
+                 itemStack.hurtAndBreak(1, player, hand.asEquipmentSlot());
+             }
+@@ -151,9 +_,31 @@
+ 
+     @Override
+     public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool) {
++        // Paper start - custom shear drops
++        this.shear(level, soundSource, tool, this.generateDefaultDrops(level, tool));
++    }
++
++    @Override
++    public java.util.List<ItemStack> generateDefaultDrops(final ServerLevel level, final ItemStack tool) {
++        final java.util.List<ItemStack> drops = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
++        this.dropFromShearingLootTable(level, BuiltInLootTables.SHEAR_SNOW_GOLEM, tool, (ignored, stack) -> {
++            drops.add(stack);
++        });
++        return drops;
++    }
++
++    @Override
++    public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool, final java.util.List<ItemStack> drops) {
++        // Paper end - custom shear drops
+         level.playSound(null, this, SoundEvents.SNOW_GOLEM_SHEAR, soundSource, 1.0F, 1.0F);
+         this.setPumpkin(false);
+-        this.dropFromShearingLootTable(level, BuiltInLootTables.SHEAR_SNOW_GOLEM, tool, (l, drop) -> this.spawnAtLocation(l, drop, this.getEyeHeight()));
++        // Paper start - custom shear drops
++        drops.forEach(drop -> {
++            this.forceDrops = true; // CraftBukkit
++            this.spawnAtLocation(level, drop, this.getEyeHeight());
++            this.forceDrops = false; // CraftBukkit
++        });
++        // Paper end - custom shear drops
+     }
+ 
+     @Override

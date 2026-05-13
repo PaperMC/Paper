@@ -46,7 +46,6 @@ import org.bukkit.inventory.meta.KnowledgeBookMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
@@ -154,21 +153,6 @@ public class ItemMetaTest {
         ItemStack bukkit = new ItemStack(craft);
         assertThat(craft, is(bukkit));
         assertThat(bukkit, is(craft));
-    }
-
-    @Test
-    public void testSpawnEggsHasMeta() {
-        for (Item item : BuiltInRegistries.ITEM) {
-            if (item instanceof net.minecraft.world.item.SpawnEggItem) {
-                Material material = CraftItemType.minecraftToBukkit(item);
-                CraftMetaItem baseMeta = (CraftMetaItem) Bukkit.getItemFactory().getItemMeta(material);
-                ItemMeta baseMetaItem = CraftItemStack.getItemMeta(item.getDefaultInstance());
-
-                assertTrue(baseMeta instanceof CraftMetaSpawnEgg, material + " is not handled in CraftItemFactory");
-                assertTrue(baseMeta.applicableTo(material), material + " is not applicable to CraftMetaSpawnEgg");
-                assertTrue(baseMetaItem instanceof SpawnEggMeta, material + " is not handled in CraftItemStack");
-            }
-        }
     }
 
     // Paper start - check entity tag metas
@@ -445,8 +429,8 @@ public class ItemMetaTest {
     @Test
     public void testBlockData() {
         BlockDataMeta itemMeta = (BlockDataMeta) Bukkit.getItemFactory().getItemMeta(Material.CHEST);
-        itemMeta.setBlockData(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]"));
-        assertThat(itemMeta.getBlockData(Material.CHEST), is(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]")));
+        itemMeta.setBlockData(CraftBlockData.fromString(null, "minecraft:chest[waterlogged=true]"));
+        assertThat(itemMeta.getBlockData(Material.CHEST), is(CraftBlockData.fromString(null, "minecraft:chest[waterlogged=true]")));
     }
 
     @Test

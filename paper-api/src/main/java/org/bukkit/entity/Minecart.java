@@ -1,6 +1,6 @@
 package org.bukkit.entity;
 
-import org.bukkit.GameRule;
+import org.bukkit.GameRules;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.material.MaterialData;
@@ -37,7 +37,7 @@ public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { 
 
     /**
      * Sets the maximum speed of a minecart. Must be nonnegative. Default is
-     * 0.4D or {@link GameRule#MINECART_MAX_SPEED}.
+     * 0.4D or {@link GameRules#MAX_MINECART_SPEED}.
      *
      * @param speed The max speed
      */

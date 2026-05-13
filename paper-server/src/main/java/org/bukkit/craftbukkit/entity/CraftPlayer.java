@@ -55,14 +55,14 @@ import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.advancements.AdvancementProgress;
-import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.PlayerChatMessage;
+import net.minecraft.network.chat.ResolutionContext;
 import net.minecraft.network.protocol.common.ClientboundClearDialogPacket;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
@@ -105,12 +105,14 @@ import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
 import net.minecraft.network.protocol.game.ClientboundTabListPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.PlayerAdvancements;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
+import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.ProblemReporter;
@@ -244,6 +246,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     private CraftWorldBorder clientWorldBorder = null;
     private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
     private long lastSaveTime; // Paper - getLastPlayed replacement API
+    private @Nullable CraftScoreboard scoreboardOverride;
 
     public CraftPlayer(CraftServer server, ServerPlayer entity) {
         super(server, entity);
@@ -359,21 +362,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     // Paper start - Implement NetworkClient
     @Override
     public int getProtocolVersion() {
-        if (getHandle().connection == null) return -1;
-        return getHandle().connection.connection.protocolVersion;
+        if (this.getHandle().connection == null) return -1;
+        return this.getHandle().connection.connection.protocolVersion;
     }
 
     @Override
     public InetSocketAddress getVirtualHost() {
-        if (getHandle().connection == null) return null;
-        return getHandle().connection.connection.virtualHost;
+        if (this.getHandle().connection == null) return null;
+        return this.getHandle().connection.connection.virtualHost;
     }
     // Paper end
 
     @Override
     public double getEyeHeight(boolean ignorePose) {
         if (ignorePose) {
-            return 1.62D;
+            return 1.62;
         } else {
             return this.getEyeHeight();
         }
@@ -691,9 +694,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public void sendOpLevel(byte level) {
-        Preconditions.checkArgument(level >= Commands.LEVEL_ALL && level <= Commands.LEVEL_OWNERS, "Level must be within [%s, %s]", Commands.LEVEL_ALL, Commands.LEVEL_OWNERS);
+        Preconditions.checkArgument(level >= PermissionLevel.ALL.id() && level <= PermissionLevel.OWNERS.id(), "Level must be within [%s, %s]", PermissionLevel.ALL.id(), PermissionLevel.OWNERS.id());
 
-        this.server.getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), level, false);
+        this.server.getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), LevelBasedPermissionSet.forLevel(PermissionLevel.byId(level)), false);
     }
 
     @Override
@@ -720,11 +723,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
         // Do not directly assign here, from the packethandler we'll assign it.
         this.getHandle().connection.send(new ClientboundSetDefaultSpawnPositionPacket(
-            new LevelData.RespawnData(
-                GlobalPos.of(
-                    ((CraftWorld) loc.getWorld()).getHandle().dimension(),
-                    CraftLocation.toBlockPosition(loc)
-                ),
+            LevelData.RespawnData.of(
+                ((CraftWorld) loc.getWorld()).getHandle().dimension(),
+                CraftLocation.toBlockPos(loc),
                 loc.getYaw(),
                 loc.getPitch()
             )
@@ -776,7 +777,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         if (instrumentSound == null) return;
 
         // Paper start - use correct pitch (modeled off of NoteBlock)
-        final net.minecraft.world.level.block.state.properties.NoteBlockInstrument noteBlockInstrument = CraftBlockData.toNMS(instrument, net.minecraft.world.level.block.state.properties.NoteBlockInstrument.class);
+        final net.minecraft.world.level.block.state.properties.NoteBlockInstrument noteBlockInstrument = CraftBlockData.toVanilla(instrument, net.minecraft.world.level.block.state.properties.NoteBlockInstrument.class);
         final float pitch = noteBlockInstrument.isTunable() ? note.getPitch() : 1.0f;
         // Paper end
         this.getHandle().connection.send(new ClientboundSoundPacket(CraftSound.bukkitToMinecraftHolder(instrumentSound), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, pitch, this.getHandle().getRandom().nextLong()));
@@ -803,7 +804,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
         if (loc == null || sound == null || category == null || this.getHandle().connection == null) return;
 
-        this.playSound0(loc, Holder.direct(SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), volume, pitch, seed);
+        this.playSound0(loc, Holder.direct(SoundEvent.createVariableRangeEvent(Identifier.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), volume, pitch, seed);
     }
 
     private void playSound0(Location loc, Holder<SoundEvent> soundEffectHolder, net.minecraft.sounds.SoundSource categoryNMS, float volume, float pitch, long seed) {
@@ -836,7 +837,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void playSound(org.bukkit.entity.Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
         if (!(entity instanceof CraftEntity) || sound == null || category == null || this.getHandle().connection == null) return;
 
-        this.playSound0(entity, Holder.direct(SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), volume, pitch, seed);
+        this.playSound0(entity, Holder.direct(SoundEvent.createVariableRangeEvent(Identifier.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), volume, pitch, seed);
     }
 
     private void playSound0(org.bukkit.entity.Entity entity, Holder<SoundEvent> soundEffectHolder, net.minecraft.sounds.SoundSource categoryNMS, float volume, float pitch, long seed) {
@@ -855,7 +856,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void stopSound(String sound, org.bukkit.SoundCategory category) {
         if (this.getHandle().connection == null) return;
 
-        this.getHandle().connection.send(new ClientboundStopSoundPacket(ResourceLocation.parse(sound), category == null ? net.minecraft.sounds.SoundSource.MASTER : net.minecraft.sounds.SoundSource.valueOf(category.name())));
+        this.getHandle().connection.send(new ClientboundStopSoundPacket(Identifier.parse(sound), category == null ? net.minecraft.sounds.SoundSource.MASTER : net.minecraft.sounds.SoundSource.valueOf(category.name())));
     }
 
     @Override
@@ -880,7 +881,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         if (this.getHandle().connection == null) return;
 
         int packetData = effect.getId();
-        ClientboundLevelEventPacket packet = new ClientboundLevelEventPacket(packetData, CraftLocation.toBlockPosition(loc), data, false);
+        ClientboundLevelEventPacket packet = new ClientboundLevelEventPacket(packetData, CraftLocation.toBlockPos(loc), data, false);
         this.getHandle().connection.send(packet);
     }
 
@@ -911,7 +912,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void sendBlockChange(Location loc, Material material, byte data) {
         if (this.getHandle().connection == null) return;
 
-        ClientboundBlockUpdatePacket packet = new ClientboundBlockUpdatePacket(CraftLocation.toBlockPosition(loc), CraftMagicNumbers.getBlock(material, data));
+        ClientboundBlockUpdatePacket packet = new ClientboundBlockUpdatePacket(CraftLocation.toBlockPos(loc), CraftMagicNumbers.getBlock(material, data));
         this.getHandle().connection.send(packet);
     }
 
@@ -919,7 +920,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void sendBlockChange(Location loc, BlockData block) {
         if (this.getHandle().connection == null) return;
 
-        ClientboundBlockUpdatePacket packet = new ClientboundBlockUpdatePacket(CraftLocation.toBlockPosition(loc), ((CraftBlockData) block).getState());
+        ClientboundBlockUpdatePacket packet = new ClientboundBlockUpdatePacket(CraftLocation.toBlockPos(loc), ((CraftBlockData) block).getState());
         this.getHandle().connection.send(packet);
     }
 
@@ -1003,7 +1004,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
             stage = -1; // The protocol states that any other value will reset the damage, which this API promises
         }
 
-        ClientboundBlockDestructionPacket packet = new ClientboundBlockDestructionPacket(sourceId, CraftLocation.toBlockPosition(loc), stage);
+        ClientboundBlockDestructionPacket packet = new ClientboundBlockDestructionPacket(sourceId, CraftLocation.toBlockPos(loc), stage);
         this.getHandle().connection.send(packet);
     }
 
@@ -1055,7 +1056,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     private void sendSignChange0(Component[] components, Location loc, DyeColor dyeColor, boolean hasGlowingText) {
         // Paper end
-        SignBlockEntity sign = new SignBlockEntity(CraftLocation.toBlockPosition(loc), Blocks.OAK_SIGN.defaultBlockState());
+        SignBlockEntity sign = new SignBlockEntity(CraftLocation.toBlockPos(loc), Blocks.OAK_SIGN.defaultBlockState());
         SignText text = sign.getFrontText();
         text = text.setColor(net.minecraft.world.item.DyeColor.byId(dyeColor.getWoolData()));
         text = text.setHasGlowingText(hasGlowingText);
@@ -1168,27 +1169,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     private BorderChangeListener createWorldBorderListener() {
         return new BorderChangeListener() {
             @Override
-            public void onSetSize(net.minecraft.world.level.border.WorldBorder border, double size) {
+            public void onSetSize(net.minecraft.world.level.border.WorldBorder border, double newSize) {
                 CraftPlayer.this.getHandle().connection.send(new ClientboundSetBorderSizePacket(border));
             }
 
             @Override
-            public void onLerpSize(net.minecraft.world.level.border.WorldBorder border, double fromSize, double toSize, long time) {
+            public void onLerpSize(net.minecraft.world.level.border.WorldBorder border, double fromSize, double targetSize, long ticks, long gameTime) {
                 CraftPlayer.this.getHandle().connection.send(new ClientboundSetBorderLerpSizePacket(border));
             }
 
             @Override
-            public void onSetCenter(net.minecraft.world.level.border.WorldBorder border, double centerX, double centerZ) {
+            public void onSetCenter(net.minecraft.world.level.border.WorldBorder border, double x, double z) {
                 CraftPlayer.this.getHandle().connection.send(new ClientboundSetBorderCenterPacket(border));
             }
 
             @Override
-            public void onSetWarningTime(net.minecraft.world.level.border.WorldBorder border, int warningTime) {
+            public void onSetWarningTime(net.minecraft.world.level.border.WorldBorder border, int time) {
                 CraftPlayer.this.getHandle().connection.send(new ClientboundSetBorderWarningDelayPacket(border));
             }
 
             @Override
-            public void onSetWarningBlocks(net.minecraft.world.level.border.WorldBorder border, int warningBlockDistance) {
+            public void onSetWarningBlocks(net.minecraft.world.level.border.WorldBorder border, int blocks) {
                 CraftPlayer.this.getHandle().connection.send(new ClientboundSetBorderWarningDistancePacket(border));
             }
 
@@ -1196,7 +1197,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
             public void onSetDamagePerBlock(net.minecraft.world.level.border.WorldBorder border, double damagePerBlock) {} // NO OP
 
             @Override
-            public void onSetSafeZone(net.minecraft.world.level.border.WorldBorder border, double safeZoneRadius) {} // NO OP
+            public void onSetSafeZone(net.minecraft.world.level.border.WorldBorder border, double safeZone) {} // NO OP
         };
     }
 
@@ -1391,11 +1392,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         } else {
             this.getHandle().setRespawnPosition(
                 new ServerPlayer.RespawnConfig(
-                    new LevelData.RespawnData(
-                        GlobalPos.of(
-                            ((CraftWorld) location.getWorld()).getHandle().dimension(),
-                            CraftLocation.toBlockPosition(location)
-                        ),
+                    LevelData.RespawnData.of(
+                        ((CraftWorld) location.getWorld()).getHandle().dimension(),
+                        CraftLocation.toBlockPos(location),
                         location.getYaw(),
                         location.getPitch()
                     ),
@@ -1428,13 +1427,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     @Override
     public boolean hasDiscoveredRecipe(NamespacedKey recipe) {
         Preconditions.checkArgument(recipe != null, "recipe cannot be null");
-        return this.getHandle().getRecipeBook().contains(CraftRecipe.toMinecraft(recipe));
+        return this.getHandle().getRecipeBook().contains(CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipe));
     }
 
     @Override
     public Set<NamespacedKey> getDiscoveredRecipes() {
         ImmutableSet.Builder<NamespacedKey> bukkitRecipeKeys = ImmutableSet.builder();
-        this.getHandle().getRecipeBook().known.forEach(key -> bukkitRecipeKeys.add(CraftNamespacedKey.fromMinecraft(key.location())));
+        this.getHandle().getRecipeBook().known.forEach(key -> bukkitRecipeKeys.add(CraftNamespacedKey.fromMinecraft(key.identifier())));
         return bukkitRecipeKeys.build();
     }
 
@@ -1529,9 +1528,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public void setPlayerTime(long time, boolean relative) {
+    public void setPlayerTime(long time, boolean tickTime) {
         this.getHandle().timeOffset = time;
-        this.getHandle().relativeTime = relative;
+        this.getHandle().relativeTime = tickTime;
+
+        final ServerLevel level = this.getHandle().level();
+        if (this.getHandle().connection == null || level.dimensionType().defaultClock().isEmpty()) {
+            return;
+        }
+
+        this.getHandle().connection.send(level.clockManager().createFullSyncPacket(this.getHandle()));
     }
 
     @Override
@@ -1880,7 +1886,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         // Remove the hidden entity from this player user list, if they're on it
         if (other instanceof ServerPlayer) {
             ServerPlayer otherPlayer = (ServerPlayer) other;
-            if (otherPlayer.sentListPacket) {
+            if (this.getHandle().sentListPacket && otherPlayer.sentListPacket) {
                 this.getHandle().connection.send(new ClientboundPlayerInfoRemovePacket(List.of(otherPlayer.getUUID())));
             }
         }
@@ -2037,6 +2043,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         for (net.minecraft.world.effect.MobEffectInstance mobEffect : handle.getActiveEffects()) {
             connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateMobEffectPacket(handle.getId(), mobEffect, false));
         }
+        sendHealthUpdate();
     }
     // Paper end
 
@@ -2207,12 +2214,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         if (this.getHandle().connection == null) return;
 
         if (this.channels().contains(channel)) {
-            ResourceLocation id = ResourceLocation.parse(StandardMessenger.validateAndCorrectChannel(channel));
+            Identifier id = Identifier.parse(StandardMessenger.validateAndCorrectChannel(channel));
             this.sendCustomPayload(id, message);
         }
     }
 
-    private void sendCustomPayload(ResourceLocation id, byte[] message) {
+    private void sendCustomPayload(Identifier id, byte[] message) {
         ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(id, message));
         this.getHandle().connection.send(packet);
     }
@@ -2506,6 +2513,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         return this.server.getScoreboardManager().getPlayerBoard(this);
     }
 
+    public @Nullable CraftScoreboard getScoreboardOverride() {
+        return this.scoreboardOverride;
+    }
+
+    public void setScoreboardOverride(@Nullable CraftScoreboard scoreboardOverride) {
+        this.scoreboardOverride = scoreboardOverride;
+    }
+
     @Override
     public void setScoreboard(Scoreboard scoreboard) {
         Preconditions.checkArgument(scoreboard != null, "Scoreboard cannot be null");
@@ -2675,7 +2690,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public int getClientViewDistance() {
-        return (this.getHandle().requestedViewDistance() == 0) ? Bukkit.getViewDistance() : this.getHandle().requestedViewDistance();
+        return this.getHandle().requestedViewDistance();
     }
 
     // Paper start
@@ -2959,22 +2974,25 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         Preconditions.checkArgument(book != null, "ItemStack cannot be null");
         Preconditions.checkArgument(book.hasData(DataComponentTypes.WRITTEN_BOOK_CONTENT), "ItemStack must have a 'written_book_content' component");
 
-        final ItemStack previousItem = this.getInventory().getItemInMainHand();
-        this.getInventory().setItemInMainHand(book);
-        this.getHandle().openItemGui(CraftItemStack.asNMSCopy(book), InteractionHand.MAIN_HAND);
-        this.getInventory().setItemInMainHand(previousItem);
+        net.minecraft.world.item.ItemStack bookItem = CraftItemStack.asNMSCopy(book);
+        ServerPlayer serverPlayer = this.getHandle();
+        net.minecraft.world.item.component.WrittenBookContent.resolveForItem(bookItem, ResolutionContext.create(serverPlayer.createCommandSourceStack()), serverPlayer.registryAccess());
+        sendBookOpen(bookItem);
     }
 
     @Override
     public void openBook(final Book book) {
         final ItemStack mutatedItem = ItemType.WRITTEN_BOOK.createItemStack(); // dummy item
         mutatedItem.setData(DataComponentTypes.WRITTEN_BOOK_CONTENT, WrittenBookContent.writtenBookContent("", "").addPages(book.pages()));
+        sendBookOpen(CraftItemStack.unwrap(mutatedItem));
+    }
 
+    private void sendBookOpen(net.minecraft.world.item.ItemStack bookItem) {
         final net.minecraft.world.item.ItemStack selectedItem = this.getHandle().getInventory().getSelectedItem();
         final int slot = this.getHandle().getInventory().getSelectedSlot();
         this.getHandle().connection.send(new ClientboundBundlePacket(
             List.of(
-                new ClientboundSetPlayerInventoryPacket(slot, CraftItemStack.unwrap(mutatedItem)),
+                new ClientboundSetPlayerInventoryPacket(slot, bookItem),
                 new ClientboundOpenBookPacket(InteractionHand.MAIN_HAND),
                 new ClientboundSetPlayerInventoryPacket(slot, selectedItem)
             )
@@ -3013,6 +3031,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         public void respawn() {
             if (CraftPlayer.this.getHealth() <= 0 && CraftPlayer.this.isOnline()) {
                 CraftPlayer.this.server.getServer().getPlayerList().respawn(CraftPlayer.this.getHandle(), false, Entity.RemovalReason.KILLED, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason.PLUGIN);
+                CraftPlayer.this.getHandle().connection.restartClientLoadTimerAfterRespawn();
             }
         }
 
@@ -3130,7 +3149,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     // Paper start
     @Override
     public Duration getIdleDuration() {
-        return Duration.ofMillis(net.minecraft.Util.getMillis() - this.getHandle().getLastActionTime());
+        return Duration.ofMillis(net.minecraft.util.Util.getMillis() - this.getHandle().getLastActionTime());
     }
 
     @Override
@@ -3341,5 +3360,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         if (entity != null) {
             entity.remove();
         }
+    }
+
+    @Override
+    public void knockback(final double strength, final double directionX, final double directionZ) {
+        super.knockback(strength, directionX, directionZ);
+        this.entity.hurtMarked = true;
     }
 }

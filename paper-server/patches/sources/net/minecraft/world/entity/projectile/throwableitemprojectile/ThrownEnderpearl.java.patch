@@ -1,0 +1,90 @@
+--- a/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownEnderpearl.java
++++ b/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownEnderpearl.java
+@@ -102,11 +_,22 @@
+                 Vec3 teleportPos = this.oldPosition();
+                 if (owner instanceof ServerPlayer player) {
+                     if (player.connection.isAcceptingMessages()) {
++                        // CraftBukkit start
++                        // Store pre teleportation position as the teleport has been moved up.
++                        final double preTeleportX = player.getX(), preTeleportY = player.getY(), preTeleportZ = player.getZ();
++                        final float preTeleportYRot = player.getYRot(), preTeleportXRot = player.getXRot();
++                        ServerPlayer newOwner = player.teleport(new TeleportTransition(
++                            level, teleportPos, Vec3.ZERO, 0.0F, 0.0F, Relative.union(Relative.ROTATION, Relative.DELTA), TeleportTransition.DO_NOTHING, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.ENDER_PEARL));
++                        if (newOwner == null) {
++                            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT);
++                            return;
++                        }
++                        // CraftBukkit end
+                         if (this.random.nextFloat() < 0.05F && level.isSpawningMonsters()) {
+                             Endermite endermite = EntityType.ENDERMITE.create(level, EntitySpawnReason.TRIGGERED);
+                             if (endermite != null) {
+-                                endermite.snapTo(owner.getX(), owner.getY(), owner.getZ(), owner.getYRot(), owner.getXRot());
+-                                level.addFreshEntity(endermite);
++                                endermite.snapTo(preTeleportX, preTeleportY, preTeleportZ, preTeleportYRot, preTeleportXRot); // Paper - spawn endermite at pre teleport position as teleport has been moved up
++                                level.addFreshEntity(endermite, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.ENDER_PEARL); // Paper - add reason
+                             }
+                         }
+ 
+@@ -114,15 +_,17 @@
+                             owner.setPortalCooldown();
+                         }
+ 
+-                        ServerPlayer newOwner = player.teleport(
+-                            new TeleportTransition(
+-                                level, teleportPos, Vec3.ZERO, 0.0F, 0.0F, Relative.union(Relative.ROTATION, Relative.DELTA), TeleportTransition.DO_NOTHING
+-                            )
+-                        );
++                        // CraftBukkit start - moved up
++                        // ServerPlayer newOwner = player.teleport(
++                        //     new TeleportTransition(
++                        //         level, teleportPos, Vec3.ZERO, 0.0F, 0.0F, Relative.union(Relative.ROTATION, Relative.DELTA), TeleportTransition.DO_NOTHING
++                        //     )
++                        // );
++                        // CraftBukkit end - moved up
+                         if (newOwner != null) {
+                             newOwner.resetFallDistance();
+                             newOwner.resetCurrentImpulseContext();
+-                            newOwner.hurtServer(player.level(), this.damageSources().enderPearl(), 5.0F);
++                            newOwner.hurtServer(player.level(), this.damageSources().enderPearl().eventEntityDamager(this), 5.0F); // CraftBukkit // Paper - fix DamageSource API
+                         }
+ 
+                         this.playSound(level, teleportPos);
+@@ -142,9 +_,9 @@
+                     this.playSound(level, teleportPos);
+                 }
+ 
+-                this.discard();
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+             } else {
+-                this.discard();
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+             }
+         }
+     }
+@@ -167,7 +_,7 @@
+                 && !owner.isAlive()
+                 && !serverPlayer.wonGame
+                 && serverPlayer.level().getGameRules().get(GameRules.ENDER_PEARLS_VANISH_ON_DEATH)) {
+-                this.discard();
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+             } else {
+                 super.tick();
+             }
+@@ -196,7 +_,7 @@
+     public @Nullable Entity teleport(final TeleportTransition transition) {
+         Entity newEntity = super.teleport(transition);
+         if (newEntity != null) {
+-            newEntity.placePortalTicket(BlockPos.containing(newEntity.position()));
++            if (!this.level().paperConfig().misc.legacyEnderPearlBehavior) newEntity.placePortalTicket(BlockPos.containing(newEntity.position())); // Paper - Allow using old ender pearl behavior
+         }
+ 
+         return newEntity;
+@@ -204,7 +_,7 @@
+ 
+     @Override
+     public boolean canTeleport(final Level from, final Level to) {
+-        return from.dimension() == Level.END && to.dimension() == Level.OVERWORLD && this.getOwner() instanceof ServerPlayer player
++        return from.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.END && to.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.OVERWORLD && this.getOwner() instanceof ServerPlayer player // CraftBukkit
+             ? super.canTeleport(from, to) && player.seenCredits
+             : super.canTeleport(from, to);
+     }

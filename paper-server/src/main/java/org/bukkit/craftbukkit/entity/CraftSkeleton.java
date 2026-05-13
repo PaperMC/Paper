@@ -6,13 +6,13 @@ import org.bukkit.entity.Skeleton;
 
 public class CraftSkeleton extends CraftAbstractSkeleton implements Skeleton {
 
-    public CraftSkeleton(CraftServer server, net.minecraft.world.entity.monster.Skeleton entity) {
+    public CraftSkeleton(CraftServer server, net.minecraft.world.entity.monster.skeleton.Skeleton entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.monster.Skeleton getHandle() {
-        return (net.minecraft.world.entity.monster.Skeleton) this.entity;
+    public net.minecraft.world.entity.monster.skeleton.Skeleton getHandle() {
+        return (net.minecraft.world.entity.monster.skeleton.Skeleton) this.entity;
     }
 
     @Override
@@ -30,7 +30,7 @@ public class CraftSkeleton extends CraftAbstractSkeleton implements Skeleton {
     public void setConversionTime(int time) {
         if (time < 0) {
             this.getHandle().conversionTime = -1;
-            this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.Skeleton.DATA_STRAY_CONVERSION_ID, false);
+            this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.skeleton.Skeleton.DATA_STRAY_CONVERSION_ID, false);
         } else {
             this.getHandle().startFreezeConversion(time);
         }

@@ -22,28 +22,28 @@ public class SpigotCommand extends Command {
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
         if (!this.testPermission(sender)) return true;
 
-        if (args.length != 1) {
+        if (args.length != 1 || !args[0].equals("reload")) {
             sender.sendMessage(text("Usage: " + this.usageMessage, NamedTextColor.RED));
             return false;
         }
 
-        if (args[0].equals("reload")) {
-            Command.broadcastCommandMessage(sender, text().color(NamedTextColor.RED)
-                .append(text("Please note that this command is not supported and may cause issues."))
-                .appendNewline()
-                .append(text("If you encounter any issues please use the /stop command to restart your server."))
-                .build()
-            );
 
-            MinecraftServer console = MinecraftServer.getServer();
-            org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings"));
-            for (ServerLevel world : console.getAllLevels()) {
-                world.spigotConfig.init();
-            }
-            console.server.reloadCount++;
+        Command.broadcastCommandMessage(sender, text().color(NamedTextColor.RED)
+            .append(text("Please note that this command is not supported and may cause issues."))
+            .appendNewline()
+            .append(text("If you encounter any issues please use the /stop command to restart your server."))
+            .build()
+        );
 
-            Command.broadcastCommandMessage(sender, text("Reload complete.", NamedTextColor.GREEN));
+        MinecraftServer console = MinecraftServer.getServer();
+        org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings"));
+        for (ServerLevel world : console.getAllLevels()) {
+            world.spigotConfig.init();
         }
+        console.server.reloadCount++;
+
+        Command.broadcastCommandMessage(sender, text("Reload complete.", NamedTextColor.GREEN));
+        
 
         return true;
     }

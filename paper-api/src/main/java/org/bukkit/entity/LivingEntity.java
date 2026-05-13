@@ -5,9 +5,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.world.damagesource.CombatTracker;
+import io.papermc.paper.world.damagesource.FallLocationType;
+import net.kyori.adventure.key.Key;
+import org.bukkit.Color;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
@@ -1494,4 +1498,44 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     @ApiStatus.Experimental
     @NotNull CombatTracker getCombatTracker();
+
+    /**
+     * Sets the visual style of the waypoint icon using the specified {@link Key}.
+     * <p>
+     * Minecraft has the keys "minecraft:bowtie" and "minecraft:default" built in.
+     *
+     * @param key the key representing the style, or {@code null} to use the default style
+     * @see <a href="https://minecraft.wiki/w/Waypoint_style">https://minecraft.wiki/w/Waypoint_style</a>
+     */
+    void setWaypointStyle(@Nullable Key key);
+
+    /**
+     * Sets the color of the waypoint icon.
+     *
+     * @param color the new color to apply to the waypoint icon, or {@code null} to use the default color.
+     *              While the color may contain alpha values, the client does not receive them.
+     * @see <a href="https://minecraft.wiki/w/Locator_Bar#Usage">https://minecraft.wiki/w/Locator_Bar#Usage</a>
+     */
+    void setWaypointColor(@Nullable Color color);
+
+    /**
+     * Gets the current visual style of the waypoint icon.
+     *
+     * @return the {@link Key} representing the icon's style
+     * @see #setWaypointStyle(Key)
+     * @see <a href="https://minecraft.wiki/w/Waypoint_style">https://minecraft.wiki/w/Waypoint_style</a>
+     */
+    @NotNull
+    Key getWaypointStyle();
+
+    /**
+     * Gets the current color of the waypoint icon, if any.
+     *
+     * @return the icon's color, or {@code null} if the default color is used.
+     *         While the color may contain alpha values, the client does not receive them.
+     * @see #setWaypointColor(Color)
+     * @see <a href="https://minecraft.wiki/w/Locator_Bar#Usage">https://minecraft.wiki/w/Locator_Bar#Usage</a>
+     */
+    @Nullable
+    Color getWaypointColor();
 }

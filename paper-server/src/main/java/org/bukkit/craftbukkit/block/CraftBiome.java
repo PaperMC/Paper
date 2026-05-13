@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import io.papermc.paper.util.OldEnumHolderable;
+import java.util.Objects;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.NamespacedKey;
@@ -9,27 +10,14 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.util.Objects;
 
 @NullMarked
 public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.level.biome.Biome> implements Biome {
 
     private static int count = 0;
 
-    public static Biome minecraftToBukkit(net.minecraft.world.level.biome.Biome minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.BIOME);
-    }
-
     public static Biome minecraftHolderToBukkit(Holder<net.minecraft.world.level.biome.Biome> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.BIOME);
-    }
-
-    public static net.minecraft.world.level.biome.@Nullable Biome bukkitToMinecraft(Biome bukkit) {
-        if (bukkit == Biome.CUSTOM) {
-            return null;
-        }
-
-        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     public static @Nullable Holder<net.minecraft.world.level.biome.Biome> bukkitToMinecraftHolder(Biome bukkit) {
@@ -45,7 +33,7 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
 
     /**
      * Implementation for the deprecated, API only, CUSTOM biome.
-     * As per {@link #bukkitToMinecraft(Biome)} and {@link #bukkitToMinecraftHolder(Biome)} it cannot be
+     * As per {@link #bukkitToMinecraftHolder(Biome)} it cannot be
      * converted into an internal biome and only serves backwards compatibility reasons.
      */
     @Deprecated(forRemoval = true, since = "1.21.5")

@@ -1,10 +1,11 @@
 package org.bukkit.block.banner;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -152,7 +153,7 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
             return null;
         }
 
-        for (PatternType type : Registry.BANNER_PATTERN) {
+        for (PatternType type : RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN)) {
             if (identifier.equals(type.getIdentifier())) {
                 return type;
             }
@@ -162,8 +163,8 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
     }
 
     @NotNull
-    private static PatternType getType(@NotNull String key) {
-        return RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).getOrThrow(NamespacedKey.minecraft(key));
+    private static PatternType getType(@NotNull @KeyPattern.Value String key) {
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
     /**
@@ -174,18 +175,19 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
     @NotNull
     @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static PatternType valueOf(@NotNull String name) {
-        PatternType type = Registry.BANNER_PATTERN.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        PatternType type = key == null ? null : RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).get(key);
         Preconditions.checkArgument(type != null, "No pattern type found with the name %s", name);
         return type;
     }
 
     /**
      * @return an array of all known pattern types.
-     * @deprecated use {@link Registry#iterator()}.
+     * @deprecated use {@link Registry#stream()}.
      */
     @NotNull
     @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static PatternType[] values() {
-        return Lists.newArrayList(Registry.BANNER_PATTERN).toArray(new PatternType[0]);
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN).stream().toArray(PatternType[]::new);
     }
 }

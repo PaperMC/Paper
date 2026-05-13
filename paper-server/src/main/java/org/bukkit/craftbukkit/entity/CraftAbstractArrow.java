@@ -17,13 +17,13 @@ import org.bukkit.inventory.ItemStack;
 
 public abstract class CraftAbstractArrow extends AbstractProjectile implements AbstractArrow {
 
-    public CraftAbstractArrow(CraftServer server, net.minecraft.world.entity.projectile.AbstractArrow entity) {
+    public CraftAbstractArrow(CraftServer server, net.minecraft.world.entity.projectile.arrow.AbstractArrow entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.projectile.AbstractArrow getHandle() {
-        return (net.minecraft.world.entity.projectile.AbstractArrow) this.entity;
+    public net.minecraft.world.entity.projectile.arrow.AbstractArrow getHandle() {
+        return (net.minecraft.world.entity.projectile.arrow.AbstractArrow) this.entity;
     }
 
     @Override
@@ -95,7 +95,7 @@ public abstract class CraftAbstractArrow extends AbstractProjectile implements A
     @Override
     public void setPickupStatus(PickupStatus status) {
         Preconditions.checkArgument(status != null, "PickupStatus cannot be null");
-        this.getHandle().pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.byOrdinal(status.ordinal());
+        this.getHandle().pickup = net.minecraft.world.entity.projectile.arrow.AbstractArrow.Pickup.byOrdinal(status.ordinal());
     }
 
     @Override
