@@ -48,10 +48,10 @@ index 0000000000000000000000000000000000000000..24a2090e068ad3c0d08705050944abdf
 +    }
 +}
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index a04792c6762958ed7522b19787dcf1594fc3fc08..1206e3382db8a8c24284621a68b606df5186792d 100644
+index e69b540be1e0f0c699a57e07057cee74d4f8a771..cc35c6271c98615a486422d0490145227626bd85 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -1843,6 +1843,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1840,6 +1840,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              level.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
              level.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
              level.updateLagCompensationTick(); // Paper - lag compensation
@@ -104,7 +104,7 @@ index 0e2b537ff5230e6bdb55e9e99d6b2202479b8fd2..2c9fb60cae8065b1cd70d6ec53122cec
          }
      }
 diff --git a/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 5456e74964117d85232fabef1c2c0e4c0ddca52a..26784d414114876461bdce19c192d00eb2a20639 100644
+index 920eb74888c1692b93eb060f408004f145489d7c..26784d414114876461bdce19c192d00eb2a20639 100644
 --- a/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -142,6 +142,43 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
@@ -219,10 +219,10 @@ index 5456e74964117d85232fabef1c2c0e4c0ddca52a..26784d414114876461bdce19c192d00e
 +                }
 +                origItemStack.setCount(originalItemCount);
 +            }
-         }
++        }
 +        if (foundItem && level.paperConfig().hopper.cooldownWhenFull) { // Inventory was full - cooldown
 +            hopper.setCooldown(level.spigotConfig.hopperTransfer);
-+        }
+         }
 +        return false;
 +    }
  
@@ -282,16 +282,7 @@ index 5456e74964117d85232fabef1c2c0e4c0ddca52a..26784d414114876461bdce19c192d00e
 +            return true;
 +        }
 +        origItemStack.setCount(originalItemCount);
- 
--                org.bukkit.event.inventory.InventoryMoveItemEvent event = new org.bukkit.event.inventory.InventoryMoveItemEvent(
--                    self.getOwner().getInventory(),
--                    oitemstack,
--                    destinationInventory,
--                    true
--                );
--                if (!event.callEvent()) {
--                    self.setItem(slot, original);
--                    self.setCooldown(level.spigotConfig.hopperTransfer); // Delay hopper checks // Spigot
++
 +        if (level.paperConfig().hopper.cooldownWhenFull) {
 +            applyCooldown(hopper);
 +        }
@@ -361,7 +352,16 @@ index 5456e74964117d85232fabef1c2c0e4c0ddca52a..26784d414114876461bdce19c192d00e
 +        }
 +        return sourceInventory;
 +    }
-+
+ 
+-                org.bukkit.event.inventory.InventoryMoveItemEvent event = new org.bukkit.event.inventory.InventoryMoveItemEvent(
+-                    self.getOwner().getInventory(),
+-                    oitemstack,
+-                    destinationInventory,
+-                    true
+-                );
+-                if (!event.callEvent()) {
+-                    self.setItem(slot, original);
+-                    self.setCooldown(level.spigotConfig.hopperTransfer); // Delay hopper checks // Spigot
 +    private static void applyCooldown(final Hopper hopper) {
 +        if (hopper instanceof HopperBlockEntity blockEntity && blockEntity.getLevel() != null) {
 +            blockEntity.setCooldown(blockEntity.getLevel().spigotConfig.hopperTransfer);
@@ -396,7 +396,7 @@ index 5456e74964117d85232fabef1c2c0e4c0ddca52a..26784d414114876461bdce19c192d00e
 -                // Spigot start
 -                itemStack.shrink(origCount - result.getCount());
 -                if (originalCount <= level.spigotConfig.hopperAmount) {
--                // Spigot end
+-                    // Spigot end
 -                    self.setItem(slot, itemStack);
 +    private static boolean anyMatch(Container container, Direction direction, java.util.function.BiPredicate<ItemStack, Integer> test) {
 +        if (container instanceof WorldlyContainer) {

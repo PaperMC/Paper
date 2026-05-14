@@ -315,7 +315,7 @@
          if (newState == blockState) {
              if (oldState != newState) {
                  this.setBlocksDirty(pos, oldState, newState);
-@@ -260,9 +_,66 @@
+@@ -260,9 +_,63 @@
  
              this.updatePOIOnBlockStateChange(pos, oldState, newState);
          }
@@ -338,44 +338,41 @@
      }
 +
 +    // CraftBukkit start - Split off from above in order to directly send client and physic updates
-+    public void notifyAndUpdatePhysics(BlockPos pos, LevelChunk chunkAt, BlockState oldState, BlockState newState, BlockState currentState, @Block.UpdateFlags int flags, int recursionLeft) {
-+        BlockState state = newState;
-+        BlockState blockState = oldState;
-+        BlockState blockState1 = currentState;
-+        if (blockState1 == state) {
-+            if (blockState != blockState1) {
-+                this.setBlocksDirty(pos, blockState, blockState1);
++    public void notifyAndUpdatePhysics(BlockPos pos, LevelChunk chunk, BlockState oldState, BlockState blockState, BlockState newState, @Block.UpdateFlags int updateFlags, int updateLimit) {
++        if (newState == blockState) {
++            if (oldState != newState) {
++                this.setBlocksDirty(pos, oldState, newState);
 +            }
 +
-+            if ((flags & Block.UPDATE_CLIENTS) != 0 && (!this.isClientSide() || (flags & Block.UPDATE_INVISIBLE) == 0) && (this.isClientSide() || chunkAt == null || (chunkAt.getFullStatus() != null && chunkAt.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
-+                this.sendBlockUpdated(pos, blockState, state, flags);
++            if ((updateFlags & Block.UPDATE_CLIENTS) != 0 && (!this.isClientSide() || (updateFlags & Block.UPDATE_INVISIBLE) == 0) && (this.isClientSide() || chunk == null || (chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
++                this.sendBlockUpdated(pos, oldState, blockState, updateFlags);
 +            }
 +
-+            if ((flags & Block.UPDATE_NEIGHBORS) != 0) {
-+                this.updateNeighborsAt(pos, blockState.getBlock());
-+                if (!this.isClientSide() && state.hasAnalogOutputSignal()) {
-+                    this.updateNeighbourForOutputSignal(pos, newState.getBlock());
++            if ((updateFlags & Block.UPDATE_NEIGHBORS) != 0) {
++                this.updateNeighborsAt(pos, oldState.getBlock());
++                if (!this.isClientSide() && blockState.hasAnalogOutputSignal()) {
++                    this.updateNeighbourForOutputSignal(pos, blockState.getBlock());
 +                }
 +            }
 +
-+            if ((flags & Block.UPDATE_KNOWN_SHAPE) == 0 && recursionLeft > 0) {
-+                int i = flags & ~(Block.UPDATE_SUPPRESS_DROPS | Block.UPDATE_NEIGHBORS);
++            if ((updateFlags & Block.UPDATE_KNOWN_SHAPE) == 0 && updateLimit > 0) {
++                int neighbourUpdateFlags = updateFlags & ~(Block.UPDATE_SUPPRESS_DROPS | Block.UPDATE_NEIGHBORS);
 +
 +                // CraftBukkit start
-+                blockState.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1); // Don't call an event for the old block to limit event spam
++                oldState.updateIndirectNeighbourShapes(this, pos, neighbourUpdateFlags, updateLimit - 1); // Don't call an event for the old block to limit event spam
 +                boolean cancelledUpdates = false; // Paper - Fix block place logic
 +                if (((ServerLevel)this).hasPhysicsEvent) { // Paper - BlockPhysicsEvent
-+                    org.bukkit.event.block.BlockPhysicsEvent event = new org.bukkit.event.block.BlockPhysicsEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), state.asBlockData());
++                    org.bukkit.event.block.BlockPhysicsEvent event = new org.bukkit.event.block.BlockPhysicsEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), blockState.asBlockData());
 +                    cancelledUpdates = !event.callEvent(); // Paper - Fix block place logic
 +                }
 +                // CraftBukkit end
 +                if (!cancelledUpdates) { // Paper - Fix block place logic
-+                    state.updateNeighbourShapes(this, pos, i, recursionLeft - 1);
-+                    state.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1);
++                    blockState.updateNeighbourShapes(this, pos, neighbourUpdateFlags, updateLimit - 1);
++                    blockState.updateIndirectNeighbourShapes(this, pos, neighbourUpdateFlags, updateLimit - 1);
 +                } // Paper - Fix block place logic
 +            }
 +
-+            this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
++            this.updatePOIOnBlockStateChange(pos, oldState, newState);
 +        }
 +    }
 +    // CraftBukkit end

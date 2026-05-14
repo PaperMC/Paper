@@ -393,7 +393,7 @@
              newEffect.onEffectAdded(this);
 -        } else if (effect.update(newEffect)) {
 +        } else if (override) { // Paper - Don't fire sync event during generation
-+            effect.update(newEffect);
++            effect.update(newEffect); // Paper
              this.onEffectUpdated(effect, true, source);
              changed = true;
 +            // Paper start - Properly update hidden effects
@@ -518,7 +518,7 @@
              return false;
          }
  
-@@ -1177,35 +_,58 @@
+@@ -1177,14 +_,16 @@
  
          float originalDamage = damage;
          ItemStack itemInUse = this.getUseItem();
@@ -539,12 +539,11 @@
              this.hurtHelmet(source, damage);
              damage *= 0.75F;
          }
- 
-+        EntityDamageEvent event; // CraftBukkit // Paper - move this into the actual invuln check....
-         if (Float.isNaN(damage) || Float.isInfinite(damage)) {
+@@ -1193,19 +_,40 @@
              damage = Float.MAX_VALUE;
          }
  
++        EntityDamageEvent event; // CraftBukkit // Paper - move this into the actual invuln check....
          boolean tookFullDamage = true;
 -        if (this.invulnerableTime > 10.0F && !source.is(DamageTypeTags.BYPASSES_COOLDOWN)) {
 +        if (this.invulnerableTime > (float)this.invulnerableDuration / 2.0F && !source.is(DamageTypeTags.BYPASSES_COOLDOWN)) { // CraftBukkit - restore use of maxNoDamageTicks
@@ -672,50 +671,50 @@
 +    public boolean canBlockAttack(DamageSource source, float damage) {
 +        if (damage <= 0.0F) {
 +            return false;
-+        } else {
-+            ItemStack blockingWith = this.getItemBlockingWith();
-+            if (blockingWith == null) {
++        }
++
++        ItemStack blockingWith = this.getItemBlockingWith();
++        if (blockingWith == null) {
++            return false;
++        }
++
++        BlocksAttacks blocksAttacks = blockingWith.get(DataComponents.BLOCKS_ATTACKS);
++        if (blocksAttacks != null && !blocksAttacks.bypassedBy().map(t -> t.contains(source.typeHolder())).orElse(false)) {
++            if (source.getDirectEntity() instanceof AbstractArrow abstractArrow && abstractArrow.getPierceLevel() > 0) {
 +                return false;
 +            } else {
-+                BlocksAttacks blocksAttacks = blockingWith.get(DataComponents.BLOCKS_ATTACKS);
-+                if (blocksAttacks != null && !blocksAttacks.bypassedBy().map(t -> t.contains(source.typeHolder())).orElse(false)) {
-+                    if (source.getDirectEntity() instanceof AbstractArrow abstractArrow && abstractArrow.getPierceLevel() > 0) {
-+                        return false;
-+                    } else {
-+                        return true;
-+                    }
-+                } else {
-+                    return false;
-+                }
++                return true;
 +            }
++        } else {
++            return false;
 +        }
 +    }
 +
-+    public float resolveBlockedDamage(DamageSource damageSource, float damageAmount) {
-+        Vec3 sourcePosition = damageSource.getSourcePosition();
-+        double acos;
++    public float resolveBlockedDamage(DamageSource source, float damageAmount) {
++        Vec3 sourcePosition = source.getSourcePosition();
++        double angle;
 +        if (sourcePosition != null) {
-+            Vec3 vec3 = this.calculateViewVector(0.0F, this.getYHeadRot());
-+            Vec3 vec31 = sourcePosition.subtract(this.position());
-+            vec31 = new Vec3(vec31.x, 0.0, vec31.z).normalize();
-+            acos = Math.acos(vec31.dot(vec3));
++            Vec3 viewVector = this.calculateViewVector(0.0F, this.getYHeadRot());
++            Vec3 vectorTo = sourcePosition.subtract(this.position());
++            vectorTo = new Vec3(vectorTo.x, 0.0, vectorTo.z).normalize();
++            angle = Math.acos(vectorTo.dot(viewVector));
 +        } else {
-+            acos = (float) Math.PI;
++            angle = (float) Math.PI;
 +        }
 +
 +        BlocksAttacks blocksAttacks = this.getItemBlockingWith().get(DataComponents.BLOCKS_ATTACKS);
-+        return blocksAttacks.resolveBlockedDamage(damageSource, damageAmount, acos);
++        return blocksAttacks.resolveBlockedDamage(source, damageAmount, angle);
 +    }
 +
-+    public void blockingItemEffects(ServerLevel level, DamageSource damageSource, float f) {
-+        ItemStack itemBlockingWith = this.getItemBlockingWith();
-+        if (itemBlockingWith == null) return;
++    public void blockingItemEffects(ServerLevel level, DamageSource source, float damageBlocked) {
++        ItemStack blockingWith = this.getItemBlockingWith();
++        if (blockingWith == null) return;
 +
-+        BlocksAttacks blocksAttacks = itemBlockingWith.get(DataComponents.BLOCKS_ATTACKS);
++        BlocksAttacks blocksAttacks = blockingWith.get(DataComponents.BLOCKS_ATTACKS);
 +        if (blocksAttacks == null) return;
 +
-+        blocksAttacks.hurtBlockingItem(this.level(), itemBlockingWith, this, this.getUsedItemHand(), f);
-+        if (f > 0.0F && !damageSource.is(DamageTypeTags.IS_PROJECTILE) && damageSource.getDirectEntity() instanceof LivingEntity livingEntity && livingEntity.distanceToSqr(this) <= Mth.square(200.0)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
++        blocksAttacks.hurtBlockingItem(this.level(), blockingWith, this, this.getUsedItemHand(), damageBlocked);
++        if (damageBlocked > 0.0F && !source.is(DamageTypeTags.IS_PROJECTILE) && source.getDirectEntity() instanceof LivingEntity livingEntity && livingEntity.distanceToSqr(this) <= Mth.square(200.0)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
 +            this.blockUsingItem(level, livingEntity);
 +        }
 +    }
@@ -1200,7 +1199,7 @@
  
 -            if (dmg != 0.0F) {
 +            // CraftBukkit start
-+            if (dmg > 0 || !human) {
++            if (dmg > 0.0F || !human) {
 +                if (human) {
 +                    // PAIL: Be sure to drag all this code from the EntityHuman subclass each update.
 +                    ((net.minecraft.world.entity.player.Player)this).causeFoodExhaustion(source.getFoodExhaustion(), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
@@ -1211,10 +1210,9 @@
 +                // CraftBukkit end
                  this.getCombatTracker().recordDamage(source, dmg);
                  this.setHealth(this.getHealth() - dmg);
--                this.setAbsorptionAmount(this.getAbsorptionAmount() - dmg);
 +                // CraftBukkit start
 +                if (!human) {
-+                    this.setAbsorptionAmount(this.getAbsorptionAmount() - dmg);
+                 this.setAbsorptionAmount(this.getAbsorptionAmount() - dmg);
 +                }
                  this.gameEvent(GameEvent.ENTITY_DAMAGE);
 +                return true;

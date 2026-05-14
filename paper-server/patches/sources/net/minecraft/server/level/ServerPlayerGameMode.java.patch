@@ -31,7 +31,7 @@
 +        org.bukkit.event.player.PlayerGameModeChangeEvent event = new org.bukkit.event.player.PlayerGameModeChangeEvent(
 +            this.player.getBukkitEntity(),
 +            org.bukkit.GameMode.getByValue(gameModeForPlayer.getId()),
-+            playerGameModeChangeCause, // Paper
++            playerGameModeChangeCause,
 +            cancelMessage
 +        );
 +        if (!event.callEvent()) {
@@ -259,31 +259,26 @@
          BlockState adjustedState = block.playerWillDestroy(this.level, pos, state, this.player);
          boolean changed = this.level.removeBlock(pos, false);
          if (SharedConstants.DEBUG_BLOCK_BREAK) {
-@@ -286,19 +_,44 @@
+@@ -286,17 +_,38 @@
              block.destroy(this.level, pos, adjustedState);
          }
  
-+        ItemStack mainHandStack = null; // Paper - Trigger bee_nest_destroyed trigger in the correct place
-+        boolean isCorrectTool = false; // Paper - Trigger bee_nest_destroyed trigger in the correct place
-         if (this.player.preventsBlockDrops()) {
--            return true;
-+            // return true; // CraftBukkit
+-        if (this.player.preventsBlockDrops()) {
++        if (false && this.player.preventsBlockDrops()) { // CraftBukkit
+             return true;
          }
  
          ItemStack itemStack = this.player.getMainHandItem();
          ItemStack destroyedWith = itemStack.copy();
          boolean canDestroy = this.player.hasCorrectToolForDrops(adjustedState);
-+        mainHandStack = destroyedWith; // Paper - Trigger bee_nest_destroyed trigger in the correct place
-+        isCorrectTool = canDestroy; // Paper - Trigger bee_nest_destroyed trigger in the correct place
++        ItemStack mainHandStack = destroyedWith; // Paper - Trigger bee_nest_destroyed trigger in the correct place
          itemStack.mineBlock(this.level, adjustedState, pos, this.player);
--        if (changed && canDestroy) {
+         if (changed && canDestroy) {
 -            block.playerDestroy(this.level, this.player, pos, adjustedState, blockEntity, destroyedWith);
 -        }
-+        if (changed && canDestroy) { // CraftBukkit - Check if block should drop items // Paper - fix drops not preventing stats/food exhaustion
 +            block.playerDestroy(this.level, this.player, pos, adjustedState, blockEntity, destroyedWith, event.isDropItems(), false); // Paper - fix drops not preventing stats/food exhaustion
 +        }
 +
-+        // return true; // CraftBukkit
 +        // CraftBukkit start
 +        java.util.List<net.minecraft.world.entity.item.ItemEntity> itemsToDrop = this.level.captureDrops; // Paper - capture all item additions to the world
 +        this.level.captureDrops = null; // Paper - capture all item additions to the world; Remove this earlier so that we can actually drop stuff
@@ -297,17 +292,15 @@
 +        }
 +        // Paper start - Trigger bee_nest_destroyed trigger in the correct place (check impls of block#playerDestroy)
 +        if (mainHandStack != null) {
-+            if (changed && isCorrectTool && event.isDropItems() && block instanceof net.minecraft.world.level.block.BeehiveBlock && blockEntity instanceof net.minecraft.world.level.block.entity.BeehiveBlockEntity beehiveBlockEntity) { // simulates the guard on block#playerDestroy above
-+                CriteriaTriggers.BEE_NEST_DESTROYED.trigger(player, state, mainHandStack, beehiveBlockEntity.getOccupantCount());
++            if (changed && canDestroy && event.isDropItems() && block instanceof net.minecraft.world.level.block.BeehiveBlock && blockEntity instanceof net.minecraft.world.level.block.entity.BeehiveBlockEntity beehiveBlockEntity) { // simulates the guard on block#playerDestroy above
++                CriteriaTriggers.BEE_NEST_DESTROYED.trigger(this.player, state, mainHandStack, beehiveBlockEntity.getOccupantCount());
 +            }
 +        }
 +        // Paper end - Trigger bee_nest_destroyed trigger in the correct place
++        // CraftBukkit end
  
          return true;
-+        // CraftBukkit end
      }
- 
-     public InteractionResult useItem(final ServerPlayer player, final Level level, final ItemStack itemStack, final InteractionHand hand) {
 @@ -312,6 +_,7 @@
  
          int oldCount = itemStack.getCount();
