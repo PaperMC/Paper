@@ -8,7 +8,6 @@ import java.util.Set;
 import net.minecraft.util.context.ContextKey;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import org.bukkit.support.environment.VanillaFeature;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -17,11 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @VanillaFeature
 class LootContextKeyTest {
-
-    @BeforeAll
-    static void setup() throws ClassNotFoundException {
-        Class.forName(LootContextKeys.class.getName()); // force-load class
-    }
 
     static Set<ContextKey<?>> contextParams() throws ReflectiveOperationException {
         final Set<ContextKey<?>> keys = new HashSet<>();
@@ -36,8 +30,8 @@ class LootContextKeyTest {
     }
 
     static Collection<LootContextKey> contextKeys() {
-        assertFalse(LootContextKeyImpl.KEYS.isEmpty());
-        return LootContextKeyImpl.KEYS.values();
+        assertFalse(LootContextKeys.all().isEmpty());
+        return LootContextKeys.all().values();
     }
 
     @ParameterizedTest

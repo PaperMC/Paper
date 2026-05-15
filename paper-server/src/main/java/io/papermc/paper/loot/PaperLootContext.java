@@ -2,12 +2,12 @@ package io.papermc.paper.loot;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.util.MCUtil;
 import io.papermc.paper.util.converter.Converter;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.Unit;
 import net.minecraft.util.context.ContextKey;
 import net.minecraft.util.context.ContextKeySet;
@@ -37,7 +37,7 @@ import static io.papermc.paper.util.converter.Converters.wrapper;
 @NullMarked
 public final class PaperLootContext {
 
-    private static final Map<Identifier, Converter<?, ?>> CONVERTER_BY_KEY = new HashMap<>();
+    private static final Map<ContextKey<?>, Converter<?, ?>> CONVERTER_BY_KEY = new IdentityHashMap<>();
 
     private PaperLootContext() {
     }
@@ -74,7 +74,7 @@ public final class PaperLootContext {
         if (value == null) {
             builder.withParameter((ContextKey<Unit>) param, Unit.INSTANCE);
         } else {
-            builder.withParameter(param, ((Converter<M, A>) CONVERTER_BY_KEY.get(param.name())).toVanilla(value));
+            builder.withParameter(param, ((Converter<M, A>) CONVERTER_BY_KEY.get(param)).toVanilla(value));
         }
     }
 
@@ -84,7 +84,7 @@ public final class PaperLootContext {
         if (value == Unit.INSTANCE) {
             builder.with((LootContextKey.NonValued) key);
         } else {
-            builder.with((LootContextKey.Valued<A>) key, ((Converter<M, A>) CONVERTER_BY_KEY.get(param.name())).fromVanilla((M) value));
+            builder.with((LootContextKey.Valued<A>) key, ((Converter<M, A>) CONVERTER_BY_KEY.get(param)).fromVanilla((M) value));
         }
     }
 
@@ -96,34 +96,26 @@ public final class PaperLootContext {
 
         static {
             final Converter<Entity, CraftEntity> entity = entity(Entity.class, org.bukkit.craftbukkit.entity.CraftEntity.class);
-            register(LootContextParams.THIS_ENTITY, LootContextKeys.THIS_ENTITY, entity);
-            register(LootContextParams.INTERACTING_ENTITY, LootContextKeys.INTERACTING_ENTITY, entity);
-            register(LootContextParams.TARGET_ENTITY, LootContextKeys.TARGET_ENTITY, entity);
-            register(LootContextParams.LAST_DAMAGE_PLAYER, LootContextKeys.LAST_DAMAGE_PLAYER, entity(Player.class, org.bukkit.craftbukkit.entity.CraftHumanEntity.class));
-            register(LootContextParams.DAMAGE_SOURCE, LootContextKeys.DAMAGE_SOURCE, wrapper(CraftDamageSource::new));
-            register(LootContextParams.ATTACKING_ENTITY, LootContextKeys.ATTACKING_ENTITY, entity);
-            register(LootContextParams.DIRECT_ATTACKING_ENTITY, LootContextKeys.DIRECT_ATTACKING_ENTITY, entity);
-            register(LootContextParams.ORIGIN, LootContextKeys.ORIGIN, direct(MCUtil::toPosition, MCUtil::toVec3));
-            register(LootContextParams.BLOCK_STATE, LootContextKeys.BLOCK_DATA, direct(BlockState::asBlockData, CraftBlockData::getState));
-            register(LootContextParams.BLOCK_ENTITY, LootContextKeys.BLOCK_ENTITY, direct(CraftBlockStates::getTileState, state -> ((CraftBlockEntityState<?>) state).getSnapshot()));
-            register(LootContextParams.TOOL, LootContextKeys.TOOL, direct(CraftItemStack::asBukkitCopy, CraftItemStack::asNMSCopy));
-            register(LootContextParams.EXPLOSION_RADIUS, LootContextKeys.EXPLOSION_RADIUS, identity());
-            register(LootContextParams.ENCHANTMENT_LEVEL, LootContextKeys.ENCHANTMENT_LEVEL, identity());
-            register(LootContextParams.ENCHANTMENT_ACTIVE, LootContextKeys.ENCHANTMENT_ACTIVE, identity());
-            register(LootContextParams.ADDITIONAL_COST_COMPONENT_ALLOWED, LootContextKeys.ADDITIONAL_COST_COMPONENT_ALLOWED, unvalued());
+            register(LootContextParams.THIS_ENTITY, entity);
+            register(LootContextParams.INTERACTING_ENTITY, entity);
+            register(LootContextParams.TARGET_ENTITY, entity);
+            register(LootContextParams.LAST_DAMAGE_PLAYER, entity(Player.class, org.bukkit.craftbukkit.entity.CraftHumanEntity.class));
+            register(LootContextParams.DAMAGE_SOURCE, wrapper(CraftDamageSource::new));
+            register(LootContextParams.ATTACKING_ENTITY, entity);
+            register(LootContextParams.DIRECT_ATTACKING_ENTITY, entity);
+            register(LootContextParams.ORIGIN, direct(MCUtil::toPosition, MCUtil::toVec3));
+            register(LootContextParams.BLOCK_STATE, direct(BlockState::asBlockData, CraftBlockData::getState));
+            register(LootContextParams.BLOCK_ENTITY, direct(CraftBlockStates::getTileState, state -> ((CraftBlockEntityState<?>) state).getSnapshot()));
+            register(LootContextParams.TOOL, direct(CraftItemStack::asBukkitCopy, CraftItemStack::asNMSCopy));
+            register(LootContextParams.EXPLOSION_RADIUS, identity());
+            register(LootContextParams.ENCHANTMENT_LEVEL, identity());
+            register(LootContextParams.ENCHANTMENT_ACTIVE, identity());
+            register(LootContextParams.ADDITIONAL_COST_COMPONENT_ALLOWED, unvalued());
         }
 
-        private static <M, A> void register(final ContextKey<M> key, final LootContextKey.Valued<A> apiKey, final Converter<M, ? extends A> converter) {
-            registerInternal(key, apiKey, converter);
-        }
-
-        private static void register(final ContextKey<Unit> key, final LootContextKey.NonValued apiKey, final Converter<Unit, ?> converter) {
-            registerInternal(key, apiKey, converter);
-        }
-
-        private static <M> void registerInternal(final ContextKey<M> key, final LootContextKey apiKey, final Converter<M, ?> converter) {
-            BRIDGE.put(key, apiKey);
-            CONVERTER_BY_KEY.put(key.name(), converter);
+        private static <M, A> void register(final ContextKey<M> key, final Converter<M, A> converter) {
+            BRIDGE.put(key, LootContextKeys.all().get(PaperAdventure.asAdventure(key.name())));
+            CONVERTER_BY_KEY.put(key, converter);
         }
     }
 }

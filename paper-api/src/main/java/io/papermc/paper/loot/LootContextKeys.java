@@ -1,6 +1,8 @@
 package io.papermc.paper.loot;
 
 import io.papermc.paper.math.Position;
+import java.util.Map;
+import net.kyori.adventure.key.Key;
 import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.damage.DamageSource;
@@ -11,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import static io.papermc.paper.loot.LootContextKeyImpl.unvalued;
 import static io.papermc.paper.loot.LootContextKeyImpl.valued;
 
+@SuppressWarnings("unused")
 public final class LootContextKeys {
 
     public static final LootContextKey.Valued<Entity> THIS_ENTITY = valued("this_entity");
@@ -28,4 +31,8 @@ public final class LootContextKeys {
     public static final LootContextKey.Valued<Integer> ENCHANTMENT_LEVEL = valued("enchantment_level");
     public static final LootContextKey.Valued<Boolean> ENCHANTMENT_ACTIVE = valued("enchantment_active");
     public static final LootContextKey.NonValued ADDITIONAL_COST_COMPONENT_ALLOWED = unvalued("additional_cost_component_allowed");
+
+    static Map<Key, LootContextKey> all() {
+        return LootContextKeyImpl.KEYS;
+    }
 }
