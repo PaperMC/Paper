@@ -48,19 +48,18 @@ public final class CapturedBlockState extends CraftBlockState {
     private void addBees() {
         // SPIGOT-5537: Horrible hack to manually add bees given Level#captureTreeGeneration does not support block entities
         if (this.treeBlock && this.getType() == Material.BEE_NEST) {
-            WorldGenLevel worldGenLevel = this.world.getHandle();
+            WorldGenLevel level = this.world.getHandle();
             BlockPos pos = this.getPosition();
-            RandomSource randomSource = worldGenLevel.getRandom();
+            RandomSource random = level.getRandom();
 
-            // Begin copied block from BeehiveDecorator
-            worldGenLevel.getBlockEntity(pos, BlockEntityType.BEEHIVE).ifPresent(beehiveBlockEntity -> {
-                int i1 = 2 + randomSource.nextInt(2);
+            // copied from BeehiveDecorator
+            level.getBlockEntity(pos, BlockEntityType.BEEHIVE).ifPresent(beehive -> {
+                int numBees = 2 + random.nextInt(2);
 
-                for (int i2 = 0; i2 < i1; i2++) {
-                    beehiveBlockEntity.storeBee(BeehiveBlockEntity.Occupant.create(randomSource.nextInt(599)));
+                for (int count = 0; count < numBees; count++) {
+                    beehive.storeBee(BeehiveBlockEntity.Occupant.create(random.nextInt(599)));
                 }
             });
-            // End copied block
         }
     }
 

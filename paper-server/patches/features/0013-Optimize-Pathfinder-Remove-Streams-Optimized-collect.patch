@@ -16,7 +16,7 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/net/minecraft/world/level/pathfinder/PathFinder.java b/net/minecraft/world/level/pathfinder/PathFinder.java
-index 53aa6995d18cae5663d392e606c049e2e9138a99..2809bf033f37559ea66f9d6d61130926679d75cc 100644
+index 53aa6995d18cae5663d392e606c049e2e9138a99..253074a0a14115cd3d18aaae6fa5822cf32346c9 100644
 --- a/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/net/minecraft/world/level/pathfinder/PathFinder.java
 @@ -55,20 +55,24 @@ public class PathFinder {
@@ -62,7 +62,7 @@ index 53aa6995d18cae5663d392e606c049e2e9138a99..2809bf033f37559ea66f9d6d61130926
              current.closed = true;
  
 -            for (Target target : targets) {
-+            // Paper start - optimize collection
++            // Paper start - Perf: remove streams and optimize collection
 +            for (int positionIndex = 0, size = targets.size(); positionIndex < size; positionIndex++) {
 +                final Map.Entry<Target, BlockPos> entry = targets.get(positionIndex);
 +                Target target = entry.getKey();
@@ -74,7 +74,7 @@ index 53aa6995d18cae5663d392e606c049e2e9138a99..2809bf033f37559ea66f9d6d61130926
                  }
              }
  
-@@ -126,34 +134,40 @@ public class PathFinder {
+@@ -126,34 +134,41 @@ public class PathFinder {
              }
          }
  
@@ -88,6 +88,7 @@ index 53aa6995d18cae5663d392e606c049e2e9138a99..2809bf033f37559ea66f9d6d61130926
 -        profiler.pop();
 -        if (optPath.isEmpty()) {
 -            return null;
++        // Paper start - Perf: remove streams and optimize collection
 +        Path best = null;
 +        boolean entryListIsEmpty = reachedTargets.isEmpty();
 +        Comparator<Path> comparator = entryListIsEmpty

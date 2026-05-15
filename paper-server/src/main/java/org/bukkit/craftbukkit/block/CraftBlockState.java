@@ -28,8 +28,7 @@ public class CraftBlockState implements BlockState {
     protected final CraftWorld world;
     private final BlockPos position;
     protected net.minecraft.world.level.block.state.BlockState block;
-    @net.minecraft.world.level.block.Block.UpdateFlags
-    protected int capturedFlags; // todo move out of this class
+    protected @net.minecraft.world.level.block.Block.UpdateFlags int capturedFlags; // todo move out of this class
     private WeakReference<LevelAccessor> weakLevel;
 
     protected CraftBlockState(final Block block) {

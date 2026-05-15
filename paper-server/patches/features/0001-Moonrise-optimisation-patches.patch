@@ -28876,7 +28876,7 @@ index 09b6da207530987b483444cebeadc2f1c9a15247..3666c3efd188508153b6482db425648e
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 666bd12677e62046d5f56544cadcbf1164211e0d..516ceeb6c0706528775676f9e9b8bb18d73ec7f8 100644
+index 666bd12677e62046d5f56544cadcbf1164211e0d..e5d56fdb5cfd4aa291dbdb879e478134a85c9beb 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -167,7 +167,7 @@ public abstract class Entity
@@ -29227,12 +29227,7 @@ index 666bd12677e62046d5f56544cadcbf1164211e0d..516ceeb6c0706528775676f9e9b8bb18
      }
  
      private static float[] collectCandidateStepUpHeights(
-@@ -2737,21 +2885,110 @@ public abstract class Entity
-     }
- 
-     public boolean isInWall() {
-+        // Paper start - optimise collisions
-         if (this.noPhysics) {
+@@ -2741,17 +2889,106 @@ public abstract class Entity
              return false;
          }
  
@@ -29245,6 +29240,7 @@ index 666bd12677e62046d5f56544cadcbf1164211e0d..516ceeb6c0706528775676f9e9b8bb18
 -                    return !state.isAir()
 -                        && state.isSuffocating(this.level(), pos)
 -                        && Shapes.joinIsNotEmpty(state.getCollisionShape(this.level(), pos).move(pos), Shapes.create(eyeBb), BooleanOp.AND);
++        // Paper start - optimise collisions
 +        final double reducedWith = (double)(this.dimensions.width() * 0.8F);
 +        final AABB boundingBox = AABB.ofSize(this.getEyePosition(), reducedWith, 1.0E-6D, reducedWith);
 +        final Level world = this.level;
@@ -29913,7 +29909,7 @@ index fbaefb396745cc985d4c25f3cbea17d646391948..fc7900fcb391b6fe61f7d6200f7d2656
  
      public ClipContext(final Vec3 from, final Vec3 to, final ClipContext.Block block, final ClipContext.Fluid fluid, final Entity entity) {
 diff --git a/net/minecraft/world/level/EntityGetter.java b/net/minecraft/world/level/EntityGetter.java
-index 892b338a2b0a185511c352ca2bb76ee3890836fd..f84e651e2a34e76a0a71993332e4be1b7ef53424 100644
+index 892b338a2b0a185511c352ca2bb76ee3890836fd..cc938f43c4a5e947ed87ca2001cbaca4084bf64c 100644
 --- a/net/minecraft/world/level/EntityGetter.java
 +++ b/net/minecraft/world/level/EntityGetter.java
 @@ -15,7 +15,7 @@ import net.minecraft.world.phys.shapes.Shapes;
@@ -29925,7 +29921,7 @@ index 892b338a2b0a185511c352ca2bb76ee3890836fd..f84e651e2a34e76a0a71993332e4be1b
      List<Entity> getEntities(@Nullable Entity except, AABB bb, Predicate<? super Entity> selector);
  
      <T extends Entity> List<T> getEntities(final EntityTypeTest<Entity, T> type, final AABB bb, final Predicate<? super T> selector);
-@@ -30,45 +30,86 @@ public interface EntityGetter {
+@@ -30,19 +30,42 @@ public interface EntityGetter {
          return this.getEntities(except, bb, EntitySelector.NO_SPECTATORS);
      }
  
@@ -29937,7 +29933,6 @@ index 892b338a2b0a185511c352ca2bb76ee3890836fd..f84e651e2a34e76a0a71993332e4be1b
 +    // Paper end - rewrite chunk system
 +
      default boolean isUnobstructed(final @Nullable Entity source, final VoxelShape shape) {
-+        // Paper start - optimise collisions
          if (shape.isEmpty()) {
              return true;
          }
@@ -29948,6 +29943,7 @@ index 892b338a2b0a185511c352ca2bb76ee3890836fd..f84e651e2a34e76a0a71993332e4be1b
 -                && (source == null || !entity.isPassengerOfSameVehicle(source))
 -                && Shapes.joinIsNotEmpty(shape, Shapes.create(entity.getBoundingBox()), BooleanOp.AND)) {
 -                return false;
++        // Paper start - optimise collisions
 +        final AABB singleAABB = ((ca.spottedleaf.moonrise.patches.collisions.shape.CollisionVoxelShape)shape).moonrise$getSingleAABBRepresentation();
 +        final List<Entity> entities = this.getEntities(
 +            source,
@@ -29970,12 +29966,11 @@ index 892b338a2b0a185511c352ca2bb76ee3890836fd..f84e651e2a34e76a0a71993332e4be1b
 +
 +            return false;
          }
++        // Paper end - optimise collisions
  
          return true;
-+        // Paper end - optimise collisions
      }
- 
-     default <T extends Entity> List<T> getEntitiesOfClass(final Class<T> baseClass, final AABB bb) {
+@@ -51,24 +74,42 @@ public interface EntityGetter {
          return this.getEntitiesOfClass(baseClass, bb, EntitySelector.NO_SPECTATORS);
      }
  
@@ -33657,7 +33652,7 @@ index 0113fdf0b346f1dbea3856690ca8c389a2bae0a9..026b1f31d5041786e90ba372a228732a
      }
  
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index f2f1b9132754b3e04fbaae4fc6499a7119540b90..694689c5e0ca65b1b8724b689f3817753dd74834 100644
+index f2f1b9132754b3e04fbaae4fc6499a7119540b90..36f8c19e3e90740e6d58eb8dbf573b2fdf4fed3d 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -15,7 +15,7 @@ import net.minecraft.util.FileUtil;
@@ -33847,8 +33842,8 @@ index f2f1b9132754b3e04fbaae4fc6499a7119540b90..694689c5e0ca65b1b8724b689f381775
 +    }
 +    // Paper end - rewrite chunk system
 +    // Paper start - rewrite chunk system
-+    public RegionFile getRegionFile(ChunkPos chunkcoordintpair) throws IOException {
-+        return this.getRegionFile(chunkcoordintpair, false);
++    public RegionFile getRegionFile(ChunkPos pos) throws IOException {
++        return this.getRegionFile(pos, false);
 +    }
 +    // Paper end - rewrite chunk system
 +
@@ -34623,7 +34618,7 @@ index db190b3b2bcc386d6e01c9b8d694efe4ac5e54af..83bc0f6fa7624a0df546726fa8ccc974
  
      private ChunkAccess doFill(
 diff --git a/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-index d7d98399cddb2d78eda492ab177ad770e1e083a4..0d4c26d8a086e54f84413dab9595e210e52a43bf 100644
+index d7d98399cddb2d78eda492ab177ad770e1e083a4..cba5c9ea5fd424e7aaeefaa8cc5ffe37f307b370 100644
 --- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 @@ -50,8 +50,13 @@ public class StructureCheck {
@@ -34660,8 +34655,8 @@ index d7d98399cddb2d78eda492ab177ad770e1e083a4..0d4c26d8a086e54f84413dab9595e210
 -            .computeIfAbsent(posKey, k -> this.canCreateStructure(pos, structure));
 +        // Paper start - rewrite chunk system
 +        boolean isFeatureChunk = this.featureChecksSafe
-+            .computeIfAbsent(structure, structure1 -> new ca.spottedleaf.moonrise.common.map.SynchronisedLong2BooleanMap(PER_FEATURE_CHECK_LIMIT))
-+            .getOrCompute(posKey, l -> this.canCreateStructure(pos, structure));
++            .computeIfAbsent(structure, k -> new ca.spottedleaf.moonrise.common.map.SynchronisedLong2BooleanMap(PER_FEATURE_CHECK_LIMIT))
++            .getOrCompute(posKey, k -> this.canCreateStructure(pos, structure));
 +        // Paper end - rewrite chunk system
          return !isFeatureChunk ? StructureCheckResult.START_NOT_PRESENT : StructureCheckResult.CHUNK_LOAD_NEEDED;
      }

@@ -104,7 +104,7 @@ index 0e2b537ff5230e6bdb55e9e99d6b2202479b8fd2..2c9fb60cae8065b1cd70d6ec53122cec
          }
      }
 diff --git a/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 920eb74888c1692b93eb060f408004f145489d7c..26784d414114876461bdce19c192d00eb2a20639 100644
+index 920eb74888c1692b93eb060f408004f145489d7c..ce6b64e00a0a13ebdceda56d975d79f60c26b86d 100644
 --- a/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -142,6 +142,43 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
@@ -151,7 +151,7 @@ index 920eb74888c1692b93eb060f408004f145489d7c..26784d414114876461bdce19c192d00e
      private static boolean tryMoveItems(
          final Level level, final BlockPos pos, final BlockState state, final HopperBlockEntity entity, final BooleanSupplier action
      ) {
-@@ -151,12 +188,13 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -151,11 +188,12 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
  
          if (!entity.isOnCooldown() && state.getValue(HopperBlock.ENABLED)) {
              boolean changed = false;
@@ -162,12 +162,10 @@ index 920eb74888c1692b93eb060f408004f145489d7c..26784d414114876461bdce19c192d00e
              }
  
 -            if (!entity.inventoryFull()) {
--                changed |= action.getAsBoolean();
 +            if (changed || fullState != HOPPER_IS_FULL) { // Paper - Perf: Optimize Hoppers
-+                changed |= action.getAsBoolean(); // Paper - note: this is not a validator, it's what adds/sucks in items
+                 changed |= action.getAsBoolean();
              }
  
-             if (changed) {
 @@ -179,67 +217,218 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
          return true;
      }
@@ -219,10 +217,10 @@ index 920eb74888c1692b93eb060f408004f145489d7c..26784d414114876461bdce19c192d00e
 +                }
 +                origItemStack.setCount(originalItemCount);
 +            }
-+        }
+         }
 +        if (foundItem && level.paperConfig().hopper.cooldownWhenFull) { // Inventory was full - cooldown
 +            hopper.setCooldown(level.spigotConfig.hopperTransfer);
-         }
++        }
 +        return false;
 +    }
  
@@ -352,6 +350,12 @@ index 920eb74888c1692b93eb060f408004f145489d7c..26784d414114876461bdce19c192d00e
 +        }
 +        return sourceInventory;
 +    }
++
++    private static void applyCooldown(final Hopper hopper) {
++        if (hopper instanceof HopperBlockEntity blockEntity && blockEntity.getLevel() != null) {
++            blockEntity.setCooldown(blockEntity.getLevel().spigotConfig.hopperTransfer);
++        }
++    }
  
 -                org.bukkit.event.inventory.InventoryMoveItemEvent event = new org.bukkit.event.inventory.InventoryMoveItemEvent(
 -                    self.getOwner().getInventory(),
@@ -362,15 +366,9 @@ index 920eb74888c1692b93eb060f408004f145489d7c..26784d414114876461bdce19c192d00e
 -                if (!event.callEvent()) {
 -                    self.setItem(slot, original);
 -                    self.setCooldown(level.spigotConfig.hopperTransfer); // Delay hopper checks // Spigot
-+    private static void applyCooldown(final Hopper hopper) {
-+        if (hopper instanceof HopperBlockEntity blockEntity && blockEntity.getLevel() != null) {
-+            blockEntity.setCooldown(blockEntity.getLevel().spigotConfig.hopperTransfer);
-+        }
-+    }
-+
 +    private static boolean allMatch(Container container, Direction direction, java.util.function.BiPredicate<ItemStack, Integer> test) {
-+        if (container instanceof WorldlyContainer) {
-+            for (int slot : ((WorldlyContainer) container).getSlotsForFace(direction)) {
++        if (container instanceof WorldlyContainer worldlyContainer) {
++            for (int slot : worldlyContainer.getSlotsForFace(direction)) {
 +                if (!test.test(container.getItem(slot), slot)) {
                      return false;
                  }
@@ -399,8 +397,8 @@ index 920eb74888c1692b93eb060f408004f145489d7c..26784d414114876461bdce19c192d00e
 -                    // Spigot end
 -                    self.setItem(slot, itemStack);
 +    private static boolean anyMatch(Container container, Direction direction, java.util.function.BiPredicate<ItemStack, Integer> test) {
-+        if (container instanceof WorldlyContainer) {
-+            for (int slot : ((WorldlyContainer) container).getSlotsForFace(direction)) {
++        if (container instanceof WorldlyContainer worldlyContainer) {
++            for (int slot : worldlyContainer.getSlotsForFace(direction)) {
 +                if (test.test(container.getItem(slot), slot)) {
 +                    return true;
 +                }
@@ -415,8 +413,8 @@ index 920eb74888c1692b93eb060f408004f145489d7c..26784d414114876461bdce19c192d00e
          }
 +        return true;
 +    }
-+    private static final java.util.function.BiPredicate<ItemStack, Integer> STACK_SIZE_TEST = (itemStack, i) -> itemStack.getCount() >= itemStack.getMaxStackSize();
-+    private static final java.util.function.BiPredicate<ItemStack, Integer> IS_EMPTY_TEST = (itemStack, i) -> itemStack.isEmpty();
++    private static final java.util.function.BiPredicate<ItemStack, Integer> STACK_SIZE_TEST = (itemStack, _) -> itemStack.getCount() >= itemStack.getMaxStackSize();
++    private static final java.util.function.BiPredicate<ItemStack, Integer> IS_EMPTY_TEST = (itemStack, _) -> itemStack.isEmpty();
 +    // Paper end - Perf: Optimize Hoppers
  
 -        return false;

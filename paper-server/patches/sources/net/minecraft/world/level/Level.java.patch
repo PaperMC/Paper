@@ -108,20 +108,20 @@
  
 +    // Paper start - Cancel hit for vanished players
 +    // ret true if no collision
-+    public final boolean checkEntityCollision(BlockState state, Entity source, net.minecraft.world.phys.shapes.CollisionContext collisionContext,
-+                                              BlockPos position, boolean checkCanSee) {
++    public final boolean checkEntityCollision(BlockState state, Entity source, net.minecraft.world.phys.shapes.CollisionContext context,
++                                              BlockPos pos, boolean checkCanSee) {
 +        // Copied from CollisionGetter#isUnobstructed(BlockState, BlockPos, CollisionContext) & EntityGetter#isUnobstructed(Entity, VoxelShape)
-+        net.minecraft.world.phys.shapes.VoxelShape collisionShape = state.getCollisionShape(this, position, collisionContext);
-+        if (collisionShape.isEmpty()) {
++        net.minecraft.world.phys.shapes.VoxelShape shape = state.getCollisionShape(this, pos, context);
++        if (shape.isEmpty()) {
 +            return true;
 +        }
 +
-+        collisionShape = collisionShape.move((double) position.getX(), (double) position.getY(), (double) position.getZ());
-+        if (collisionShape.isEmpty()) {
++        shape = shape.move((double) pos.getX(), (double) pos.getY(), (double) pos.getZ());
++        if (shape.isEmpty()) {
 +            return true;
 +        }
 +
-+        List<Entity> entities = this.getEntities(null, collisionShape.bounds());
++        List<Entity> entities = this.getEntities(null, shape.bounds());
 +        for (int i = 0, len = entities.size(); i < len; ++i) {
 +            Entity entity = entities.get(i);
 +
@@ -130,14 +130,14 @@
 +                continue;
 +            }
 +
-+            // !entity1.isRemoved() && entity1.blocksBuilding && (entity == null || !entity1.isPassengerOfSameVehicle(entity))
-+            // elide the last check since vanilla calls with entity = null
++            // !entity.isRemoved() && entity.blocksBuilding && (source == null || !entity.isPassengerOfSameVehicle(source))
++            // elide the last check since vanilla calls with source = null
 +            // only we care about the source for the canSee check
 +            if (entity.isRemoved() || !entity.blocksBuilding) {
 +                continue;
 +            }
 +
-+            if (net.minecraft.world.phys.shapes.Shapes.joinIsNotEmpty(collisionShape, net.minecraft.world.phys.shapes.Shapes.create(entity.getBoundingBox()), net.minecraft.world.phys.shapes.BooleanOp.AND)) {
++            if (net.minecraft.world.phys.shapes.Shapes.joinIsNotEmpty(shape, net.minecraft.world.phys.shapes.Shapes.create(entity.getBoundingBox()), net.minecraft.world.phys.shapes.BooleanOp.AND)) {
 +                return false;
 +            }
 +        }
