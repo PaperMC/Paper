@@ -264,23 +264,27 @@
          }
  
 -        if (this.player.preventsBlockDrops()) {
-+        if (false && this.player.preventsBlockDrops()) { // CraftBukkit
-             return true;
-         }
+-            return true;
+-        }
++        ItemStack destroyedWith = null; // Paper - Trigger bee_nest_destroyed trigger in the correct place
++        boolean canDestroy = false; // Paper - Trigger bee_nest_destroyed trigger in the correct place
  
++        if (!this.player.preventsBlockDrops()) { // CraftBukkit
          ItemStack itemStack = this.player.getMainHandItem();
-         ItemStack destroyedWith = itemStack.copy();
-         boolean canDestroy = this.player.hasCorrectToolForDrops(adjustedState);
-+        ItemStack mainHandStack = destroyedWith; // Paper - Trigger bee_nest_destroyed trigger in the correct place
+-        ItemStack destroyedWith = itemStack.copy();
+-        boolean canDestroy = this.player.hasCorrectToolForDrops(adjustedState);
++        destroyedWith = itemStack.copy(); // Paper
++        canDestroy = this.player.hasCorrectToolForDrops(adjustedState); // Paper
          itemStack.mineBlock(this.level, adjustedState, pos, this.player);
          if (changed && canDestroy) {
 -            block.playerDestroy(this.level, this.player, pos, adjustedState, blockEntity, destroyedWith);
 -        }
 +            block.playerDestroy(this.level, this.player, pos, adjustedState, blockEntity, destroyedWith, event.isDropItems(), false); // Paper - fix drops not preventing stats/food exhaustion
 +        }
++        } // CraftBukkit
 +
 +        // CraftBukkit start
-+        java.util.List<net.minecraft.world.entity.item.ItemEntity> itemsToDrop = this.level.captureDrops; // Paper - capture all item additions to the world
++        List<net.minecraft.world.entity.item.ItemEntity> itemsToDrop = this.level.captureDrops; // Paper - capture all item additions to the world
 +        this.level.captureDrops = null; // Paper - capture all item additions to the world; Remove this earlier so that we can actually drop stuff
 +        if (event.isDropItems()) {
 +            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, bState, this.player, itemsToDrop); // Paper - capture all item additions to the world
@@ -291,9 +295,9 @@
 +            state.getBlock().popExperience(this.level, pos, event.getExpToDrop(), this.player); // Paper
 +        }
 +        // Paper start - Trigger bee_nest_destroyed trigger in the correct place (check impls of block#playerDestroy)
-+        if (mainHandStack != null) {
++        if (destroyedWith != null) {
 +            if (changed && canDestroy && event.isDropItems() && block instanceof net.minecraft.world.level.block.BeehiveBlock && blockEntity instanceof net.minecraft.world.level.block.entity.BeehiveBlockEntity beehiveBlockEntity) { // simulates the guard on block#playerDestroy above
-+                CriteriaTriggers.BEE_NEST_DESTROYED.trigger(this.player, state, mainHandStack, beehiveBlockEntity.getOccupantCount());
++                CriteriaTriggers.BEE_NEST_DESTROYED.trigger(this.player, state, destroyedWith, beehiveBlockEntity.getOccupantCount());
 +            }
 +        }
 +        // Paper end - Trigger bee_nest_destroyed trigger in the correct place
