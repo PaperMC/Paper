@@ -1459,7 +1459,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public org.bukkit.WorldType getWorldType() {
-        if (this.world.getChunkSource().getGenerator() instanceof net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator noiseGen) {
+        net.minecraft.world.level.chunk.ChunkGenerator generator = this.world.getChunkSource().getGenerator();
+
+        if (generator instanceof org.bukkit.craftbukkit.generator.CustomChunkGenerator customGen) {
+            generator = customGen.getDelegate();
+        }
+
+        if (generator instanceof net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator noiseGen) {
             if (noiseGen.generatorSettings().is(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.AMPLIFIED)) {
                 return org.bukkit.WorldType.AMPLIFIED;
             }
