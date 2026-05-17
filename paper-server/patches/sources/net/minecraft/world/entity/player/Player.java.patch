@@ -291,7 +291,7 @@
              return true;
          } else {
              return false;
-@@ -1109,19 +_,40 @@
+@@ -1109,18 +_,35 @@
      public void causeExtraKnockback(final Entity entity, final float knockbackAmount, final Vec3 oldMovement) {
          if (knockbackAmount > 0.0F) {
              if (entity instanceof LivingEntity livingTarget) {
@@ -311,29 +311,25 @@
          }
  
          if (entity instanceof ServerPlayer && entity.hurtMarked) {
-+            // CraftBukkit start - Add Velocity Event
-+            boolean cancelled = false;
+-            ((ServerPlayer)entity).connection.send(new ClientboundSetEntityMotionPacket(entity));
++            // Paper start - Add Velocity Event
 +            org.bukkit.entity.Player player = (org.bukkit.entity.Player) entity.getBukkitEntity();
 +            org.bukkit.util.Vector velocity = org.bukkit.craftbukkit.util.CraftVector.toBukkit(oldMovement);
 +
 +            org.bukkit.event.player.PlayerVelocityEvent event = new org.bukkit.event.player.PlayerVelocityEvent(player, velocity.clone());
-+            this.level().getCraftServer().getPluginManager().callEvent(event);
 +
-+            if (event.isCancelled()) {
-+                cancelled = true;
+             entity.hurtMarked = false;
++            if (!event.callEvent()) {
++                return;
 +            } else if (!velocity.equals(event.getVelocity())) {
 +                player.setVelocity(event.getVelocity());
 +            }
-+
-+            if (!cancelled) {
-             ((ServerPlayer)entity).connection.send(new ClientboundSetEntityMotionPacket(entity));
-             entity.hurtMarked = false;
++            // Paper end
++            ((ServerPlayer)entity).connection.send(new ClientboundSetEntityMotionPacket(entity));
++            // entity.hurtMarked = false; // Paper - move before PlayerVelocityEvent call
              entity.setDeltaMovement(oldMovement);
-+            }
-+            // CraftBukkit end
          }
      }
- 
 @@ -1142,8 +_,11 @@
                      && !(nearby instanceof ArmorStand armorStand && armorStand.isMarker())
                      && this.distanceToSqr(nearby) < 9.0) {
