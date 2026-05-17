@@ -1467,6 +1467,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             if (noiseGen.generatorSettings().is(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.LARGE_BIOMES)) {
                 return org.bukkit.WorldType.LARGE_BIOMES;
             }
+
+            if (noiseGen.generatorSettings().is(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.CAVES)) {
+                return org.bukkit.WorldType.CAVES;
+            }
+
+            if (noiseGen.generatorSettings().is(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.FLOATING_ISLANDS)) {
+                return org.bukkit.WorldType.FLOATING_ISLANDS;
+            }
         }
 
         return this.world.isFlat() ? org.bukkit.WorldType.FLAT : org.bukkit.WorldType.NORMAL;
