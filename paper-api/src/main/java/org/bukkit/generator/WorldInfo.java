@@ -2,10 +2,12 @@ package org.bukkit.generator;
 
 import java.util.UUID;
 import io.papermc.paper.world.flag.FeatureFlagSetHolder;
+import net.kyori.adventure.key.Key;
 import org.bukkit.Keyed;
 import org.bukkit.World;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Holds various information of a World
@@ -39,6 +41,14 @@ public interface WorldInfo extends FeatureFlagSetHolder, Keyed {
      */
     @NotNull
     World.Environment getEnvironment();
+
+    /**
+     * Gets the environment key for this world.
+     *
+     * @return This world Environment key
+     */
+    @ApiStatus.Experimental
+    @NotNull Key getEnvironmentKey();
 
     /**
      * Gets the Seed for this world.
