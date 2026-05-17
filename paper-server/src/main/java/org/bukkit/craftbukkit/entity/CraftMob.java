@@ -5,6 +5,8 @@ import java.util.Optional;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.Optionull;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.Entity;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftLootTable;
@@ -199,5 +201,24 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     @Override
     public boolean setLeashHolder(final org.bukkit.entity.Entity holder) {
         return io.papermc.paper.entity.PaperLeashable.super.setLeashHolder(holder);
+    }
+
+    @Override
+    public boolean burnsInDaylight() {
+        final net.minecraft.world.entity.Mob handle = this.getHandle();
+
+        return handle.burnInDaylightOverride.toBooleanOrElseGet(() -> handle.is(EntityTypeTags.BURN_IN_DAYLIGHT))
+            && handle.level().environmentAttributes().getValue(EnvironmentAttributes.MONSTERS_BURN, handle.position());
+    }
+
+    @Override
+    public void setBurnInDaylightOverride(final TriState state) {
+        Preconditions.checkArgument(state != null, "TriState cannot be null");
+        this.getHandle().burnInDaylightOverride = state;
+    }
+
+    @Override
+    public TriState getBurnInDaylightOverride() {
+        return this.getHandle().burnInDaylightOverride;
     }
 }

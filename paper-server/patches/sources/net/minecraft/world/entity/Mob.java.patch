@@ -23,12 +23,13 @@
      public GoalSelector targetSelector;
      private @Nullable LivingEntity target;
      private final Sensing sensing;
-@@ -139,6 +_,8 @@
+@@ -139,6 +_,9 @@
      private Leashable.@Nullable LeashData leashData;
      private BlockPos homePosition = BlockPos.ZERO;
      private int homeRadius = -1;
 +    public boolean aware = true; // CraftBukkit
 +    public net.kyori.adventure.util.TriState despawnInPeacefulOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper - allow changing despawnInPeaceful
++    public net.kyori.adventure.util.TriState burnInDaylightOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper - burnInDaylight API
  
      protected Mob(final EntityType<? extends Mob> type, final Level level) {
          super(type, level);
@@ -78,7 +79,7 @@
      }
  
      @Override
-@@ -383,13 +_,27 @@
+@@ -383,13 +_,32 @@
          if (this.isNoAi()) {
              output.putBoolean("NoAI", this.isNoAi());
          }
@@ -88,6 +89,11 @@
 +            output.putString("Paper.DespawnInPeacefulOverride", this.despawnInPeacefulOverride.name());
 +        }
 +        // Paper end - allow changing despawnInPeaceful
++        // Paper start - burnInDaylight API
++        if (this.burnInDaylightOverride != net.kyori.adventure.util.TriState.NOT_SET) {
++            output.putString("Paper.BurnInDaylightOverride", this.burnInDaylightOverride.name());
++        }
++        // Paper end - burnInDaylight API
      }
  
      @Override
@@ -108,11 +114,12 @@
          this.dropChances = input.read("drop_chances", DropChances.CODEC).orElse(DropChances.DEFAULT);
          this.readLeashData(input);
          this.homeRadius = input.getIntOr("home_radius", -1);
-@@ -401,6 +_,13 @@
+@@ -401,6 +_,14 @@
          this.lootTable = input.read("DeathLootTable", LootTable.KEY_CODEC);
          this.lootTableSeed = input.getLongOr("DeathLootTableSeed", 0L);
          this.setNoAi(input.getBooleanOr("NoAI", false));
 +        this.aware = input.getBooleanOr("Bukkit.Aware", true); // CraftBukkit
++        this.burnInDaylightOverride = input.read("Paper.BurnInDaylightOverride", io.papermc.paper.util.PaperCodecs.TRI_STATE_CODEC).orElse(net.kyori.adventure.util.TriState.NOT_SET); // Paper - burnInDaylight API
 +        // Paper start - allow changing despawnInPeaceful
 +        this.despawnInPeacefulOverride = readDespawnInPeacefulOverride(input);
 +    }
@@ -122,6 +129,15 @@
      }
  
      @Override
+@@ -449,7 +_,7 @@
+     @Override
+     public void aiStep() {
+         super.aiStep();
+-        if (this.is(EntityTypeTags.BURN_IN_DAYLIGHT)) {
++        if (this.burnInDaylightOverride.toBooleanOrElseGet(() -> this.is(EntityTypeTags.BURN_IN_DAYLIGHT))) { // Paper - burnInDaylight API
+             this.burnUndead();
+         }
+ 
 @@ -465,6 +_,11 @@
              for (ItemEntity entity : this.level()
                  .getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(pickupReach.getX(), pickupReach.getY(), pickupReach.getZ()))) {
