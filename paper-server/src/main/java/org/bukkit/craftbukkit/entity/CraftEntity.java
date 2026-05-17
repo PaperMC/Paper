@@ -316,9 +316,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             Vec3.ZERO,
             location.getYaw(),
             location.getPitch(),
+            false,
+            false,
             relativeFlags,
             TeleportTransition.DO_NOTHING,
-            cause
+            cause,
+            TeleportTransition.PassengerTeleportationMode.POSITION_RIDER
         )) != null;
     }
 
