@@ -1483,6 +1483,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             }
         }
 
+        if (generator instanceof net.minecraft.world.level.levelgen.DebugLevelSource) {
+            return org.bukkit.WorldType.DEBUG;
+        }
+
         return this.world.isFlat() ? org.bukkit.WorldType.FLAT : org.bukkit.WorldType.NORMAL;
     }
 
