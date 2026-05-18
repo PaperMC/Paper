@@ -2949,8 +2949,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Gets the type of this world.
      *
      * @return Type of this world.
+     * @deprecated Deprecated in favor of {@link #getWorldTypeKey()}, world types are now data driven and the old world type system may eventually get replaced entirely
      */
     @Nullable
+    @Deprecated(since = "1.16.1")
     public WorldType getWorldType();
 
     /**
