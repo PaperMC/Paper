@@ -8,7 +8,7 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private final Holder.Reference<EntityType<?>> builtInRegistryHolder = BuiltInRegistries.ENTITY_TYPE.createIntrusiveHolder(this);
      public static final Codec<EntityType<?>> CODEC = BuiltInRegistries.ENTITY_TYPE.byNameCodec();
-@@ -1288,6 +_,22 @@
+@@ -1288,14 +_,45 @@
          final boolean tryMoveDown,
          final boolean movedUp
      ) {
@@ -27,13 +27,28 @@
 +        final boolean movedUp,
 +        final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason createSpawnReason
 +    ) {
++        return this.spawn(level, itemStack, user, spawnPos, spawnReason, tryMoveDown, movedUp, createSpawnReason, null);
++    }
++
++    public @Nullable T spawn(
++        final ServerLevel level,
++        final @Nullable ItemStack itemStack,
++        final @Nullable LivingEntity user,
++        final BlockPos spawnPos,
++        final EntitySpawnReason spawnReason,
++        final boolean tryMoveDown,
++        final boolean movedUp,
++        final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason createSpawnReason,
++        final @Nullable Consumer<? super T> op
++    ) {
 +        // CraftBukkit end
          Consumer<T> postSpawnConfig;
          if (itemStack != null) {
              postSpawnConfig = createDefaultStackConfig(level, itemStack, user);
-@@ -1295,7 +_,7 @@
+         } else {
              postSpawnConfig = entity -> {};
          }
++        if (op != null) postSpawnConfig = postSpawnConfig.andThen(op); // Paper
  
 -        return this.spawn(level, postSpawnConfig, spawnPos, spawnReason, tryMoveDown, movedUp);
 +        return this.spawn(level, postSpawnConfig, spawnPos, spawnReason, tryMoveDown, movedUp, createSpawnReason); // CraftBukkit
@@ -69,11 +84,11 @@
 +        final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason
 +    ) {
 +        return this.spawn(level, null, spawnPos, spawnReason, false, false, creatureSpawnReason);
-+        // CraftBukkit End
++        // CraftBukkit end
      }
  
      public @Nullable T spawn(
-@@ -1331,9 +_,39 @@
+@@ -1331,9 +_,40 @@
          final boolean tryMoveDown,
          final boolean movedUp
      ) {
@@ -105,6 +120,7 @@
          T entity = this.create(level, postSpawnConfig, spawnPos, spawnReason, tryMoveDown, movedUp);
          if (entity != null) {
 -            level.addFreshEntityWithPassengers(entity);
++            if (entity.isRemoved()) return null; // Paper - if consumer removed entity, return null
 +            // CraftBukkit start
 +            level.addFreshEntityWithPassengers(entity, creatureSpawnReason);
 +            if (entity.isRemoved()) {
