@@ -2954,6 +2954,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public WorldType getWorldType();
 
     /**
+     * Gets the key of the world type of this world.
+     *
+     * @return Key of this world's world type.
+     */
+    @NotNull
+    public NamespacedKey getWorldTypeKey();
+
+    /**
      * Gets whether or not structures are being generated.
      *
      * @return True if structures are being generated.
