@@ -339,6 +339,11 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
+    public org.bukkit.NamespacedKey getKey() {
+        return this.delegate.getKey();
+    }
+
+    @Override
     protected MapCodec<? extends net.minecraft.world.level.chunk.ChunkGenerator> codec() {
         return MapCodec.unit(null);
     }

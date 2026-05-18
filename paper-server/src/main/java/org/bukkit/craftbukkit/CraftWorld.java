@@ -1492,29 +1492,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public NamespacedKey getWorldTypeKey() {
-        net.minecraft.world.level.chunk.ChunkGenerator generator = this.world.getChunkSource().getGenerator();
-
-        if (generator instanceof org.bukkit.craftbukkit.generator.CustomChunkGenerator customGen) {
-            generator = customGen.getDelegate();
-        }
-
-        if (generator instanceof net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator noiseGen) {
-            java.util.Optional<net.minecraft.resources.ResourceKey<net.minecraft.world.level.levelgen.NoiseGeneratorSettings>> key = noiseGen.generatorSettings().unwrapKey();
-
-            if (key.isPresent()) {
-                return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromResourceKey(key.get());
-            }
-        }
-
-        if (generator instanceof net.minecraft.world.level.levelgen.DebugLevelSource) {
-            return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromResourceKey(net.minecraft.world.level.levelgen.presets.WorldPresets.DEBUG);
-        }
-
-        if (this.world.isFlat()) {
-            return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromResourceKey(net.minecraft.world.level.levelgen.presets.WorldPresets.FLAT);
-        }
-
-        return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromResourceKey(net.minecraft.world.level.levelgen.presets.WorldPresets.NORMAL);
+        return this.world.getChunkSource().getGenerator().getKey();
     }
 
     @Override
