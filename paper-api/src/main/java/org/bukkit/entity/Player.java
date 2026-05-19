@@ -3364,6 +3364,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     java.util.Locale locale();
     // Paper end
+
     /**
      * Gets the player's estimated ping in milliseconds.
      *
@@ -3376,6 +3377,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * this purpose in the tab list).
      *
      * @return player ping
+     * @see io.papermc.paper.connection.PlayerCommonConnection#getLastPing()
      */
     public int getPing();
 
