@@ -3,13 +3,18 @@ package io.papermc.paper;
 import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.SkinParts;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.block.property.EnumBlockProperty;
+import io.papermc.paper.block.property.PaperBlockProperties;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
+import io.papermc.paper.entity.poi.PaperPoiType;
+import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -17,14 +22,15 @@ import net.kyori.adventure.text.Component;
 import net.minecraft.Optionull;
 import net.minecraft.commands.Commands;
 import net.minecraft.world.damagesource.FallLocation;
+import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.decoration.Mannequin;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 import org.bukkit.GameRule;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.block.CraftBiome;
-import io.papermc.paper.entity.poi.PaperPoiType;
-import io.papermc.paper.entity.poi.PoiType;
-import net.minecraft.world.entity.ai.village.poi.PoiManager;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
@@ -42,7 +48,7 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
 
     @Override
     public DamageEffect getDamageEffect(final String key) {
-        return CraftDamageEffect.getById(key);
+        return Objects.requireNonNull(CraftDamageEffect.getById(key), "Unknown damage effect key: " + key);
     }
 
     @Override
@@ -131,5 +137,14 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public Set<Pose> validMannequinPoses() {
         return CraftMannequin.VALID_POSES;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public <A extends Enum<A>> String getPropertyEnumName(final EnumBlockProperty<A> property, final A bukkitEnum) {
+        final Property<?> propertyd = PaperBlockProperties.convertTointernalProperty(property);
+        if (!(PaperBlockProperties.convertTointernalProperty(property) instanceof final EnumProperty enumProperty)) {
+            throw new IllegalArgumentException("Could not convert " + property + " to an nms EnumProperty");
+        }
+        return enumProperty.getName(CraftBlockData.toVanilla(bukkitEnum, enumProperty.getValueClass()));
     }
 }

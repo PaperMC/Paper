@@ -29,7 +29,7 @@ public class CraftNetherPortal extends CraftBlockData implements Orientable {
     @Override
     public void setAxis(final Axis axis) {
         Preconditions.checkArgument(axis != null, "axis cannot be null!");
-        Preconditions.checkArgument(axis == Axis.X || axis == Axis.Z, "Invalid axis, only horizontal axis are allowed for this property!");
+        Preconditions.checkArgument(axis.isHorizontal(), "Invalid axis, only horizontal axis are allowed for this property!");
         this.set(AXIS, axis);
     }
 

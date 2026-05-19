@@ -1,6 +1,7 @@
 package io.papermc.paper;
 
 import com.destroystokyo.paper.SkinParts;
+import io.papermc.paper.block.property.EnumBlockProperty;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.entity.poi.PoiType;
@@ -113,4 +114,14 @@ public interface InternalAPIBridge {
     <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass);
 
     Set<Pose> validMannequinPoses();
+
+    /**
+     * Gets the string representation for this bukkit enum.
+     *
+     * @param enumProperty the enum data property
+     * @param bukkitEnum the enum to get the string representation of
+     * @param <B> the bukkit enum type
+     * @return the string representation of the supplied enum
+     */
+    <B extends Enum<B>> String getPropertyEnumName(EnumBlockProperty<B> enumProperty, B bukkitEnum);
 }

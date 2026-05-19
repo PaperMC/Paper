@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.block.property.BlockProperty;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.Map;
 import net.minecraft.world.item.component.BlockItemStateProperties;
@@ -37,7 +38,11 @@ public record PaperBlockItemDataProperties(
 
         private final Map<String, String> properties = new Object2ObjectOpenHashMap<>();
 
-        // TODO when BlockProperty API is merged
+        @Override
+        public <T extends Comparable<T>> Builder set(final BlockProperty<T> property, final T value) {
+            this.properties.put(property.name(), property.name(value));
+            return this;
+        }
 
         @Override
         public BlockItemDataProperties build() {

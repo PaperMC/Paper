@@ -1,5 +1,7 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.block.property.BlockProperty;
+import io.papermc.paper.block.property.BlockPropertyHolder;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.data.BlockData;
@@ -46,6 +48,34 @@ public interface BlockItemDataProperties {
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BlockItemDataProperties> {
-        // building this requires BlockProperty API, so an empty builder for now (essentially read-only)
+
+        /**
+         * Sets all the properties from the given {@link BlockPropertyHolder}.
+         *
+         * @param properties the properties to set
+         * @return the builder for chaining
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        default Builder setFrom(final BlockPropertyHolder properties) {
+            properties.getProperties().forEach(property -> {
+                this.setFromHelper(properties, property);
+            });
+            return this;
+        }
+
+        private <T extends Comparable<T>> void setFromHelper(final BlockPropertyHolder propertyHolder, final BlockProperty<T> property) {
+            this.set(property, propertyHolder.getValue(property));
+        }
+
+        /**
+         * Sets a property to the given value.
+         *
+         * @param property the property to set
+         * @param value the value to set
+         * @param <T> the property type
+         * @return the builder for chaining
+         */
+        @Contract(value = "_, _ -> this", mutates = "this")
+        <T extends Comparable<T>> Builder set(BlockProperty<T> property, T value);
     }
 }
