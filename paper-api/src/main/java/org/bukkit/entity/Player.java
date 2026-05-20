@@ -203,6 +203,31 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     public void setPlayerListOrder(int order);
 
+
+    /**
+     * Gets the game mode that is shown for this player on the player list.
+     * @return the player list game mode
+     */
+    public GameMode getPlayerListGameMode();
+
+    /**
+     * Sets the game mode that is shown for this player on the in-game player list.
+     * @param gameMode new player list game mode
+     */
+    public void setPlayerListGameMode(GameMode gameMode);
+
+    /**
+     * Gets whether the player's game mode should be updated on the player list when it changes.
+     * @param update true if the player's game mode should be updated on the player list, false if it should not be updated
+     */
+    public void setUpdateGameMode(boolean update);
+
+    /**
+     * Gets whether the player's game mode should be updated on the player list when it changes.
+     * @return true if the player's game mode should be updated on the player list, false if it should not be updated
+     */
+    public Boolean shouldUpdateGameMode();
+
     /**
      * Gets the currently displayed player list header for this player.
      *

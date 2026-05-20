@@ -138,7 +138,6 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
-import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
 import org.bukkit.EntityEffect;
@@ -188,7 +187,6 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.conversations.ConversationTracker;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.map.CraftMapCursor;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.map.RenderData;
@@ -613,6 +611,39 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         }
         // Paper end - Send update packet
     }
+
+    // Paper start - add custom player list gamemode and add shouldUpdateGameMode
+
+    @Override
+    public void setPlayerListGameMode(GameMode gameMode) {
+        Preconditions.checkNotNull(gameMode, "gameMode cannot be null");
+
+        this.getHandle().listGameMode = gameMode;
+        if (getHandle().connection == null) return;
+
+        for (ServerPlayer player : server.getHandle().players) {
+            if (player.getBukkitEntity().canSee(this)) {
+                player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, getHandle()));
+            }
+        }
+    }
+
+    @Override
+    public @NonNull GameMode getPlayerListGameMode() {return this.getHandle().listGameMode;}
+
+    // Paper end - add custom player list gamemode and add shouldUpdateGameMode
+
+
+    // Paper start - add custom player list gamemode and add shouldUpdateGameMode
+    @Override
+    public Boolean shouldUpdateGameMode() {return this.getHandle().shouldUpdateListGameMode;}
+
+    @Override
+    public void setUpdateGameMode(boolean update) {
+        this.getHandle().shouldUpdateListGameMode = update;
+    }
+
+    // Paper end - add custom player list gamemode and add shouldUpdateGameMode
 
     private net.kyori.adventure.text.Component playerListHeader; // Paper - Adventure
     private net.kyori.adventure.text.Component playerListFooter; // Paper - Adventure
