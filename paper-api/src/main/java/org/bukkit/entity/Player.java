@@ -3807,7 +3807,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param pitch the pitch
      * @param relativePitch whether the pitch is relative to the current pitch
      */
-    void modRotation(float yaw, boolean relativeYaw, float pitch, boolean relativePitch);
+    void setRotation(float yaw, boolean relativeYaw, float pitch, boolean relativePitch);
 
     /**
      * Causes the player to look towards the given entity.
