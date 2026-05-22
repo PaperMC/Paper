@@ -3796,7 +3796,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     void setRotation(float yaw, float pitch);
 
     /**
-     * Modify the player's rotation.
+     * Set the player's rotation.
      * <p>
      * Note: When relative parameters are set, client will do interpolations to
      * make the rotation smooth, it's different from just send a new rotation with
