@@ -417,7 +417,7 @@
                  }
              }
  
-@@ -611,16 +_,24 @@
+@@ -611,6 +_,13 @@
      }
  
      protected BlockPos findLightningTargetAround(final BlockPos pos) {
@@ -431,18 +431,20 @@
          BlockPos center = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
          Optional<BlockPos> lightningRodTarget = this.findLightningRod(center);
          if (lightningRodTarget.isPresent()) {
-             return lightningRodTarget.get();
-         } else {
-             AABB search = AABB.encapsulatingFullBlocks(center, center.atY(this.getMaxY() + 1)).inflate(3.0);
--            List<LivingEntity> entities = this.getEntitiesOfClass(LivingEntity.class, search, input -> input.isAlive() && this.canSeeSky(input.blockPosition()));
-+            List<LivingEntity> entities = this.getEntitiesOfClass(LivingEntity.class, search, input -> input.isAlive() && this.canSeeSky(input.blockPosition()) && !input.isSpectator()); // Paper - Fix lightning being able to hit spectators (MC-262422)
-             if (!entities.isEmpty()) {
-                 return entities.get(this.random.nextInt(entities.size())).blockPosition();
-             } else {
-+                if (returnNullWhenNoTarget) return null; // Paper - Add methods to find targets for lightning strikes
-                 if (center.getY() == this.getMinY() - 1) {
-                     center = center.above(2);
-                 }
+@@ -618,11 +_,12 @@
+         }
+ 
+         AABB search = AABB.encapsulatingFullBlocks(center, center.atY(this.getMaxY() + 1)).inflate(3.0);
+-        List<LivingEntity> entities = this.getEntitiesOfClass(LivingEntity.class, search, input -> input.isAlive() && this.canSeeSky(input.blockPosition()));
++        List<LivingEntity> entities = this.getEntitiesOfClass(LivingEntity.class, search, input -> input.isAlive() && this.canSeeSky(input.blockPosition()) && !input.isSpectator()); // Paper - Fix lightning being able to hit spectators (MC-262422)
+         if (!entities.isEmpty()) {
+             return entities.get(this.random.nextInt(entities.size())).blockPosition();
+         }
+ 
++        if (returnNullWhenNoTarget) return null; // Paper - Add methods to find targets for lightning strikes
+         if (center.getY() == this.getMinY() - 1) {
+             center = center.above(2);
+         }
 @@ -739,8 +_,8 @@
                  weatherData.setThunderTime(thunderTime);
                  weatherData.setRainTime(rainTime);
@@ -682,11 +684,11 @@
 +        // CraftBukkit end
          if (entity.getSelfAndPassengers().map(Entity::getUUID).anyMatch(this.entityManager::isLoaded)) {
              return false;
-         } else {
--            this.addFreshEntityWithPassengers(entity);
-+            this.addFreshEntityWithPassengers(entity, reason); // CraftBukkit
-             return true;
          }
+ 
+-        this.addFreshEntityWithPassengers(entity);
++        this.addFreshEntityWithPassengers(entity, reason); // CraftBukkit
+         return true;
      }
  
      public void unload(final LevelChunk levelChunk) {
@@ -976,8 +978,8 @@
 -        if (!this.server.getWorldGenSettings().options().generateStructures()) {
 +        if (!this.worldGenSettings.options().generateStructures()) { // CraftBukkit
              return null;
-         } else {
-             Optional<HolderSet.Named<Structure>> tag = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
+         }
+ 
 @@ -1479,10 +_,36 @@
  
      @Override
@@ -1115,7 +1117,7 @@
  
      @Override
      public CrashReportCategory fillReportDetails(final CrashReport report) {
-@@ -1905,6 +_,7 @@
+@@ -1900,6 +_,7 @@
              if (entity instanceof WaypointTransmitter waypoint && waypoint.isTransmittingWaypoint()) {
                  ServerLevel.this.getWaypointManager().trackWaypoint(waypoint);
              }
@@ -1123,7 +1125,7 @@
          }
  
          @Override
-@@ -1918,17 +_,24 @@
+@@ -1913,17 +_,24 @@
  
          @Override
          public void onTickingStart(final Entity entity) {
@@ -1149,7 +1151,7 @@
              if (entity instanceof ServerPlayer player) {
                  ServerLevel.this.players.add(player);
                  if (player.isReceivingWaypoints()) {
-@@ -1943,7 +_,7 @@
+@@ -1938,7 +_,7 @@
              }
  
              if (entity instanceof Mob mob) {
@@ -1158,7 +1160,7 @@
                      String message = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1960,10 +_,52 @@
+@@ -1955,10 +_,52 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1211,7 +1213,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer player) {
                  ServerLevel.this.players.remove(player);
-@@ -1972,7 +_,7 @@
+@@ -1967,7 +_,7 @@
              }
  
              if (entity instanceof Mob mob) {
@@ -1220,7 +1222,7 @@
                      String message = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1990,6 +_,15 @@
+@@ -1985,6 +_,15 @@
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
              ServerLevel.this.debugSynchronizers.dropEntity(entity);
@@ -1236,7 +1238,7 @@
          }
  
          @Override
-@@ -1997,4 +_,24 @@
+@@ -1992,4 +_,24 @@
              entity.updateDynamicGameEventListener(DynamicGameEventListener::move);
          }
      }

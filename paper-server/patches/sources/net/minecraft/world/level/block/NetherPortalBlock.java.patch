@@ -38,7 +38,7 @@
              entity.setAsInsidePortal(this, pos);
          }
      }
-@@ -133,16 +_,39 @@
+@@ -133,17 +_,40 @@
  
      @Override
      public @Nullable TeleportTransition getPortalDestination(final ServerLevel currentLevel, final Entity entity, final BlockPos portalEntryPos) {
@@ -55,32 +55,33 @@
 +        // Paper end - Add EntityPortalReadyEvent
          if (newLevel == null) {
              return null;
-         } else {
--            boolean toNether = newLevel.dimension() == Level.NETHER;
-+            boolean toNether = newLevel.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER; // CraftBukkit
-             WorldBorder newWorldBorder = newLevel.getWorldBorder();
-             double teleportationScale = DimensionType.getTeleportationScale(currentLevel.dimensionType(), newLevel.dimensionType());
-             BlockPos approximateExitPos = newWorldBorder.clampToBounds(entity.getX() * teleportationScale, entity.getY(), entity.getZ() * teleportationScale);
--            return this.getExitPortal(newLevel, entity, portalEntryPos, approximateExitPos, toNether, newWorldBorder);
-+            // Paper start - Configurable portal search radius
-+            int portalSearchRadius = newLevel.paperConfig().environment.portalSearchRadius;
-+            if (entity.level().paperConfig().environment.portalSearchVanillaDimensionScaling && toNether) {
-+                portalSearchRadius = (int) (portalSearchRadius / newLevel.dimensionType().coordinateScale());
-+            }
-+            // Paper end - Configurable portal search radius
-+            // CraftBukkit start
-+            org.bukkit.craftbukkit.event.PortalEventResult result = org.bukkit.craftbukkit.event.CraftEventFactory.handlePortalEvents(entity, org.bukkit.craftbukkit.util.CraftLocation.toBukkit(approximateExitPos, newLevel), org.bukkit.PortalType.NETHER, portalSearchRadius, newLevel.paperConfig().environment.portalCreateRadius); // Paper - use custom portal search radius
-+            if (result == null) {
-+                return null;
-+            }
-+            newLevel = ((org.bukkit.craftbukkit.CraftWorld) result.to().getWorld()).getHandle();
-+            newWorldBorder = newLevel.getWorldBorder();
-+            approximateExitPos = newWorldBorder.clampToBounds(result.to().getX(), result.to().getY(), result.to().getZ());
-+            return this.getExitPortal(newLevel, entity, portalEntryPos, approximateExitPos, toNether, newWorldBorder, result);
-+            // CraftBukkit end
          }
+ 
+-        boolean toNether = newLevel.dimension() == Level.NETHER;
++        boolean toNether = newLevel.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER; // CraftBukkit
+         WorldBorder newWorldBorder = newLevel.getWorldBorder();
+         double teleportationScale = DimensionType.getTeleportationScale(currentLevel.dimensionType(), newLevel.dimensionType());
+         BlockPos approximateExitPos = newWorldBorder.clampToBounds(entity.getX() * teleportationScale, entity.getY(), entity.getZ() * teleportationScale);
+-        return this.getExitPortal(newLevel, entity, portalEntryPos, approximateExitPos, toNether, newWorldBorder);
++        // Paper start - Configurable portal search radius
++        int portalSearchRadius = newLevel.paperConfig().environment.portalSearchRadius;
++        if (entity.level().paperConfig().environment.portalSearchVanillaDimensionScaling && toNether) {
++            portalSearchRadius = (int) (portalSearchRadius / newLevel.dimensionType().coordinateScale());
++        }
++        // Paper end - Configurable portal search radius
++        // CraftBukkit start
++        org.bukkit.craftbukkit.event.PortalEventResult result = org.bukkit.craftbukkit.event.CraftEventFactory.handlePortalEvents(entity, org.bukkit.craftbukkit.util.CraftLocation.toBukkit(approximateExitPos, newLevel), org.bukkit.PortalType.NETHER, portalSearchRadius, newLevel.paperConfig().environment.portalCreateRadius); // Paper - use custom portal search radius
++        if (result == null) {
++            return null;
++        }
++        newLevel = ((org.bukkit.craftbukkit.CraftWorld) result.to().getWorld()).getHandle();
++        newWorldBorder = newLevel.getWorldBorder();
++        approximateExitPos = newWorldBorder.clampToBounds(result.to().getX(), result.to().getY(), result.to().getZ());
++        return this.getExitPortal(newLevel, entity, portalEntryPos, approximateExitPos, toNether, newWorldBorder, result);
++        // CraftBukkit end
      }
  
+     private @Nullable TeleportTransition getExitPortal(
 @@ -153,8 +_,9 @@
          final BlockPos approximateExitPos,
          final boolean toNether,

@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -68,6 +_,11 @@
+@@ -67,6 +_,11 @@
      private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
      public Channel channel;
      public SocketAddress address;
@@ -12,7 +12,7 @@
      private volatile @Nullable PacketListener disconnectListener;
      private volatile @Nullable PacketListener packetListener;
      private @Nullable DisconnectionDetails disconnectionDetails;
-@@ -81,6 +_,44 @@
+@@ -80,6 +_,44 @@
      private boolean handlingFault;
      private volatile @Nullable DisconnectionDetails delayedDisconnect;
      private @Nullable BandwidthDebugMonitor bandwidthDebugMonitor;
@@ -57,7 +57,7 @@
  
      public Connection(final PacketFlow receiving) {
          this.receiving = receiving;
-@@ -91,6 +_,7 @@
+@@ -90,6 +_,7 @@
          super.channelActive(ctx);
          this.channel = ctx.channel();
          this.address = this.channel.remoteAddress();
@@ -65,7 +65,7 @@
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -102,15 +_,32 @@
+@@ -101,15 +_,32 @@
      }
  
      @Override
@@ -99,7 +99,7 @@
                      this.disconnect(Component.translatable("disconnect.timeout"));
                  } else {
                      Component reason = Component.translatable("disconnect.genericReason", "Internal Exception: " + cause);
-@@ -122,9 +_,11 @@
+@@ -121,9 +_,11 @@
                          details = new DisconnectionDetails(reason);
                      }
  
@@ -109,10 +109,10 @@
 -                        if (this.getSending() == PacketFlow.CLIENTBOUND) {
 +                        boolean doesDisconnectExist = this.packetListener.protocol() != ConnectionProtocol.STATUS && this.packetListener.protocol() != ConnectionProtocol.HANDSHAKING; // Paper
 +                        if (this.getSending() == PacketFlow.CLIENTBOUND && doesDisconnectExist) { // Paper
-                             Packet<?> packet = (Packet<?>)(this.sendLoginDisconnect
+                             Packet<?> packet = this.sendLoginDisconnect
                                  ? new ClientboundLoginDisconnectPacket(reason)
-                                 : new ClientboundDisconnectPacket(reason));
-@@ -141,6 +_,7 @@
+                                 : new ClientboundDisconnectPacket(reason);
+@@ -140,6 +_,7 @@
                  }
              }
          }
@@ -120,68 +120,69 @@
      }
  
      @Override
-@@ -150,10 +_,60 @@
+@@ -149,11 +_,60 @@
              if (packetListener == null) {
                  throw new IllegalStateException("Received a packet before the packet listener was initialized");
-             } else {
-+                // Paper start - packet limiter
-+                if (this.stopReadingPackets) {
-+                    return;
-+                }
-+                if (this.allPacketCounts != null ||
-+                    io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.containsKey(packet.getClass())) {
-+                    long time = System.nanoTime();
-+                    synchronized (PACKET_LIMIT_LOCK) {
-+                        if (this.allPacketCounts != null) {
-+                            this.allPacketCounts.updateAndAdd(1, time);
-+                            if (this.allPacketCounts.getRate() >= io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.maxPacketRate()) {
-+                                this.killForPacketSpam();
-+                                return;
-+                            }
+             }
+-
++            // Paper start - packet limiter
++            if (this.stopReadingPackets) {
++                return;
++            }
++            if (this.allPacketCounts != null ||
++                io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.containsKey(packet.getClass())) {
++                long time = System.nanoTime();
++                synchronized (PACKET_LIMIT_LOCK) {
++                    if (this.allPacketCounts != null) {
++                        this.allPacketCounts.updateAndAdd(1, time);
++                        if (this.allPacketCounts.getRate() >= io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.maxPacketRate()) {
++                            this.killForPacketSpam();
++                            return;
 +                        }
++                    }
 +
-+                        for (Class<?> check = packet.getClass(); check != Object.class; check = check.getSuperclass()) {
-+                            io.papermc.paper.configuration.GlobalConfiguration.PacketLimiter.PacketLimit packetSpecificLimit =
-+                                io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.get(check);
-+                            if (packetSpecificLimit == null || !packetSpecificLimit.isEnabled()) {
-+                                continue;
-+                            }
-+                            io.papermc.paper.util.IntervalledCounter counter = this.packetSpecificLimits.computeIfAbsent((Class)check, (clazz) -> {
-+                                return new io.papermc.paper.util.IntervalledCounter((long)(packetSpecificLimit.interval() * 1.0e9));
-+                            });
-+                            counter.updateAndAdd(1, time);
-+                            if (counter.getRate() >= packetSpecificLimit.maxPacketRate()) {
-+                                switch (packetSpecificLimit.action()) {
-+                                    case DROP:
-+                                        return;
-+                                    case KICK:
-+                                        String deobfedPacketName = check.getName();
++                    for (Class<?> check = packet.getClass(); check != Object.class; check = check.getSuperclass()) {
++                        io.papermc.paper.configuration.GlobalConfiguration.PacketLimiter.PacketLimit packetSpecificLimit =
++                            io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.get(check);
++                        if (packetSpecificLimit == null || !packetSpecificLimit.isEnabled()) {
++                            continue;
++                        }
++                        io.papermc.paper.util.IntervalledCounter counter = this.packetSpecificLimits.computeIfAbsent((Class)check, (clazz) -> {
++                            return new io.papermc.paper.util.IntervalledCounter((long)(packetSpecificLimit.interval() * 1.0e9));
++                        });
++                        counter.updateAndAdd(1, time);
++                        if (counter.getRate() >= packetSpecificLimit.maxPacketRate()) {
++                            switch (packetSpecificLimit.action()) {
++                                case DROP:
++                                    return;
++                                case KICK:
++                                    String deobfedPacketName = check.getName();
 +
-+                                        String playerName;
-+                                        if (this.packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl impl) {
-+                                            playerName = impl.getOwner().name();
-+                                        } else {
-+                                            playerName = this.getLoggableAddress(net.minecraft.server.MinecraftServer.getServer().logIPs());
-+                                        }
++                                    String playerName;
++                                    if (this.packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl impl) {
++                                        playerName = impl.getOwner().name();
++                                    } else {
++                                        playerName = this.getLoggableAddress(net.minecraft.server.MinecraftServer.getServer().logIPs());
++                                    }
 +
-+                                        Connection.LOGGER.warn("{} kicked for packet spamming: {}", playerName, deobfedPacketName.substring(deobfedPacketName.lastIndexOf(".") + 1));
-+                                        this.killForPacketSpam();
-+                                        return;
-+                                }
++                                    Connection.LOGGER.warn("{} kicked for packet spamming: {}", playerName, deobfedPacketName.substring(deobfedPacketName.lastIndexOf(".") + 1));
++                                    this.killForPacketSpam();
++                                    return;
 +                            }
 +                        }
 +                    }
 +                }
-+                // Paper end - packet limiter
-                 if (packetListener.shouldHandleMessage(packet)) {
-                     try {
-                         genericsFtw(packet, packetListener);
-                     } catch (RunningOnDifferentThreadException var5) {
-+                    } catch (io.papermc.paper.util.ServerStopRejectedExecutionException ignored) { // Paper - do not prematurely disconnect players on stop
-                     } catch (RejectedExecutionException var6) {
-                         this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
-                     } catch (ClassCastException var7) {
-@@ -344,10 +_,30 @@
++            }
++            // Paper end - packet limiter
+             if (packetListener.shouldHandleMessage(packet)) {
+                 try {
+                     genericsFtw(packet, packetListener);
+                 } catch (RunningOnDifferentThreadException var5) {
++                } catch (io.papermc.paper.util.ServerStopRejectedExecutionException ignored) { // Paper - do not prematurely disconnect players on stop
+                 } catch (RejectedExecutionException ignored) {
+                     this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
+                 } catch (ClassCastException exception) {
+@@ -343,10 +_,30 @@
          }
      }
  
@@ -212,7 +213,7 @@
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -355,7 +_,7 @@
+@@ -354,7 +_,7 @@
          }
  
          if (this.channel != null) {
@@ -221,7 +222,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -391,6 +_,7 @@
+@@ -390,6 +_,7 @@
      }
  
      public void disconnect(final DisconnectionDetails details) {
@@ -229,7 +230,7 @@
          if (this.channel == null) {
              this.delayedDisconnect = details;
          }
-@@ -543,6 +_,14 @@
+@@ -534,6 +_,14 @@
          }
      }
  
@@ -244,7 +245,7 @@
      public void setupCompression(final int threshold, final boolean validateDecompressed) {
          if (threshold >= 0) {
              if (this.channel.pipeline().get(HandlerNames.DECOMPRESS) instanceof CompressionDecoder compressionDecoder) {
-@@ -556,6 +_,7 @@
+@@ -547,6 +_,7 @@
              } else {
                  this.channel.pipeline().addAfter(HandlerNames.PREPENDER, HandlerNames.COMPRESS, new CompressionEncoder(threshold));
              }
@@ -252,7 +253,7 @@
          } else {
              if (this.channel.pipeline().get(HandlerNames.DECOMPRESS) instanceof CompressionDecoder) {
                  this.channel.pipeline().remove(HandlerNames.DECOMPRESS);
-@@ -564,6 +_,7 @@
+@@ -555,6 +_,7 @@
              if (this.channel.pipeline().get(HandlerNames.COMPRESS) instanceof CompressionEncoder) {
                  this.channel.pipeline().remove(HandlerNames.COMPRESS);
              }
@@ -260,7 +261,7 @@
          }
      }
  
-@@ -581,6 +_,26 @@
+@@ -572,6 +_,26 @@
                      );
                      disconnectListener.onDisconnect(details);
                  }

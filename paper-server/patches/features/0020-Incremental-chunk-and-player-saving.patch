@@ -5,10 +5,10 @@ Subject: [PATCH] Incremental chunk and player saving
 
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 248a01f06ec822737a741873166aa4e502a7ba07..c4eb56fc227afd7e9631624537dd8e67ae3a8bea 100644
+index 49be7709026cd75cfcb31715550387f0ba954a16..f9da26656b18327e3bcc1537a5f51e84b32cc43a 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -968,7 +968,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -961,7 +961,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
      public boolean saveAllChunks(final boolean silent, final boolean flush, final boolean force, final boolean close) {
          // Paper end - add close param
@@ -17,7 +17,7 @@ index 248a01f06ec822737a741873166aa4e502a7ba07..c4eb56fc227afd7e9631624537dd8e67
          boolean result = false;
  
          for (ServerLevel level : this.getAllLevels()) {
-@@ -980,13 +980,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -973,13 +973,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              result = true;
          }
  
@@ -32,7 +32,7 @@ index 248a01f06ec822737a741873166aa4e502a7ba07..c4eb56fc227afd7e9631624537dd8e67
  
          if (flush) {
              for (ServerLevel level : this.getAllLevels()) {
-@@ -1000,11 +994,25 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -993,10 +987,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return result;
      }
  
@@ -51,15 +51,14 @@ index 248a01f06ec822737a741873166aa4e502a7ba07..c4eb56fc227afd7e9631624537dd8e67
 +    // Paper end - split out global level data
 +
      public boolean saveEverything(final boolean silent, final boolean flush, final boolean force) {
-         boolean var5;
          try {
              this.isSaving = true;
 -            this.getPlayerList().saveAll();
 +            this.getPlayerList().saveAll(); // Paper - Incremental chunk and player saving; diff on change
              boolean result = this.saveAllChunks(silent, flush, force);
              this.warnOnLowDiskSpace();
-             var5 = result;
-@@ -1651,9 +1659,31 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             return result;
+@@ -1641,9 +1649,31 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
  
          this.ticksUntilAutosave--;
@@ -94,7 +93,7 @@ index 248a01f06ec822737a741873166aa4e502a7ba07..c4eb56fc227afd7e9631624537dd8e67
          ProfilerFiller profiler = Profiler.get();
          this.server.spark.executeMainThreadTasks(); // Paper - spark
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 0b9fbf0ae658f0b3e9c6106a42fb70948b6fb9be..bbeb0f673f2b23d1748e33364dc12ac16528d4c4 100644
+index 965d9f515d0410df3395d07c6cf5e6349c75c923..49f688e3536fe4fdb052bbfeeec36b5b8666b9b1 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -1451,6 +1451,15 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
@@ -114,10 +113,10 @@ index 0b9fbf0ae658f0b3e9c6106a42fb70948b6fb9be..bbeb0f673f2b23d1748e33364dc12ac1
      public void save(final @Nullable ProgressListener progressListener, final boolean flush, final boolean noSave) {
          // Paper start - add close param
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 41816ca8d4ef3d959d2b88cd4b2eedaaa541e612..82e87270d1ad89ad7aa56e028ced6b998ea0eca5 100644
+index f35f88da81abb14b393d6fce04054ee40e8d8397..ec4ad547c2d09f7313390ac6b8a91809baab5f2e 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
-@@ -205,6 +205,7 @@ import org.slf4j.Logger;
+@@ -204,6 +204,7 @@ import org.slf4j.Logger;
  
  public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer { // Paper - rewrite chunk system
      private static final Logger LOGGER = LogUtils.getLogger();
@@ -126,10 +125,10 @@ index 41816ca8d4ef3d959d2b88cd4b2eedaaa541e612..82e87270d1ad89ad7aa56e028ced6b99
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
      private static final int FLY_STAT_RECORDING_SPEED = 25;
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index 02605ebe6ef10727badadbf7fc4cec52583df965..3d62e4d275f32c8604a1bdaefb6b9b1d4ea6e21f 100644
+index eb41400b8948d3eecc6fd89e2fefbe638ccbaad1..3c38b8cadcab6575fca0b7c3cf61287c3793f00f 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
-@@ -418,6 +418,7 @@ public abstract class PlayerList {
+@@ -413,6 +413,7 @@ public abstract class PlayerList {
  
      protected void save(final ServerPlayer player) {
          if (!player.getBukkitEntity().isPersistent()) return; // CraftBukkit
@@ -137,7 +136,7 @@ index 02605ebe6ef10727badadbf7fc4cec52583df965..3d62e4d275f32c8604a1bdaefb6b9b1d
          this.playerIo.save(player);
          ServerStatsCounter stats = player.getStats(); // CraftBukkit
          if (stats != null) {
-@@ -950,10 +951,24 @@ public abstract class PlayerList {
+@@ -947,10 +948,24 @@ public abstract class PlayerList {
      }
  
      public void saveAll() {

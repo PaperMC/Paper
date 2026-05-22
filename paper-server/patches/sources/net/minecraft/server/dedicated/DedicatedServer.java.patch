@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -84,9 +_,9 @@
+@@ -83,9 +_,9 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final int CONVERSION_RETRY_DELAY_MS = 5000;
      private static final int CONVERSION_RETRIES = 2;
@@ -12,7 +12,7 @@
      private @Nullable RconThread rconThread;
      public DedicatedServerSettings settings;
      private @Nullable MinecraftServerGui gui;
-@@ -99,6 +_,7 @@
+@@ -98,6 +_,7 @@
      private long lastHeartbeat;
  
      public DedicatedServer(
@@ -20,7 +20,7 @@
          final Thread serverThread,
          final LevelStorageSource.LevelStorageAccess levelStorageSource,
          final PackRepository packRepository,
-@@ -109,6 +_,7 @@
+@@ -108,6 +_,7 @@
          final Services services
      ) {
          super(
@@ -28,7 +28,7 @@
              serverThread,
              levelStorageSource,
              packRepository,
-@@ -121,7 +_,8 @@
+@@ -120,7 +_,8 @@
              true
          );
          this.settings = settings;
@@ -38,8 +38,8 @@
          this.serverTextFilter = ServerTextFilter.createFromConfig(settings.getProperties());
          this.serverLinks = createServerLinks(settings);
          if (settings.getProperties().codeOfConduct) {
-@@ -211,6 +_,10 @@
- 
+@@ -206,6 +_,10 @@
+         Thread consoleThread = new Thread("Server console handler") {
              @Override
              public void run() {
 +                if (!org.bukkit.craftbukkit.Main.useConsole) return; // CraftBukkit
@@ -49,9 +49,9 @@
                  BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
  
                  String line;
-@@ -221,16 +_,41 @@
-                 } catch (IOException var4) {
-                     DedicatedServer.LOGGER.error("Exception handling console input", (Throwable)var4);
+@@ -216,16 +_,41 @@
+                 } catch (IOException e) {
+                     DedicatedServer.LOGGER.error("Exception handling console input", e);
                  }
 +                */
 +                // Paper end - Use TerminalConsoleAppender
@@ -92,7 +92,7 @@
          LOGGER.info("Loading properties");
          DedicatedServerProperties properties = this.settings.getProperties();
          if (this.isSingleplayer()) {
-@@ -241,8 +_,45 @@
+@@ -236,8 +_,45 @@
              this.setLocalIp(properties.serverIp);
          }
  
@@ -139,7 +139,7 @@
          InetAddress localAddress = null;
          if (!this.getLocalIp().isEmpty()) {
              localAddress = InetAddress.getByName(this.getLocalIp());
-@@ -251,46 +_,72 @@
+@@ -246,47 +_,73 @@
          if (this.getPort() < 0) {
              this.setPort(properties.serverPort);
          }
@@ -153,11 +153,11 @@
          try {
 -            this.getConnection().startTcpServerListener(localAddress, this.getPort());
 +            this.getConnection().startTcpServerListener(bindAddress); // Paper - Unix domain socket support
-         } catch (IOException var11) {
+         } catch (IOException e) {
              LOGGER.warn("**** FAILED TO BIND TO PORT!");
-             LOGGER.warn("The exception was: {}", var11.toString());
+             LOGGER.warn("The exception was: {}", e.toString());
              LOGGER.warn("Perhaps a server is already running on that port?");
-+            if (true) throw new IllegalStateException("Failed to bind to port", var11); // Paper - Propagate failed to bind to port error
++            if (true) throw new IllegalStateException("Failed to bind to port", e); // Paper - Propagate failed to bind to port error
              return false;
          }
  
@@ -200,37 +200,38 @@
  
          if (!OldUsersConverter.areOldUserlistsRemoved()) {
              return false;
-         } else {
--            this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
-+            // this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage)); // CraftBukkit - moved up
-             this.tickTimeLogger = new RemoteSampleLogger(TpsDebugDimensions.values().length, this.debugSubscribers(), RemoteDebugSampleType.TICK_TIME);
-             long levelNanoTime = Util.getNanos();
-             this.services.nameToIdCache().resolveOfflineUsers(!this.usesAuthentication());
-             LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
--            this.loadLevel();
-+            this.loadLevel(this.storageSource.getLevelId()); // CraftBukkit
-             long elapsed = Util.getNanos() - levelNanoTime;
-             String time = String.format(Locale.ROOT, "%.3fs", elapsed / 1.0E9);
--            LOGGER.info("Done ({})! For help, type \"help\"", time);
-+            LOGGER.info("Done preparing level \"{}\" ({})", this.getLevelIdName(), time); // Paper - Improve startup message, add total time
-+            this.initPostWorld(); // Paper - don't include plugins in world preparation time
-             if (properties.announcePlayerAchievements != null) {
--                this.getGameRules().set(GameRules.SHOW_ADVANCEMENT_MESSAGES, properties.announcePlayerAchievements, this);
-+                this.getAllLevels().forEach(l -> l.getGameRules().set(GameRules.SHOW_ADVANCEMENT_MESSAGES, properties.announcePlayerAchievements, this.overworld())); // Paper - per-world game rules
-             }
- 
-             if (properties.enableQuery) {
-@@ -303,7 +_,7 @@
-                 this.rconThread = RconThread.create(this);
-             }
- 
--            if (this.getMaxTickLength() > 0L) {
-+            if (false && this.getMaxTickLength() > 0L) { // Spigot - disable
-                 Thread watchdog = new Thread(new ServerWatchdog(this));
-                 watchdog.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(LOGGER));
-                 watchdog.setName("Server Watchdog");
-@@ -322,6 +_,12 @@
          }
+ 
+-        this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
++        // this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage)); // CraftBukkit - moved up
+         this.tickTimeLogger = new RemoteSampleLogger(TpsDebugDimensions.values().length, this.debugSubscribers(), RemoteDebugSampleType.TICK_TIME);
+         long levelNanoTime = Util.getNanos();
+         this.services.nameToIdCache().resolveOfflineUsers(!this.usesAuthentication());
+         LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
+-        this.loadLevel();
++        this.loadLevel(this.storageSource.getLevelId()); // CraftBukkit
+         long elapsed = Util.getNanos() - levelNanoTime;
+         String time = String.format(Locale.ROOT, "%.3fs", elapsed / 1.0E9);
+-        LOGGER.info("Done ({})! For help, type \"help\"", time);
++        LOGGER.info("Done preparing level \"{}\" ({})", this.getLevelIdName(), time); // Paper - Improve startup message, add total time
++        this.initPostWorld(); // Paper - don't include plugins in world preparation time
+         if (properties.announcePlayerAchievements != null) {
+-            this.getGameRules().set(GameRules.SHOW_ADVANCEMENT_MESSAGES, properties.announcePlayerAchievements, this);
++            this.getAllLevels().forEach(l -> l.getGameRules().set(GameRules.SHOW_ADVANCEMENT_MESSAGES, properties.announcePlayerAchievements, this.overworld())); // Paper - per-world game rules
+         }
+ 
+         if (properties.enableQuery) {
+@@ -299,7 +_,7 @@
+             this.rconThread = RconThread.create(this);
+         }
+ 
+-        if (this.getMaxTickLength() > 0L) {
++        if (false && this.getMaxTickLength() > 0L) { // Spigot - disable
+             Thread watchdog = new Thread(new ServerWatchdog(this));
+             watchdog.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(LOGGER));
+             watchdog.setName("Server Watchdog");
+@@ -317,6 +_,12 @@
+         return true;
      }
  
 +    // Paper start
@@ -242,7 +243,7 @@
      @Override
      public boolean isEnforceWhitelist() {
          return this.settings.getProperties().enforceWhitelist.get();
-@@ -339,6 +_,7 @@
+@@ -334,6 +_,7 @@
  
      @Override
      public void setUsingWhitelist(final boolean usingWhitelist) {
@@ -250,7 +251,7 @@
          this.settings.update(p -> p.whiteList.update(this.registryAccess(), usingWhitelist));
      }
  
-@@ -400,7 +_,7 @@
+@@ -395,7 +_,7 @@
  
      @Override
      protected void forceDifficulty() {
@@ -259,7 +260,7 @@
      }
  
      public int viewDistance() {
-@@ -456,11 +_,11 @@
+@@ -451,11 +_,11 @@
          }
  
          if (this.rconThread != null) {
@@ -273,8 +274,8 @@
          }
  
          if (this.jsonRpcServer != null) {
-@@ -470,6 +_,9 @@
-                 LOGGER.error("Interrupted while stopping the management server", (Throwable)var2);
+@@ -465,6 +_,9 @@
+                 LOGGER.error("Interrupted while stopping the management server", e);
              }
          }
 +
@@ -283,7 +284,7 @@
      }
  
      @Override
-@@ -479,12 +_,20 @@
+@@ -474,12 +_,20 @@
      }
  
      public void handleConsoleInput(final String msg, final CommandSourceStack source) {
@@ -307,7 +308,7 @@
              this.getCommands().performPrefixedCommand(input.source, input.msg);
          }
      }
-@@ -624,12 +_,15 @@
+@@ -625,12 +_,15 @@
  
      @Override
      public String getMotd() {
@@ -325,7 +326,7 @@
      }
  
      @Override
-@@ -655,7 +_,11 @@
+@@ -656,7 +_,11 @@
      @Override
      public boolean enforceSecureProfile() {
          DedicatedServerProperties properties = this.getProperties();
@@ -338,7 +339,7 @@
      }
  
      @Override
-@@ -740,21 +_,60 @@
+@@ -741,21 +_,60 @@
  
      @Override
      public String getPluginNames() {
@@ -404,7 +405,7 @@
      }
  
      @Override
-@@ -882,4 +_,15 @@
+@@ -883,4 +_,15 @@
      public Map<String, String> getCodeOfConducts() {
          return this.codeOfConductTexts;
      }

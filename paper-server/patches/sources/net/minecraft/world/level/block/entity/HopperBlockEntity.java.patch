@@ -55,65 +55,64 @@
          }
      }
  
-@@ -120,7 +_,7 @@
-                 }
+@@ -121,7 +_,7 @@
+             }
  
-                 if (changed) {
--                    entity.setCooldown(8);
-+                    entity.setCooldown(level.spigotConfig.hopperTransfer); // Spigot
-                     setChanged(level, pos, state);
+             if (changed) {
+-                entity.setCooldown(8);
++                entity.setCooldown(level.spigotConfig.hopperTransfer); // Spigot
+                 setChanged(level, pos, state);
+                 return true;
+             }
+@@ -155,14 +_,46 @@
+             ItemStack itemStack = self.getItem(slot);
+             if (!itemStack.isEmpty()) {
+                 int originalCount = itemStack.getCount();
+-                ItemStack result = addItem(self, container, self.removeItem(slot, 1), direction);
++                // CraftBukkit start - Call event when pushing items into other inventories
++                ItemStack original = itemStack.copy();
++                org.bukkit.craftbukkit.inventory.CraftItemStack oitemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(
++                    self.removeItem(slot, level.spigotConfig.hopperAmount)
++                ); // Spigot
++
++                org.bukkit.inventory.Inventory destinationInventory;
++                // Have to special case large chests as they work oddly
++                if (container instanceof final net.minecraft.world.CompoundContainer compoundContainer) {
++                    destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest(compoundContainer);
++                } else if (container.getOwner() != null) {
++                    destinationInventory = container.getOwner().getInventory();
++                } else {
++                    destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventory(container);
++                }
++
++                org.bukkit.event.inventory.InventoryMoveItemEvent event = new org.bukkit.event.inventory.InventoryMoveItemEvent(
++                    self.getOwner().getInventory(),
++                    oitemstack,
++                    destinationInventory,
++                    true
++                );
++                if (!event.callEvent()) {
++                    self.setItem(slot, original);
++                    self.setCooldown(level.spigotConfig.hopperTransfer); // Delay hopper checks // Spigot
++                    return false;
++                }
++                int origCount = event.getItem().getAmount(); // Spigot
++                ItemStack result = HopperBlockEntity.addItem(self, container, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()), direction);
++                // CraftBukkit end
+                 if (result.isEmpty()) {
+                     container.setChanged();
                      return true;
                  }
-@@ -153,14 +_,47 @@
-                     ItemStack itemStack = self.getItem(slot);
-                     if (!itemStack.isEmpty()) {
-                         int originalCount = itemStack.getCount();
--                        ItemStack result = addItem(self, container, self.removeItem(slot, 1), direction);
-+                        // CraftBukkit start - Call event when pushing items into other inventories
-+                        ItemStack original = itemStack.copy();
-+                        org.bukkit.craftbukkit.inventory.CraftItemStack oitemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(
-+                            self.removeItem(slot, level.spigotConfig.hopperAmount)
-+                        ); // Spigot
-+
-+                        org.bukkit.inventory.Inventory destinationInventory;
-+                        // Have to special case large chests as they work oddly
-+                        if (container instanceof final net.minecraft.world.CompoundContainer compoundContainer) {
-+                            destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest(compoundContainer);
-+                        } else if (container.getOwner() != null) {
-+                            destinationInventory = container.getOwner().getInventory();
-+                        } else {
-+                            destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventory(container);
-+                        }
-+
-+                        org.bukkit.event.inventory.InventoryMoveItemEvent event = new org.bukkit.event.inventory.InventoryMoveItemEvent(
-+                            self.getOwner().getInventory(),
-+                            oitemstack,
-+                            destinationInventory,
-+                            true
-+                        );
-+                        if (!event.callEvent()) {
-+                            self.setItem(slot, original);
-+                            self.setCooldown(level.spigotConfig.hopperTransfer); // Delay hopper checks // Spigot
-+                            return false;
-+                        }
-+                        int origCount = event.getItem().getAmount(); // Spigot
-+                        ItemStack result = HopperBlockEntity.addItem(self, container, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()), direction);
-+                        // CraftBukkit end
-+
-                         if (result.isEmpty()) {
-                             container.setChanged();
-                             return true;
-                         }
  
-                         itemStack.setCount(originalCount);
--                        if (originalCount == 1) {
-+                        // Spigot start
-+                        itemStack.shrink(origCount - result.getCount());
-+                        if (originalCount <= level.spigotConfig.hopperAmount) {
-+                            // Spigot end
-                             self.setItem(slot, itemStack);
-                         }
-                     }
+                 itemStack.setCount(originalCount);
+-                if (originalCount == 1) {
++                // Spigot start
++                itemStack.shrink(origCount - result.getCount());
++                if (originalCount <= level.spigotConfig.hopperAmount) {
++                    // Spigot end
+                     self.setItem(slot, itemStack);
+                 }
+             }
 @@ -223,7 +_,7 @@
              Direction direction = Direction.DOWN;
  

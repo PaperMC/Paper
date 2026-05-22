@@ -86,7 +86,7 @@ index 0003a548fe4a48ecfe3534f3de309a920568b773..fae764ffd6858c920cafd2fba4444793
 +    // Paper end - Use Velocity cipher
  }
 diff --git a/net/minecraft/network/CompressionDecoder.java b/net/minecraft/network/CompressionDecoder.java
-index 2f660186f00414b37fa5c01d00c048173feaef13..fe3f0b59561e7b7236aba9cca2a13cee8955a933 100644
+index 8497561d90bf6165d1e56a044b3b409c234e1ef8..ddd5daf92d03dd343e6164d55fff638509175e6d 100644
 --- a/net/minecraft/network/CompressionDecoder.java
 +++ b/net/minecraft/network/CompressionDecoder.java
 @@ -12,14 +12,22 @@ import java.util.zip.Inflater;
@@ -169,7 +169,7 @@ index 2f660186f00414b37fa5c01d00c048173feaef13..fe3f0b59561e7b7236aba9cca2a13cee
          this.validateDecompressed = validateDecompressed;
      }
 diff --git a/net/minecraft/network/CompressionEncoder.java b/net/minecraft/network/CompressionEncoder.java
-index 319325e741cc314b84844bb49ea569aaf014f319..20b5cfe1ce36d74cd6b2f95566a1bc34fc0aaa7f 100644
+index 595db570b0ade9cad7de77d2ab7b10d9e68699df..ac095f59d9f17d8239d6493d1c1e3942139b039f 100644
 --- a/net/minecraft/network/CompressionEncoder.java
 +++ b/net/minecraft/network/CompressionEncoder.java
 @@ -6,17 +6,30 @@ import io.netty.handler.codec.MessageToByteEncoder;
@@ -207,33 +207,34 @@ index 319325e741cc314b84844bb49ea569aaf014f319..20b5cfe1ce36d74cd6b2f95566a1bc34
          int uncompressedLength = uncompressed.readableBytes();
          if (uncompressedLength > 8388608) {
              throw new IllegalArgumentException("Packet too big (is " + uncompressedLength + ", should be less than 8388608)");
-@@ -25,6 +38,7 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
-                 VarInt.write(out, 0);
-                 out.writeBytes(uncompressed);
-             } else {
-+                if (this.deflater != null) { // Paper - Use Velocity cipher
-                 byte[] input = new byte[uncompressedLength];
-                 uncompressed.readBytes(input);
-                 VarInt.write(out, input.length);
-@@ -37,6 +51,17 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
-                 }
- 
-                 this.deflater.reset();
-+                    // Paper start - Use Velocity cipher
-+                    return;
-+                }
-+
-+                VarInt.write(out, uncompressedLength);
-+                final ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(ctx.alloc(), this.compressor, uncompressed);
-+                try {
-+                    this.compressor.deflate(compatibleIn, out);
-+                } finally {
-+                    compatibleIn.release();
-+                }
+@@ -26,6 +39,7 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+             VarInt.write(out, 0);
+             out.writeBytes(uncompressed);
+         } else {
++            if (this.deflater != null) { // Paper - Use Velocity cipher
+             byte[] input = new byte[uncompressedLength];
+             uncompressed.readBytes(input);
+             VarInt.write(out, input.length);
+@@ -38,6 +52,18 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
              }
+ 
+             this.deflater.reset();
++            // Paper start - Use Velocity cipher
++                return;
++            }
++
++            VarInt.write(out, uncompressedLength);
++            final ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(ctx.alloc(), this.compressor, uncompressed);
++            try {
++                this.compressor.deflate(compatibleIn, out);
++            } finally {
++                compatibleIn.release();
++            }
++            // Paper end - Use Velocity cipher
          }
      }
-@@ -48,4 +73,31 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+ 
+@@ -48,4 +74,31 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
      public void setThreshold(final int threshold) {
          this.threshold = threshold;
      }
@@ -266,10 +267,10 @@ index 319325e741cc314b84844bb49ea569aaf014f319..20b5cfe1ce36d74cd6b2f95566a1bc34
 +    // Paper end - Use Velocity cipher
  }
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index 104976b3eb04d80e5be5bd020cf16c647b1cde27..5a23f95aff982ecc58d2e2bc994f4e495285069c 100644
+index d14aea970ce98edfe3dc3692e707334e7e150804..0f06d509125e72ec11d263d0d5c2179d65f6d8dd 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -740,11 +740,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -730,11 +730,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          return connection;
      }
  
@@ -296,7 +297,7 @@ index 104976b3eb04d80e5be5bd020cf16c647b1cde27..5a23f95aff982ecc58d2e2bc994f4e49
  
      public boolean isEncrypted() {
          return this.encrypted;
-@@ -782,16 +793,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -772,16 +783,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
      public void setupCompression(final int threshold, final boolean validateDecompressed) {
          if (threshold >= 0) {
@@ -318,10 +319,10 @@ index 104976b3eb04d80e5be5bd020cf16c647b1cde27..5a23f95aff982ecc58d2e2bc994f4e49
              this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_THRESHOLD_SET); // Paper - Add Channel initialization listeners
          } else {
 diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
-index 391435cf3d279c8f5a889702b50f57626864c7bb..19a77c8269c3f1998985d533d9099c7e6cf76af4 100644
+index 6d506004583b2415ab356e34e2f8d6ac0e39cca2..474b7f06223514d95bad3d91356dfaa5435b77f5 100644
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
-@@ -77,6 +77,10 @@ public class ServerConnectionListener {
+@@ -76,6 +76,10 @@ public class ServerConnectionListener {
                  LOGGER.warn("Using HAProxy, please ensure the server port is adequately firewalled.");
              }
              // Paper end - Warn people with console access that HAProxy is in use.
@@ -333,7 +334,7 @@ index 391435cf3d279c8f5a889702b50f57626864c7bb..19a77c8269c3f1998985d533d9099c7e
                  .add(
                      new ServerBootstrap()
 diff --git a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index c1edad046cbdd1627edba58bc06aef5c058e79eb..3a0d47a716ce5c5345640ed67ac306101791892b 100644
+index 50e4f4037702875fe7755b169947abd800b06e7b..722c832ce18fd930d9fdb4f718dc13bfc962e5dd 100644
 --- a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -251,11 +251,9 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
@@ -346,6 +347,6 @@ index c1edad046cbdd1627edba58bc06aef5c058e79eb..3a0d47a716ce5c5345640ed67ac30610
              this.state = ServerLoginPacketListenerImpl.State.AUTHENTICATING;
 -            this.connection.setEncryptionKey(decryptCipher, encryptCipher);
 +            this.connection.setEncryptionKey(secretKey); // Paper - Use Velocity cipher
-         } catch (CryptException var7) {
-             throw new IllegalStateException("Protocol error", var7);
+         } catch (CryptException e) {
+             throw new IllegalStateException("Protocol error", e);
          }

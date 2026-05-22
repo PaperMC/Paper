@@ -151,17 +151,17 @@ index 0000000000000000000000000000000000000000..f47c12e9dd6cfa857ca07a764edc22de
 +    }
 +}
 diff --git a/net/minecraft/recipebook/ServerPlaceRecipe.java b/net/minecraft/recipebook/ServerPlaceRecipe.java
-index 31f8aa58b48aeb64e57480490a449b6c46913880..b7ee9fe694ea37eeb58b5dded7967e7d0f338d0d 100644
+index da0380782a846dbb2657c58668e398f36f191c6e..d5ce83d5abd4de6f014a2827780170d3341eb927 100644
 --- a/net/minecraft/recipebook/ServerPlaceRecipe.java
 +++ b/net/minecraft/recipebook/ServerPlaceRecipe.java
-@@ -41,6 +41,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
-             return RecipeBookMenu.PostPlaceAction.NOTHING;
-         } else {
-             StackedItemContents availableItems = new StackedItemContents();
-+            availableItems.initializeExtras(recipe.value(), null); // Paper - Improve exact choice recipe ingredients
-             inventory.fillStackedContents(availableItems);
-             menu.fillCraftSlotsStackedContents(availableItems);
-             return placer.tryPlaceRecipe(recipe, availableItems);
+@@ -42,6 +42,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
+         }
+ 
+         StackedItemContents availableItems = new StackedItemContents();
++        availableItems.initializeExtras(recipe.value(), null); // Paper - Improve exact choice recipe ingredients
+         inventory.fillStackedContents(availableItems);
+         menu.fillCraftSlotsStackedContents(availableItems);
+         return placer.tryPlaceRecipe(recipe, availableItems);
 @@ -100,7 +101,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
          }
  
@@ -195,7 +195,7 @@ index 31f8aa58b48aeb64e57480490a449b6c46913880..b7ee9fe694ea37eeb58b5dded7967e7d
          }
  
          return value;
-@@ -165,7 +168,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
+@@ -167,7 +170,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
          }
      }
  
@@ -205,7 +205,7 @@ index 31f8aa58b48aeb64e57480490a449b6c46913880..b7ee9fe694ea37eeb58b5dded7967e7d
          int inventorySlotId = this.inventory.findSlotMatchingCraftingIngredient(itemInInventory, itemInTargetSlot);
          if (inventorySlotId == Inventory.NOT_FOUND_INDEX) {
 diff --git a/net/minecraft/world/entity/player/Inventory.java b/net/minecraft/world/entity/player/Inventory.java
-index da8bab81e135a9b240fbeac0e9e1d2aa12c6212d..f004911c438e6f89d6e079437e3f4104d6cbacbd 100644
+index 5c083f2ec110c388be951014d8e5a6eb64ded371..cd7714dffcd7e7b6d96d18a97e65fd0914a739d1 100644
 --- a/net/minecraft/world/entity/player/Inventory.java
 +++ b/net/minecraft/world/entity/player/Inventory.java
 @@ -252,12 +252,12 @@ public class Inventory implements Container, Nameable {
@@ -225,10 +225,10 @@ index da8bab81e135a9b240fbeac0e9e1d2aa12c6212d..f004911c438e6f89d6e079437e3f4104
                  return i;
              }
 diff --git a/net/minecraft/world/entity/player/StackedContents.java b/net/minecraft/world/entity/player/StackedContents.java
-index 889b8e6c3762203deccf657b505f6f29cc893526..6710653d033a48c4b3fc267496f93a2548b5c966 100644
+index 2a8527a2712de71f4c0d6a2e5af8dd3c01b8ff0a..5982b79f6b391ac9c01c452747fc235faf78369e 100644
 --- a/net/minecraft/world/entity/player/StackedContents.java
 +++ b/net/minecraft/world/entity/player/StackedContents.java
-@@ -14,7 +14,7 @@ import java.util.Objects;
+@@ -13,7 +13,7 @@ import java.util.List;
  import org.jspecify.annotations.Nullable;
  
  public class StackedContents<T> {
@@ -237,7 +237,7 @@ index 889b8e6c3762203deccf657b505f6f29cc893526..6710653d033a48c4b3fc267496f93a25
  
      private boolean hasAtLeast(final T item, final int count) {
          return this.amounts.getInt(item) >= count;
-@@ -54,7 +54,7 @@ public class StackedContents<T> {
+@@ -53,7 +53,7 @@ public class StackedContents<T> {
      private List<T> getUniqueAvailableIngredientItems(final Iterable<? extends StackedContents.IngredientInfo<T>> ingredients) {
          List<T> result = new ArrayList<>();
  
@@ -246,7 +246,7 @@ index 889b8e6c3762203deccf657b505f6f29cc893526..6710653d033a48c4b3fc267496f93a25
              if (availableItem.getIntValue() > 0 && anyIngredientMatches(ingredients, availableItem.getKey())) {
                  result.add(availableItem.getKey());
              }
-@@ -76,13 +76,13 @@ public class StackedContents<T> {
+@@ -75,13 +75,13 @@ public class StackedContents<T> {
      @VisibleForTesting
      public int getResultUpperBound(final List<? extends StackedContents.IngredientInfo<T>> ingredients) {
          int min = Integer.MAX_VALUE;
@@ -344,7 +344,7 @@ index ffaa8e450a11a01060b6847d1b66a76323f9d8ba..1ace17d8fc7e7b8b4722a1889d49233c
      }
  
 diff --git a/net/minecraft/world/item/crafting/Ingredient.java b/net/minecraft/world/item/crafting/Ingredient.java
-index 3a8a07712a15167dabd12d4bfd258de11706ce93..1deeb3fd148c5d59250346147681b7e8f2147574 100644
+index 653fb104bb51fb738aa3ad22093c24f196f33df2..d4601c6a77f89d89ac9f042ee7b8c25461409523 100644
 --- a/net/minecraft/world/item/crafting/Ingredient.java
 +++ b/net/minecraft/world/item/crafting/Ingredient.java
 @@ -22,7 +22,7 @@ import net.minecraft.world.item.Items;
@@ -383,7 +383,7 @@ index 3a8a07712a15167dabd12d4bfd258de11706ce93..1deeb3fd148c5d59250346147681b7e8
          return ingredient;
      }
      // CraftBukkit end
-@@ -79,21 +83,22 @@ public final class Ingredient implements Predicate<ItemStack>, StackedContents.I
+@@ -81,21 +85,22 @@ public final class Ingredient implements Predicate<ItemStack>, StackedContents.I
      public boolean test(final ItemStack input) {
          // CraftBukkit start
          if (this.isExact()) {
@@ -415,7 +415,7 @@ index 3a8a07712a15167dabd12d4bfd258de11706ce93..1deeb3fd148c5d59250346147681b7e8
      }
  
      @Override
-@@ -118,6 +123,11 @@ public final class Ingredient implements Predicate<ItemStack>, StackedContents.I
+@@ -120,6 +125,11 @@ public final class Ingredient implements Predicate<ItemStack>, StackedContents.I
      }
  
      public SlotDisplay display() {

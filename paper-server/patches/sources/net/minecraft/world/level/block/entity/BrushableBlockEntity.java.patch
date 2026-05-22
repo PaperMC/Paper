@@ -1,42 +1,42 @@
 --- a/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
-@@ -67,9 +_,26 @@
-             return false;
-         } else {
-             this.coolDownEndsAtTick = gameTime + 10L;
-+            // Paper start - EntityChangeBlockEvent
-+            // The vanilla logic here is *so* backwards, we'd be moving basically *all* following calls down.
-+            // Instead, compute vanilla ourselves up here and just replace the below usages with our computed values for a free diff-on-change.
-+            final int currentCompletionStage = this.getCompletionState();
-+            final boolean enoughBrushesToBreak = ++this.brushCount >= REQUIRED_BRUSHES_TO_BREAK;
-+            final int nextCompletionStage = this.getCompletionState();
-+            final boolean differentCompletionStages = currentCompletionStage != nextCompletionStage;
-+            final BlockState nextBrokenBlockState = this.getBlockState().setValue(BlockStateProperties.DUSTED, nextCompletionStage);
-+            if (enoughBrushesToBreak || differentCompletionStages) {
-+                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(
-+                    user, this.worldPosition, enoughBrushesToBreak ? this.computeTurnsTo().defaultBlockState() : nextBrokenBlockState
-+                )) {
-+                    this.brushCount--;
-+                    return false;
-+                }
+@@ -68,9 +_,26 @@
+         }
+ 
+         this.coolDownEndsAtTick = gameTime + 10L;
++        // Paper start - EntityChangeBlockEvent
++        // The vanilla logic here is *so* backwards, we'd be moving basically *all* following calls down.
++        // Instead, compute vanilla ourselves up here and just replace the below usages with our computed values for a free diff-on-change.
++        final int currentCompletionStage = this.getCompletionState();
++        final boolean enoughBrushesToBreak = ++this.brushCount >= REQUIRED_BRUSHES_TO_BREAK;
++        final int nextCompletionStage = this.getCompletionState();
++        final boolean differentCompletionStages = currentCompletionStage != nextCompletionStage;
++        final BlockState nextBrokenBlockState = this.getBlockState().setValue(BlockStateProperties.DUSTED, nextCompletionStage);
++        if (enoughBrushesToBreak || differentCompletionStages) {
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(
++                user, this.worldPosition, enoughBrushesToBreak ? this.computeTurnsTo().defaultBlockState() : nextBrokenBlockState
++            )) {
++                this.brushCount--;
++                return false;
 +            }
-+            // Paper end - EntityChangeBlockEvent
-             this.unpackLootTable(level, user, brush);
--            int previousCompletionState = this.getCompletionState();
--            if (++this.brushCount >= 10) {
-+            int previousCompletionState = currentCompletionStage; // Paper - EntityChangeBlockEvent - use precomputed - diff on change
-+            if (enoughBrushesToBreak) { // Paper - EntityChangeBlockEvent - use precomputed - diff on change
-                 this.brushingCompleted(level, user, brush);
-                 return true;
-             } else {
-@@ -77,7 +_,7 @@
-                 int completionState = this.getCompletionState();
-                 if (previousCompletionState != completionState) {
-                     BlockState previousState = this.getBlockState();
--                    BlockState state = previousState.setValue(BlockStateProperties.DUSTED, completionState);
-+                    BlockState state = nextBrokenBlockState; // Paper - EntityChangeBlockEvent - use precomputed - diff on change
-                     level.setBlock(this.getBlockPos(), state, Block.UPDATE_ALL);
-                 }
++        }
++        // Paper end - EntityChangeBlockEvent
+         this.unpackLootTable(level, user, brush);
+-        int previousCompletionState = this.getCompletionState();
+-        if (++this.brushCount >= 10) {
++        int previousCompletionState = currentCompletionStage; // Paper - EntityChangeBlockEvent - use precomputed - diff on change
++        if (enoughBrushesToBreak) { // Paper - EntityChangeBlockEvent - use precomputed - diff on change
+             this.brushingCompleted(level, user, brush);
+             return true;
+         }
+@@ -79,7 +_,7 @@
+         int completionState = this.getCompletionState();
+         if (previousCompletionState != completionState) {
+             BlockState previousState = this.getBlockState();
+-            BlockState state = previousState.setValue(BlockStateProperties.DUSTED, completionState);
++            BlockState state = nextBrokenBlockState; // Paper - EntityChangeBlockEvent - use precomputed - diff on change
+             level.setBlock(this.getBlockPos(), state, Block.UPDATE_ALL);
+         }
  
 @@ -118,6 +_,12 @@
          this.dropContent(level, user, brush);
