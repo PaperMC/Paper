@@ -278,6 +278,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
+    public void setRotation(float yaw, final boolean relativeYaw, float pitch, final boolean relativePitch) {
+        NumberConversions.checkFinite(pitch, "pitch not finite");
+        NumberConversions.checkFinite(yaw, "yaw not finite");
+
+        this.getHandle().forceSetRotation(yaw, relativeYaw, pitch, relativePitch);
+    }
+
+    @Override
     public boolean teleport(Location location) {
         return this.teleport(location, TeleportCause.PLUGIN);
     }
