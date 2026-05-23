@@ -70,6 +70,15 @@ initial commits are the decompiled Minecraft source files. The per-file
 patches are applied on top of these files as a single, large commit, which is then followed
 by the individual feature-patch commits.
 
+### Optional paper-generator Project
+
+Paper also includes an optional `paper-generator` project used for generating and updating Minecraft source and mapping data during development.
+
+The project is disabled by default, but can be enabled by uncommenting the following line in `paper-generator.settings.gradle.kts`:
+
+```kotlin
+// include(":paper-generator")
+
 ## Modifying (per-file) Minecraft patches
 
 This is generally what you need to do when editing Minecraft files. Updating our
