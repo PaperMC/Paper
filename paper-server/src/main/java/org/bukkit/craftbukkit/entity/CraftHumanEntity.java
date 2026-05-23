@@ -512,17 +512,18 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         net.minecraft.world.item.trading.Merchant mcMerchant;
         Component name;
         int level = 1; // note: using level 0 with active 'is-regular-villager'-flag allows hiding the name suffix
-        if (merchant instanceof CraftAbstractVillager) {
-            mcMerchant = ((CraftAbstractVillager) merchant).getHandle();
-            name = ((CraftAbstractVillager) merchant).getHandle().getDisplayName();
-            if (merchant instanceof CraftVillager) {
-                level = ((CraftVillager) merchant).getHandle().getVillagerData().level();
+        if (merchant instanceof CraftAbstractVillager craftAbstractVillager) {
+            mcMerchant = craftAbstractVillager.getHandle();
+            name = craftAbstractVillager.getHandle().getDisplayName();
+            if (merchant instanceof CraftVillager craftVillager) {
+                level = craftVillager.getHandle().getVillagerData().level();
+                craftVillager.getHandle().updateSpecialPrices(this.getHandle()); // Update villager prices before to open to player
             }
-        } else if (merchant instanceof CraftMerchantCustom) {
-            mcMerchant = ((CraftMerchantCustom) merchant).getMerchant();
-            name = ((CraftMerchantCustom) merchant).getMerchant().getScoreboardDisplayName();
+        } else if (merchant instanceof CraftMerchantCustom craftMerchantCustom) {
+            mcMerchant = craftMerchantCustom.getMerchant();
+            name = craftMerchantCustom.getMerchant().getScoreboardDisplayName();
         } else {
-            throw new IllegalArgumentException("Can't open merchant " + merchant.toString());
+            throw new IllegalArgumentException("Can't open merchant " + merchant);
         }
 
         mcMerchant.setTradingPlayer(this.getHandle());

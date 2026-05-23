@@ -54,6 +54,7 @@ public final class CraftMenus {
         int level = 1;
         if (minecraftMerchant instanceof final Villager villager) {
             level = villager.getVillagerData().level();
+            villager.updateSpecialPrices(player); // Update villager prices before to open to player
         }
 
         if (minecraftMerchant.getTradingPlayer() != null) { // merchant's can only have one trader
