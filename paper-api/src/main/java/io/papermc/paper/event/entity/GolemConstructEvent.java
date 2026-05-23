@@ -5,6 +5,7 @@ import org.bukkit.entity.Golem;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
@@ -12,6 +13,9 @@ import java.util.List;
 
 /**
  * Called just before a {@link Golem} spawns due to a pattern of blocks being constructed.
+ * <br>
+ * Note: This event is fired before {@link EntitySpawnEvent}, before the golem is added to the world,
+ * the success of this event does not guarantee the golem will actually spawn.
  */
 @NullMarked
 public class GolemConstructEvent extends EntityEvent implements Cancellable {
