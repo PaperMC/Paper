@@ -51,8 +51,8 @@ public final class NamespacedKey implements Key, com.destroystokyo.paper.Namespa
     public NamespacedKey(@NotNull String namespace, @NotNull String key) {
         Preconditions.checkArgument(namespace != null, "Namespace cannot be null");
         Preconditions.checkArgument(key != null, "Key cannot be null");
-        this.namespace = namespace;
-        this.key = key;
+        this.namespace = namespace.toLowerCase(Locale.ROOT);
+        this.key = key.toLowerCase(Locale.ROOT);
 
         this.validate();
     }
