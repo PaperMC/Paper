@@ -32,7 +32,7 @@
  
          return damaged;
      }
-@@ -118,25 +_,44 @@
+@@ -118,7 +_,7 @@
          this.maxSwell = input.getShortOr("Fuse", (short)30);
          this.explosionRadius = input.getByteOr("ExplosionRadius", (byte)3);
          if (input.getBooleanOr("ignited", false)) {
@@ -41,21 +41,15 @@
          }
      }
  
-     @Override
-     public void tick() {
-         if (this.isAlive()) {
-+            boolean swellChanged = this.oldSwell != this.swell; // Paper - CreeperSwellEvent
-             this.oldSwell = this.swell;
-             if (this.isIgnited()) {
-                 this.setSwellDir(1);
+@@ -131,12 +_,23 @@
              }
  
              int swellDir = this.getSwellDir();
 -            if (swellDir > 0 && this.swell == 0) {
 -                this.playSound(SoundEvents.CREEPER_PRIMED, 1.0F, 0.5F);
 -                this.gameEvent(GameEvent.PRIME_FUSE);
-+            // Paper start - CreeperSwellEvent; fire event for primed swell changes
-+            if (swellChanged) {
++            // Paper start - CreeperSwellEvent; fire if swell will change this tick
++            if (swellDir != 0) {
 +                int finalSwellChange = Math.clamp(swellDir, -this.swell, this.maxSwell - this.swell);
 +                io.papermc.paper.event.entity.CreeperSwellEvent event = new io.papermc.paper.event.entity.CreeperSwellEvent(
 +                    (org.bukkit.entity.Creeper) this.getBukkitEntity(), swellDir, finalSwellChange, this.swell, this.maxSwell,
@@ -69,13 +63,6 @@
 +                    }
 +                    this.swell += change;
 +                }
-+            } else {
-+                // vanilla behavior
-+                if (swellDir > 0 && this.swell == 0) {
-+                    this.playSound(SoundEvents.CREEPER_PRIMED, 1.0F, 0.5F);
-+                    this.gameEvent(GameEvent.PRIME_FUSE);
-+                }
-+                this.swell += swellDir;
              }
 -
 -            this.swell += swellDir;
