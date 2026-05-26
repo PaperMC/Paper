@@ -44,6 +44,7 @@ import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.PistonMoveReaction;
@@ -614,8 +615,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public org.bukkit.SoundCategory getSoundCategory() {
-        return org.bukkit.SoundCategory.valueOf(this.getHandle().getSoundSource().name());
+    public SoundCategory getSoundCategory() {
+        return SoundCategory.valueOf(this.getHandle().getSoundSource().name());
     }
 
     @Override
