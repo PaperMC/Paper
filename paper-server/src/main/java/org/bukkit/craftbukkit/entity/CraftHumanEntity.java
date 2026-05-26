@@ -230,7 +230,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public boolean canCriticalAttack(Entity entity) {
-        Preconditions.checkState(entity != null, "entity cannot be null");
+        Preconditions.checkArgument(entity != null, "entity cannot be null");
 
         return this.getHandle().canCriticalAttack(((CraftEntity) entity).getHandle()) && !this.getHandle().level().paperConfig().entities.behavior.disablePlayerCrits;
     }
