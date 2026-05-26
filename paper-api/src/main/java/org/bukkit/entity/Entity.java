@@ -716,6 +716,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public Sound getSwimHighSpeedSplashSound();
 
     /**
+     * Get the {@link org.bukkit.SoundCategory} this entity will use when playing its sounds.
+     *
+     * @return the sound category for this entity
+     */
+    @NotNull
+    org.bukkit.SoundCategory getSoundCategory();
+
+    /**
      * Returns whether this entity is inside a vehicle.
      *
      * @return True if the entity is in a vehicle.

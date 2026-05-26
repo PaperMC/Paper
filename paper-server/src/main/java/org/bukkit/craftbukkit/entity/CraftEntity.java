@@ -614,6 +614,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
+    public org.bukkit.SoundCategory getSoundCategory() {
+        return org.bukkit.SoundCategory.valueOf(this.getHandle().getSoundSource().name());
+    }
+
+    @Override
     public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
         this.server.getEntityMetadata().setMetadata(this, metadataKey, newMetadataValue);
     }
