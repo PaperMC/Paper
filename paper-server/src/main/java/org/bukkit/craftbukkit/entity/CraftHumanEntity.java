@@ -57,6 +57,7 @@ import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.util.CraftMenus;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Item;
@@ -225,6 +226,13 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(damage >= 0, "Damage must not be negative");
 
         this.getHandle().startAutoSpinAttack(duration, damage, CraftItemStack.asNMSCopy(attackItem));
+    }
+
+    @Override
+    public boolean canCriticalAttack(Entity entity) {
+        Preconditions.checkState(entity != null, "entity cannot be null");
+
+        return this.getHandle().canCriticalAttack(((CraftEntity) entity).getHandle()) && !this.getHandle().level().paperConfig().entities.behavior.disablePlayerCrits;
     }
 
     @Override
