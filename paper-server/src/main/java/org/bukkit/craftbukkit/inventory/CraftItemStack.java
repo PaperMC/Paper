@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.util.converter.CodecConverter;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -590,8 +591,14 @@ public final class CraftItemStack extends ItemStack {
         this.setDataInternal((io.papermc.paper.datacomponent.PaperDataComponentType.NonValuedImpl<?, ?>) type, null);
     }
 
-    private <A, V> void setDataInternal(final io.papermc.paper.datacomponent.PaperDataComponentType<A, V> type, final A value) {
-        this.handle.set(type.getHandle(), type.getAdapter().toVanilla(value, type.getHolder()));
+    private <A, V> void setDataInternal(final io.papermc.paper.datacomponent.PaperDataComponentType<A, V> type, final @Nullable A value) {
+        final V v = type.getConverter().toVanilla(value);
+        if (type.getConverter() instanceof CodecConverter<V, A> codecConverter) {
+            codecConverter.validate(v, true).ifPresent(message -> {
+                throw new IllegalArgumentException("Failed to encode data component %s (%s)".formatted(type.getKey().asString(), message));
+            });
+        }
+        this.handle.set(type.getHandle(), v);
     }
 
     @Override
