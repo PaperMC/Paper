@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/storage/LevelStorageSource.java
 +++ b/net/minecraft/world/level/storage/LevelStorageSource.java
-@@ -149,12 +_,13 @@
+@@ -144,13 +_,14 @@
          final WorldDataConfiguration dataConfiguration,
          final Registry<LevelStem> datapackDimensions,
          final HolderLookup.Provider registryAccess
@@ -8,14 +8,15 @@
      ) {
          if (DataFixers.getFileFixer().requiresFileFixing(NbtUtils.getDataVersion(levelDataTag))) {
              throw new IllegalStateException("Cannot get level data without file fixing first");
-         } else {
-             Dynamic<?> dataTag = RegistryOps.injectRegistryContext(levelDataTag, registryAccess);
--            WorldGenSettings worldGenSettings = readExistingSavedData(worldAccess, registryAccess, WorldGenSettings.TYPE)
-+            WorldGenSettings worldGenSettings = readExistingSavedData(worldAccess, dimension, registryAccess, WorldGenSettings.TYPE) // Paper - pass dimension
-                 .mapOrElse(
-                     Function.identity(),
-                     error -> {
-@@ -174,13 +_,13 @@
+         }
+ 
+         Dynamic<?> dataTag = RegistryOps.injectRegistryContext(levelDataTag, registryAccess);
+-        WorldGenSettings worldGenSettings = readExistingSavedData(worldAccess, registryAccess, WorldGenSettings.TYPE)
++        WorldGenSettings worldGenSettings = readExistingSavedData(worldAccess, dimension, registryAccess, WorldGenSettings.TYPE) // Paper - pass dimension
+             .mapOrElse(
+                 Function.identity(),
+                 error -> {
+@@ -169,13 +_,13 @@
      }
  
      public static <T extends SavedData> DataResult<T> readExistingSavedData(
@@ -28,11 +29,11 @@
          CompoundTag fileContents;
          try {
 -            fileContents = NbtIo.readCompressed(dataLocation, NbtAccounter.defaultQuota());
-+            fileContents = NbtIo.readCompressed(dataLocation, NbtAccounter.create(net.minecraft.nbt.NbtAccounter.DEFAULT_NBT_QUOTA * 50L)); // Paper - raise quota to account for custom data
-         } catch (IOException var6) {
-             return DataResult.error(var6::getMessage);
++            fileContents = NbtIo.readCompressed(dataLocation, NbtAccounter.create(NbtAccounter.DEFAULT_NBT_QUOTA * 50L)); // Paper - raise quota to account for custom data
+         } catch (IOException e) {
+             return DataResult.error(e::getMessage);
          }
-@@ -396,7 +_,7 @@
+@@ -386,7 +_,7 @@
  
      public LevelStorageSource.LevelStorageAccess validateAndCreateAccess(final String levelId) throws IOException, ContentValidationException {
          Path levelPath = this.getLevelPath(levelId);

@@ -118,26 +118,26 @@
          }
      }
  
-@@ -288,12 +_,17 @@
-         } else if (!this.getItem().canBeHurtBy(source)) {
+@@ -293,12 +_,17 @@
              return false;
-         } else {
-+            // CraftBukkit start
-+            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, damage)) {
-+                return false;
-+            }
-+            // CraftBukkit end
-             this.markHurt();
-             this.health = (int)(this.health - damage);
-             this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
-             if (this.health <= 0) {
-                 this.getItem().onDestroyed(this);
--                this.discard();
-+                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
-             }
+         }
  
-             return true;
-@@ -315,6 +_,11 @@
++        // CraftBukkit start
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, damage)) {
++            return false;
++        }
++        // CraftBukkit end
+         this.markHurt();
+         this.health = (int)(this.health - damage);
+         this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
+         if (this.health <= 0) {
+             this.getItem().onDestroyed(this);
+-            this.discard();
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
+         }
+ 
+         return true;
+@@ -319,6 +_,11 @@
          if (!this.getItem().isEmpty()) {
              output.store("Item", ItemStack.CODEC, this.getItem());
          }
@@ -149,7 +149,7 @@
      }
  
      @Override
-@@ -325,8 +_,17 @@
+@@ -329,8 +_,17 @@
          this.target = input.read("Owner", UUIDUtil.CODEC).orElse(null);
          this.thrower = EntityReference.read(input, "Thrower");
          this.setItem(input.read("Item", ItemStack.CODEC).orElse(ItemStack.EMPTY));
@@ -168,7 +168,7 @@
          }
      }
  
-@@ -336,10 +_,73 @@
+@@ -340,10 +_,73 @@
              ItemStack itemStack = this.getItem();
              Item item = itemStack.getItem();
              int orgCount = itemStack.getCount();
@@ -243,7 +243,7 @@
                      itemStack.setCount(orgCount);
                  }
  
-@@ -376,6 +_,7 @@
+@@ -380,6 +_,7 @@
  
      public void setItem(final ItemStack itemStack) {
          this.getEntityData().set(DATA_ITEM, itemStack);
@@ -251,7 +251,7 @@
      }
  
      public void setTarget(final @Nullable UUID target) {
-@@ -420,7 +_,7 @@
+@@ -424,7 +_,7 @@
  
      public void makeFakeItem() {
          this.setNeverPickUp();

@@ -8,10 +8,10 @@ This ensures at least a valid version of the chunk exists
 on disk, even if outdated
 
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index d628e06a8dbf11b491b323c10a512fde22e72a12..fc712f9dbc893a6dee8ccecc54d0af07659dee62 100644
+index d39f8ae8f5736a7f4590ca41ac95792a61975baf..4d83986bccc2003b291dd93534da2d2260f6c428 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -25,6 +25,7 @@ import org.slf4j.Logger;
+@@ -24,6 +24,7 @@ import org.slf4j.Logger;
  
  public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.storage.ChunkSystemRegionFile { // Paper - rewrite chunk system
      private static final Logger LOGGER = LogUtils.getLogger();
@@ -19,7 +19,7 @@ index d628e06a8dbf11b491b323c10a512fde22e72a12..fc712f9dbc893a6dee8ccecc54d0af07
      private static final int SECTOR_BYTES = 4096;
      @VisibleForTesting
      protected static final int SECTOR_INTS = 1024;
-@@ -453,6 +454,24 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -451,6 +452,24 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
              this.pos = pos;
          }
  
@@ -45,18 +45,10 @@ index d628e06a8dbf11b491b323c10a512fde22e72a12..fc712f9dbc893a6dee8ccecc54d0af07
          public void close() throws IOException {
              ByteBuffer result = ByteBuffer.wrap(this.buf, 0, this.count);
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index aa36e241d49725eb13f00e57d020d4da24add53d..5fa64ff30b8252f139ca7f77c14352c384c8c0e5 100644
+index 3d0a09662e5ed1f7bc0c02dbe6de529791f2f66f..fedec4d680934730d38d8c5d609fe216938b668a 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -16,6 +16,7 @@ import net.minecraft.world.level.ChunkPos;
- import org.jspecify.annotations.Nullable;
- 
- public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.io.ChunkSystemRegionFileStorage { // Paper - rewrite chunk system
-+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // Paper
-     public static final String ANVIL_EXTENSION = ".mca";
-     private static final int MAX_CACHE_SIZE = 256;
-     public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap<>();
-@@ -122,11 +123,24 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -123,11 +123,24 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          // (and, the regionfile parameter is unused for writing until the write call)
          final ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.WriteData writeData = ((ca.spottedleaf.moonrise.patches.chunk_system.storage.ChunkSystemRegionFile)regionFile).moonrise$startWrite(compound, pos);
  
@@ -81,7 +73,7 @@ index aa36e241d49725eb13f00e57d020d4da24add53d..5fa64ff30b8252f139ca7f77c14352c3
  
          return writeData;
      }
-@@ -331,9 +345,18 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -325,9 +338,18 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
              if (value == null) {
                  region.clear(pos);
              } else {
@@ -96,12 +88,12 @@ index aa36e241d49725eb13f00e57d020d4da24add53d..5fa64ff30b8252f139ca7f77c14352c3
 +                } catch (final RegionFileSizeException ex) {
 +                    region.clear(pos);
 +                    final int maxSize = RegionFile.MAX_CHUNK_SIZE / (1024 * 1024);
-+                    LOGGER.error("Chunk at (" + pos.x() + "," + pos.z() + ") in regionfile '" + region.getPath().toString() + "' exceeds max size of " + maxSize + "MiB, it has been deleted from disk.");
++                    LOGGER.error("Chunk at ({},{}) in regionfile '{}' exceeds max size of {}MiB, it has been deleted from disk.", pos.x(), pos.z(), region.getPath().toString(), maxSize);
 +                    // Paper end - don't write garbage data to disk if writing serialization fails
                  }
              }
          }
-@@ -376,4 +399,13 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -370,4 +392,13 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
      public RegionStorageInfo info() {
          return this.info;
      }

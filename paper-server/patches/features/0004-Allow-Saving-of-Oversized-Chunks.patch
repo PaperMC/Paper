@@ -31,18 +31,18 @@ this fix, as the data will remain in the oversized file. Once the server returns
 to a jar with this fix, the data will be restored.
 
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 5149635679ec03d881e63effbd79fc193d7e52c8..d628e06a8dbf11b491b323c10a512fde22e72a12 100644
+index 026b1f31d5041786e90ba372a228732aee094c16..d39f8ae8f5736a7f4590ca41ac95792a61975baf 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -69,6 +69,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -68,6 +68,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
          this.info = info;
          this.path = path;
          this.version = version;
 +        this.initOversizedState(); // Paper
          if (!Files.isDirectory(externalFileDir)) {
              throw new IllegalArgumentException("Expected directory, got " + externalFileDir.toAbsolutePath());
-         } else {
-@@ -465,4 +466,75 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+         }
+@@ -463,4 +464,75 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
      private interface CommitOp {
          void run() throws IOException;
      }
@@ -54,7 +54,7 @@ index 5149635679ec03d881e63effbd79fc193d7e52c8..d628e06a8dbf11b491b323c10a512fde
 +    private synchronized void initOversizedState() throws IOException {
 +        Path metaFile = getOversizedMetaFile();
 +        if (Files.exists(metaFile)) {
-+            final byte[] read = java.nio.file.Files.readAllBytes(metaFile);
++            final byte[] read = Files.readAllBytes(metaFile);
 +            System.arraycopy(read, 0, oversized, 0, oversized.length);
 +            for (byte temp : oversized) {
 +                oversizedCount += temp;
@@ -98,7 +98,7 @@ index 5149635679ec03d881e63effbd79fc193d7e52c8..d628e06a8dbf11b491b323c10a512fde
 +    }
 +
 +    private void writeOversizedMeta() throws IOException {
-+        java.nio.file.Files.write(getOversizedMetaFile(), oversized);
++        Files.write(this.getOversizedMetaFile(), this.oversized);
 +    }
 +
 +    private Path getOversizedMetaFile() {
@@ -119,16 +119,24 @@ index 5149635679ec03d881e63effbd79fc193d7e52c8..d628e06a8dbf11b491b323c10a512fde
 +    // Paper end
  }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index e9316cc08fe4cb4af28583a8cb1ec658243bffd0..aa36e241d49725eb13f00e57d020d4da24add53d 100644
+index 36f8c19e3e90740e6d58eb8dbf573b2fdf4fed3d..3d0a09662e5ed1f7bc0c02dbe6de529791f2f66f 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -241,6 +241,43 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -16,6 +16,7 @@ import net.minecraft.world.level.ChunkPos;
+ import org.jspecify.annotations.Nullable;
+ 
+ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.io.ChunkSystemRegionFileStorage { // Paper - rewrite chunk system
++    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // Paper
+     public static final String ANVIL_EXTENSION = ".mca";
+     private static final int MAX_CACHE_SIZE = 256;
+     public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap<>();
+@@ -241,6 +242,43 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          // Paper end - rewrite chunk system
      }
  
 +    // Paper start
 +    private static void printOversizedLog(String msg, Path file, int x, int z) {
-+        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO PAPER - You may ask for help on Discord, but do not file an issue. These error messages can not be removed.");
++        LOGGER.error("{} ({} - {},{}) Go clean it up to remove this message. /minecraft:tp {} 128 {} - DO NOT REPORT THIS TO PAPER - You may ask for help on Discord, but do not file an issue. These error messages can not be removed.", msg, file.toString().replaceAll(".+[\\\\/]", ""), x, z, x << 4, z << 4);
 +    }
 +
 +    private static CompoundTag readOversizedChunk(RegionFile regionfile, ChunkPos chunkCoordinate) throws IOException {
@@ -145,9 +153,9 @@ index e9316cc08fe4cb4af28583a8cb1ec658243bffd0..aa36e241d49725eb13f00e57d020d4da
 +                mergeChunkList(chunk.getCompoundOrEmpty("Level"), oversizedLevel, "TileEntities", "TileEntities");
 +
 +                return chunk;
-+            } catch (Throwable throwable) {
-+                throwable.printStackTrace();
-+                throw throwable;
++            } catch (Throwable t) {
++                t.printStackTrace();
++                throw t;
 +            }
 +        }
 +    }
@@ -166,7 +174,7 @@ index e9316cc08fe4cb4af28583a8cb1ec658243bffd0..aa36e241d49725eb13f00e57d020d4da
      public @Nullable CompoundTag read(final ChunkPos pos) throws IOException {
          // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
          RegionFile region = this.getRegionFile(pos, true);
-@@ -248,6 +285,12 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -248,6 +286,12 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
              return null;
          }
          // CraftBukkit end
@@ -177,9 +185,9 @@ index e9316cc08fe4cb4af28583a8cb1ec658243bffd0..aa36e241d49725eb13f00e57d020d4da
 +        }
 +        // Paper end
  
-         CompoundTag var4;
          try (DataInputStream regionChunkInputStream = region.getChunkDataInputStream(pos)) {
-@@ -290,6 +333,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+             return regionChunkInputStream == null ? null : NbtIo.read(regionChunkInputStream);
+@@ -283,6 +327,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
              } else {
                  try (DataOutputStream output = region.getChunkDataOutputStream(pos)) {
                      NbtIo.write(value, output);

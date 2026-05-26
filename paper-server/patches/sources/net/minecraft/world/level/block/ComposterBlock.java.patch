@@ -48,7 +48,7 @@
          if (!level.isClientSide()) {
              Vec3 itemPos = Vec3.atLowerCornerWithOffset(pos, 0.5, 1.01, 0.5).offsetRandomXZ(level.getRandom(), 0.7F);
              ItemEntity entity = new ItemEntity(level, itemPos.x(), itemPos.y(), itemPos.z(), new ItemStack(Items.BONE_MEAL));
-@@ -315,16 +_,44 @@
+@@ -315,17 +_,45 @@
          return newState;
      }
  
@@ -83,23 +83,24 @@
 +        if (!willRaiseLevel) {
 +            // Paper end - Add CompostItemEvent and EntityCompostItemEvent
              return state;
-         } else {
-             int newLevel = fillLevel + 1;
-             BlockState newState = state.setValue(LEVEL, newLevel);
-+            // Paper start - move the EntityChangeBlockEvent here to avoid conflict later for the compost events
-+            if (sourceEntity != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(sourceEntity, pos, newState)) {
-+                return null;
-+            }
-+            // Paper end
-             level.setBlock(pos, newState, Block.UPDATE_ALL);
-             level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(sourceEntity, newState));
-             if (newLevel == 7) {
+         }
+ 
+         int newLevel = fillLevel + 1;
+         BlockState newState = state.setValue(LEVEL, newLevel);
++        // Paper start - move the EntityChangeBlockEvent here to avoid conflict later for the compost events
++        if (sourceEntity != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(sourceEntity, pos, newState)) {
++            return null;
++        }
++        // Paper end
+         level.setBlock(pos, newState, Block.UPDATE_ALL);
+         level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(sourceEntity, newState));
+         if (newLevel == 7) {
 @@ -369,13 +_,14 @@
          if (contentLevel == 8) {
              return new ComposterBlock.OutputContainer(state, level, pos, new ItemStack(Items.BONE_MEAL));
          } else {
--            return (WorldlyContainer)(contentLevel < 7 ? new ComposterBlock.InputContainer(state, level, pos) : new ComposterBlock.EmptyContainer());
-+            return (WorldlyContainer)(contentLevel < 7 ? new ComposterBlock.InputContainer(state, level, pos) : new ComposterBlock.EmptyContainer(level, pos)); // CraftBukkit - empty levelAccessor, blockPos
+-            return contentLevel < 7 ? new ComposterBlock.InputContainer(state, level, pos) : new ComposterBlock.EmptyContainer();
++            return contentLevel < 7 ? new ComposterBlock.InputContainer(state, level, pos) : new ComposterBlock.EmptyContainer(level, pos); // CraftBukkit - empty levelAccessor, blockPos
          }
      }
  

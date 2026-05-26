@@ -39,33 +39,33 @@
 +        // Paper end - EntityPathfindEvent
          if (targets.isEmpty()) {
              return null;
-         } else if (this.mob.getY() < this.level.getMinY()) {
-@@ -149,6 +_,23 @@
-         } else if (this.path != null && !this.path.isDone() && targets.contains(this.targetPos)) {
+         }
+@@ -156,6 +_,23 @@
              return this.path;
-         } else {
-+            // Paper start - EntityPathfindEvent
-+            boolean copiedSet = false;
-+            for (BlockPos possibleTarget : targets) {
-+                if (!this.mob.level().getWorldBorder().isWithinBounds(possibleTarget) || !new com.destroystokyo.paper.event.entity.EntityPathfindEvent(this.mob.getBukkitEntity(), // Paper - don't path out of world border
-+                    org.bukkit.craftbukkit.util.CraftLocation.toBukkit(possibleTarget, this.mob.level()), target == null ? null : target.getBukkitEntity()).callEvent()) {
-+                    if (!copiedSet) {
-+                        copiedSet = true;
-+                        targets = new java.util.HashSet<>(targets);
-+                    }
-+                    // note: since we copy the set this remove call is safe, since we're iterating over the old copy
-+                    targets.remove(possibleTarget);
-+                    if (targets.isEmpty()) {
-+                        return null;
-+                    }
+         }
+ 
++        // Paper start - EntityPathfindEvent
++        boolean copiedSet = false;
++        for (BlockPos possibleTarget : targets) {
++            if (!this.mob.level().getWorldBorder().isWithinBounds(possibleTarget) || !new com.destroystokyo.paper.event.entity.EntityPathfindEvent(this.mob.getBukkitEntity(), // Paper - don't path out of world border
++                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(possibleTarget, this.mob.level()), target == null ? null : target.getBukkitEntity()).callEvent()) {
++                if (!copiedSet) {
++                    copiedSet = true;
++                    targets = new java.util.HashSet<>(targets);
++                }
++                // note: since we copy the set this remove call is safe, since we're iterating over the old copy
++                targets.remove(possibleTarget);
++                if (targets.isEmpty()) {
++                    return null;
 +                }
 +            }
-+            // Paper end - EntityPathfindEvent
-             ProfilerFiller profiler = Profiler.get();
-             profiler.push("pathfind");
-             BlockPos fromPos = above ? this.mob.blockPosition().above() : this.mob.blockPosition();
-@@ -168,6 +_,11 @@
-         }
++        }
++        // Paper end - EntityPathfindEvent
+         ProfilerFiller profiler = Profiler.get();
+         profiler.push("pathfind");
+         BlockPos fromPos = above ? this.mob.blockPosition().above() : this.mob.blockPosition();
+@@ -172,6 +_,11 @@
+         return path;
      }
  
 +    // Paper start - Perf: Optimise pathfinding
@@ -76,7 +76,7 @@
      public boolean moveTo(final double x, final double y, final double z, final double speedModifier) {
          return this.moveTo(this.createPath(x, y, z, 1), speedModifier);
      }
-@@ -177,8 +_,23 @@
+@@ -181,8 +_,23 @@
      }
  
      public boolean moveTo(final Entity target, final double speedModifier) {

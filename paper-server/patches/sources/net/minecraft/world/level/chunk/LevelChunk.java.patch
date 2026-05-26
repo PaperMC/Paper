@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -88,13 +_,21 @@
+@@ -87,13 +_,21 @@
      };
      private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel = Maps.newHashMap();
      public boolean loaded;
@@ -23,7 +23,7 @@
  
      public LevelChunk(final Level level, final ChunkPos pos) {
          this(level, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, null, null, null);
-@@ -112,7 +_,7 @@
+@@ -111,7 +_,7 @@
          final @Nullable BlendingData blendingData
      ) {
          super(pos, upgradeData, level, level.palettedContainerFactory(), inhabitedTime, sections, blendingData);
@@ -32,7 +32,7 @@
          this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap<>();
  
          for (Heightmap.Types type : Heightmap.Types.values()) {
-@@ -164,6 +_,10 @@
+@@ -163,6 +_,10 @@
          this.skyLightSources = protoChunk.skyLightSources;
          this.setLightCorrect(protoChunk.isLightCorrect());
          this.markUnsaved();
@@ -43,7 +43,7 @@
      }
  
      public void setUnsavedListener(final LevelChunk.UnsavedListener unsavedListener) {
-@@ -172,6 +_,12 @@
+@@ -171,6 +_,12 @@
              unsavedListener.setUnsaved(this.chunkPos);
          }
      }
@@ -56,7 +56,7 @@
  
      @Override
      public void markUnsaved() {
-@@ -205,8 +_,28 @@
+@@ -204,8 +_,28 @@
              : super.getListenerRegistry(section);
      }
  
@@ -85,7 +85,7 @@
          int x = pos.getX();
          int y = pos.getY();
          int z = pos.getZ();
-@@ -241,28 +_,42 @@
+@@ -240,28 +_,42 @@
          }
      }
  
@@ -120,8 +120,8 @@
  
              return Fluids.EMPTY.defaultFluidState();
 +        /* // Paper - Perf: Optimise Chunk#getFluid
-         } catch (Throwable var7) {
-             CrashReport report = CrashReport.forThrowable(var7, "Getting fluid state");
+         } catch (Throwable t) {
+             CrashReport report = CrashReport.forThrowable(t, "Getting fluid state");
              CrashReportCategory category = report.addCategory("Block being got");
              category.setDetail("Location", () -> CrashReportCategory.formatLocation(this, x, y, z));
              throw new ReportedException(report);
@@ -130,16 +130,16 @@
      }
  
      @Override
-@@ -323,7 +_,7 @@
-                 if (!section.getBlockState(localX, localY, localZ).is(newBlock)) {
-                     return null;
-                 } else {
--                    if (!this.level.isClientSide() && (flags & Block.UPDATE_SKIP_ON_PLACE) == 0) {
-+                    if (!this.level.isClientSide() && (flags & Block.UPDATE_SKIP_ON_PLACE) == 0 && (!this.level.captureBlockStates || newBlock instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
-                         state.onPlace(this.level, pos, oldState, movedByPiston);
-                     }
+@@ -325,7 +_,7 @@
+             return null;
+         }
  
-@@ -369,7 +_,12 @@
+-        if (!this.level.isClientSide() && (flags & Block.UPDATE_SKIP_ON_PLACE) == 0) {
++        if (!this.level.isClientSide() && (flags & Block.UPDATE_SKIP_ON_PLACE) == 0 && (!this.level.captureBlockStates || newBlock instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
+             state.onPlace(this.level, pos, oldState, movedByPiston);
+         }
+ 
+@@ -368,7 +_,12 @@
      }
  
      public @Nullable BlockEntity getBlockEntity(final BlockPos pos, final LevelChunk.EntityCreationType creationType) {
@@ -153,7 +153,7 @@
          if (blockEntity == null) {
              CompoundTag tag = this.pendingBlockEntities.remove(pos);
              if (tag != null) {
-@@ -424,7 +_,13 @@
+@@ -423,7 +_,13 @@
          BlockPos pos = blockEntity.getBlockPos();
          BlockState blockState = this.getBlockState(pos);
          if (!blockState.hasBlockEntity()) {
@@ -168,7 +168,7 @@
          } else {
              BlockState cachedBlockState = blockEntity.getBlockState();
              if (blockState != cachedBlockState) {
-@@ -471,6 +_,11 @@
+@@ -470,6 +_,11 @@
      public void removeBlockEntity(final BlockPos pos) {
          if (this.isInLevel()) {
              BlockEntity removeThis = this.blockEntities.remove(pos);
@@ -180,7 +180,7 @@
              if (removeThis != null) {
                  if (this.level instanceof ServerLevel serverLevel) {
                      this.removeGameEventListener(removeThis, serverLevel);
-@@ -514,6 +_,65 @@
+@@ -513,6 +_,65 @@
          }
      }
  
@@ -246,7 +246,7 @@
      public boolean isEmpty() {
          return false;
      }
-@@ -703,6 +_,7 @@
+@@ -702,6 +_,7 @@
      }
  
      private <T extends BlockEntity> void updateBlockEntityTicker(final T blockEntity) {
@@ -254,39 +254,36 @@
          BlockState state = blockEntity.getBlockState();
          BlockEntityTicker<T> ticker = state.getTicker(this.level, (BlockEntityType<T>)blockEntity.getType());
          if (ticker == null) {
-@@ -752,23 +_,24 @@
+@@ -749,7 +_,11 @@
                          if (this.blockEntity.getType().isValid(blockState)) {
                              this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), blockState, this.blockEntity);
                              this.loggedInvalidBlockState = false;
 -                        } else if (!this.loggedInvalidBlockState) {
--                            this.loggedInvalidBlockState = true;
--                            LevelChunk.LOGGER
--                                .warn(
--                                    "Block entity {} @ {} state {} invalid for ticking:",
--                                    LogUtils.defer(this::getType),
--                                    LogUtils.defer(this::getPos),
--                                    blockState
--                                );
-+                        // Paper start - Remove the Block Entity if it's invalid
++                            // Paper start - Remove the Block Entity if it's invalid
 +                        } else {
 +                            LevelChunk.this.removeBlockEntity(this.getPos());
 +                            if (!this.loggedInvalidBlockState) {
-+                                this.loggedInvalidBlockState = true;
-+                                LevelChunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", LogUtils.defer(this::getType), LogUtils.defer(this::getPos), blockState);
-+                            }
 +                            // Paper end - Remove the Block Entity if it's invalid
+                             this.loggedInvalidBlockState = true;
+                             LevelChunk.LOGGER
+                                 .warn(
+@@ -758,14 +_,17 @@
+                                     LogUtils.defer(this::getPos),
+                                     blockState
+                                 );
++                            } // Paper - Remove the Block Entity if it's invalid
                          }
  
                          profiler.pop();
-                     } catch (Throwable var5) {
--                        CrashReport report = CrashReport.forThrowable(var5, "Ticking block entity");
+                     } catch (Throwable t) {
+-                        CrashReport report = CrashReport.forThrowable(t, "Ticking block entity");
 -                        CrashReportCategory category = report.addCategory("Block entity being ticked");
 -                        this.blockEntity.fillCrashReportCategory(category);
 -                        throw new ReportedException(report);
 +                        // Paper start - Prevent block entity and entity crashes
 +                        final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", io.papermc.paper.util.MCUtil.getLevelName(LevelChunk.this.getLevel()), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
-+                        net.minecraft.server.MinecraftServer.LOGGER.error(msg, var5);
-+                        net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, var5))); // Paper - ServerExceptionEvent
++                        LevelChunk.LOGGER.error(msg, t);
++                        LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, t))); // Paper - ServerExceptionEvent
 +                        LevelChunk.this.removeBlockEntity(this.getPos());
 +                        // Paper end - Prevent block entity and entity crashes
                      }

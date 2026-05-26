@@ -80,13 +80,10 @@
          for (Entity entity : this.level().getEntities(this, this.getBoundingBox(), RIDABLE_MINECARTS)) {
              if (this.distanceToSqr(entity) <= 0.2) {
                  entity.push(this);
-@@ -248,7 +_,25 @@
+@@ -256,6 +_,23 @@
              return false;
-         } else if (itemStack.isEmpty() && (this.disabledSlots & 1 << slot.getFilterBit(16)) != 0) {
-             return false;
--        } else if (player.hasInfiniteMaterials() && itemStack.isEmpty() && !playerItemStack.isEmpty()) {
-+        }
-+
+         }
+ 
 +        // CraftBukkit start
 +        org.bukkit.inventory.ItemStack armorStandItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack);
 +        org.bukkit.inventory.ItemStack playerHeldItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(playerItemStack);
@@ -103,14 +100,14 @@
 +            return true;
 +        }
 +        // CraftBukkit end
-+        if (player.hasInfiniteMaterials() && itemStack.isEmpty() && !playerItemStack.isEmpty()) {
++
+         if (player.hasInfiniteMaterials() && itemStack.isEmpty() && !playerItemStack.isEmpty()) {
              this.setItemSlot(slot, playerItemStack.copyWithCount(1));
              return true;
-         } else if (playerItemStack.isEmpty() || playerItemStack.getCount() <= 1) {
-@@ -270,15 +_,32 @@
-         } else if (!level.getGameRules().get(GameRules.MOB_GRIEFING) && source.getEntity() instanceof Mob) {
-             return false;
-         } else if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+@@ -286,21 +_,38 @@
+         }
+ 
+         if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
 -            this.kill(level);
 +            // CraftBukkit start
 +            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, damage)) {
@@ -119,10 +116,14 @@
 +            this.kill(level, source); // CraftBukkit
 +            // CraftBukkit end
              return false;
--        } else if (this.isInvulnerableTo(level, source) || this.invisible || this.isMarker()) {
-+        } else if (this.isInvulnerableTo(level, source) /*|| this.invisible*/ || this.isMarker()) { // CraftBukkit
+         }
+ 
+-        if (this.isInvulnerableTo(level, source) || this.invisible || this.isMarker()) {
++        if (this.isInvulnerableTo(level, source) /*|| this.invisible*/ || this.isMarker()) { // CraftBukkit
              return false;
-         } else if (source.is(DamageTypeTags.IS_EXPLOSION)) {
+         }
+ 
+         if (source.is(DamageTypeTags.IS_EXPLOSION)) {
 -            this.brokenByAnything(level, source);
 -            this.kill(level);
 +            // CraftBukkit start
@@ -135,7 +136,9 @@
 +            if (!event.isCancelled()) this.kill(level, source, false); // CraftBukkit
 +            // Paper end
              return false;
-         } else if (source.is(DamageTypeTags.IGNITES_ARMOR_STANDS)) {
+         }
+ 
+         if (source.is(DamageTypeTags.IGNITES_ARMOR_STANDS)) {
 +            // CraftBukkit start
 +            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, damage, true, this.invisible)) {
 +                return false;
@@ -144,7 +147,7 @@
              if (this.isOnFire()) {
                  this.causeDamage(level, source, 0.15F);
              } else {
-@@ -287,9 +_,19 @@
+@@ -309,9 +_,19 @@
  
              return false;
          } else if (source.is(DamageTypeTags.BURNS_ARMOR_STANDS) && this.getHealth() > 0.5F) {
@@ -164,16 +167,16 @@
              boolean allowIncrementalBreaking = source.is(DamageTypeTags.CAN_BREAK_ARMOR_STAND);
              boolean shouldKill = source.is(DamageTypeTags.ALWAYS_KILLS_ARMOR_STANDS);
              if (!allowIncrementalBreaking && !shouldKill) {
-@@ -299,7 +_,7 @@
-             } else if (source.isCreativePlayer()) {
-                 this.playBrokenSound();
-                 this.showBreakingParticles();
--                this.kill(level);
-+                this.kill(level, source); // CraftBukkit
-                 return true;
-             } else {
-                 long time = level.getGameTime();
-@@ -308,9 +_,9 @@
+@@ -322,7 +_,7 @@
+                 if (source.isCreativePlayer()) {
+                     this.playBrokenSound();
+                     this.showBreakingParticles();
+-                    this.kill(level);
++                    this.kill(level, source); // CraftBukkit
+                     return true;
+                 }
+ 
+@@ -332,9 +_,9 @@
                      this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
                      this.lastHit = time;
                  } else {
@@ -185,7 +188,7 @@
                  }
  
                  return true;
-@@ -362,31 +_,42 @@
+@@ -386,31 +_,42 @@
          float health = this.getHealth();
          health -= dmg;
          if (health <= 0.5F) {
@@ -239,7 +242,7 @@
      }
  
      private void playBrokenSound() {
-@@ -434,9 +_,40 @@
+@@ -458,9 +_,40 @@
          return this.isSmall();
      }
  
@@ -281,7 +284,7 @@
          this.gameEvent(GameEvent.ENTITY_DIE);
      }
  
-@@ -683,4 +_,13 @@
+@@ -707,4 +_,13 @@
                  .apply(i, ArmorStand.ArmorStandPose::new)
          );
      }

@@ -48,30 +48,30 @@
      }
  
      @Override
-@@ -92,10 +_,24 @@
-             return false;
-         } else {
-             if (!this.isRemoved()) {
--                this.remove(Entity.RemovalReason.KILLED);
-+                // CraftBukkit start - All non-living entities need this
-+                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, damage, false)) {
+@@ -95,10 +_,24 @@
+         }
+ 
+         if (!this.isRemoved()) {
+-            this.remove(Entity.RemovalReason.KILLED);
++            // CraftBukkit start - All non-living entities need this
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, damage, false)) {
++                return false;
++            }
++            // CraftBukkit end
+             if (!source.is(DamageTypeTags.IS_EXPLOSION)) {
+                 DamageSource damageSource = source.getEntity() != null ? this.damageSources().explosion(this, source.getEntity()) : null;
+-                level.explode(this, damageSource, null, this.getX(), this.getY(), this.getZ(), 6.0F, false, Level.ExplosionInteraction.BLOCK);
++                // CraftBukkit start
++                org.bukkit.event.entity.ExplosionPrimeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callExplosionPrimeEvent(this, 6.0F, false);
++                if (event.isCancelled()) {
 +                    return false;
 +                }
-+                // CraftBukkit end
-                 if (!source.is(DamageTypeTags.IS_EXPLOSION)) {
-                     DamageSource damageSource = source.getEntity() != null ? this.damageSources().explosion(this, source.getEntity()) : null;
--                    level.explode(this, damageSource, null, this.getX(), this.getY(), this.getZ(), 6.0F, false, Level.ExplosionInteraction.BLOCK);
-+                    // CraftBukkit start
-+                    org.bukkit.event.entity.ExplosionPrimeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callExplosionPrimeEvent(this, 6.0F, false);
-+                    if (event.isCancelled()) {
-+                        return false;
-+                    }
 +
-+                    this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.EXPLODE); // Paper - add Bukkit remove cause
-+                    level.explode(this, damageSource, null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.BLOCK);
-+                } else {
-+                    this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // Paper - add Bukkit remove cause
-+                    // CraftBukkit end
-                 }
++                this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.EXPLODE); // Paper - add Bukkit remove cause
++                level.explode(this, damageSource, null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.BLOCK);
++            } else {
++                this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // Paper - add Bukkit remove cause
++                // CraftBukkit end
+             }
  
-                 this.onDestroyedBy(level, source);
+             this.onDestroyedBy(level, source);

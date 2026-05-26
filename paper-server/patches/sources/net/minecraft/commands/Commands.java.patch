@@ -1,6 +1,6 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -157,6 +_,7 @@
+@@ -156,6 +_,7 @@
  import org.slf4j.Logger;
  
  public class Commands {
@@ -8,7 +8,7 @@
      public static final String COMMAND_PREFIX = "/";
      private static final ThreadLocal<@Nullable ExecutionContext<CommandSourceStack>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal<>();
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -181,6 +_,7 @@
+@@ -180,6 +_,7 @@
  
          @Override
          public boolean isRestricted(final CommandNode<CommandSourceStack> node) {
@@ -16,7 +16,7 @@
              Predicate<CommandSourceStack> requirement = node.getRequirement();
              return !requirement.test(this.noPermissionSource);
          }
-@@ -188,6 +_,11 @@
+@@ -187,6 +_,11 @@
      private final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
  
      public Commands(final Commands.CommandSelection commandSelection, final CommandBuildContext context) {
@@ -28,7 +28,7 @@
          AdvancementCommands.register(this.dispatcher);
          AttributeCommand.register(this.dispatcher, context);
          ExecuteCommand.register(this.dispatcher, context);
-@@ -299,6 +_,42 @@
+@@ -298,6 +_,42 @@
              PublishCommand.register(this.dispatcher);
          }
  
@@ -71,7 +71,7 @@
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -318,6 +_,13 @@
+@@ -317,6 +_,13 @@
      }
  
      public void performCommand(final ParseResults<CommandSourceStack> command, final String commandString) {
@@ -85,36 +85,36 @@
          CommandSourceStack sender = command.getContext().getSource();
          Profiler.get().push(() -> "/" + commandString);
          ContextChain<CommandSourceStack> commandChain = finishParsing(command, commandString, sender);
-@@ -331,10 +_,12 @@
+@@ -330,10 +_,12 @@
                      )
                  );
              }
--        } catch (Exception var12) {
+-        } catch (Exception e) {
 +            // Paper start
-+        } catch (Throwable var12) { // always gracefully handle it, no matter how bad:tm:
-+            if (throwCommandError) throw var12; // rethrow directly if requested
-             MutableComponent hover = Component.literal(var12.getMessage() == null ? var12.getClass().getName() : var12.getMessage());
++        } catch (Throwable e) { // always gracefully handle it, no matter how bad:tm:
++            if (throwCommandError) throw e; // rethrow directly if requested
+             MutableComponent hover = Component.literal(e.getMessage() == null ? e.getClass().getName() : e.getMessage());
 -            if (LOGGER.isDebugEnabled()) {
--                LOGGER.error("Command exception: /{}", commandString, var12);
-+            LOGGER.error("Command exception: /{}", commandString, var12); // Paper - always show execution exception in console log
+-                LOGGER.error("Command exception: /{}", commandString, e);
++            LOGGER.error("Command exception: /{}", commandString, e); // Paper - always show execution exception in console log
 +            if (sender.getServer().isDebugging() || LOGGER.isDebugEnabled()) { // Paper - Debugging
-                 StackTraceElement[] stackTrace = var12.getStackTrace();
+                 StackTraceElement[] stackTrace = e.getStackTrace();
  
                  for (int i = 0; i < Math.min(stackTrace.length, 3); i++) {
-@@ -365,7 +_,11 @@
+@@ -364,7 +_,11 @@
              return ContextChain.tryFlatten(command.getContext().build(commandString))
                  .orElseThrow(() -> CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().createWithContext(command.getReader()));
-         } catch (CommandSyntaxException var7) {
--            sender.sendFailure(ComponentUtils.fromMessage(var7.getRawMessage()));
+         } catch (CommandSyntaxException e) {
+-            sender.sendFailure(ComponentUtils.fromMessage(e.getRawMessage()));
 +            // Paper start - Add UnknownCommandEvent
 +            final net.kyori.adventure.text.TextComponent.Builder builder = net.kyori.adventure.text.Component.text();
 +            // sender.sendFailure(ComponentUtils.fromMessage(var7.getRawMessage()));
-+            builder.color(net.kyori.adventure.text.format.NamedTextColor.RED).append(io.papermc.paper.command.brigadier.MessageComponentSerializer.message().deserialize(var7.getRawMessage()));
++            builder.color(net.kyori.adventure.text.format.NamedTextColor.RED).append(io.papermc.paper.command.brigadier.MessageComponentSerializer.message().deserialize(e.getRawMessage()));
 +            // Paper end - Add UnknownCommandEvent
-             if (var7.getInput() != null && var7.getCursor() >= 0) {
-                 int cursor = Math.min(var7.getInput().length(), var7.getCursor());
+             if (e.getInput() != null && e.getCursor() >= 0) {
+                 int cursor = Math.min(e.getInput().length(), e.getCursor());
                  MutableComponent context = Component.empty()
-@@ -382,7 +_,17 @@
+@@ -381,7 +_,17 @@
                  }
  
                  context.append(Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
@@ -133,7 +133,7 @@
              }
  
              return null;
-@@ -410,19 +_,112 @@
+@@ -409,19 +_,112 @@
      }
  
      public void sendCommands(final ServerPlayer player) {
@@ -249,7 +249,7 @@
                  if (builder.getRedirect() != null) {
                      builder.redirect(converted.get(builder.getRedirect()));
                  }
-@@ -431,7 +_,7 @@
+@@ -430,7 +_,7 @@
                  converted.put(child, node);
                  target.addChild(node);
                  if (!child.getChildren().isEmpty()) {

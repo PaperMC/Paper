@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/config/PrepareSpawnTask.java
 +++ b/net/minecraft/server/network/config/PrepareSpawnTask.java
-@@ -37,10 +_,18 @@
+@@ -36,10 +_,18 @@
      private final LevelLoadListener loadListener;
      private PrepareSpawnTask.@Nullable State state;
  
@@ -22,7 +22,7 @@
      }
  
      @Override
-@@ -50,16 +_,58 @@
+@@ -49,16 +_,58 @@
                  .getPlayerList()
                  .loadPlayerData(this.nameAndId)
                  .map(tag -> TagValueInput.create(reporter, this.server.registryAccess(), tag));
@@ -86,7 +86,7 @@
              Vec2 spawnAngle = loadedPosition.rotation().orElse(new Vec2(respawnData.yaw(), respawnData.pitch()));
              this.state = new PrepareSpawnTask.Preparing(spawnLevel, spawnPosition, spawnAngle);
          }
-@@ -111,10 +_,11 @@
+@@ -110,10 +_,11 @@
      }
  
      private final class Preparing implements PrepareSpawnTask.State {
@@ -98,65 +98,65 @@
 +        private Vec2 spawnAngle; // Paper - remove final
          private @Nullable CompletableFuture<?> chunkLoadFuture;
 +        private @Nullable CompletableFuture<org.bukkit.Location> eventFuture; // Paper
-         private final ChunkLoadCounter chunkLoadCounter;
+         private final ChunkLoadCounter chunkLoadCounter = new ChunkLoadCounter();
  
          private Preparing(final ServerLevel spawnLevel, final CompletableFuture<Vec3> spawnPosition, final Vec2 spawnAngle) {
-@@ -136,6 +_,54 @@
-             } else {
-                 Vec3 spawnPosition = this.spawnPosition.join();
-                 if (this.chunkLoadFuture == null) {
-+                    // Paper start - PlayerSpawnLocationEvent
-+                    if (this.eventFuture == null && org.spigotmc.event.player.PlayerSpawnLocationEvent.getHandlerList().getRegisteredListeners().length != 0) {
-+                        ServerPlayer player;
-+                        if (PrepareSpawnTask.this.listener.connection.savedPlayerForLegacyEvents != null) {
-+                            player = PrepareSpawnTask.this.listener.connection.savedPlayerForLegacyEvents;
-+                        } else {
-+                            player = new ServerPlayer(
-+                                PrepareSpawnTask.this.server,
-+                                PrepareSpawnTask.this.server.overworld(),
-+                                PrepareSpawnTask.this.profile,
-+                                net.minecraft.server.level.ClientInformation.createDefault()
-+                            );
-+                            PrepareSpawnTask.this.listener.connection.savedPlayerForLegacyEvents = player;
-+                        }
-+                        org.spigotmc.event.player.PlayerSpawnLocationEvent ev = new org.spigotmc.event.player.PlayerSpawnLocationEvent(
-+                            player.getBukkitEntity(),
-+                            org.bukkit.craftbukkit.util.CraftLocation.toBukkit(spawnPosition, this.spawnLevel, this.spawnAngle.x, this.spawnAngle.y)
+@@ -133,6 +_,54 @@
+ 
+             Vec3 spawnPosition = this.spawnPosition.join();
+             if (this.chunkLoadFuture == null) {
++                // Paper start - PlayerSpawnLocationEvent
++                if (this.eventFuture == null && org.spigotmc.event.player.PlayerSpawnLocationEvent.getHandlerList().getRegisteredListeners().length != 0) {
++                    ServerPlayer player;
++                    if (PrepareSpawnTask.this.listener.connection.savedPlayerForLegacyEvents != null) {
++                        player = PrepareSpawnTask.this.listener.connection.savedPlayerForLegacyEvents;
++                    } else {
++                        player = new ServerPlayer(
++                            PrepareSpawnTask.this.server,
++                            PrepareSpawnTask.this.server.overworld(),
++                            PrepareSpawnTask.this.profile,
++                            net.minecraft.server.level.ClientInformation.createDefault()
++                        );
++                        PrepareSpawnTask.this.listener.connection.savedPlayerForLegacyEvents = player;
++                    }
++                    org.spigotmc.event.player.PlayerSpawnLocationEvent ev = new org.spigotmc.event.player.PlayerSpawnLocationEvent(
++                        player.getBukkitEntity(),
++                        org.bukkit.craftbukkit.util.CraftLocation.toBukkit(spawnPosition, this.spawnLevel, this.spawnAngle.x, this.spawnAngle.y)
++                    );
++                    ev.callEvent();
++                    spawnPosition = io.papermc.paper.util.MCUtil.toVec3(ev.getSpawnLocation());
++                    if (ev.getSpawnLocation().getWorld() != null) this.spawnLevel = ((org.bukkit.craftbukkit.CraftWorld) ev.getSpawnLocation().getWorld()).getHandle();
++                    this.spawnPosition = CompletableFuture.completedFuture(spawnPosition);
++                    this.spawnAngle = new Vec2(ev.getSpawnLocation().getYaw(), ev.getSpawnLocation().getPitch());
++                }
++
++                if (this.eventFuture == null && io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent.getHandlerList().getRegisteredListeners().length != 0) {
++                    final Vec3 spawnPositionFinal = spawnPosition;
++                    this.eventFuture = CompletableFuture.supplyAsync(() -> {
++                        io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent ev = new io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent(
++                            PrepareSpawnTask.this.listener.paperConnection,
++                            org.bukkit.craftbukkit.util.CraftLocation.toBukkit(spawnPositionFinal, this.spawnLevel, this.spawnAngle.x, this.spawnAngle.y),
++                            PrepareSpawnTask.this.newPlayer
 +                        );
 +                        ev.callEvent();
-+                        spawnPosition = io.papermc.paper.util.MCUtil.toVec3(ev.getSpawnLocation());
-+                        if (ev.getSpawnLocation().getWorld() != null) this.spawnLevel = ((org.bukkit.craftbukkit.CraftWorld) ev.getSpawnLocation().getWorld()).getHandle();
-+                        this.spawnPosition = CompletableFuture.completedFuture(spawnPosition);
-+                        this.spawnAngle = new Vec2(ev.getSpawnLocation().getYaw(), ev.getSpawnLocation().getPitch());
++                        return ev.getSpawnLocation();
++                    }, io.papermc.paper.connection.PaperConfigurationTask.CONFIGURATION_POOL);
++                }
++                if (this.eventFuture != null) {
++                    if (!this.eventFuture.isDone()) {
++                        return null;
 +                    }
-+
-+                    if (this.eventFuture == null && io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent.getHandlerList().getRegisteredListeners().length != 0) {
-+                        final Vec3 spawnPositionFinal = spawnPosition;
-+                        this.eventFuture = CompletableFuture.supplyAsync(() -> {
-+                            io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent ev = new io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent(
-+                                PrepareSpawnTask.this.listener.paperConnection,
-+                                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(spawnPositionFinal, this.spawnLevel, this.spawnAngle.x, this.spawnAngle.y),
-+                                PrepareSpawnTask.this.newPlayer
-+                            );
-+                            ev.callEvent();
-+                            return ev.getSpawnLocation();
-+                        }, io.papermc.paper.connection.PaperConfigurationTask.CONFIGURATION_POOL);
-+                    }
-+                    if (this.eventFuture != null) {
-+                        if (!this.eventFuture.isDone()) {
-+                            return null;
-+                        }
-+                        org.bukkit.Location location = this.eventFuture.join();
-+                        spawnPosition = io.papermc.paper.util.MCUtil.toVec3(location);
-+                        this.spawnLevel = ((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle();
-+                        this.spawnPosition = CompletableFuture.completedFuture(spawnPosition);
-+                        this.spawnAngle = new Vec2(location.getYaw(), location.getPitch());
-+                    }
-+                    // Paper end - PlayerSpawnLocationEvent
-                     ChunkPos spawnChunk = ChunkPos.containing(BlockPos.containing(spawnPosition));
-                     this.chunkLoadCounter
-                         .track(
-@@ -178,15 +_,48 @@
++                    org.bukkit.Location location = this.eventFuture.join();
++                    spawnPosition = io.papermc.paper.util.MCUtil.toVec3(location);
++                    this.spawnLevel = ((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle();
++                    this.spawnPosition = CompletableFuture.completedFuture(spawnPosition);
++                    this.spawnAngle = new Vec2(location.getYaw(), location.getPitch());
++                }
++                // Paper end - PlayerSpawnLocationEvent
+                 ChunkPos spawnChunk = ChunkPos.containing(BlockPos.containing(spawnPosition));
+                 this.chunkLoadCounter
+                     .track(
+@@ -172,14 +_,47 @@
          public ServerPlayer spawn(final Connection connection, final CommonListenerCookie cookie) {
              ChunkPos spawnChunk = ChunkPos.containing(BlockPos.containing(this.spawnPosition));
              this.spawnLevel.waitForEntities(spawnChunk, 3);
@@ -175,7 +175,6 @@
 +            }
 +            // Paper end - configuration api - possibly use legacy saved server player instance
  
-             ServerPlayer var7;
              try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(player.problemPath(), PrepareSpawnTask.LOGGER)) {
                  Optional<ValueInput> input = PrepareSpawnTask.this.server
                      .getPlayerList()

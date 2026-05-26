@@ -31,7 +31,7 @@
          this.level = level;
          this.mainThreadProcessor = new ServerChunkCache.MainThreadExecutor(level);
 @@ -99,7 +_,7 @@
-             LOGGER.error("Failed to create dimension data storage directory", (Throwable)var14);
+             LOGGER.error("Failed to create dimension data storage directory", e);
          }
  
 -        this.savedDataStorage = new SavedDataStorage(dataFolder, fixerUpper, level.registryAccess());
@@ -83,11 +83,11 @@
 +    // Note: Partially copied from the getChunkAt method below
 +    @Nullable
 +    public LevelChunk getChunkAtIfCachedImmediately(int x, int z) {
-+        long k = ChunkPos.pack(x, z);
++        long key = ChunkPos.pack(x, z);
 +
 +        // Note: Bypass cache since we need to check ticket level, and to make this MT-Safe
 +
-+        ChunkHolder playerChunk = this.getVisibleChunkIfPresent(k);
++        ChunkHolder playerChunk = this.getVisibleChunkIfPresent(key);
 +        if (playerChunk == null) {
 +            return null;
 +        }
@@ -104,23 +104,15 @@
      @Override
      public ThreadedLevelLightEngine getLightEngine() {
          return this.lightEngine;
-@@ -155,7 +_,7 @@
-             for (int i = 0; i < 4; i++) {
-                 if (pos == this.lastChunkPos[i] && targetStatus == this.lastChunkStatus[i]) {
-                     ChunkAccess chunkAccess = this.lastChunk[i];
--                    if (chunkAccess != null || !loadOrGenerate) {
-+                    if (chunkAccess != null) { // CraftBukkit - the chunk can become accessible in the meantime TODO for non-null chunks it might also make sense to check that the chunk's state hasn't changed in the meantime
-                         return chunkAccess;
-                     }
+@@ -156,7 +_,7 @@
+         for (int i = 0; i < 4; i++) {
+             if (pos == this.lastChunkPos[i] && targetStatus == this.lastChunkStatus[i]) {
+                 ChunkAccess chunkAccess = this.lastChunk[i];
+-                if (chunkAccess != null || !loadOrGenerate) {
++                if (chunkAccess != null) { // CraftBukkit - the chunk can become accessible in the meantime TODO for non-null chunks it might also make sense to check that the chunk's state hasn't changed in the meantime
+                     return chunkAccess;
                  }
-@@ -164,6 +_,7 @@
-             profiler.incrementCounter("getChunkCacheMiss");
-             CompletableFuture<ChunkResult<ChunkAccess>> serverFuture = this.getChunkFutureMainThread(x, z, targetStatus, loadOrGenerate);
-             this.mainThreadProcessor.managedBlock(serverFuture::isDone);
-+            // com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.level, x, z); // Paper - Add debug for sync chunk loads
-             ChunkResult<ChunkAccess> chunkResult = serverFuture.join();
-             ChunkAccess chunk = chunkResult.orElse(null);
-             if (chunk == null && loadOrGenerate) {
+             }
 @@ -236,7 +_,15 @@
          long key = pos.pack();
          int targetTicketLevel = ChunkLevel.byStatus(targetStatus);
@@ -223,7 +215,7 @@
          } else {
              spawningCategories = List.of();
          }
-@@ -556,7 +_,13 @@
+@@ -558,7 +_,13 @@
  
      @Override
      public void setSpawnSettings(final boolean spawnEnemies) {
@@ -237,17 +229,17 @@
      }
  
      public String getChunkDebugData(final ChunkPos pos) {
-@@ -624,12 +_,18 @@
+@@ -625,12 +_,18 @@
  
          @Override
          protected boolean pollTask() {
 +            try { // CraftBukkit - process pending Chunk loadCallback() and unloadCallback() after each run task
              if (ServerChunkCache.this.runDistanceManagerUpdates()) {
                  return true;
-             } else {
-                 ServerChunkCache.this.lightEngine.tryScheduleUpdate();
-                 return super.pollTask();
              }
+ 
+             ServerChunkCache.this.lightEngine.tryScheduleUpdate();
+             return super.pollTask();
 +            // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
 +            } finally {
 +                ServerChunkCache.this.chunkMap.callbackExecutor.run();
