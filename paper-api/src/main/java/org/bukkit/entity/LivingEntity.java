@@ -16,6 +16,7 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.block.Block;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
@@ -1003,13 +1004,13 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public Sound getHurtSound();
 
     /**
-     * Get the {@link Sound} this entity will make when damaged by the given {@link org.bukkit.damage.DamageSource}.
+     * Get the {@link Sound} this entity will make when damaged by the given {@link DamageSource}.
      *
      * @param damageSource the damage source to get the hurt sound of
      * @return the hurt sound, or null if the entity does not make any sound for the given damage source
      */
     @Nullable
-    public Sound getHurtSound(@NotNull org.bukkit.damage.DamageSource damageSource);
+    public Sound getHurtSound(@NotNull DamageSource damageSource);
 
     /**
      * Get the {@link Sound} this entity will make on death.
