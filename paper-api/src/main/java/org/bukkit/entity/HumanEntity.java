@@ -537,6 +537,14 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public void startRiptideAttack(int duration, float attackStrength, @Nullable ItemStack attackItem);
 
     /**
+     * Check if the player can critical attack the target {@link Entity}
+     *
+     * @param entity target entity to check if can critical attack.
+     * @return Whether they can critical attack the target entity.
+     */
+    public boolean canCriticalAttack(Entity entity);
+
+    /**
      * Gets the location of the bed the player is currently sleeping in
      *
      * @return location
