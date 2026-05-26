@@ -877,6 +877,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public Sound getHurtSound(org.bukkit.damage.DamageSource damageSource) {
+        Preconditions.checkArgument(damageSource != null, "damageSource cannot be null");
+
         SoundEvent sound = this.getHandle().getHurtSound(((CraftDamageSource) damageSource).getHandle());
         return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
     }
