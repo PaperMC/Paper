@@ -1,6 +1,6 @@
 package org.bukkit.entity;
 
-import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.UUID;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
@@ -15,7 +15,7 @@ public interface Firework extends Projectile {
      * Get a copy of the fireworks meta
      *
      * @return A copy of the current Firework meta
-     * @apiNote obsolete in favor of {@link #getItem()} with {@link ItemStack#getData(DataComponentType.Valued)} like {@link io.papermc.paper.datacomponent.DataComponentTypes#FIREWORKS}
+     * @apiNote obsolete in favor of {@link #getItem()} / {@link #setItem(ItemStack)} with the equivalent {@link DataComponentTypes#FIREWORKS} component
      */
     @ApiStatus.Obsolete
     FireworkMeta getFireworkMeta();
@@ -26,7 +26,7 @@ public interface Firework extends Projectile {
      * Adjusts detonation ticks automatically.
      *
      * @param meta The FireworkMeta to apply
-     * @apiNote obsolete in favor of {@link #setItem(ItemStack)} with {@link io.papermc.paper.datacomponent.DataComponentTypes#FIREWORKS}
+     * @apiNote obsolete in favor of {@link #getItem()} / {@link #setItem(ItemStack)} with the equivalent {@link DataComponentTypes#FIREWORKS} component
      */
     @ApiStatus.Obsolete
     void setFireworkMeta(FireworkMeta meta);
