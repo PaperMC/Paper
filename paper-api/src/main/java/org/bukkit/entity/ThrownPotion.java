@@ -1,6 +1,6 @@
 package org.bukkit.entity;
 
-import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.Collection;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
@@ -37,14 +37,14 @@ public interface ThrownPotion extends ThrowableProjectile {
      *
      * @param item New ItemStack
      */
-     void setItem(ItemStack item);
+    void setItem(ItemStack item);
 
     /**
      * Gets a copy of the PotionMeta for this thrown potion.
      * This includes what effects will be applied by this potion.
      *
      * @return potion meta
-     * @apiNote obsolete in favor of {@link #getItem()} with {@link ItemStack#getData(DataComponentType.Valued)} like {@link io.papermc.paper.datacomponent.DataComponentTypes#POTION_CONTENTS}
+     * @apiNote obsolete in favor of {@link #getItem()} / {@link #setItem(ItemStack)} with the equivalent {@link DataComponentTypes#POTION_CONTENTS} component
      */
     @ApiStatus.Obsolete
     PotionMeta getPotionMeta();
@@ -56,7 +56,7 @@ public interface ThrownPotion extends ThrowableProjectile {
      * Note that the type of {@link #getItem()} is irrelevant
      *
      * @param meta potion meta
-     * @apiNote obsolete in favor of {@link #setItem(ItemStack)} with {@link io.papermc.paper.datacomponent.DataComponentTypes#POTION_CONTENTS}
+     * @apiNote obsolete in favor of {@link #getItem()} / {@link #setItem(ItemStack)} with the equivalent {@link DataComponentTypes#POTION_CONTENTS} component
      */
     @ApiStatus.Obsolete
     void setPotionMeta(PotionMeta meta);
