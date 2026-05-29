@@ -538,6 +538,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
 
     /**
      * Check if the player can critical attack the target {@link Entity}
+     * <br>
+     * Note: When hitting an entity, Minecraft also checks that the result of {@link #getAttackCooldown()} is {@code > 0.9F}
+     * to determine if the critical attack will happen.
      *
      * @param entity target entity to check if can critical attack.
      * @return Whether they can critical attack the target entity.
