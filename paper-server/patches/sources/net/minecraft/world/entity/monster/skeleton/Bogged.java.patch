@@ -1,22 +1,18 @@
 --- a/net/minecraft/world/entity/monster/skeleton/Bogged.java
 +++ b/net/minecraft/world/entity/monster/skeleton/Bogged.java
-@@ -72,7 +_,19 @@
+@@ -72,7 +_,15 @@
          ItemStack itemStack = player.getItemInHand(hand);
          if (itemStack.is(Items.SHEARS) && this.readyForShearing()) {
              if (this.level() instanceof ServerLevel level) {
 -                this.shear(level, SoundSource.PLAYERS, itemStack);
-+                // CraftBukkit start
 +                // Paper start - custom shear drops
 +                java.util.List<ItemStack> drops = this.generateDefaultDrops(level, itemStack);
 +                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemStack, hand, drops);
-+                if (event != null) {
-+                    if (event.isCancelled()) {
-+                        return InteractionResult.PASS;
-+                    }
-+                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
-+                    // Paper end - custom shear drops
++                if (event.isCancelled()) {
++                    return InteractionResult.PASS;
 +                }
-+                // CraftBukkit end
++                drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++                // Paper end - custom shear drops
 +                this.shear(level, SoundSource.PLAYERS, itemStack, drops); // Paper - custom shear drops
                  this.gameEvent(GameEvent.SHEAR, player);
                  itemStack.hurtAndBreak(1, player, hand.asEquipmentSlot());
