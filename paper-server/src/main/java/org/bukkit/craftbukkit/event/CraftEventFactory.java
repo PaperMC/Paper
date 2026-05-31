@@ -1700,14 +1700,14 @@ public class CraftEventFactory {
         return event.callEvent();
     }
 
-    public static BlockShearEntityEvent callBlockShearEntityEvent(Entity animal, org.bukkit.block.Block dispenser, CraftItemStack is, List<ItemStack> drops) { // Paper - custom shear drops
-        BlockShearEntityEvent bse = new BlockShearEntityEvent(dispenser, animal.getBukkitEntity(), is, Lists.transform(drops, CraftItemStack::asCraftMirror)); // Paper - custom shear drops
+    public static BlockShearEntityEvent callBlockShearEntityEvent(Entity animal, org.bukkit.block.Block dispenser, CraftItemStack is, List<ItemStack> drops) {
+        BlockShearEntityEvent bse = new BlockShearEntityEvent(dispenser, animal.getBukkitEntity(), is, Lists.transform(drops, CraftItemStack::asCraftMirror));
         Bukkit.getPluginManager().callEvent(bse);
         return bse;
     }
 
-    public static PlayerShearEntityEvent handlePlayerShearEntityEvent(net.minecraft.world.entity.player.Player player, Entity sheared, ItemStack shears, InteractionHand hand, List<ItemStack> drops) { // Paper - custom shear drops
-        PlayerShearEntityEvent event = new PlayerShearEntityEvent(((ServerPlayer) player).getBukkitEntity(), sheared.getBukkitEntity(), CraftItemStack.asCraftMirror(shears), CraftEquipmentSlot.getHand(hand), Lists.transform(drops, CraftItemStack::asCraftMirror)); // Paper - custom shear drops
+    public static PlayerShearEntityEvent handlePlayerShearEntityEvent(net.minecraft.world.entity.player.Player player, Entity sheared, ItemStack shears, InteractionHand hand, List<ItemStack> drops) {
+        PlayerShearEntityEvent event = new PlayerShearEntityEvent(((ServerPlayer) player).getBukkitEntity(), sheared.getBukkitEntity(), CraftItemStack.asCraftMirror(shears), CraftEquipmentSlot.getHand(hand), Lists.transform(drops, CraftItemStack::asCraftMirror));
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
