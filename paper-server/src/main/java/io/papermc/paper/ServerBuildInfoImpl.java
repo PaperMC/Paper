@@ -46,7 +46,7 @@ public record ServerBuildInfoImpl(
             getManifestAttribute(manifest, ATTRIBUTE_BRAND_NAME)
                 .orElse(BRAND_PAPER_NAME),
             SharedConstants.getCurrentVersion().id(),
-            SharedConstants.getCurrentVersion().name(),
+            SharedConstants.getCurrentVersion().name().replace("26","1.22"),
             getManifestAttribute(manifest, ATTRIBUTE_BUILD_NUMBER)
                 .map(Integer::parseInt)
                 .map(OptionalInt::of)
