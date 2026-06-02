@@ -1,14 +1,6 @@
-From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/server/level/WorldGenRegion.java b/net/minecraft/server/level/WorldGenRegion.java
-index 40476bcca53f334e9429f29f1b02631402642454..f4a426af2e638b79b783f5181da665d4e0552949 100644
 --- a/net/minecraft/server/level/WorldGenRegion.java
 +++ b/net/minecraft/server/level/WorldGenRegion.java
-@@ -146,6 +146,28 @@ public class WorldGenRegion implements WorldGenLevel {
+@@ -153,6 +_,28 @@
          return distance < this.generatingStep.directDependencies().size();
      }
  
@@ -36,25 +28,23 @@ index 40476bcca53f334e9429f29f1b02631402642454..f4a426af2e638b79b783f5181da665d4
 +
      @Override
      public BlockState getBlockState(final BlockPos pos) {
-         return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ())).getBlockState(pos);
-@@ -221,6 +243,7 @@ public class WorldGenRegion implements WorldGenLevel {
-         return null;
+         int chunkX = SectionPos.blockToSectionCoord(pos.getX());
+@@ -268,11 +_,14 @@
+         return Math.abs(this.centerChunkX - chunkX) <= this.writeRadius && Math.abs(this.centerChunkZ - chunkZ) <= this.writeRadius;
      }
  
 +    private boolean hasSetFarWarned = false; // Paper - Buffer OOB setBlock calls
      @Override
      public boolean ensureCanWrite(final BlockPos pos) {
-         int chunkX = SectionPos.blockToSectionCoord(pos.getX());
-@@ -238,6 +261,8 @@ public class WorldGenRegion implements WorldGenLevel {
- 
-             return true;
-         } else {
+         if (!this.isWithinWriteZone(pos)) {
+             int chunkX = SectionPos.blockToSectionCoord(pos.getX());
+             int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
 +            // Paper start - Buffer OOB setBlock calls
 +            if (!hasSetFarWarned) {
              Util.logAndPauseIfInIde(
                  "Detected setBlock in a far chunk ["
                      + chunkX
-@@ -249,6 +274,12 @@ public class WorldGenRegion implements WorldGenLevel {
+@@ -284,6 +_,12 @@
                      + this.generatingStep.targetStatus()
                      + (this.currentlyGenerating == null ? "" : ", currently generating: " + this.currentlyGenerating.get())
              );
@@ -65,9 +55,9 @@ index 40476bcca53f334e9429f29f1b02631402642454..f4a426af2e638b79b783f5181da665d4
 +            }
 +            // Paper end - Buffer OOB setBlock calls
              return false;
-         }
-     }
-@@ -274,6 +305,17 @@ public class WorldGenRegion implements WorldGenLevel {
+         } else if (this.center.isUpgrading()) {
+             LevelHeightAccessor levelHeightAccessor = this.center.getHeightAccessorForGeneration();
+@@ -314,6 +_,17 @@
                      chunk.removeBlockEntity(pos);
                  }
              } else {
@@ -85,7 +75,7 @@ index 40476bcca53f334e9429f29f1b02631402642454..f4a426af2e638b79b783f5181da665d4
                  CompoundTag tag = new CompoundTag();
                  tag.putInt("x", pos.getX());
                  tag.putInt("y", pos.getY());
-@@ -301,6 +343,13 @@ public class WorldGenRegion implements WorldGenLevel {
+@@ -341,6 +_,13 @@
  
      @Override
      public boolean addFreshEntity(final Entity entity) {
