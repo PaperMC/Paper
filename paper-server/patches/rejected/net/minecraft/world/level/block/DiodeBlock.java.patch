@@ -1,0 +1,37 @@
+From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/DiodeBlock.java b/net/minecraft/world/level/block/DiodeBlock.java
+index b6437059c15edaee0a496419f3d57ea95184a4e9..306377c8dcd9cfb1dda205d803bec2beffa2f2b7 100644
+--- a/net/minecraft/world/level/block/DiodeBlock.java
++++ b/net/minecraft/world/level/block/DiodeBlock.java
+@@ -57,8 +57,18 @@ public abstract class DiodeBlock extends HorizontalDirectionalBlock {
+             boolean on = state.getValue(POWERED);
+             boolean shouldTurnOn = this.shouldTurnOn(level, pos, state);
+             if (on && !shouldTurnOn) {
++                // Paper start - Call BlockRedstoneEvent
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, false)) {
++                    return;
++                }
++                // Paper end - Call BlockRedstoneEvent
+                 level.setBlock(pos, state.setValue(POWERED, false), Block.UPDATE_CLIENTS);
+             } else if (!on) {
++                // Paper start - Call BlockRedstoneEvent
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, true)) {
++                    return;
++                }
++                // Paper end - Call BlockRedstoneEvent
+                 level.setBlock(pos, state.setValue(POWERED, true), Block.UPDATE_CLIENTS);
+                 if (!shouldTurnOn) {
+                     level.scheduleTick(pos, this, this.getDelay(state), TickPriority.VERY_HIGH);
+@@ -85,6 +95,7 @@ public abstract class DiodeBlock extends HorizontalDirectionalBlock {
+     protected void neighborChanged(
+         final BlockState state, final Level level, final BlockPos pos, final Block block, final @Nullable Orientation orientation, final boolean movedByPiston
+     ) {
++        if (!level.getBlockState(pos).is(this)) return; // Paper - Fix blockstate validation issues
+         if (state.canSurvive(level, pos)) {
+             this.checkTickOnNeighbor(level, pos, state);
+         } else {

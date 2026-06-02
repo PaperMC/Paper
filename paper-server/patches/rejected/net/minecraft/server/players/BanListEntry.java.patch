@@ -1,0 +1,42 @@
+From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/server/players/BanListEntry.java b/net/minecraft/server/players/BanListEntry.java
+index 2fb6b7f7b6556d6300a7ade4d3f5e97f16e4ec00..09df99f2272b3330448009d4729db83d88d22c0b 100644
+--- a/net/minecraft/server/players/BanListEntry.java
++++ b/net/minecraft/server/players/BanListEntry.java
+@@ -28,7 +28,7 @@ public abstract class BanListEntry<T> extends StoredUserEntry<T> {
+     }
+ 
+     protected BanListEntry(final @Nullable T user, final JsonObject object) {
+-        super(user);
++        super(BanListEntry.checkExpiry(user, object)); // CraftBukkit
+ 
+         Date created;
+         try {
+@@ -101,4 +101,22 @@ public abstract class BanListEntry<T> extends StoredUserEntry<T> {
+             return false;
+         }
+     }
++
++    // CraftBukkit start
++    private static <T> T checkExpiry(T object, JsonObject jsonobject) {
++        Date expires = null;
++
++        try {
++            expires = jsonobject.has("expires") ? BanListEntry.DATE_FORMAT.parse(jsonobject.get("expires").getAsString()) : null;
++        } catch (ParseException ex) {
++            // Guess we don't have a date
++        }
++
++        if (expires == null || expires.after(new Date())) {
++            return object;
++        } else {
++            return null;
++        }
++    }
++    // CraftBukkit end
+ }

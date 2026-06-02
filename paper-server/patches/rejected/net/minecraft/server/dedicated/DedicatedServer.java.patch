@@ -1,0 +1,431 @@
+From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index fefbbf1ee2d1f8b4c2ac7c8dcd3c79c0c7e06259..f008e09da3c2210a0d9a6ccae4d34f959d5ae5d0 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -83,9 +83,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final int CONVERSION_RETRY_DELAY_MS = 5000;
+     private static final int CONVERSION_RETRIES = 2;
+-    private final List<ConsoleInput> consoleInput = Collections.synchronizedList(Lists.newArrayList());
++    private final java.util.Queue<ConsoleInput> serverCommandQueue = new java.util.concurrent.ConcurrentLinkedQueue<>(); // Paper - Perf: use a proper queue
+     private @Nullable QueryThreadGs4 queryThreadGs4;
+-    private final RconConsoleSource rconConsoleSource;
++    // private final RconConsoleSource rconConsoleSource; // CraftBukkit - remove field
+     private @Nullable RconThread rconThread;
+     public DedicatedServerSettings settings;
+     private @Nullable MinecraftServerGui gui;
+@@ -98,6 +98,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+     private long lastHeartbeat;
+ 
+     public DedicatedServer(
++        joptsimple.OptionSet options, net.minecraft.server.WorldLoader.DataLoadContext worldLoader, // CraftBukkit - Signature changed
+         final Thread serverThread,
+         final LevelStorageSource.LevelStorageAccess levelStorageSource,
+         final PackRepository packRepository,
+@@ -108,6 +109,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         final Services services
+     ) {
+         super(
++            options, worldLoader, // CraftBukkit - Signature changed
+             serverThread,
+             levelStorageSource,
+             packRepository,
+@@ -120,7 +122,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             true
+         );
+         this.settings = settings;
+-        this.rconConsoleSource = new RconConsoleSource(this);
++        this.setMotd(settings.getProperties().motd.get()); // Paper - set field from initial properties
++        //this.rconConsoleSource = new RconConsoleSource(this); // CraftBukkit - remove field
+         this.serverTextFilter = ServerTextFilter.createFromConfig(settings.getProperties());
+         this.serverLinks = createServerLinks(settings);
+         if (settings.getProperties().codeOfConduct) {
+@@ -206,6 +209,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         Thread consoleThread = new Thread("Server console handler") {
+             @Override
+             public void run() {
++                if (!org.bukkit.craftbukkit.Main.useConsole) return; // CraftBukkit
++                // Paper start - Use TerminalConsoleAppender
++                new com.destroystokyo.paper.console.PaperConsole(DedicatedServer.this).start();
++                /*
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
+ 
+                 String line;
+@@ -216,16 +223,41 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+                 } catch (IOException e) {
+                     DedicatedServer.LOGGER.error("Exception handling console input", e);
+                 }
++                */
++                // Paper end - Use TerminalConsoleAppender
+             }
+         };
++        // CraftBukkit start - TODO: handle command-line logging arguments
++        java.util.logging.Logger global = java.util.logging.Logger.getLogger("");
++        global.setUseParentHandlers(false);
++        for (java.util.logging.Handler handler : global.getHandlers()) {
++            global.removeHandler(handler);
++        }
++        global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
++
++        final org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getRootLogger();
++
++        System.setOut(org.apache.logging.log4j.io.IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.INFO).buildPrintStream());
++        System.setErr(org.apache.logging.log4j.io.IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.WARN).buildPrintStream());
++        // CraftBukkit end
+         consoleThread.setDaemon(true);
+         consoleThread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
+-        consoleThread.start();
++        // consoleThread.start(); // Paper - Enhance console tab completions for brigadier commands; moved down
+         LOGGER.info("Starting minecraft server version {}", SharedConstants.getCurrentVersion().name());
+         if (Runtime.getRuntime().maxMemory() / 1024L / 1024L < 512L) {
+             LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
+         }
+ 
++        // Paper start - detect running as root
++        if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
++            LOGGER.warn("****************************");
++            LOGGER.warn("YOU ARE RUNNING THIS SERVER AS AN ADMINISTRATIVE OR ROOT USER. THIS IS NOT ADVISED.");
++            LOGGER.warn("YOU ARE OPENING YOURSELF UP TO POTENTIAL RISKS WHEN DOING THIS.");
++            LOGGER.warn("FOR MORE INFORMATION, SEE https://madelinemiller.dev/blog/root-minecraft-server/");
++            LOGGER.warn("****************************");
++        }
++        // Paper end - detect running as root
++
+         LOGGER.info("Loading properties");
+         DedicatedServerProperties properties = this.settings.getProperties();
+         if (this.isSingleplayer()) {
+@@ -236,8 +268,45 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             this.setLocalIp(properties.serverIp);
+         }
+ 
+-        this.worldData.setGameType(properties.gameMode.get());
++        // Spigot start
++        this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
++        org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
++        org.spigotmc.SpigotConfig.registerCommands();
++        // Spigot end
++        // Paper start - initialize global and world-defaults configuration
++        this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
++        this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
++        // Paper end - initialize global and world-defaults configuration
++        this.server.spark.enableEarlyIfRequested(); // Paper - spark
++        // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
++        if (this.convertOldUsers()) {
++            this.services().nameToIdCache().save(false); // Paper
++        }
++        this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
++        // Paper end - fix converting txt to json file
++        org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
++        consoleThread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
++        io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
++        this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
++        com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
++        com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
++
++        // this.worldData.setGameType(properties.gameMode.get()); // CraftBukkit - moved to world loading
+         LOGGER.info("Default game type: {}", properties.gameMode.get());
++        // Paper start - Unix domain socket support
++        java.net.SocketAddress bindAddress;
++        if (this.getLocalIp().startsWith("unix:")) {
++            if (!io.netty.channel.epoll.Epoll.isAvailable()) {
++                LOGGER.error("**** INVALID CONFIGURATION!");
++                LOGGER.error("You are trying to use a Unix domain socket but you're not on a supported OS.");
++                return false;
++            } else if (!io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && !org.spigotmc.SpigotConfig.bungee) {
++                LOGGER.error("**** INVALID CONFIGURATION!");
++                LOGGER.error("Unix domain sockets require IPs to be forwarded from a proxy.");
++                return false;
++            }
++            bindAddress = new io.netty.channel.unix.DomainSocketAddress(this.getLocalIp().substring("unix:".length()));
++        } else {
+         InetAddress localAddress = null;
+         if (!this.getLocalIp().isEmpty()) {
+             localAddress = InetAddress.getByName(this.getLocalIp());
+@@ -246,47 +315,73 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         if (this.getPort() < 0) {
+             this.setPort(properties.serverPort);
+         }
++        bindAddress = new java.net.InetSocketAddress(localAddress, this.getPort());
++        }
++        // Paper end - Unix domain socket support
+ 
+         this.initializeKeyPair();
+         LOGGER.info("Starting Minecraft server on {}:{}", this.getLocalIp().isEmpty() ? "*" : this.getLocalIp(), this.getPort());
+ 
+         try {
+-            this.getConnection().startTcpServerListener(localAddress, this.getPort());
++            this.getConnection().startTcpServerListener(bindAddress); // Paper - Unix domain socket support
+         } catch (IOException e) {
+             LOGGER.warn("**** FAILED TO BIND TO PORT!");
+             LOGGER.warn("The exception was: {}", e.toString());
+             LOGGER.warn("Perhaps a server is already running on that port?");
++            if (true) throw new IllegalStateException("Failed to bind to port", e); // Paper - Propagate failed to bind to port error
+             return false;
+         }
+ 
++        // CraftBukkit start
++        this.server.loadPlugins();
++        this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
++        // CraftBukkit end
++
++        // Paper start - Add Velocity IP Forwarding Support
++        boolean usingProxy = org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled;
++        String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
++        String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
++        // Paper end - Add Velocity IP Forwarding Support
+         if (!this.usesAuthentication()) {
+             LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
+             LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
+-            LOGGER.warn(
+-                "While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose."
+-            );
++            // Spigot start
++            // Paper start - Add Velocity IP Forwarding Support
++            if (usingProxy) {
++                LOGGER.warn("Whilst this makes it possible to use {}, unless access to your server is properly restricted, it also opens up the ability for hackers to connect with any username they choose.", proxyFlavor);
++                LOGGER.warn("Please see {} for further information.", proxyLink);
++                // Paper end - Add Velocity IP Forwarding Support
++            } else {
++                LOGGER.warn("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
++            }
++            // Spigot end
+             LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
+         }
+ 
++        // CraftBukkit start
++        /*
+         if (this.convertOldUsers()) {
+             this.services.nameToIdCache().save();
+         }
++        */
++        // CraftBukkit end
+ 
+         if (!OldUsersConverter.areOldUserlistsRemoved()) {
+             return false;
+         }
+ 
+-        this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
++        // this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage)); // CraftBukkit - moved up
+         this.tickTimeLogger = new RemoteSampleLogger(TpsDebugDimensions.values().length, this.debugSubscribers(), RemoteDebugSampleType.TICK_TIME);
+         long levelNanoTime = Util.getNanos();
+         this.services.nameToIdCache().resolveOfflineUsers(!this.usesAuthentication());
+         LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
+-        this.loadLevel();
++        this.loadLevel(this.storageSource.getLevelId()); // CraftBukkit
+         long elapsed = Util.getNanos() - levelNanoTime;
+         String time = String.format(Locale.ROOT, "%.3fs", elapsed / 1.0E9);
+-        LOGGER.info("Done ({})! For help, type \"help\"", time);
++        LOGGER.info("Done preparing level \"{}\" ({})", this.getLevelIdName(), time); // Paper - Improve startup message, add total time
++        this.initPostWorld(); // Paper - don't include plugins in world preparation time
+         if (properties.announcePlayerAchievements != null) {
+-            this.getGameRules().set(GameRules.SHOW_ADVANCEMENT_MESSAGES, properties.announcePlayerAchievements, this);
++            this.getAllLevels().forEach(l -> l.getGameRules().set(GameRules.SHOW_ADVANCEMENT_MESSAGES, properties.announcePlayerAchievements, this.overworld())); // Paper - per-world game rules
+         }
+ 
+         if (properties.enableQuery) {
+@@ -299,7 +394,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             this.rconThread = RconThread.create(this);
+         }
+ 
+-        if (this.getMaxTickLength() > 0L) {
++        if (false && this.getMaxTickLength() > 0L) { // Spigot - disable
+             Thread watchdog = new Thread(new ServerWatchdog(this));
+             watchdog.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(LOGGER));
+             watchdog.setName("Server Watchdog");
+@@ -317,6 +412,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         return true;
+     }
+ 
++    // Paper start
++    public java.io.File getPluginsFolder() {
++        return (java.io.File) this.options.valueOf("plugins");
++    }
++    // Paper end
++
+     @Override
+     public boolean isEnforceWhitelist() {
+         return this.settings.getProperties().enforceWhitelist.get();
+@@ -334,6 +435,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+     @Override
+     public void setUsingWhitelist(final boolean usingWhitelist) {
++        new com.destroystokyo.paper.event.server.WhitelistToggleEvent(usingWhitelist).callEvent(); // Paper - WhitelistToggleEvent
+         this.settings.update(p -> p.whiteList.update(this.registryAccess(), usingWhitelist));
+     }
+ 
+@@ -395,7 +497,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+     @Override
+     protected void forceDifficulty() {
+-        this.setDifficulty(this.getProperties().difficulty.get(), true);
++        // this.setDifficulty(this.getProperties().difficulty.get(), true); // Paper - per level difficulty; Don't overwrite level.dat's difficulty, keep current
+     }
+ 
+     public int viewDistance() {
+@@ -451,11 +553,11 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
+ 
+         if (this.rconThread != null) {
+-            this.rconThread.stop();
++            this.rconThread.stopNonBlocking(); // Paper - don't wait for remote connections
+         }
+ 
+         if (this.queryThreadGs4 != null) {
+-            this.queryThreadGs4.stop();
++            // this.remoteStatusListener.stop(); // Paper - don't wait for remote connections
+         }
+ 
+         if (this.jsonRpcServer != null) {
+@@ -465,6 +567,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+                 LOGGER.error("Interrupted while stopping the management server", e);
+             }
+         }
++
++        this.hasFullyShutdown = true; // Paper - Improved watchdog support
++        System.exit(this.abnormalExit ? 70 : 0); // CraftBukkit // Paper - Improved watchdog support
+     }
+ 
+     @Override
+@@ -474,12 +579,20 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+     }
+ 
+     public void handleConsoleInput(final String msg, final CommandSourceStack source) {
+-        this.consoleInput.add(new ConsoleInput(msg, source));
++        this.serverCommandQueue.add(new ConsoleInput(msg, source)); // Paper - Perf: use proper queue
+     }
+ 
+     public void handleConsoleInputs() {
+-        while (!this.consoleInput.isEmpty()) {
+-            ConsoleInput input = this.consoleInput.remove(0);
++        // Paper start - Perf: use proper queue
++        ConsoleInput input;
++        while ((input = this.serverCommandQueue.poll()) != null) {
++            // Paper end - Perf: use proper queue
++            // CraftBukkit start - ServerCommand for preprocessing
++            org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(this.console, input.msg);
++            this.server.getPluginManager().callEvent(event);
++            if (event.isCancelled()) continue;
++            input = new ConsoleInput(event.getCommand(), input.source);
++            // CraftBukkit end
+             this.getCommands().performPrefixedCommand(input.source, input.msg);
+         }
+     }
+@@ -625,12 +738,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+     @Override
+     public String getMotd() {
+-        return this.settings.getProperties().motd.get();
++        return super.getMotd(); // Paper
+     }
+ 
+     @Override
+     public void setMotd(final String motd) {
+-        this.settings.update(p -> p.motd.update(this.registryAccess(), motd));
++        // Paper start
++        super.setMotd(motd);
++        this.settings.update(p -> p.motd.update(this.registryAccess(), this.getMotd()));
++        // Paper end
+     }
+ 
+     @Override
+@@ -656,7 +772,11 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+     @Override
+     public boolean enforceSecureProfile() {
+         DedicatedServerProperties properties = this.getProperties();
+-        return properties.enforceSecureProfile && properties.onlineMode && this.services.canValidateProfileKeys();
++        // Paper start - Add setting for proxy online mode status
++        return properties.enforceSecureProfile
++            && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()
++            && this.services.canValidateProfileKeys();
++        // Paper end - Add setting for proxy online mode status
+     }
+ 
+     @Override
+@@ -741,21 +861,60 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+     @Override
+     public String getPluginNames() {
+-        return "";
++        // CraftBukkit start - Whole method
++        StringBuilder result = new StringBuilder();
++        org.bukkit.plugin.Plugin[] plugins = this.server.getPluginManager().getPlugins();
++
++        result.append(this.server.getName());
++        result.append(" on Bukkit ");
++        result.append(this.server.getBukkitVersion());
++
++        if (plugins.length > 0 && this.server.getQueryPlugins()) {
++            result.append(": ");
++
++            for (int i = 0; i < plugins.length; i++) {
++                if (i > 0) {
++                    result.append("; ");
++                }
++
++                result.append(plugins[i].getDescription().getName());
++                result.append(" ");
++                result.append(plugins[i].getDescription().getVersion().replaceAll(";", ","));
++            }
++        }
++
++        return result.toString();
++        // CraftBukkit end
+     }
+ 
+     @Override
+     public String runCommand(final String command) {
+-        this.rconConsoleSource.prepareForCommand();
+-        this.executeBlocking(() -> this.getCommands().performPrefixedCommand(this.rconConsoleSource.createCommandSourceStack(), command));
+-        return this.rconConsoleSource.getCommandResponse();
++        // CraftBukkit start - fire RemoteServerCommandEvent
++        throw new UnsupportedOperationException("Not supported - remote source required.");
++    }
++
++    public String runCommand(final RconConsoleSource rconConsoleSource, final String command) {
++        if (command.isBlank()) return ""; // Paper - Do not process empty rcon commands
++
++        rconConsoleSource.prepareForCommand();
++        this.executeBlocking(() -> {
++            CommandSourceStack wrapper = rconConsoleSource.createCommandSourceStack();
++            org.bukkit.event.server.RemoteServerCommandEvent event = new org.bukkit.event.server.RemoteServerCommandEvent(rconConsoleSource.getBukkitSender(wrapper), command);
++            this.server.getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return;
++            }
++            this.getCommands().performPrefixedCommand(wrapper, event.getCommand());
++        });
++        return rconConsoleSource.getCommandResponse();
++        // CraftBukkit end
+     }
+ 
+     @Override
+     protected void stopServer() {
+         this.notificationManager().serverShuttingDown();
+         super.stopServer();
+-        Util.shutdownExecutors();
++        //Util.shutdownExecutors(); // Paper - Improved watchdog support; moved into super
+     }
+ 
+     @Override
+@@ -883,4 +1042,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+     public Map<String, String> getCodeOfConducts() {
+         return this.codeOfConductTexts;
+     }
++
++    // CraftBukkit start
++    public boolean isDebugging() {
++        return this.getProperties().debug;
++    }
++
++    @Override
++    public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
++        return this.console;
++    }
++    // CraftBukkit end
+ }

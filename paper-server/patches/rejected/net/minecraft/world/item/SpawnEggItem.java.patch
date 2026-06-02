@@ -1,0 +1,36 @@
+From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/SpawnEggItem.java b/net/minecraft/world/item/SpawnEggItem.java
+index b939f7683b9987c898eec3641c3ceb2627533cb3..276d078a101cdf91925c533a7e85d1d8505c2447 100644
+--- a/net/minecraft/world/item/SpawnEggItem.java
++++ b/net/minecraft/world/item/SpawnEggItem.java
+@@ -63,6 +63,7 @@ public class SpawnEggItem extends Item {
+ 
+                     return InteractionResult.FAIL;
+                 } else {
++                    if (level.paperConfig().entities.spawning.disableMobSpawnerSpawnEggTransformation) return InteractionResult.FAIL; // Paper - Allow disabling mob spawner spawn egg transformation
+                     spawnerHolder.setEntityId(type, level.getRandom());
+                     level.sendBlockUpdated(pos, blockState, blockState, Block.UPDATE_ALL);
+                     level.gameEvent(context.getPlayer(), GameEvent.BLOCK_CHANGE, pos);
+@@ -95,7 +96,7 @@ public class SpawnEggItem extends Item {
+             return InteractionResult.FAIL;
+         }
+ 
+-        if (!type.isAllowedInPeaceful() && level.getDifficulty() == Difficulty.PEACEFUL) {
++        if (!type.isAllowedInPeaceful(itemStack.get(DataComponents.ENTITY_DATA).getUnsafe()) && level.getDifficulty() == Difficulty.PEACEFUL) { // Paper - check peaceful override
+             return InteractionResult.FAIL;
+         }
+ 
+@@ -174,7 +175,7 @@ public class SpawnEggItem extends Item {
+ 
+         offspring.snapTo(pos.x(), pos.y(), pos.z(), 0.0F, 0.0F);
+         offspring.applyComponentsFromItemStack(spawnEggStack);
+-        level.addFreshEntityWithPassengers(offspring);
++        level.addFreshEntityWithPassengers(offspring, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
+         spawnEggStack.consume(1, player);
+         return Optional.of(offspring);
+     }

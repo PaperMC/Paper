@@ -1,0 +1,93 @@
+From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/BedBlock.java b/net/minecraft/world/level/block/BedBlock.java
+index 945113721d3d0af014eb20d04971994f8c70f2e2..3ab00a55523bb4ab79c346df5c83993cecb3154c 100644
+--- a/net/minecraft/world/level/block/BedBlock.java
++++ b/net/minecraft/world/level/block/BedBlock.java
+@@ -92,7 +92,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+         }
+ 
+         BedRule bedRule = level.environmentAttributes().getValue(EnvironmentAttributes.BED_RULE, pos);
+-        if (bedRule.explodes()) {
++        if (false && bedRule.explodes()) { // CraftBukkit - moved world and biome check into Player
+             bedRule.errorMessage().ifPresent(player::sendOverlayMessage);
+             level.removeBlock(pos, false);
+             BlockPos blockPos = pos.relative(state.getValue(FACING).getOpposite());
+@@ -104,21 +104,60 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+             level.explode(null, level.damageSources().badRespawnPointExplosion(boomPos), null, boomPos, 5.0F, true, Level.ExplosionInteraction.BLOCK);
+             return InteractionResult.SUCCESS_SERVER;
+         } else if (state.getValue(OCCUPIED)) {
++            if (bedRule.explodes()) return this.explodeBed(state, level, pos); // Paper - check explode first
+             if (!this.kickVillagerOutOfBed(level, pos)) {
+                 player.sendOverlayMessage(Component.translatable("block.minecraft.bed.occupied"));
+             }
+ 
+             return InteractionResult.SUCCESS_SERVER;
+         } else {
++            // CraftBukkit start
++            final BlockState finalState = state;
++            final BlockPos finalPos = pos;
++            // CraftBukkit end
+             player.startSleepInBed(pos).ifLeft(problem -> {
+-                if (problem.message() != null) {
++                // Paper start - PlayerBedFailEnterEvent
++                if (false && problem.message() != null) { // Moved down
+                     player.sendOverlayMessage(problem.message());
+                 }
++                if (problem != null) {
++                    io.papermc.paper.event.player.PlayerBedFailEnterEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBedFailEnterEvent(player, finalPos, problem);
++                    if (event.isCancelled()) {
++                        return;
++                    }
++                    // Paper end - PlayerBedFailEnterEvent
++                    // CraftBukkit start - handling bed explosion from below here
++                    if (event.getWillExplode()) { // Paper - PlayerBedFailEnterEvent
++                        this.explodeBed(finalState, level, finalPos);
++                    }
++                    // CraftBukkit end
++                    // Paper start - PlayerBedFailEnterEvent
++                    final net.kyori.adventure.text.Component message = event.getMessage();
++                    if (message != null) {
++                        player.sendOverlayMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message));
++                    }
++                }
++                // Paper end - PlayerBedFailEnterEvent
+             });
+             return InteractionResult.SUCCESS_SERVER;
+         }
+     }
+ 
++    // CraftBukkit start - Copied from the above method
++    private InteractionResult explodeBed(BlockState state, Level level, BlockPos pos) {
++        org.bukkit.block.BlockState blockState = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos).getState(); // CraftBukkit - capture BlockState before remove block
++        level.removeBlock(pos, false);
++        BlockPos blockPos = pos.relative(state.getValue(FACING).getOpposite());
++        if (level.getBlockState(blockPos).is(this)) {
++            level.removeBlock(blockPos, false);
++        }
++
++        Vec3 boomPos = pos.getCenter();
++        level.explode(null, level.damageSources().badRespawnPointExplosion(boomPos).causingBlockSnapshot(blockState), null, boomPos, 5.0F, true, Level.ExplosionInteraction.BLOCK); // CraftBukkit - add state
++        return InteractionResult.SUCCESS_SERVER;
++    }
++    // CraftBukkit end
++
+     private boolean kickVillagerOutOfBed(final Level level, final BlockPos pos) {
+         List<Villager> villagers = level.getEntitiesOfClass(Villager.class, new AABB(pos), LivingEntity::isSleeping);
+         if (villagers.isEmpty()) {
+@@ -298,6 +337,11 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+         if (!level.isClientSide()) {
+             BlockPos otherPos = pos.relative(state.getValue(FACING));
+             level.setBlock(otherPos, state.setValue(PART, BedPart.HEAD), Block.UPDATE_ALL);
++            // CraftBukkit start - SPIGOT-7315: Don't updated if we capture block states
++            if (level.captureBlockStates) {
++                return;
++            }
++            // CraftBukkit end
+             level.updateNeighborsAt(pos, Blocks.AIR);
+             state.updateNeighbourShapes(level, pos, Block.UPDATE_ALL);
+         }

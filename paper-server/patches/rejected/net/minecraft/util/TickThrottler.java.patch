@@ -1,0 +1,53 @@
+From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/util/TickThrottler.java b/net/minecraft/util/TickThrottler.java
+index 65c634a986c88cc8a53bc796d10a1004b08665cd..cf6dd704f6d66d42b9d8005a67b3a557b4a439d9 100644
+--- a/net/minecraft/util/TickThrottler.java
++++ b/net/minecraft/util/TickThrottler.java
+@@ -3,7 +3,7 @@ package net.minecraft.util;
+ public class TickThrottler {
+     private final int incrementStep;
+     private final int threshold;
+-    private int count;
++    private final java.util.concurrent.atomic.AtomicInteger count = new java.util.concurrent.atomic.AtomicInteger(); // CraftBukkit - multithreaded field
+ 
+     public TickThrottler(final int incrementStep, final int threshold) {
+         this.incrementStep = incrementStep;
+@@ -11,16 +11,31 @@ public class TickThrottler {
+     }
+ 
+     public void increment() {
+-        this.count = this.count + this.incrementStep;
++        this.count.addAndGet(this.incrementStep); // CraftBukkit - use thread-safe field access instead
+     }
+ 
+     public void tick() {
++        // CraftBukkit start
++        for (int val; (val = this.count.get()) > 0 && !this.count.compareAndSet(val, val - 1); ) ;
++        /* Use thread-safe field access instead
+         if (this.count > 0) {
+             this.count--;
+         }
++        */
++        // CraftBukkit end
+     }
+ 
+     public boolean isUnderThreshold() {
+-        return this.count < this.threshold;
++        // CraftBukkit start - use thread-safe field access instead
++        return this.count.get() < this.threshold;
++    }
++
++    public boolean isIncrementAndUnderThreshold() {
++        return this.isIncrementAndUnderThreshold(this.incrementStep, this.threshold);
++    }
++
++    public boolean isIncrementAndUnderThreshold(int incrementStep, int threshold) {
++        return this.count.addAndGet(incrementStep) < threshold;
++        // CraftBukkit end
+     }
+ }

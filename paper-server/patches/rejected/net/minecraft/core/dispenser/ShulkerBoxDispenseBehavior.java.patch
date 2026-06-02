@@ -1,0 +1,48 @@
+From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java b/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java
+index 8d7617faff549a194fbbeab8bc2f853a59e98d0e..4ea08b86191c14ed538638f623302a6cccfe767f 100644
+--- a/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java
++++ b/net/minecraft/core/dispenser/ShulkerBoxDispenseBehavior.java
+@@ -22,10 +22,36 @@ public class ShulkerBoxDispenseBehavior extends OptionalDispenseItemBehavior {
+             BlockPos relativePos = source.pos().relative(facing);
+             Direction clickedFace = source.level().isEmptyBlock(relativePos.below()) ? facing : Direction.UP;
+ 
++            // CraftBukkit start
++            org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(source.level(), source.pos());
++            org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(dispensed.copyWithCount(1));
++
++            org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(relativePos));
++            source.level().getCraftServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                return dispensed;
++            }
++
++            if (!event.getItem().equals(craftItem)) {
++                // Chain to handler for new item
++                ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
++                DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(source, eventStack);
++                if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) {
++                    dispenseBehavior.dispense(source, eventStack);
++                    return dispensed;
++                }
++            }
++            // CraftBukkit end
+             try {
++                // Paper start - track changed items in the dispense event
+                 this.setSuccess(
+-                    ((BlockItem)item).place(new DirectionalPlaceContext(source.level(), relativePos, facing, dispensed, clickedFace)).consumesAction()
++                    ((BlockItem)item).place(new DirectionalPlaceContext(source.level(), relativePos, facing, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()), clickedFace)).consumesAction()
+                 );
++                if (this.isSuccess()) {
++                    dispensed.shrink(1); // vanilla shrink is in the place function above, manually handle it here
++                }
++                // Paper end - track changed items in the dispense event
+             } catch (Exception e) {
+                 LOGGER.error("Error trying to place shulker box at {}", relativePos, e);
+             }

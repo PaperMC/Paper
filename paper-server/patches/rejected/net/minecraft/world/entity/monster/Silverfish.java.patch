@@ -1,0 +1,48 @@
+From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 15:37:42 +0200
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/monster/Silverfish.java b/net/minecraft/world/entity/monster/Silverfish.java
+index 743b7fd0ef9f7a0d5aec8b8ad021e8bc3e83debd..95896f9276f3d4afa8141f2beed06974240a1318 100644
+--- a/net/minecraft/world/entity/monster/Silverfish.java
++++ b/net/minecraft/world/entity/monster/Silverfish.java
+@@ -120,7 +120,7 @@ public class Silverfish extends Monster {
+             return true;
+         }
+ 
+-        Player nearestPlayer = level.getNearestPlayer(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5.0, true);
++        Player nearestPlayer = level.getNearestPlayerThatAffectsSpawning(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5.0, true); // Paper - Affects Spawning API
+         return nearestPlayer == null;
+     }
+ 
+@@ -172,9 +172,14 @@ public class Silverfish extends Monster {
+                 BlockPos pos = BlockPos.containing(this.mob.getX(), this.mob.getY() + 0.5, this.mob.getZ()).relative(this.selectedDirection);
+                 BlockState blockState = level.getBlockState(pos);
+                 if (InfestedBlock.isCompatibleHostBlock(blockState)) {
++                    // CraftBukkit start
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.mob, pos, InfestedBlock.infestedStateByHost(blockState))) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     level.setBlock(pos, InfestedBlock.infestedStateByHost(blockState), Block.UPDATE_ALL);
+                     this.mob.spawnAnim();
+-                    this.mob.discard();
++                    this.mob.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.ENTER_BLOCK); // CraftBukkit - add Bukkit remove cause
+                 }
+             }
+         }
+@@ -214,6 +219,12 @@ public class Silverfish extends Monster {
+                             BlockState blockState = level.getBlockState(testPos);
+                             Block block = blockState.getBlock();
+                             if (block instanceof InfestedBlock) {
++                                // CraftBukkit start
++                                BlockState afterState = getServerLevel(level).getGameRules().get(GameRules.MOB_GRIEFING) ? blockState.getFluidState().createLegacyBlock() : ((InfestedBlock) block).hostStateByInfested(level.getBlockState(testPos)); // Paper - fix wrong block state
++                                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, testPos, afterState)) { // Paper - fix wrong block state
++                                    continue;
++                                }
++                                // CraftBukkit end
+                                 if (getServerLevel(level).getGameRules().get(GameRules.MOB_GRIEFING)) {
+                                     level.destroyBlock(testPos, true, this.silverfish);
+                                 } else {
