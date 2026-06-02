@@ -505,7 +505,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean addPotionEffect(PotionEffect effect) {
-        org.spigotmc.AsyncCatcher.catchOp("effect add"); // Paper
+        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.entity, "Cannot add potion effect async"); // Paper - block async calls
         return this.getHandle().addEffect(org.bukkit.craftbukkit.potion.CraftPotionUtil.fromBukkit(effect), EntityPotionEffectEvent.Cause.PLUGIN); // Paper - Don't ignore icon
     }
 
