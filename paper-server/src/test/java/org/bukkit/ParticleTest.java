@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class ParticleTest {
 
     public static Set<Identifier> data() {
-        return CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE).keySet();
+        return CraftRegistry.getRegistry(Registries.PARTICLE_TYPE).keySet();
     }
 
     @ParameterizedTest

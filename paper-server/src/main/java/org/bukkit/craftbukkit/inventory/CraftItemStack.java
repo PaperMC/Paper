@@ -167,7 +167,7 @@ public final class CraftItemStack extends ItemStack {
         net.minecraft.world.item.ItemStack item = CraftItemStack.unwrap(key);
 
         return ItemPredicate.Builder.item()
-            .of(CraftRegistry.getMinecraftRegistry(Registries.ITEM), item.getItem())
+            .of(CraftRegistry.getRegistry(Registries.ITEM), item.getItem())
             .withComponents(DataComponentMatchers.Builder.components()
                 .exact(DataComponentExactPredicate.allOf(
                     PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, item.getComponentsPatch())

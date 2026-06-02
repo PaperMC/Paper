@@ -84,12 +84,12 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
 
     @Override
     public LootTable getLootTable() {
-        return CraftLootTable.minecraftToBukkit(this.getSnapshot().getConfig().lootTable());
+        return CraftLootTable.minecraftKeyToBukkit(this.getSnapshot().getConfig().lootTable());
     }
 
     @Override
     public void setLootTable(final LootTable lootTable) {
-        final ResourceKey<net.minecraft.world.level.storage.loot.LootTable> lootTableKey = CraftLootTable.bukkitToMinecraft(lootTable);
+        final ResourceKey<net.minecraft.world.level.storage.loot.LootTable> lootTableKey = CraftLootTable.bukkitToMinecraftKey(lootTable);
         Preconditions.checkArgument(lootTableKey != null, "lootTable must not be null");
 
         final VaultConfig config = this.getSnapshot().getConfig();
@@ -98,14 +98,14 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
 
     @Override
     public @Nullable LootTable getDisplayedLootTable() {
-        return this.getSnapshot().getConfig().overrideLootTableToDisplay().map(CraftLootTable::minecraftToBukkit).orElse(null);
+        return this.getSnapshot().getConfig().overrideLootTableToDisplay().map(CraftLootTable::minecraftKeyToBukkit).orElse(null);
     }
 
     @Override
     public void setDisplayedLootTable(final @Nullable LootTable lootTable) {
         final VaultConfig config = this.getSnapshot().getConfig();
 
-        this.getSnapshot().setConfig(new VaultConfig(config.lootTable(), config.activationRange(), config.deactivationRange(), config.keyItem(), Optional.ofNullable(CraftLootTable.bukkitToMinecraft(lootTable))));
+        this.getSnapshot().setConfig(new VaultConfig(config.lootTable(), config.activationRange(), config.deactivationRange(), config.keyItem(), Optional.ofNullable(CraftLootTable.bukkitToMinecraftKey(lootTable))));
     }
 
     @Override

@@ -42,12 +42,12 @@ import org.bukkit.material.MaterialData;
 
 public abstract class CraftParticle<D> implements Keyed {
 
-    private static final Registry<CraftParticle<?>> CRAFT_PARTICLE_REGISTRY = new CraftParticleRegistry(CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE));
+    private static final Registry<CraftParticle<?>> CRAFT_PARTICLE_REGISTRY = new CraftParticleRegistry(CraftRegistry.getRegistry(Registries.PARTICLE_TYPE));
 
     public static Particle minecraftToBukkit(net.minecraft.core.particles.ParticleType<?> minecraft) {
         Preconditions.checkArgument(minecraft != null);
 
-        net.minecraft.core.Registry<net.minecraft.core.particles.ParticleType<?>> registry = CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE);
+        net.minecraft.core.Registry<net.minecraft.core.particles.ParticleType<?>> registry = CraftRegistry.getRegistry(Registries.PARTICLE_TYPE);
         Particle bukkit = Registry.PARTICLE_TYPE.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().identifier()));
 
         Preconditions.checkArgument(bukkit != null);
@@ -58,7 +58,7 @@ public abstract class CraftParticle<D> implements Keyed {
     public static net.minecraft.core.particles.ParticleType<?> bukkitToMinecraft(Particle bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        return CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE)
+        return CraftRegistry.getRegistry(Registries.PARTICLE_TYPE)
                 .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
     }
 

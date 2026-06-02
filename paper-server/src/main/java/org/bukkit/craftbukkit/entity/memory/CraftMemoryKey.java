@@ -16,7 +16,7 @@ public final class CraftMemoryKey {
             return null;
         }
 
-        net.minecraft.core.Registry<MemoryModuleType<?>> registry = CraftRegistry.getMinecraftRegistry(Registries.MEMORY_MODULE_TYPE);
+        net.minecraft.core.Registry<MemoryModuleType<?>> registry = CraftRegistry.getRegistry(Registries.MEMORY_MODULE_TYPE);
         MemoryKey<U> bukkit = (MemoryKey<U>) Registry.MEMORY_MODULE_TYPE.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().identifier()));
 
         return bukkit;
@@ -27,7 +27,7 @@ public final class CraftMemoryKey {
             return null;
         }
 
-        return (MemoryModuleType<U>) CraftRegistry.getMinecraftRegistry(Registries.MEMORY_MODULE_TYPE)
+        return (MemoryModuleType<U>) CraftRegistry.getRegistry(Registries.MEMORY_MODULE_TYPE)
                 .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
     }
 }

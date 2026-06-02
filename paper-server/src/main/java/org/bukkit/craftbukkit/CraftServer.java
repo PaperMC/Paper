@@ -13,6 +13,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.world.PaperWorldLoader;
 import io.papermc.paper.world.migration.WorldFolderMigration;
 import io.papermc.paper.world.saveddata.PaperLevelOverrides;
@@ -58,7 +59,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.ReloadableServerRegistries;
 import net.minecraft.server.WorldLoader;
 import net.minecraft.server.bossevents.CustomBossEvent;
 import net.minecraft.server.commands.ReloadCommand;
@@ -416,7 +416,8 @@ public final class CraftServer implements Server {
         this.pluginManager.paperPluginManager = this.paperPluginManager;
          // Paper end
 
-        CraftRegistry.setMinecraftRegistry(console.registryAccess());
+        CraftRegistry.setRegistryAccess(console.registryAccess());
+        CraftRegistry.setReloadableRegistries(console.reloadableRegistries());
 
         if (!Main.useConsole) {
             this.getLogger().info("Console input is disabled due to --noconsole command argument");
@@ -2586,7 +2587,7 @@ public final class CraftServer implements Server {
             case org.bukkit.tag.DamageTypeTags.REGISTRY_DAMAGE_TYPES -> {
                 Preconditions.checkArgument(clazz == org.bukkit.damage.DamageType.class, "Damage type namespace (%s) must have damage type", clazz.getName());
                 TagKey<DamageType> damageTagKey = TagKey.create(Registries.DAMAGE_TYPE, key);
-                net.minecraft.core.Registry<DamageType> damageRegistry = CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE);
+                net.minecraft.core.Registry<DamageType> damageRegistry = CraftRegistry.getRegistry(Registries.DAMAGE_TYPE);
                 if (damageRegistry.get(damageTagKey).isPresent()) {
                     return (org.bukkit.Tag<T>) new CraftDamageTag(damageRegistry, damageTagKey);
                 }
@@ -2632,7 +2633,7 @@ public final class CraftServer implements Server {
             }
             case org.bukkit.tag.DamageTypeTags.REGISTRY_DAMAGE_TYPES -> {
                 Preconditions.checkArgument(clazz == org.bukkit.damage.DamageType.class, "Damage type namespace (%s) must have damage type", clazz.getName());
-                net.minecraft.core.Registry<DamageType> damageTags = CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE);
+                net.minecraft.core.Registry<DamageType> damageTags = CraftRegistry.getRegistry(Registries.DAMAGE_TYPE);
                 return damageTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftDamageTag(damageTags, pair.key())).collect(ImmutableList.toImmutableList());
             }
             case org.bukkit.Tag.REGISTRY_GAME_EVENTS -> {
@@ -2647,12 +2648,7 @@ public final class CraftServer implements Server {
     @Override
     public LootTable getLootTable(NamespacedKey key) {
         Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
-
-        ReloadableServerRegistries.Holder registry = this.getServer().reloadableRegistries();
-        return registry.lookup().lookup(Registries.LOOT_TABLE)
-                .flatMap((lookup) -> lookup.get(CraftLootTable.bukkitKeyToMinecraft(key)))
-                .map((holder) -> new CraftLootTable(key, holder.value()))
-                .orElse(null);
+        return io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(RegistryKey.LOOT_TABLE).get(key);
     }
 
     @Override

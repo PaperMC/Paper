@@ -3,7 +3,8 @@ package io.papermc.generator.utils.experimental;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.mojang.logging.LogUtils;
-import io.papermc.generator.Main;
+import io.papermc.generator.registry.RegistryEntries;
+import io.papermc.generator.registry.RegistryEntry;
 import io.papermc.generator.utils.Formatting;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,8 +13,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.registries.TradeRebalanceRegistries;
@@ -52,7 +53,7 @@ public final class ExperimentalCollector {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> Map<ResourceKey<T>, SingleFlagHolder> collectDataDrivenElementIds(Registry<T> registry) {
+    public static <T> Map<ResourceKey<T>, SingleFlagHolder> collectDataDrivenElementIds(HolderLookup.RegistryLookup<T> registry) {
         Collection<Map.Entry<SingleFlagHolder, RegistrySetBuilder.RegistryBootstrap<?>>> experimentalEntries = EXPERIMENTAL_REGISTRY_ENTRIES.get(registry.key());
         if (experimentalEntries.isEmpty()) {
             return Collections.emptyMap();
@@ -88,7 +89,7 @@ public final class ExperimentalCollector {
             .filter(packResources -> packResources.packId().equals(BuiltInPackSource.VANILLA_ID))
             .findFirst()
             .orElseThrow();
-        collectTagsFromPack(vanillaPack, (entry, path) -> vanillaTags.put(entry.key(), path));
+        collectTagsFromPack(vanillaPack, (entry, path) -> vanillaTags.put(entry.registryKey(), path));
 
         // then distinct with other data-pack tags to know for sure newly created tags and so experimental one
         resourceManager.listPacks().forEach(pack -> {
@@ -96,11 +97,11 @@ public final class ExperimentalCollector {
             if (packId.equals(BuiltInPackSource.VANILLA_ID)) return;
 
             collectTagsFromPack(pack, (entry, path) -> {
-                if (vanillaTags.get(entry.key()).contains(path)) {
+                if (vanillaTags.get(entry.registryKey()).contains(path)) {
                     return;
                 }
 
-                result.put(entry.value().listTagIds()
+                result.put(entry.registry().listTagIds()
                     .filter(tagKey -> tagKey.location().getPath().equals(path))
                     .findFirst()
                     .orElseThrow(), packId);
@@ -109,15 +110,15 @@ public final class ExperimentalCollector {
         return Collections.unmodifiableMap(result);
     }
 
-    private static void collectTagsFromPack(PackResources pack, BiConsumer<RegistryAccess.RegistryEntry<?>, String> output) {
+    private static void collectTagsFromPack(PackResources pack, BiConsumer<RegistryEntry<?>, String> output) {
         Set<String> namespaces = pack.getNamespaces(PackType.SERVER_DATA);
 
         for (String namespace : namespaces) {
-            Main.REGISTRY_ACCESS.registries().forEach(entry -> {
+            RegistryEntries.BY_REGISTRY_KEY.values().forEach(entry -> {
                 // this is probably expensive but can't find another way around and data-pack loader has similar logic
                 // the issue is that registry key can have parent/key but tag key can also have parent/key so parsing become a mess
                 // without having at least one of the two values
-                String tagDir = Registries.tagsDirPath(entry.key());
+                String tagDir = Registries.tagsDirPath(entry.registryKey());
                 pack.listResources(PackType.SERVER_DATA, namespace, tagDir, (id, supplier) -> {
                     Formatting.formatTagKey(tagDir, id.getPath()).ifPresentOrElse(path -> output.accept(entry, path), () -> {
                         LOGGER.warn("Unable to parse the path: {}/{}/{}.json in the data-pack {} into a tag key", namespace, tagDir, id.getPath(), pack.packId());

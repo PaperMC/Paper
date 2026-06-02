@@ -40,7 +40,7 @@ public class CraftBrushableBlock extends CraftBlockEntityState<BrushableBlockEnt
 
     @Override
     public LootTable getLootTable() {
-        return CraftLootTable.minecraftToBukkit(this.getSnapshot().lootTable);
+        return CraftLootTable.minecraftKeyToBukkit(this.getSnapshot().lootTable);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class CraftBrushableBlock extends CraftBlockEntityState<BrushableBlockEnt
 
     @Override // Paper - this is now an override
     public void setLootTable(LootTable table, long seed) { // Paper - make public since it overrides a public method
-        this.getSnapshot().setLootTable(CraftLootTable.bukkitToMinecraft(table), seed);
+        this.getSnapshot().setLootTable(CraftLootTable.bukkitToMinecraftKey(table), seed);
     }
 
     @Override

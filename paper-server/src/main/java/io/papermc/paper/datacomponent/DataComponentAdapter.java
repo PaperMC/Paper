@@ -29,7 +29,7 @@ public record DataComponentAdapter<NMS, API>(
     public NMS toVanilla(final API value, final Holder<? extends DataComponentType<NMS>> type) {
         final NMS nms = this.apiToVanilla.apply(value);
         if (this.codecValidation && !type.value().isTransient()) {
-            type.value().codecOrThrow().encodeStart(CraftRegistry.getMinecraftRegistry().createSerializationContext(NullOps.INSTANCE), nms).ifError(error -> {
+            type.value().codecOrThrow().encodeStart(CraftRegistry.getRegistryAccess().createSerializationContext(NullOps.INSTANCE), nms).ifError(error -> {
                 throw new IllegalArgumentException("Failed to encode data component %s (%s)".formatted(type.unwrapKey().orElseThrow(), error.message()));
             });
         }
