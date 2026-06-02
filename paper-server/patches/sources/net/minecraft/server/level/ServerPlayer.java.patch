@@ -218,6 +218,14 @@
      public void setExperiencePoints(final int amount) {
          float limit = this.getXpNeededForNextLevel();
          float max = (limit - 1.0F) / limit;
+@@ -540,6 +_,7 @@
+     }
+ 
+     public void initMenu(final AbstractContainerMenu container) {
++        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this, "Cannot init menu async"); // Paper - block async calls
+         container.addSlotListener(this.containerListener);
+         container.setSynchronizer(this.containerSynchronizer);
+     }
 @@ -572,6 +_,11 @@
  
      @Override
@@ -437,7 +445,7 @@
              this.connection
                  .send(
                      new ClientboundPlayerCombatKillPacket(this.getId(), deathMessage),
-@@ -889,6 +_,64 @@
+@@ -889,6 +_,65 @@
                          }
                      )
                  );
@@ -448,6 +456,7 @@
 +    // Paper end - Expand PlayerDeathEvent API
 +    @Override
 +    public void die(final DamageSource source) {
++        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this, "Cannot die async"); // Paper - block async calls
 +        // this.gameEvent(GameEvent.ENTITY_DIE); // Paper - move below event cancellation check
 +        boolean showDeathMessage = this.level().getGameRules().get(GameRules.SHOW_DEATH_MESSAGES);
 +        // CraftBukkit start - fire PlayerDeathEvent
@@ -964,7 +973,7 @@
      }
  
      @Override
-@@ -1308,8 +_,9 @@
+@@ -1308,22 +_,51 @@
          this.connection.send(new ClientboundShowDialogPacket(dialog));
      }
  
@@ -975,7 +984,9 @@
      }
  
      @Override
-@@ -1318,12 +_,39 @@
+     public OptionalInt openMenu(final @Nullable MenuProvider provider) {
++        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this, "Cannot open menu async"); // Paper - block async calls
+         if (provider == null) {
              return OptionalInt.empty();
          }
  
@@ -1088,7 +1099,7 @@
          this.initMenu(this.containerMenu);
      }
  
-@@ -1394,10 +_,30 @@
+@@ -1394,10 +_,31 @@
  
      @Override
      public void closeContainer() {
@@ -1097,6 +1108,7 @@
 +    }
 +    @Override
 +    public void closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this, "Cannot close container async"); // Paper - block async calls
 +        org.bukkit.craftbukkit.event.CraftEventFactory.handleInventoryCloseEvent(this, reason); // CraftBukkit
 +        // Paper end - Inventory close reason
          this.connection.send(new ClientboundContainerClosePacket(this.containerMenu.containerId));

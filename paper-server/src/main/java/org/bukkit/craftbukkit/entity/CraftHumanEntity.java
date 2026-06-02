@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import ca.spottedleaf.moonrise.common.util.TickThread;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import io.papermc.paper.adventure.PaperAdventure;
@@ -501,6 +502,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public InventoryView openMerchant(Merchant merchant, boolean force) {
         Preconditions.checkNotNull(merchant, "merchant cannot be null");
+        // Paper start - block async calls
+        if (merchant instanceof CraftEntity craftEntity) {
+            TickThread.ensureTickThread(craftEntity.entity, "Cannot open merchant screen async from merchant");
+        }
+        TickThread.ensureTickThread(this.entity, "Cannot open merchant screen async");
+        // Paper end - block async calls
 
         if (!force && merchant.isTrading()) {
             return null;
@@ -562,7 +569,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     private InventoryView openInventory(Location location, boolean force, Material material) {
-        org.spigotmc.AsyncCatcher.catchOp("open" + material);
+        TickThread.ensureTickThread(this.entity, "Cannot open inventory async"); // Paper - block async calls
         if (location == null) {
             location = this.getLocation();
         }
