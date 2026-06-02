@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit;
 
 import ca.spottedleaf.moonrise.common.list.ReferenceList;
 import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
+import ca.spottedleaf.moonrise.common.util.TickThread;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
@@ -1554,7 +1555,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void playSound(Location loc, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
-        org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
+        TickThread.ensureTickThread(this.getHandle(), CraftLocation.toBlockPos(loc), "Cannot play sound async"); // Paper - block async calls
         if (loc == null || sound == null || category == null) return;
 
         double x = loc.getX();
@@ -1566,7 +1567,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
-        org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
+        TickThread.ensureTickThread(this.getHandle(), CraftLocation.toBlockPos(loc), "Cannot play sound async"); // Paper - block async calls
         if (loc == null || sound == null || category == null) return;
 
         double x = loc.getX();
@@ -1589,8 +1590,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void playSound(Entity entity, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
-        org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
         if (!(entity instanceof CraftEntity craftEntity) || entity.getWorld() != this || sound == null || category == null) return;
+        TickThread.ensureTickThread(craftEntity.getHandleRaw(), "Cannot play sound async"); // Paper - block async calls
 
         ClientboundSoundEntityPacket packet = new ClientboundSoundEntityPacket(CraftSound.bukkitToMinecraftHolder(sound), net.minecraft.sounds.SoundSource.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
         ChunkMap.TrackedEntity entityTracker = this.getHandle().getChunkSource().chunkMap.entityMap.get(entity.getEntityId());
@@ -1610,8 +1611,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void playSound(Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
-        org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
         if (!(entity instanceof CraftEntity craftEntity) || entity.getWorld() != this || sound == null || category == null) return;
+        TickThread.ensureTickThread(craftEntity.getHandleRaw(), "Cannot play sound async"); // Paper - block async calls
 
         ClientboundSoundEntityPacket packet = new ClientboundSoundEntityPacket(Holder.direct(SoundEvent.createVariableRangeEvent(Identifier.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
         ChunkMap.TrackedEntity entityTracker = this.getHandle().getChunkSource().chunkMap.entityMap.get(entity.getEntityId());
@@ -1622,7 +1623,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void playSound(final net.kyori.adventure.sound.Sound sound, final double x, final double y, final double z) {
-        org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
+        TickThread.ensureTickThread(this.getHandle(), ((int) x) >> 4, ((int) z) >> 4, "Cannot play sound async"); // Paper - block async calls
         io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, x, y, z, sound.seed().orElseGet(this.world.getRandom()::nextLong), this.playSound0(x, y, z));
     }
 
