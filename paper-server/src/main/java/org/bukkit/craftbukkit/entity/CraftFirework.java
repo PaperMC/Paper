@@ -1,7 +1,9 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import java.util.OptionalInt;
 import java.util.Random;
+import java.util.UUID;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.item.ItemStack;
 import org.bukkit.craftbukkit.CraftServer;
@@ -25,17 +27,18 @@ public class CraftFirework extends CraftProjectile implements Firework {
 
     @Override
     public FireworkMeta getFireworkMeta() {
-        return (FireworkMeta) CraftItemStack.getItemMeta(this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM), org.bukkit.inventory.ItemType.FIREWORK_ROCKET); // Paper - Expose firework item directly
+        return (FireworkMeta) CraftItemStack.getItemMeta(this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM), org.bukkit.inventory.ItemType.FIREWORK_ROCKET);
     }
 
     @Override
     public void setFireworkMeta(FireworkMeta meta) {
-        applyFireworkEffect(meta); // Paper - Expose firework item directly
+        final ItemStack item = this.getHandle().getItem();
+        CraftItemStack.applyMetaToItem(item, meta);
+
+        this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, item);
 
         // Copied from FireworkRocketEntity constructor, update firework lifetime/power
         this.getHandle().lifetime = 10 * (1 + meta.getPower()) + this.random.nextInt(6) + this.random.nextInt(7);
-
-        this.getHandle().getEntityData().markDirty(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM);
     }
 
     @Override
@@ -45,10 +48,7 @@ public class CraftFirework extends CraftProjectile implements Firework {
         }
 
         this.getHandle().attachedToEntity = (entity != null) ? ((CraftLivingEntity) entity).getHandle() : null;
-        // Paper start - update entity data
-        this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ATTACHED_TO_TARGET,
-            entity != null ? java.util.OptionalInt.of(entity.getEntityId()) : java.util.OptionalInt.empty());
-        // Paper end - update entity data
+        this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ATTACHED_TO_TARGET, entity != null ? OptionalInt.of(entity.getEntityId()) : OptionalInt.empty());
         return true;
     }
 
@@ -113,11 +113,10 @@ public class CraftFirework extends CraftProjectile implements Firework {
     }
 
     @Override
-    public java.util.UUID getSpawningEntity() {
-        return getHandle().spawningEntity;
+    public UUID getSpawningEntity() {
+        return this.getHandle().spawningEntity;
     }
 
-    // Paper start - Expose firework item directly + manually setting flight
     @Override
     public org.bukkit.inventory.ItemStack getItem() {
         return CraftItemStack.asBukkitCopy(this.getHandle().getItem());
@@ -125,11 +124,8 @@ public class CraftFirework extends CraftProjectile implements Firework {
 
     @Override
     public void setItem(org.bukkit.inventory.ItemStack itemStack) {
-        FireworkMeta meta = getFireworkMeta();
         ItemStack nmsItem = itemStack == null ? FireworkRocketEntity.getDefaultItem() : CraftItemStack.asNMSCopy(itemStack);
         this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, nmsItem);
-
-        applyFireworkEffect(meta);
     }
 
     @Override
@@ -151,12 +147,4 @@ public class CraftFirework extends CraftProjectile implements Firework {
     public void setTicksToDetonate(int ticks) {
         this.getHandle().lifetime = ticks;
     }
-
-    void applyFireworkEffect(FireworkMeta meta) {
-        ItemStack item = this.getHandle().getItem();
-        CraftItemStack.applyMetaToItem(item, meta);
-
-        this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, item);
-    }
-    // Paper end - Expose firework item directly + manually setting flight
 }
