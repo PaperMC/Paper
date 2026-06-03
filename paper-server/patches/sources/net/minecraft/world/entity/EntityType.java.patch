@@ -1,14 +1,6 @@
-From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/EntityType.java b/net/minecraft/world/entity/EntityType.java
-index f7145a6a59882c2e021c24fadb04543fa04f03a4..a1ee86c18c17e14ebf98f0e72680543addc4c7fa 100644
 --- a/net/minecraft/world/entity/EntityType.java
 +++ b/net/minecraft/world/entity/EntityType.java
-@@ -187,6 +187,7 @@ import org.jspecify.annotations.Nullable;
+@@ -52,6 +_,7 @@
  import org.slf4j.Logger;
  
  public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>, FeatureElement {
@@ -16,7 +8,7 @@ index f7145a6a59882c2e021c24fadb04543fa04f03a4..a1ee86c18c17e14ebf98f0e72680543a
      private static final Logger LOGGER = LogUtils.getLogger();
      private final Holder.Reference<EntityType<?>> builtInRegistryHolder = BuiltInRegistries.ENTITY_TYPE.createIntrusiveHolder(this);
      public static final Codec<EntityType<?>> CODEC = BuiltInRegistries.ENTITY_TYPE.byNameCodec();
-@@ -1288,6 +1289,22 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
+@@ -120,6 +_,22 @@
          final boolean tryMoveDown,
          final boolean movedUp
      ) {
@@ -36,20 +28,20 @@ index f7145a6a59882c2e021c24fadb04543fa04f03a4..a1ee86c18c17e14ebf98f0e72680543a
 +        final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason createSpawnReason
 +    ) {
 +        // CraftBukkit end
-         Consumer<T> postSpawnConfig;
+         PostSpawnProcessor<T> postSpawnConfig;
          if (itemStack != null) {
              postSpawnConfig = createDefaultStackConfig(level, itemStack, user);
-@@ -1295,7 +1312,7 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
-             postSpawnConfig = entity -> {};
+@@ -127,7 +_,7 @@
+             postSpawnConfig = PostSpawnProcessor.nop();
          }
  
 -        return this.spawn(level, postSpawnConfig, spawnPos, spawnReason, tryMoveDown, movedUp);
 +        return this.spawn(level, postSpawnConfig, spawnPos, spawnReason, tryMoveDown, movedUp, createSpawnReason); // CraftBukkit
      }
  
-     public static <T extends Entity> Consumer<T> createDefaultStackConfig(final Level level, final ItemStack itemStack, final @Nullable LivingEntity user) {
-@@ -1316,11 +1333,30 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
-         final Consumer<T> initialConfig, final Level level, final ItemStack itemStack, final @Nullable LivingEntity user
+     public static <T extends Entity> PostSpawnProcessor<T> createDefaultStackConfig(
+@@ -150,11 +_,30 @@
+         final PostSpawnProcessor<T> initialConfig, final Level level, final ItemStack itemStack, final @Nullable LivingEntity user
      ) {
          TypedEntityData<EntityType<?>> entityData = itemStack.get(DataComponents.ENTITY_DATA);
 -        return entityData != null ? initialConfig.andThen(entity -> updateCustomEntityTag(level, user, entity, entityData)) : initialConfig;
@@ -81,7 +73,7 @@ index f7145a6a59882c2e021c24fadb04543fa04f03a4..a1ee86c18c17e14ebf98f0e72680543a
      }
  
      public @Nullable T spawn(
-@@ -1331,9 +1367,39 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
+@@ -165,9 +_,39 @@
          final boolean tryMoveDown,
          final boolean movedUp
      ) {
@@ -92,7 +84,7 @@ index f7145a6a59882c2e021c24fadb04543fa04f03a4..a1ee86c18c17e14ebf98f0e72680543a
 +    @Nullable
 +    public T spawn(
 +        final ServerLevel level,
-+        final @Nullable Consumer<T> postSpawnConfig,
++        final @Nullable PostSpawnProcessor<T> postSpawnConfig,
 +        final BlockPos spawnPos,
 +        final EntitySpawnReason spawnReason,
 +        final boolean tryMoveDown,
@@ -122,7 +114,7 @@ index f7145a6a59882c2e021c24fadb04543fa04f03a4..a1ee86c18c17e14ebf98f0e72680543a
              if (entity instanceof Mob mob) {
                  mob.playAmbientSound();
              }
-@@ -1396,6 +1462,13 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
+@@ -230,6 +_,13 @@
                  if (level.isClientSide()
                      || !entity.getType().onlyOpCanSetNbt()
                      || user instanceof Player player && server.getPlayerList().isOp(player.nameAndId())) {
@@ -136,18 +128,18 @@ index f7145a6a59882c2e021c24fadb04543fa04f03a4..a1ee86c18c17e14ebf98f0e72680543a
                      entityData.loadInto(entity);
                  }
              }
-@@ -1466,10 +1539,28 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
+@@ -308,10 +_,28 @@
      }
  
-     public static Optional<Entity> create(final ValueInput input, final Level level, final EntitySpawnReason reason) {
+     public static Optional<Entity> create(final ValueInput input, final Level level, final EntitySpawnRequest request) {
 +        // Paper start - Don't fire sync event during generation
-+        return create(input, level, reason, false);
++        return create(input, level, request, false);
 +    }
 +
-+    public static Optional<Entity> create(final ValueInput input, final Level level, final EntitySpawnReason reason, final boolean generation) {
++    public static Optional<Entity> create(final ValueInput input, final Level level, final EntitySpawnRequest request, final boolean generation) {
 +        // Paper end - Don't fire sync event during generation
          return Util.ifElse(
-             by(input).map(type -> type.create(level, reason)),
+             by(input).map(type -> type.create(level, request)),
 -            entity -> entity.load(input),
 -            () -> LOGGER.warn("Skipping Entity with id {}", input.getStringOr("id", "[invalid]"))
 +            // Paper start - Don't fire sync event during generation
@@ -167,7 +159,7 @@ index f7145a6a59882c2e021c24fadb04543fa04f03a4..a1ee86c18c17e14ebf98f0e72680543a
          );
      }
  
-@@ -1610,9 +1701,24 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
+@@ -460,8 +_,23 @@
          return this.builtInRegistryHolder;
      }
  
@@ -175,7 +167,7 @@ index f7145a6a59882c2e021c24fadb04543fa04f03a4..a1ee86c18c17e14ebf98f0e72680543a
 +    // Paper start
 +    public final boolean isTypeAllowedInPeaceful() {
          return this.allowedInPeaceful;
-     }
++    }
 +    public final boolean isAllowedInPeaceful(@Nullable CompoundTag tag) {
 +        if (tag == null || tag.isEmpty()) {
 +            return this.isTypeAllowedInPeaceful();
@@ -189,7 +181,6 @@ index f7145a6a59882c2e021c24fadb04543fa04f03a4..a1ee86c18c17e14ebf98f0e72680543a
 +    public final boolean isAllowedInPeaceful() {
 +        return this.isTypeAllowedInPeaceful();
 +        // Paper end
-+    }
+     }
  
-     private static EntityType.EntityFactory<Boat> boatFactory(final Supplier<Item> boatItem) {
-         return (entityType, level) -> new Boat(entityType, level, boatItem);
+     public boolean onlyOpCanSetNbt() {
