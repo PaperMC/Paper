@@ -182,6 +182,29 @@
                  } catch (RejectedExecutionException ignored) {
                      this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
                  } catch (ClassCastException exception) {
+@@ -296,6 +_,22 @@
+         }
+     }
+ 
++    // Paper start - Add netty task scheduling helper
++    public void scheduleNettyTask(final Runnable task) {
++        final boolean connected = this.isConnected();
++        if (!connected && !this.preparing) {
++            return;
++        }
++
++        if (connected && this.pendingActions.isEmpty()) {
++            this.channel.eventLoop().execute(task);
++        } else {
++            this.pendingActions.add(new WrappedConsumer(connection -> connection.channel.eventLoop().execute(task)));
++            this.flushQueue();
++        }
++    }
++    // Paper end - Add netty task scheduling helper
++
+     private void sendPacket(final Packet<?> packet, final @Nullable ChannelFutureListener listener, final boolean flush) {
+         this.sentPackets++;
+         if (this.channel.eventLoop().inEventLoop()) {
 @@ -343,10 +_,30 @@
          }
      }
