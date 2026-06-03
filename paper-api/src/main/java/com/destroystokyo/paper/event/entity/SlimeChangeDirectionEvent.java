@@ -1,6 +1,6 @@
 package com.destroystokyo.paper.event.entity;
 
-import org.bukkit.entity.Slime;
+import org.bukkit.entity.AbstractCubeMob;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -16,7 +16,7 @@ public class SlimeChangeDirectionEvent extends SlimePathfindEvent {
     private float yaw;
 
     @ApiStatus.Internal
-    public SlimeChangeDirectionEvent(final Slime slime, final float yaw) {
+    public SlimeChangeDirectionEvent(final AbstractCubeMob slime, final float yaw) {
         super(slime);
         this.yaw = yaw;
     }

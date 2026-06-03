@@ -142,6 +142,8 @@ public final class MobGoalNames { // todo sync with MobGoalHelper ideally this s
         map.put(net.minecraft.world.entity.animal.nautilus.ZombieNautilus.class, org.bukkit.entity.ZombieNautilus.class);
         map.put(net.minecraft.world.entity.animal.camel.CamelHusk.class, org.bukkit.entity.CamelHusk.class);
         map.put(net.minecraft.world.entity.monster.skeleton.Parched.class, org.bukkit.entity.Parched.class);
+        map.put(net.minecraft.world.entity.monster.cubemob.SulfurCube.class, SulfurCube.class);
+        map.put(net.minecraft.world.entity.monster.cubemob.AbstractCubeMob.class, AbstractCubeMob.class);
         //</editor-fold>
     });
 

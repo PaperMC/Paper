@@ -1,6 +1,6 @@
 package com.destroystokyo.paper.event.entity;
 
-import org.bukkit.entity.Slime;
+import org.bukkit.entity.AbstractCubeMob;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
@@ -21,7 +21,7 @@ public class SlimePathfindEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public SlimePathfindEvent(final Slime slime) {
+    public SlimePathfindEvent(final AbstractCubeMob slime) {
         super(slime);
     }
 
@@ -31,8 +31,8 @@ public class SlimePathfindEvent extends EntityEvent implements Cancellable {
      * @return The Slime that is pathfinding.
      */
     @Override
-    public Slime getEntity() {
-        return (Slime) super.getEntity();
+    public AbstractCubeMob getEntity() {
+        return (AbstractCubeMob) super.getEntity();
     }
 
     @Override

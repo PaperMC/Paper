@@ -1,7 +1,7 @@
 package com.destroystokyo.paper.event.entity;
 
+import org.bukkit.entity.AbstractCubeMob;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Slime;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -17,7 +17,7 @@ public class SlimeTargetLivingEntityEvent extends SlimePathfindEvent {
     private final LivingEntity target;
 
     @ApiStatus.Internal
-    public SlimeTargetLivingEntityEvent(final Slime slime, final LivingEntity target) {
+    public SlimeTargetLivingEntityEvent(final AbstractCubeMob slime, final LivingEntity target) {
         super(slime);
         this.target = target;
     }

@@ -165,6 +165,7 @@ import org.bukkit.entity.SplashPotion;
 import org.bukkit.entity.Squid;
 import org.bukkit.entity.Stray;
 import org.bukkit.entity.Strider;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.entity.Tadpole;
 import org.bukkit.entity.TextDisplay;
@@ -366,6 +367,7 @@ public final class CraftEntityTypes {
         register(new EntityTypeData<>(EntityType.ZOMBIE_NAUTILUS, ZombieNautilus.class, CraftZombieNautilus::new, createLiving(net.minecraft.world.entity.EntityTypes.ZOMBIE_NAUTILUS)));
         register(new EntityTypeData<>(EntityType.CAMEL_HUSK, CamelHusk.class, CraftCamelHusk::new, createLiving(net.minecraft.world.entity.EntityTypes.CAMEL_HUSK)));
         register(new EntityTypeData<>(EntityType.PARCHED, Parched.class, CraftParched::new, createLiving(net.minecraft.world.entity.EntityTypes.PARCHED)));
+        register(new EntityTypeData<>(EntityType.SULFUR_CUBE, SulfurCube.class, CraftSulfurCube::new, createLiving(net.minecraft.world.entity.EntityTypes.SULFUR_CUBE)));
 
         Function<SpawnData, net.minecraft.world.entity.boss.enderdragon.EnderDragon> dragonFunction = createLiving(net.minecraft.world.entity.EntityTypes.ENDER_DRAGON);
         register(new EntityTypeData<>(EntityType.ENDER_DRAGON, EnderDragon.class, CraftEnderDragon::new, spawnData -> {

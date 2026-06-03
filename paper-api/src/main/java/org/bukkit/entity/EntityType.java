@@ -176,6 +176,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     SQUID("squid", Squid.class, 94),
     STRAY("stray", Stray.class, 6),
     STRIDER("strider", Strider.class, -1),
+    SULFUR_CUBE("sulfur_cube", SulfurCube.class, -1),
     TADPOLE("tadpole", Tadpole.class, -1),
     TEXT_DISPLAY("text_display", TextDisplay.class, -1),
     TNT("tnt", TNTPrimed.class, 20),
