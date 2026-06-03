@@ -104,10 +104,10 @@ public class MaterialTags {
     /**
      * Covers all colors of concrete powder.
      *
-     * @deprecated in favour of {@link Tag#CONCRETE_POWDER}
+     * @deprecated in favour of {@link Tag#CONCRETE_POWDERS}
      */
     @Deprecated(since = "1.21.8")
-    public static final MaterialSetTag CONCRETE_POWDER = replacedBy(Tag.CONCRETE_POWDER);
+    public static final MaterialSetTag CONCRETE_POWDER = replacedBy(Tag.CONCRETE_POWDERS);
 
     /**
      * Covers the two types of cooked fish.

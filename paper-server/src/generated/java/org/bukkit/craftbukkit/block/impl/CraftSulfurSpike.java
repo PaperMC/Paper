@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.annotation.GeneratedClass;
 import java.util.Set;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.PointedDripstoneBlock;
+import net.minecraft.world.level.block.SulfurSpikeBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
@@ -16,14 +16,14 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @GeneratedClass
-public class CraftPointedDripstone extends CraftBlockData implements Speleothem {
-    private static final EnumProperty<SpeleothemThickness> THICKNESS = PointedDripstoneBlock.THICKNESS;
+public class CraftSulfurSpike extends CraftBlockData implements Speleothem {
+    private static final EnumProperty<SpeleothemThickness> THICKNESS = SulfurSpikeBlock.THICKNESS;
 
-    private static final EnumProperty<Direction> TIP_DIRECTION = PointedDripstoneBlock.TIP_DIRECTION;
+    private static final EnumProperty<Direction> TIP_DIRECTION = SulfurSpikeBlock.TIP_DIRECTION;
 
-    private static final BooleanProperty WATERLOGGED = PointedDripstoneBlock.WATERLOGGED;
+    private static final BooleanProperty WATERLOGGED = SulfurSpikeBlock.WATERLOGGED;
 
-    public CraftPointedDripstone(BlockState state) {
+    public CraftSulfurSpike(BlockState state) {
         super(state);
     }
 

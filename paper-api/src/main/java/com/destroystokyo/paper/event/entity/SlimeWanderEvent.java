@@ -14,7 +14,7 @@ import org.jspecify.annotations.NullMarked;
 public class SlimeWanderEvent extends SlimePathfindEvent {
 
     @ApiStatus.Internal
-    public SlimeWanderEvent(final AbstractCubeMob slime) {
-        super(slime);
+    public SlimeWanderEvent(final AbstractCubeMob cubeMob) {
+        super(cubeMob);
     }
 }

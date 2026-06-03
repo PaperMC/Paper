@@ -6,9 +6,9 @@ package org.bukkit.entity;
 public interface AbstractCubeMob extends Mob {
 
     /**
-     * @return The size of the slime
+     * @return the size of the slime
      */
-    public int getSize();
+    int getSize();
 
     /**
      * Setting the size of the slime (regardless of previous size)
@@ -21,21 +21,21 @@ public interface AbstractCubeMob extends Mob {
      * to their per-size defaults and heal the
      * slime to its max health (assuming it's alive).
      *
-     * @param sz The new size of the slime.
+     * @param size the new size of the slime.
      */
-    public void setSize(int sz);
+    void setSize(int size);
 
     /**
      * Get whether this slime can randomly wander/jump around on its own
      *
-     * @return true if can wander
+     * @return {@code true} if can wander
      */
-    public boolean canWander();
+    boolean canWander();
 
     /**
      * Set whether this slime can randomly wander/jump around on its own
      *
-     * @param canWander true if can wander
+     * @param canWander {@code true} if can wander
      */
-    public void setWander(boolean canWander);
+    void setWander(boolean canWander);
 }

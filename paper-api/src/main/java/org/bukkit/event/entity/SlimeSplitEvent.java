@@ -17,8 +17,8 @@ public class SlimeSplitEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public SlimeSplitEvent(@NotNull final AbstractCubeMob slime, final int count) {
-        super(slime);
+    public SlimeSplitEvent(@NotNull final AbstractCubeMob cubeMob, final int count) {
+        super(cubeMob);
         this.count = count;
     }
 

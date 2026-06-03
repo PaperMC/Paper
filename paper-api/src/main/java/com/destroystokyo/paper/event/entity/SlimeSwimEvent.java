@@ -14,7 +14,7 @@ import org.jspecify.annotations.NullMarked;
 public class SlimeSwimEvent extends SlimeWanderEvent {
 
     @ApiStatus.Internal
-    public SlimeSwimEvent(final AbstractCubeMob slime) {
-        super(slime);
+    public SlimeSwimEvent(final AbstractCubeMob cubeMob) {
+        super(cubeMob);
     }
 }

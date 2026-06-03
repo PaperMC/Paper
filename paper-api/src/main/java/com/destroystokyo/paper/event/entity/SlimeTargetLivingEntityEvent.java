@@ -17,8 +17,8 @@ public class SlimeTargetLivingEntityEvent extends SlimePathfindEvent {
     private final LivingEntity target;
 
     @ApiStatus.Internal
-    public SlimeTargetLivingEntityEvent(final AbstractCubeMob slime, final LivingEntity target) {
-        super(slime);
+    public SlimeTargetLivingEntityEvent(final AbstractCubeMob cubeMob, final LivingEntity target) {
+        super(cubeMob);
         this.target = target;
     }
 

@@ -21,8 +21,8 @@ public class SlimePathfindEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public SlimePathfindEvent(final AbstractCubeMob slime) {
-        super(slime);
+    public SlimePathfindEvent(final AbstractCubeMob cubeMob) {
+        super(cubeMob);
     }
 
     /**

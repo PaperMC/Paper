@@ -649,6 +649,13 @@ public final class DataComponentTypeKeys {
     public static final TypedKey<DataComponentType> STORED_ENCHANTMENTS = create(key("stored_enchantments"));
 
     /**
+     * {@code minecraft:sulfur_cube_content}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DataComponentType> SULFUR_CUBE_CONTENT = create(key("sulfur_cube_content"));
+
+    /**
      * {@code minecraft:suspicious_stew_effects}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

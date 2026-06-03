@@ -20,7 +20,7 @@ public abstract class CraftAbstractCubeMob extends CraftMob implements AbstractC
 
     @Override
     public void setSize(int size) {
-        this.getHandle().setSize(size, /* true */ getHandle().isAlive()); // Paper - fix dead slime setSize invincibility
+        this.getHandle().setSize(size, this.getHandle().isAlive());
     }
 
     @Override

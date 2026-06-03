@@ -120,6 +120,7 @@ public final class CraftBlockStates {
         register(BlockEntityTypes.LECTERN, CraftLectern.class, CraftLectern::new);
         register(BlockEntityTypes.MOB_SPAWNER, CraftCreatureSpawner.class, CraftCreatureSpawner::new);
         register(BlockEntityTypes.PISTON, CraftMovingPiston.class, CraftMovingPiston::new);
+        register(BlockEntityTypes.POTENT_SULFUR, CraftPotentSulfur.class, CraftPotentSulfur::new);
         register(BlockEntityTypes.SCULK_CATALYST, CraftSculkCatalyst.class, CraftSculkCatalyst::new);
         register(BlockEntityTypes.SCULK_SENSOR, CraftSculkSensor.class, CraftSculkSensor::new);
         register(BlockEntityTypes.SCULK_SHRIEKER, CraftSculkShrieker.class, CraftSculkShrieker::new);

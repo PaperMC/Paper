@@ -16,8 +16,8 @@ public class SlimeChangeDirectionEvent extends SlimePathfindEvent {
     private float yaw;
 
     @ApiStatus.Internal
-    public SlimeChangeDirectionEvent(final AbstractCubeMob slime, final float yaw) {
-        super(slime);
+    public SlimeChangeDirectionEvent(final AbstractCubeMob cubeMob, final float yaw) {
+        super(cubeMob);
         this.yaw = yaw;
     }
 
