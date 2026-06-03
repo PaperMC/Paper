@@ -87,6 +87,108 @@
              this.finishCurrentTask(ServerResourcePackConfigurationTask.TYPE);
          }
      }
+@@ -146,11 +_,100 @@
+         if (this.synchronizeRegistriesTask == null) {
+             throw new IllegalStateException("Unexpected response from client: received pack selection, but no negotiation ongoing");
+         }
++        // Paper start - Per Player Quick Action & Pause Menu Dialogs
++        var dialogEvent = new io.papermc.paper.event.connection.configuration.PlayerDialogsReceiveEvent(paperConnection);
++        dialogEvent.callEvent();
++        if (dialogEvent.getPauseMenuAdditions().isPresent() || dialogEvent.getQuickAction().isPresent()) {
++            this.synchronizeRegistriesTask.handleResponse(packet.knownPacks(), p -> spoofPacketForPerPlayerDialogs(p, dialogEvent));
++        } else {
++            // Vanilla
++            this.synchronizeRegistriesTask.handleResponse(packet.knownPacks(), this::send);
++        }
++        // Paper end - Per Player Quick Action & Pause Menu Dialogs
+ 
+-        this.synchronizeRegistriesTask.handleResponse(packet.knownPacks(), this::send);
+         this.finishCurrentTask(SynchronizeRegistriesTask.TYPE);
+     }
+ 
++    // Paper start - Per Player Quick Action & Pause Menu Dialogs
++    private void spoofPacketForPerPlayerDialogs(final net.minecraft.network.protocol.Packet<?> packet, io.papermc.paper.event.connection.configuration.PlayerDialogsReceiveEvent dialogEvent) {
++        switch (packet) {
++            case net.minecraft.network.protocol.configuration.ClientboundRegistryDataPacket dataPacket -> {
++                // spoof the dialog quick_actions and custom_options for quick actions and pause menu add
++                // I'd rather use a new custom dialog but I couldn't find out how to add a new one.
++                var dialogRegistry = net.minecraft.core.registries.Registries.DIALOG;
++                if (dataPacket.registry().equals(dialogRegistry)) {
++                    dialogEvent.getQuickAction().ifPresent(spoofDialog(net.minecraft.server.dialog.Dialogs.QUICK_ACTIONS, dataPacket));
++                    dialogEvent.getPauseMenuAdditions().ifPresent(spoofDialog(net.minecraft.server.dialog.Dialogs.CUSTOM_OPTIONS, dataPacket));
++                }
++            }
++            case net.minecraft.network.protocol.common.ClientboundUpdateTagsPacket tagsPacket -> {
++                // spoof the quick_actions and pause_menu_additions Tag so it includes the dialog
++                var registry = net.minecraft.core.registries.Registries.DIALOG;
++                tagsPacket.getTags().compute(registry, (_, old) -> {
++                    var registryAccess = this.server.registries().compositeAccess().lookup(registry).get();
++                    var map = new java.util.HashMap<net.minecraft.resources.Identifier, it.unimi.dsi.fastutil.ints.IntList>();
++                    // if old data exists keep it
++                    if (old != null) {
++                        var tags = old.resolve(registryAccess).tags();
++                        tags.forEach((key, val) -> {
++                            map.put(key.location(), val.stream().map(holder -> registryAccess.getId(holder.value())).collect(java.util.stream.Collectors.toCollection(it.unimi.dsi.fastutil.ints.IntArrayList::new)));
++                        });
++                    }
++                    // replace the Tags with the dialogs we want
++                    if (dialogEvent.getQuickAction().isPresent()) {
++                        map.put(net.minecraft.tags.DialogTags.QUICK_ACTIONS.location(), dialogToIdList(registryAccess, net.minecraft.server.dialog.Dialogs.QUICK_ACTIONS.identifier()));
++                    }
++                    if (dialogEvent.getPauseMenuAdditions().isPresent()) {
++                        map.put(net.minecraft.tags.DialogTags.PAUSE_SCREEN_ADDITIONS.location(), dialogToIdList(registryAccess, net.minecraft.server.dialog.Dialogs.CUSTOM_OPTIONS.identifier()));
++                    }
++                    return new net.minecraft.tags.TagNetworkSerialization.NetworkPayload(map);
++                });
++            }
++            default -> {
++            }
++        }
++        this.send(packet);
++    }
++
++    private static it.unimi.dsi.fastutil.ints.IntList dialogToIdList(
++        net.minecraft.core.Registry<net.minecraft.server.dialog.Dialog> registryAccess,
++        net.minecraft.resources.Identifier identifier
++    ) {
++        return it.unimi.dsi.fastutil.ints.IntList.of(registryAccess.getId(registryAccess.getValue(identifier)));
++    }
++
++    private java.util.function.Consumer<net.kyori.adventure.dialog.DialogLike> spoofDialog(
++        net.minecraft.resources.ResourceKey<net.minecraft.server.dialog.Dialog> dialogKey,
++        net.minecraft.network.protocol.configuration.ClientboundRegistryDataPacket dataPacket
++    ) {
++        var registry = net.minecraft.core.registries.Registries.DIALOG;
++        var ops = this.server.registries().compositeAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE);
++        var registryData = new net.minecraft.resources.RegistryDataLoader.RegistryData<>(registry, net.minecraft.server.dialog.Dialog.DIRECT_CODEC, net.minecraft.resources.RegistryValidator.none());
++        return dialog -> {
++            // get index so that the network Id stays the same
++            var identifier = dialogKey.identifier();
++            int index = 0;
++            for (var entry : dataPacket.entries()) {
++                if (entry.id().equals(identifier)) {
++                    break;
++                }
++                ++index;
++            }
++            // remove the element
++            dataPacket.entries().remove(index);
++
++            var paperDialog = io.papermc.paper.dialog.PaperDialog.bukkitToMinecraftHolder((io.papermc.paper.dialog.Dialog) dialog);
++            // parse dialog to, see net.minecraft.core.RegistrySynchronization#packRegistry
++            net.minecraft.nbt.Tag encodedElement = registryData.elementCodec()
++                .encodeStart(ops, paperDialog.value())
++                .getOrThrow(s -> new IllegalArgumentException("Failed to serialize " + identifier + ": " + s));
++            var optional = java.util.Optional.of(encodedElement);
++            // readd the element to the list at the same position
++            dataPacket.entries().add(index, new net.minecraft.core.RegistrySynchronization.PackedRegistryEntry(identifier, optional));
++        };
++    }
++    // Paper end - Per Player Quick Action & Pause Menu Dialogs
++
+     @Override
+     public void handleAcceptCodeOfConduct(final ServerboundAcceptCodeOfConductPacket packet) {
+         this.finishCurrentTask(ServerCodeOfConductConfigurationTask.TYPE);
 @@ -169,7 +_,7 @@
                  return;
              }
