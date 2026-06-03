@@ -1,7 +1,10 @@
 package org.bukkit.craftbukkit.entity;
 
+import ca.spottedleaf.moonrise.common.util.TickThread;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.world.damagesource.CombatTracker;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -10,10 +13,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.key.Key;
 import net.minecraft.Optionull;
-import io.papermc.paper.world.damagesource.CombatTracker;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.resources.ResourceKey;
@@ -33,12 +34,12 @@ import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.entity.projectile.FishingHook;
-import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
+import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
+import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEgg;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownExperienceBottle;
-import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.phys.Vec3;
@@ -787,6 +788,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public AttributeInstance getAttribute(Attribute attribute) {
+        TickThread.ensureTickThread(this.getHandleRaw(), "Cannot update attributes asynchronously");
         return this.getHandle().craftAttributes.getAttribute(attribute);
     }
 
