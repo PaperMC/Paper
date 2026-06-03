@@ -72,7 +72,7 @@
  
      public boolean updateEffects(final Optional<Holder<MobEffect>> primary, final Optional<Holder<MobEffect>> secondary) {
          if (this.paymentSlot.hasItem()) {
-@@ -149,11 +_,18 @@
+@@ -149,8 +_,16 @@
                  return false;
              }
  
@@ -80,19 +80,17 @@
 -            this.beaconData.set(2, encodeEffect(secondaryEffect));
 +            // Paper start - Add PlayerChangeBeaconEffectEvent
 +            io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.inventory.player.getBukkitEntity(), convert(primary), convert(secondary), this.access.getLocation().getBlock());
-+            if (event.callEvent()) {
++            if (!event.callEvent()) {
++                return true; // don't disconnect player when the event is cancelled
++            }
++
++            this.beaconData.set(1, encodeEffect(event.getPrimary() == null ? null : org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraftHolder(event.getPrimary())));
++            this.beaconData.set(2, encodeEffect(event.getSecondary() == null ? null : org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraftHolder(event.getSecondary())));
++            if (event.willConsumeItem())
 +            // Paper end - Add PlayerChangeBeaconEffectEvent
-+            this.beaconData.set(1, encodeEffect(event.getPrimary() == null ? null : org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraftHolder(event.getPrimary()))); // CraftBukkit
-+            this.beaconData.set(2, encodeEffect(event.getSecondary() == null ? null : org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraftHolder(event.getSecondary()))); // CraftBukkit
-+            if (event.willConsumeItem()) { // Paper - Add PlayerChangeBeaconEffectEvent
              this.paymentSlot.remove(1);
-+            } // Paper - Add PlayerChangeBeaconEffectEvent
              this.access.execute(Level::blockEntityChanged);
              return true;
-+            } else { return false; } // Paper - Add PlayerChangeBeaconEffectEvent
-         } else {
-             return false;
-         }
 @@ -178,4 +_,17 @@
              return 1;
          }

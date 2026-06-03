@@ -1145,6 +1145,7 @@
 +            if (event.isCancelled()) {
 +                return false;
 +            }
++            float originalDamage = (float)event.getDamage();
 +
 +            // Resistance
 +            if (event.getDamage(DamageModifier.RESISTANCE) < 0) {
@@ -1160,7 +1161,7 @@
 +
 +            // Apply damage to helmet
 +            if (source.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
-+                float helmetDamage = (float)event.getDamage();
++                float helmetDamage = originalDamage;
 +                helmetDamage += (float)event.getDamage(DamageModifier.INVULNERABILITY_REDUCTION);
 +                helmetDamage += (float)event.getDamage(DamageModifier.BLOCKING);
 +                helmetDamage += (float)event.getDamage(DamageModifier.FREEZING);
@@ -1169,7 +1170,7 @@
 +
 +            // Apply damage to armor
 +            if (!source.is(DamageTypeTags.BYPASSES_ARMOR)) {
-+                float armorDamage = (float)event.getDamage();
++                float armorDamage = originalDamage;
 +                armorDamage += (float)event.getDamage(DamageModifier.INVULNERABILITY_REDUCTION);
 +                armorDamage += (float)event.getDamage(DamageModifier.BLOCKING);
 +                armorDamage += (float)event.getDamage(DamageModifier.FREEZING);
@@ -1179,11 +1180,10 @@
 +
 +            // Apply blocking code
 +            if (event.getDamage(DamageModifier.BLOCKING) < 0) {
-+                this.blockingItemEffects(level, source, dmg, (float)-event.getDamage(DamageModifier.BLOCKING)); // todo - snapshot - double check dmg parameter is correct here
++                this.blockingItemEffects(level, source, originalDamage, (float)-event.getDamage(DamageModifier.BLOCKING));
 +            }
 +
 +            boolean human = this instanceof net.minecraft.world.entity.player.Player;
-+            float originalDamage = (float)event.getDamage();
 +            float absorptionModifier = (float)-event.getDamage(DamageModifier.ABSORPTION);
 +            this.setAbsorptionAmount(Math.max(this.getAbsorptionAmount() - absorptionModifier, 0.0F));
 +            float absorbedDamage = absorptionModifier;
@@ -1200,7 +1200,7 @@
 +            // CraftBukkit start
 +            if (dmg > 0.0F || !human) {
 +                if (human) {
-+                    // PAIL: Be sure to drag all this code from the EntityHuman subclass each update.
++                    // PAIL: Be sure to drag all this code from the Player subclass each update.
 +                    ((net.minecraft.world.entity.player.Player)this).causeFoodExhaustion(source.getFoodExhaustion(), org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.DAMAGED); // CraftBukkit - EntityExhaustionEvent
 +                    if (dmg < 3.4028235E37F) {
 +                        ((net.minecraft.world.entity.player.Player)this).awardStat(Stats.DAMAGE_TAKEN, Math.round(dmg * 10.0F));
@@ -1226,8 +1226,8 @@
 +                        }
 +                    }
 +
-+                    if (source.getEntity() instanceof ServerPlayer) {
-+                        CriteriaTriggers.PLAYER_HURT_ENTITY.trigger((ServerPlayer)source.getEntity(), this, source, originalDamage, dmg, true); // Paper - fix taken/dealt param order
++                    if (source.getEntity() instanceof ServerPlayer sourcePlayer) {
++                        CriteriaTriggers.PLAYER_HURT_ENTITY.trigger(sourcePlayer, this, source, originalDamage, dmg, true); // Paper - fix taken/dealt param order
 +                    }
 +
 +                    return !io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.skipVanillaDamageTickWhenShieldBlocked; // Paper - this should always return true, however expose an unsupported setting to flip this to false to enable "shield stunning".
