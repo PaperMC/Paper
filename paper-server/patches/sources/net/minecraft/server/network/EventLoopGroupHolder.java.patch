@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/EventLoopGroupHolder.java
 +++ b/net/minecraft/server/network/EventLoopGroupHolder.java
-@@ -48,19 +_,39 @@
+@@ -48,19 +_,63 @@
              return LocalIoHandler.newFactory();
          }
      };
@@ -12,6 +12,20 @@
 +        }
 +    };
 +    // Paper end - Unix domain socket support
++    // Paper start - io_uring transport support
++    private static final EventLoopGroupHolder IO_URING = new EventLoopGroupHolder("IO Uring", io.netty.channel.uring.IoUringSocketChannel.class, io.netty.channel.uring.IoUringServerSocketChannel.class) {
++        @Override
++        protected IoHandlerFactory ioHandlerFactory() {
++            return io.netty.channel.uring.IoUringIoHandler.newFactory();
++        }
++    };
++    private static final EventLoopGroupHolder IO_URING_UNIX_DOMAIN = new EventLoopGroupHolder("Unix Domain Socket", io.netty.channel.uring.IoUringDomainSocketChannel.class, io.netty.channel.uring.IoUringServerDomainSocketChannel.class) {
++        @Override
++        protected IoHandlerFactory ioHandlerFactory() {
++            return io.netty.channel.uring.IoUringIoHandler.newFactory();
++        }
++    };
++    // Paper end - io_uring transport support
      private final String type;
      private final Class<? extends Channel> channelCls;
      private final Class<? extends ServerChannel> serverChannelCls;
@@ -29,6 +43,16 @@
                  return KQUEUE;
              }
  
++            // Paper start - io_uring transport support
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().network.useIoUringTransport) {
++                if (address instanceof io.netty.channel.unix.DomainSocketAddress) {
++                    return IO_URING_UNIX_DOMAIN;
++                } else {
++                    return IO_URING;
++                }
++            }
++            // Paper end - io_uring transport support
++
              if (Epoll.isAvailable()) {
 -                return EPOLL;
 +                // Paper start - Unix domain socket support
