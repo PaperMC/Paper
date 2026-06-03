@@ -1,14 +1,6 @@
-From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb8019fb3a 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -67,6 +67,11 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -68,6 +_,11 @@
      private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
      public Channel channel;
      public SocketAddress address;
@@ -20,10 +12,10 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
      private volatile @Nullable PacketListener disconnectListener;
      private volatile @Nullable PacketListener packetListener;
      private @Nullable DisconnectionDetails disconnectionDetails;
-@@ -80,6 +85,44 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-     private boolean handlingFault;
+@@ -81,6 +_,44 @@
      private volatile @Nullable DisconnectionDetails delayedDisconnect;
      private @Nullable BandwidthDebugMonitor bandwidthDebugMonitor;
+     private @Nullable UUID intendedProfileId;
 +    public String hostname = ""; // CraftBukkit - add field
 +    public boolean handleConnectionDisconnectOnNextTick = false; // Paper - Force kill connection ticking
 +    // Paper start - NetworkClient implementation
@@ -44,7 +36,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
 +    // Paper start - packet limiter
 +    protected final Object PACKET_LIMIT_LOCK = new Object();
 +    protected final io.papermc.paper.util.@Nullable IntervalledCounter allPacketCounts = io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.isEnabled() ? new io.papermc.paper.util.IntervalledCounter(
-+        (long)(io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.interval() * 1.0e9)
++            (long)(io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.interval() * 1.0e9)
 +    ) : null;
 +    protected final java.util.Map<Class<? extends net.minecraft.network.protocol.Packet<?>>, io.papermc.paper.util.IntervalledCounter> packetSpecificLimits = new java.util.HashMap<>();
 +
@@ -65,7 +57,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
  
      public Connection(final PacketFlow receiving) {
          this.receiving = receiving;
-@@ -90,6 +133,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -91,6 +_,7 @@
          super.channelActive(ctx);
          this.channel = ctx.channel();
          this.address = this.channel.remoteAddress();
@@ -73,7 +65,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -101,15 +145,32 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -102,15 +_,32 @@
      }
  
      @Override
@@ -107,7 +99,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
                      this.disconnect(Component.translatable("disconnect.timeout"));
                  } else {
                      Component reason = Component.translatable("disconnect.genericReason", "Internal Exception: " + cause);
-@@ -121,9 +182,11 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -122,9 +_,11 @@
                          details = new DisconnectionDetails(reason);
                      }
  
@@ -120,7 +112,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
                              Packet<?> packet = this.sendLoginDisconnect
                                  ? new ClientboundLoginDisconnectPacket(reason)
                                  : new ClientboundDisconnectPacket(reason);
-@@ -140,6 +203,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -141,6 +_,7 @@
                  }
              }
          }
@@ -128,10 +120,11 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
      }
  
      @Override
-@@ -149,11 +213,60 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -150,11 +_,60 @@
              if (packetListener == null) {
                  throw new IllegalStateException("Received a packet before the packet listener was initialized");
              }
+-
 +            // Paper start - packet limiter
 +            if (this.stopReadingPackets) {
 +                return;
@@ -147,7 +140,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
 +                            return;
 +                        }
 +                    }
- 
++
 +                    for (Class<?> check = packet.getClass(); check != Object.class; check = check.getSuperclass()) {
 +                        io.papermc.paper.configuration.GlobalConfiguration.PacketLimiter.PacketLimit packetSpecificLimit =
 +                            io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.get(check);
@@ -189,7 +182,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
                  } catch (RejectedExecutionException ignored) {
                      this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
                  } catch (ClassCastException exception) {
-@@ -343,10 +456,30 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -344,10 +_,30 @@
          }
      }
  
@@ -220,7 +213,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -354,7 +487,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -355,7 +_,7 @@
          }
  
          if (this.channel != null) {
@@ -229,7 +222,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -390,6 +523,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -391,6 +_,7 @@
      }
  
      public void disconnect(final DisconnectionDetails details) {
@@ -237,7 +230,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
          if (this.channel == null) {
              this.delayedDisconnect = details;
          }
-@@ -534,6 +668,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -543,6 +_,14 @@
          }
      }
  
@@ -252,7 +245,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
      public void setupCompression(final int threshold, final boolean validateDecompressed) {
          if (threshold >= 0) {
              if (this.channel.pipeline().get(HandlerNames.DECOMPRESS) instanceof CompressionDecoder compressionDecoder) {
-@@ -547,6 +689,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -556,6 +_,7 @@
              } else {
                  this.channel.pipeline().addAfter(HandlerNames.PREPENDER, HandlerNames.COMPRESS, new CompressionEncoder(threshold));
              }
@@ -260,7 +253,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
          } else {
              if (this.channel.pipeline().get(HandlerNames.DECOMPRESS) instanceof CompressionDecoder) {
                  this.channel.pipeline().remove(HandlerNames.DECOMPRESS);
-@@ -555,6 +698,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -564,6 +_,7 @@
              if (this.channel.pipeline().get(HandlerNames.COMPRESS) instanceof CompressionEncoder) {
                  this.channel.pipeline().remove(HandlerNames.COMPRESS);
              }
@@ -268,7 +261,7 @@ index f1036671b6fb9dd9883addbb72999e52bfc6849e..13faa13a9d3120cdeaca63d6eb3a0feb
          }
      }
  
-@@ -572,6 +716,26 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -581,6 +_,26 @@
                      );
                      disconnectListener.onDisconnect(details);
                  }
