@@ -131,6 +131,9 @@ dependencies {
         isTransitive = false
     }
     implementation("io.netty:netty-codec-haproxy:4.2.7.Final") // Add support for proxy protocol
+    implementation("io.netty:netty-transport-classes-io_uring:4.2.7.Final") // Add support for io_uring
+    implementation("io.netty:netty-transport-native-io_uring:4.2.7.Final:linux-x86_64")
+    implementation("io.netty:netty-transport-native-io_uring:4.2.7.Final:linux-aarch_64")
     implementation("org.apache.logging.log4j:log4j-iostreams:2.25.2")
     implementation("org.ow2.asm:asm-commons:9.9.1")
     implementation("org.spongepowered:configurate-yaml:4.2.0")

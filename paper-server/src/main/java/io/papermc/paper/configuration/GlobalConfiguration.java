@@ -141,6 +141,28 @@ public class GlobalConfiguration extends ConfigurationPart {
         }
     }
 
+    public Network network;
+
+    public class Network extends ConfigurationPart {
+        public boolean useIoUringTransport = false;
+
+        @PostProcess
+        private void postProcess() {
+            if (!this.useIoUringTransport) return;
+
+            if (!io.netty.channel.uring.IoUring.isAvailable()) {
+                LOGGER.error("Linux io_uring transport is enabled but is not supported on this system. Disabling io_uring...");
+                this.useIoUringTransport = false;
+            }
+
+            if (!net.minecraft.server.MinecraftServer.getServer().useNativeTransport()) {
+                LOGGER.error("Linux io_uring transport is enabled but native transports are disabled in server.properties. Disabling io_uring...");
+                this.useIoUringTransport = false;
+            }
+        }
+
+    }
+
     public Console console;
 
     public class Console extends ConfigurationPart {
