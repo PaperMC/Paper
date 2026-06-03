@@ -20,7 +20,7 @@
 +    private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
 +    protected static final net.minecraft.resources.Identifier MINECRAFT_BRAND = net.minecraft.resources.Identifier.withDefaultNamespace("brand"); // Paper - Brand support
 +    // Paper start - retain certain values
-+    public @Nullable String playerBrand;
++    public @Nullable String clientBrand;
 +    public final java.util.Set<String> pluginMessagerChannels;
 +    // Paper end - retain certain values
  
@@ -31,7 +31,7 @@
          this.latency = cookie.latency();
          this.transferred = cookie.transferred();
 +        // Paper start
-+        this.playerBrand = cookie.brandName();
++        this.clientBrand = cookie.clientBrand();
 +        this.cserver = server.server;
 +        this.pluginMessagerChannels = cookie.channels();
 +        // Paper end
@@ -95,13 +95,13 @@
 +            }
 +
 +            if (identifier.equals(MINECRAFT_BRAND)) {
-+                this.playerBrand = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(data)).readUtf(256);
++                this.clientBrand = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(data)).readUtf(256);
 +            }
 +
 +            this.cserver.getMessenger().dispatchIncomingMessage(paperConnection(), identifier.toString(), data);
 +        } catch (final Exception e) {
 +            LOGGER.error("Couldn't handle custom payload on channel {}", identifier, e);
-+            this.disconnect(net.minecraft.network.chat.Component.literal("Invalid custom payload payload!"), io.papermc.paper.connection.DisconnectionReason.INVALID_PAYLOAD); // Paper - kick event cause
++            this.disconnect(Component.literal("Invalid custom payload payload!"), io.papermc.paper.connection.DisconnectionReason.INVALID_PAYLOAD); // Paper - kick event cause
 +        }
 +    }
 +
@@ -335,6 +335,6 @@
  
      protected CommonListenerCookie createCookie(final ClientInformation clientInformation) {
 -        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred);
-+        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand, this.pluginMessagerChannels); // Paper
++        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.clientBrand, this.pluginMessagerChannels); // Paper
      }
  }
