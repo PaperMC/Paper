@@ -47,7 +47,6 @@ import net.minecraft.world.level.block.state.properties.ComparatorMode;
 import net.minecraft.world.level.block.state.properties.CreakingHeartState;
 import net.minecraft.world.level.block.state.properties.DoorHingeSide;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
-import net.minecraft.world.level.block.state.properties.DripstoneThickness;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.block.state.properties.PistonType;
@@ -57,6 +56,7 @@ import net.minecraft.world.level.block.state.properties.RedstoneSide;
 import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
 import net.minecraft.world.level.block.state.properties.SideChainPart;
 import net.minecraft.world.level.block.state.properties.SlabType;
+import net.minecraft.world.level.block.state.properties.SpeleothemThickness;
 import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.level.block.state.properties.StructureMode;
 import net.minecraft.world.level.block.state.properties.TestBlockMode;
@@ -278,7 +278,7 @@ public final class BlockStateMapping {
         .put(DoorHingeSide.class, Door.Hinge.class)
         .put(SlabType.class, Slab.Type.class)
         .put(StructureMode.class, org.bukkit.block.data.type.StructureBlock.Mode.class)
-        .put(DripstoneThickness.class, PointedDripstone.Thickness.class)
+        .put(SpeleothemThickness.class, PointedDripstone.Thickness.class)
         .put(WallSide.class, Wall.Height.class)
         .put(BellAttachType.class, Bell.Attachment.class)
         .put(NoteBlockInstrument.class, Instrument.class)

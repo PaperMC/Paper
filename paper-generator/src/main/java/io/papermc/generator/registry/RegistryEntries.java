@@ -207,7 +207,7 @@ public final class RegistryEntries {
     );
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(
-        entry(Registries.ENTITY_TYPE, net.minecraft.world.entity.EntityType.class, EntityType.class),
+        entry(Registries.ENTITY_TYPE, net.minecraft.world.entity.EntityTypes.class, EntityType.class),
         entry(Registries.PARTICLE_TYPE, ParticleTypes.class, Particle.class),
         entry(Registries.POTION, Potions.class, PotionType.class),
         entry(Registries.MEMORY_MODULE_TYPE, MemoryModuleType.class, MemoryKey.class)

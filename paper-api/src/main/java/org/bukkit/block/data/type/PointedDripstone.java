@@ -58,7 +58,7 @@ public interface PointedDripstone extends Waterlogged {
      * Represents the thickness of the dripstone, corresponding to its position
      * within a multi-block dripstone formation.
      */
-    public enum Thickness {
+    public enum Thickness { // todo - snapshot - move & rename
         /**
          * Extended tip.
          */
