@@ -11,6 +11,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
 
 public abstract class CraftThrownPotion extends CraftThrowableProjectile implements ThrownPotion {
@@ -39,7 +40,7 @@ public abstract class CraftThrownPotion extends CraftThrowableProjectile impleme
     }
 
     @Override
-    public void setPotionMeta(org.bukkit.inventory.meta.PotionMeta meta) {
+    public void setPotionMeta(PotionMeta meta) {
         net.minecraft.world.item.ItemStack item = this.getHandle().getItem();
         CraftItemStack.applyMetaToItem(item, meta);
         this.getHandle().setItem(item); // Reset item
