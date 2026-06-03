@@ -8,6 +8,30 @@
  
      public Creeper(final EntityType<? extends Creeper> type, final Level level) {
          super(type, level);
+@@ -86,10 +_,20 @@
+     @Override
+     public boolean causeFallDamage(final double fallDistance, final float damageModifier, final DamageSource damageSource) {
+         boolean damaged = super.causeFallDamage(fallDistance, damageModifier, damageSource);
+-        this.swell += (int)(fallDistance * 1.5);
+-        if (this.swell > this.maxSwell - 5) {
+-            this.swell = this.maxSwell - 5;
++        // Paper start - CreeperSwellEvent; fire event for fall damage swell
++        int swellChange = (int)(fallDistance * 1.5);
++        int maxAllowedSwell = this.maxSwell - 5;
++        int finalSwellChange = Math.min(swellChange, maxAllowedSwell - this.swell);
++        if (finalSwellChange > 0) {
++            io.papermc.paper.event.entity.CreeperSwellEvent event = new io.papermc.paper.event.entity.CreeperSwellEvent(
++                (org.bukkit.entity.Creeper) this.getBukkitEntity(), swellChange, finalSwellChange, this.swell,
++                this.maxSwell, io.papermc.paper.event.entity.CreeperSwellEvent.SwellReason.FALL_DAMAGE);
++            event.callEvent();
++            if (!event.isCancelled()) {
++                this.swell += event.getFinalSwellChange();
++            }
+         }
++        // Paper end - CreeperSwellEvent
+ 
+         return damaged;
+     }
 @@ -118,7 +_,7 @@
          this.maxSwell = input.getShortOr("Fuse", (short)30);
          this.explosionRadius = input.getByteOr("ExplosionRadius", (byte)3);
@@ -17,6 +41,35 @@
          }
      }
  
+@@ -131,12 +_,23 @@
+             }
+ 
+             int swellDir = this.getSwellDir();
+-            if (swellDir > 0 && this.swell == 0) {
+-                this.playSound(SoundEvents.CREEPER_PRIMED, 1.0F, 0.5F);
+-                this.gameEvent(GameEvent.PRIME_FUSE);
++            // Paper start - CreeperSwellEvent; fire if swell will change this tick
++            if (swellDir != 0) {
++                int finalSwellChange = Math.clamp(swellDir, -this.swell, this.maxSwell - this.swell);
++                io.papermc.paper.event.entity.CreeperSwellEvent event = new io.papermc.paper.event.entity.CreeperSwellEvent(
++                    (org.bukkit.entity.Creeper) this.getBukkitEntity(), swellDir, finalSwellChange, this.swell, this.maxSwell,
++                    io.papermc.paper.event.entity.CreeperSwellEvent.SwellReason.PRIMED);
++                event.callEvent();
++                if (!event.isCancelled()) {
++                    int change = event.getFinalSwellChange();
++                    if (change > 0 && this.swell == 0) {
++                        this.playSound(SoundEvents.CREEPER_PRIMED, 1.0F, 0.5F);
++                        this.gameEvent(GameEvent.PRIME_FUSE);
++                    }
++                    this.swell += change;
++                }
+             }
+-
+-            this.swell += swellDir;
++            // Paper end - CreeperSwellEvent
+             if (this.swell < 0) {
+                 this.swell = 0;
+             }
 @@ -151,10 +_,11 @@
      }
  
@@ -63,7 +116,7 @@
                      itemStack.shrink(1);
                  } else {
                      itemStack.hurtAndBreak(1, player, hand.asEquipmentSlot());
-@@ -231,18 +_,29 @@
+@@ -231,18 +_,38 @@
      public void explodeCreeper() {
          if (this.level() instanceof ServerLevel level) {
              float explosionMultiplier = this.isPowered() ? 2.0F : 1.0F;
@@ -80,7 +133,16 @@
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
 +            // CraftBukkit start
 +            } else {
-+                this.swell = 0;
++                // Paper start - CreeperSwellEvent; reset swell through event when explosion is cancelled
++                io.papermc.paper.event.entity.CreeperSwellEvent swellEvent =
++                    new io.papermc.paper.event.entity.CreeperSwellEvent((org.bukkit.entity.Creeper) getBukkitEntity(),
++                        -this.swell, -this.swell, this.swell, this.maxSwell,
++                        io.papermc.paper.event.entity.CreeperSwellEvent.SwellReason.CUSTOM);
++                swellEvent.callEvent();
++                if (!swellEvent.isCancelled()) {
++                    this.swell += swellEvent.getFinalSwellChange();
++                }
++                // Paper end - CreeperSwellEvent
 +                this.entityData.set(DATA_IS_IGNITED, false); // Paper
 +            }
 +            // CraftBukkit end
