@@ -138,7 +138,6 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
-import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
 import org.bukkit.EntityEffect;
@@ -188,7 +187,6 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.conversations.ConversationTracker;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.map.CraftMapCursor;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.map.RenderData;
@@ -3097,12 +3095,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         // Paper end
     };
 
-    // Paper start - brand support
     @Override
     public String getClientBrandName() {
-        return getHandle().connection.playerBrand;
+        if (this.getHandle().connection == null) {
+            return null;
+        }
+        return this.getHandle().connection.clientBrand;
     }
-    // Paper end
 
     // Paper start
     @Override

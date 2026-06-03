@@ -8,8 +8,8 @@ import org.bukkit.plugin.Plugin;
 
 public class PaperPlayerGameConnection extends PaperCommonConnection<ServerGamePacketListenerImpl> implements PlayerGameConnection {
 
-    public PaperPlayerGameConnection(final ServerGamePacketListenerImpl serverConfigurationPacketListenerImpl) {
-        super(serverConfigurationPacketListenerImpl);
+    public PaperPlayerGameConnection(final ServerGamePacketListenerImpl packetListener) {
+        super(packetListener);
     }
 
     @Override
