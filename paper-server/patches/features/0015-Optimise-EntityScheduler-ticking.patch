@@ -7,23 +7,11 @@ The vast majority of the time, there are no tasks scheduled to
 the EntityScheduler. We can avoid iterating the entire entity list
 by tracking which schedulers have any tasks scheduled.
 
-diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
-index 2bc436cdf5180a7943c45fabb9fbbedae6f7db56..f312a7f5b1b2a777ab36b94ce7cbf3873f5e88bc 100644
---- a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
-+++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
-@@ -96,6 +96,7 @@ public final class ServerEntityLookup extends EntityLookup {
-         if (entity instanceof ThrownEnderpearl enderpearl) {
-             this.addEnderPearl(CoordinateUtils.getChunkKey(enderpearl.chunkPosition()));
-         }
-+        entity.registerScheduler(); // Paper - optimise Folia entity scheduler
-     }
- 
-     @Override
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index f9da26656b18327e3bcc1537a5f51e84b32cc43a..e69b540be1e0f0c699a57e07057cee74d4f8a771 100644
+index 0f41295186f7dbcdf3c496c97b70b9732ce1ca23..ea91ac77929db3eb73efa0377f223cb0617357b0 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -1784,32 +1784,22 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1664,32 +1664,22 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return new ServerStatus.Players(maxPlayers, players.size(), sample);
      }
  
@@ -66,10 +54,10 @@ index f9da26656b18327e3bcc1537a5f51e84b32cc43a..e69b540be1e0f0c699a57e07057cee74
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.ADVENTURE_CLICK_MANAGER.handleQueue(this.tickCount); // Paper
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.DIALOG_CLICK_MANAGER.handleQueue(this.tickCount); // Paper
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 5e030ff471248f501d8bca6cfa6cc4161a580d4d..5d4ae462c60723291b1c72dc5b933cd04d31133b 100644
+index bf2b2e107e22cd13bf381d7b6394ad578e58d599..19df7d79af25c5f3f9ea9f49ae78f62c5d49c92d 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -5148,6 +5148,11 @@ public abstract class Entity
+@@ -4960,6 +4960,11 @@ public abstract class Entity
          this.getBukkitEntity().taskScheduler.retire();
      }
      // Paper end - Folia schedulers
