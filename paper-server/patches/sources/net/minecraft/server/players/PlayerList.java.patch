@@ -1,14 +1,6 @@
-From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d489814a68b5d 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
-@@ -113,14 +113,16 @@ public abstract class PlayerList {
+@@ -113,14 +_,16 @@
      private static final int SEND_PLAYER_INFO_INTERVAL = 600;
      private static final SimpleDateFormat BAN_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z", Locale.ROOT);
      private final MinecraftServer server;
@@ -28,7 +20,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
      public final PlayerDataStorage playerIo;
      private final LayeredRegistryAccess<RegistryLayer> registries;
      private int viewDistance;
-@@ -128,12 +130,20 @@ public abstract class PlayerList {
+@@ -128,12 +_,20 @@
      private boolean allowCommandsForAllPlayers;
      private int sendAllPlayerInfoIn;
  
@@ -49,7 +41,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
          this.server = server;
          this.registries = registries;
          this.playerIo = playerIo;
-@@ -143,23 +153,19 @@ public abstract class PlayerList {
+@@ -143,23 +_,19 @@
          this.ipBans = new IpBanList(IPBANLIST_FILE, notificationService);
      }
  
@@ -78,7 +70,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
          LevelData levelData = level.getLevelData();
          ServerGamePacketListenerImpl playerConnection = new ServerGamePacketListenerImpl(this.server, connection, player, cookie);
          connection.setupInboundProtocol(
-@@ -176,8 +182,8 @@ public abstract class PlayerList {
+@@ -176,8 +_,8 @@
                  levelData.isHardcore(),
                  this.server.levelKeys(),
                  this.getMaxPlayers(),
@@ -89,7 +81,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
                  reducedDebugInfo,
                  !immediateRespawn,
                  doLimitedCrafting,
-@@ -185,6 +191,7 @@ public abstract class PlayerList {
+@@ -186,6 +_,7 @@
                  this.server.enforceSecureProfile()
              )
          );
@@ -97,7 +89,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
          playerConnection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
          playerConnection.send(new ClientboundPlayerAbilitiesPacket(player.getAbilities()));
          playerConnection.send(new ClientboundSetHeldSlotPacket(player.getInventory().getSelectedSlot()));
-@@ -204,24 +211,129 @@ public abstract class PlayerList {
+@@ -205,24 +_,129 @@
              component = Component.translatable("multiplayer.player.joined.renamed", player.getDisplayName(), oldName);
          }
  
@@ -231,7 +223,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
      }
  
      public void updateEntireScoreboard(final ServerScoreboard scoreboard, final ServerPlayer player) {
-@@ -243,31 +355,40 @@ public abstract class PlayerList {
+@@ -244,31 +_,40 @@
          }
      }
  
@@ -277,7 +269,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
              }
  
              @Override
-@@ -291,65 +412,146 @@ public abstract class PlayerList {
+@@ -292,65 +_,146 @@
      }
  
      protected void save(final ServerPlayer player) {
@@ -368,7 +360,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
  
          level.removePlayerImmediately(player, Entity.RemovalReason.UNLOADED_WITH_PLAYER);
 +        player.retireScheduler(); // Paper - Folia schedulers
-         player.getAdvancements().stopListening();
+         player.getAdvancements().clearTriggers();
          this.players.remove(player);
 +        this.playersByName.remove(player.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot
          this.server.getCustomBossEvents().onPlayerDisconnect(player);
@@ -386,6 +378,11 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
          }
  
 -        this.broadcastAll(new ClientboundPlayerInfoRemovePacket(List.of(player.getUUID())));
+-    }
+-
+-    public @Nullable Component canPlayerLogin(final SocketAddress address, final NameAndId nameAndId) {
+-        if (this.bans.isBanned(nameAndId)) {
+-            UserBanListEntry ban = this.bans.get(nameAndId);
 +        // CraftBukkit start
 +        // this.broadcastAll(new ClientboundPlayerInfoRemovePacket(List.of(player.getUUID())));
 +        ClientboundPlayerInfoRemovePacket packet = new ClientboundPlayerInfoRemovePacket(List.of(player.getUUID()));
@@ -402,11 +399,8 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
 +        this.cserver.getScoreboardManager().removePlayer(player.getBukkitEntity());
 +        // CraftBukkit end
 +        return playerQuitEvent.quitMessage(); // Paper - Adventure
-     }
- 
--    public @Nullable Component canPlayerLogin(final SocketAddress address, final NameAndId nameAndId) {
--        if (this.bans.isBanned(nameAndId)) {
--            UserBanListEntry ban = this.bans.get(nameAndId);
++    }
++
 +    // Paper start - PlayerLoginEvent
 +    public record LoginResult(@Nullable Component message, org.bukkit.event.player.PlayerLoginEvent.Result result) {
 +        public static LoginResult ALLOW = new net.minecraft.server.players.PlayerList.LoginResult(null, org.bukkit.event.player.PlayerLoginEvent.Result.ALLOWED);
@@ -438,7 +432,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
              }
  
              if (this.ipBans.isBanned(address)) {
-@@ -359,20 +561,19 @@ public abstract class PlayerList {
+@@ -360,20 +_,19 @@
                      reason.append(Component.translatable("multiplayer.disconnect.banned_ip.expiration", BAN_DATE_FORMAT.format(ban.getExpires())));
                  }
  
@@ -464,7 +458,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
                  dupes.add(player);
              }
          }
-@@ -383,23 +584,31 @@ public abstract class PlayerList {
+@@ -384,23 +_,31 @@
          }
  
          for (ServerPlayer player : dupes) {
@@ -501,7 +495,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
              player.copyRespawnPosition(serverPlayer);
          }
  
-@@ -407,17 +616,26 @@ public abstract class PlayerList {
+@@ -408,17 +_,26 @@
              player.addTag(tag);
          }
  
@@ -529,7 +523,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
          player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
          player.connection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
          player.connection.send(new ClientboundSetExperiencePacket(player.experienceProgress, player.totalExperience, player.experienceLevel));
-@@ -426,9 +644,15 @@ public abstract class PlayerList {
+@@ -427,9 +_,15 @@
          this.sendPlayerPermissionLevel(player);
          level.addRespawnedPlayer(player);
          this.players.add(player);
@@ -545,7 +539,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
          ServerPlayer.RespawnConfig respawnConfig = player.getRespawnConfig();
          if (!keepAllPlayerData && respawnConfig != null) {
              LevelData.RespawnData respawnData = respawnConfig.respawnData();
-@@ -454,6 +678,29 @@ public abstract class PlayerList {
+@@ -455,6 +_,29 @@
              }
          }
  
@@ -575,7 +569,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
          return player;
      }
  
-@@ -462,23 +709,58 @@ public abstract class PlayerList {
+@@ -463,23 +_,58 @@
      }
  
      public void sendActiveEffects(final LivingEntity livingEntity, final ServerGamePacketListenerImpl connection) {
@@ -637,7 +631,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
      public void broadcastAll(final Packet<?> packet) {
          for (ServerPlayer player : this.players) {
              player.connection.send(packet);
-@@ -564,6 +846,12 @@ public abstract class PlayerList {
+@@ -565,6 +_,12 @@
      }
  
      private void sendPlayerPermissionLevel(final ServerPlayer player, final LevelBasedPermissionSet permissions) {
@@ -650,16 +644,18 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
          if (player.connection != null) {
              byte eventId = switch (permissions.level()) {
                  case ALL -> EntityEvent.PERMISSION_LEVEL_ALL;
-@@ -575,9 +863,48 @@ public abstract class PlayerList {
+@@ -576,9 +_,48 @@
              player.connection.send(new ClientboundEntityEventPacket(player, eventId));
          }
  
 +        if (recalculatePermissions) { // Paper - Add sendOpLevel API
 +        player.getBukkitEntity().recalculatePermissions(); // CraftBukkit
          this.server.getCommands().sendCommands(player);
+-    }
+-
 +        } // Paper - Add sendOpLevel API
-     }
- 
++    }
++
 +    // Paper start - whitelist verify event / login event
 +    public LoginResult canBypassFullServerLogin(final NameAndId nameAndId, final LoginResult currentResult) {
 +        final boolean shouldKick = this.players.size() >= this.getMaxPlayers() && !this.canBypassPlayerLimit(nameAndId);
@@ -699,7 +695,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
      public boolean isWhiteListed(final NameAndId nameAndId) {
          return !this.isUsingWhitelist() || this.ops.contains(nameAndId) || this.whitelist.contains(nameAndId);
      }
-@@ -589,16 +916,7 @@ public abstract class PlayerList {
+@@ -590,16 +_,7 @@
      }
  
      public @Nullable ServerPlayer getPlayerByName(final String name) {
@@ -717,7 +713,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
      }
  
      public void broadcast(
-@@ -612,6 +930,11 @@ public abstract class PlayerList {
+@@ -613,6 +_,11 @@
      ) {
          for (int i = 0; i < this.players.size(); i++) {
              ServerPlayer player = this.players.get(i);
@@ -729,7 +725,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
              if (player != except && player.level().dimension() == dimension) {
                  double xd = x - player.getX();
                  double yd = y - player.getY();
-@@ -624,9 +947,11 @@ public abstract class PlayerList {
+@@ -625,9 +_,11 @@
      }
  
      public void saveAll() {
@@ -741,7 +737,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
      }
  
      public UserWhiteList getWhiteList() {
-@@ -651,12 +976,20 @@ public abstract class PlayerList {
+@@ -652,12 +_,20 @@
      public void sendLevelInfo(final ServerPlayer player, final ServerLevel level) {
          WorldBorder worldBorder = level.getWorldBorder();
          player.connection.send(new ClientboundInitializeBorderPacket(worldBorder));
@@ -766,7 +762,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -665,8 +998,21 @@ public abstract class PlayerList {
+@@ -666,8 +_,21 @@
  
      public void sendAllPlayerInfo(final ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
@@ -789,12 +785,13 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
      }
  
      public int getPlayerCount() {
-@@ -710,9 +1056,26 @@ public abstract class PlayerList {
+@@ -711,9 +_,26 @@
      }
  
      public void removeAll() {
 -        for (int i = 0; i < this.players.size(); i++) {
 -            this.players.get(i).connection.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
+-        }
 +        // Paper start - Extract method to allow for restarting flag
 +        this.removeAll(false);
 +    }
@@ -813,12 +810,12 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
 +            final net.minecraft.world.scores.Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
 +            final PlayerTeam team = scoreboard.getPlayersTeam(this.collideRuleTeamName);
 +            if (team != null) scoreboard.removePlayerTeam(team);
-         }
++        }
 +        // Paper end - Configurable player collision
      }
  
      public void broadcastSystemMessage(final Component message, final boolean overlay) {
-@@ -735,20 +1098,39 @@ public abstract class PlayerList {
+@@ -736,20 +_,39 @@
      }
  
      public void broadcastChatMessage(final PlayerChatMessage message, final ServerPlayer sender, final ChatType.Bound chatType) {
@@ -861,7 +858,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
              wasFullyFiltered |= filtered && message.isFullyFiltered();
          }
  
-@@ -761,13 +1143,21 @@ public abstract class PlayerList {
+@@ -762,13 +_,21 @@
          return message.hasSignature() && !message.hasExpiredServer(Instant.now());
      }
  
@@ -886,7 +883,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
  
      private Path locateStatsFile(final GameProfile gameProfile) {
          Path statFolder = this.server.getWorldPath(LevelResource.PLAYER_STATS_DIR);
-@@ -794,11 +1184,11 @@ public abstract class PlayerList {
+@@ -795,11 +_,11 @@
  
      public PlayerAdvancements getPlayerAdvancements(final ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -900,7 +897,7 @@ index 04e0a26944b9427dbaccb806728881214300a7eb..58fb206651471c7fe9781733bf6d4898
          }
  
          result.setPlayer(player);
-@@ -846,11 +1236,34 @@ public abstract class PlayerList {
+@@ -851,11 +_,34 @@
      }
  
      public void reloadResources() {

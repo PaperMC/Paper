@@ -1,14 +1,6 @@
-From 5e6b33d90f104b017d79526da9538bfd0934fc41 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/npc/villager/AbstractVillager.java b/net/minecraft/world/entity/npc/villager/AbstractVillager.java
-index 4eb3e530cf62a3592a60162f8e6d86b55338ee91..9582f694ddbb47be7d820c5fe8791d5ba112ec6b 100644
 --- a/net/minecraft/world/entity/npc/villager/AbstractVillager.java
 +++ b/net/minecraft/world/entity/npc/villager/AbstractVillager.java
-@@ -56,7 +56,7 @@ public abstract class AbstractVillager extends AgeableMob implements Npc, Mercha
+@@ -57,7 +_,7 @@
      private static final EntityDataAccessor<Integer> DATA_UNHAPPY_COUNTER = SynchedEntityData.defineId(AbstractVillager.class, EntityDataSerializers.INT);
      private @Nullable Player tradingPlayer;
      protected @Nullable MerchantOffers offers;
@@ -17,7 +9,7 @@ index 4eb3e530cf62a3592a60162f8e6d86b55338ee91..9582f694ddbb47be7d820c5fe8791d5b
  
      public AbstractVillager(final EntityType<? extends AbstractVillager> type, final Level level) {
          super(type, level);
-@@ -108,6 +108,20 @@ public abstract class AbstractVillager extends AgeableMob implements Npc, Mercha
+@@ -109,6 +_,20 @@
          return this.tradingPlayer != null;
      }
  
@@ -38,7 +30,7 @@ index 4eb3e530cf62a3592a60162f8e6d86b55338ee91..9582f694ddbb47be7d820c5fe8791d5b
      @Override
      public MerchantOffers getOffers() {
          if (this.level() instanceof ServerLevel serverLevel) {
-@@ -130,11 +144,24 @@ public abstract class AbstractVillager extends AgeableMob implements Npc, Mercha
+@@ -131,11 +_,24 @@
      public void overrideXp(final int xp) {
      }
  
@@ -65,7 +57,7 @@ index 4eb3e530cf62a3592a60162f8e6d86b55338ee91..9582f694ddbb47be7d820c5fe8791d5b
          if (this.tradingPlayer instanceof ServerPlayer) {
              CriteriaTriggers.TRADE.trigger((ServerPlayer)this.tradingPlayer, this, offer.getResult());
          }
-@@ -232,6 +259,11 @@ public abstract class AbstractVillager extends AgeableMob implements Npc, Mercha
+@@ -230,6 +_,11 @@
      protected abstract void updateTrades(ServerLevel level);
  
      protected void addOffersFromTradeSet(final ServerLevel level, final MerchantOffers offers, final ResourceKey<TradeSet> resourceKey) {
@@ -77,7 +69,7 @@ index 4eb3e530cf62a3592a60162f8e6d86b55338ee91..9582f694ddbb47be7d820c5fe8791d5b
          Optional<TradeSet> tradeSetOpt = this.registryAccess().lookupOrThrow(Registries.TRADE_SET).getOptional(resourceKey);
          if (tradeSetOpt.isEmpty()) {
              LOGGER.debug("Missing expected trade set {}", resourceKey);
-@@ -245,17 +277,17 @@ public abstract class AbstractVillager extends AgeableMob implements Npc, Mercha
+@@ -243,18 +_,18 @@
                          .create(LootContextParamSets.VILLAGER_TRADE)
                  )
                  .create(tradeSet.randomSequence());
@@ -93,16 +85,17 @@ index 4eb3e530cf62a3592a60162f8e6d86b55338ee91..9582f694ddbb47be7d820c5fe8791d5b
          }
      }
  
-     private static void addOffersFromItemListings(
+     @VisibleForTesting
+     static void addOffersFromItemListings(
 -        final LootContext lootContext, final MerchantOffers merchantOffers, final HolderSet<VillagerTrade> potentialOffers, final int numberOfOffers
 +        final LootContext lootContext, final MerchantOffers merchantOffers, final HolderSet<VillagerTrade> potentialOffers, final int numberOfOffers, AbstractVillager villager // Paper
      ) {
+         List<Holder<VillagerTrade>> potentialOffersList = Lists.newArrayList(potentialOffers);
          int offersFound = 0;
- 
-@@ -267,14 +299,14 @@ public abstract class AbstractVillager extends AgeableMob implements Npc, Mercha
- 
-             MerchantOffer offer = villagerTrade.get().value().getOffer(lootContext);
-             if (offer != null) {
+@@ -266,14 +_,14 @@
+             if (offer == null) {
+                 potentialOffersList.remove(roll);
+             } else {
 -                merchantOffers.add(offer);
 +                tryAcquireTrade(villager, merchantOffers, offer); // Paper
                  offersFound++;
@@ -116,7 +109,7 @@ index 4eb3e530cf62a3592a60162f8e6d86b55338ee91..9582f694ddbb47be7d820c5fe8791d5b
      ) {
          List<Holder<VillagerTrade>> leftoverOffers = Lists.newArrayList(potentialOffers);
          int offersFound = 0;
-@@ -283,12 +315,31 @@ public abstract class AbstractVillager extends AgeableMob implements Npc, Mercha
+@@ -282,11 +_,30 @@
              Holder<VillagerTrade> villagerTrade = leftoverOffers.remove(lootContext.getRandom().nextInt(leftoverOffers.size()));
              MerchantOffer offer = villagerTrade.value().getOffer(lootContext);
              if (offer != null) {
@@ -126,7 +119,7 @@ index 4eb3e530cf62a3592a60162f8e6d86b55338ee91..9582f694ddbb47be7d820c5fe8791d5b
              }
          }
      }
- 
++
 +    // Paper start
 +    private static void tryAcquireTrade(final AbstractVillager villager, final MerchantOffers merchantOffers, MerchantOffer offer) {
 +        // CraftBukkit start
@@ -145,7 +138,6 @@ index 4eb3e530cf62a3592a60162f8e6d86b55338ee91..9582f694ddbb47be7d820c5fe8791d5b
 +        // CraftBukkit end
 +    }
 +    // Paper end
-+
+ 
      @Override
      public Vec3 getRopeHoldPosition(final float partialTickTime) {
-         float yRot = Mth.lerp(partialTickTime, this.yBodyRotO, this.yBodyRot) * Mth.DEG_TO_RAD;
