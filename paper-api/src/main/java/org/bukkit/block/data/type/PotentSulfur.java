@@ -4,7 +4,7 @@ import org.bukkit.block.data.BlockData;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * 'potent_sulfur_state' represents the environment state of the block and whether it can form a geyser
+ * 'potent_sulfur_state' represents the environment state of the block and whether it can form a geyser.
  */
 @NullMarked
 public interface PotentSulfur extends BlockData {

@@ -163,7 +163,8 @@ public final class MobGoalNames { // todo sync with MobGoalHelper ideally this s
         RangedEntity.class,
         Tameable.class,
         Monster.class,
-        PufferFish.class // weird case
+        PufferFish.class, // weird case
+        AbstractCubeMob.class
     );
 
     private static String getPathName(Class<? extends Mob> type, Class<?> holderClass, String name) {

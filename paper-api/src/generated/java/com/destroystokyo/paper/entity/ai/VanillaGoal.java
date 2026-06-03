@@ -71,13 +71,13 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @GeneratedClass
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
-    GoalKey<AbstractCubeMob> CUBE_MOB_CUBE_MOB_ATTACK = create("cube_mob_cube_mob_attack", AbstractCubeMob.class);
+    GoalKey<AbstractCubeMob> CUBE_MOB_ATTACK = create("cube_mob_attack", AbstractCubeMob.class);
 
-    GoalKey<AbstractCubeMob> CUBE_MOB_CUBE_MOB_FLOAT = create("cube_mob_cube_mob_float", AbstractCubeMob.class);
+    GoalKey<AbstractCubeMob> CUBE_MOB_FLOAT = create("cube_mob_float", AbstractCubeMob.class);
 
-    GoalKey<AbstractCubeMob> CUBE_MOB_CUBE_MOB_KEEP_ON_JUMPING = create("cube_mob_cube_mob_keep_on_jumping", AbstractCubeMob.class);
+    GoalKey<AbstractCubeMob> CUBE_MOB_KEEP_ON_JUMPING = create("cube_mob_keep_on_jumping", AbstractCubeMob.class);
 
-    GoalKey<AbstractCubeMob> CUBE_MOB_CUBE_MOB_RANDOM_DIRECTION = create("cube_mob_cube_mob_random_direction", AbstractCubeMob.class);
+    GoalKey<AbstractCubeMob> CUBE_MOB_RANDOM_DIRECTION = create("cube_mob_random_direction", AbstractCubeMob.class);
 
     GoalKey<AbstractHorse> HORSE_MOUNT_PANIC = create("horse_mount_panic", AbstractHorse.class);
 
