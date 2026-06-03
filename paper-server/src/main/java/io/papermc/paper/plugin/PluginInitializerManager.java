@@ -109,8 +109,16 @@ public class PluginInitializerManager {
         io.papermc.paper.plugin.util.EntrypointUtil.registerProvidersFromSource(io.papermc.paper.plugin.provider.source.PluginFlagProviderSource.INSTANCE, files);
 
         @SuppressWarnings("unchecked")
-        java.util.List<Path> dirs = ((java.util.List<File>) optionSet.valuesOf("add-plugin-dir")).stream().map(File::toPath).toList();
-        dirs.forEach(pluginDir -> io.papermc.paper.plugin.util.EntrypointUtil.registerProvidersFromSource(io.papermc.paper.plugin.provider.source.DirectoryProviderSource.INSTANCE_NO_CREATE, pluginDir));
+        java.util.List<Path> pluginList = ((java.util.List<File>) optionSet.valuesOf("add-plugin-dir")).stream()
+            .filter(java.util.Objects::nonNull)
+            .map(f -> f.listFiles(file -> file.getName().endsWith(".jar")))
+            .filter(java.util.Objects::nonNull)
+            .flatMap(java.util.Arrays::stream)
+            .filter(File::isFile)
+            .map(File::toPath)
+            .toList();
+
+        io.papermc.paper.plugin.util.EntrypointUtil.registerProvidersFromSource(io.papermc.paper.plugin.provider.source.PluginFlagProviderSource.INSTANCE, pluginList);
 
         final Set<String> paperPluginNames = new TreeSet<>();
         final Set<String> legacyPluginNames = new TreeSet<>();
