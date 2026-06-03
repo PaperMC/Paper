@@ -343,7 +343,7 @@ class PaperPluginInstanceManager {
 
         for (final Appender appender : context.getConfiguration().getAppenders().values()) {
             if (appender instanceof AsyncAppender asyncAppender) {
-                final boolean flushed = asyncAppender.flush(100, TimeUnit.MILLISECONDS);
+                final boolean flushed = true; //asyncAppender.flush(100, TimeUnit.MILLISECONDS); // todo - snapshot - relies on 'Add explicit flush support to Log4j AsyncAppender' feature patch, uncomment once that's in
                 if (!flushed) {
                     this.server.getLogger().log(Level.WARNING, "Failed to flush log messages before plugin unload.");
                 }

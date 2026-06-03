@@ -6,17 +6,12 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.BaseSpawner;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.SpawnData;
-import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.storage.TagValueOutput;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
@@ -56,7 +51,7 @@ public interface PaperSharedSpawnerLogic extends Spawner {
 
         try (ProblemReporter.ScopedCollector scopedCollector = new ProblemReporter.ScopedCollector(() -> getSpawner().toString(), LOGGER)) {
             TagValueOutput tagValueOutput = TagValueOutput.createWithContext(scopedCollector, this.getInternalWorld().registryAccess());
-            tagValueOutput.putString(Entity.TAG_ID, BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.ITEM).toString());
+            tagValueOutput.putString(Entity.TAG_ID, BuiltInRegistries.ENTITY_TYPE.getKey(EntityTypes.ITEM).toString());
             tagValueOutput.store("Item", net.minecraft.world.item.ItemStack.CODEC, item);
 
             this.setNextSpawnData(

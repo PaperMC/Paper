@@ -49,6 +49,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntitySpawnRequest;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.alchemy.Potion;
@@ -436,7 +438,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public String getTranslationKey(EntityType entityType) {
         Preconditions.checkArgument(entityType.getName() != null, "Invalid name of EntityType %s for translation key", entityType);
-        return net.minecraft.world.entity.EntityType.byString(entityType.getName()).map(net.minecraft.world.entity.EntityType::getDescriptionId).orElseThrow();
+        return BuiltInRegistries.ENTITY_TYPE.getOptional(Identifier.tryParse(entityType.getName())).map(net.minecraft.world.entity.EntityType::getDescriptionId).orElseThrow();
     }
 
     @Override
@@ -740,7 +742,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             nmsEntity = net.minecraft.world.entity.EntityType.create(
                 TagValueInput.create(problemReporter, world.registryAccess(), compound),
                 world,
-                net.minecraft.world.entity.EntitySpawnReason.LOAD
+                new EntitySpawnRequest(EntitySpawnReason.LOAD, false)
             ).orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?"));
         }
 
@@ -785,8 +787,8 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public int nextEntityId() {
-        return net.minecraft.world.entity.Entity.nextEntityId();
+    public int nextEntityId(final World world) {
+        return ((CraftWorld) world).getHandle().getNextEntityId();
     }
 
     @Override

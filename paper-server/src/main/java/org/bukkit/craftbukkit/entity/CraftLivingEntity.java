@@ -26,7 +26,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.decoration.ArmorStand;
@@ -606,9 +606,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                 launch = new net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball(world, this.getHandle(), vec);
             } else if (AbstractWindCharge.class.isAssignableFrom(projectile)) {
                 if (BreezeWindCharge.class.isAssignableFrom(projectile)) {
-                    launch = EntityType.BREEZE_WIND_CHARGE.create(world, EntitySpawnReason.TRIGGERED);
+                    launch = EntityTypes.BREEZE_WIND_CHARGE.create(world, EntitySpawnReason.TRIGGERED);
                 } else {
-                    launch = EntityType.WIND_CHARGE.create(world, EntitySpawnReason.TRIGGERED);
+                    launch = EntityTypes.WIND_CHARGE.create(world, EntitySpawnReason.TRIGGERED);
                 }
 
                 ((net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) launch).setOwner(this.getHandle());
@@ -623,7 +623,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             Location location = this.getEyeLocation();
             Vector direction = location.getDirection();
 
-            launch = EntityType.LLAMA_SPIT.create(world, EntitySpawnReason.TRIGGERED);
+            launch = EntityTypes.LLAMA_SPIT.create(world, EntitySpawnReason.TRIGGERED);
 
             ((net.minecraft.world.entity.projectile.LlamaSpit) launch).setOwner(this.getHandle());
             ((net.minecraft.world.entity.projectile.LlamaSpit) launch).shoot(direction.getX(), direction.getY(), direction.getZ(), 1.5F, 10.0F); // EntityLlama
@@ -1029,7 +1029,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public void knockback(final double strength, final double directionX, final double directionZ) {
         Preconditions.checkArgument(strength > 0, "Knockback strength must be > 0");
-        this.getHandle().knockback(strength, directionX, directionZ);
+        this.getHandle().knockback(strength, directionX, directionZ, this.getHandle().damageSources().generic(), 0.0F); // todo - snapshot - api - expose damage source and/or damage
     }
 
     public void broadcastSlotBreak(final org.bukkit.inventory.EquipmentSlot slot) {

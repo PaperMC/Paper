@@ -276,7 +276,7 @@ public interface UnsafeValues {
      * <p>
      * Use this when sending custom packets, so that there are no collisions on the client or server.
      */
-    public int nextEntityId();
+    int nextEntityId(final World world);
 
     /**
      * Just don't use it.

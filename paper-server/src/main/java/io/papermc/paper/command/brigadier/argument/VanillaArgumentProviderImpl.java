@@ -50,7 +50,6 @@ import net.kyori.adventure.text.format.TextColor;
 import net.minecraft.advancements.predicates.MinMaxBounds;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.AngleArgument;
-import net.minecraft.commands.arguments.ColorArgument;
 import net.minecraft.commands.arguments.ComponentArgument;
 import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
@@ -67,6 +66,7 @@ import net.minecraft.commands.arguments.ResourceArgument;
 import net.minecraft.commands.arguments.ResourceKeyArgument;
 import net.minecraft.commands.arguments.ScoreboardSlotArgument;
 import net.minecraft.commands.arguments.StyleArgument;
+import net.minecraft.commands.arguments.TeamColorArgument;
 import net.minecraft.commands.arguments.TemplateMirrorArgument;
 import net.minecraft.commands.arguments.TemplateRotationArgument;
 import net.minecraft.commands.arguments.TimeArgument;
@@ -279,14 +279,8 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
 
     @Override
     public ArgumentType<NamedTextColor> namedColor() {
-        return this.wrap(ColorArgument.color(), result ->
-            requireNonNull(
-                NamedTextColor.namedColor(
-                    requireNonNull(result.getColor(), () -> result + " didn't have a color")
-                ),
-                () -> result.getColor() + " didn't map to an adventure named color"
-            )
-        );
+        return this.wrap(TeamColorArgument.teamColor(), result ->
+            requireNonNull(NamedTextColor.NAMES.value(result.getSerializedName()), () -> result.getSerializedName() + " didn't map to an adventure named color"));
     }
 
     @Override
