@@ -1459,7 +1459,40 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public org.bukkit.WorldType getWorldType() {
+        net.minecraft.world.level.chunk.ChunkGenerator generator = this.world.getChunkSource().getGenerator();
+
+        if (generator instanceof org.bukkit.craftbukkit.generator.CustomChunkGenerator customGen) {
+            generator = customGen.getDelegate();
+        }
+
+        if (generator instanceof net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator noiseGen) {
+            if (noiseGen.generatorSettings().is(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.AMPLIFIED)) {
+                return org.bukkit.WorldType.AMPLIFIED;
+            }
+
+            if (noiseGen.generatorSettings().is(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.LARGE_BIOMES)) {
+                return org.bukkit.WorldType.LARGE_BIOMES;
+            }
+
+            if (noiseGen.generatorSettings().is(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.CAVES)) {
+                return org.bukkit.WorldType.CAVES;
+            }
+
+            if (noiseGen.generatorSettings().is(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.FLOATING_ISLANDS)) {
+                return org.bukkit.WorldType.FLOATING_ISLANDS;
+            }
+        }
+
+        if (generator instanceof net.minecraft.world.level.levelgen.DebugLevelSource) {
+            return org.bukkit.WorldType.DEBUG;
+        }
+
         return this.world.isFlat() ? org.bukkit.WorldType.FLAT : org.bukkit.WorldType.NORMAL;
+    }
+
+    @Override
+    public NamespacedKey getWorldTypeKey() {
+        return this.world.getChunkSource().getGenerator().getKey();
     }
 
     @Override

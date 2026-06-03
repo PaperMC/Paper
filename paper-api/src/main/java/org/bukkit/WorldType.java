@@ -13,7 +13,10 @@ public enum WorldType {
     NORMAL("DEFAULT"),
     FLAT("FLAT"),
     LARGE_BIOMES("LARGEBIOMES"),
-    AMPLIFIED("AMPLIFIED");
+    AMPLIFIED("AMPLIFIED"),
+    CAVES("CAVES"),
+    FLOATING_ISLANDS("FLOATING_ISLANDS"),
+    DEBUG("DEBUG");
 
     private static final Map<String, WorldType> BY_NAME = Maps.newHashMap();
     private final String name;
