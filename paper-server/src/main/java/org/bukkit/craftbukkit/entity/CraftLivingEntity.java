@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import ca.spottedleaf.moonrise.common.util.TickThread;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
@@ -508,7 +509,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean addPotionEffect(PotionEffect effect, boolean force) {
-        org.spigotmc.AsyncCatcher.catchOp("effect add"); // Paper
+        TickThread.ensureTickThread(this.entity, "Cannot add potion effect async"); // Paper - block async calls
         this.getHandle().addEffect(org.bukkit.craftbukkit.potion.CraftPotionUtil.fromBukkit(effect), EntityPotionEffectEvent.Cause.PLUGIN); // Paper - Don't ignore icon
         return true;
     }
