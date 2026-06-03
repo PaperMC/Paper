@@ -1,8 +1,9 @@
 package org.bukkit.craftbukkit.legacy.reroute;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import io.papermc.paper.plugin.ApiVersion;
 import java.lang.annotation.Annotation;
-import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
@@ -19,56 +20,56 @@ public class RequirePluginVersionDataTest {
 
     @Test
     public void testDifferent() {
-        RequirePluginVersionData data = RequirePluginVersionData.create(new RequirePluginVersionImpl("", "1.21", "1.23"));
+        RequirePluginVersionData data = RequirePluginVersionData.create(new RequirePluginVersionImpl("", "1.20", "1.21"));
 
-        assertEquals(ApiVersion.getOrCreateVersion("1.21"), data.minInclusive());
-        assertEquals(ApiVersion.getOrCreateVersion("1.23"), data.maxInclusive());
+        assertEquals(ApiVersion.getOrCreateVersion("1.20"), data.minInclusive());
+        assertEquals(ApiVersion.getOrCreateVersion("1.21"), data.maxInclusive());
     }
 
     @Test
     public void testValue() {
-        RequirePluginVersionData data = RequirePluginVersionData.create(new RequirePluginVersionImpl("1.42", "", ""));
+        RequirePluginVersionData data = RequirePluginVersionData.create(new RequirePluginVersionImpl("1.21", "", ""));
 
-        assertEquals(ApiVersion.getOrCreateVersion("1.42"), data.minInclusive());
-        assertEquals(ApiVersion.getOrCreateVersion("1.42"), data.maxInclusive());
+        assertEquals(ApiVersion.getOrCreateVersion("1.21"), data.minInclusive());
+        assertEquals(ApiVersion.getOrCreateVersion("1.21"), data.maxInclusive());
     }
 
     @Test
     public void testValueAndMin() {
-        assertThrows(IllegalArgumentException.class, () -> RequirePluginVersionData.create(new RequirePluginVersionImpl("1.42", "1.52", "")));
+        assertThrows(IllegalArgumentException.class, () -> RequirePluginVersionData.create(new RequirePluginVersionImpl("1.20", "1.21", "")));
     }
 
     @Test
     public void testValueAndMax() {
-        assertThrows(IllegalArgumentException.class, () -> RequirePluginVersionData.create(new RequirePluginVersionImpl("1.42", "", "1.53")));
+        assertThrows(IllegalArgumentException.class, () -> RequirePluginVersionData.create(new RequirePluginVersionImpl("1.20", "", "1.21")));
     }
 
 
     @Test
     public void testValueAndMinMax() {
-        assertThrows(IllegalArgumentException.class, () -> RequirePluginVersionData.create(new RequirePluginVersionImpl("1.42", "1.51", "1.53")));
+        assertThrows(IllegalArgumentException.class, () -> RequirePluginVersionData.create(new RequirePluginVersionImpl("1.19", "1.20", "1.21")));
     }
 
     @Test
     public void testMinNewerThanMax() {
-        assertThrows(IllegalArgumentException.class, () -> RequirePluginVersionData.create(new RequirePluginVersionImpl("", "1.59", "1.57")));
+        assertThrows(IllegalArgumentException.class, () -> RequirePluginVersionData.create(new RequirePluginVersionImpl("", "1.21", "1.20")));
     }
 
     @Test
     public void testOnlyMin() {
-        RequirePluginVersionData data = RequirePluginVersionData.create(new RequirePluginVersionImpl("", "1.44", ""));
+        RequirePluginVersionData data = RequirePluginVersionData.create(new RequirePluginVersionImpl("", "1.21", ""));
 
-        assertEquals(ApiVersion.getOrCreateVersion("1.44"), data.minInclusive());
+        assertEquals(ApiVersion.getOrCreateVersion("1.21"), data.minInclusive());
         assertNull(data.maxInclusive());
     }
 
 
     @Test
     public void testOnlyMax() {
-        RequirePluginVersionData data = RequirePluginVersionData.create(new RequirePluginVersionImpl("", "", "1.96"));
+        RequirePluginVersionData data = RequirePluginVersionData.create(new RequirePluginVersionImpl("", "", "1.21"));
 
         assertNull(data.minInclusive());
-        assertEquals(ApiVersion.getOrCreateVersion("1.96"), data.maxInclusive());
+        assertEquals(ApiVersion.getOrCreateVersion("1.21"), data.maxInclusive());
     }
 
     @Test

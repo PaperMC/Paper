@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.legacy.reroute;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.plugin.ApiVersion;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -10,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
-import org.bukkit.craftbukkit.util.ApiVersion;
 import org.objectweb.asm.Type;
 
 public class RerouteBuilder {
