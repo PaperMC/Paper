@@ -3796,6 +3796,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     void setRotation(float yaw, float pitch);
 
     /**
+     * Set the player's rotation.
+     * <p>
+     * Note: When relative parameters are set, client will do interpolations to
+     * make the rotation smooth, it's different from just send a new rotation with
+     * yaw or pitch addition.
+     *
+     * @param yaw the yaw
+     * @param relativeYaw whether the yaw is relative to the current yaw
+     * @param pitch the pitch
+     * @param relativePitch whether the pitch is relative to the current pitch
+     */
+    void setRotation(float yaw, boolean relativeYaw, float pitch, boolean relativePitch);
+
+    /**
      * Causes the player to look towards the given entity.
      *
      * @param entity Entity to look at
