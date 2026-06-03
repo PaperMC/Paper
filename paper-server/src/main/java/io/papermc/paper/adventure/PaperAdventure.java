@@ -26,6 +26,7 @@ import net.kyori.adventure.text.TranslationArgument;
 import net.kyori.adventure.text.event.DataComponentValue;
 import net.kyori.adventure.text.event.DataComponentValueConverterRegistry;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.serializer.ComponentSerializer;
@@ -58,6 +59,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.scores.TeamColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
@@ -437,17 +439,12 @@ public final class PaperAdventure {
     }
 
     // Colors
-
-    public static @NotNull TextColor asAdventure(final ChatFormatting formatting) {
-        final Integer color = formatting.getColor();
-        if (color == null) {
-            throw new IllegalArgumentException("Not a valid color");
-        }
-        return TextColor.color(color);
+    public static @Nullable NamedTextColor asAdventure(final TeamColor teamColor) {
+        return NamedTextColor.NAMES.value(teamColor.getSerializedName());
     }
 
-    public static @Nullable ChatFormatting asVanilla(final TextColor color) {
-        return ChatFormatting.getByHexValue(color.value());
+    public static @Nullable TeamColor asVanilla(final NamedTextColor color) {
+        return TeamColor.byName(color.toString());
     }
 
     // Style

@@ -369,7 +369,7 @@ public final class CraftChatMessage {
         return jsonToBungee(toJSON(component));
     }
 
-    private static @Nullable ChatFormatting toLegacyFormat(final TextColor color) {
+    public static @Nullable ChatFormatting toLegacyFormat(final TextColor color) {
         // rgb values of the named text colors mapped to the legacy chat formatting enum
         return switch (color.getValue()) {
             case 0 -> ChatFormatting.BLACK;
