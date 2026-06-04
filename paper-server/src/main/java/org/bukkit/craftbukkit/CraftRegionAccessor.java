@@ -1,6 +1,9 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
+import io.papermc.paper.world.attribute.PaperEnvironmentalAttribute;
+import io.papermc.paper.world.attribute.PaperEnvironmentalAttributeType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -500,5 +503,10 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     @Override
     public java.util.Set<org.bukkit.FeatureFlag> getFeatureFlags() {
         return io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl.fromNms(this.getHandle().enabledFeatures());
+    }
+
+    @Override
+    public <T> PaperEnvironmentalAttribute<T, ?> getEnvironmentalAttribute(final EnvironmentalAttributeType<T> type) {
+        return new PaperEnvironmentalAttribute<>(this.getHandle().getLevel().environmentAttributes(), (PaperEnvironmentalAttributeType<T, ?>) type);
     }
 }
