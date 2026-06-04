@@ -1,6 +1,8 @@
 package org.bukkit.event.player;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import org.bukkit.Warning;
 import net.kyori.adventure.text.Component;
@@ -32,16 +34,21 @@ public class PlayerLoginEvent extends PlayerEvent {
 
     private final String hostname;
     private final InetAddress address;
-    private final InetAddress realAddress;
+    private final SocketAddress realAddress;
     private Result result = Result.ALLOWED;
     private Component message = Component.empty();
 
     @ApiStatus.Internal
-    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address, final @NotNull InetAddress realAddress) {
+    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address, final @NotNull SocketAddress realAddress) {
         super(player);
         this.hostname = hostname;
         this.address = address;
         this.realAddress = realAddress;
+    }
+
+    @ApiStatus.Internal
+    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address, final @NotNull InetAddress realAddress) {
+        this(player, hostname, address, new InetSocketAddress(address, 0));
     }
 
     @ApiStatus.Internal
@@ -88,16 +95,30 @@ public class PlayerLoginEvent extends PlayerEvent {
         return this.address;
     }
 
+
+    /**
+     * Gets the connection socket address of this player, regardless of whether
+     * it has been spoofed or not.
+     *
+     * @return the player's connection socket address
+     */
+    @NotNull
+    public SocketAddress getRealSocketAddress() {
+        return this.realAddress;
+    }
+
     /**
      * Gets the connection address of this player, regardless of whether it has
      * been spoofed or not.
      *
-     * @return the player's connection address
+     * @return the player's connection address, or the loopback address if the
+     * player is connecting through a Unix socket
      * @see #getAddress()
      */
     @NotNull
     public InetAddress getRealAddress() {
-        return this.realAddress;
+        if (this.realAddress instanceof InetSocketAddress inet) return inet.getAddress();
+        return InetAddress.getLoopbackAddress();
     }
 
     /**
