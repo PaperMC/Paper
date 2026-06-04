@@ -252,8 +252,10 @@ public class CraftBlockState implements BlockState {
     }
 
     // used to revert a block placement due to an event being cancelled for example
-    public boolean revertPlace() {
+    public boolean revertPlace(boolean ignorePoi) {
+        int defaultFlags = ignorePoi ? net.minecraft.world.level.block.Block.UPDATE_SKIP_POI : 0;
         return this.place(
+            defaultFlags |
             net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
             net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
             net.minecraft.world.level.block.Block.UPDATE_SUPPRESS_DROPS |
