@@ -1202,7 +1202,7 @@ public final class CraftServer implements Server {
             default -> throw new IllegalArgumentException("Illegal dimension (" + creator.environment() + ")");
         };
 
-        final ResourceKey<net.minecraft.world.level.Level> dimensionKey = PaperWorldLoader.dimensionKey(creator.key());
+        final ResourceKey<net.minecraft.world.level.Level> dimensionKey = CraftNamespacedKey.toResourceKey(Registries.DIMENSION, creator.key());
         WorldLoader.DataLoadContext context = this.console.worldLoaderContext;
         RegistryAccess.Frozen registryAccess = context.datapackDimensions();
         net.minecraft.core.Registry<LevelStem> contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
