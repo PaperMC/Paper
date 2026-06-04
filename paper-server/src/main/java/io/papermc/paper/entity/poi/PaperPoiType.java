@@ -10,7 +10,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class PaperPoiType extends HolderableBase<net.minecraft.world.entity.ai.village.poi.PoiType> implements PoiType {
+public class PaperPoiType extends HolderableBase<net.minecraft.world.entity.ai.village.poi.PoiType, PoiType> implements PoiType {
 
     public static PaperPoiType minecraftHolderToBukkit(final Holder<net.minecraft.world.entity.ai.village.poi.PoiType> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.POINT_OF_INTEREST_TYPE);

@@ -1,5 +1,6 @@
 package org.bukkit.block;
 
+import io.papermc.paper.registry.RegistryElement;
 import java.util.Collection;
 import java.util.function.Consumer;
 import net.kyori.adventure.key.Key;
@@ -132,7 +133,7 @@ import org.jspecify.annotations.Nullable;
  * Represents a block type.
  */
 @NullMarked
-public interface BlockType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - add translatable & feature flag API
+public interface BlockType extends RegistryElement<BlockType>, Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - add translatable & feature flag API
 
     /**
      * Typed represents a subtype of {@link BlockType}s that have a known block
