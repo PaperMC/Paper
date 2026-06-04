@@ -11,6 +11,11 @@ public class CraftInventoryFurnace extends CraftInventory implements FurnaceInve
     }
 
     @Override
+    public ItemStack[] getStorageContents() {
+        return this.asCraftMirror(this.getInventory().getContents().subList(0, AbstractFurnaceBlockEntity.SLOT_RESULT));
+    }
+
+    @Override
     public ItemStack getResult() {
         return this.getItem(2);
     }
