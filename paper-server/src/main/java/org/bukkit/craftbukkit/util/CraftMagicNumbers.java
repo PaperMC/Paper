@@ -757,14 +757,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public boolean isValidRepairItemStack(org.bukkit.inventory.ItemStack itemToBeRepaired, org.bukkit.inventory.ItemStack repairMaterial) {
-        if (!itemToBeRepaired.getType().isItem() || !repairMaterial.getType().isItem()) {
-            return false;
-        }
-        return CraftItemStack.unwrap(itemToBeRepaired).isValidRepairItem(CraftItemStack.unwrap(repairMaterial));
-    }
-
-    @Override
     public boolean hasDefaultEntityAttributes(NamespacedKey entityKey) {
         return net.minecraft.world.entity.ai.attributes.DefaultAttributes.hasSupplier(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(CraftNamespacedKey.toMinecraft(entityKey)));
     }

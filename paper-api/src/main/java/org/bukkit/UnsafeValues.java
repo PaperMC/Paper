@@ -289,16 +289,6 @@ public interface UnsafeValues {
     int getProtocolVersion();
 
     /**
-     * Checks if an itemstack can be repaired with another itemstack.
-     * Returns false if either argument's type is not an item ({@link Material#isItem()}).
-     *
-     * @param itemToBeRepaired the itemstack to be repaired
-     * @param repairMaterial the repair material
-     * @return true if valid repair, false if not
-     */
-    public boolean isValidRepairItemStack(@org.jetbrains.annotations.NotNull ItemStack itemToBeRepaired, @org.jetbrains.annotations.NotNull ItemStack repairMaterial);
-
-    /**
      * Checks if the entity represented by the namespaced key has default attributes.
      *
      * @param entityKey the entity's key
