@@ -2,6 +2,7 @@ package org.bukkit.event.world;
 
 import java.util.Collection;
 import java.util.List;
+import io.papermc.paper.event.entity.EntityLootGenerateEvent;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
@@ -19,8 +20,8 @@ import org.jetbrains.annotations.Nullable;
  * Called when a {@link LootTable} is generated in the world for an
  * {@link InventoryHolder}.
  * <p>
- * This event is NOT currently called when an entity's loot table has been
- * generated (use {@link EntityDeathEvent#getDrops()}), but WILL be called by
+ * This event is NOT called when an entity's loot table has been
+ * generated (use {@link EntityLootGenerateEvent} or {@link EntityDeathEvent#getDrops()}), but WILL be called by
  * plugins invoking
  * {@link LootTable#fillInventory(org.bukkit.inventory.Inventory, java.util.Random, LootContext)}.
  */

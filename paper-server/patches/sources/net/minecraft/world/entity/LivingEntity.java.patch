@@ -966,6 +966,41 @@
      }
  
      protected void dropCustomDeathLoot(final ServerLevel level, final DamageSource source, final boolean killedByPlayer) {
+@@ -1546,8 +_,18 @@
+             builder = builder.withParameter(LootContextParams.LAST_DAMAGE_PLAYER, killerPlayer).withLuck(killerPlayer.getLuck());
+         }
+ 
++        // Paper start - EntityLootGenerateEvent
++        List<ItemStack> drops = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
+         LootParams params = builder.create(LootContextParamSets.ENTITY);
+-        table.getRandomItems(params, this.getLootTableSeed(), itemStackConsumer);
++        table.getRandomItems(params, this.getLootTableSeed(), drops::add);
++
++        List<org.bukkit.inventory.ItemStack> bukkitLoot = drops.stream().map(CraftItemStack::asCraftMirror).collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
++        io.papermc.paper.event.entity.EntityLootGenerateEvent event = new io.papermc.paper.event.entity.EntityLootGenerateEvent(this.getBukkitEntity(), table.craftLootTable, org.bukkit.craftbukkit.CraftLootTable.convertParams(params), bukkitLoot);
++        if (!event.callEvent()) {
++            return;
++        }
++        event.getLoot().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).forEach(itemStackConsumer);
++        // Paper end
+     }
+ 
+     public boolean dropFromEntityInteractLootTable(
+@@ -1602,6 +_,14 @@
+         LootTable lootTable = level.getServer().reloadableRegistries().getLootTable(key);
+         LootParams params = paramsBuilder.apply(new LootParams.Builder(level));
+         List<ItemStack> drops = lootTable.getRandomItems(params);
++        // Paper start - EntityLootGenerateEvent
++        List<org.bukkit.inventory.ItemStack> bukkitLoot = drops.stream().map(CraftItemStack::asCraftMirror).collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
++        io.papermc.paper.event.entity.EntityLootGenerateEvent event = new io.papermc.paper.event.entity.EntityLootGenerateEvent(this.getBukkitEntity(), lootTable.craftLootTable, org.bukkit.craftbukkit.CraftLootTable.convertParams(params), bukkitLoot);
++        if (!event.callEvent()) {
++            return false;
++        }
++        drops = event.getLoot().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).collect(it.unimi.dsi.fastutil.objects.ObjectArrayList.toList());
++        // Paper end
+         if (!drops.isEmpty()) {
+             drops.forEach(stack -> consumer.accept(level, stack));
+             return true;
 @@ -1611,9 +_,14 @@
      }
  

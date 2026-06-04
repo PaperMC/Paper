@@ -148,6 +148,29 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         }
     }
 
+    public static LootContext convertParams(net.minecraft.world.level.storage.loot.LootParams info) {
+        Vec3 position = info.contextMap().getOptional(LootContextParams.ORIGIN);
+        if (position == null) {
+            position = info.contextMap().getOptional(LootContextParams.THIS_ENTITY).position(); // Every vanilla context has origin or this_entity, see LootContextParamSets
+        }
+        Location location = CraftLocation.toBukkit(position, info.getLevel());
+        LootContext.Builder contextBuilder = new LootContext.Builder(location);
+
+        if (info.contextMap().has(LootContextParams.ATTACKING_ENTITY)) {
+            CraftEntity killer = info.contextMap().getOptional(LootContextParams.ATTACKING_ENTITY).getBukkitEntity();
+            if (killer instanceof CraftHumanEntity) {
+                contextBuilder.killer((CraftHumanEntity) killer);
+            }
+        }
+
+        if (info.contextMap().has(LootContextParams.THIS_ENTITY)) {
+            contextBuilder.lootedEntity(info.contextMap().getOptional(LootContextParams.THIS_ENTITY).getBukkitEntity());
+        }
+
+        contextBuilder.luck(info.getLuck());
+        return contextBuilder.build();
+    }
+
     public static LootContext convertContext(net.minecraft.world.level.storage.loot.LootContext info) {
         Vec3 position = info.getOptionalParameter(LootContextParams.ORIGIN);
         if (position == null) {
