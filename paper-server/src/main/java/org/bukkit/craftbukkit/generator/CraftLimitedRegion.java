@@ -262,11 +262,6 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     }
 
     @Override
-    public void addEntityToWorld(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason) {
-        this.entities.add(entity);
-    }
-
-    @Override
     public void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason) {
         this.entities.add(entity);
     }
