@@ -4,7 +4,7 @@ import org.bukkit.block.data.BlockData;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * 'potent_sulfur_state' represents the environment state of the block and whether it can form a geyser.
+ * 'potent_sulfur_state' represents the environmental state of the block and whether it can form a geyser.
  */
 @NullMarked
 public interface PotentSulfur extends BlockData {
@@ -24,7 +24,7 @@ public interface PotentSulfur extends BlockData {
     void setPotentSulfurState(State state);
 
     /**
-     * The environment state of the potent sulfur.
+     * The environmental state of the potent sulfur.
      */
     enum State {
         DRY,

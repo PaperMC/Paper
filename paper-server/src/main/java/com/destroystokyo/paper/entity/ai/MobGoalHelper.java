@@ -161,7 +161,8 @@ public class MobGoalHelper {
         RangedEntity.class,
         Tameable.class,
         Monster.class,
-        PufferFish.class // weird case
+        PufferFish.class, // weird case
+        AbstractCubeMob.class
     );
 
     private static String getPathName(Class<? extends Mob> type, Class<?> holderClass, String name) {

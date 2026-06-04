@@ -177,6 +177,14 @@ public enum Particle implements Keyed {
     COPPER_FIRE_FLAME("copper_fire_flame"),
     PAUSE_MOB_GROWTH("pause_mob_growth"),
     RESET_MOB_GROWTH("reset_mob_growth"),
+    NOXIOUS_GAS("noxious_gas"),
+    NOXIOUS_GAS_CLOUD("noxious_gas_cloud"),
+    SULFUR_CUBE_GOO("sulfur_cube_goo"),
+    SULFUR_BUBBLES("sulfur_bubbles"),
+    GEYSER("geyser", Geyser.class),
+    GEYSER_BASE("geyser_base", GeyserBase.class),
+    GEYSER_PLUME("geyser_plume", Geyser.class),
+    GEYSER_POOF("geyser_poof", GeyserBase.class),
     ;
 
     private final NamespacedKey key;
@@ -336,6 +344,9 @@ public enum Particle implements Keyed {
         }
     }
 
+    /**
+     * Options which can be applied to effect particles.
+     */
     public static class Spell {
 
         private final Color color;
@@ -362,6 +373,56 @@ public enum Particle implements Keyed {
          */
         public float getPower() {
             return power;
+        }
+    }
+
+    /**
+     * Options which can be applied to geyser base particles.
+     */
+    public static class GeyserBase extends AbstractGeyser {
+
+        private final float burstImpulse;
+
+        public GeyserBase(final int waterBlocks, final float burstImpulse) {
+            super(waterBlocks);
+            this.burstImpulse = burstImpulse;
+        }
+
+        /**
+         * {@return the burst impulse}
+         */
+        public float getBurstImpulse() {
+            return this.burstImpulse;
+        }
+    }
+
+    /**
+     * Options which can be applied to geyser particles.
+     */
+    public static class Geyser extends AbstractGeyser {
+
+        public Geyser(final int waterBlocks) {
+            super(waterBlocks);
+        }
+    }
+
+    private abstract static class AbstractGeyser {
+
+        private final int waterBlocks;
+
+        protected AbstractGeyser(final int waterBlocks) {
+            Preconditions.checkArgument(waterBlocks > 1, "waterBlocks must be positive");
+            this.waterBlocks = waterBlocks;
+        }
+
+        /**
+         * The number of water blocks below the geyser
+         * which scale the particle size and its burst impulse.
+         *
+         * @return the number of water blocks
+         */
+        public int getWaterBlocks() {
+            return waterBlocks;
         }
     }
 }

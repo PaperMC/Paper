@@ -438,7 +438,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public String getTranslationKey(EntityType entityType) {
-        Preconditions.checkArgument(entityType != EntityType.UNKNOWN, "UNKNOWN entity type doesn't have translation key");
+        Preconditions.checkArgument(entityType != EntityType.UNKNOWN, "UNKNOWN entity type doesn't have a translation key");
         return CraftEntityType.bukkitToMinecraft(entityType).getDescriptionId();
     }
 

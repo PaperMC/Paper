@@ -37,8 +37,8 @@ public record PaperWritableBookContent(
             );
         }
 
-        private static void validatePageCount(final int current, final int add) {
-            final int newSize = current + add;
+        private static void validatePageCount(final int current, final int delta) {
+            final int newSize = current + delta;
             Preconditions.checkArgument(
                 newSize <= net.minecraft.world.item.component.WritableBookContent.MAX_PAGES,
                 "Cannot have more than %s pages, had %s",

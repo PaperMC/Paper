@@ -158,6 +158,8 @@ public class LegacyTest {
             Material.NETHERITE_NAUTILUS_ARMOR, Material.NETHERITE_SPEAR, Material.STONE_SPEAR, Material.WOODEN_SPEAR, Material.ZOMBIE_NAUTILUS_SPAWN_EGG, Material.CAMEL_HUSK_SPAWN_EGG, Material.PARCHED_SPAWN_EGG, Material.NETHERITE_HORSE_ARMOR,
             // 26.1
             Material.GOLDEN_DANDELION, Material.POTTED_GOLDEN_DANDELION,
+            // 26.2
+            Material.MUSIC_DISC_BOUNCE, Material.SULFUR_CUBE_BUCKET, Material.SULFUR_CUBE_SPAWN_EGG,
             //
             Material.LEGACY_AIR, Material.LEGACY_DEAD_BUSH, Material.LEGACY_BURNING_FURNACE, Material.LEGACY_WALL_SIGN, Material.LEGACY_REDSTONE_TORCH_OFF, Material.LEGACY_SKULL, Material.LEGACY_REDSTONE_COMPARATOR_ON, Material.LEGACY_WALL_BANNER, Material.LEGACY_MONSTER_EGG));
 

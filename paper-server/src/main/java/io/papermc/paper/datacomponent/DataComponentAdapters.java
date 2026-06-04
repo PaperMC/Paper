@@ -36,6 +36,7 @@ import io.papermc.paper.datacomponent.item.PaperPotionContents;
 import io.papermc.paper.datacomponent.item.PaperRepairable;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.PaperSeededContainerLoot;
+import io.papermc.paper.datacomponent.item.PaperSulfurCubeContent;
 import io.papermc.paper.datacomponent.item.PaperSuspiciousStewEffects;
 import io.papermc.paper.datacomponent.item.PaperSwingAnimation;
 import io.papermc.paper.datacomponent.item.PaperTooltipDisplay;
@@ -173,6 +174,7 @@ public final class DataComponentAdapters {
         register(DataComponents.CONTAINER, PaperItemContainerContents::new);
         register(DataComponents.BLOCK_STATE, PaperBlockItemDataProperties::new);
         // bees
+        register(DataComponents.SULFUR_CUBE_CONTENT, PaperSulfurCubeContent::new);
         // register(DataComponents.LOCK, PaperLockCode::new);
         register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
         register(DataComponents.BREAK_SOUND, nms -> PaperAdventure.asAdventure(nms.value().location()), PaperAdventure::resolveSound);

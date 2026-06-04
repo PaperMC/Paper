@@ -1186,6 +1186,11 @@ public interface Tag<T extends Keyed> extends Keyed {
     @Deprecated(since = "1.21.4", forRemoval = true)
     Tag<Material> DRIPSTONE_REPLACEABLE = DRIPSTONE_REPLACEABLE_BLOCKS;
     /**
+     * @deprecated replaced by {@link #CONCRETE_POWDERS}
+     */
+    @Deprecated(since = "26.2", forRemoval = true)
+    Tag<Material> CONCRETE_POWDER = CONCRETE_POWDERS;
+    /**
      * Vanilla item tag representing all piglin food.
      *
      * @deprecated replaced by {@link #ITEMS_PIGLIN_FOOD}

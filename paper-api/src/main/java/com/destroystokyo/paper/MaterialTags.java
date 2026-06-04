@@ -71,7 +71,7 @@ public class MaterialTags {
      */
     public static final MaterialSetTag BUCKETS = new MaterialSetTag(keyFor("buckets"))
         .endsWith("BUCKET")
-        .ensureSize("BUCKETS", 11).lock();
+        .ensureSize("BUCKETS", 12).lock();
 
     /**
      * Covers coal and charcoal.
@@ -170,10 +170,11 @@ public class MaterialTags {
 
     /**
      * Covers all glazed terracotta blocks.
+     *
+     * @deprecated in favour of {@link Tag#GLAZED_TERRACOTTA}
      */
-    public static final MaterialSetTag GLAZED_TERRACOTTA = new MaterialSetTag(keyFor("glazed_terracotta"))
-        .endsWith("GLAZED_TERRACOTTA")
-        .ensureSize("GLAZED_TERRACOTTA", 16).lock();
+    @Deprecated(since = "26.2")
+    public static final MaterialSetTag GLAZED_TERRACOTTA = replacedBy(Tag.GLAZED_TERRACOTTA);
 
     /**
      * Covers the colors of stained terracotta.
@@ -341,7 +342,7 @@ public class MaterialTags {
      */
     public static final MaterialSetTag SPAWN_EGGS = new MaterialSetTag(keyFor("spawn_eggs"))
         .endsWith("_SPAWN_EGG")
-        .ensureSize("SPAWN_EGGS", 87).lock();
+        .ensureSize("SPAWN_EGGS", 88).lock();
 
     /**
      * Covers all colors of stained glass.

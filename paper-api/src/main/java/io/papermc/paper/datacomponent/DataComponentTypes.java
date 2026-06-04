@@ -34,6 +34,7 @@ import io.papermc.paper.datacomponent.item.PotionContents;
 import io.papermc.paper.datacomponent.item.Repairable;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.datacomponent.item.SeededContainerLoot;
+import io.papermc.paper.datacomponent.item.SulfurCubeContent;
 import io.papermc.paper.datacomponent.item.SuspiciousStewEffects;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.Tool;
@@ -351,6 +352,7 @@ public final class DataComponentTypes {
      */
     public static final DataComponentType.Valued<BlockItemDataProperties> BLOCK_DATA = valued("block_state");
     // bees
+    public static final DataComponentType.Valued<SulfurCubeContent> SULFUR_CUBE_CONTENT = valued("sulfur_cube_content");
     // /**
     //  * Holds the lock state of a container-like block,
     //  * copied to container block when placed.

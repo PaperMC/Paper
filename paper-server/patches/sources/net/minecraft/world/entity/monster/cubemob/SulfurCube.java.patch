@@ -1,5 +1,51 @@
 --- a/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
 +++ b/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
+@@ -454,7 +_,15 @@
+                 if (heldItem.is(Items.SHEARS) && this.readyForShearing()) {
+                     if (this.level() instanceof ServerLevel level) {
+                         ItemStack itemStackToShear = this.getItemBySlot(EquipmentSlot.BODY);
+-                        this.shear(level, SoundSource.PLAYERS, heldItem);
++                        // Paper start - call PlayerShearEntityEvent
++                        java.util.List<ItemStack> drops = this.generateDefaultDrops(level, heldItem);
++                        org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, heldItem, hand, drops);
++                        if (event.isCancelled()) {
++                            return InteractionResult.PASS;
++                        }
++                        drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++                        this.shear(level, SoundSource.PLAYERS, heldItem, drops);
++                        // Paper end - call PlayerShearEntityEvent
+                         this.gameEvent(GameEvent.SHEAR, player);
+                         heldItem.hurtAndBreak(1, player, hand.asEquipmentSlot());
+                         CriteriaTriggers.PLAYER_SHEARED_EQUIPMENT.trigger((ServerPlayer)player, itemStackToShear, this);
+@@ -604,10 +_,26 @@
+ 
+     @Override
+     public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool) {
+-        Vec3 equipmentSpawnOffset = this.getAttachments().getAverage(EntityAttachment.PASSENGER);
++        // Paper start - custom shear drops
++        this.shear(level, soundSource, tool, this.generateDefaultDrops(level, tool));
++    }
++
++    @Override
++    public java.util.List<ItemStack> generateDefaultDrops(final ServerLevel level, final ItemStack tool) {
+         ItemStack itemStackToShear = this.getItemBySlot(EquipmentSlot.BODY);
++        final java.util.List<ItemStack> drops = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>(1);
++        drops.add(itemStackToShear);
++        return drops;
++    }
++
++    @Override
++    public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool, final java.util.List<ItemStack> drops) {
++        // Paper end - custom shear drops
++        Vec3 equipmentSpawnOffset = this.getAttachments().getAverage(EntityAttachment.PASSENGER);
+         this.setItemSlot(EquipmentSlot.BODY, ItemStack.EMPTY);
+-        this.spawnAtLocation(level, itemStackToShear, equipmentSpawnOffset);
++        this.forceDrops = true; // Paper - Add missing forceDrop toggles
++        drops.forEach(drop -> this.spawnAtLocation(level, drop, equipmentSpawnOffset));
++        this.forceDrops = false; // Paper - Add missing forceDrop toggles
+         this.playSound(this.getEjectSound());
+         this.pickupTimer = 100;
+     }
 @@ -826,7 +_,7 @@
      }
  

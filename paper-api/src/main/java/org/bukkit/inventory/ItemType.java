@@ -2392,6 +2392,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> SALMON_BUCKET = getItemType("salmon_bucket");
 
+    ItemType.Typed<ItemMeta> SULFUR_CUBE_BUCKET = getItemType("sulfur_cube_bucket"); // just for entity meta but lynx should run the THING
+
     ItemType.Typed<SpawnEggMeta> SALMON_SPAWN_EGG = getItemType("salmon_spawn_egg");
 
     ItemType.Typed<ItemMeta> SAND = getItemType("sand");
