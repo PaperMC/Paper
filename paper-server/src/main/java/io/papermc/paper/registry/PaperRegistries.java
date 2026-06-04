@@ -27,6 +27,8 @@ import io.papermc.paper.registry.data.dialog.PaperDialogRegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeTypes;
+import io.papermc.paper.world.attribute.PaperEnvironmentalAttributeType;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -124,6 +126,7 @@ public final class PaperRegistries {
             start(Registries.DATA_COMPONENT_TYPE, RegistryKey.DATA_COMPONENT_TYPE).craft(DataComponentTypes.class, PaperDataComponentType::of).build(),
             start(Registries.GAME_RULE, RegistryKey.GAME_RULE).craft(GameRule.class, CraftGameRule::new).build(),
             start(Registries.POINT_OF_INTEREST_TYPE, RegistryKey.POINT_OF_INTEREST_TYPE).craft(PoiTypes.class, PaperPoiType::new).build(),
+            start(Registries.ENVIRONMENT_ATTRIBUTE, RegistryKey.ENVIRONMENT_ATTRIBUTE).craft(EnvironmentalAttributeTypes.class, PaperEnvironmentalAttributeType::of).build(),
 
             // data-driven
             start(Registries.BIOME, RegistryKey.BIOME).craft(Biome.class, CraftBiome::new).build().delayed(),

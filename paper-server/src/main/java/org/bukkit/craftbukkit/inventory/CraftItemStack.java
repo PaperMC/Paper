@@ -2,7 +2,19 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.PaperDataComponentType;
+import io.papermc.paper.persistence.PaperPersistentDataContainerView;
+import io.papermc.paper.persistence.PersistentDataContainerView;
+import io.papermc.paper.util.converter.CodecConverter;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
@@ -17,19 +29,27 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemInstance;
 import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
+import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -40,12 +60,12 @@ import org.jetbrains.annotations.Nullable;
 public final class CraftItemStack extends ItemStack {
 
     // Paper start - delegate api-ItemStack to CraftItemStack
-    private static final java.lang.invoke.VarHandle API_ITEM_STACK_CRAFT_DELEGATE_FIELD;
+    private static final VarHandle API_ITEM_STACK_CRAFT_DELEGATE_FIELD;
     static {
         try {
-            API_ITEM_STACK_CRAFT_DELEGATE_FIELD = java.lang.invoke.MethodHandles.privateLookupIn(
+            API_ITEM_STACK_CRAFT_DELEGATE_FIELD = MethodHandles.privateLookupIn(
                 ItemStack.class,
-                java.lang.invoke.MethodHandles.lookup()
+                MethodHandles.lookup()
             ).findVarHandle(ItemStack.class, "craftDelegate", ItemStack.class);
         } catch (final IllegalAccessException | NoSuchFieldException exception) {
             throw new RuntimeException(exception);
@@ -112,8 +132,8 @@ public final class CraftItemStack extends ItemStack {
         // Paper end - re-implement after delegating all api ItemStack calls to CraftItemStack
     }
 
-    public static java.util.List<net.minecraft.world.item.ItemStack> asNMSCopy(java.util.List<? extends ItemStack> originals) {
-        final java.util.List<net.minecraft.world.item.ItemStack> items = new java.util.ArrayList<>(originals.size());
+    public static List<net.minecraft.world.item.ItemStack> asNMSCopy(List<? extends ItemStack> originals) {
+        final List<net.minecraft.world.item.ItemStack> items = new ArrayList<>(originals.size());
         for (final ItemStack original : originals) {
             items.add(asNMSCopy(original));
         }
@@ -121,7 +141,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     public static ItemStackTemplate asTemplate(ItemStack bukkit) {
-        return net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(asNMSCopy(bukkit));
+        return ItemStackTemplate.fromNonEmptyStack(asNMSCopy(bukkit));
     }
 
     public static net.minecraft.world.item.ItemStack copyNMSStack(net.minecraft.world.item.ItemStack original, int amount) {
@@ -133,14 +153,18 @@ public final class CraftItemStack extends ItemStack {
     /**
      * Copies the NMS stack to return as a strictly-Bukkit stack
      */
-    public static ItemStack asBukkitCopy(net.minecraft.world.item.ItemStack original) {
+    private static ItemStack asBukkitCopy(net.minecraft.world.item.ItemStack original) {
         // no such thing as a "strictly-Bukkit stack" anymore
         // we copy the stack since it should be a complete copy not a mirror
         return asCraftMirror(original.copy());
     }
 
-    public static ItemStack asBukkitCopy(net.minecraft.world.item.ItemStackTemplate original) {
-        return asBukkitCopy(original.create());
+    public static ItemStack asBukkitCopy(ItemInstance original) {
+        return switch (original) {
+            case net.minecraft.world.item.ItemStack stack -> asBukkitCopy(stack);
+            case ItemStackTemplate template -> asBukkitCopy(template.create());
+            default -> throw new IllegalStateException("Unexpected value: " + original);
+        };
     }
 
     public static CraftItemStack asCraftMirror(net.minecraft.world.item.ItemStack original) {
@@ -261,16 +285,16 @@ public final class CraftItemStack extends ItemStack {
     }
 
     @Override
-    public int getMaxItemUseDuration(final org.bukkit.entity.LivingEntity entity) {
+    public int getMaxItemUseDuration(final LivingEntity entity) {
         if (this.handle == null) {
             return 0;
         }
 
         // Make sure plugins calling the old method don't blow up
-        if (entity == null && (this.handle.is(net.minecraft.world.item.Items.CROSSBOW) || this.handle.is(net.minecraft.world.item.Items.GOAT_HORN))) {
+        if (entity == null && (this.handle.is(Items.CROSSBOW) || this.handle.is(Items.GOAT_HORN))) {
             throw new UnsupportedOperationException("This item requires an entity to determine the max use duration");
         }
-        return this.handle.getUseDuration(entity != null ? ((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity).getHandle() : null);
+        return this.handle.getUseDuration(entity != null ? ((CraftLivingEntity) entity).getHandle() : null);
     }
 
     @Override
@@ -335,16 +359,16 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public Map<Enchantment, Integer> getEnchantments() {
-        io.papermc.paper.datacomponent.item.ItemEnchantments itemEnchantments = this.getData(io.papermc.paper.datacomponent.DataComponentTypes.ENCHANTMENTS); // empty constant might be useful here
+        io.papermc.paper.datacomponent.item.ItemEnchantments itemEnchantments = this.getData(DataComponentTypes.ENCHANTMENTS); // empty constant might be useful here
         if (itemEnchantments == null) {
-            return java.util.Collections.emptyMap();
+            return Collections.emptyMap();
         }
         return itemEnchantments.enchantments();
     }
 
     @Override
     public CraftItemStack clone() {
-        return new org.bukkit.craftbukkit.inventory.CraftItemStack(this.handle != null ? this.handle.copy() : null); // Paper
+        return new CraftItemStack(this.handle != null ? this.handle.copy() : null); // Paper
     }
 
     @Override
@@ -358,7 +382,7 @@ public final class CraftItemStack extends ItemStack {
         if (oldMeta == null) {
             newMeta = getItemMeta(this.handle);
         } else {
-            final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents = new java.util.HashSet<>(CraftMetaItem.getTopLevelHandledComponents(oldMeta.getClass()));
+            final Set<DataComponentType<?>> extraHandledComponents = new HashSet<>(CraftMetaItem.getTopLevelHandledComponents(oldMeta.getClass()));
             newMeta = getItemMeta(this.handle, CraftItemType.minecraftToBukkitNew(this.handle.getItem()), extraHandledComponents);
         }
         this.setItemMeta(newMeta);
@@ -369,7 +393,7 @@ public final class CraftItemStack extends ItemStack {
         // Paper start - support updating profile after resolving it
         final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
             @Override
-            void skullCallback(final net.minecraft.world.item.component.ResolvableProfile profile) {
+            void skullCallback(final ResolvableProfile profile) {
                 itemStack.set(DataComponents.PROFILE, profile);
             }
         };
@@ -382,11 +406,11 @@ public final class CraftItemStack extends ItemStack {
         return getItemMeta(item, null);
     }
 
-    public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, org.bukkit.inventory.ItemType metaForType) {
+    public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, ItemType metaForType) {
         // Paper start - handled tags on type change
         return getItemMeta(item, metaForType, null);
     }
-    public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, org.bukkit.inventory.ItemType metaForType, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+    public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, ItemType metaForType, final Set<DataComponentType<?>> extraHandledComponents) {
         // Paper end - handled tags on type change
         if (!CraftItemStack.hasItemMeta(item)) {
             return CraftItemFactory.instance().getItemMeta(CraftItemStack.getType(item));
@@ -424,7 +448,7 @@ public final class CraftItemStack extends ItemStack {
             // Paper start - support updating profile after resolving it
             CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
                 @Override
-                void skullCallback(final net.minecraft.world.item.component.ResolvableProfile resolvableProfile) {
+                void skullCallback(final ResolvableProfile resolvableProfile) {
                     item.set(DataComponents.PROFILE, resolvableProfile);
                 }
             };
@@ -492,18 +516,18 @@ public final class CraftItemStack extends ItemStack {
     // Paper end
 
     public static final String PDC_CUSTOM_DATA_KEY = "PublicBukkitValues";
-    private net.minecraft.nbt.CompoundTag getPdcTag() {
+    private CompoundTag getPdcTag() {
         if (this.handle == null) {
-            return new net.minecraft.nbt.CompoundTag();
+            return new CompoundTag();
         }
-        final net.minecraft.world.item.component.CustomData customData = this.handle.getOrDefault(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY);
+        final CustomData customData = this.handle.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         // getUnsafe is OK here because we are only ever *reading* the data so immutability is preserved
         //noinspection deprecation
         return customData.getUnsafe().getCompoundOrEmpty(PDC_CUSTOM_DATA_KEY);
     }
 
-    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
-    private final io.papermc.paper.persistence.PaperPersistentDataContainerView pdcView = new io.papermc.paper.persistence.PaperPersistentDataContainerView(REGISTRY) {
+    private static final CraftPersistentDataTypeRegistry REGISTRY = new CraftPersistentDataTypeRegistry();
+    private final PaperPersistentDataContainerView pdcView = new PaperPersistentDataContainerView(REGISTRY) {
 
         @Override
         public int getSize() {
@@ -511,17 +535,17 @@ public final class CraftItemStack extends ItemStack {
         }
 
         @Override
-        public net.minecraft.nbt.CompoundTag toTagCompound() {
+        public CompoundTag toTagCompound() {
             return CraftItemStack.this.getPdcTag();
         }
 
         @Override
-        public net.minecraft.nbt.Tag getTag(final String key) {
+        public Tag getTag(final String key) {
             return CraftItemStack.this.getPdcTag().get(key);
         }
     };
     @Override
-    public io.papermc.paper.persistence.PersistentDataContainerView getPersistentDataContainer() {
+    public PersistentDataContainerView getPersistentDataContainer() {
         return this.pdcView;
     }
 
@@ -554,7 +578,7 @@ public final class CraftItemStack extends ItemStack {
         if (this.isEmpty()) {
             return null;
         }
-        return io.papermc.paper.datacomponent.PaperDataComponentType.convertDataComponentValue(this.handle.getComponents(), (io.papermc.paper.datacomponent.PaperDataComponentType.ValuedImpl<T, ?>) type);
+        return PaperDataComponentType.convertDataComponentValue(this.handle.getComponents(), (PaperDataComponentType.ValuedImpl<T, ?>) type);
     }
 
     @Override
@@ -562,15 +586,15 @@ public final class CraftItemStack extends ItemStack {
         if (this.isEmpty()) {
             return false;
         }
-        return this.handle.has(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type));
+        return this.handle.has(PaperDataComponentType.bukkitToMinecraft(type));
     }
 
     @Override
-    public java.util.Set<io.papermc.paper.datacomponent.DataComponentType> getDataTypes() {
+    public Set<io.papermc.paper.datacomponent.DataComponentType> getDataTypes() {
         if (this.isEmpty()) {
-            return java.util.Collections.emptySet();
+            return Collections.emptySet();
         }
-        return io.papermc.paper.datacomponent.PaperDataComponentType.minecraftToBukkit(this.handle.getComponents().keySet());
+        return PaperDataComponentType.minecraftToBukkit(this.handle.getComponents().keySet());
     }
 
     @Override
@@ -579,7 +603,7 @@ public final class CraftItemStack extends ItemStack {
         if (this.isEmpty()) {
             return;
         }
-        this.setDataInternal((io.papermc.paper.datacomponent.PaperDataComponentType.ValuedImpl<T, ?>) type, value);
+        this.setDataInternal((PaperDataComponentType.ValuedImpl<T, ?>) type, value);
     }
 
     @Override
@@ -587,11 +611,17 @@ public final class CraftItemStack extends ItemStack {
         if (this.isEmpty()) {
             return;
         }
-        this.setDataInternal((io.papermc.paper.datacomponent.PaperDataComponentType.NonValuedImpl<?, ?>) type, null);
+        this.setDataInternal((PaperDataComponentType.NonValuedImpl<?, ?>) type, null);
     }
 
-    private <A, V> void setDataInternal(final io.papermc.paper.datacomponent.PaperDataComponentType<A, V> type, final A value) {
-        this.handle.set(type.getHandle(), type.getAdapter().toVanilla(value, type.getHolder()));
+    private <A, V> void setDataInternal(final PaperDataComponentType<A, V> type, final @Nullable A value) {
+        final V v = type.getConverter().toVanilla(value);
+        if (type.getConverter() instanceof CodecConverter<V, A> codecConverter) {
+            codecConverter.validate(v, true).ifPresent(message -> {
+                throw new IllegalArgumentException("Failed to encode data component %s (%s)".formatted(type.getKey().asString(), message));
+            });
+        }
+        this.handle.set(type.getHandle(), v);
     }
 
     @Override
@@ -599,7 +629,7 @@ public final class CraftItemStack extends ItemStack {
         if (this.isEmpty()) {
             return;
         }
-        this.handle.remove(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type));
+        this.handle.remove(PaperDataComponentType.bukkitToMinecraft(type));
     }
 
     @Override
@@ -607,11 +637,11 @@ public final class CraftItemStack extends ItemStack {
         if (this.isEmpty()) {
             return;
         }
-        this.resetData((io.papermc.paper.datacomponent.PaperDataComponentType<?, ?>) type);
+        this.resetData((PaperDataComponentType<?, ?>) type);
     }
 
-    private <M> void resetData(final io.papermc.paper.datacomponent.PaperDataComponentType<?, M> type) {
-        final net.minecraft.core.component.DataComponentType<M> nms = io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type);
+    private <M> void resetData(final PaperDataComponentType<?, M> type) {
+        final DataComponentType<M> nms = PaperDataComponentType.bukkitToMinecraft(type);
         final M nmsValue = this.handle.getItem().components().get(nms);
         // if nmsValue is null, it will clear any set patch
         // if nmsValue is not null, it will still clear any set patch because it will equal the default value
@@ -626,7 +656,7 @@ public final class CraftItemStack extends ItemStack {
             return;
         }
 
-        final Predicate<DataComponentType<?>> nmsFilter = nms -> filter.test(io.papermc.paper.datacomponent.PaperDataComponentType.minecraftToBukkit(nms));
+        final Predicate<DataComponentType<?>> nmsFilter = nms -> filter.test(PaperDataComponentType.minecraftToBukkit(nms));
         net.minecraft.world.item.ItemStack sourceNmsStack = getCraftStack(source).handle;
         this.handle.applyComponents(sourceNmsStack.getPrototype().filter(nmsType -> {
             return !sourceNmsStack.hasNonDefault(nmsType) && nmsFilter.test(nmsType);
@@ -642,12 +672,12 @@ public final class CraftItemStack extends ItemStack {
         if (this.isEmpty()) {
             return false;
         }
-        final net.minecraft.core.component.DataComponentType<?> nms = io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type);
+        final DataComponentType<?> nms = PaperDataComponentType.bukkitToMinecraft(type);
         return this.handle.hasNonDefault(nms);
     }
 
     @Override
-    public boolean matchesWithoutData(final ItemStack item, final java.util.Set<io.papermc.paper.datacomponent.DataComponentType> exclude, final boolean ignoreCount) {
+    public boolean matchesWithoutData(final ItemStack item, final Set<io.papermc.paper.datacomponent.DataComponentType> exclude, final boolean ignoreCount) {
         // Extracted from base equals
         final CraftItemStack craftStack = getCraftStack(item);
         if (this.handle == craftStack.handle) return true;
@@ -671,9 +701,9 @@ public final class CraftItemStack extends ItemStack {
         }
 
         // Collect all the NMS types into a set
-        java.util.Set<net.minecraft.core.component.DataComponentType<?>> skippingTypes = new java.util.HashSet<>(exclude.size());
+        Set<DataComponentType<?>> skippingTypes = new HashSet<>(exclude.size());
         for (io.papermc.paper.datacomponent.DataComponentType api : exclude) {
-            skippingTypes.add(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(api));
+            skippingTypes.add(PaperDataComponentType.bukkitToMinecraft(api));
         }
 
         // Check the patch by first stripping excluded types and then compare the trimmed patches

@@ -4,6 +4,7 @@ import com.destroystokyo.paper.SkinParts;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.entity.poi.PoiType;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeContext;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import java.util.Set;
@@ -113,4 +114,6 @@ public interface InternalAPIBridge {
     <MODERN, LEGACY> GameRule<LEGACY> legacyGameRuleBridge(GameRule<MODERN> rule, Function<LEGACY, MODERN> fromLegacyToModern, Function<MODERN, LEGACY> toLegacyFromModern, Class<LEGACY> legacyClass);
 
     Set<Pose> validMannequinPoses();
+
+    EnvironmentalAttributeContext.Builder environmentalAttributeContextBuilder();
 }
