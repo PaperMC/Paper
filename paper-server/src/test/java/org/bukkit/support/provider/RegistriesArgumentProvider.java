@@ -7,6 +7,9 @@ import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.poi.PaperPoiType;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.entity.poi.PoiTypes;
+import io.papermc.paper.inventory.CreativeModeTab;
+import io.papermc.paper.inventory.CreativeModeTabs;
+import io.papermc.paper.inventory.PaperCreativeModeTab;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.List;
@@ -161,6 +164,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.DIALOG, Dialog.class, PaperDialog.class, net.minecraft.server.dialog.Dialog.class);
         register(Registries.GAME_RULE, GameRule.class, GameRules.class, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
         register(Registries.POINT_OF_INTEREST_TYPE, PoiType.class, PoiTypes.class, PaperPoiType.class, net.minecraft.world.entity.ai.village.poi.PoiType.class);
+        register(Registries.CREATIVE_MODE_TAB, CreativeModeTab.class, CreativeModeTabs.class, PaperCreativeModeTab.class, net.minecraft.world.item.CreativeModeTab.class);
     }
 
     private static <M, B extends Keyed> void register(ResourceKey<? extends Registry<? extends M>> registryKey, Class<B> api, Class<? extends B> impl, Class<M> internal) {

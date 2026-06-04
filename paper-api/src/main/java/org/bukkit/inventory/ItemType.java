@@ -2,6 +2,8 @@ package org.bukkit.inventory;
 
 import com.google.common.collect.Multimap;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.inventory.CreativeModeTab;
+import java.util.Collection;
 import java.util.Set;
 import java.util.function.Consumer;
 import net.kyori.adventure.key.Key;
@@ -3282,11 +3284,18 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * Get the {@link CreativeCategory} to which this item type belongs.
      *
      * @return the creative category. null if it does not belong to a category
-     * @deprecated items can belong to multiple creative categories and this is no
-     * longer implemented, will always be {@link CreativeCategory#BUILDING_BLOCKS}
+     * @deprecated items can belong to multiple creative categories, use {@link #getCreativeCategories()} instead
      */
-    @Deprecated(since = "1.20.6", forRemoval = true)
+    @Deprecated(since = "26.1", forRemoval = true)
     @Nullable CreativeCategory getCreativeCategory();
+
+    /**
+     * Gets the creative categories to which this item type belongs.
+     *
+     * @return a collection of creative categories to which this item type belongs
+     * @see ItemStack#getCreativeCategories()
+     */
+    @Unmodifiable Collection<CreativeModeTab> getCreativeCategories();
 
     /**
      * Gets if the ItemType is enabled by the features in a world.

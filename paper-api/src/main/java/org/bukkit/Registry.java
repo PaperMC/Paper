@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.entity.poi.PoiType;
+import io.papermc.paper.inventory.CreativeModeTab;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
@@ -362,6 +363,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see GameRule
      */
     Registry<GameRule<?>> GAME_RULE = registryFor(RegistryKey.GAME_RULE);
+    /**
+     * Creative mode tabs.
+     *
+     * @see CreativeModeTab
+     */
+    Registry<CreativeModeTab> CREATIVE_MODE_TAB = registryFor(RegistryKey.CREATIVE_MODE_TAB);
 
     //<editor-fold desc="renames" defaultstate="collapsed">
     /**

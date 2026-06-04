@@ -26,8 +26,9 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
-import io.papermc.paper.item.MapPostProcessing;
 import io.papermc.paper.entity.poi.PoiTypes;
+import io.papermc.paper.inventory.CreativeModeTab;
+import io.papermc.paper.item.MapPostProcessing;
 import io.papermc.paper.world.WeatheringCopperState;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
@@ -160,6 +161,7 @@ public final class Rewriters {
                     }
                 })
             ))
+            .register("CreativeModeTabType", CreativeModeTab.Type.class, new EnumCloneRewriter<>(net.minecraft.world.item.CreativeModeTab.Type.class))
             .register("ItemUseAnimation", ItemUseAnimation.class, new EnumCloneRewriter<>(net.minecraft.world.item.ItemUseAnimation.class))
             .register("SwingAnimationType", SwingAnimation.Animation.class, new EnumCloneRewriter<>(SwingAnimationType.class))
             .register("MapPostProcessing", MapPostProcessing.class, new EnumCloneRewriter<>(net.minecraft.world.item.component.MapPostProcessing.class))
