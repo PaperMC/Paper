@@ -3015,6 +3015,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
+    public void setCooledAttackStrength(float strength) {
+        Preconditions.checkArgument(!Float.isNaN(strength), "strength cannot be NaN");
+        strength = Math.clamp(strength, 0F, 1F);
+
+        float delay = getCooldownPeriod();
+        // It's possible to set attributes that cause delay to be infinite
+        // don't overflow/underflow the attackStrengthTicker
+        delay = Math.clamp(delay, 0F, Integer.MAX_VALUE / 2F);
+        int ticks = (int) Math.ceil(delay * strength);
+
+        // on Player#tick, if the lastItemInMainHand does not match the item current main hand item, it will
+        // reset the attackStrengthTicker.
+        net.minecraft.world.item.ItemStack mainHandItem = getHandle().getMainHandItem();
+        if (!net.minecraft.world.item.ItemStack.matches(getHandle().lastItemInMainHand, mainHandItem)) {
+            getHandle().lastItemInMainHand = mainHandItem.copy();
+        }
+
+        getHandle().attackStrengthTicker = ticks;
+    }
+
+    @Override
     public void resetCooldown() {
         getHandle().resetAttackStrengthTicker();
     }
