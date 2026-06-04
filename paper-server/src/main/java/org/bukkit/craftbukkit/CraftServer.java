@@ -692,7 +692,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @Deprecated
     public Player getPlayerExact(String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
 
@@ -1928,7 +1927,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @Deprecated
     public OfflinePlayer getOfflinePlayer(String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
         Preconditions.checkArgument(!name.isBlank(), "name cannot be empty");

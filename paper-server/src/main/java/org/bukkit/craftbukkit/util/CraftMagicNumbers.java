@@ -443,12 +443,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public String getTranslationKey(ItemStack itemStack) {
-        net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
-        return nmsItemStack.getItem().getDescriptionId();
-    }
-
-    @Override
     public boolean isSupportedApiVersion(String apiVersion) {
         if (apiVersion == null) return false;
         final ApiVersion toCheck = ApiVersion.getOrCreateVersion(apiVersion);
@@ -526,46 +520,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(
             CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), compound
         ).getOrThrow());
-    }
-
-    @Override
-    public @org.jetbrains.annotations.NotNull Map<String, Object> serializeStack(final ItemStack itemStack) {
-        if (itemStack.isEmpty()) {
-            return Map.of("id", "minecraft:air", SharedConstants.DATA_VERSION_TAG, this.getDataVersion(), "schema_version", 1);
-        }
-        final CompoundTag tag = (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
-            CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE),
-            CraftItemStack.asNMSCopy(itemStack)
-        ).getOrThrow();
-        NbtUtils.addCurrentDataVersion(tag);
-
-        final Map<String, Object> ret = new LinkedHashMap<>();
-        tag.asCompound().get().forEach((key, value) -> {
-            switch (key) {
-                case "id" -> {
-                    ret.put("id", value.asString().get());
-                }
-                case "count" -> {
-                    ret.put("count", value.asInt().get());
-                }
-                case "components" -> {
-                    final Map<String, Object> components = new LinkedHashMap<>();
-                    value.asCompound().ifPresent((compoundTag) -> {
-                        compoundTag.forEach((componentKey, componentTag) -> {
-                            final String serializedComponent = componentTag.toString();
-                            components.put(componentKey, serializedComponent);
-                        });
-                    });
-                    ret.put("components", components);
-                }
-                case SharedConstants.DATA_VERSION_TAG -> {
-                    ret.put(SharedConstants.DATA_VERSION_TAG, value.asInt().get());
-                }
-                default -> throw new IllegalStateException("Unexpected value: " + key);
-            }
-        });
-        ret.put("schema_version", 1);
-        return ret;
     }
 
     private static final TagParser<Tag> SNBT_REGISTRY_UNAWARE_PARSER = TagParser.create(NbtOps.INSTANCE);
@@ -836,19 +790,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public String getStatisticCriteriaKey(org.bukkit.Statistic statistic) {
         if (statistic.getType() != org.bukkit.Statistic.Type.UNTYPED) return "minecraft.custom:minecraft." + statistic.getKey().getKey();
         return org.bukkit.craftbukkit.CraftStatistic.getNMSStatistic(statistic).getName();
-    }
-
-    @Override
-    public List<net.kyori.adventure.text.Component> computeTooltipLines(final ItemStack itemStack, final io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final org.bukkit.entity.Player player) {
-        Preconditions.checkArgument(tooltipContext != null, "tooltipContext cannot be null");
-        net.minecraft.world.item.TooltipFlag.Default flag = tooltipContext.isAdvanced() ? net.minecraft.world.item.TooltipFlag.ADVANCED : net.minecraft.world.item.TooltipFlag.NORMAL;
-        if (tooltipContext.isCreative()) {
-            flag = flag.asCreative();
-        }
-        final List<net.minecraft.network.chat.Component> lines = CraftItemStack.asNMSCopy(itemStack).getTooltipLines(
-            net.minecraft.world.item.Item.TooltipContext.of(player == null ? CraftRegistry.getMinecraftRegistry() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
-            player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
-        return lines.stream().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).toList();
     }
     // Paper end
 

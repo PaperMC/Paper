@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
+import io.papermc.paper.inventory.tooltip.TooltipContext;
 import io.papermc.paper.persistence.PaperPersistentDataContainerView;
 import io.papermc.paper.persistence.PersistentDataContainerView;
 import java.lang.invoke.MethodHandles;
@@ -11,12 +12,14 @@ import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
+import net.minecraft.SharedConstants;
 import net.minecraft.advancements.predicates.DataComponentMatchers;
 import net.minecraft.advancements.predicates.ItemPredicate;
 import net.minecraft.core.Holder;
@@ -28,6 +31,8 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemInstance;
@@ -37,6 +42,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.CraftRegistry;
@@ -47,6 +53,7 @@ import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -54,6 +61,7 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 @DelegateDeserialization(ItemStack.class)
 public final class CraftItemStack extends ItemStack {
@@ -357,6 +365,46 @@ public final class CraftItemStack extends ItemStack {
     }
 
     @Override
+    public @NotNull Map<String, Object> serialize() {
+        if (this.isEmpty()) {
+            return Map.of("id", "minecraft:air", SharedConstants.DATA_VERSION_TAG, Bukkit.getUnsafe().getDataVersion(), "schema_version", 1);
+        }
+        final CompoundTag tag = (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
+            CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE),
+            CraftItemStack.asNMSCopy(this)
+        ).getOrThrow();
+        NbtUtils.addCurrentDataVersion(tag);
+
+        final Map<String, Object> ret = new LinkedHashMap<>();
+        tag.asCompound().get().forEach((key, value) -> {
+            switch (key) {
+                case "id" -> {
+                    ret.put("id", value.asString().get());
+                }
+                case "count" -> {
+                    ret.put("count", value.asInt().get());
+                }
+                case "components" -> {
+                    final Map<String, Object> components = new LinkedHashMap<>();
+                    value.asCompound().ifPresent((compoundTag) -> {
+                        compoundTag.forEach((componentKey, componentTag) -> {
+                            final String serializedComponent = componentTag.toString();
+                            components.put(componentKey, serializedComponent);
+                        });
+                    });
+                    ret.put("components", components);
+                }
+                case SharedConstants.DATA_VERSION_TAG -> {
+                    ret.put(SharedConstants.DATA_VERSION_TAG, value.asInt().get());
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + key);
+            }
+        });
+        ret.put("schema_version", 1);
+        return ret;
+    }
+
+    @Override
     public Map<Enchantment, Integer> getEnchantments() {
         io.papermc.paper.datacomponent.item.ItemEnchantments itemEnchantments = this.getData(DataComponentTypes.ENCHANTMENTS); // empty constant might be useful here
         if (itemEnchantments == null) {
@@ -463,6 +511,14 @@ public final class CraftItemStack extends ItemStack {
     }
 
     @Override
+    public @NotNull String translationKey() {
+        if (this.handle == null) {
+            return Items.AIR.getDescriptionId();
+        }
+        return this.handle.getItem().getDescriptionId();
+    }
+
+    @Override
     public @NotNull Component effectiveName() {
         return this.handle == null ? Component.empty() : PaperAdventure.asAdventure(this.handle.getStyledHoverName());
     }
@@ -513,6 +569,28 @@ public final class CraftItemStack extends ItemStack {
         return mirrored;
     }
     // Paper end
+
+    @Override
+    public boolean isRepairableBy(@NotNull final ItemStack repairMaterial) {
+        if (this.handle == null) {
+            return false;
+        }
+        return this.handle.isValidRepairItem(CraftItemStack.unwrap(repairMaterial));
+    }
+
+    @Override
+    public @NotNull @Unmodifiable List<Component> computeTooltipLines(final  TooltipContext tooltipContext, final Player player) {
+        Preconditions.checkArgument(tooltipContext != null, "tooltipContext cannot be null");
+        net.minecraft.world.item.ItemStack item = this.handle == null ? net.minecraft.world.item.ItemStack.EMPTY : this.handle;
+        net.minecraft.world.item.TooltipFlag.Default flag = tooltipContext.isAdvanced() ? net.minecraft.world.item.TooltipFlag.ADVANCED : net.minecraft.world.item.TooltipFlag.NORMAL;
+        if (tooltipContext.isCreative()) {
+            flag = flag.asCreative();
+        }
+        final List<net.minecraft.network.chat.Component> lines = item.getTooltipLines(
+            net.minecraft.world.item.Item.TooltipContext.of(player == null ? CraftRegistry.getMinecraftRegistry() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
+            player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
+        return lines.stream().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).toList();
+    }
 
     public static final String PDC_CUSTOM_DATA_KEY = "PublicBukkitValues";
     private CompoundTag getPdcTag() {

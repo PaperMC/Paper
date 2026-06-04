@@ -1380,7 +1380,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return an offline player
      * @see #getOfflinePlayer(java.util.UUID)
      */
-    // @Deprecated(since = "1.7.5") // Paper
     @NotNull
     public OfflinePlayer getOfflinePlayer(@NotNull String name);
 

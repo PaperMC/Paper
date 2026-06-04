@@ -3,6 +3,7 @@ package org.bukkit;
 import com.google.common.collect.Multimap;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
+import java.util.Map;
 import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
@@ -23,7 +24,6 @@ import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import java.util.Map;
 
 /**
  * This interface provides value conversions that may be specific to a
@@ -109,8 +109,6 @@ public interface UnsafeValues {
     String getItemTranslationKey(Material material);
 
     String getTranslationKey(EntityType entityType);
-
-    String getTranslationKey(ItemStack itemStack);
 
     @Deprecated(since = "1.21.3", forRemoval = true)
     String getTranslationKey(Attribute attribute);
@@ -377,11 +375,7 @@ public interface UnsafeValues {
     io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> createPluginLifecycleEventManager(final org.bukkit.plugin.java.JavaPlugin plugin, final java.util.function.BooleanSupplier registrationCheck);
     // Paper end - lifecycle event API
 
-    @NotNull java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(@NotNull ItemStack itemStack, @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, @Nullable org.bukkit.entity.Player player); // Paper - expose itemstack tooltip lines
-
     ItemStack createEmptyStack(); // Paper - proxy ItemStack
-
-    @NotNull Map<String, Object> serializeStack(ItemStack itemStack);
 
     @NotNull ItemStack deserializeStack(@NotNull Map<String, Object> args);
 

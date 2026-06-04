@@ -497,7 +497,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     @NotNull
     @Utility
     public Map<String, Object> serialize() {
-        return Bukkit.getUnsafe().serializeStack(this);
+        return this.craftDelegate.serialize();
     }
 
     /**
@@ -668,7 +668,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     @NotNull
     @Deprecated(forRemoval = true) // Paper
     public String getTranslationKey() {
-        return Bukkit.getUnsafe().getTranslationKey(this);
+        return this.craftDelegate.getTranslationKey();
     }
 
     // Paper start
@@ -1079,7 +1079,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @Override
     public @NotNull String translationKey() {
-        return Bukkit.getUnsafe().getTranslationKey(this);
+        return this.craftDelegate.translationKey();
     }
 
     /**
@@ -1102,7 +1102,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return true if it is repairable by, false if not
      */
     public boolean isRepairableBy(@NotNull ItemStack repairMaterial) {
-        return Bukkit.getUnsafe().isValidRepairItemStack(this, repairMaterial);
+        return this.craftDelegate.isRepairableBy(repairMaterial);
     }
 
     /**
@@ -1113,7 +1113,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return true if it can repair, false if not
      */
     public boolean canRepair(@NotNull ItemStack toBeRepaired) {
-        return Bukkit.getUnsafe().isValidRepairItemStack(toBeRepaired, this);
+        return toBeRepaired.isRepairableBy(this);
     }
 
     /**
@@ -1162,9 +1162,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param player a player for player-specific tooltip lines
      * @return an immutable list of components (can be empty)
      */
-    @SuppressWarnings("deprecation") // abusing unsafe as a bridge
-    public java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<net.kyori.adventure.text.Component> computeTooltipLines(final @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final @Nullable org.bukkit.entity.Player player) {
-        return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
+    public java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<net.kyori.adventure.text.Component> computeTooltipLines(final @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final org.bukkit.entity.@Nullable Player player) {
+        return this.craftDelegate.computeTooltipLines(tooltipContext, player);
     }
     // Paper end - expose itemstack tooltip lines
 
