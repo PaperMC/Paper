@@ -219,6 +219,9 @@ public class Commodore {
         if (pluginVersion.isOlderThan(ApiVersion.ABSTRACT_COW)) {
             renames.put("org/bukkit/entity/Cow", "org/bukkit/entity/AbstractCow");
         }
+        if (pluginVersion.isOlderThan(ApiVersion.ABSTRACT_CUBE_MOB)) {
+            renames.put("org/bukkit/entity/Slime", "org/bukkit/entity/AbstractCubeMob");
+        }
 
         cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, cw) {
             final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
