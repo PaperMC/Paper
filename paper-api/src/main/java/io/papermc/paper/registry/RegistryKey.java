@@ -4,6 +4,8 @@ import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.statistic.CustomStatistic;
+import io.papermc.paper.statistic.StatisticType;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
@@ -138,6 +140,16 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.GameRuleKeys
      */
     RegistryKey<GameRule<?>> GAME_RULE = create("game_rule");
+    /**
+     * Built-in registry for custom statistics.
+     * @see io.papermc.paper.registry.keys.CustomStatisticKeys
+     */
+    RegistryKey<CustomStatistic> CUSTOM_STAT = create("custom_stat");
+    /**
+     * Built-in registry for statistic types.
+     * @see io.papermc.paper.registry.keys.StatisticTypeKeys
+     */
+    RegistryKey<StatisticType<?>> STAT_TYPE = create("stat_type");
 
     /* ********************** *
      * Data-driven Registries *
