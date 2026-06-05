@@ -13,7 +13,7 @@ import org.jspecify.annotations.NullMarked;
 import java.util.List;
 
 /**
- * Called just before a {@link Entity} spawns due to a pattern of blocks being constructed (golems, the wither, etc.)
+ * Called just before an {@link Entity} spawns due to a pattern of blocks being constructed (golems, the wither, etc.)
  * <br>
  * Note: This event is fired before {@link EntitySpawnEvent}, before the entity is added to the world,
  * the success of this event does not guarantee the entity will actually spawn.
