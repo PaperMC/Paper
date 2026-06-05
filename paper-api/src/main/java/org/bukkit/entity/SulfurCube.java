@@ -6,5 +6,5 @@ import io.papermc.paper.entity.Shearable;
 /**
  * Represents a Sulfur Cube.
  */
-public interface SulfurCube extends AbstractCubeMob, Shearable, Bucketable {
+public interface SulfurCube extends AbstractCubeMob, Shearable, Bucketable, Ageable {
 }
