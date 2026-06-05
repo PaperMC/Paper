@@ -77,15 +77,15 @@ public class RegistryEntryBuilder<M, A extends Keyed> { // TODO remove Keyed
             return this.create(filler, MODIFIABLE);
         }
 
-        public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> addable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
+        public <B extends PaperRegistryBuilder<M, ? extends A>> RegistryEntry<M, A> addable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
             return this.create(filler, ADDABLE);
         }
 
-        public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> writable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
+        public <B extends PaperRegistryBuilder<M, ? extends A>> RegistryEntry<M, A> writable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
             return this.create(filler, WRITABLE);
         }
 
-        public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> create(final PaperRegistryBuilder.Filler<M, A, B> filler, final RegistryEntryMeta.RegistryModificationApiSupport support) {
+        public <B extends PaperRegistryBuilder<M, ? extends A>> RegistryEntry<M, A> create(final PaperRegistryBuilder.Filler<M, A, B> filler, final RegistryEntryMeta.RegistryModificationApiSupport support) {
             return new RegistryEntryImpl<>(new RegistryEntryMeta.Buildable<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit, this.serializationUpdater, filler, support));
         }
     }

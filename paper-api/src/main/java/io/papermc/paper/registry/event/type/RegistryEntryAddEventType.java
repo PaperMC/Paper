@@ -13,5 +13,5 @@ import org.jetbrains.annotations.ApiStatus;
  * @param <B> registry entry builder type
  */
 @ApiStatus.NonExtendable
-public interface RegistryEntryAddEventType<T, B extends RegistryBuilder<T>> extends LifecycleEventType<BootstrapContext, RegistryEntryAddEvent<T, B>, RegistryEntryAddConfiguration<T>> {
+public interface RegistryEntryAddEventType<T, B extends RegistryBuilder<? extends T>> extends LifecycleEventType<BootstrapContext, RegistryEntryAddEvent<T, B>, RegistryEntryAddConfiguration<T>> {
 }

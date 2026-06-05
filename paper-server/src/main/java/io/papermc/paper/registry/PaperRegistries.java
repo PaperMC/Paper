@@ -1,6 +1,8 @@
 package io.papermc.paper.registry;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.advancement.CriteriaTrigger;
+import io.papermc.paper.advancement.PaperCriteriaTrigger;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
@@ -12,6 +14,7 @@ import io.papermc.paper.registry.data.PaperBannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.PaperCatTypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperChickenVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperCowVariantRegistryEntry;
+import io.papermc.paper.registry.data.PaperCriteriaTriggerRegistryEntry;
 import io.papermc.paper.registry.data.PaperDamageTypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.PaperFrogVariantRegistryEntry;
@@ -124,6 +127,7 @@ public final class PaperRegistries {
             start(Registries.DATA_COMPONENT_TYPE, RegistryKey.DATA_COMPONENT_TYPE).craft(DataComponentTypes.class, PaperDataComponentType::of).build(),
             start(Registries.GAME_RULE, RegistryKey.GAME_RULE).craft(GameRule.class, CraftGameRule::new).build(),
             start(Registries.POINT_OF_INTEREST_TYPE, RegistryKey.POINT_OF_INTEREST_TYPE).craft(PoiTypes.class, PaperPoiType::new).build(),
+            start(Registries.TRIGGER_TYPE, RegistryKey.TRIGGER_TYPE).craft(CriteriaTrigger.class, PaperCriteriaTrigger::new).addable(PaperCriteriaTriggerRegistryEntry.PaperBuilder::new),
 
             // data-driven
             start(Registries.BIOME, RegistryKey.BIOME).craft(Biome.class, CraftBiome::new).build().delayed(),
