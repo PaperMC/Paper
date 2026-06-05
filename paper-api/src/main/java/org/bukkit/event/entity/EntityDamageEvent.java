@@ -310,7 +310,8 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         WORLD_BORDER,
         /**
-         * Damage caused when an entity contacts another entity (sulfur cube) or block (cactus, dripstone stalagmite, berry bush).
+         * Damage caused when an entity contacts another entity (sulfur cube) or block (cactus, dripstone stalagmite,
+         * berry bush, campfire, magma block).
          * <p>
          * Damage: variable
          */
@@ -466,13 +467,19 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * Damage caused when an entity steps on {@link Material#MAGMA_BLOCK}.
          * <p>
          * Damage: 1
+         *
+         * @deprecated use {@link #CONTACT}, the block will be exposed in the event
          */
+        @Deprecated(since = "26.2")
         HOT_FLOOR,
         /**
          * Damage caused when an entity steps on {@link Material#CAMPFIRE} or {@link Material#SOUL_CAMPFIRE}.
          * <p>
          * Damage: 1 or 2 (for soul fire)
+         *
+         * @deprecated use {@link #CONTACT}, the block will be exposed in the event
          */
+        @Deprecated(since = "26.2")
         CAMPFIRE,
         /**
          * Damage caused when an entity is colliding with too many entities due

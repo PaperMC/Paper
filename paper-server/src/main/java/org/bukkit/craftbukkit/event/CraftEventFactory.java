@@ -1101,16 +1101,13 @@ public class CraftEventFactory {
             DamageCause cause;
             if (source.knownCause() != null) {
                 cause = source.knownCause();
-            } else if (source.is(DamageTypes.CACTUS) || source.is(DamageTypes.SWEET_BERRY_BUSH) || source.is(DamageTypes.STALAGMITE)) {
+            } else if (source.is(DamageTypes.CACTUS) || source.is(DamageTypes.SWEET_BERRY_BUSH) || source.is(DamageTypes.STALAGMITE) ||
+                source.is(DamageTypes.HOT_FLOOR) || source.is(DamageTypes.CAMPFIRE)) {
                 cause = DamageCause.CONTACT;
-            } else if (source.is(DamageTypes.HOT_FLOOR)) {
-                cause = DamageCause.HOT_FLOOR;
             } else if (source.is(DamageTypes.MAGIC)) {
                 cause = DamageCause.MAGIC;
             } else if (source.is(DamageTypes.IN_FIRE)) {
                 cause = DamageCause.FIRE;
-            } else if (source.is(DamageTypes.CAMPFIRE)) {
-                cause = DamageCause.CAMPFIRE;
             } else if (source.is(DamageTypes.BAD_RESPAWN_POINT)) {
                 cause = DamageCause.BLOCK_EXPLOSION;
             } else {
