@@ -42,6 +42,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     }
 
     @ApiStatus.Internal
+    @Deprecated(forRemoval = true)
     public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, final double damage) {
         this(damagee, cause, damageSource, new EnumMap<>(ImmutableMap.of(DamageModifier.BASE, damage)), new EnumMap<DamageModifier, Function<? super Double, Double>>(ImmutableMap.of(DamageModifier.BASE, ZERO)));
     }
@@ -454,7 +455,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * @deprecated never used without help of commands or plugins,
          * {@link #ENTITY_ATTACK} will be used instead
          */
-        @Deprecated
+        @Deprecated(since = "1.21.5")
         DRAGON_BREATH,
         /**
          * Damage caused when an entity runs into a wall.
