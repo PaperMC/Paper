@@ -310,7 +310,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         WORLD_BORDER,
         /**
-         * Damage caused when an entity contacts a block such as a Cactus,
+         * Damage caused when an entity contacts an entity such as Sulfur Cube or block such as a Cactus,
          * Dripstone (Stalagmite) or Berry Bush.
          * <p>
          * Damage: variable
