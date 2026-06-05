@@ -2438,17 +2438,17 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(barStyle != null, "BarStyle key cannot be null");
 
         CustomBossEvent bossBattleCustom = this.getServer().getCustomBossEvents().create(net.minecraft.util.RandomSource.create(), CraftNamespacedKey.toMinecraft(key), CraftChatMessage.fromString(title, true)[0]);
-        CraftKeyedBossbar craftKeyedBossbar = new CraftKeyedBossbar(bossBattleCustom);
-        craftKeyedBossbar.setColor(barColor);
-        craftKeyedBossbar.setStyle(barStyle);
+        KeyedBossBar keyedBossbar = bossBattleCustom.getBukkitEntity();
+        keyedBossbar.setColor(barColor);
+        keyedBossbar.setStyle(barStyle);
         for (BarFlag flag : barFlags) {
             if (flag == null) {
                 continue;
             }
-            craftKeyedBossbar.addFlag(flag);
+            keyedBossbar.addFlag(flag);
         }
 
-        return craftKeyedBossbar;
+        return keyedBossbar;
     }
 
     @Override
