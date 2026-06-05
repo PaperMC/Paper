@@ -1807,7 +1807,7 @@ public class CraftEventFactory {
         }
         event.callEvent();
         event.getInventory().setItem(resultSlot, event.getResult());
-        container.broadcastChanges();;
+        container.broadcastChanges();
     }
 
     public static SpawnerSpawnEvent callSpawnerSpawnEvent(Entity spawnee, BlockPos pos) {

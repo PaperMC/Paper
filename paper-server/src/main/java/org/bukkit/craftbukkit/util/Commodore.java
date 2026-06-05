@@ -447,7 +447,7 @@ public class Commodore {
                         }
 
                         // Paper start - Rewrite plugins
-                        owner = getOriginalOrRewrite(owner) ;
+                        owner = getOriginalOrRewrite(owner);
                         if (desc != null) {
                             desc = getOriginalOrRewrite(desc);
                         }
@@ -670,7 +670,7 @@ public class Commodore {
             public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
                 // Paper start - Rewrite plugins
                 descriptor = getOriginalOrRewrite(descriptor);
-                if ( signature != null ) {
+                if (signature != null) {
                     signature = getOriginalOrRewrite(signature);
                 }
                 // Paper end

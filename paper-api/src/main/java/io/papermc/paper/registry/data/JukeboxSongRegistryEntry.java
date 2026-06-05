@@ -101,7 +101,7 @@ public interface JukeboxSongRegistryEntry {
          * @see #soundEvent(TypedKey)
          * @see #soundEvent(Consumer)
          */
-        @Contract( value = "_ -> this", mutates = "this")
+        @Contract(value = "_ -> this", mutates = "this")
         Builder soundEvent(RegistryHolder<Sound, SoundEventRegistryEntry> soundEvent);
 
         /**

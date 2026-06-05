@@ -2409,9 +2409,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
         // Paper start
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
-        {
-            throw new UnsupportedOperationException( "Not supported yet." );
+        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         /**
@@ -2423,8 +2422,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          */
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
-        {
+        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -2437,8 +2435,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          */
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig()
-        {
+        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
         // Paper end

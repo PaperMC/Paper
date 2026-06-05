@@ -579,7 +579,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     @Override
-    public @NotNull @Unmodifiable List<Component> computeTooltipLines(final  TooltipContext tooltipContext, final Player player) {
+    public @NotNull @Unmodifiable List<Component> computeTooltipLines(final TooltipContext tooltipContext, final Player player) {
         Preconditions.checkArgument(tooltipContext != null, "tooltipContext cannot be null");
         net.minecraft.world.item.ItemStack item = this.handle == null ? net.minecraft.world.item.ItemStack.EMPTY : this.handle;
         net.minecraft.world.item.TooltipFlag.Default flag = tooltipContext.isAdvanced() ? net.minecraft.world.item.TooltipFlag.ADVANCED : net.minecraft.world.item.TooltipFlag.NORMAL;
@@ -589,7 +589,7 @@ public final class CraftItemStack extends ItemStack {
         final List<net.minecraft.network.chat.Component> lines = item.getTooltipLines(
             net.minecraft.world.item.Item.TooltipContext.of(player == null ? CraftRegistry.getMinecraftRegistry() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
             player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
-        return lines.stream().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).toList();
+        return lines.stream().map(PaperAdventure::asAdventure).toList();
     }
 
     public static final String PDC_CUSTOM_DATA_KEY = "PublicBukkitValues";

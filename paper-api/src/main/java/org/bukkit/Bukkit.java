@@ -805,7 +805,7 @@ public final class Bukkit {
      *
      * @return true if the worlds are being ticked, false otherwise.
      */
-    public static boolean isTickingWorlds(){
+    public static boolean isTickingWorlds() {
         return server.isTickingWorlds();
     }
     // Paper end
