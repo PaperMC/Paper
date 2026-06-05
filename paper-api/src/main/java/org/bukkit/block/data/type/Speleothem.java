@@ -56,7 +56,7 @@ public interface Speleothem extends Waterlogged {
      * Represents the thickness of the speleothem, corresponding to its position
      * within a multi-block speleothem formation.
      */
-    enum Thickness { // todo - snapshot - check ABI
+    enum Thickness {
         /**
          * Extended tip.
          */

@@ -82,7 +82,10 @@ public class Commodore {
             "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent",
             "org/bukkit/block/data/type/Crafter$Orientation", "org/bukkit/block/Orientation",
             "org/bukkit/block/data/type/Jigsaw$Orientation", "org/bukkit/block/Orientation",
-            "org/bukkit/block/data/type/MossyCarpet$Height", "org/bukkit/block/data/type/Wall$Height"
+            "org/bukkit/block/data/type/MossyCarpet$Height", "org/bukkit/block/data/type/Wall$Height",
+            "org/bukkit/block/data/type/PinkPetals", "org/bukkit/block/data/type/FlowerBed",
+            "org/bukkit/block/data/type/PointedDripstone", "org/bukkit/block/data/type/Speleothem",
+            "org/bukkit/block/data/type/PointedDripstone$Thickness", "org/bukkit/block/data/type/Speleothem$Thickness"
     );
 
     private static final Map<String, String> CLASS_TO_INTERFACE = Map.ofEntries(
