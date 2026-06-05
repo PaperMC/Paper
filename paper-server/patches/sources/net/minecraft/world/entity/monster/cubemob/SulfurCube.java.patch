@@ -1,14 +1,6 @@
 --- a/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
 +++ b/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
-@@ -94,6 +_,7 @@
-     private SulfurCubeArchetype.KnockbackModifiers knockbackModifier = SulfurCubeArchetype.DEFAULT_KNOCKBACK_MODIFIERS;
-     private SulfurCubeArchetype.SoundSettings soundSettings = SulfurCubeArchetype.DEFAULT_SOUND_SETTINGS;
-     private int fuse = -1;
-+    private @Nullable Boolean wasInvulnerable; // Paper - track this state for event cancellation
-     private List<SulfurCubeArchetype.ContactDamage> contactDamages = new ArrayList<>();
-     private static final EntityDataAccessor<Integer> MAX_FUSE = SynchedEntityData.defineId(SulfurCube.class, EntityDataSerializers.INT);
-     private static final EntityDataAccessor<Boolean> FROM_BUCKET = SynchedEntityData.defineId(SulfurCube.class, EntityDataSerializers.BOOLEAN);
-@@ -295,13 +_,35 @@
+@@ -295,13 +_,31 @@
  
          if (!this.explosionData.isEmpty()) {
              if (this.fuse == 0) {
@@ -33,10 +25,6 @@
 +                        // Paper start - Fire events for SulfurCube explosions
 +                        final org.bukkit.event.entity.ExplosionPrimeEvent primeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callExplosionPrimeEvent(this, this.explosionData.get().power(), this.explosionData.get().causesFire());
 +                        if (primeEvent.isCancelled()) {
-+                            if (this.wasInvulnerable != null) {
-+                                this.setInvulnerable(this.wasInvulnerable);
-+                                this.wasInvulnerable = null;
-+                            }
 +                            this.setFuse(-1);
 +                            this.entityData.set(MAX_FUSE, -1);
 +                            return;
@@ -70,14 +58,6 @@
              }
          }
      }
-@@ -340,6 +_,7 @@
-             && !this.isPrimed()) {
-             int fuse = this.explosionData.get().fuse();
-             int fuseTime = imminent ? PrimedTnt.getRandomShortFuse(fuse, this.getRandom()) : fuse;
-+            this.wasInvulnerable = this.isInvulnerable(); // Paper - track this state for event cancellation
-             this.setInvulnerable(true);
-             this.setFuse(fuseTime);
-             this.entityData.set(MAX_FUSE, fuseTime);
 @@ -455,7 +_,15 @@
                  if (heldItem.is(Items.SHEARS) && this.readyForShearing()) {
                      if (this.level() instanceof ServerLevel level) {
