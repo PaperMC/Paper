@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
@@ -8,7 +9,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface Weapon {
+public interface Weapon extends BuildableDataComponent<Weapon, Weapon.Builder> {
 
     /**
      * Returns a new builder for creating a Weapon.

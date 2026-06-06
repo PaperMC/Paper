@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
@@ -21,7 +22,7 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface BlocksAttacks {
+public interface BlocksAttacks extends BuildableDataComponent<BlocksAttacks, BlocksAttacks.Builder> {
 
     @Contract(value = "-> new", pure = true)
     static Builder blocksAttacks() {

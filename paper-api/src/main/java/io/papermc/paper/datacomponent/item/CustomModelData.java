@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.List;
 import org.bukkit.Color;
@@ -16,7 +17,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface CustomModelData {
+public interface CustomModelData extends BuildableDataComponent<CustomModelData, CustomModelData.Builder> {
 
     @Contract(value = "-> new", pure = true)
     static CustomModelData.Builder customModelData() {
@@ -83,6 +84,16 @@ public interface CustomModelData {
         CustomModelData.Builder addFloats(List<Float> floats);
 
         /**
+         * Sets multiple floats to this custom model data.
+         *
+         * @param floats the floats
+         * @return the builder for chaining
+         * @see #floats()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        CustomModelData.Builder floats(List<Float> floats);
+
+        /**
          * Adds a flag to this custom model data.
          *
          * @param flag the flag
@@ -101,6 +112,16 @@ public interface CustomModelData {
          */
         @Contract(value = "_ -> this", mutates = "this")
         CustomModelData.Builder addFlags(List<Boolean> flags);
+
+        /**
+         * Sets multiple flags to this custom model data.
+         *
+         * @param flags the flags
+         * @return the builder for chaining
+         * @see #flags()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        CustomModelData.Builder flags(List<Boolean> flags);
 
         /**
          * Adds a string to this custom model data.
@@ -123,6 +144,16 @@ public interface CustomModelData {
         CustomModelData.Builder addStrings(List<String> strings);
 
         /**
+         * Sets multiple strings to this custom model data.
+         *
+         * @param strings the strings
+         * @return the builder for chaining
+         * @see #strings()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        CustomModelData.Builder strings(List<String> strings);
+
+        /**
          * Adds a color to this custom model data.
          *
          * @param color the color
@@ -141,5 +172,15 @@ public interface CustomModelData {
          */
         @Contract(value = "_ -> this", mutates = "this")
         CustomModelData.Builder addColors(List<Color> colors);
+
+        /**
+         * Sets multiple colors to this custom model data.
+         *
+         * @param colors the colors
+         * @return the builder for chaining
+         * @see #colors()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        CustomModelData.Builder colors(List<Color> colors);
     }
 }

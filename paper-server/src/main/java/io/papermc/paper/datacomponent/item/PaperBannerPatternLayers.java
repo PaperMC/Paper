@@ -2,6 +2,7 @@ package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.MCUtil;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,6 +33,11 @@ public record PaperBannerPatternLayers(
     @Override
     public @Unmodifiable List<Pattern> patterns() {
         return convert(impl);
+    }
+
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().addAll(this.patterns());
     }
 
     static final class BuilderImpl implements BannerPatternLayers.Builder {

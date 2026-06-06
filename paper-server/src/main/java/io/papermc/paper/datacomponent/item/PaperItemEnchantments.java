@@ -9,6 +9,7 @@ import net.minecraft.core.Holder;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.enchantments.Enchantment;
+import org.checkerframework.common.value.qual.IntRange;
 
 import static io.papermc.paper.util.BoundChecker.requireRange;
 
@@ -37,6 +38,11 @@ public record PaperItemEnchantments(
         return this.impl;
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().enchantments(this.enchantments());
+    }
+
     static final class BuilderImpl implements ItemEnchantments.Builder {
 
         private final Map<Enchantment, Integer> enchantments = new Object2ObjectOpenHashMap<>();
@@ -49,6 +55,13 @@ public record PaperItemEnchantments(
 
         @Override
         public ItemEnchantments.Builder addAll(final Map<Enchantment, Integer> enchantments) {
+            enchantments.forEach(this::add);
+            return this;
+        }
+
+        @Override
+        public Builder enchantments(final Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments) {
+            this.enchantments.clear();
             enchantments.forEach(this::add);
             return this;
         }

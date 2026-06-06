@@ -19,6 +19,11 @@ public record PaperItemArmorTrim(
         return new ArmorTrim(CraftTrimMaterial.minecraftHolderToBukkit(this.impl.material()), CraftTrimPattern.minecraftHolderToBukkit(this.impl.pattern()));
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl(this.armorTrim());
+    }
+
     static final class BuilderImpl implements ItemArmorTrim.Builder {
 
         private ArmorTrim armorTrim;

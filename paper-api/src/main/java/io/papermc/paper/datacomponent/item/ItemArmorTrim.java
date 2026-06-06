@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.jetbrains.annotations.ApiStatus;
@@ -13,7 +14,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface ItemArmorTrim  {
+public interface ItemArmorTrim extends BuildableDataComponent<ItemArmorTrim, ItemArmorTrim.Builder> {
 
     @Contract(value = "_ -> new", pure = true)
     static ItemArmorTrim.Builder itemArmorTrim(final ArmorTrim armorTrim) {

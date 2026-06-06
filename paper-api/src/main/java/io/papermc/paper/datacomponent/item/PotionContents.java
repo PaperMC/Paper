@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.List;
 import org.bukkit.Color;
@@ -18,7 +19,7 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface PotionContents {
+public interface PotionContents extends BuildableDataComponent<PotionContents, PotionContents.Builder> {
 
     @Contract(value = "-> new", pure = true)
     static PotionContents.Builder potionContents() {
@@ -135,5 +136,15 @@ public interface PotionContents {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addCustomEffects(List<PotionEffect> effects);
+
+        /**
+         * Sets custom effect instances to this builder.
+         *
+         * @param effects effects
+         * @return the builder for chaining
+         * @see #customEffects()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder customEffects(List<PotionEffect> effects);
     }
 }

@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.registry.set.RegistryKeySet;
@@ -21,7 +22,7 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface Tool {
+public interface Tool extends BuildableDataComponent<Tool, Tool.Builder> {
 
     @Contract(value = "-> new", pure = true)
     static Tool.Builder tool() {
@@ -164,5 +165,14 @@ public interface Tool {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addRules(Collection<Rule> rules);
+
+        /**
+         * Sets rules to the tool that control the breaking speed / damage per block if matched.
+         *
+         * @param rules rules
+         * @return the builder for chaining
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder rules(Collection<Rule> rules);
     }
 }

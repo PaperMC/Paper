@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import net.kyori.adventure.key.Key;
 import org.checkerframework.checker.index.qual.Positive;
@@ -15,7 +16,7 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface UseCooldown {
+public interface UseCooldown extends BuildableDataComponent<UseCooldown, UseCooldown.Builder> {
 
     /**
      * Creates a new builder for use cooldown.

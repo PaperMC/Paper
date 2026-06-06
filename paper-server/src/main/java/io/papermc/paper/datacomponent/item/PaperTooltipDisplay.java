@@ -29,6 +29,13 @@ public record PaperTooltipDisplay(
             .collect(Collectors.toCollection(ReferenceLinkedOpenHashSet::new));
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .hideTooltip(this.hideTooltip())
+            .hiddenComponents(this.hiddenComponents());
+    }
+
     static final class BuilderImpl implements Builder {
 
         private final Set<DataComponentType> hiddenComponents = new ReferenceLinkedOpenHashSet<>();
@@ -47,7 +54,14 @@ public record PaperTooltipDisplay(
         }
 
         @Override
+        public Builder addHiddenComponents(final Set<DataComponentType> components) {
+            this.hiddenComponents.addAll(components);
+            return this;
+        }
+
+        @Override
         public Builder hiddenComponents(final Set<DataComponentType> components) {
+            this.hiddenComponents.clear();
             this.hiddenComponents.addAll(components);
             return this;
         }

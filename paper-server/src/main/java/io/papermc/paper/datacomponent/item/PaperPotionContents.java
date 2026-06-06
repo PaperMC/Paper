@@ -63,6 +63,15 @@ public record PaperPotionContents(
         return Color.fromARGB(this.impl.getColor());
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .potion(this.potion())
+            .customColor(this.customColor())
+            .customName(this.customName())
+            .customEffects(this.customEffects());
+    }
+
     static final class BuilderImpl implements PotionContents.Builder {
 
         private final List<MobEffectInstance> customEffects = new ObjectArrayList<>();
@@ -97,6 +106,13 @@ public record PaperPotionContents(
 
         @Override
         public PotionContents.Builder addCustomEffects(final List<PotionEffect> effects) {
+            effects.forEach(this::addCustomEffect);
+            return this;
+        }
+
+        @Override
+        public Builder customEffects(final List<PotionEffect> effects) {
+            this.customEffects.clear();
             effects.forEach(this::addCustomEffect);
             return this;
         }
