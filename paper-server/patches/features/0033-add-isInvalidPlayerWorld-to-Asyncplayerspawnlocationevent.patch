@@ -7,7 +7,7 @@ If a world that players are in gets unloaded/reset, they end up spawning in the 
 There is no easy way to detect if a player spawn location has had its world changed, this patch fixes that by tracking if the world was determined to be invalid.
 
 diff --git a/net/minecraft/server/network/config/PrepareSpawnTask.java b/net/minecraft/server/network/config/PrepareSpawnTask.java
-index 5014840..91f219e 100644
+index f087b290..ac47509a 100644
 --- a/net/minecraft/server/network/config/PrepareSpawnTask.java
 +++ b/net/minecraft/server/network/config/PrepareSpawnTask.java
 @@ -40,6 +40,7 @@ public class PrepareSpawnTask implements ConfigurationTask {
@@ -15,20 +15,20 @@ index 5014840..91f219e 100644
      private final net.minecraft.server.network.ServerConfigurationPacketListenerImpl listener;
      private boolean newPlayer;
 +    private boolean invalidPlayerWorld;
-     public PrepareSpawnTask(MinecraftServer server, com.mojang.authlib.GameProfile profile, net.minecraft.server.network.ServerConfigurationPacketListenerImpl listener) {
+ 
+     public PrepareSpawnTask(final MinecraftServer server, final com.mojang.authlib.GameProfile profile, final net.minecraft.server.network.ServerConfigurationPacketListenerImpl listener) {
          this.profile = profile;
-         this.listener = listener;
-@@ -58,8 +59,8 @@ public class PrepareSpawnTask implements ConfigurationTask {
-                 .map(compoundTag -> TagValueInput.create(scopedCollector, this.server.registryAccess(), compoundTag));
+@@ -59,8 +60,8 @@ public class PrepareSpawnTask implements ConfigurationTask {
+                 .map(tag -> TagValueInput.create(reporter, this.server.registryAccess(), tag));
              // Paper start - move logic in Entity to here, to use bukkit supplied world UUID & reset to main world spawn if no valid world is found
-             this.newPlayer = optional.isEmpty(); // New players don't have saved data!
+             this.newPlayer = loadedData.isEmpty(); // New players don't have saved data!
 +            this.invalidPlayerWorld = false;
              net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> resourceKey = null; // Paper
 -            boolean[] invalidPlayerWorld = {false};
-             bukkitData: if (optional.isPresent()) {
+             bukkitData: if (loadedData.isPresent()) {
                  // The main way for bukkit worlds to store the world is the world UUID despite mojang adding custom worlds
                  final org.bukkit.World bWorld;
-@@ -79,7 +80,7 @@ public class PrepareSpawnTask implements ConfigurationTask {
+@@ -80,7 +81,7 @@ public class PrepareSpawnTask implements ConfigurationTask {
                      resourceKey = ((org.bukkit.craftbukkit.CraftWorld) bWorld).getHandle().dimension();
                  } else {
                      resourceKey = net.minecraft.world.level.Level.OVERWORLD;
@@ -36,22 +36,22 @@ index 5014840..91f219e 100644
 +                    this.invalidPlayerWorld = true;
                  }
              }
-             ServerPlayer.SavedPosition savedPosition = optional.<ServerPlayer.SavedPosition>flatMap(
-@@ -103,6 +104,7 @@ public class PrepareSpawnTask implements ConfigurationTask {
-                 if (serverLevel1 == null) {
+             ServerPlayer.SavedPosition loadedPosition = loadedData.<ServerPlayer.SavedPosition>flatMap(tag -> tag.read(ServerPlayer.SavedPosition.MAP_CODEC))
+@@ -102,6 +103,7 @@ public class PrepareSpawnTask implements ConfigurationTask {
+                 if (spawnLevel == null) {
                      LOGGER.warn("Unknown respawn dimension {}, defaulting to overworld", resourceKey);
-                     serverLevel1 = vanillaDefaultLevel;
+                     spawnLevel = spawnDataLevel;
 +                    this.invalidPlayerWorld = true;
                  }
              }
-             final ServerLevel serverLevel = serverLevel1;
-@@ -211,7 +213,8 @@ public class PrepareSpawnTask implements ConfigurationTask {
-                             io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent ev = new io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent(
-                                 PrepareSpawnTask.this.listener.paperConnection,
-                                 org.bukkit.craftbukkit.util.CraftLocation.toBukkit(vec3final, this.spawnLevel, this.spawnAngle.x, this.spawnAngle.y),
--                                PrepareSpawnTask.this.newPlayer
-+                                PrepareSpawnTask.this.newPlayer,
-+                                PrepareSpawnTask.this.invalidPlayerWorld
-                             );
-                             ev.callEvent();
-                             return ev.getSpawnLocation();
+             final ServerLevel finalSpawnLevel = spawnLevel;
+@@ -215,7 +217,8 @@ public class PrepareSpawnTask implements ConfigurationTask {
+                         io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent ev = new io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent(
+                             PrepareSpawnTask.this.listener.paperConnection,
+                             org.bukkit.craftbukkit.util.CraftLocation.toBukkit(spawnPositionFinal, this.spawnLevel, this.spawnAngle.x, this.spawnAngle.y),
+-                            PrepareSpawnTask.this.newPlayer
++                            PrepareSpawnTask.this.newPlayer,
++                            PrepareSpawnTask.this.invalidPlayerWorld
+                         );
+                         ev.callEvent();
+                         return ev.getSpawnLocation();
