@@ -17,6 +17,7 @@ val serverRuntimeClasspath by configurations.registering { // resolvable?
 dependencies {
     minecraftJar(project(":paper-server", "mappedJarOutgoing"))
     implementation(project(":paper-server", "macheMinecraftLibraries"))
+    implementation(project(":paper-server")) // for ItemType rewriter; we need CB classes
 
     implementation("com.squareup:javapoet:1.13.0")
     implementation(project(":paper-api"))

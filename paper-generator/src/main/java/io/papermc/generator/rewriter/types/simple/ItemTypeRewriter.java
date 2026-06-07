@@ -6,10 +6,10 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.ItemMeta;
 
-@Deprecated // bad generic
 public class ItemTypeRewriter extends RegistryFieldRewriter<Item> {
 
     public ItemTypeRewriter() {
@@ -22,6 +22,14 @@ public class ItemTypeRewriter extends RegistryFieldRewriter<Item> {
             return super.rewriteFieldType(reference);
         }
 
-        return "%s<%s>".formatted(ClassHelper.retrieveFullNestedName(ItemType.Typed.class), ItemMeta.class.getSimpleName());
+        CraftItemType<?> itemType = (CraftItemType<?>) CraftItemType.minecraftToBukkitNew(reference.value());
+        Class<? extends ItemMeta> metaClass = itemType.getItemMetaClass();
+        String metaName = metaClass.getPackageName().startsWith("org.bukkit") // ArmorStandMeta
+            ? metaClass.getSimpleName()
+            : metaClass.getCanonicalName();
+        return "%s<%s>".formatted(
+            ClassHelper.retrieveFullNestedName(ItemType.Typed.class),
+            metaName
+        );
     }
 }

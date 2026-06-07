@@ -234,7 +234,7 @@ public final class Rewriters {
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
             .register("PoiTypes", PoiTypes.class, new RegistryFieldRewriter<>(Registries.POINT_OF_INTEREST_TYPE, "get"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
-            // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) // - disable for now, lynx want the generic type
+            .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter())
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
             .register("Tag", Tag.class, new TagRewriter())

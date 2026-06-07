@@ -17,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.Util;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.HolderLookup;
@@ -42,6 +43,7 @@ import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.DataPackConfig;
 import net.minecraft.world.level.WorldDataConfiguration;
 import org.apache.commons.io.file.PathUtils;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.slf4j.Logger;
 import picocli.CommandLine;
@@ -91,6 +93,12 @@ public class Main implements Callable<Integer> {
         RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES, Util.backgroundExecutor()).join();
         layers = layers.replaceFrom(RegistryLayer.DIMENSIONS, dimensionRegistries);
         REGISTRY_ACCESS = layers.compositeAccess().freeze();
+        io.papermc.paper.registry.PaperRegistryAccess paperAccess =
+            io.papermc.paper.registry.PaperRegistryAccess.instance();
+        REGISTRY_ACCESS.listRegistries().forEach(lookup ->
+            paperAccess.registerRegistry((net.minecraft.core.Registry) lookup)
+        );
+        CraftRegistry.setMinecraftRegistry(REGISTRY_ACCESS);
         if (withTags) {
             return ReloadableServerResources.loadResources(
                 resourceManager,
