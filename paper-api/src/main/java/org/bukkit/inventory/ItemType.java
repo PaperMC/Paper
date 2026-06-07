@@ -564,6 +564,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<BlockStateMeta> CHISELED_BOOKSHELF = getItemType("chiseled_bookshelf");
 
+    ItemType.Typed<ItemMeta> CHISELED_CINNABAR = getItemType("chiseled_cinnabar");
+
     ItemType.Typed<ItemMeta> CHISELED_COPPER = getItemType("chiseled_copper");
 
     ItemType.Typed<ItemMeta> CHISELED_DEEPSLATE = getItemType("chiseled_deepslate");
@@ -582,6 +584,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> CHISELED_STONE_BRICKS = getItemType("chiseled_stone_bricks");
 
+    ItemType.Typed<ItemMeta> CHISELED_SULFUR = getItemType("chiseled_sulfur");
+
     ItemType.Typed<ItemMeta> CHISELED_TUFF = getItemType("chiseled_tuff");
 
     ItemType.Typed<ItemMeta> CHISELED_TUFF_BRICKS = getItemType("chiseled_tuff_bricks");
@@ -591,6 +595,22 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> CHORUS_FRUIT = getItemType("chorus_fruit");
 
     ItemType.Typed<ItemMeta> CHORUS_PLANT = getItemType("chorus_plant");
+
+    ItemType.Typed<ItemMeta> CINNABAR = getItemType("cinnabar");
+
+    ItemType.Typed<ItemMeta> CINNABAR_BRICK_SLAB = getItemType("cinnabar_brick_slab");
+
+    ItemType.Typed<ItemMeta> CINNABAR_BRICK_STAIRS = getItemType("cinnabar_brick_stairs");
+
+    ItemType.Typed<ItemMeta> CINNABAR_BRICK_WALL = getItemType("cinnabar_brick_wall");
+
+    ItemType.Typed<ItemMeta> CINNABAR_BRICKS = getItemType("cinnabar_bricks");
+
+    ItemType.Typed<ItemMeta> CINNABAR_SLAB = getItemType("cinnabar_slab");
+
+    ItemType.Typed<ItemMeta> CINNABAR_STAIRS = getItemType("cinnabar_stairs");
+
+    ItemType.Typed<ItemMeta> CINNABAR_WALL = getItemType("cinnabar_wall");
 
     ItemType.Typed<ItemMeta> CLAY = getItemType("clay");
 
@@ -1762,6 +1782,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> MUSIC_DISC_BLOCKS = getItemType("music_disc_blocks");
 
+    ItemType.Typed<ItemMeta> MUSIC_DISC_BOUNCE = getItemType("music_disc_bounce");
+
     ItemType.Typed<ItemMeta> MUSIC_DISC_CAT = getItemType("music_disc_cat");
 
     ItemType.Typed<ItemMeta> MUSIC_DISC_CHIRP = getItemType("music_disc_chirp");
@@ -2138,6 +2160,14 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> POLISHED_BLACKSTONE_WALL = getItemType("polished_blackstone_wall");
 
+    ItemType.Typed<ItemMeta> POLISHED_CINNABAR = getItemType("polished_cinnabar");
+
+    ItemType.Typed<ItemMeta> POLISHED_CINNABAR_SLAB = getItemType("polished_cinnabar_slab");
+
+    ItemType.Typed<ItemMeta> POLISHED_CINNABAR_STAIRS = getItemType("polished_cinnabar_stairs");
+
+    ItemType.Typed<ItemMeta> POLISHED_CINNABAR_WALL = getItemType("polished_cinnabar_wall");
+
     ItemType.Typed<ItemMeta> POLISHED_DEEPSLATE = getItemType("polished_deepslate");
 
     ItemType.Typed<ItemMeta> POLISHED_DEEPSLATE_SLAB = getItemType("polished_deepslate_slab");
@@ -2158,6 +2188,14 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> POLISHED_GRANITE_STAIRS = getItemType("polished_granite_stairs");
 
+    ItemType.Typed<ItemMeta> POLISHED_SULFUR = getItemType("polished_sulfur");
+
+    ItemType.Typed<ItemMeta> POLISHED_SULFUR_SLAB = getItemType("polished_sulfur_slab");
+
+    ItemType.Typed<ItemMeta> POLISHED_SULFUR_STAIRS = getItemType("polished_sulfur_stairs");
+
+    ItemType.Typed<ItemMeta> POLISHED_SULFUR_WALL = getItemType("polished_sulfur_wall");
+
     ItemType.Typed<ItemMeta> POLISHED_TUFF = getItemType("polished_tuff");
 
     ItemType.Typed<ItemMeta> POLISHED_TUFF_SLAB = getItemType("polished_tuff_slab");
@@ -2173,6 +2211,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> PORKCHOP = getItemType("porkchop");
 
     ItemType.Typed<ItemMeta> POTATO = getItemType("potato");
+
+    ItemType.Typed<ItemMeta> POTENT_SULFUR = getItemType("potent_sulfur");
 
     ItemType.Typed<PotionMeta> POTION = getItemType("potion");
 
@@ -2391,8 +2431,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> SALMON = getItemType("salmon");
 
     ItemType.Typed<ItemMeta> SALMON_BUCKET = getItemType("salmon_bucket");
-
-    ItemType.Typed<ItemMeta> SULFUR_CUBE_BUCKET = getItemType("sulfur_cube_bucket"); // just for entity meta but lynx should run the THING
 
     ItemType.Typed<SpawnEggMeta> SALMON_SPAWN_EGG = getItemType("salmon_spawn_egg");
 
@@ -2681,6 +2719,28 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> SUGAR = getItemType("sugar");
 
     ItemType.Typed<ItemMeta> SUGAR_CANE = getItemType("sugar_cane");
+
+    ItemType.Typed<ItemMeta> SULFUR = getItemType("sulfur");
+
+    ItemType.Typed<ItemMeta> SULFUR_BRICK_SLAB = getItemType("sulfur_brick_slab");
+
+    ItemType.Typed<ItemMeta> SULFUR_BRICK_STAIRS = getItemType("sulfur_brick_stairs");
+
+    ItemType.Typed<ItemMeta> SULFUR_BRICK_WALL = getItemType("sulfur_brick_wall");
+
+    ItemType.Typed<ItemMeta> SULFUR_BRICKS = getItemType("sulfur_bricks");
+
+    ItemType.Typed<ItemMeta> SULFUR_CUBE_BUCKET = getItemType("sulfur_cube_bucket");
+
+    ItemType.Typed<SpawnEggMeta> SULFUR_CUBE_SPAWN_EGG = getItemType("sulfur_cube_spawn_egg");
+
+    ItemType.Typed<ItemMeta> SULFUR_SLAB = getItemType("sulfur_slab");
+
+    ItemType.Typed<ItemMeta> SULFUR_SPIKE = getItemType("sulfur_spike");
+
+    ItemType.Typed<ItemMeta> SULFUR_STAIRS = getItemType("sulfur_stairs");
+
+    ItemType.Typed<ItemMeta> SULFUR_WALL = getItemType("sulfur_wall");
 
     ItemType.Typed<ItemMeta> SUNFLOWER = getItemType("sunflower");
 
