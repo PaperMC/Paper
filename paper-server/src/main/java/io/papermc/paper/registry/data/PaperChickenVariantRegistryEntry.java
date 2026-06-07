@@ -3,11 +3,16 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.registry.data.variant.PaperSpawnConditions;
+import io.papermc.paper.registry.data.variant.SpawnConditionPriority;
+import io.papermc.paper.util.MCUtil;
+import java.util.List;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.animal.chicken.ChickenVariant;
 import net.minecraft.world.entity.variant.ModelAndTexture;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.Chicken;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
@@ -15,12 +20,11 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryEntry {
 
+    protected final Conversions conversions;
     protected ChickenVariant.@Nullable ModelType model;
     protected ClientAsset.@Nullable ResourceTexture clientTextureAsset;
     protected ClientAsset.@Nullable ResourceTexture babyClientTextureAsset;
     protected SpawnPrioritySelectors spawnConditions;
-
-    protected final Conversions conversions;
 
     public PaperChickenVariantRegistryEntry(
         final Conversions conversions,
@@ -40,12 +44,12 @@ public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryE
 
     @Override
     public ClientTextureAsset clientTextureAsset() {
-        return this.conversions.asBukkit(asConfigured(this.clientTextureAsset, "clientTextureAsset"));
+        return MCUtil.toTextureAsset(asConfigured(this.clientTextureAsset, "clientTextureAsset"));
     }
 
     @Override
     public ClientTextureAsset babyClientTextureAsset() {
-        return this.conversions.asBukkit(asConfigured(this.babyClientTextureAsset, "babyClientTextureAsset"));
+        return MCUtil.toTextureAsset(asConfigured(this.babyClientTextureAsset, "babyClientTextureAsset"));
     }
 
     @Override
@@ -56,6 +60,11 @@ public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryE
         };
     }
 
+    @Override
+    public @Unmodifiable List<SpawnConditionPriority> spawnConditions() {
+        return PaperSpawnConditions.fromNms(this.spawnConditions);
+    }
+
     public static final class PaperBuilder extends PaperChickenVariantRegistryEntry implements Builder, PaperRegistryBuilder<ChickenVariant, Chicken.Variant> {
 
         public PaperBuilder(final Conversions conversions, final @Nullable ChickenVariant internal) {
@@ -64,13 +73,13 @@ public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryE
 
         @Override
         public Builder clientTextureAsset(final ClientTextureAsset clientTextureAsset) {
-            this.clientTextureAsset = this.conversions.asVanilla(asArgument(clientTextureAsset, "clientTextureAsset"));
+            this.clientTextureAsset = MCUtil.toResourceTexture(asArgument(clientTextureAsset, "clientTextureAsset"));
             return this;
         }
 
         @Override
         public Builder babyClientTextureAsset(final ClientTextureAsset babyClientTextureAsset) {
-            this.babyClientTextureAsset = this.conversions.asVanilla(asArgument(babyClientTextureAsset, "babyClientTextureAsset"));
+            this.babyClientTextureAsset = MCUtil.toResourceTexture(asArgument(babyClientTextureAsset, "babyClientTextureAsset"));
             return this;
         }
 
@@ -80,6 +89,12 @@ public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryE
                 case NORMAL -> ChickenVariant.ModelType.NORMAL;
                 case COLD -> ChickenVariant.ModelType.COLD;
             };
+            return this;
+        }
+
+        @Override
+        public Builder spawnConditions(final List<SpawnConditionPriority> spawnConditions) {
+            this.spawnConditions = PaperSpawnConditions.fromApi(asArgument(spawnConditions, "spawnConditions"), this.conversions);
             return this;
         }
 

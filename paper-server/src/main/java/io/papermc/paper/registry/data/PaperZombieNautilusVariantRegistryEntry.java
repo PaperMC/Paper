@@ -3,11 +3,16 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.registry.data.variant.PaperSpawnConditions;
+import io.papermc.paper.registry.data.variant.SpawnConditionPriority;
+import io.papermc.paper.util.MCUtil;
+import java.util.List;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.animal.nautilus.ZombieNautilusVariant;
 import net.minecraft.world.entity.variant.ModelAndTexture;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.ZombieNautilus;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
@@ -15,11 +20,10 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperZombieNautilusVariantRegistryEntry implements ZombieNautilusVariantRegistryEntry {
 
+    protected final Conversions conversions;
     protected ZombieNautilusVariant.@Nullable ModelType model;
     protected ClientAsset.@Nullable ResourceTexture clientTextureAsset;
     protected SpawnPrioritySelectors spawnConditions;
-
-    protected final Conversions conversions;
 
     public PaperZombieNautilusVariantRegistryEntry(
         final Conversions conversions,
@@ -38,15 +42,20 @@ public class PaperZombieNautilusVariantRegistryEntry implements ZombieNautilusVa
 
     @Override
     public ClientTextureAsset clientTextureAsset() {
-        return this.conversions.asBukkit(asConfigured(this.clientTextureAsset, "clientTextureAsset"));
+        return MCUtil.toTextureAsset(asConfigured(this.clientTextureAsset, "clientTextureAsset"));
     }
 
     @Override
-    public ZombieNautilusVariantRegistryEntry.Model model() {
+    public Model model() {
         return switch (asConfigured(this.model, "model")) {
-            case NORMAL -> ZombieNautilusVariantRegistryEntry.Model.NORMAL;
-            case WARM -> ZombieNautilusVariantRegistryEntry.Model.WARM;
+            case NORMAL -> Model.NORMAL;
+            case WARM -> Model.WARM;
         };
+    }
+
+    @Override
+    public @Unmodifiable List<SpawnConditionPriority> spawnConditions() {
+        return PaperSpawnConditions.fromNms(this.spawnConditions);
     }
 
     public static final class PaperBuilder extends PaperZombieNautilusVariantRegistryEntry implements Builder, PaperRegistryBuilder<ZombieNautilusVariant, ZombieNautilus.Variant> {
@@ -56,17 +65,23 @@ public class PaperZombieNautilusVariantRegistryEntry implements ZombieNautilusVa
         }
 
         @Override
-        public ZombieNautilusVariantRegistryEntry.Builder clientTextureAsset(final ClientTextureAsset clientTextureAsset) {
-            this.clientTextureAsset = this.conversions.asVanilla(asArgument(clientTextureAsset, "clientTextureAsset"));
+        public Builder clientTextureAsset(final ClientTextureAsset clientTextureAsset) {
+            this.clientTextureAsset = MCUtil.toResourceTexture(asArgument(clientTextureAsset, "clientTextureAsset"));
             return this;
         }
 
         @Override
-        public ZombieNautilusVariantRegistryEntry.Builder model(final ZombieNautilusVariantRegistryEntry.Model model) {
+        public Builder model(final Model model) {
             this.model = switch (asArgument(model, "model")) {
                 case NORMAL -> ZombieNautilusVariant.ModelType.NORMAL;
                 case WARM -> ZombieNautilusVariant.ModelType.WARM;
             };
+            return this;
+        }
+
+        @Override
+        public Builder spawnConditions(final List<SpawnConditionPriority> spawnConditions) {
+            this.spawnConditions = PaperSpawnConditions.fromApi(asArgument(spawnConditions, "spawnConditions"), this.conversions);
             return this;
         }
 
