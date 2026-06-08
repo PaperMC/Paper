@@ -1045,6 +1045,15 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes);
     // Paper end - method to send recipes immediately
 
+    /**
+     * Adds multiple recipes to the crafting manager at once, resending recipes only once
+     * after all have been added.
+     *
+     * @apiNote This method differs from {@link #addRecipe} in that it will only resend the recipe book once instead of once per every recipe added
+     * @param recipes the recipes to add
+     * @return true if any recipe was added, false if none were for some reason
+     * @see #addRecipe
+     */
     boolean addRecipes(Iterable<Recipe> recipes);
 
     /**
@@ -1207,6 +1216,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     public void resetRecipes();
 
+    /**
+     * Checks if the server has a recipe
+     *
+     * @param key NamespacedKey of recipe to check for
+     * @return True if there is a recipe with a matching key
+     */
     boolean hasRecipe(@NotNull NamespacedKey key);
 
     /**
@@ -1239,6 +1254,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes);
     // Paper end - method to resend recipes
 
+    /**
+     * Remove multiple recipes from the server.
+     *
+     * @apiNote This method differs from {@link #removeRecipe} in that it will only resend the recipe book once instead of once per every recipe removed
+     * @param keys the NamespacedKeys of the recipes to remove
+     * @return true if any recipe was removed, false if none were for some reason
+     * @see #removeRecipe
+     */
     boolean removeRecipes(Iterable<NamespacedKey> keys);
 
     /**
