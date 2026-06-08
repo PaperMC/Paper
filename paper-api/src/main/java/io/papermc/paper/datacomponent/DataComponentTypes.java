@@ -396,7 +396,7 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<DyeColor> SHEEP_COLOR = valued("sheep/color");
     public static final DataComponentType.Valued<DyeColor> SHULKER_COLOR = valued("shulker/color");
 
-    private static DataComponentType.NonValued unvalued(final @KeyPattern.Value String key) {
+    private static DataComponentType.NonValued unvalued(@KeyPattern.Value final String key) {
         final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         if (dataComponentType instanceof DataComponentType.NonValued) {
             return (DataComponentType.NonValued) dataComponentType;
@@ -405,7 +405,7 @@ public final class DataComponentTypes {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> DataComponentType.Valued<T> valued(final @KeyPattern.Value String key) {
+    private static <T> DataComponentType.Valued<T> valued(@KeyPattern.Value final String key) {
         final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         if (dataComponentType instanceof DataComponentType.Valued) {
             return (DataComponentType.Valued<T>) dataComponentType;

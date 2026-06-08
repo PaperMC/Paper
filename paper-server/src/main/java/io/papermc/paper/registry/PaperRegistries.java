@@ -21,6 +21,7 @@ import io.papermc.paper.registry.data.PaperJukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperPigVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperSoundEventRegistryEntry;
+import io.papermc.paper.registry.data.PaperSulfurCubeArchetypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperWolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.PaperDialogRegistryEntry;
@@ -65,6 +66,7 @@ import org.bukkit.craftbukkit.entity.CraftChicken;
 import org.bukkit.craftbukkit.entity.CraftCow;
 import org.bukkit.craftbukkit.entity.CraftFrog;
 import org.bukkit.craftbukkit.entity.CraftPig;
+import org.bukkit.craftbukkit.entity.CraftSulfurCube;
 import org.bukkit.craftbukkit.entity.CraftVillager;
 import org.bukkit.craftbukkit.entity.CraftWolf;
 import org.bukkit.craftbukkit.entity.CraftZombieNautilus;
@@ -85,6 +87,7 @@ import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Cow;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Pig;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieNautilus;
@@ -148,6 +151,7 @@ public final class PaperRegistries {
             start(Registries.PIG_VARIANT, RegistryKey.PIG_VARIANT).craft(Pig.Variant.class, CraftPig.CraftVariant::new).writable(PaperPigVariantRegistryEntry.PaperBuilder::new),
             start(Registries.PIG_SOUND_VARIANT, RegistryKey.PIG_SOUND_VARIANT).craft(Pig.SoundVariant.class, CraftPig.CraftSoundVariant::new).build(),
             start(Registries.ZOMBIE_NAUTILUS_VARIANT, RegistryKey.ZOMBIE_NAUTILUS_VARIANT).craft(ZombieNautilus.Variant.class, CraftZombieNautilus.CraftVariant::new).writable(PaperZombieNautilusVariantRegistryEntry.PaperBuilder::new),
+            start(Registries.SULFUR_CUBE_ARCHETYPE, RegistryKey.SULFUR_CUBE_ARCHETYPE).craft(SulfurCube.Archetype.class, CraftSulfurCube.CraftArchetype::new).writable(PaperSulfurCubeArchetypeRegistryEntry.PaperBuilder::new),
             start(Registries.DIALOG, RegistryKey.DIALOG).craft(Dialog.class, PaperDialog::new, true).writable(PaperDialogRegistryEntry.PaperBuilder::new),
 
             // api-only

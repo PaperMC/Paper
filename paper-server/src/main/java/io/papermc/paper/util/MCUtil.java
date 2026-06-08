@@ -3,9 +3,11 @@ package io.papermc.paper.util;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.math.Position;
+import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.ClientAsset;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.MinecraftServer;
@@ -42,6 +45,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.Waitable;
+import org.jspecify.annotations.Nullable;
 
 public final class MCUtil {
     public static final java.util.concurrent.Executor MAIN_EXECUTOR = (run) -> {
@@ -250,5 +254,19 @@ public final class MCUtil {
 
     public static String getLevelName(Level level) {
         return level.dimension().identifier().toString();
+    }
+
+    public static @Nullable ClientTextureAsset toTextureAsset(final ClientAsset.@Nullable Texture clientTextureAsset) {
+        return clientTextureAsset == null ? null : ClientTextureAsset.clientTextureAsset(
+            PaperAdventure.asAdventure(clientTextureAsset.id()),
+            PaperAdventure.asAdventure(clientTextureAsset.texturePath())
+        );
+    }
+
+    public static ClientAsset.@Nullable ResourceTexture toResourceTexture(final @Nullable ClientTextureAsset clientTextureAsset) {
+        return clientTextureAsset == null ? null : new ClientAsset.ResourceTexture(
+            PaperAdventure.asVanilla(clientTextureAsset.identifier()),
+            PaperAdventure.asVanilla(clientTextureAsset.texturePath())
+        );
     }
 }

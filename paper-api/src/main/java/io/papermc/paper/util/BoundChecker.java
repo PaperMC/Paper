@@ -1,8 +1,13 @@
 package io.papermc.paper.util;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @hidden
+ */
 @NullMarked
+@ApiStatus.Internal
 public final class BoundChecker {
 
     public static int requireRange(final int value, final String field, final int min, final int max) {

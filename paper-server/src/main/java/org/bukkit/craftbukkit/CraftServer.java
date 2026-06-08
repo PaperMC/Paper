@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit;
 
 import ca.spottedleaf.moonrise.common.time.TickData;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -13,9 +12,9 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
+import io.papermc.paper.util.MCUtil;
 import io.papermc.paper.world.PaperWorldLoader;
 import io.papermc.paper.world.migration.WorldFolderMigration;
-import io.papermc.paper.world.saveddata.PaperLevelOverrides;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -397,12 +396,7 @@ public final class CraftServer implements Server {
     public CraftServer(DedicatedServer console, PlayerList playerList) {
         this.console = console;
         this.playerList = (DedicatedPlayerList) playerList;
-        this.playerView = Collections.unmodifiableList(Lists.transform(playerList.players, new Function<ServerPlayer, CraftPlayer>() {
-            @Override
-            public CraftPlayer apply(ServerPlayer player) {
-                return player.getBukkitEntity();
-            }
-        }));
+        this.playerView = MCUtil.transformUnmodifiable(playerList.players, ServerPlayer::getBukkitEntity);
         this.serverVersion = io.papermc.paper.ServerBuildInfo.buildInfo().asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_SIMPLE); // Paper - improve version
         this.structureManager = new CraftStructureManager(console.getStructureManager(), console.registryAccess());
         this.serverTickManager = new CraftServerTickManager(console.tickRateManager());

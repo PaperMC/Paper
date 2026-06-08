@@ -26,8 +26,8 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
-import io.papermc.paper.item.MapPostProcessing;
 import io.papermc.paper.entity.poi.PoiTypes;
+import io.papermc.paper.item.MapPostProcessing;
 import io.papermc.paper.world.WeatheringCopperState;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
@@ -77,6 +77,7 @@ import org.bukkit.entity.Panda;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Salmon;
 import org.bukkit.entity.Sniffer;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
@@ -231,6 +232,7 @@ public final class Rewriters {
             .register("PigVariant", Pig.Variant.class, new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
             .register("PigSoundVariant", Pig.SoundVariant.class, new RegistryFieldRewriter<>(Registries.PIG_SOUND_VARIANT, "getSoundVariant"))
             .register("ZombieNautilusVariant", ZombieNautilus.Variant.class, new RegistryFieldRewriter<>(Registries.ZOMBIE_NAUTILUS_VARIANT, "getVariant"))
+            .register("SulfurCubeArchetype", SulfurCube.Archetype.class, new RegistryFieldRewriter<>(Registries.SULFUR_CUBE_ARCHETYPE, "getArchetype"))
             .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
             .register("PoiTypes", PoiTypes.class, new RegistryFieldRewriter<>(Registries.POINT_OF_INTEREST_TYPE, "get"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())

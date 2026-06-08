@@ -181,9 +181,21 @@ public enum Particle implements Keyed {
     NOXIOUS_GAS_CLOUD("noxious_gas_cloud"),
     SULFUR_CUBE_GOO("sulfur_cube_goo"),
     SULFUR_BUBBLES("sulfur_bubbles"),
+    /**
+     * Uses {@link Geyser} as DataType
+     */
     GEYSER("geyser", Geyser.class),
+    /**
+     * Uses {@link GeyserBase} as DataType
+     */
     GEYSER_BASE("geyser_base", GeyserBase.class),
+    /**
+     * Uses {@link Geyser} as DataType
+     */
     GEYSER_PLUME("geyser_plume", Geyser.class),
+    /**
+     * Uses {@link GeyserBase} as DataType
+     */
     GEYSER_POOF("geyser_poof", GeyserBase.class),
     ;
 

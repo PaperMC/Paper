@@ -2,6 +2,11 @@ package org.bukkit.craftbukkit.entity;
 
 import io.papermc.paper.entity.PaperBucketable;
 import io.papermc.paper.entity.PaperShearable;
+import io.papermc.paper.registry.HolderableBase;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.entity.SulfurCubeArchetype;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.SulfurCube;
 
@@ -57,5 +62,20 @@ public class CraftSulfurCube extends CraftAbstractCubeMob implements SulfurCube,
 
     @Override
     public void setBreed(final boolean breed) {
+    }
+
+    public static class CraftArchetype extends HolderableBase<SulfurCubeArchetype> implements Archetype {
+
+        public static Archetype minecraftHolderToBukkit(Holder<SulfurCubeArchetype> minecraft) {
+            return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.SULFUR_CUBE_ARCHETYPE);
+        }
+
+        public static Holder<SulfurCubeArchetype> bukkitToMinecraftHolder(Archetype bukkit) {
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit);
+        }
+
+        public CraftArchetype(final Holder<SulfurCubeArchetype> holder) {
+            super(holder);
+        }
     }
 }
