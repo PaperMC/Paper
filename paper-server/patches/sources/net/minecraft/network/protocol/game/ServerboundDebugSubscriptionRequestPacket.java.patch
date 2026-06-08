@@ -1,0 +1,20 @@
+--- a/net/minecraft/network/protocol/game/ServerboundDebugSubscriptionRequestPacket.java
++++ b/net/minecraft/network/protocol/game/ServerboundDebugSubscriptionRequestPacket.java
+@@ -11,10 +_,13 @@
+ import net.minecraft.util.debug.DebugSubscription;
+ 
+ public record ServerboundDebugSubscriptionRequestPacket(Set<DebugSubscription<?>> subscriptions) implements Packet<ServerGamePacketListener> {
+-    private static final StreamCodec<RegistryFriendlyByteBuf, Set<DebugSubscription<?>>> SET_STREAM_CODEC = ByteBufCodecs.registry(
+-            Registries.DEBUG_SUBSCRIPTION
+-        )
+-        .apply(ByteBufCodecs.collection(ReferenceOpenHashSet::new));
++    // Paper start - Limit max size of subscription codec
++    private static final StreamCodec<RegistryFriendlyByteBuf, Set<DebugSubscription<?>>> SET_STREAM_CODEC = ByteBufCodecs.collection(
++        ReferenceOpenHashSet::new,
++        ByteBufCodecs.registry(Registries.DEBUG_SUBSCRIPTION),
++        64
++    );
++    // Paper end - Limit max size of subscription codec
+     public static final StreamCodec<RegistryFriendlyByteBuf, ServerboundDebugSubscriptionRequestPacket> STREAM_CODEC = SET_STREAM_CODEC.map(
+         ServerboundDebugSubscriptionRequestPacket::new, ServerboundDebugSubscriptionRequestPacket::subscriptions
+     );
