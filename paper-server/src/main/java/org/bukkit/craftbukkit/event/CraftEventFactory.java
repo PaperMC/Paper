@@ -1320,8 +1320,8 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static PigZapEvent callPigZapEvent(Entity pig, Entity lightning, Entity pigzombie) {
-        PigZapEvent event = new PigZapEvent((Pig) pig.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), (PigZombie) pigzombie.getBukkitEntity());
+    public static PigZapEvent callPigZapEvent(Entity pig, Entity lightning, Entity zombifiedPiglin) {
+        PigZapEvent event = new PigZapEvent((Pig) pig.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), (PigZombie) zombifiedPiglin.getBukkitEntity());
         pig.getBukkitEntity().getServer().getPluginManager().callEvent(event);
         return event;
     }

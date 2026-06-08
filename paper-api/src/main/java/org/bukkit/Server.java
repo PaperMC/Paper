@@ -213,7 +213,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     /**
      * Get world type (level-type setting) for default world.
      *
-     * @return the value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)
+     * @return the value of level-type (e.g. minecraft:normal, minecraft:flat, minecraft:large_biomes, minecraft:amplified)
      */
     @NotNull
     public String getWorldType();
