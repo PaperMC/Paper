@@ -1144,7 +1144,7 @@ public final class Bukkit {
      * @return true if any recipe was added, false if none were for some reason
      * @see #addRecipe
      */
-    public static boolean addRecipes(Iterable<Recipe> recipes) {
+    public static boolean addRecipes(@NotNull Iterable<Recipe> recipes) {
         return server.addRecipes(recipes);
     }
 

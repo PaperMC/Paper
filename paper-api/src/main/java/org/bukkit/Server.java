@@ -1054,7 +1054,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return true if any recipe was added, false if none were for some reason
      * @see #addRecipe
      */
-    boolean addRecipes(Iterable<Recipe> recipes);
+    boolean addRecipes(@NotNull Iterable<Recipe> recipes);
 
     /**
      * Get a list of all recipes for a given item. The stack size is ignored
@@ -1262,7 +1262,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return true if any recipe was removed, false if none were for some reason
      * @see #removeRecipe
      */
-    boolean removeRecipes(Iterable<NamespacedKey> keys);
+    boolean removeRecipes(@NotNull Iterable<NamespacedKey> keys);
 
     /**
      * Gets a list of command aliases defined in the server properties.
