@@ -1434,7 +1434,8 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean addRecipes(final Iterable<Recipe> recipes) {
+    public boolean addRecipes(Iterable<Recipe> recipes) {
+        Preconditions.checkArgument(recipes != null, "recipes == null");
         boolean anyAdded = false;
         RecipeManager recipeManager = this.getServer().getRecipeManager();
         for (Recipe recipe : recipes) {
@@ -1634,7 +1635,8 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public boolean removeRecipes(final Iterable<NamespacedKey> recipeKeys) {
+    public boolean removeRecipes(Iterable<NamespacedKey> recipeKeys) {
+        Preconditions.checkArgument(recipeKeys != null, "recipeKeys == null");
         boolean anyRemoved = false;
         RecipeManager recipeManager = this.getServer().getRecipeManager();
         for (NamespacedKey recipeKey : recipeKeys) {
