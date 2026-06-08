@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.entity.PaperBucketable;
 import io.papermc.paper.entity.PaperShearable;
 import io.papermc.paper.registry.HolderableBase;
@@ -19,6 +20,28 @@ public class CraftSulfurCube extends CraftAbstractCubeMob implements SulfurCube,
     @Override
     public net.minecraft.world.entity.monster.cubemob.SulfurCube getHandle() {
         return (net.minecraft.world.entity.monster.cubemob.SulfurCube) this.entity;
+    }
+
+    @Override
+    public int getFuseTicks() {
+        return this.getHandle().getFuse();
+    }
+
+    @Override
+    public void setFuseTicks(final int ticks) {
+        Preconditions.checkArgument(ticks == PrimedTnt.NO_FUSE || ticks > 0, "ticks must be positive or %s", PrimedTnt.NO_FUSE);
+        this.getHandle().setFuse(ticks);
+        this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.cubemob.SulfurCube.MAX_FUSE, ticks);
+    }
+
+    @Override
+    public boolean canExplode() {
+        return this.getHandle().canExplode();
+    }
+
+    @Override
+    public boolean ignite(final boolean imminent) {
+        return this.getHandle().primeTime(imminent);
     }
 
     @Override
@@ -63,27 +86,6 @@ public class CraftSulfurCube extends CraftAbstractCubeMob implements SulfurCube,
 
     @Override
     public void setBreed(final boolean breed) {
-    }
-
-    @Override
-    public int getFuseTicks() {
-        return this.getHandle().getFuse();
-    }
-
-    @Override
-    public void setFuseTicks(final int ticks) {
-        this.getHandle().setFuse(ticks);
-        this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.cubemob.SulfurCube.MAX_FUSE, ticks);
-    }
-
-    @Override
-    public boolean canExplode() {
-        return this.getHandle().canExplode();
-    }
-
-    @Override
-    public void ignite(final boolean imminent) {
-        this.getHandle().primeTime(imminent);
     }
 
     public static class CraftArchetype extends HolderableBase<SulfurCubeArchetype> implements Archetype {

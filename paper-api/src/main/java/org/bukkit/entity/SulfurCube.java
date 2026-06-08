@@ -16,58 +16,61 @@ import org.jspecify.annotations.NullMarked;
 public interface SulfurCube extends AbstractCubeMob, Shearable, Bucketable, Ageable {
 
     /**
-     * Set the fuse ticks for this SulfurCube, where the ticks is the amount of
-     * time in which a SulfurCube has been in the primed state.
+     * Gets the amount of ticks until this sulfur cube explode.
+     *
+     * @return the fuse ticks or -1 if not exploding
+     */
+    int getFuseTicks();
+
+    /**
+     * Sets the amount of ticks until this sulfur cube explode.
      *
      * @param ticks the new fuse ticks
      */
     void setFuseTicks(int ticks);
 
     /**
-     * Get the maximum fuse ticks for this SulfurCube, where the ticks is the
-     * amount of time in which a SulfurCube has been in the primed state.
+     * Determines whether this sulfur cube is capable of exploding.
      *
-     * @return the fuse ticks
-     */
-    int getFuseTicks();
-
-    /**
-     * Determines whether this SulfurCube is capable of exploding.
-     *
-     * @return true if the SulfurCube can explode, false otherwise
+     * @return {@code true} if the sulfur cube can explode, {@code false} otherwise
      */
     boolean canExplode();
 
     /**
-     * Ignites this SulfurCube, beginning its fuse if {@link #canExplode()} is {@code true}.
-     * <br>
-     * The amount of time the SulfurCube takes to explode will depend on what
-     * the fuse in the {@link Archetype} is set as.
-     * <br>
-     * The resulting explosion can be cancelled by an
+     * Ignites this sulfur cube, beginning its fuse if {@link #canExplode()} is {@code true}.
+     * <p>
+     * The amount of time the sulfur cube takes to explode is defined in the {@link Archetype}
+     * of the entity and further controlled by the {@code imminent} parameter.
+     * <p>
+     * This action can be cancelled using {@link io.papermc.paper.event.entity.EntityIgniteEvent}.
+     * The resulting explosion can also be cancelled by an
      * {@link org.bukkit.event.entity.ExplosionPrimeEvent} and obeys the mob
      * griefing gamerule.
      *
-     * @param imminent if {@code true} the fuse used is a random value based in the fuse, otherwise the fuse is set from the archetype
-     *
+     * @param imminent if {@code true} the fuse time is shortened but still depends on the {@link Archetype}
+     * @return whether the sulfur cube got ignited
      * @see #canExplode()
+     * @see #ignite()
      */
-    void ignite(boolean imminent);
+    boolean ignite(boolean imminent);
 
     /**
-     * Ignites this SulfurCube, beginning its fuse if {@link #canExplode()} is {@code true}.
-     * <br>
-     * The amount of time the SulfurCube takes to explode will be a random value and
-     * depend on what the fuse in the {@link Archetype} is set as.
-     * <br>
-     * The resulting explosion can be cancelled by an
+     * Ignites this sulfur cube, beginning its fuse if {@link #canExplode()} is {@code true}.
+     * <p>
+     * The amount of time the sulfur cube takes to explode is defined in the {@link Archetype}
+     * of the entity.
+     * <p>
+     * This action can be cancelled using {@link io.papermc.paper.event.entity.EntityIgniteEvent}.
+     * The resulting explosion can also be cancelled by an
      * {@link org.bukkit.event.entity.ExplosionPrimeEvent} and obeys the mob
      * griefing gamerule.
      *
+     * @return whether the sulfur cube got ignited
      * @see #canExplode()
+     * @see #ignite(boolean)
      */
-    default void ignite() {
-        this.ignite(false);
+    default boolean ignite() {
+        return this.ignite(false);
     }
 
     /**
