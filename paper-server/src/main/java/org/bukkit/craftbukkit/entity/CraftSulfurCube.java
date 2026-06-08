@@ -1,11 +1,13 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.entity.PaperBucketable;
 import io.papermc.paper.entity.PaperShearable;
 import io.papermc.paper.registry.HolderableBase;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.SulfurCubeArchetype;
+import net.minecraft.world.entity.item.PrimedTnt;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.SulfurCube;
@@ -18,6 +20,28 @@ public class CraftSulfurCube extends CraftAbstractCubeMob implements SulfurCube,
     @Override
     public net.minecraft.world.entity.monster.cubemob.SulfurCube getHandle() {
         return (net.minecraft.world.entity.monster.cubemob.SulfurCube) this.entity;
+    }
+
+    @Override
+    public int getFuseTicks() {
+        return this.getHandle().getFuse();
+    }
+
+    @Override
+    public void setFuseTicks(final int ticks) {
+        Preconditions.checkArgument(ticks == PrimedTnt.NO_FUSE || ticks > 0, "ticks must be positive or %s", PrimedTnt.NO_FUSE);
+        this.getHandle().setFuse(ticks);
+        this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.cubemob.SulfurCube.MAX_FUSE, ticks);
+    }
+
+    @Override
+    public boolean canExplode() {
+        return this.getHandle().canExplode();
+    }
+
+    @Override
+    public boolean ignite(final boolean imminent) {
+        return this.getHandle().primeTime(imminent);
     }
 
     @Override

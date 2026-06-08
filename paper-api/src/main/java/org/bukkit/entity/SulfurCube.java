@@ -7,11 +7,71 @@ import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a Sulfur Cube.
  */
+@NullMarked
 public interface SulfurCube extends AbstractCubeMob, Shearable, Bucketable, Ageable {
+
+    /**
+     * Gets the amount of ticks until this sulfur cube explode.
+     *
+     * @return the fuse ticks or -1 if not exploding
+     */
+    int getFuseTicks();
+
+    /**
+     * Sets the amount of ticks until this sulfur cube explode.
+     *
+     * @param ticks the new fuse ticks
+     */
+    void setFuseTicks(int ticks);
+
+    /**
+     * Determines whether this sulfur cube is capable of exploding.
+     *
+     * @return {@code true} if the sulfur cube can explode, {@code false} otherwise
+     */
+    boolean canExplode();
+
+    /**
+     * Ignites this sulfur cube, beginning its fuse if {@link #canExplode()} is {@code true}.
+     * <p>
+     * The amount of time the sulfur cube takes to explode is defined in the {@link Archetype}
+     * of the entity and further controlled by the {@code imminent} parameter.
+     * <p>
+     * This action can be cancelled using {@link io.papermc.paper.event.entity.EntityIgniteEvent}.
+     * The resulting explosion can also be cancelled by an
+     * {@link org.bukkit.event.entity.ExplosionPrimeEvent} and obeys the mob
+     * griefing gamerule.
+     *
+     * @param imminent if {@code true} the fuse time is shortened but still depends on the {@link Archetype}
+     * @return whether the sulfur cube got ignited
+     * @see #canExplode()
+     * @see #ignite()
+     */
+    boolean ignite(boolean imminent);
+
+    /**
+     * Ignites this sulfur cube, beginning its fuse if {@link #canExplode()} is {@code true}.
+     * <p>
+     * The amount of time the sulfur cube takes to explode is defined in the {@link Archetype}
+     * of the entity.
+     * <p>
+     * This action can be cancelled using {@link io.papermc.paper.event.entity.EntityIgniteEvent}.
+     * The resulting explosion can also be cancelled by an
+     * {@link org.bukkit.event.entity.ExplosionPrimeEvent} and obeys the mob
+     * griefing gamerule.
+     *
+     * @return whether the sulfur cube got ignited
+     * @see #canExplode()
+     * @see #ignite(boolean)
+     */
+    default boolean ignite() {
+        return this.ignite(false);
+    }
 
     /**
      * Represents the archetype of a sulfur cube
