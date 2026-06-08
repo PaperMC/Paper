@@ -7,11 +7,68 @@ import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a Sulfur Cube.
  */
+@NullMarked
 public interface SulfurCube extends AbstractCubeMob, Shearable, Bucketable, Ageable {
+
+    /**
+     * Set the fuse ticks for this SulfurCube, where the ticks is the amount of
+     * time in which a SulfurCube has been in the primed state.
+     *
+     * @param ticks the new fuse ticks
+     */
+    void setFuseTicks(int ticks);
+
+    /**
+     * Get the maximum fuse ticks for this SulfurCube, where the ticks is the
+     * amount of time in which a SulfurCube has been in the primed state.
+     *
+     * @return the fuse ticks
+     */
+    int getFuseTicks();
+
+    /**
+     * Determines whether this SulfurCube is capable of exploding.
+     *
+     * @return true if the SulfurCube can explode, false otherwise
+     */
+    boolean canExplode();
+
+    /**
+     * Ignites this SulfurCube, beginning its fuse if {@link #canExplode()} is {@code true}.
+     * <br>
+     * The amount of time the SulfurCube takes to explode will depend on what
+     * the fuse in the {@link Archetype} is set as.
+     * <br>
+     * The resulting explosion can be cancelled by an
+     * {@link org.bukkit.event.entity.ExplosionPrimeEvent} and obeys the mob
+     * griefing gamerule.
+     *
+     * @param imminent if {@code true} the fuse used is a random value based in the fuse, otherwise the fuse is set from the archetype
+     *
+     * @see #canExplode()
+     */
+    void ignite(boolean imminent);
+
+    /**
+     * Ignites this SulfurCube, beginning its fuse if {@link #canExplode()} is {@code true}.
+     * <br>
+     * The amount of time the SulfurCube takes to explode will be a random value and
+     * depend on what the fuse in the {@link Archetype} is set as.
+     * <br>
+     * The resulting explosion can be cancelled by an
+     * {@link org.bukkit.event.entity.ExplosionPrimeEvent} and obeys the mob
+     * griefing gamerule.
+     *
+     * @see #canExplode()
+     */
+    default void ignite() {
+        this.ignite(false);
+    }
 
     /**
      * Represents the archetype of a sulfur cube

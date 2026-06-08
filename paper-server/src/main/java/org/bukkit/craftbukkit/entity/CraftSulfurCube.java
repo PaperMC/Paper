@@ -6,6 +6,7 @@ import io.papermc.paper.registry.HolderableBase;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.SulfurCubeArchetype;
+import net.minecraft.world.entity.item.PrimedTnt;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.SulfurCube;
@@ -62,6 +63,27 @@ public class CraftSulfurCube extends CraftAbstractCubeMob implements SulfurCube,
 
     @Override
     public void setBreed(final boolean breed) {
+    }
+
+    @Override
+    public int getFuseTicks() {
+        return this.getHandle().getFuse();
+    }
+
+    @Override
+    public void setFuseTicks(final int ticks) {
+        this.getHandle().setFuse(ticks);
+        this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.cubemob.SulfurCube.MAX_FUSE, ticks);
+    }
+
+    @Override
+    public boolean canExplode() {
+        return this.getHandle().canExplode();
+    }
+
+    @Override
+    public void ignite(final boolean imminent) {
+        this.getHandle().primeTime(imminent);
     }
 
     public static class CraftArchetype extends HolderableBase<SulfurCubeArchetype> implements Archetype {
