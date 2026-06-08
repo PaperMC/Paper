@@ -21,6 +21,16 @@
              this.fuse--;
              this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5, this.getZ(), 0.0, 0.0, 0.0);
          } else if (this.fuse == 0) {
+@@ -81,8 +_,7 @@
+             this.destroy(level, this.getDropItem());
+         } else {
+             if (this.fuse < 0) {
+-                this.primeFuse(source);
+-                this.fuse = this.random.nextInt(20) + this.random.nextInt(20);
++                this.primeFuse(source, this.random.nextInt(20) + this.random.nextInt(20)); // Paper - call EntityIgniteEvent
+             }
+         }
+     }
 @@ -101,6 +_,17 @@
          if (this.level() instanceof ServerLevel level) {
              if (level.getGameRules().get(GameRules.TNT_EXPLODES)) {
@@ -32,7 +42,7 @@
 +                    this.isIncendiary
 +                );
 +                if (!event.callEvent()) {
-+                    this.fuse = -1;
++                    this.fuse = net.minecraft.world.entity.item.PrimedTnt.NO_FUSE;
 +                    return;
 +                }
 +                // CraftBukkit end
@@ -57,3 +67,26 @@
              }
          }
      }
+@@ -145,9 +_,21 @@
+         }
+     }
+ 
++    // Paper start - add fuseTime param
+     public void primeFuse(final @Nullable DamageSource source) {
++        this.primeFuse(source, 80);
++    }
++
++    public void primeFuse(final @Nullable DamageSource source, int fuseTime) {
++        // Paper end - add fuseTime param
+         if (!(this.level() instanceof ServerLevel serverLevel && !serverLevel.getGameRules().get(GameRules.TNT_EXPLODES))) {
+-            this.fuse = 80;
++            // Paper start - call EntityIgniteEvent
++            fuseTime = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityIgniteEvent(this, fuseTime);
++            if (fuseTime == net.minecraft.world.entity.item.PrimedTnt.NO_FUSE) {
++                return;
++            }
++            this.fuse = fuseTime;
++            // Paper end - call EntityIgniteEvent
+             if (!this.level().isClientSide()) {
+                 if (source != null && this.ignitionSource == null) {
+                     this.ignitionSource = this.damageSources().explosion(this, source.getEntity());
