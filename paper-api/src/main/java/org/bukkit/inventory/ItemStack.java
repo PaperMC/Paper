@@ -1,6 +1,7 @@
 package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.datacomponent.DataComponentHolder;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.LinkedHashMap;
@@ -757,7 +758,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
 
     /**
      * Deserializes this itemstack from raw NBT bytes. NBT is safer for data migrations as it will
-     * use the built in data converter instead of bukkits dangerous serialization system.
+     * use the built-in data converter instead of bukkits dangerous serialization system.
      *
      * This expects that the DataVersion was stored on the root of the Compound, as saved from
      * the {@link #serializeAsBytes()} API returned.
@@ -765,16 +766,20 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return ItemStack migrated to this version of Minecraft if needed.
      */
     public static @NotNull ItemStack deserializeBytes(final byte @NotNull [] bytes) {
-        return org.bukkit.Bukkit.getUnsafe().deserializeItem(bytes);
+        Preconditions.checkArgument(bytes != null, "null cannot be deserialized");
+        Preconditions.checkArgument(bytes.length > 0, "cannot deserialize nothing");
+
+        return InternalAPIBridge.get().deserializeItem(bytes);
     }
 
     /**
      * Serializes this itemstack to raw bytes in NBT. NBT is safer for data migrations as it will
-     * use the built in data converter instead of bukkits dangerous serialization system.
+     * use the built-in data converter instead of bukkits dangerous serialization system.
      * @return bytes representing this item in NBT.
      */
     public byte @NotNull [] serializeAsBytes() {
-        return org.bukkit.Bukkit.getUnsafe().serializeItem(this);
+        Preconditions.checkArgument(!this.isEmpty(), "Empty item cannot be serialized");
+        return InternalAPIBridge.get().serializeItem(this);
     }
 
     /**
@@ -1138,8 +1143,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @NotNull
     public static ItemStack empty() {
-        //noinspection deprecation
-        return Bukkit.getUnsafe().createEmptyStack(); // Paper - proxy ItemStack
+        return InternalAPIBridge.get().createEmptyStack(); // Paper - proxy ItemStack
     }
 
     /**
