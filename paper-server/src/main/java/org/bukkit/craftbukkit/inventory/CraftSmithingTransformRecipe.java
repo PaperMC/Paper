@@ -27,15 +27,19 @@ public class CraftSmithingTransformRecipe extends SmithingTransformRecipe implem
     }
 
     @Override
-    public void addToRecipeManager() {
-        final net.minecraft.world.item.crafting.SmithingTransformRecipe recipe = new net.minecraft.world.item.crafting.SmithingTransformRecipe(
+    public RecipeHolder<?> toMinecraftRecipe() {
+        return new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), new net.minecraft.world.item.crafting.SmithingTransformRecipe(
             new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
             CraftRecipe.toPossibleIngredient(this.getTemplate(), false),
             CraftRecipe.toIngredient(this.getBase(), false),
             CraftRecipe.toPossibleIngredient(this.getAddition(), false),
             CraftItemStack.asTemplate(this.getResult()),
             this.willCopyDataComponents()
-        );
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe)); // Paper - Option to prevent data components copy
+        ));
+    }
+
+    @Override
+    public void addToRecipeManager() {
+        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe()); // Paper - Option to prevent data components copy
     }
 }

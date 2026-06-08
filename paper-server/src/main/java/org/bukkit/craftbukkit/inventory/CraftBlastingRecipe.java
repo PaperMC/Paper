@@ -25,15 +25,19 @@ public class CraftBlastingRecipe extends BlastingRecipe implements CraftRecipe {
     }
 
     @Override
-    public void addToRecipeManager() {
-        net.minecraft.world.item.crafting.BlastingRecipe recipe = new net.minecraft.world.item.crafting.BlastingRecipe(
+    public RecipeHolder<?> toMinecraftRecipe() {
+        return new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), new net.minecraft.world.item.crafting.BlastingRecipe(
             new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
             new net.minecraft.world.item.crafting.AbstractCookingRecipe.CookingBookInfo(CraftRecipe.getCategory(this.getCategory()), this.getGroup()),
             CraftRecipe.toIngredient(this.getInputChoice(), true),
             CraftItemStack.asTemplate(this.getResult()),
             this.getExperience(),
             this.getCookingTime()
-        );
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe));
+        ));
+    }
+
+    @Override
+    public void addToRecipeManager() {
+        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
     }
 }

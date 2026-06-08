@@ -1139,6 +1139,10 @@ public final class Bukkit {
         return server.addRecipe(recipe, resendRecipes);
     }
 
+    public static boolean addRecipes(Iterable<Recipe> recipes) {
+        return server.addRecipes(recipes);
+    }
+
     /**
      * Get a list of all recipes for a given item. The stack size is ignored
      * in comparisons. If the durability is -1, it will match any data value.
@@ -1316,6 +1320,10 @@ public final class Bukkit {
         server.resetRecipes();
     }
 
+    public static boolean hasRecipe(@NotNull NamespacedKey recipeKey) {
+        return server.hasRecipe(recipeKey);
+    }
+
     /**
      * Remove a recipe from the server.
      *
@@ -1347,6 +1355,10 @@ public final class Bukkit {
         return server.removeRecipe(key, resendRecipes);
     }
     // Paper end - method to resend recipes
+
+    public static boolean removeRecipes(@NotNull Iterable<NamespacedKey> keys) {
+        return server.removeRecipes(keys);
+    }
 
     /**
      * Gets a list of command aliases defined in the server properties.

@@ -1049,6 +1049,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes);
     // Paper end - method to send recipes immediately
 
+    boolean addRecipes(Iterable<Recipe> recipes);
+
     /**
      * Get a list of all recipes for a given item. The stack size is ignored
      * in comparisons. If the durability is -1, it will match any data value.
@@ -1209,6 +1211,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     public void resetRecipes();
 
+    boolean hasRecipe(@NotNull NamespacedKey key);
+
     /**
      * Remove a recipe from the server.
      *
@@ -1238,6 +1242,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes);
     // Paper end - method to resend recipes
+
+    boolean removeRecipes(Iterable<NamespacedKey> keys);
 
     /**
      * Gets a list of command aliases defined in the server properties.
