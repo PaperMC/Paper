@@ -5,6 +5,7 @@ import com.destroystokyo.paper.PaperVersionFetcher;
 import com.destroystokyo.paper.SkinParts;
 import com.destroystokyo.paper.util.VersionFetcher;
 import com.google.common.base.Preconditions;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.attribute.UnmodifiableAttributeMap;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -19,17 +20,21 @@ import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import java.io.IOException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.minecraft.Optionull;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.chat.ComponentUtils;
+import net.minecraft.network.chat.ResolutionContext;
 import net.minecraft.world.damagesource.FallLocation;
 import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
@@ -39,13 +44,15 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Statistic;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.block.Biome;
+import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftGameRule;
-import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.block.CraftBiome;
+import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.damage.CraftDamageSourceBuilder;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftMannequin;
@@ -55,6 +62,7 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pose;
@@ -67,11 +75,6 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     public static final PaperServerInternalAPIBridge INSTANCE = new PaperServerInternalAPIBridge();
-
-    @Override
-    public DamageEffect getDamageEffect(final String key) {
-        return CraftDamageEffect.getById(key);
-    }
 
     @Override
     public Biome constructLegacyCustomBiome() {
@@ -91,11 +94,6 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
             fallLocation,
             (float) mob.fallDistance
         );
-    }
-
-    @Override
-    public PoiType.Occupancy createOccupancy(final String enumNameEntry) {
-        return new PaperPoiType.PaperOccupancy(PoiManager.Occupancy.valueOf(enumNameEntry));
     }
 
     @Override
@@ -162,8 +160,18 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
-    public DamageSource.Builder createDamageSourceBuilder(DamageType damageType) {
+    public PoiType.Occupancy createOccupancy(final String enumNameEntry) {
+        return new PaperPoiType.PaperOccupancy(PoiManager.Occupancy.valueOf(enumNameEntry));
+    }
+
+    @Override
+    public DamageSource.Builder createDamageSourceBuilder(final DamageType damageType) {
         return new CraftDamageSourceBuilder(damageType);
+    }
+
+    @Override
+    public DamageEffect getDamageEffect(final String key) {
+        return Objects.requireNonNull(CraftDamageEffect.getById(key), "No DamageEffect found for " + key + ". This is a bug.");
     }
 
     @Override
@@ -174,16 +182,6 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public VersionFetcher getVersionFetcher() {
         return new PaperVersionFetcher();
-    }
-
-    @Override
-    public byte[] serializeItem(final ItemStack item) {
-        return MCUtil.serializeTagToBytes(
-            (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
-                CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE),
-                CraftItemStack.unwrap(item)
-            ).getOrThrow()
-        );
     }
 
     @Override
@@ -219,5 +217,31 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public ItemStack createEmptyStack() {
         return CraftItemStack.asCraftMirror(null);
+    }
+
+    @Override
+    public Component resolveWithContext(final Component component, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
+        final net.minecraft.commands.CommandSourceStack source = context != null ? VanillaCommandWrapper.getListener(context) : null;
+        Boolean previous = null;
+        if (source != null && bypassPermissions) {
+            previous = source.bypassSelectorPermissions;
+            source.bypassSelectorPermissions = true;
+        }
+        try {
+            // todo NPE when source is null?
+            final ResolutionContext resolutionContext = ResolutionContext.builder().withSource(source).withEntityOverride(scoreboardSubject == null ? null : ((CraftEntity) scoreboardSubject).getHandle()).build();
+            return PaperAdventure.asAdventure(ComponentUtils.resolve(resolutionContext, PaperAdventure.asVanilla(component)));
+        } catch (final CommandSyntaxException e) {
+            throw new IOException(e);
+        } finally {
+            if (previous != null) {
+                source.bypassSelectorPermissions = previous;
+            }
+        }
+    }
+
+    @Override
+    public ComponentFlattener componentFlattener() {
+        return PaperAdventure.FLATTENER;
     }
 }

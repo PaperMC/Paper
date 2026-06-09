@@ -8,20 +8,24 @@ import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
+import java.io.IOException;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.kyori.adventure.util.Services;
 import org.bukkit.GameRule;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Statistic;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.block.Biome;
+import org.bukkit.command.CommandSender;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pose;
@@ -56,10 +60,6 @@ public interface InternalAPIBridge {
         return Holder.INSTANCE;
     }
 
-    DamageEffect getDamageEffect(String key);
-
-    PoiType.Occupancy createOccupancy(String enumNameEntry);
-
     @Deprecated(forRemoval = true, since = "1.21.5")
     @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
     Biome constructLegacyCustomBiome();
@@ -89,7 +89,11 @@ public interface InternalAPIBridge {
 
     Set<Pose> validMannequinPoses();
 
+    PoiType.Occupancy createOccupancy(String enumNameEntry);
+
     DamageSource.Builder createDamageSourceBuilder(DamageType damageType);
+
+    DamageEffect getDamageEffect(String key);
 
     String getTranslationKey(EntityType entityType);
 
@@ -99,8 +103,6 @@ public interface InternalAPIBridge {
     default VersionFetcher getVersionFetcher() {
         return new VersionFetcher.DummyVersionFetcher();
     }
-
-    byte[] serializeItem(ItemStack item);
 
     ItemStack deserializeItem(byte[] data);
 
@@ -113,4 +115,8 @@ public interface InternalAPIBridge {
     LifecycleEventManager<Plugin> createPluginLifecycleEventManager(JavaPlugin plugin, BooleanSupplier registrationCheck);
 
     ItemStack createEmptyStack();
+
+    Component resolveWithContext(Component component, @Nullable CommandSender context, @Nullable Entity scoreboardSubject, boolean bypassPermissions) throws IOException;
+
+    ComponentFlattener componentFlattener();
 }

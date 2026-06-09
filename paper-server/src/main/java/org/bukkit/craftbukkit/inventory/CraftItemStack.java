@@ -7,6 +7,7 @@ import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.inventory.tooltip.TooltipContext;
 import io.papermc.paper.persistence.PaperPersistentDataContainerView;
 import io.papermc.paper.persistence.PersistentDataContainerView;
+import io.papermc.paper.util.MCUtil;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
@@ -292,16 +293,24 @@ public final class CraftItemStack extends ItemStack {
     }
 
     @Override
+    public byte @NotNull [] serializeAsBytes() {
+        Preconditions.checkArgument(!this.isEmpty(), "Empty item cannot be serialized");
+
+        return MCUtil.serializeTagToBytes(
+            (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
+                CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE),
+                this.handle
+            ).getOrThrow()
+        );
+    }
+
+    @Override
     public int getMaxItemUseDuration(final LivingEntity entity) {
         if (this.handle == null) {
             return 0;
         }
 
-        // Make sure plugins calling the old method don't blow up
-        if (entity == null && (this.handle.is(Items.CROSSBOW) || this.handle.is(Items.GOAT_HORN))) {
-            throw new UnsupportedOperationException("This item requires an entity to determine the max use duration");
-        }
-        return this.handle.getUseDuration(entity != null ? ((CraftLivingEntity) entity).getHandle() : null);
+        return this.handle.getUseDuration(entity != null ? ((CraftLivingEntity) entity).getHandle() : null); // TODO - check on each update if passing null is fine
     }
 
     @Override

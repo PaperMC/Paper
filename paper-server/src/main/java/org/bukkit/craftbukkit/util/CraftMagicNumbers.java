@@ -46,6 +46,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntitySpawnRequest;
 import net.minecraft.world.entity.player.Player;
@@ -94,38 +95,8 @@ public final class CraftMagicNumbers implements UnsafeValues {
     private CraftMagicNumbers() {}
 
     @Override
-    public net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener() {
-        return io.papermc.paper.adventure.PaperAdventure.FLATTENER;
-    }
-
-    @Override
-    public net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer() {
-        return net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.colorDownsamplingGson();
-    }
-
-    @Override
-    public net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer() {
-        return net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson();
-    }
-
-    @Override
     public net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer() {
         return io.papermc.paper.adventure.PaperAdventure.PLAIN;
-    }
-
-    @Override
-    public net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainTextSerializer() {
-        return net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText();
-    }
-
-    @Override
-    public net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer() {
-        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection();
-    }
-
-    @Override
-    public net.kyori.adventure.text.Component resolveWithContext(final net.kyori.adventure.text.Component component, final org.bukkit.command.CommandSender context, final org.bukkit.entity.Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
-        return io.papermc.paper.adventure.PaperAdventure.resolveWithContext(component, context, scoreboardSubject, bypassPermissions);
     }
 
     public static BlockState getBlock(MaterialData material) {
@@ -258,16 +229,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
 
         return Material.matchMaterial(converted.asString(""));
-    }
-
-    /**
-     * @deprecated in favor of {@link io.papermc.paper.ServerBuildInfo#minecraftVersionId()}
-     * Paper has used Mojang mappings since 1.20.5 and now in 26.1 the server is not obfuscated anymore,
-     * so this method no longer returns a useful value.
-     */
-    @Deprecated(forRemoval = true, since = "1.21.6")
-    public String getMappingsVersion() {
-        throw new UnsupportedOperationException("Use ServerBuildInfo#minecraftVersionId instead.");
     }
 
     @Override
@@ -451,10 +412,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
                         Map<String, String> componentMap;
                         if (value instanceof Map) {
                             componentMap = (Map<String, String>) value;
-                        } else if (value instanceof MemorySection memory) {
+                        } else if (value instanceof MemorySection section) {
                             componentMap = new HashMap<>();
-                            for (final String memoryKey : memory.getKeys(false)) {
-                                componentMap.put(memoryKey, memory.getString(memoryKey));
+                            for (final String sectionKey : section.getKeys(false)) {
+                                componentMap.put(sectionKey, section.getString(sectionKey));
                             }
                         } else {
                             throw new IllegalArgumentException("components must be a Map");
@@ -471,7 +432,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                         });
                         tag.put("components", componentsTag);
 
-                     } else {
+                    } else {
                         throw new IllegalStateException("Unexpected version: " + version);
                     }
                 }
@@ -589,7 +550,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(dataVersion <= Bukkit.getUnsafe().getDataVersion(), "Newer version! Server downgrades are not supported!");
         tag = PlatformHooks.get().convertNBT(References.ENTITY, MinecraftServer.getServer().fixerUpper, tag, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
         if (!preservePassengers) {
-            tag.remove("Passengers");
+            tag.remove(Entity.TAG_PASSENGERS);
         }
         net.minecraft.world.entity.Entity nmsEntity = deserializeEntity(tag, ((CraftWorld) world).getHandle(), preserveUUID);
         return nmsEntity.getBukkitEntity();
@@ -598,7 +559,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     private net.minecraft.world.entity.Entity deserializeEntity(CompoundTag tag, ServerLevel world, boolean preserveUUID) {
         if (!preserveUUID) {
             // Generate a new UUID, so we don't have to worry about deserializing the same entity twice
-            tag.remove("UUID");
+            tag.remove(Entity.TAG_UUID);
         }
 
         final net.minecraft.world.entity.Entity nmsEntity;
@@ -612,7 +573,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             ).orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?"));
         }
 
-        tag.getList("Passengers").ifPresent(passengers -> {
+        tag.getList(Entity.TAG_PASSENGERS).ifPresent(passengers -> {
             for (final Tag passenger : passengers) {
                 if (!(passenger instanceof final CompoundTag serializedPassenger)) {
                     continue;

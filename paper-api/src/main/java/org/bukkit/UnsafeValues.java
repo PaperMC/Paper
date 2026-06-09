@@ -27,15 +27,6 @@ import org.jetbrains.annotations.Nullable;
  */
 @Deprecated(since = "1.7.2")
 public interface UnsafeValues {
-    // Paper start
-    net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener();
-    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
-    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainTextSerializer();
-    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer();
-    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer();
-    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
-    net.kyori.adventure.text.Component resolveWithContext(net.kyori.adventure.text.Component component, org.bukkit.command.CommandSender context, org.bukkit.entity.Entity scoreboardSubject, boolean bypassPermissions) throws java.io.IOException;
-    // Paper end
 
     Material toLegacy(Material material);
 
@@ -250,4 +241,6 @@ public interface UnsafeValues {
      * @return the deserialized {@code ItemStack}
      */
     @NotNull ItemStack deserializeItemHover(HoverEvent.@NotNull ShowItem itemHover);
+
+    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
 }

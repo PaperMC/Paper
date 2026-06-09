@@ -4,13 +4,11 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.datacomponent.DataComponentHolder;
 import io.papermc.paper.registry.RegistryKey;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -775,11 +773,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     /**
      * Serializes this itemstack to raw bytes in NBT. NBT is safer for data migrations as it will
      * use the built-in data converter instead of bukkits dangerous serialization system.
+     *
      * @return bytes representing this item in NBT.
      */
     public byte @NotNull [] serializeAsBytes() {
-        Preconditions.checkArgument(!this.isEmpty(), "Empty item cannot be serialized");
-        return InternalAPIBridge.get().serializeItem(this);
+        return this.craftDelegate.serializeAsBytes();
     }
 
     /**
@@ -889,7 +887,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @Deprecated(forRemoval = true)
     public int getMaxItemUseDuration() {
-        return getMaxItemUseDuration(null);
+        return this.getMaxItemUseDuration(null);
     }
 
     public int getMaxItemUseDuration(@NotNull final org.bukkit.entity.LivingEntity entity) {
