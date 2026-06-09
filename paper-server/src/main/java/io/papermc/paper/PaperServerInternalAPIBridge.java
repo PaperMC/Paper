@@ -228,9 +228,15 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
             source.bypassSelectorPermissions = true;
         }
         try {
-            // todo NPE when source is null?
-            final ResolutionContext resolutionContext = ResolutionContext.builder().withSource(source).withEntityOverride(scoreboardSubject == null ? null : ((CraftEntity) scoreboardSubject).getHandle()).build();
-            return PaperAdventure.asAdventure(ComponentUtils.resolve(resolutionContext, PaperAdventure.asVanilla(component)));
+            final ResolutionContext.Builder builder = ResolutionContext.builder();
+            // order is important here
+            if (source != null) {
+                builder.withSource(source);
+            }
+            if (scoreboardSubject != null) {
+                builder.withEntityOverride(((CraftEntity) scoreboardSubject).getHandle());
+            }
+            return PaperAdventure.asAdventure(ComponentUtils.resolve(builder.build(), PaperAdventure.asVanilla(component)));
         } catch (final CommandSyntaxException e) {
             throw new IOException(e);
         } finally {
