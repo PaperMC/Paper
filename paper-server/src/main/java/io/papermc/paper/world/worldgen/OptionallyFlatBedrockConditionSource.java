@@ -37,7 +37,7 @@ public record OptionallyFlatBedrockConditionSource(Identifier randomName, Vertic
     }
 
     @Override
-    public MapCodec<? extends SurfaceRules.ConditionSource> codec() {
+    public MapCodec<OptionallyFlatBedrockConditionSource> codec() {
         return CODEC;
     }
 
