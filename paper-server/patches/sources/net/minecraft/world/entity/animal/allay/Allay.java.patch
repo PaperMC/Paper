@@ -52,6 +52,21 @@
          return this.jukeboxPos == null
              || !this.jukeboxPos.closerToCenterThan(this.position(), GameEvent.JUKEBOX_PLAY.value().notificationRadius())
              || !this.level().getBlockState(this.jukeboxPos).is(Blocks.JUKEBOX);
+@@ -412,11 +_,12 @@
+     @Override
+     protected void dropEquipment(final ServerLevel level) {
+         super.dropEquipment(level);
+-        this.inventory.removeAllItems().forEach(stack -> this.spawnAtLocation(level, stack));
++        this.inventory.getItems().stream().filter(item -> !item.isEmpty()).forEach(stack -> this.spawnAtLocation(level, stack)); // Paper - delay removal post event - taken from removeAllItems
++        this.postDeathEventTasks.add(this.inventory::clearContent); // Paper - only clear after death event
+         ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
+         if (!itemStack.isEmpty() && !EnchantmentHelper.has(itemStack, EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP)) {
+             this.spawnAtLocation(level, itemStack);
+-            this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
++            this.postDeathEventTasks.add(() -> this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY)); // Paper
+         }
+     }
+ 
 @@ -438,7 +_,7 @@
          super.readAdditionalSaveData(input);
          this.readInventoryFromTag(input);

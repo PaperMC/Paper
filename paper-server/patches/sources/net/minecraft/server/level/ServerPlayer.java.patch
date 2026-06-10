@@ -440,7 +440,7 @@
              this.connection
                  .send(
                      new ClientboundPlayerCombatKillPacket(this.getId(), deathMessage),
-@@ -903,6 +_,64 @@
+@@ -903,6 +_,65 @@
                          }
                      )
                  );
@@ -468,10 +468,11 @@
 +        }
 +        if (!this.isSpectator() && this.shouldDropLoot(this.level())) { // Paper - fix player loottables running when mob loot gamerule is false
 +            // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
++            this.deathDropItems = new java.util.ArrayList<>();
 +            this.dropFromLootTable(this.level(), source, this.lastHurtByPlayerMemoryTime > 0);
 +            // Paper - Restore vanilla drops behaviour; custom death loot is a noop on server player, remove.
-+            loot.addAll(this.drops);
-+            this.drops.clear(); // SPIGOT-5188: make sure to clear
++            loot.addAll(this.deathDropItems);
++            this.deathDropItems = null;
 +        } // Paper - fix player loottables running when mob loot gamerule is false
 +
 +        Component defaultMessage = this.getCombatTracker().getDeathMessage();
@@ -501,7 +502,7 @@
 +            Component deathMessage = io.papermc.paper.adventure.PaperAdventure.asVanilla(apiDeathMessage); // Paper - Adventure
 +
 +            // Paper - moved up to sendClientboundPlayerCombatKillPacket()
-+            sendClientboundPlayerCombatKillPacket(event.getShowDeathMessages(), deathScreenMessage); // Paper - Expand PlayerDeathEvent
++            this.sendClientboundPlayerCombatKillPacket(event.getShowDeathMessages(), deathScreenMessage); // Paper - Expand PlayerDeathEvent
              Team team = this.getTeam();
              if (team == null || team.getDeathMessageVisibility() == Team.Visibility.ALWAYS) {
                  this.server.getPlayerList().broadcastSystemMessage(deathMessage, false);
@@ -510,7 +511,7 @@
              }
          } else {
 -            this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), CommonComponents.EMPTY));
-+            sendClientboundPlayerCombatKillPacket(event.getShowDeathMessages(), deathScreenMessage); // Paper - Expand PlayerDeathEvent
++            this.sendClientboundPlayerCombatKillPacket(event.getShowDeathMessages(), deathScreenMessage); // Paper - Expand PlayerDeathEvent
          }
  
          this.removeEntitiesOnShoulder();

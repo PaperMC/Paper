@@ -70,44 +70,21 @@
      }
  
      private void wakeUp() {
-@@ -709,15 +_,33 @@
-         return this.getTrustedEntities().anyMatch(trusted -> trusted.matches(entity));
+@@ -710,7 +_,13 @@
      }
  
--    @Override
+     @Override
 -    protected void dropAllDeathLoot(final ServerLevel level, final DamageSource source) {
-+    // Paper start - handle the bitten item separately like vanilla
-+    @Override
-+    protected boolean shouldSkipLoot(EquipmentSlot slot) {
++    // Paper start - Fix MC-153010 (dropCustomDeathLoot is only called when shouldDropLoot = true)
++    protected boolean guaranteedToDropUndamaged(final net.minecraft.world.entity.EquipmentSlot slot) {
 +        return slot == EquipmentSlot.MAINHAND;
 +    }
-+    // Paper end
 +
-+    @Override
-+    // Paper start - Cancellable death event
-+    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(final ServerLevel level, final DamageSource source) {
++    protected void dropAllDeathLootDisabled(final ServerLevel level, final DamageSource source) {
++        // Paper end
          ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
--        if (!itemStack.isEmpty()) {
-+        boolean releaseMouth = false;
-+        if (!itemStack.isEmpty() && level.getGameRules().get(GameRules.MOB_DROPS)) { // Fix MC-153010
+         if (!itemStack.isEmpty()) {
              this.spawnAtLocation(level, itemStack);
-+            releaseMouth = true;
-+        }
-+
-+        org.bukkit.event.entity.EntityDeathEvent deathEvent = super.dropAllDeathLoot(level, source);
-+        // Below is code to drop
-+        if (deathEvent == null || deathEvent.isCancelled()) return deathEvent;
-+
-+        if (releaseMouth) {
-+            // Paper end
-             this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-         }
- 
--        super.dropAllDeathLoot(level, source);
-+        return deathEvent; // Paper - Cancellable death event
-     }
- 
-     public static boolean isPathClear(final Fox fox, final LivingEntity target) {
 @@ -890,6 +_,19 @@
                      offspring.addTrustedEntity(partnerLoveCause);
                  }

@@ -415,10 +415,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void damage(double amount, org.bukkit.entity.Entity source) {
-        DamageSource reason = this.getHandle().damageSources().generic();
-
+        final DamageSource reason;
         if (source instanceof LivingEntity) {
             reason = ((CraftLivingEntity) source).getHandle().createDamageSource();
+        } else {
+            reason = this.getHandle().damageSources().generic();
         }
 
         this.damage(amount, reason);

@@ -132,12 +132,11 @@
      private @Nullable BlockState inBlockState = null;
      public static final int MAX_MOVEMENTS_HANDELED_PER_TICK = 100;
      private final ArrayDeque<Entity.Movement> movementThisTick = new ArrayDeque<>(100);
-@@ -300,6 +_,40 @@
+@@ -300,6 +_,39 @@
      private final LongSet visitedBlocks = new LongOpenHashSet();
      private final InsideBlockEffectApplier.StepBasedCollector insideEffectCollector = new InsideBlockEffectApplier.StepBasedCollector();
      private CustomData customData = CustomData.EMPTY;
 +    // CraftBukkit start
-+    public boolean forceDrops;
 +    public boolean persist = true;
 +    public boolean visibleByDefault = true;
 +    public boolean valid;
@@ -970,9 +969,9 @@
          }
 -
 +        // CraftBukkit start - Capture drops for death event
-+        if (!this.forceDrops && this instanceof LivingEntity livingEntity) {
++        if (this instanceof LivingEntity livingEntity && livingEntity.deathDropItems != null) {
 +            // Paper start - Restore vanilla drops behavior
-+            livingEntity.drops.add(new DefaultDrop(itemStack, dropStack -> {
++            livingEntity.deathDropItems.add(new DefaultDrop(itemStack, dropStack -> {
 +                ItemEntity dropEntity = new ItemEntity(this.level, this.getX() + offset.x, this.getY() + offset.y, this.getZ() + offset.z, dropStack); // stack is copied before consumer
 +                dropEntity.setDefaultPickUpDelay();
 +                this.level.addFreshEntity(dropEntity);
@@ -1395,6 +1394,19 @@
      }
  
      public void onAboveBubbleColumn(final boolean dragDown, final BlockPos pos) {
+@@ -2888,6 +_,12 @@
+         entity.resetFallDistance();
+     }
+ 
++    // Paper start
++    public boolean killedEntityPreEvent(final ServerLevel level, final LivingEntity entity, final DamageSource source) {
++        return true;
++    }
++    // Paper end
++
+     public boolean killedEntity(final ServerLevel level, final LivingEntity entity, final DamageSource source) {
+         return true;
+     }
 @@ -2986,26 +_,30 @@
          return this.removalReason != null
              ? String.format(

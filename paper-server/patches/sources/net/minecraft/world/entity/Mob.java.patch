@@ -108,7 +108,7 @@
          this.dropChances = input.read("drop_chances", DropChances.CODEC).orElse(DropChances.DEFAULT);
          this.readLeashData(input);
          this.homeRadius = input.getIntOr("home_radius", -1);
-@@ -406,11 +_,24 @@
+@@ -406,12 +_,19 @@
          this.lootTable = input.read("DeathLootTable", LootTable.KEY_CODEC);
          this.lootTableSeed = input.getLongOr("DeathLootTableSeed", 0L);
          this.setNoAi(input.getBooleanOr("NoAI", false));
@@ -124,15 +124,11 @@
      @Override
      protected void dropFromLootTable(final ServerLevel level, final DamageSource source, final boolean playerKilled) {
          super.dropFromLootTable(level, source, playerKilled);
-+        // Paper start - delay loot table removal to after death event
-+    }
-+    @Override
-+    protected void postDeathEventCallback() {
-+        if (!this.shouldDropLoot((ServerLevel) this.level())) return; // This callback can only be ran if the level is a ServerLevel
-+        // Paper end - delay loot table removal to after death event
-         this.lootTable = Optional.empty();
+-        this.lootTable = Optional.empty();
++        this.postDeathEventTasks.add(() -> this.lootTable = Optional.empty()); // Paper
      }
  
+     @Override
 @@ -470,6 +_,11 @@
              for (ItemEntity entity : this.level()
                  .getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(pickupReach.getX(), pickupReach.getY(), pickupReach.getZ()))) {
@@ -172,7 +168,7 @@
          EquipmentSlot slot = this.getEquipmentSlotForItem(itemStack);
          if (!this.isEquippableInSlot(itemStack, slot)) {
              return ItemStack.EMPTY;
-@@ -544,11 +_,18 @@
+@@ -544,8 +_,13 @@
              current = this.getItemBySlot(slot);
              canReplace = current.isEmpty();
          }
@@ -187,22 +183,7 @@
 +            // CraftBukkit end
              double dropChance = this.dropChances.byEquipment(slot);
              if (!current.isEmpty() && Math.max(this.random.nextFloat() - 0.1F, 0.0F) < dropChance) {
-+                this.forceDrops = true; // CraftBukkit
                  this.spawnAtLocation(level, current);
-+                this.forceDrops = false; // CraftBukkit
-             }
- 
-             ItemStack toEquip = slot.limit(itemStack);
-@@ -593,7 +_,9 @@
-         this.setItemSlot(slot, ItemStack.EMPTY);
-         this.gameEvent(GameEvent.SHEAR, player);
-         if (this.level() instanceof ServerLevel serverLevel) {
-+            this.forceDrops = true; // Paper
-             this.spawnAtLocation(serverLevel, itemStackToShear, equipmentSpawnOffset);
-+            this.forceDrops = false; // Paper
-             CriteriaTriggers.PLAYER_SHEARED_EQUIPMENT.trigger((ServerPlayer)player, itemStackToShear, this);
-         }
-     }
 @@ -685,25 +_,38 @@
          return this.isPassenger() || this.isLeashed();
      }
@@ -271,7 +252,7 @@
          ProfilerFiller profiler = Profiler.get();
          profiler.push("sensing");
          this.sensing.tick();
-@@ -885,14 +_,69 @@
+@@ -885,15 +_,79 @@
              public boolean stillValid(final Player player) {
                  return player.getVehicle() == Mob.this || player.isWithinEntityInteractionRange(Mob.this, 4.0);
              }
@@ -327,7 +308,8 @@
      }
  
 +    // Paper start
-+    protected boolean shouldSkipLoot(EquipmentSlot slot) { // method to avoid to fallback into the global mob loot logic (e.g. the fox)
++    protected Set<EquipmentSlot> droppedEquipmentSlots = new java.util.HashSet<>();
++    protected boolean guaranteedToDropUndamaged(EquipmentSlot slot) { // method to avoid to fallback into the global mob loot logic (e.g. the fox)
 +        return false;
 +    }
 +    // Paper end
@@ -336,35 +318,50 @@
      protected void dropCustomDeathLoot(final ServerLevel level, final DamageSource source, final boolean killedByPlayer) {
          super.dropCustomDeathLoot(level, source, killedByPlayer);
  
++        this.droppedEquipmentSlots.clear(); // Paper
          for (EquipmentSlot slot : EquipmentSlot.VALUES) {
-+            if (this.shouldSkipLoot(slot)) continue; // Paper
              ItemStack itemStack = this.getItemBySlot(slot);
++            // Paper start
++            if (this.guaranteedToDropUndamaged(slot)) {
++                this.spawnAtLocation(level, itemStack);
++                this.droppedEquipmentSlots.add(slot);
++                this.postDeathEventTasks.add(() -> this.setItemSlot(slot, ItemStack.EMPTY));
++                continue;
++            }
++            // Paper end
              float dropChance = this.dropChances.byEquipment(slot);
              if (dropChance != 0.0F) {
-@@ -912,7 +_,13 @@
+                 boolean preserve = this.dropChances.isPreserved(slot);
+@@ -912,7 +_,8 @@
                      }
  
                      this.spawnAtLocation(level, itemStack);
-+                    if (this.clearEquipmentSlots) { // Paper
-                     this.setItemSlot(slot, ItemStack.EMPTY);
-+                    // Paper start
-+                    } else {
-+                        this.clearedEquipmentSlots.add(slot);
-+                    }
-+                    // Paper end
+-                    this.setItemSlot(slot, ItemStack.EMPTY);
++                    this.droppedEquipmentSlots.add(slot); // Paper
++                    this.postDeathEventTasks.add(() -> this.setItemSlot(slot, ItemStack.EMPTY)); // Paper
                  }
              }
          }
-@@ -936,7 +_,9 @@
+@@ -931,11 +_,17 @@
+ 
+         for (EquipmentSlot slot : EquipmentSlot.VALUES) {
+             ItemStack itemStack = this.getItemBySlot(slot);
+-            if (!itemStack.isEmpty()) {
++            if (!itemStack.isEmpty() && (this.deathDropItems == null || !this.droppedEquipmentSlots.contains(slot))) { // Paper - account for already dropped item in dropCustomDeathLoot to not duplicate loot
+                 if (!shouldDrop.test(itemStack)) {
                      slotsPreventedFromDropping.add(slot);
                  } else if (this.dropChances.isPreserved(slot)) {
-                     this.setItemSlot(slot, ItemStack.EMPTY);
-+                    this.forceDrops = true; // Paper - Add missing forceDrop toggles
+-                    this.setItemSlot(slot, ItemStack.EMPTY);
++                    // Paper start
++                    if (this.deathDropItems != null) {
++                        this.postDeathEventTasks.add(() -> this.setItemSlot(slot, ItemStack.EMPTY));
++                    } else {
++                        this.setItemSlot(slot, ItemStack.EMPTY);
++                    }
++                    // Paper end
                      this.spawnAtLocation(level, itemStack);
-+                    this.forceDrops = false; // Paper - Add missing forceDrop toggles
                  }
              }
-         }
 @@ -1236,6 +_,22 @@
          final EntitySpawnReason spawnReason,
          final ConversionParams.AfterConversion<T> afterConversion

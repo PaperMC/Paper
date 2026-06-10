@@ -657,7 +657,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         ItemEntity entity = new ItemEntity(this.world, location.getX(), location.getY(), location.getZ(), CraftItemStack.asNMSCopy(item));
         org.bukkit.entity.Item itemEntity = (org.bukkit.entity.Item) entity.getBukkitEntity();
-        entity.pickupDelay = 10;
+        entity.setDefaultPickUpDelay();
         if (function != null) {
             function.accept(itemEntity);
         }

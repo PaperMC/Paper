@@ -22,6 +22,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.minecraft.commands.CommandSourceStack;
@@ -48,6 +49,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.fish.AbstractFish;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -953,49 +955,51 @@ public class CraftEventFactory {
         return false;
     }
 
-    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource) {
-        return CraftEventFactory.callEntityDeathEvent(victim, damageSource, new ArrayList<>(0)); // Paper - Restore vanilla drops behavior
-    }
-
-    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource, List<Entity.DefaultDrop> drops) { // Paper - Restore vanilla drops behavior
-        // Paper start
-        return CraftEventFactory.callEntityDeathEvent(victim, damageSource, drops, com.google.common.util.concurrent.Runnables.doNothing());
-    }
-
     private static final java.util.function.Function<org.bukkit.inventory.ItemStack, Entity.DefaultDrop> FROM_FUNCTION = stack -> {
         if (stack == null) return null;
         return new Entity.DefaultDrop(CraftItemType.bukkitToMinecraft(stack.getType()), stack, null);
     };
 
-    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource, List<Entity.DefaultDrop> drops, Runnable lootCheck) { // Paper - Restore vanilla drops behavior
-        // Paper end
+    public static boolean callEntityDeathEvent(ServerLevel level, net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource) {
+        EntityDeathEvent event = callEntityDeathEvent(level, victim, damageSource, new ArrayList<>(0), false);
+        return !event.isCancelled();
+    }
+
+    public static EntityDeathEvent callEntityDeathEvent(ServerLevel level, net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource, List<Entity.DefaultDrop> drops, boolean delayedDrops) { // Paper - Restore vanilla drops behavior
         CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
         CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
-        CraftWorld world = (CraftWorld) entity.getWorld();
-        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(world.getHandle(), damageSource.getEntity())); // Paper - Restore vanilla drops behavior
+        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(level, damageSource.getEntity())); // Paper - Restore vanilla drops behavior
         populateFields(victim, event); // Paper - make cancellable
-        Bukkit.getServer().getPluginManager().callEvent(event);
+        event.callEvent();
 
-        // Paper start - make cancellable
         if (event.isCancelled()) {
             return event;
         }
+
         playDeathSound(victim, event, damageSource);
-        // Paper end
         victim.expToDrop = event.getDroppedExp();
-        lootCheck.run(); // Paper - advancement triggers before destroying items
 
-        // Paper start - Restore vanilla drops behavior
-        for (Entity.DefaultDrop drop : drops) {
-            if (drop == null) continue;
-            final org.bukkit.inventory.ItemStack stack = drop.stack();
-        // Paper end - Restore vanilla drops behavior
-            if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
+        Runnable dropAll = () -> {
+            dropAllItems(drops, item -> victim.spawnAtLocation(level, item));
+        };
 
-            drop.runConsumer(s -> world.dropItem(entity.getLocation(), s)); // Paper - Restore vanilla drops behavior
+        if (delayedDrops) {
+            victim.postDeathEventTasks.add(dropAll);
+        } else {
+            dropAll.run();
         }
 
         return event;
+    }
+
+    private static void dropAllItems(List<Entity.DefaultDrop> drops, Consumer<ItemStack> fallback) {
+        for (Entity.DefaultDrop drop : drops) {
+            if (drop == null) continue;
+            final org.bukkit.inventory.ItemStack stack = drop.stack();
+            if (stack.isEmpty()) continue;
+
+            drop.runConsumer(item -> fallback.accept(CraftItemStack.unwrap(item)));
+        }
     }
 
     public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, DamageSource damageSource, List<Entity.DefaultDrop> drops, net.kyori.adventure.text.Component deathMessage, boolean showDeathMessages, boolean keepInventory) {
@@ -1019,15 +1023,7 @@ public class CraftEventFactory {
         victim.expToDrop = event.getDroppedExp();
         victim.newExp = event.getNewExp();
 
-        // Paper start - Restore vanilla drops behavior
-        for (Entity.DefaultDrop drop : drops) {
-            if (drop == null) continue;
-            final org.bukkit.inventory.ItemStack stack = drop.stack();
-        // Paper end - Restore vanilla drops behavior
-            if (stack == null || stack.getType() == Material.AIR) continue;
-
-            drop.runConsumer(s -> victim.drop(CraftItemStack.unwrap(s), true, false)); // Paper - Restore vanilla drops behavior
-        }
+        dropAllItems(drops, item -> victim.drop(item, true, false));
 
         return event;
     }
@@ -1035,9 +1031,10 @@ public class CraftEventFactory {
     // Paper start - helper methods for making death event cancellable
     // Add information to death event
     private static void populateFields(net.minecraft.world.entity.LivingEntity victim, EntityDeathEvent event) {
-        event.setReviveHealth(event.getEntity().getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue());
+        event.setReviveHealth(victim.getAttribute(Attributes.MAX_HEALTH).getValue());
         event.setShouldPlayDeathSound(!victim.silentDeath && !victim.isSilent());
         net.minecraft.sounds.SoundEvent soundEffect = victim.getDeathSound();
+        // todo this feels overblown better to just provide a way to cancel the sound and plugins play their own sound
         event.setDeathSound(soundEffect != null ? org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(soundEffect) : null);
         event.setDeathSoundCategory(org.bukkit.SoundCategory.valueOf(victim.getSoundSource().name()));
         event.setDeathSoundVolume(victim.getSoundVolume());
