@@ -111,8 +111,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 dependencies {
     implementation(project(":paper-api"))
     implementation("ca.spottedleaf:concurrentutil:0.0.10")
-    implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
-    implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
+    implementation("org.jline:jline-terminal-ffm:3.27.1")
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
     implementation("net.kyori:adventure-text-serializer-ansi")
 
@@ -122,8 +121,7 @@ dependencies {
       all its classes to check if they are plugins.
       Scanning takes about 1-2 seconds so adding this speeds up the server start.
      */
-    implementation("org.apache.logging.log4j:log4j-core:2.25.2")
-    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.25.2") // Needed to generate meta for our Log4j plugins
+    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.26.0") // Needed to generate meta for our Log4j plugins
     runtimeOnly(log4jPlugins.output)
     alsoShade(log4jPlugins.output)
 
@@ -131,7 +129,7 @@ dependencies {
         isTransitive = false
     }
     implementation("io.netty:netty-codec-haproxy:4.2.15.Final") // Add support for proxy protocol
-    implementation("org.apache.logging.log4j:log4j-iostreams:2.25.2")
+    implementation("org.apache.logging.log4j:log4j-iostreams:2.26.0")
     implementation("org.ow2.asm:asm-commons:9.9.1")
     implementation("org.spongepowered:configurate-yaml:4.2.0")
 
