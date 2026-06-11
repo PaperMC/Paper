@@ -130,7 +130,7 @@ dependencies {
     implementation("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT") {
         isTransitive = false
     }
-    implementation("io.netty:netty-codec-haproxy:4.2.7.Final") // Add support for proxy protocol
+    implementation("io.netty:netty-codec-haproxy:4.2.15.Final") // Add support for proxy protocol
     implementation("org.apache.logging.log4j:log4j-iostreams:2.25.2")
     implementation("org.ow2.asm:asm-commons:9.9.1")
     implementation("org.spongepowered:configurate-yaml:4.2.0")
