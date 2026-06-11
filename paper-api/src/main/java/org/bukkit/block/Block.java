@@ -500,7 +500,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param fluid the fluid to be replaceable with
      * @return true if the block can be replaced
      */
-    boolean isFluidReplaceable(Fluid fluid);
+    boolean isFluidReplaceable(@NotNull Fluid fluid);
 
     /**
      * Check if this block is solid
