@@ -32,6 +32,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.Fluid;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -42,6 +43,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.CraftFluid;
 import org.bukkit.craftbukkit.CraftFluidCollisionMode;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
@@ -441,6 +443,11 @@ public class CraftBlock implements Block {
     @Override
     public boolean isReplaceable() {
         return this.getBlockState().canBeReplaced();
+    }
+
+    @Override
+    public boolean isFluidReplaceable(final Fluid fluid) {
+        return this.getBlockState().canBeReplaced(CraftFluid.bukkitToMinecraft(fluid));
     }
 
     @Override
