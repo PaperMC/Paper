@@ -6,6 +6,8 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
+import io.papermc.paper.entity.ai.MemoryKeys;
+import io.papermc.paper.entity.ai.PaperMemoryKey;
 import io.papermc.paper.entity.poi.PaperPoiType;
 import io.papermc.paper.entity.poi.PoiTypes;
 import io.papermc.paper.registry.data.PaperBannerPatternRegistryEntry;
@@ -27,6 +29,8 @@ import io.papermc.paper.registry.data.dialog.PaperDialogRegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeTypes;
+import io.papermc.paper.world.attribute.PaperEnvironmentalAttributeType;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -124,6 +128,8 @@ public final class PaperRegistries {
             start(Registries.DATA_COMPONENT_TYPE, RegistryKey.DATA_COMPONENT_TYPE).craft(DataComponentTypes.class, PaperDataComponentType::of).build(),
             start(Registries.GAME_RULE, RegistryKey.GAME_RULE).craft(GameRule.class, CraftGameRule::new).build(),
             start(Registries.POINT_OF_INTEREST_TYPE, RegistryKey.POINT_OF_INTEREST_TYPE).craft(PoiTypes.class, PaperPoiType::new).build(),
+            start(Registries.ENVIRONMENT_ATTRIBUTE, RegistryKey.ENVIRONMENT_ATTRIBUTE).craft(EnvironmentalAttributeTypes.class, PaperEnvironmentalAttributeType::of).build(),
+            start(Registries.MEMORY_MODULE_TYPE, RegistryKey.MEMORY_MODULE_TYPE).craft(MemoryKeys.class, PaperMemoryKey::of).build(),
 
             // data-driven
             start(Registries.BIOME, RegistryKey.BIOME).craft(Biome.class, CraftBiome::new).build().delayed(),
@@ -153,8 +159,7 @@ public final class PaperRegistries {
             // api-only
             start(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE).apiOnly(PaperSimpleRegistry::entityType),
             start(Registries.PARTICLE_TYPE, RegistryKey.PARTICLE_TYPE).apiOnly(PaperSimpleRegistry::particleType),
-            start(Registries.POTION, RegistryKey.POTION).apiOnly(PaperSimpleRegistry::potion),
-            start(Registries.MEMORY_MODULE_TYPE, RegistryKey.MEMORY_MODULE_TYPE).apiOnly(() -> org.bukkit.Registry.MEMORY_MODULE_TYPE)
+            start(Registries.POTION, RegistryKey.POTION).apiOnly(PaperSimpleRegistry::potion)
             // End generate - RegistryDefinitions
         );
         final Map<RegistryKey<?>, RegistryEntry<?, ?>> byRegistryKey = new IdentityHashMap<>(REGISTRY_ENTRIES.size());
