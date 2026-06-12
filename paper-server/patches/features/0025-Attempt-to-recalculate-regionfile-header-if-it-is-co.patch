@@ -55,7 +55,7 @@ index a6f9435a8e2a6c8cc05bd3873cb6fc0ec98973b8..d44fd9eea0ccb09c894d6431ede8a4c2
          this.used.set(position, position + size);
      }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 4d83986bccc2003b291dd93534da2d2260f6c428..42d07aef0b2f646ec52ed6f4e7c003dbf82bd92d 100644
+index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a881f514ad3 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -46,6 +46,363 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
@@ -633,13 +633,13 @@ index 4d83986bccc2003b291dd93534da2d2260f6c428..42d07aef0b2f646ec52ed6f4e7c003db
 +        // Paper end - add version param
          ByteBuffer stub = ByteBuffer.allocate(5);
          stub.putInt(1);
--        stub.put((byte)(this.version.getId() | 128));
-+        stub.put((byte)(version.getId() | 128)); // Paper - add version param
+-        stub.put((byte)(this.version.getId() | EXTERNAL_STREAM_FLAG));
++        stub.put((byte)(version.getId() | EXTERNAL_STREAM_FLAG)); // Paper - add version param
          stub.flip();
          return stub;
      }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index fedec4d680934730d38d8c5d609fe216938b668a..e47a91b1869801258d0db20c126722fb06522c80 100644
+index 6a9a238c28c15025dd9103d42c0a95dbe148265e..db118c2665f6d94c8394a478cc3c619ed010a0c6 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -24,6 +24,32 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
@@ -800,7 +800,7 @@ index 590bd1ca60956e5c5be58481f97401e55f9e1aeb..4e0c9fa1eecfa9f21285b7911e25830b
          return new RegionStorageInfo(this.level, this.dimension, this.type + suffix);
      }
 diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index 2d326c3090a5d7621350347e131ee31d4715d3a7..98fb7a282a33f4391de124ed9be9bcf069178516 100644
+index 470d88c5d3b701ad0148dd18f506277f4017b931..7d29fdc6548324d97ec34d476b5b48ec0bdba0d2 100644
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 @@ -120,6 +120,18 @@ public record SerializableChunkData(
@@ -822,7 +822,7 @@ index 2d326c3090a5d7621350347e131ee31d4715d3a7..98fb7a282a33f4391de124ed9be9bcf0
  
      // Paper start - Do not let the server load chunks from newer versions
      private static final int CURRENT_DATA_VERSION = net.minecraft.SharedConstants.getCurrentVersion().dataVersion().version();
-@@ -542,7 +554,7 @@ public record SerializableChunkData(
+@@ -545,7 +557,7 @@ public record SerializableChunkData(
          tag.putInt("xPos", this.chunkPos.x());
          tag.putInt("yPos", this.minSectionY);
          tag.putInt("zPos", this.chunkPos.z());
@@ -832,7 +832,7 @@ index 2d326c3090a5d7621350347e131ee31d4715d3a7..98fb7a282a33f4391de124ed9be9bcf0
          tag.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(this.chunkStatus).toString());
          tag.storeNullable("blending_data", BlendingData.Packed.CODEC, this.blendingData);
 diff --git a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
-index df4f03f3a346e0ab0074757b3a077b2407135ac3..0b0265c8d4cb70aef758c1b443d007ef8d6c282b 100644
+index 4346f3bace176e09d9ffb02e9af29a1281071e2a..5b8c9d74e0fb9ed9bcace801124263f75204c9eb 100644
 --- a/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 @@ -34,6 +34,7 @@ public class SimpleRegionStorage implements ca.spottedleaf.moonrise.patches.chun
