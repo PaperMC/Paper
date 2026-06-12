@@ -32,7 +32,7 @@
                      ItemStack.CODEC.encodeStart(ops, itemStack).getOrThrow(DecoderException::new);
                  }
  
-@@ -368,10 +_,156 @@
+@@ -368,10 +_,141 @@
          }
  
          Item usedItem = this.getItem();
@@ -72,6 +72,7 @@
 +        int newCount = this.getCount();
 +        this.setCount(previousCount);
 +        this.restorePatch(previousPatch);
++
 +        if (result.consumesAction() && isBonemeal && !capturedBlockStates.isEmpty()) {
 +            org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level);
 +            org.bukkit.event.world.StructureGrowEvent structureEvent = null;
@@ -97,10 +98,9 @@
 +                }
 +                player.awardStat(Stats.ITEM_USED.get(usedItem)); // SPIGOT-7236 - award stat
 +            }
-+
-+            SignItem.openSign = null; // SPIGOT-6758 - Reset on early return
 +            return result;
 +        }
++
          if (player != null && result instanceof InteractionResult.Success success && success.wasItemInteraction()) {
 -            player.awardStat(Stats.ITEM_USED.get(usedItem));
 +            InteractionHand hand = context.getHand();
@@ -119,8 +119,6 @@
 +                for (org.bukkit.craftbukkit.block.CraftBlockState snapshot : capturedBlockStates) {
 +                    snapshot.revertPlace(true); // poi updates needs to be skipped since the poi were never registered as part of the capture
 +                }
-+
-+                SignItem.openSign = null; // SPIGOT-6758 - Reset on early return
 +            } else {
 +                // Change the stack to its new contents if it hasn't been tampered with.
 +                if (this.getCount() == previousCount && Objects.equals(this.components.asPatch(), previousPatch)) {
@@ -145,40 +143,27 @@
 +                    level.notifyAndUpdatePhysics(newPos, null, oldBlock, block, level.getBlockState(newPos), updateFlags, net.minecraft.world.level.block.Block.UPDATE_LIMIT); // send null chunk as chunk.k() returns false by this point
 +                }
 +
-+                if (usedItem == Items.WITHER_SKELETON_SKULL) { // Special case skulls to allow wither spawns to be cancelled
-+                    BlockPos bp = pos;
-+                    if (!level.getBlockState(pos).canBeReplaced()) {
-+                        if (!level.getBlockState(pos).isSolid()) {
-+                            bp = null;
-+                        } else {
-+                            bp = bp.relative(context.getClickedFace());
-+                        }
-+                    }
-+                    if (bp != null) {
-+                        net.minecraft.world.level.block.entity.BlockEntity te = level.getBlockEntity(bp);
-+                        if (te instanceof net.minecraft.world.level.block.entity.SkullBlockEntity) {
-+                            net.minecraft.world.level.block.WitherSkullBlock.checkSpawn(level, bp, (net.minecraft.world.level.block.entity.SkullBlockEntity) te);
-+                        }
++                BlockPos placedPos = success.paperSuccessContext().placedPos();
++                if (usedItem == Items.WITHER_SKELETON_SKULL && placedPos != null) { // Special case skulls to allow wither spawns to be cancelled
++                    net.minecraft.world.level.block.entity.BlockEntity blockEntity = level.getBlockEntity(placedPos);
++                    if (blockEntity instanceof net.minecraft.world.level.block.entity.SkullBlockEntity skull) {
++                        net.minecraft.world.level.block.WitherSkullBlock.checkSpawn(level, placedPos, skull);
 +                    }
 +                }
 +
 +                // SPIGOT-4678
-+                if (usedItem instanceof SignItem && SignItem.openSign != null) {
-+                    try {
-+                        if (level.getBlockEntity(SignItem.openSign) instanceof net.minecraft.world.level.block.entity.SignBlockEntity blockEntity) {
-+                            if (level.getBlockState(SignItem.openSign).getBlock() instanceof net.minecraft.world.level.block.SignBlock signBlock) {
-+                                signBlock.openTextEdit(player, blockEntity, true, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLACE); // CraftBukkit // Paper - Add PlayerOpenSignEvent
-+                            }
++                if (usedItem instanceof SignItem && placedPos != null) {
++                    if (level.getBlockEntity(placedPos) instanceof net.minecraft.world.level.block.entity.SignBlockEntity sign) {
++                        if (level.getBlockState(placedPos).getBlock() instanceof net.minecraft.world.level.block.SignBlock signBlock) {
++                            signBlock.openTextEdit(player, sign, true, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLACE); // CraftBukkit // Paper - Add PlayerOpenSignEvent
 +                        }
-+                    } finally {
-+                        SignItem.openSign = null;
 +                    }
 +                }
 +
 +                // SPIGOT-1288 - play sound stripped from BlockItem
-+                if (usedItem instanceof BlockItem && success.paperSuccessContext().placedPos() != null) {
++                if (usedItem instanceof BlockItem && placedPos != null) {
 +                    // Paper start - Fix spigot sound playing for BlockItem ItemStacks
-+                    net.minecraft.world.level.block.state.BlockState state = level.getBlockState(success.paperSuccessContext().placedPos());
++                    BlockState state = level.getBlockState(placedPos);
 +                    net.minecraft.world.level.block.SoundType soundType = state.getSoundType();
 +                    // Paper end - Fix spigot sound playing for BlockItem ItemStacks
 +                    level.playSound(player, pos, soundType.getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS, (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);
