@@ -6,7 +6,6 @@ import net.minecraft.world.entity.EntityReference;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.entity.Mob;
 import org.bukkit.entity.Vex;
 
 public class CraftVex extends CraftMonster implements Vex {
@@ -21,14 +20,14 @@ public class CraftVex extends CraftMonster implements Vex {
     }
 
     @Override
-    public org.bukkit.entity.Mob getSummoner() {
+    public org.bukkit.entity.LivingEntity getSummoner() {
         net.minecraft.world.entity.LivingEntity owner = this.getHandle().getOwner();
-        return owner instanceof net.minecraft.world.entity.Mob mob ? (Mob) mob.getBukkitEntity() : null; // todo - snapshot - the summoner/owner can be any LivingEntity now
+        return owner instanceof net.minecraft.world.entity.LivingEntity livingEntity ? livingEntity.getBukkitLivingEntity() : null;
     }
 
     @Override
-    public void setSummoner(org.bukkit.entity.Mob summoner) {
-        this.getHandle().owner = summoner == null ? null : EntityReference.of(((CraftMob) summoner).getHandle());
+    public void setSummoner(org.bukkit.entity.LivingEntity summoner) {
+        this.getHandle().owner = summoner == null ? null : EntityReference.of(((CraftLivingEntity) summoner).getHandle());
     }
 
     @Override

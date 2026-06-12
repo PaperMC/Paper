@@ -85,19 +85,30 @@ public interface Vex extends Monster {
     // Paper start
 
     /**
-     * Get the Mob that summoned this vex
+     * Get the living entity that summoned this vex
      *
-     * @return Mob that summoned this vex
+     * @return Living entity that summoned this vex
      */
     @Nullable
-    Mob getSummoner();
+    LivingEntity getSummoner();
 
     /**
      * Set the summoner of this vex
      *
      * @param summoner New summoner
      */
-    void setSummoner(@Nullable Mob summoner);
+    void setSummoner(@Nullable LivingEntity summoner);
+
+    /**
+     * Set the summoner of this vex
+     *
+     * @param summoner New summoner
+     * @deprecated Use {@link #setSummoner(LivingEntity)}
+     */
+    @Deprecated(forRemoval = true, since = "26.2")
+    default void setSummoner(@Nullable Mob summoner) {
+        this.setSummoner((LivingEntity) summoner);
+    }
 
     /**
      * Gets if this vex should start to take damage
