@@ -22,7 +22,7 @@ public interface InstrumentRegistryEntry {
     /**
      * Provides the sound event of the instrument.
      *
-     * @return the sound event.
+     * @return the sound event
      * @see MusicInstrument#getSound()
      */
     @Contract(pure = true)
@@ -31,7 +31,7 @@ public interface InstrumentRegistryEntry {
     /**
      * Provides the duration of the instrument, which is time to use.
      *
-     * @return the duration.
+     * @return the duration
      * @see MusicInstrument#getDuration()
      */
     @Contract(pure = true)
@@ -40,7 +40,7 @@ public interface InstrumentRegistryEntry {
     /**
      * Provides the range of the instrument, which is range of the sound.
      *
-     * @return the range.
+     * @return the range
      * @see MusicInstrument#getRange()
      */
     @Contract(pure = true)
@@ -49,7 +49,7 @@ public interface InstrumentRegistryEntry {
     /**
      * Provides the description of the instrument, which is used in the item tooltip.
      *
-     * @return the description.
+     * @return the description
      * @see MusicInstrument#description()
      */
     @Contract(pure = true)

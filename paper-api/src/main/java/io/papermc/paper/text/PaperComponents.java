@@ -1,5 +1,6 @@
 package io.papermc.paper.text;
 
+import io.papermc.paper.InternalAPIBridge;
 import java.io.IOException;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
@@ -80,9 +81,8 @@ public final class PaperComponents {
      * @return the resolved component
      * @throws IOException if a syntax error tripped during resolving
      */
-    @SuppressWarnings("deprecation") // using unsafe as a bridge
     public static Component resolveWithContext(final Component input, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
-        return Bukkit.getUnsafe().resolveWithContext(input, context, scoreboardSubject, bypassPermissions);
+        return InternalAPIBridge.get().resolveWithContext(input, context, scoreboardSubject, bypassPermissions);
     }
 
     /**
@@ -90,9 +90,8 @@ public final class PaperComponents {
      *
      * @return a component flattener
      */
-    @SuppressWarnings("deprecation") // using unsafe as a bridge
     public static ComponentFlattener flattener() {
-        return Bukkit.getUnsafe().componentFlattener();
+        return InternalAPIBridge.get().componentFlattener();
     }
 
     /**
@@ -122,7 +121,7 @@ public final class PaperComponents {
      */
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static PlainTextComponentSerializer plainTextSerializer() {
-        return Bukkit.getUnsafe().plainTextSerializer();
+        return PlainTextComponentSerializer.plainText();
     }
 
     /**
@@ -138,7 +137,7 @@ public final class PaperComponents {
      */
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static GsonComponentSerializer gsonSerializer() {
-        return Bukkit.getUnsafe().gsonComponentSerializer();
+        return GsonComponentSerializer.gson();
     }
 
     /**
@@ -155,7 +154,7 @@ public final class PaperComponents {
      */
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static GsonComponentSerializer colorDownsamplingGsonSerializer() {
-        return Bukkit.getUnsafe().colorDownsamplingGsonComponentSerializer();
+        return GsonComponentSerializer.colorDownsamplingGson();
     }
 
     /**
@@ -175,6 +174,6 @@ public final class PaperComponents {
      */
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static LegacyComponentSerializer legacySectionSerializer() {
-        return Bukkit.getUnsafe().legacyComponentSerializer();
+        return LegacyComponentSerializer.legacySection();
     }
 }

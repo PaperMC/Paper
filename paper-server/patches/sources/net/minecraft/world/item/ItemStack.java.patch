@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -187,12 +_,20 @@
+@@ -186,12 +_,20 @@
  
              @Override
              public void encode(final RegistryFriendlyByteBuf output, final ItemStack itemStack) {
@@ -23,7 +23,7 @@
                  }
              }
          };
-@@ -204,7 +_,7 @@
+@@ -203,7 +_,7 @@
              public ItemStack decode(final RegistryFriendlyByteBuf input) {
                  ItemStack itemStack = codec.decode(input);
                  if (!itemStack.isEmpty()) {
@@ -32,7 +32,7 @@
                      ItemStack.CODEC.encodeStart(ops, itemStack).getOrThrow(DecoderException::new);
                  }
  
-@@ -369,10 +_,165 @@
+@@ -368,10 +_,156 @@
          }
  
          Item usedItem = this.getItem();
@@ -45,34 +45,42 @@
 +
 +        if (!(usedItem instanceof BucketItem)) {
 +            level.captureBlockStates = true;
-+            if (isBonemeal) {
-+                level.captureTreeGeneration = true;
-+            }
++            level.captureTreeGeneration = isBonemeal;
 +        }
++
++        List<org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates;
++        java.util.Map<BlockPos, net.minecraft.world.level.block.entity.BlockEntity> capturedTileEntities;
++        org.bukkit.TreeType treeType;
 +        InteractionResult result;
 +        try {
 +            result = usedItem.useOn(context);
 +        } finally {
 +            level.captureBlockStates = false;
++            level.captureTreeGeneration = false;
++
++            capturedBlockStates = new java.util.ArrayList<>(level.capturedBlockStates.values());
++            level.capturedBlockStates.clear();
++
++            capturedTileEntities = new java.util.LinkedHashMap<>(level.capturedTileEntities);
++            level.capturedTileEntities.clear();
++
++            treeType = net.minecraft.world.level.block.SaplingBlock.treeType;
++            net.minecraft.world.level.block.SaplingBlock.treeType = null;
 +        }
++
 +        DataComponentPatch newPatch = this.components.asPatch();
 +        int newCount = this.getCount();
 +        this.setCount(previousCount);
 +        this.restorePatch(previousPatch);
-+        if (result.consumesAction() && level.captureTreeGeneration && !level.capturedBlockStates.isEmpty()) {
-+            level.captureTreeGeneration = false;
++        if (result.consumesAction() && isBonemeal && !capturedBlockStates.isEmpty()) {
 +            org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level);
-+            org.bukkit.TreeType treeType = net.minecraft.world.level.block.SaplingBlock.treeType;
-+            net.minecraft.world.level.block.SaplingBlock.treeType = null;
-+            List<org.bukkit.craftbukkit.block.CraftBlockState> blocks = new java.util.ArrayList<>(level.capturedBlockStates.values());
-+            level.capturedBlockStates.clear();
 +            org.bukkit.event.world.StructureGrowEvent structureEvent = null;
 +            if (treeType != null) {
-+                structureEvent = new org.bukkit.event.world.StructureGrowEvent(location, treeType, isBonemeal, (org.bukkit.entity.Player) player.getBukkitEntity(), (List<org.bukkit.block.BlockState>) (List<? extends org.bukkit.block.BlockState>) blocks);
++                structureEvent = new org.bukkit.event.world.StructureGrowEvent(location, treeType, isBonemeal, (org.bukkit.entity.Player) player.getBukkitEntity(), (List<org.bukkit.block.BlockState>) (List<? extends org.bukkit.block.BlockState>) capturedBlockStates);
 +                org.bukkit.Bukkit.getPluginManager().callEvent(structureEvent);
 +            }
 +
-+            org.bukkit.event.block.BlockFertilizeEvent fertilizeEvent = new org.bukkit.event.block.BlockFertilizeEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), (org.bukkit.entity.Player) player.getBukkitEntity(), (List<org.bukkit.block.BlockState>) (List<? extends org.bukkit.block.BlockState>) blocks);
++            org.bukkit.event.block.BlockFertilizeEvent fertilizeEvent = new org.bukkit.event.block.BlockFertilizeEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), (org.bukkit.entity.Player) player.getBukkitEntity(), (List<org.bukkit.block.BlockState>) (List<? extends org.bukkit.block.BlockState>) capturedBlockStates);
 +            fertilizeEvent.setCancelled(structureEvent != null && structureEvent.isCancelled());
 +            org.bukkit.Bukkit.getPluginManager().callEvent(fertilizeEvent);
 +
@@ -82,7 +90,7 @@
 +                    this.restorePatch(newPatch);
 +                    this.setCount(newCount);
 +                }
-+                for (org.bukkit.craftbukkit.block.CraftBlockState snapshot : blocks) {
++                for (org.bukkit.craftbukkit.block.CraftBlockState snapshot : capturedBlockStates) {
 +                    // SPIGOT-7572 - Move fix for SPIGOT-7248 to CapturedBlockState, to allow bees in bee nest
 +                    snapshot.place(snapshot.getFlags());
 +                    level.checkCapturedTreeStateForObserverNotify(pos, snapshot); // Paper - notify observers even if grow failed
@@ -93,27 +101,23 @@
 +            SignItem.openSign = null; // SPIGOT-6758 - Reset on early return
 +            return result;
 +        }
-+        level.captureTreeGeneration = false;
          if (player != null && result instanceof InteractionResult.Success success && success.wasItemInteraction()) {
 -            player.awardStat(Stats.ITEM_USED.get(usedItem));
 +            InteractionHand hand = context.getHand();
 +            org.bukkit.event.block.BlockPlaceEvent placeEvent = null;
-+            List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(level.capturedBlockStates.values());
-+            level.capturedBlockStates.clear();
-+            if (blocks.size() > 1) {
-+                placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(level, player, hand, blocks, pos);
-+            } else if (blocks.size() == 1 && usedItem != Items.POWDER_SNOW_BUCKET) { // Paper - Fix cancelled powdered snow bucket placement
-+                placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(level, player, hand, blocks.getFirst(), pos);
++            if (capturedBlockStates.size() > 1) {
++                placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(level, player, hand, (List<org.bukkit.block.BlockState>) (List<? extends org.bukkit.block.BlockState>) capturedBlockStates, pos);
++            } else if (capturedBlockStates.size() == 1 && usedItem != Items.POWDER_SNOW_BUCKET) { // Paper - Fix cancelled powdered snow bucket placement
++                placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(level, player, hand, capturedBlockStates.getFirst(), pos);
 +            }
 +
 +            if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
 +                result = InteractionResult.FAIL; // cancel placement
 +                // PAIL: Remove this when MC-99075 fixed
 +                player.containerMenu.forceHeldSlot(hand);
-+                level.capturedTileEntities.clear(); // Paper - Allow chests to be placed with NBT data; clear out block entities as chests and such will pop loot
 +                // revert back all captured blocks
-+                for (org.bukkit.block.BlockState blockstate : blocks) {
-+                    ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).revertPlace();
++                for (org.bukkit.craftbukkit.block.CraftBlockState snapshot : capturedBlockStates) {
++                    snapshot.revertPlace(true); // poi updates needs to be skipped since the poi were never registered as part of the capture
 +                }
 +
 +                SignItem.openSign = null; // SPIGOT-6758 - Reset on early return
@@ -124,14 +128,14 @@
 +                    this.setCount(newCount);
 +                }
 +
-+                for (java.util.Map.Entry<BlockPos, net.minecraft.world.level.block.entity.BlockEntity> e : level.capturedTileEntities.entrySet()) {
++                for (java.util.Map.Entry<BlockPos, net.minecraft.world.level.block.entity.BlockEntity> e : capturedTileEntities.entrySet()) {
 +                    level.setBlockEntity(e.getValue());
 +                }
 +
-+                for (org.bukkit.block.BlockState blockstate : blocks) {
-+                    int updateFlags = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getFlags();
-+                    net.minecraft.world.level.block.state.BlockState oldBlock = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getHandle();
-+                    BlockPos newPos = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getPosition();
++                for (org.bukkit.block.BlockState snapshot : capturedBlockStates) {
++                    int updateFlags = ((org.bukkit.craftbukkit.block.CraftBlockState) snapshot).getFlags();
++                    net.minecraft.world.level.block.state.BlockState oldBlock = ((org.bukkit.craftbukkit.block.CraftBlockState) snapshot).getHandle();
++                    BlockPos newPos = ((org.bukkit.craftbukkit.block.CraftBlockState) snapshot).getPosition();
 +                    net.minecraft.world.level.block.state.BlockState block = level.getBlockState(newPos);
 +
 +                    if (!(block.getBlock() instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // Containers get placed automatically
@@ -171,17 +175,6 @@
 +                    }
 +                }
 +
-+                // SPIGOT-7315: Moved from BedBlock#setPlacedBy
-+                if (placeEvent != null && usedItem instanceof BedItem) {
-+                    BlockPos bedPos = ((org.bukkit.craftbukkit.block.CraftBlock) placeEvent.getBlock()).getPosition();
-+                    net.minecraft.world.level.block.state.BlockState state = level.getBlockState(bedPos);
-+
-+                    if (state.getBlock() instanceof net.minecraft.world.level.block.BedBlock) {
-+                        level.updateNeighborsAt(bedPos, net.minecraft.world.level.block.Blocks.AIR);
-+                        state.updateNeighbourShapes(level, bedPos, net.minecraft.world.level.block.Block.UPDATE_ALL);
-+                    }
-+                }
-+
 +                // SPIGOT-1288 - play sound stripped from BlockItem
 +                if (usedItem instanceof BlockItem && success.paperSuccessContext().placedPos() != null) {
 +                    // Paper start - Fix spigot sound playing for BlockItem ItemStacks
@@ -194,13 +187,11 @@
 +                player.awardStat(Stats.ITEM_USED.get(usedItem));
 +            }
          }
-+        level.capturedTileEntities.clear();
-+        level.capturedBlockStates.clear();
 +        // CraftBukkit end
  
          return result;
      }
-@@ -448,31 +_,67 @@
+@@ -447,31 +_,67 @@
          return this.isDamageableItem() && this.getDamageValue() >= this.getMaxDamage() - 1;
      }
  
@@ -276,7 +267,7 @@
              this.shrink(1);
              onBreak.accept(item);
          }
-@@ -485,7 +_,26 @@
+@@ -484,7 +_,26 @@
                  return;
              }
  
@@ -304,7 +295,7 @@
              this.applyDamage(newDamage, serverPlayer, i -> {});
          }
      }
-@@ -495,9 +_,14 @@
+@@ -494,9 +_,14 @@
      }
  
      public void hurtAndBreak(final int amount, final LivingEntity owner, final EquipmentSlot slot) {
@@ -320,7 +311,7 @@
              );
          }
      }
-@@ -756,6 +_,12 @@
+@@ -755,6 +_,12 @@
          return this.getItem().useOnRelease(this);
      }
  
@@ -333,7 +324,7 @@
      public <T> @Nullable T set(final DataComponentType<T> type, final @Nullable T value) {
          return this.components.set(type, value);
      }
-@@ -799,6 +_,28 @@
+@@ -798,6 +_,28 @@
          this.components.setAll(components);
      }
  

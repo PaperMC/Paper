@@ -90,11 +90,10 @@ import org.bukkit.block.data.type.MangrovePropagule;
 import org.bukkit.block.data.type.MossyCarpet;
 import org.bukkit.block.data.type.NoteBlock;
 import org.bukkit.block.data.type.Observer;
-import org.bukkit.block.data.type.PinkPetals;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.block.data.type.PistonHead;
 import org.bukkit.block.data.type.PitcherCrop;
-import org.bukkit.block.data.type.PointedDripstone;
+import org.bukkit.block.data.type.PotentSulfur;
 import org.bukkit.block.data.type.RedstoneRail;
 import org.bukkit.block.data.type.RedstoneWallTorch;
 import org.bukkit.block.data.type.RedstoneWire;
@@ -114,6 +113,7 @@ import org.bukkit.block.data.type.Skull;
 import org.bukkit.block.data.type.Slab;
 import org.bukkit.block.data.type.SmallDripleaf;
 import org.bukkit.block.data.type.Snow;
+import org.bukkit.block.data.type.Speleothem;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.block.data.type.StructureBlock;
 import org.bukkit.block.data.type.Switch;
@@ -435,6 +435,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     MUSIC_DISC_11(-1),
     MUSIC_DISC_13(-1),
     MUSIC_DISC_BLOCKS(-1),
+    MUSIC_DISC_BOUNCE(-1),
     MUSIC_DISC_CAT(-1),
     MUSIC_DISC_CHIRP(-1),
     MUSIC_DISC_CREATOR(-1),
@@ -584,6 +585,8 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     STRIDER_SPAWN_EGG(-1),
     STRING(-1),
     SUGAR(-1),
+    SULFUR_CUBE_BUCKET(-1),
+    SULFUR_CUBE_SPAWN_EGG(-1),
     SUSPICIOUS_STEW(-1),
     SWEET_BERRIES(-1),
     TADPOLE_BUCKET(-1),
@@ -830,6 +833,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     CHEST(-1, Chest.class),
     CHIPPED_ANVIL(-1, Directional.class),
     CHISELED_BOOKSHELF(-1, ChiseledBookshelf.class),
+    CHISELED_CINNABAR(-1),
     CHISELED_COPPER(-1),
     CHISELED_DEEPSLATE(-1),
     CHISELED_NETHER_BRICKS(-1),
@@ -839,10 +843,19 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     CHISELED_RESIN_BRICKS(-1),
     CHISELED_SANDSTONE(-1),
     CHISELED_STONE_BRICKS(-1),
+    CHISELED_SULFUR(-1),
     CHISELED_TUFF(-1),
     CHISELED_TUFF_BRICKS(-1),
     CHORUS_FLOWER(-1, Ageable.class),
     CHORUS_PLANT(-1, MultipleFacing.class),
+    CINNABAR(-1),
+    CINNABAR_BRICK_SLAB(-1, Slab.class),
+    CINNABAR_BRICK_STAIRS(-1, Stairs.class),
+    CINNABAR_BRICK_WALL(-1, Wall.class),
+    CINNABAR_BRICKS(-1),
+    CINNABAR_SLAB(-1, Slab.class),
+    CINNABAR_STAIRS(-1, Stairs.class),
+    CINNABAR_WALL(-1, Wall.class),
     CLAY(-1),
     CLOSED_EYEBLOSSOM(-1),
     COAL_BLOCK(-1),
@@ -1376,7 +1389,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     PLAYER_HEAD(-1, Skull.class),
     PLAYER_WALL_HEAD(-1, WallSkull.class),
     PODZOL(-1, Snowable.class),
-    POINTED_DRIPSTONE(-1, PointedDripstone.class),
+    POINTED_DRIPSTONE(-1, Speleothem.class),
     POLISHED_ANDESITE(-1),
     POLISHED_ANDESITE_SLAB(-1, Slab.class),
     POLISHED_ANDESITE_STAIRS(-1, Stairs.class),
@@ -1391,6 +1404,10 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     POLISHED_BLACKSTONE_SLAB(-1, Slab.class),
     POLISHED_BLACKSTONE_STAIRS(-1, Stairs.class),
     POLISHED_BLACKSTONE_WALL(-1, Wall.class),
+    POLISHED_CINNABAR(-1),
+    POLISHED_CINNABAR_SLAB(-1, Slab.class),
+    POLISHED_CINNABAR_STAIRS(-1, Stairs.class),
+    POLISHED_CINNABAR_WALL(-1, Wall.class),
     POLISHED_DEEPSLATE(-1),
     POLISHED_DEEPSLATE_SLAB(-1, Slab.class),
     POLISHED_DEEPSLATE_STAIRS(-1, Stairs.class),
@@ -1401,12 +1418,17 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     POLISHED_GRANITE(-1),
     POLISHED_GRANITE_SLAB(-1, Slab.class),
     POLISHED_GRANITE_STAIRS(-1, Stairs.class),
+    POLISHED_SULFUR(-1),
+    POLISHED_SULFUR_SLAB(-1, Slab.class),
+    POLISHED_SULFUR_STAIRS(-1, Stairs.class),
+    POLISHED_SULFUR_WALL(-1, Wall.class),
     POLISHED_TUFF(-1),
     POLISHED_TUFF_SLAB(-1, Slab.class),
     POLISHED_TUFF_STAIRS(-1, Stairs.class),
     POLISHED_TUFF_WALL(-1, Wall.class),
     POPPY(-1),
     POTATOES(-1, Ageable.class),
+    POTENT_SULFUR(-1, PotentSulfur.class),
     POTTED_ACACIA_SAPLING(-1),
     POTTED_ALLIUM(-1),
     POTTED_AZALEA_BUSH(-1),
@@ -1633,6 +1655,15 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     STRUCTURE_BLOCK(-1, StructureBlock.class),
     STRUCTURE_VOID(-1),
     SUGAR_CANE(-1, Ageable.class),
+    SULFUR(-1),
+    SULFUR_BRICK_SLAB(-1, Slab.class),
+    SULFUR_BRICK_STAIRS(-1, Stairs.class),
+    SULFUR_BRICK_WALL(-1, Wall.class),
+    SULFUR_BRICKS(-1),
+    SULFUR_SLAB(-1, Slab.class),
+    SULFUR_SPIKE(-1, Speleothem.class),
+    SULFUR_STAIRS(-1, Stairs.class),
+    SULFUR_WALL(-1, Wall.class),
     SUNFLOWER(-1, Bisected.class),
     SUSPICIOUS_GRAVEL(-1, Brushable.class),
     SUSPICIOUS_SAND(-1, Brushable.class),

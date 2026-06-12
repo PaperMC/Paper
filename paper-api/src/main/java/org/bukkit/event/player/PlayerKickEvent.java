@@ -29,7 +29,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
         super(playerKicked);
         this.kickReason = LegacyComponentSerializer.legacySection().deserialize(kickReason);
         this.leaveMessage = LegacyComponentSerializer.legacySection().deserialize(leaveMessage);
-        this.cause  = Cause.UNKNOWN;
+        this.cause = Cause.UNKNOWN;
     }
 
     @ApiStatus.Internal

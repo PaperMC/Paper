@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 20 Apr 2026 02:56:22 -0700
+Subject: [PATCH] Delay open/close callbacks for chests
+
+The logic for chests may invoke block updates, which may not
+be safe to perform. For example, inventory closing due to
+player logout (which restricts chunk loading due to being
+inside an entity status callback) or during shutdown (which has
+chunk loading restrictions due to the chunk system being halted).
+
+diff --git a/net/minecraft/world/level/block/entity/BarrelBlockEntity.java b/net/minecraft/world/level/block/entity/BarrelBlockEntity.java
+index dd407db2db01b5ff49b7a3cdba92688c484a4928..5bfd25f22808794f5e24d5425ea32e8c1b927182 100644
+--- a/net/minecraft/world/level/block/entity/BarrelBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BarrelBlockEntity.java
+@@ -61,6 +61,13 @@ public class BarrelBlockEntity extends RandomizableContainerBlockEntity {
+     private static final Component DEFAULT_NAME = Component.translatable("container.barrel");
+     private NonNullList<ItemStack> items = NonNullList.withSize(27, ItemStack.EMPTY);
+     public final ContainerOpenersCounter openersCounter = new ContainerOpenersCounter() {
++        // Paper start - delay open/close callbacks
++        @Override
++        public boolean delayCallbacks() {
++            return true;
++        }
++        // Paper end - delay open/close callbacks
++
+         @Override
+         protected void onOpen(final Level level, final BlockPos pos, final BlockState state) {
+             BarrelBlockEntity.this.playSound(state, SoundEvents.BARREL_OPEN);
+diff --git a/net/minecraft/world/level/block/entity/ChestBlockEntity.java b/net/minecraft/world/level/block/entity/ChestBlockEntity.java
+index 06878204e0df42fc35cfa380413986a045ee229d..a9273aebb5c8efe78e88158f11e1ee2af0dff3f1 100644
+--- a/net/minecraft/world/level/block/entity/ChestBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/ChestBlockEntity.java
+@@ -30,6 +30,13 @@ public class ChestBlockEntity extends RandomizableContainerBlockEntity implement
+     public static final Component DEFAULT_NAME = Component.translatable("container.chest");
+     private NonNullList<ItemStack> items = NonNullList.withSize(27, ItemStack.EMPTY);
+     public final ContainerOpenersCounter openersCounter = new ContainerOpenersCounter() {
++        // Paper start - delay open/close callbacks
++        @Override
++        public boolean delayCallbacks() {
++            return true;
++        }
++        // Paper end - delay open/close callbacks
++
+         @Override
+         protected void onOpen(final Level level, final BlockPos pos, final BlockState blockState) {
+             if (blockState.getBlock() instanceof ChestBlock chestBlock) {
+diff --git a/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java b/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
+index baa8b5aba0500981a191626553d66650c7304b88..52737172ccfa0c7c977e4f2fe1db242e0bb92d25 100644
+--- a/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
++++ b/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
+@@ -37,11 +37,23 @@ public abstract class ContainerOpenersCounter {
+ 
+     protected abstract void openerCountChanged(final Level level, final BlockPos pos, final BlockState blockState, int previous, int current);
+ 
++    // Paper start - delay open/close callbacks
++    public boolean delayCallbacks() {
++        return false;
++    }
++    // Paper end - delay open/close callbacks
++
+     public abstract boolean isOwnContainer(final Player player);
+ 
+     public void incrementOpeners(
+         final LivingEntity entity, final Level level, final BlockPos pos, final BlockState blockState, final double maxInteractionRange
+     ) {
++        // Paper start - delay open/close callbacks
++        if (this.delayCallbacks()) {
++            scheduleRecheck(level, pos, blockState, 1);
++            return;
++        }
++        // Paper end - delay open/close callbacks
+         int previous = this.openCount++;
+ 
+         // Paper start - Call BlockRedstoneEvent
+@@ -66,6 +78,12 @@ public abstract class ContainerOpenersCounter {
+     }
+ 
+     public void decrementOpeners(final LivingEntity entity, final Level level, final BlockPos pos, final BlockState blockState) {
++        // Paper start - delay open/close callbacks
++        if (this.delayCallbacks()) {
++            scheduleRecheck(level, pos, blockState, 1);
++            return;
++        }
++        // Paper end - delay open/close callbacks
+         if (this.openCount == 0) return; // Paper - Prevent ContainerOpenersCounter openCount from going negative
+         int previous = this.openCount--;
+ 
+@@ -151,6 +169,11 @@ public abstract class ContainerOpenersCounter {
+     }
+ 
+     private static void scheduleRecheck(final Level level, final BlockPos blockPos, final BlockState blockState) {
+-        level.scheduleTick(blockPos, blockState.getBlock(), 5);
++        // Paper start - delay open/close callbacks
++        scheduleRecheck(level, blockPos, blockState, 5);
++    }
++    private static void scheduleRecheck(final Level level, final BlockPos blockPos, final BlockState blockState, final int delay) {
++        level.scheduleTick(blockPos, blockState.getBlock(), delay);
++        // Paper end - delay open/close callbacks
+     }
+ }
+diff --git a/net/minecraft/world/level/block/entity/EnderChestBlockEntity.java b/net/minecraft/world/level/block/entity/EnderChestBlockEntity.java
+index a469bef4b2e9c7d57391a5700277066cc5872ae9..6109d8da984b398bb1eb6cd6ab9a55f0511a615c 100644
+--- a/net/minecraft/world/level/block/entity/EnderChestBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/EnderChestBlockEntity.java
+@@ -14,6 +14,13 @@ import net.minecraft.world.level.block.state.BlockState;
+ public class EnderChestBlockEntity extends BlockEntity implements LidBlockEntity {
+     private final ChestLidController chestLidController = new ChestLidController();
+     public final ContainerOpenersCounter openersCounter = new ContainerOpenersCounter() {
++        // Paper start - delay open/close callbacks
++        @Override
++        public boolean delayCallbacks() {
++            return true;
++        }
++        // Paper end - delay open/close callbacks
++
+         @Override
+         protected void onOpen(final Level level, final BlockPos pos, final BlockState blockState) {
+             level.playSound(

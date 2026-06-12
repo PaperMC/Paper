@@ -442,6 +442,8 @@ public enum Effect {
     TRIAL_SPAWNER_SPAWN_ITEM(3021, Type.VISUAL, Boolean.class),
 
     SOUND_WITH_CHARGE_SHOT(1051, Type.SOUND),
+
+    SOUND_SULFUR_SPIKE_LAND(1052, Type.SOUND)
     ;
     // Paper end
 

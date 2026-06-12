@@ -97,6 +97,6 @@ public class CraftPiglinAbstract extends CraftMonster implements PiglinAbstract 
     }
 
     @Override
-    public void setBreed(boolean b) {
+    public void setBreed(boolean breed) {
     }
 }

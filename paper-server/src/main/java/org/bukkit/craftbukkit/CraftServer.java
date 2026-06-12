@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit;
 
 import ca.spottedleaf.moonrise.common.time.TickData;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -10,12 +9,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.serialization.JsonOps;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
+import io.papermc.paper.util.MCUtil;
 import io.papermc.paper.world.PaperWorldLoader;
 import io.papermc.paper.world.migration.WorldFolderMigration;
-import io.papermc.paper.world.saveddata.PaperLevelOverrides;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -105,6 +105,7 @@ import net.minecraft.world.level.levelgen.PhantomSpawner;
 import net.minecraft.world.level.levelgen.WorldDimensions;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
 import net.minecraft.world.level.levelgen.WorldOptions;
+import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
@@ -397,12 +398,7 @@ public final class CraftServer implements Server {
     public CraftServer(DedicatedServer console, PlayerList playerList) {
         this.console = console;
         this.playerList = (DedicatedPlayerList) playerList;
-        this.playerView = Collections.unmodifiableList(Lists.transform(playerList.players, new Function<ServerPlayer, CraftPlayer>() {
-            @Override
-            public CraftPlayer apply(ServerPlayer player) {
-                return player.getBukkitEntity();
-            }
-        }));
+        this.playerView = MCUtil.transformUnmodifiable(playerList.players, ServerPlayer::getBukkitEntity);
         this.serverVersion = io.papermc.paper.ServerBuildInfo.buildInfo().asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_SIMPLE); // Paper - improve version
         this.structureManager = new CraftStructureManager(console.getStructureManager(), console.registryAccess());
         this.serverTickManager = new CraftServerTickManager(console.tickRateManager());
@@ -692,7 +688,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @Deprecated
     public Player getPlayerExact(String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
 
@@ -1202,18 +1197,17 @@ public final class CraftServer implements Server {
             default -> throw new IllegalArgumentException("Illegal dimension (" + creator.environment() + ")");
         };
 
-        final ResourceKey<net.minecraft.world.level.Level> dimensionKey = PaperWorldLoader.dimensionKey(creator.key());
-        WorldLoader.DataLoadContext context = this.console.worldLoaderContext;
-        RegistryAccess.Frozen registryAccess = context.datapackDimensions();
-        net.minecraft.core.Registry<LevelStem> contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
-        final LevelStem configuredStem = this.console.registryAccess().lookupOrThrow(Registries.LEVEL_STEM).getValue(actualDimension);
+        RegistryAccess registryAccess = this.console.registryAccess();
+        final ResourceKey<net.minecraft.world.level.Level> dimensionKey = CraftNamespacedKey.toResourceKey(Registries.DIMENSION, creator.key());
+        net.minecraft.core.Registry<LevelStem> levelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
+        final LevelStem configuredStem = levelStemRegistry.getValue(actualDimension);
         if (configuredStem == null) {
             throw new IllegalStateException("Missing configured level stem " + actualDimension);
         }
         try {
             WorldFolderMigration.migrateApiWorld(
                 this.console.storageSource,
-                this.console.registryAccess(),
+                registryAccess,
                 name,
                 actualDimension,
                 dimensionKey
@@ -1227,22 +1221,31 @@ public final class CraftServer implements Server {
             name
         );
         final PrimaryLevelData primaryLevelData = (PrimaryLevelData) this.console.getWorldData();
-        WorldGenSettings worldGenSettings = LevelStorageSource.readExistingSavedData(this.console.storageSource, dimensionKey, this.console.registryAccess(), WorldGenSettings.TYPE)
+        WorldGenSettings worldGenSettings = LevelStorageSource.readExistingSavedData(this.console.storageSource, dimensionKey, registryAccess, WorldGenSettings.TYPE)
             .result()
             .orElse(null);
+        RegistryAccess contextRegistryAccess = registryAccess;
         if (worldGenSettings == null) {
             WorldOptions worldOptions = new WorldOptions(creator.seed(), creator.generateStructures(), creator.bonusChest());
 
-            DedicatedServerProperties.WorldDimensionData properties = new DedicatedServerProperties.WorldDimensionData(GsonHelper.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.type().name().toLowerCase(Locale.ROOT));
-            WorldDimensions worldDimensions = properties.create(context.datapackWorldgen());
+            String flatGenSettings = creator.generatorSettings();
+            if (flatGenSettings.isEmpty()) {
+                flatGenSettings = FlatLevelGeneratorSettings.CODEC.encodeStart(registryAccess.createSerializationContext(JsonOps.INSTANCE), FlatLevelGeneratorSettings.getDefault(
+                    registryAccess.lookupOrThrow(Registries.BIOME),
+                    registryAccess.lookupOrThrow(Registries.STRUCTURE_SET),
+                    registryAccess.lookupOrThrow(Registries.PLACED_FEATURE)
+                )).getOrThrow().toString();
+            }
+            DedicatedServerProperties.WorldDimensionData properties = new DedicatedServerProperties.WorldDimensionData(GsonHelper.parse(flatGenSettings), creator.type().name().toLowerCase(Locale.ROOT));
+            WorldDimensions worldDimensions = properties.create(registryAccess);
 
-            WorldDimensions.Complete complete = worldDimensions.bake(contextLevelStemRegistry);
+            WorldDimensions.Complete complete = worldDimensions.bake(levelStemRegistry);
             if (complete.dimensions().getValue(actualDimension) == null) {
                 throw new IllegalStateException("Missing generated level stem " + actualDimension + " for world " + name);
             }
 
             worldGenSettings = new WorldGenSettings(worldOptions, worldDimensions);
-            registryAccess = complete.dimensionsRegistryAccess();
+            contextRegistryAccess = complete.dimensionsRegistryAccess();
             loadedWorldData.levelOverrides().setHardcore(creator.hardcore());
             loadedWorldData = new PaperWorldLoader.LoadedWorldData(
                 loadedWorldData.bukkitName(),
@@ -1253,27 +1256,27 @@ public final class CraftServer implements Server {
         }
         final WorldGenSettings genSettingsFinal = worldGenSettings;
 
-        contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
+        levelStemRegistry = contextRegistryAccess.lookupOrThrow(Registries.LEVEL_STEM);
 
         if (this.console.options.has("forceUpgrade")) {
-            net.minecraft.server.Main.forceUpgrade(this.console.storageSource, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, registryAccess, this.console.options.has("recreateRegionFiles"));
+            net.minecraft.server.Main.forceUpgrade(this.console.storageSource, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, contextRegistryAccess, this.console.options.has("recreateRegionFiles"));
         }
 
         long biomeZoomSeed = BiomeManager.obfuscateSeed(genSettingsFinal.options().seed());
         LevelStem customStem = genSettingsFinal.dimensions().get(actualDimension).orElse(null);
         if (customStem == null) {
-            customStem = contextLevelStemRegistry.getValue(actualDimension);
+            customStem = levelStemRegistry.getValue(actualDimension);
         }
         if (customStem == null) {
             throw new IllegalStateException("Missing level stem for world " + name + " using key " + actualDimension);
         }
 
-        WorldInfo worldInfo = new CraftWorldInfo(loadedWorldData.bukkitName(), CraftNamespacedKey.fromMinecraft(dimensionKey.identifier()), genSettingsFinal.options().seed(), primaryLevelData.enabledFeatures(), creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess(), loadedWorldData.uuid());
+        WorldInfo worldInfo = new CraftWorldInfo(loadedWorldData.bukkitName(), CraftNamespacedKey.fromMinecraft(dimensionKey.identifier()), genSettingsFinal.options().seed(), primaryLevelData.enabledFeatures(), creator.environment(), customStem.type().value(), customStem.generator(), registryAccess, loadedWorldData.uuid());
         if (biomeProvider == null && chunkGenerator != null) {
             biomeProvider = chunkGenerator.getDefaultBiomeProvider(worldInfo);
         }
 
-        final SavedDataStorage savedDataStorage = new SavedDataStorage(this.console.storageSource.getDimensionPath(dimensionKey).resolve(LevelResource.DATA.id()), this.console.getFixerUpper(), this.console.registryAccess());
+        final SavedDataStorage savedDataStorage = new SavedDataStorage(this.console.storageSource.getDimensionPath(dimensionKey).resolve(LevelResource.DATA.id()), this.console.getFixerUpper(), registryAccess);
         savedDataStorage.set(WorldGenSettings.TYPE, new WorldGenSettings(genSettingsFinal.options(), genSettingsFinal.dimensions()));
         List<CustomSpawner> list = ImmutableList.of(
             new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(savedDataStorage)
@@ -1928,7 +1931,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @Deprecated
     public OfflinePlayer getOfflinePlayer(String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
         Preconditions.checkArgument(!name.isBlank(), "name cannot be empty");

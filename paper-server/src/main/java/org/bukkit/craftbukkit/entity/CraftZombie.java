@@ -144,7 +144,7 @@ public class CraftZombie extends CraftMonster implements Zombie {
     }
 
     @Override
-    public void setBreed(boolean b) {
+    public void setBreed(boolean breed) {
     }
 
     @Override

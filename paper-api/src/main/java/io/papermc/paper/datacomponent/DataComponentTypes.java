@@ -34,6 +34,7 @@ import io.papermc.paper.datacomponent.item.PotionContents;
 import io.papermc.paper.datacomponent.item.Repairable;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.datacomponent.item.SeededContainerLoot;
+import io.papermc.paper.datacomponent.item.SulfurCubeContent;
 import io.papermc.paper.datacomponent.item.SuspiciousStewEffects;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.Tool;
@@ -351,6 +352,7 @@ public final class DataComponentTypes {
      */
     public static final DataComponentType.Valued<BlockItemDataProperties> BLOCK_DATA = valued("block_state");
     // bees
+    public static final DataComponentType.Valued<SulfurCubeContent> SULFUR_CUBE_CONTENT = valued("sulfur_cube_content");
     // /**
     //  * Holds the lock state of a container-like block,
     //  * copied to container block when placed.
@@ -394,7 +396,7 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<DyeColor> SHEEP_COLOR = valued("sheep/color");
     public static final DataComponentType.Valued<DyeColor> SHULKER_COLOR = valued("shulker/color");
 
-    private static DataComponentType.NonValued unvalued(final @KeyPattern.Value String key) {
+    private static DataComponentType.NonValued unvalued(@KeyPattern.Value final String key) {
         final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         if (dataComponentType instanceof DataComponentType.NonValued) {
             return (DataComponentType.NonValued) dataComponentType;
@@ -403,7 +405,7 @@ public final class DataComponentTypes {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> DataComponentType.Valued<T> valued(final @KeyPattern.Value String key) {
+    private static <T> DataComponentType.Valued<T> valued(@KeyPattern.Value final String key) {
         final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         if (dataComponentType instanceof DataComponentType.Valued) {
             return (DataComponentType.Valued<T>) dataComponentType;

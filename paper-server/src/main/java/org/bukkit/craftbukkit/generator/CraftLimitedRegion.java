@@ -15,6 +15,7 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntitySpawnRequest;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
@@ -91,7 +92,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
             for (int z = -(this.buffer >> 4); z <= (this.buffer >> 4); z++) {
                 ProtoChunk chunk = (ProtoChunk) access.getChunk(this.centerChunkX + x, this.centerChunkZ + z);
                 for (CompoundTag compound : chunk.getEntities()) {
-                    EntityType.loadEntityRecursive(compound, access.getMinecraftWorld(), EntitySpawnReason.LOAD, (entity) -> {
+                    EntityType.loadEntityRecursive(compound, access.getMinecraftWorld(), new EntitySpawnRequest(EntitySpawnReason.LOAD, false), (entity) -> {
                         if (this.region.contains(entity.getX(), entity.getY(), entity.getZ())) {
                             entity.generation = true;
                             this.entities.add(entity);

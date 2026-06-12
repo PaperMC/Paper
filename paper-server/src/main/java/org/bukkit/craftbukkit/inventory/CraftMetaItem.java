@@ -309,8 +309,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     private CraftJukeboxComponent jukebox;
     private Integer damage;
     private Integer maxDamage;
-    private List<net.minecraft.advancements.criterion.BlockPredicate> canPlaceOnPredicates;
-    private List<net.minecraft.advancements.criterion.BlockPredicate> canBreakPredicates;
+    private List<net.minecraft.advancements.predicates.BlockPredicate> canPlaceOnPredicates;
+    private List<net.minecraft.advancements.predicates.BlockPredicate> canBreakPredicates;
 
     // hide_additional_tooltip backward compatibility based on TooltipDisplayComponentFix#CONVERTED_ADDITIONAL_TOOLTIP_TYPES
     private static final Set<DataComponentType<?>> HIDDEN_COMPONENTS_PREVIOUSLY = Set.of(
@@ -2537,14 +2537,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.canPlaceOnPredicates = convertFromLegacyMaterial(canPlaceOn);
     }
 
-    private static List<net.minecraft.advancements.criterion.BlockPredicate> convertFromLegacyMaterial(final Collection<Material> materials) {
+    private static List<net.minecraft.advancements.predicates.BlockPredicate> convertFromLegacyMaterial(final Collection<Material> materials) {
         final net.minecraft.core.Registry<net.minecraft.world.level.block.Block> blockRegistry = CraftRegistry.getMinecraftRegistry().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
         return materials.stream().map(m -> {
-            return net.minecraft.advancements.criterion.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(m)).build();
+            return net.minecraft.advancements.predicates.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(m)).build();
         }).toList();
     }
 
-    private static Set<Material> convertToLegacyMaterial(final List<net.minecraft.advancements.criterion.BlockPredicate> predicates) {
+    private static Set<Material> convertToLegacyMaterial(final List<net.minecraft.advancements.predicates.BlockPredicate> predicates) {
         return predicates.stream()
             .flatMap(p -> p.blocks().map(net.minecraft.core.HolderSet::stream).orElse(java.util.stream.Stream.empty()))
             .map(holder -> CraftBlockType.minecraftToBukkit(holder.value()))
@@ -2575,22 +2575,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.canPlaceOnPredicates = convertFromLegacyNamespaced(canPlaceOn);
     }
 
-    private static List<net.minecraft.advancements.criterion.BlockPredicate> convertFromLegacyNamespaced(final Collection<com.destroystokyo.paper.Namespaced> namespaceds) {
-        final List<net.minecraft.advancements.criterion.BlockPredicate> predicates = new ArrayList<>();
+    private static List<net.minecraft.advancements.predicates.BlockPredicate> convertFromLegacyNamespaced(final Collection<com.destroystokyo.paper.Namespaced> namespaceds) {
+        final List<net.minecraft.advancements.predicates.BlockPredicate> predicates = new ArrayList<>();
         final net.minecraft.core.Registry<net.minecraft.world.level.block.Block> blockRegistry = CraftRegistry.getMinecraftRegistry().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
         for (final com.destroystokyo.paper.Namespaced namespaced : namespaceds) {
             if (namespaced instanceof final org.bukkit.NamespacedKey key) {
-                predicates.add(net.minecraft.advancements.criterion.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(requireNonNull(org.bukkit.Registry.MATERIAL.get(key)))).build());
+                predicates.add(net.minecraft.advancements.predicates.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(requireNonNull(org.bukkit.Registry.MATERIAL.get(key)))).build());
             } else if (namespaced instanceof final com.destroystokyo.paper.NamespacedTag tag) {
-                predicates.add(net.minecraft.advancements.criterion.BlockPredicate.Builder.block().of(blockRegistry, net.minecraft.tags.TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(tag.getNamespace(), tag.getKey()))).build());
+                predicates.add(net.minecraft.advancements.predicates.BlockPredicate.Builder.block().of(blockRegistry, net.minecraft.tags.TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(tag.getNamespace(), tag.getKey()))).build());
             }
         }
         return predicates;
     }
 
-    private static Set<com.destroystokyo.paper.Namespaced> convertToLegacyNamespaced(final Collection<net.minecraft.advancements.criterion.BlockPredicate> predicates) {
+    private static Set<com.destroystokyo.paper.Namespaced> convertToLegacyNamespaced(final Collection<net.minecraft.advancements.predicates.BlockPredicate> predicates) {
         final Set<com.destroystokyo.paper.Namespaced> namespaceds = Sets.newHashSet();
-        for (final net.minecraft.advancements.criterion.BlockPredicate predicate : predicates) {
+        for (final net.minecraft.advancements.predicates.BlockPredicate predicate : predicates) {
             if (predicate.blocks().isEmpty()) {
                 continue;
             }

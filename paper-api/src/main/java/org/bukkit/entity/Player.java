@@ -3771,7 +3771,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          */
         @Deprecated
         public int getPing() {
-            throw new UnsupportedOperationException( "Not supported yet." );
+            throw new UnsupportedOperationException("Not supported yet.");
         }
         // Paper end
     }

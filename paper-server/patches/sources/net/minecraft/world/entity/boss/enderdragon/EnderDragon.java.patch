@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
 +++ b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
-@@ -86,6 +_,10 @@
+@@ -88,6 +_,10 @@
      private final Node[] nodes = new Node[24];
      private final int[] nodeAdjacency = new int[24];
      private final BinaryHeap openSet = new BinaryHeap();
@@ -10,8 +10,8 @@
 +    // Paper end
  
      public EnderDragon(final EntityType<? extends EnderDragon> type, final Level level) {
-         super(EntityType.ENDER_DRAGON, level);
-@@ -101,6 +_,7 @@
+         super(EntityTypes.ENDER_DRAGON, level);
+@@ -103,6 +_,7 @@
          this.setHealth(this.getMaxHealth());
          this.noPhysics = true;
          this.phaseManager = new EnderDragonPhaseManager(this);
@@ -19,7 +19,7 @@
      }
  
      public void setDragonFight(final EnderDragonFight fight) {
-@@ -119,6 +_,19 @@
+@@ -121,6 +_,19 @@
          return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 200.0).add(Attributes.CAMERA_DISTANCE, 16.0);
      }
  
@@ -39,7 +39,7 @@
      @Override
      public boolean isFlapping() {
          float flap = Mth.cos(this.flapTime * (Mth.PI * 2.0F));
-@@ -210,7 +_,7 @@
+@@ -212,7 +_,7 @@
                      }
  
                      Vec3 targetLocation = currentPhase.getFlyTargetLocation();
@@ -48,7 +48,7 @@
                          double xdd = targetLocation.x - this.getX();
                          double ydd = targetLocation.y - this.getY();
                          double zdd = targetLocation.z - this.getZ();
-@@ -359,7 +_,12 @@
+@@ -361,7 +_,12 @@
              if (this.nearestCrystal.isRemoved()) {
                  this.nearestCrystal = null;
              } else if (this.tickCount % 10 == 0 && this.getHealth() < this.getMaxHealth()) {
@@ -62,7 +62,7 @@
              }
          }
  
-@@ -389,7 +_,7 @@
+@@ -391,7 +_,7 @@
                  double xd = entity.getX() - xm;
                  double zd = entity.getZ() - zm;
                  double dd = Math.max(xd * xd + zd * zd, 0.1);
@@ -71,7 +71,7 @@
                  if (!this.phaseManager.getCurrentPhase().isSitting() && livingTarget.getLastHurtByMobTimestamp() < entity.tickCount - 2) {
                      DamageSource damageSource = this.damageSources().mobAttack(this);
                      entity.hurtServer(serverLevel, damageSource, 5.0F);
-@@ -422,6 +_,7 @@
+@@ -424,6 +_,7 @@
          int z1 = Mth.floor(bb.maxZ);
          boolean hitWall = false;
          boolean destroyedBlock = false;
@@ -79,7 +79,7 @@
  
          for (int x = x0; x <= x1; x++) {
              for (int y = y0; y <= y1; y++) {
-@@ -430,7 +_,11 @@
+@@ -432,7 +_,11 @@
                      BlockState state = level.getBlockState(blockPos);
                      if (!state.isAir() && !state.is(BlockTags.DRAGON_TRANSPARENT)) {
                          if (level.getGameRules().get(GameRules.MOB_GRIEFING) && !state.is(BlockTags.DRAGON_IMMUNE)) {
@@ -92,7 +92,7 @@
                          } else {
                              hitWall = true;
                          }
-@@ -439,6 +_,59 @@
+@@ -441,6 +_,59 @@
              }
          }
  
@@ -152,16 +152,23 @@
          if (destroyedBlock) {
              BlockPos randomPos = new BlockPos(
                  x0 + this.random.nextInt(x1 - x0 + 1), y0 + this.random.nextInt(y1 - y0 + 1), z0 + this.random.nextInt(z1 - z0 + 1)
-@@ -501,7 +_,15 @@
+@@ -498,15 +_,20 @@
+     }
+ 
+     @Override
+-    public void knockback(final double power, final double xd, final double zd, final DamageSource source, final float damage) {
++    public void knockback(final double power, final double xd, final double zd, final DamageSource source, final float damage, final boolean comesFromEffect, @Nullable Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause eventCause) { // Paper - knockback events
+         if (!this.phaseManager.getCurrentPhase().isSitting()) {
+-            super.knockback(power, xd, zd, source, damage);
++            super.knockback(power, xd, zd, source, damage, comesFromEffect, attacker, eventCause); // Paper - knockback events
+         }
+     }
  
      @Override
      public void kill(final ServerLevel level) {
 -        this.remove(Entity.RemovalReason.KILLED);
 +        // Paper start - Fire entity death event
-+        this.silentDeath = true;
-+        org.bukkit.event.entity.EntityDeathEvent deathEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, this.damageSources().genericKill());
-+        if (deathEvent.isCancelled()) {
-+            this.silentDeath = false; // Reset to default if event was cancelled
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(level, this, this.damageSources().genericKill())) {
 +            return;
 +        }
 +        this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
@@ -169,25 +176,17 @@
          this.gameEvent(GameEvent.ENTITY_DIE);
          if (this.dragonFight != null) {
              this.dragonFight.updateDragon(this);
-@@ -523,18 +_,41 @@
-             this.level().addParticle(ParticleTypes.EXPLOSION_EMITTER, this.getX() + xo, this.getY() + 2.0 + yo, this.getZ() + zo, 0.0, 0.0, 0.0);
-         }
- 
-+        // CraftBukkit start - SPIGOT-2420: Moved up to #getExpReward method
-+        /*
-         int xpCount = 500;
+@@ -532,14 +_,33 @@
          if (this.dragonFight != null && !this.dragonFight.hasPreviouslyKilledDragon()) {
              xpCount = 12000;
          }
-+         */
-+        int xpCount = this.expToDrop;
-+        // CraftBukkit end
++        xpCount = this.expToDrop; // CraftBukkit - SPIGOT-2420: Moved up to #getExpReward method
  
          if (this.level() instanceof ServerLevel level) {
 -            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0 && level.getGameRules().get(GameRules.MOB_DROPS)) {
 -                ExperienceOrb.award(level, this.position(), Mth.floor(xpCount * 0.08F));
 +            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0) { // CraftBukkit - SPIGOT-2420: Already checked for the game rule when calculating the xp
-+                ExperienceOrb.awardWithDirection(level, this.position(), net.minecraft.world.phys.Vec3.ZERO, Mth.floor(xpCount * 0.08F), org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, net.minecraft.world.entity.EntityReference.get(this.lastHurtByPlayer, this.level(), Player.class), this); // Paper
++                ExperienceOrb.awardWithDirection(level, this.position(), Vec3.ZERO, Mth.floor(xpCount * 0.08F), org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, net.minecraft.world.entity.EntityReference.get(this.lastHurtByPlayer, this.level(), Player.class), this); // Paper
              }
  
              if (this.dragonDeathTime == 1 && !this.isSilent()) {
@@ -214,14 +213,14 @@
              }
          }
  
-@@ -547,15 +_,15 @@
+@@ -552,15 +_,15 @@
          }
  
          if (this.dragonDeathTime >= 200 && this.level() instanceof ServerLevel level) {
 -            if (level.getGameRules().get(GameRules.MOB_DROPS)) {
 -                ExperienceOrb.award(level, this.position(), Mth.floor(xpCount * 0.2F));
 +            if (true) { // Paper - SPIGOT-2420: Already checked for the game rule when calculating the xp
-+                ExperienceOrb.awardWithDirection(level, this.position(), net.minecraft.world.phys.Vec3.ZERO, Mth.floor(xpCount * 0.2F), org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, net.minecraft.world.entity.EntityReference.get(this.lastHurtByPlayer, this.level(), Player.class), this); // Paper
++                ExperienceOrb.awardWithDirection(level, this.position(), Vec3.ZERO, Mth.floor(xpCount * 0.2F), org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, net.minecraft.world.entity.EntityReference.get(this.lastHurtByPlayer, this.level(), Player.class), this); // Paper
              }
  
              if (this.dragonFight != null) {
@@ -233,23 +232,23 @@
              this.gameEvent(GameEvent.ENTITY_DIE);
          }
      }
-@@ -739,6 +_,7 @@
-         super.addAdditionalSaveData(output);
+@@ -745,6 +_,7 @@
          output.putInt("DragonPhase", this.phaseManager.getCurrentPhase().getPhase().getId());
          output.putInt("DragonDeathTime", this.dragonDeathTime);
+         output.putFloat("sitting_damage_received", this.sittingDamageReceived);
 +        output.putInt("Bukkit.expToDrop", this.expToDrop); // CraftBukkit - SPIGOT-2420: The ender dragon drops xp over time which can also happen between server starts
      }
  
      @Override
-@@ -746,6 +_,7 @@
-         super.readAdditionalSaveData(input);
+@@ -753,6 +_,7 @@
          input.getInt("DragonPhase").ifPresent(phaseId -> this.phaseManager.setPhase(EnderDragonPhase.getById(phaseId)));
          this.dragonDeathTime = input.getIntOr("DragonDeathTime", 0);
-+        this.expToDrop = input.getIntOr("Bukkit.expToDrop", 0); // CraftBukkit - SPIGOT-2420: The ender dragon drops xp over time which can also happen between server starts
+         this.sittingDamageReceived = input.getFloatOr("sitting_damage_received", 0.0F);
++        this.expToDrop = input.getIntOr("Bukkit.expToDrop", this.getDefaultExpToDrop()); // CraftBukkit - SPIGOT-2420: The ender dragon drops xp over time which can also happen between server starts
      }
  
      @Override
-@@ -786,7 +_,7 @@
+@@ -793,7 +_,7 @@
          EnderDragonPhase<? extends DragonPhaseInstance> phase = phaseInstance.getPhase();
          Vec3 result;
          if (phase == EnderDragonPhase.LANDING || phase == EnderDragonPhase.TAKEOFF) {
@@ -258,7 +257,7 @@
              float dist = Math.max((float)Math.sqrt(egg.distToCenterSqr(this.position())) / 4.0F, 1.0F);
              float yOffset = 6.0F / dist;
              float xRotOld = this.getXRot();
-@@ -873,4 +_,19 @@
+@@ -880,4 +_,23 @@
      protected float sanitizeScale(final float scale) {
          return 1.0F;
      }
@@ -266,15 +265,19 @@
 +    // CraftBukkit start - SPIGOT-2420: Special case, the ender dragon drops 12000 xp for the first kill and 500 xp for every other kill and this over time.
 +    @Override
 +    public int getExpReward(ServerLevel level, Entity entity) {
-+        // CraftBukkit - Moved from #tickDeath method
-+        boolean shouldDrop = level.getGameRules().get(GameRules.MOB_DROPS);
-+        int xpCount = 500;
-+
-+        if (this.dragonFight != null && !this.dragonFight.hasPreviouslyKilledDragon()) {
-+            xpCount = 12000;
++        if (!level.getGameRules().get(GameRules.MOB_DROPS)) {
++            return 0;
 +        }
-+
-+        return shouldDrop ? xpCount : 0;
++        return this.getDefaultExpToDrop();
 +    }
 +    // CraftBukkit end
++
++    // Paper start - init expToDrop for already dying spawned dragon (like in MC-306798)
++    private int getDefaultExpToDrop() {
++        if (this.dragonFight != null && !this.dragonFight.hasPreviouslyKilledDragon()) {
++            return 12000;
++        }
++        return 500;
++    }
++    // Paper end - init expToDrop for already dying spawned dragon
  }

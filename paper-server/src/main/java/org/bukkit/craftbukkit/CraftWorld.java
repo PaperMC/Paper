@@ -63,10 +63,9 @@ import net.minecraft.util.NullOps;
 import net.minecraft.world.attribute.BedRule;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
-import net.minecraft.world.entity.ai.village.poi.PoiRecord;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.raid.Raids;
@@ -658,7 +657,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         ItemEntity entity = new ItemEntity(this.world, location.getX(), location.getY(), location.getZ(), CraftItemStack.asNMSCopy(item));
         org.bukkit.entity.Item itemEntity = (org.bukkit.entity.Item) entity.getBukkitEntity();
-        entity.pickupDelay = 10;
+        entity.setDefaultPickUpDelay();
         if (function != null) {
             function.accept(itemEntity);
         }
@@ -672,7 +671,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(item != null, "ItemStack cannot be null");
 
         double xs = Mth.nextDouble(this.world.getRandom(), -0.25, 0.25);
-        double ys = Mth.nextDouble(this.world.getRandom(), -0.25, 0.25) - ((double) EntityType.ITEM.getHeight() / 2.0);
+        double ys = Mth.nextDouble(this.world.getRandom(), -0.25, 0.25) - ((double) EntityTypes.ITEM.getHeight() / 2.0);
         double zs = Mth.nextDouble(this.world.getRandom(), -0.25, 0.25);
         location = location.clone().add(xs, ys, zs);
         return this.dropItem(location, item, function);
@@ -686,14 +685,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         net.minecraft.world.entity.projectile.arrow.AbstractArrow arrow;
         if (TippedArrow.class.isAssignableFrom(clazz)) {
-            arrow = EntityType.ARROW.create(this.world, EntitySpawnReason.COMMAND);
+            arrow = EntityTypes.ARROW.create(this.world, EntitySpawnReason.COMMAND);
             ((Arrow) arrow.getBukkitEntity()).setBasePotionType(PotionType.WATER);
         } else if (SpectralArrow.class.isAssignableFrom(clazz)) {
-            arrow = EntityType.SPECTRAL_ARROW.create(this.world, EntitySpawnReason.COMMAND);
+            arrow = EntityTypes.SPECTRAL_ARROW.create(this.world, EntitySpawnReason.COMMAND);
         } else if (Trident.class.isAssignableFrom(clazz)) {
-            arrow = EntityType.TRIDENT.create(this.world, EntitySpawnReason.COMMAND);
+            arrow = EntityTypes.TRIDENT.create(this.world, EntitySpawnReason.COMMAND);
         } else {
-            arrow = EntityType.ARROW.create(this.world, EntitySpawnReason.COMMAND);
+            arrow = EntityTypes.ARROW.create(this.world, EntitySpawnReason.COMMAND);
         }
 
         arrow.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
@@ -715,7 +714,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private LightningStrike strikeLightning0(Location loc, boolean isVisual) {
         Preconditions.checkArgument(loc != null, "Location cannot be null");
 
-        LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(this.world, EntitySpawnReason.COMMAND);
+        LightningBolt lightning = EntityTypes.LIGHTNING_BOLT.create(this.world, EntitySpawnReason.COMMAND);
         lightning.snapTo(loc.getX(), loc.getY(), loc.getZ());
         lightning.isEffect = isVisual; // Paper - Properly handle lightning effects api
         this.world.strikeLightning(lightning, LightningStrikeEvent.Cause.CUSTOM);
@@ -748,24 +747,28 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate) {
         this.world.captureTreeGeneration = true;
         this.world.captureBlockStates = true;
-        boolean grownTree = this.generateTree(loc, type);
-        this.world.captureBlockStates = false;
-        this.world.captureTreeGeneration = false;
+        List<org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates;
+        boolean grownTree;
+        try {
+            grownTree = this.generateTree(loc, type);
+        } finally {
+            this.world.captureTreeGeneration = false;
+            this.world.captureBlockStates = false;
+
+            capturedBlockStates = new ArrayList<>(this.world.capturedBlockStates.values());
+            this.world.capturedBlockStates.clear();
+        }
         if (grownTree) { // Copy block data to delegate
-            for (BlockState blockstate : this.world.capturedBlockStates.values()) {
-                BlockPos position = ((CraftBlockState) blockstate).getPosition();
+            for (CraftBlockState snapshot : capturedBlockStates) {
+                BlockPos position = snapshot.getPosition();
                 net.minecraft.world.level.block.state.BlockState oldBlock = this.world.getBlockState(position);
-                int flags = ((CraftBlockState) blockstate).getFlags();
-                delegate.setBlockData(blockstate.getX(), blockstate.getY(), blockstate.getZ(), blockstate.getBlockData());
+                int flags = snapshot.getFlags();
+                delegate.setBlockData(snapshot.getX(), snapshot.getY(), snapshot.getZ(), snapshot.getBlockData());
                 net.minecraft.world.level.block.state.BlockState newBlock = this.world.getBlockState(position);
                 this.world.notifyAndUpdatePhysics(position, null, oldBlock, newBlock, newBlock, flags, net.minecraft.world.level.block.Block.UPDATE_LIMIT);
             }
-            this.world.capturedBlockStates.clear();
-            return true;
-        } else {
-            this.world.capturedBlockStates.clear();
-            return false;
         }
+        return grownTree;
     }
 
     @Override
@@ -1857,7 +1860,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Collection<org.bukkit.Material> getInfiniburn() {
-        return com.google.common.collect.Sets.newHashSet(com.google.common.collect.Iterators.transform(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getTagOrEmpty(this.getHandle().dimensionType().infiniburn()).iterator(), blockHolder -> CraftBlockType.minecraftToBukkit(blockHolder.value())));
+        return com.google.common.collect.Sets.newHashSet(com.google.common.collect.Iterators.transform(this.getHandle().dimensionType().infiniburn().iterator(), blockHolder -> CraftBlockType.minecraftToBukkit(blockHolder.value())));
     }
 
     @Override

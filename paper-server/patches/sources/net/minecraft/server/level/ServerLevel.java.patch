@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -194,7 +_,7 @@
+@@ -195,7 +_,7 @@
      private final List<ServerPlayer> players = Lists.newArrayList();
      public final ServerChunkCache chunkSource;
      private final MinecraftServer server;
@@ -9,7 +9,7 @@
      private final EntityTickList entityTickList = new EntityTickList();
      private final ServerWaypointManager waypointManager;
      private EnvironmentAttributeSystem environmentAttributes;
-@@ -221,24 +_,199 @@
+@@ -222,24 +_,199 @@
      private final boolean tickTime;
      private final LevelDebugSynchronizers debugSynchronizers = new LevelDebugSynchronizers(this);
  
@@ -211,7 +211,7 @@
          boolean syncWrites = server.forceSynchronousWrites();
          DataFixer fixerUpper = server.getFixerUpper();
          EntityPersistentStorage<Entity> entityStorage = new EntityStorage(
-@@ -260,16 +_,17 @@
+@@ -261,16 +_,17 @@
              server.getStructureManager(),
              executor,
              generator,
@@ -232,7 +232,7 @@
          }
  
          this.raids = this.getDataStorage().computeIfAbsent(Raids.TYPE);
-@@ -277,14 +_,13 @@
+@@ -278,14 +_,13 @@
              levelData.setGameType(server.getDefaultGameType());
          }
  
@@ -248,7 +248,7 @@
              generator,
              this.chunkSource.randomState(),
              this,
-@@ -300,10 +_,18 @@
+@@ -301,10 +_,18 @@
  
          this.sleepStatus = new SleepStatus();
          this.gameEventDispatcher = new GameEventDispatcher(this);
@@ -267,9 +267,9 @@
 +    }
 +    // Paper end
  
-     @Deprecated
-     @VisibleForTesting
-@@ -322,7 +_,7 @@
+     @Override
+     public int getNextEntityId() {
+@@ -334,7 +_,7 @@
  
      @Override
      public ServerClockManager clockManager() {
@@ -278,7 +278,7 @@
      }
  
      @Override
-@@ -354,11 +_,24 @@
+@@ -367,11 +_,24 @@
          int percentage = this.getGameRules().get(GameRules.PLAYERS_SLEEPING_PERCENTAGE);
          if (this.sleepStatus.areEnoughSleeping(percentage) && this.sleepStatus.areEnoughDeepSleeping(percentage, this.players)) {
              Optional<Holder<WorldClock>> defaultClock = this.dimensionType().defaultClock();
@@ -305,7 +305,7 @@
              if (this.getGameRules().get(GameRules.ADVANCE_WEATHER) && this.isRaining()) {
                  this.resetWeatherCycle();
              }
-@@ -373,9 +_,9 @@
+@@ -386,9 +_,9 @@
          if (!this.isDebug() && runs) {
              long tick = this.getGameTime();
              profiler.push("blockTicks");
@@ -317,7 +317,7 @@
              profiler.pop();
          }
  
-@@ -393,7 +_,7 @@
+@@ -406,7 +_,7 @@
  
          this.handlingTick = false;
          profiler.pop();
@@ -326,7 +326,7 @@
          if (isActive) {
              this.resetEmptyTime();
          }
-@@ -437,9 +_,12 @@
+@@ -450,9 +_,12 @@
                          }
                      }
                  );
@@ -339,7 +339,7 @@
          }
  
          profiler.push("entityManagement");
-@@ -468,7 +_,7 @@
+@@ -480,7 +_,7 @@
              long time = this.levelData.getGameTime() + 1L;
              this.serverLevelData.setGameTime(time);
              Profiler.get().push("scheduledFunctions");
@@ -348,7 +348,7 @@
              Profiler.get().pop();
          }
      }
-@@ -491,11 +_,13 @@
+@@ -503,11 +_,13 @@
          ProfilerFiller profiler = Profiler.get();
          profiler.push("iceandsnow");
  
@@ -362,7 +362,7 @@
  
          profiler.popPush("tickBlocks");
          if (tickSpeed > 0) {
-@@ -536,12 +_,12 @@
+@@ -548,12 +_,12 @@
          int minZ = chunkPos.getMinBlockZ();
          ProfilerFiller profiler = Profiler.get();
          profiler.push("thunder");
@@ -376,8 +376,8 @@
 +                    && this.random.nextDouble() < difficulty.getEffectiveDifficulty() * this.paperConfig().entities.spawning.skeletonHorseThunderSpawnChance.or(0.01) // Paper - Configurable spawn chances for skeleton horses
                      && !this.getBlockState(pos.below()).is(BlockTags.LIGHTNING_RODS);
                  if (isTrap) {
-                     SkeletonHorse horse = EntityType.SKELETON_HORSE.create(this, EntitySpawnReason.EVENT);
-@@ -549,7 +_,7 @@
+                     SkeletonHorse horse = EntityTypes.SKELETON_HORSE.create(this, EntitySpawnReason.EVENT);
+@@ -561,7 +_,7 @@
                          horse.setTrap(true);
                          horse.setAge(0);
                          horse.setPos(pos.getX(), pos.getY(), pos.getZ());
@@ -386,7 +386,7 @@
                      }
                  }
  
-@@ -557,7 +_,7 @@
+@@ -569,7 +_,7 @@
                  if (bolt != null) {
                      bolt.snapTo(Vec3.atBottomCenterOf(pos));
                      bolt.setVisualOnly(isTrap);
@@ -395,7 +395,7 @@
                  }
              }
          }
-@@ -571,7 +_,7 @@
+@@ -583,7 +_,7 @@
          BlockPos belowPos = topPos.below();
          Biome biome = this.getBiome(topPos).value();
          if (biome.shouldFreeze(this, belowPos)) {
@@ -404,7 +404,7 @@
          }
  
          if (this.isRaining()) {
-@@ -583,10 +_,10 @@
+@@ -595,10 +_,10 @@
                      if (currentLayers < Math.min(maxHeight, 8)) {
                          BlockState newState = state.setValue(SnowLayerBlock.LAYERS, currentLayers + 1);
                          Block.pushEntitiesUp(state, newState, this, topPos);
@@ -417,7 +417,7 @@
                  }
              }
  
-@@ -611,6 +_,13 @@
+@@ -623,6 +_,13 @@
      }
  
      protected BlockPos findLightningTargetAround(final BlockPos pos) {
@@ -431,7 +431,7 @@
          BlockPos center = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
          Optional<BlockPos> lightningRodTarget = this.findLightningRod(center);
          if (lightningRodTarget.isPresent()) {
-@@ -618,11 +_,12 @@
+@@ -630,11 +_,12 @@
          }
  
          AABB search = AABB.encapsulatingFullBlocks(center, center.atY(this.getMaxY() + 1)).inflate(3.0);
@@ -445,7 +445,7 @@
          if (center.getY() == this.getMinY() - 1) {
              center = center.above(2);
          }
-@@ -739,8 +_,8 @@
+@@ -751,8 +_,8 @@
                  weatherData.setThunderTime(thunderTime);
                  weatherData.setRainTime(rainTime);
                  weatherData.setClearWeatherTime(clearWeatherTime);
@@ -456,7 +456,7 @@
              }
  
              this.oThunderLevel = this.thunderLevel;
-@@ -761,6 +_,7 @@
+@@ -773,6 +_,7 @@
              this.rainLevel = Mth.clamp(this.rainLevel, 0.0F, 1.0F);
          }
  
@@ -464,7 +464,7 @@
          if (this.oRainLevel != this.rainLevel) {
              this.server
                  .getPlayerList()
-@@ -783,15 +_,48 @@
+@@ -795,15 +_,48 @@
              this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, this.rainLevel));
              this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel));
          }
@@ -517,7 +517,7 @@
      }
  
      public void resetEmptyTime() {
-@@ -813,18 +_,46 @@
+@@ -825,18 +_,46 @@
          }
      }
  
@@ -564,7 +564,7 @@
      }
  
      private void tickPassenger(final Entity vehicle, final Entity entity) {
-@@ -833,10 +_,12 @@
+@@ -845,10 +_,12 @@
          } else if (entity instanceof Player || this.entityTickList.contains(entity)) {
              entity.setOldPosAndRot();
              entity.tickCount++;
@@ -577,7 +577,7 @@
              profiler.pop();
  
              for (Entity passenger : entity.getPassengers()) {
-@@ -867,6 +_,7 @@
+@@ -879,6 +_,7 @@
      public void save(final @Nullable ProgressListener progressListener, final boolean flush, final boolean noSave) {
          ServerChunkCache chunkSource = this.getChunkSource();
          if (!noSave) {
@@ -585,7 +585,7 @@
              if (progressListener != null) {
                  progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
              }
-@@ -887,6 +_,7 @@
+@@ -899,6 +_,7 @@
  
      private void saveLevelData(final boolean sync) {
          SavedDataStorage savedDataStorage = this.getChunkSource().getDataStorage();
@@ -593,7 +593,7 @@
          if (sync) {
              savedDataStorage.saveAndJoin();
          } else {
-@@ -949,18 +_,40 @@
+@@ -961,18 +_,40 @@
  
      @Override
      public boolean addFreshEntity(final Entity entity) {
@@ -637,7 +637,7 @@
          }
      }
  
-@@ -983,42 +_,121 @@
+@@ -995,42 +_,121 @@
          this.entityManager.addNewEntity(player);
      }
  
@@ -764,7 +764,7 @@
                      player.connection.send(new ClientboundBlockDestructionPacket(id, blockPos, progress));
                  }
              }
-@@ -1106,7 +_,7 @@
+@@ -1118,7 +_,7 @@
                  pos.getX(),
                  pos.getY(),
                  pos.getZ(),
@@ -773,7 +773,7 @@
                  this.dimension(),
                  new ClientboundLevelEventPacket(type, pos, data, false)
              );
-@@ -1118,6 +_,11 @@
+@@ -1130,6 +_,11 @@
  
      @Override
      public void gameEvent(final Holder<GameEvent> gameEvent, final Vec3 position, final GameEvent.Context context) {
@@ -785,7 +785,7 @@
          this.gameEventDispatcher.post(gameEvent, position, context);
      }
  
-@@ -1130,17 +_,28 @@
+@@ -1142,17 +_,28 @@
  
          this.getChunkSource().blockChanged(pos);
          this.pathTypesByPosCache.invalidate(pos);
@@ -814,7 +814,7 @@
  
              try {
                  this.isUpdatingNavigations = true;
-@@ -1152,15 +_,23 @@
+@@ -1164,15 +_,23 @@
                  this.isUpdatingNavigations = false;
              }
          }
@@ -838,7 +838,7 @@
          this.neighborUpdater.updateNeighborsAtExceptFromFacing(pos, sourceBlock, null, orientation);
      }
  
-@@ -1214,6 +_,44 @@
+@@ -1226,6 +_,44 @@
          final WeightedList<ExplosionParticleInfo> blockParticles,
          final Holder<SoundEvent> explosionSound
      ) {
@@ -883,7 +883,7 @@
          Explosion.BlockInteraction blockInteraction = switch (interactionType) {
              case NONE -> Explosion.BlockInteraction.KEEP;
              case BLOCK -> this.getDestroyType(GameRules.BLOCK_EXPLOSION_DROP_DECAY);
-@@ -1222,10 +_,17 @@
+@@ -1234,10 +_,17 @@
                  : Explosion.BlockInteraction.KEEP;
              case TNT -> this.getDestroyType(GameRules.TNT_EXPLOSION_DROP_DECAY);
              case TRIGGER -> Explosion.BlockInteraction.TRIGGER_BLOCK;
@@ -901,7 +901,7 @@
          ParticleOptions explosionParticle = explosion.isSmall() ? smallExplosionParticles : largeExplosionParticles;
  
          for (ServerPlayer player : this.players) {
-@@ -1234,6 +_,8 @@
+@@ -1246,6 +_,8 @@
                  player.connection.send(new ClientboundExplodePacket(center, r, blockCount, playerKnockback, explosionParticle, explosionSound, blockParticles));
              }
          }
@@ -910,7 +910,7 @@
      }
  
      private Explosion.BlockInteraction getDestroyType(final GameRule<Boolean> gameRule) {
-@@ -1311,7 +_,7 @@
+@@ -1323,7 +_,7 @@
          final double zDist,
          final double speed
      ) {
@@ -919,7 +919,7 @@
      }
  
      public <T extends ParticleOptions> int sendParticles(
-@@ -1327,13 +_,49 @@
+@@ -1339,13 +_,49 @@
          final double zDist,
          final double speed
      ) {
@@ -971,16 +971,7 @@
              if (this.sendParticles(player, overrideLimiter, x, y, z, packet)) {
                  result++;
              }
-@@ -1421,7 +_,7 @@
-     public @Nullable BlockPos findNearestMapStructure(
-         final TagKey<Structure> structureTag, final BlockPos origin, final int maxSearchRadius, final boolean createReference
-     ) {
--        if (!this.server.getWorldGenSettings().options().generateStructures()) {
-+        if (!this.worldGenSettings.options().generateStructures()) { // CraftBukkit
-             return null;
-         }
- 
-@@ -1479,10 +_,36 @@
+@@ -1487,10 +_,36 @@
  
      @Override
      public @Nullable MapItemSavedData getMapData(final MapId id) {
@@ -1018,7 +1009,7 @@
          this.getServer().getDataStorage().set(MapItemSavedData.type(id), data);
      }
  
-@@ -1492,7 +_,20 @@
+@@ -1500,7 +_,20 @@
  
      @Override
      public void setRespawnData(final LevelData.RespawnData respawnData) {
@@ -1040,19 +1031,19 @@
      }
  
      @Override
-@@ -1529,6 +_,11 @@
+@@ -1537,6 +_,11 @@
                  this.debugSynchronizers.dropPoi(immutable);
              }));
              newType.ifPresent(poiType -> this.getServer().execute(() -> {
 +                // Paper start - Remove stale POIs
-+                if (oldType.isEmpty() && this.getPoiManager().exists(pos, _ -> true)) {
-+                    this.getPoiManager().remove(pos);
++                if (oldType.isEmpty() && this.getPoiManager().exists(immutable, _ -> true)) {
++                    this.getPoiManager().remove(immutable);
 +                }
 +                // Paper end - Remove stale POIs
                  PoiRecord record = this.getPoiManager().add(immutable, (Holder<PoiType>)poiType);
                  if (record != null) {
                      this.debugSynchronizers.registerPoi(record);
-@@ -1677,12 +_,12 @@
+@@ -1685,12 +_,12 @@
      }
  
      public boolean isFlat() {
@@ -1067,7 +1058,7 @@
      }
  
      public @Nullable EnderDragonFight getDragonFight() {
-@@ -1690,7 +_,7 @@
+@@ -1698,7 +_,7 @@
      }
  
      public WeatherData getWeatherData() {
@@ -1076,7 +1067,7 @@
      }
  
      @Override
-@@ -1737,6 +_,7 @@
+@@ -1745,6 +_,7 @@
  
      @Override
      public LevelEntityGetter<Entity> getEntities() {
@@ -1084,7 +1075,7 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1841,8 +_,30 @@
+@@ -1847,8 +_,30 @@
      }
  
      public GameRules getGameRules() {
@@ -1117,7 +1108,7 @@
  
      @Override
      public CrashReportCategory fillReportDetails(final CrashReport report) {
-@@ -1900,6 +_,7 @@
+@@ -1906,6 +_,7 @@
              if (entity instanceof WaypointTransmitter waypoint && waypoint.isTransmittingWaypoint()) {
                  ServerLevel.this.getWaypointManager().trackWaypoint(waypoint);
              }
@@ -1125,7 +1116,7 @@
          }
  
          @Override
-@@ -1913,17 +_,24 @@
+@@ -1919,17 +_,24 @@
  
          @Override
          public void onTickingStart(final Entity entity) {
@@ -1151,7 +1142,7 @@
              if (entity instanceof ServerPlayer player) {
                  ServerLevel.this.players.add(player);
                  if (player.isReceivingWaypoints()) {
-@@ -1938,7 +_,7 @@
+@@ -1944,7 +_,7 @@
              }
  
              if (entity instanceof Mob mob) {
@@ -1160,7 +1151,7 @@
                      String message = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1955,10 +_,52 @@
+@@ -1961,10 +_,52 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1213,7 +1204,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer player) {
                  ServerLevel.this.players.remove(player);
-@@ -1967,7 +_,7 @@
+@@ -1973,7 +_,7 @@
              }
  
              if (entity instanceof Mob mob) {
@@ -1222,7 +1213,7 @@
                      String message = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1985,6 +_,15 @@
+@@ -1991,6 +_,15 @@
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
              ServerLevel.this.debugSynchronizers.dropEntity(entity);
@@ -1238,7 +1229,7 @@
          }
  
          @Override
-@@ -1992,4 +_,24 @@
+@@ -1998,4 +_,24 @@
              entity.updateDynamicGameEventListener(DynamicGameEventListener::move);
          }
      }
