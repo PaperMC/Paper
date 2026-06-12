@@ -919,7 +919,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public float getVoicePitch() {
+    public float getSoundPitch() {
         return this.getHandle().getVoicePitch();
     }
 

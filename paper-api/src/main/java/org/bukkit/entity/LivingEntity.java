@@ -1083,7 +1083,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return the sound pitch of this entity
      */
-    public float getVoicePitch();
+    public float getSoundPitch();
 
     /**
      * Returns true if this entity can breathe underwater and will not take
