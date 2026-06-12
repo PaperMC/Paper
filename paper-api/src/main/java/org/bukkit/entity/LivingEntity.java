@@ -16,6 +16,7 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.block.Block;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
@@ -1003,6 +1004,15 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public Sound getHurtSound();
 
     /**
+     * Get the {@link Sound} this entity will make when damaged by the given {@link DamageSource}.
+     *
+     * @param damageSource the damage source to get the hurt sound of
+     * @return the hurt sound, or null if the entity does not make any sound for the given damage source
+     */
+    @Nullable
+    public Sound getHurtSound(@NotNull DamageSource damageSource);
+
+    /**
      * Get the {@link Sound} this entity will make on death.
      *
      * @return the death sound, or null if the entity does not make any sound
@@ -1060,6 +1070,20 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     @NotNull
     public Sound getEatingSound(@NotNull ItemStack itemStack);
+
+    /**
+     * Get the sound volume at which this entity plays its sounds with
+     *
+     * @return the sound volume of this entity
+     */
+    public float getSoundVolume();
+
+    /**
+     * Get the sound pitch at which this entity plays its sounds with
+     *
+     * @return the sound pitch of this entity
+     */
+    public float getSoundPitch();
 
     /**
      * Returns true if this entity can breathe underwater and will not take
