@@ -1947,7 +1947,7 @@
                      this.resetPosition();
                      this.restartClientLoadTimerAfterRespawn();
                      CriteriaTriggers.CHANGED_DIMENSION.trigger(this.player, Level.END, Level.OVERWORLD);
-@@ -1905,12 +_,12 @@
+@@ -1905,11 +_,11 @@
                          return;
                      }
  
@@ -1957,13 +1957,11 @@
                      this.restartClientLoadTimerAfterRespawn();
                      if (this.server.isHardcore()) {
 -                        this.player.setGameMode(GameType.SPECTATOR);
--                        this.player.level().getGameRules().set(GameRules.SPECTATORS_GENERATE_CHUNKS, false, this.server);
 +                        this.player.setGameMode(GameType.SPECTATOR, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.HARDCORE_DEATH, null); // Paper - Expand PlayerGameModeChangeEvent
-+                        this.player.level().getGameRules().set(GameRules.SPECTATORS_GENERATE_CHUNKS, false, this.player.level()); // CraftBukkit - per-world
                      }
                  }
                  break;
-@@ -1923,7 +_,7 @@
+@@ -1922,7 +_,7 @@
      }
  
      private void sendGameRuleValues() {
@@ -1972,7 +1970,7 @@
              LOGGER.warn("Player {} tried to request game rule values without required permissions", this.player.getGameProfile().name());
          } else {
              GameRules gameRules = this.player.level().getGameRules();
-@@ -1939,16 +_,27 @@
+@@ -1938,16 +_,27 @@
  
      @Override
      public void handleContainerClose(final ServerboundContainerClosePacket packet) {
@@ -2002,7 +2000,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1964,7 +_,298 @@
+@@ -1963,7 +_,298 @@
                  } else {
                      boolean fullResyncNeeded = packet.stateId() != this.player.containerMenu.getStateId();
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -2302,7 +2300,7 @@
  
                      for (Entry<HashedStack> e : Int2ObjectMaps.fastIterable(packet.changedSlots())) {
                          this.player.containerMenu.setRemoteSlotUnsafe(e.getIntKey(), e.getValue());
-@@ -1977,6 +_,8 @@
+@@ -1976,6 +_,8 @@
                      } else {
                          this.player.containerMenu.broadcastChanges();
                      }
@@ -2311,7 +2309,7 @@
                  }
              }
          }
-@@ -1984,6 +_,14 @@
+@@ -1983,6 +_,14 @@
  
      @Override
      public void handlePlaceRecipe(final ServerboundPlaceRecipePacket packet) {
@@ -2326,7 +2324,7 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          this.player.resetLastActionTime();
          if (!this.player.isSpectator() && this.player.containerMenu.containerId == packet.containerId()) {
-@@ -2000,9 +_,44 @@
+@@ -1999,9 +_,44 @@
                                  return;
                              }
  
@@ -2372,7 +2370,7 @@
                              if (postPlaceAction == RecipeBookMenu.PostPlaceAction.PLACE_GHOST_RECIPE) {
                                  this.send(new ClientboundPlaceGhostRecipePacket(this.player.containerMenu.containerId, displayInfo.display().display()));
                              }
-@@ -2016,6 +_,7 @@
+@@ -2015,6 +_,7 @@
      @Override
      public void handleContainerButtonClick(final ServerboundContainerButtonClickPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -2380,7 +2378,7 @@
          this.player.resetLastActionTime();
          if (this.player.containerMenu.containerId == packet.containerId() && !this.player.isSpectator()) {
              if (!this.player.containerMenu.stillValid(this.player)) {
-@@ -2025,6 +_,7 @@
+@@ -2024,6 +_,7 @@
                  if (clickAccepted) {
                      this.player.containerMenu.broadcastChanges();
                  }
@@ -2388,7 +2386,7 @@
              }
          }
      }
-@@ -2041,10 +_,48 @@
+@@ -2040,10 +_,48 @@
  
              boolean validSlot = packet.slotNum() >= 1 && packet.slotNum() <= 45;
              boolean validData = itemStack.isEmpty() || itemStack.getCount() <= itemStack.getMaxStackSize();
@@ -2437,7 +2435,7 @@
              } else if (drop && validData) {
                  if (this.dropSpamThrottler.isUnderThreshold()) {
                      this.dropSpamThrottler.increment();
-@@ -2058,15 +_,38 @@
+@@ -2057,15 +_,38 @@
  
      @Override
      public void handleSignUpdate(final ServerboundSignUpdatePacket packet) {
@@ -2477,7 +2475,7 @@
              if (!(level.getBlockEntity(pos) instanceof SignBlockEntity sign)) {
                  return;
              }
-@@ -2078,14 +_,32 @@
+@@ -2077,14 +_,32 @@
      @Override
      public void handlePlayerAbilities(final ServerboundPlayerAbilitiesPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -2511,7 +2509,7 @@
          if (this.player.isModelPartShown(PlayerModelPart.HAT) != wasHatShown) {
              this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_HAT, this.player));
          }
-@@ -2101,21 +_,21 @@
+@@ -2100,21 +_,21 @@
                  packet.difficulty().getDisplayName()
              );
          } else {
@@ -2536,7 +2534,7 @@
          }
      }
  
-@@ -2135,7 +_,7 @@
+@@ -2134,7 +_,7 @@
          ProfilePublicKey.Data newProfileKey = newChatSession.profilePublicKey();
          if (!Objects.equals(oldProfileKey, newProfileKey)) {
              if (oldProfileKey != null && newProfileKey.expiresAt().isBefore(oldProfileKey.expiresAt())) {
@@ -2545,7 +2543,7 @@
              } else {
                  try {
                      SignatureValidator profileKeySignatureValidator = this.server.services().profileKeySignatureValidator();
-@@ -2146,8 +_,8 @@
+@@ -2145,8 +_,8 @@
  
                      this.resetPlayerChatState(newChatSession.validate(this.player.getGameProfile(), profileKeySignatureValidator));
                  } catch (ProfilePublicKey.ValidationException e) {
@@ -2556,7 +2554,7 @@
                  }
              }
          }
-@@ -2159,11 +_,13 @@
+@@ -2158,11 +_,13 @@
              throw new IllegalStateException("Client acknowledged config, but none was requested");
          }
  
@@ -2571,7 +2569,7 @@
      }
  
      @Override
-@@ -2180,27 +_,32 @@
+@@ -2179,27 +_,32 @@
  
      private void resetPlayerChatState(final RemoteChatSession chatSession) {
          this.chatSession = chatSession;
@@ -2605,7 +2603,7 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -2232,12 +_,23 @@
+@@ -2231,12 +_,23 @@
      }
  
      public void tickClientLoadTimeout() {
@@ -2631,7 +2629,7 @@
          this.clientLoadedTimeoutTimer = 0;
      }
  
-@@ -2249,4 +_,80 @@
+@@ -2248,4 +_,80 @@
          this.waitingForRespawn = false;
          this.clientLoadedTimeoutTimer = 60;
      }
