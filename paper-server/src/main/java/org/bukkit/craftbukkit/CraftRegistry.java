@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
 import io.papermc.paper.registry.tag.Tag;
@@ -243,6 +244,10 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
     public boolean supportsDirectHolders() {
         return this.minecraftToBukkit.supportsDirectHolders();
+    }
+
+    public boolean constructorUsesHolder() {
+        return this.minecraftToBukkit.constructorUsesHolder();
     }
 
     @Override
