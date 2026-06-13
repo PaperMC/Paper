@@ -85,30 +85,41 @@ public interface Vex extends Monster {
     // Paper start
 
     /**
-     * Get the living entity that summoned this vex
+     * Gets the Mob that summoned this vex
      *
-     * @return Living entity that summoned this vex
-     */
-    @Nullable
-    LivingEntity getSummoner();
-
-    /**
-     * Set the summoner of this vex
-     *
-     * @param summoner New summoner
-     */
-    void setSummoner(@Nullable LivingEntity summoner);
-
-    /**
-     * Set the summoner of this vex
-     *
-     * @param summoner New summoner
-     * @deprecated Use {@link #setSummoner(LivingEntity)}
+     * @return mob that summoned this vex
+     * @deprecated use {@link #getOwner()}
      */
     @Deprecated(forRemoval = true, since = "26.2")
-    default void setSummoner(@Nullable Mob summoner) {
-        this.setSummoner((LivingEntity) summoner);
+    default @Nullable Mob getSummoner() {
+        return this.getOwner() instanceof Mob mob ? mob : null;
     }
+
+    /**
+     * Sets the summoner of this vex
+     *
+     * @param summoner new summoner
+     * @deprecated use {@link #setOwner(LivingEntity)}
+     */
+    @Deprecated(forRemoval = true, since = "26.2")
+    default void setSummoner(final @Nullable Mob summoner) {
+        this.setOwner(summoner);
+    }
+
+    /**
+     * Gets the owner of this vex which is
+     * often its summoner.
+     *
+     * @return new owner
+     */
+    @Nullable LivingEntity getOwner();
+
+    /**
+     * Sets the owner of this vex.
+     *
+     * @param owner new owner
+     */
+    void setOwner(@Nullable LivingEntity owner);
 
     /**
      * Gets if this vex should start to take damage

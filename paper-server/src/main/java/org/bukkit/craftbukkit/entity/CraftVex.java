@@ -1,12 +1,15 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.Optionull;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityReference;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Vex;
+import org.jetbrains.annotations.Nullable;
 
 public class CraftVex extends CraftMonster implements Vex {
 
@@ -20,14 +23,13 @@ public class CraftVex extends CraftMonster implements Vex {
     }
 
     @Override
-    public org.bukkit.entity.LivingEntity getSummoner() {
-        net.minecraft.world.entity.LivingEntity owner = this.getHandle().getOwner();
-        return owner instanceof net.minecraft.world.entity.LivingEntity livingEntity ? livingEntity.getBukkitLivingEntity() : null;
+    public @Nullable LivingEntity getOwner() {
+        return Optionull.map(this.getHandle().getOwner(), net.minecraft.world.entity.LivingEntity::getBukkitLivingEntity);
     }
 
     @Override
-    public void setSummoner(org.bukkit.entity.LivingEntity summoner) {
-        this.getHandle().owner = summoner == null ? null : EntityReference.of(((CraftLivingEntity) summoner).getHandle());
+    public void setOwner(final @Nullable LivingEntity owner) {
+        this.getHandle().owner = owner == null ? null : EntityReference.of(((CraftLivingEntity) owner).getHandle());
     }
 
     @Override
