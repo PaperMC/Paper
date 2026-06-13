@@ -447,6 +447,7 @@ public class CraftBlock implements Block {
 
     @Override
     public boolean isFluidReplaceable(final Fluid fluid) {
+        Preconditions.checkArgument(fluid != null, "Fluid cannot be null");
         return this.getBlockState().canBeReplaced(CraftFluid.bukkitToMinecraft(fluid));
     }
 
