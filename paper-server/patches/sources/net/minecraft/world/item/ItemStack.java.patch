@@ -1,11 +1,7 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -186,12 +_,20 @@
- 
-             @Override
-             public void encode(final RegistryFriendlyByteBuf output, final ItemStack itemStack) {
--                if (itemStack.isEmpty()) {
-+                if (itemStack.isEmpty() || itemStack.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
+@@ -189,9 +_,17 @@
+                 if (itemStack.isEmpty()) {
                      output.writeVarInt(0);
                  } else {
 -                    output.writeVarInt(itemStack.getCount());
@@ -32,7 +28,7 @@
                      ItemStack.CODEC.encodeStart(ops, itemStack).getOrThrow(DecoderException::new);
                  }
  
-@@ -368,10 +_,140 @@
+@@ -368,10 +_,138 @@
          }
  
          Item usedItem = this.getItem();
@@ -160,12 +156,10 @@
 +                }
 +
 +                // SPIGOT-1288 - play sound stripped from BlockItem
-+                if (usedItem instanceof BlockItem && placedPos != null) {
-+                    // Paper start - Fix spigot sound playing for BlockItem ItemStacks
-+                    BlockState state = level.getBlockState(placedPos);
-+                    net.minecraft.world.level.block.SoundType soundType = state.getSoundType();
-+                    // Paper end - Fix spigot sound playing for BlockItem ItemStacks
-+                    level.playSound(player, pos, soundType.getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS, (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);
++                if (usedItem instanceof BlockItem blockItem && placedPos != null) {
++                    BlockState placedState = level.getBlockState(placedPos);
++                    net.minecraft.world.level.block.SoundType soundType = placedState.getSoundType();
++                    level.playSound(player, pos, blockItem.getPlaceSound(placedState), net.minecraft.sounds.SoundSource.BLOCKS, (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);
 +                }
 +
 +                player.awardStat(Stats.ITEM_USED.get(usedItem));
