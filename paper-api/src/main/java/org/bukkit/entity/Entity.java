@@ -682,7 +682,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @return The weapon item
      */
-    @Nullable
+    @NotNull
     ItemStack getWeaponItem();
 
     /**
