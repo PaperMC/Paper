@@ -644,6 +644,18 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public EntityDamageEvent getLastDamageCause();
 
     /**
+     * Gets the item being used as a weapon by this entity.
+     * <p>
+     * Note: In most cases this is the item in the entity's main hand, but
+     * it may be the offhand if for ex: the entity is using the riptide
+     * enchantment on a trident.
+     *
+     * @return The weapon item
+     */
+    @NotNull
+    ItemStack getWeaponItem();
+
+    /**
      * Returns a unique and persistent id for this entity
      *
      * @return unique id
