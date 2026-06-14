@@ -230,7 +230,7 @@
          }, this::clearSleepingPos);
          input.read("Brain", Brain.Packed.CODEC).ifPresent(packedBrain -> this.brain = this.makeBrain(packedBrain));
          this.lastHurtByPlayer = EntityReference.read(input, "last_hurt_by_player");
-@@ -846,15 +_,44 @@
+@@ -846,15 +_,46 @@
          this.updateDirtyEffects();
      }
  
@@ -240,13 +240,15 @@
 +
 +    private static class ProcessableEffect {
 +
-+        private Holder<MobEffect> type;
-+        private MobEffectInstance effect;
++        private @Nullable Holder<MobEffect> type;
++        private @Nullable MobEffectInstance effect;
++        private @Nullable Entity source;
 +        private final EntityPotionEffectEvent.Cause cause;
 +
-+        private ProcessableEffect(MobEffectInstance effect, EntityPotionEffectEvent.Cause cause) {
++        private ProcessableEffect(MobEffectInstance effect, @Nullable Entity source, EntityPotionEffectEvent.Cause cause) {
 +            this.effect = effect;
 +            this.cause = cause;
++            this.source = source;
 +        }
 +
 +        private ProcessableEffect(Holder<MobEffect> type, EntityPotionEffectEvent.Cause cause) {
@@ -275,18 +277,20 @@
                          iterator.remove();
                          this.onEffectsRemoved(List.of(effect));
                      } else if (effect.getDuration() % 600 == 0) {
-@@ -863,6 +_,18 @@
+@@ -863,6 +_,20 @@
                  }
              } catch (ConcurrentModificationException var6) {
              }
 +
 +            // CraftBukkit start
 +            this.isTickingEffects = false;
-+            for (ProcessableEffect effect : this.effectsToProcess) {
++            for (final ProcessableEffect effect : this.effectsToProcess) {
 +                if (effect.effect != null) {
-+                    this.addEffect(effect.effect, effect.cause);
++                    this.addEffect(effect.effect, effect.source, effect.cause);
 +                } else {
-+                    this.removeEffect(effect.type, effect.cause);
++                    if (effect.type != null) {
++                        this.removeEffect(effect.type, effect.cause);
++                    }
 +                }
 +            }
 +            this.effectsToProcess.clear();
@@ -360,7 +364,7 @@
 +        // Paper end - Don't fire sync event during generation
 +        // org.spigotmc.AsyncCatcher.catchOp("effect add"); // Spigot // Paper - move to API
 +        if (this.isTickingEffects) {
-+            this.effectsToProcess.add(new ProcessableEffect(newEffect, cause));
++            this.effectsToProcess.add(new ProcessableEffect(newEffect, source, cause));
 +            return true;
 +        }
 +        // CraftBukkit end
@@ -379,7 +383,7 @@
 +        }
 +
 +        if (fireEvent) {
-+            EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, effect, newEffect, cause, override);
++            EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, effect, newEffect, source, cause, override);
 +            override = event.isOverride();
 +            if (event.isCancelled()) {
 +                return false;
