@@ -185,7 +185,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         ATTACK,
         /**
-         * When an entity gets the effect from an axolotl.
+         * When an entity gets the effect from an axolotl or the axolotl is playing to dead.
          */
         AXOLOTL,
         /**
@@ -193,7 +193,11 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         BEACON,
         /**
-         * When a potion effect is changed due to the /effect command.
+         * When the entity gets the effect from a bell.
+         */
+        BELL,
+        /**
+         * When a potion effect is changed due to the /effect or /raid command.
          */
         COMMAND,
         /**
@@ -201,8 +205,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         CONDUIT,
         /**
-         * When a conversion from a villager zombie to a villager is started or
-         * finished.
+         * When a conversion started or finished (e.g. when a villager zombie to a villager).
          */
         CONVERSION,
         /**
@@ -217,6 +220,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          * When the effect was removed due to expiration.
          */
         EXPIRATION,
+        /**
+         * When the entity gets the effect from an eye blossom.
+         */
+        EYE_BLOSSOM,
         /**
          * When an effect is inflicted due to food (e.g. when a player eats or a
          * cookie is given to a parrot).
@@ -246,6 +253,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         PLUGIN,
         /**
+         * When an entity gets the effect from a potent sulfur.
+         */
+        POTENT_SULFUR,
+        /**
          * When the entity drinks a potion.
          */
         POTION_DRINK,
@@ -254,6 +265,13 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         POTION_SPLASH,
         /**
+         * When the effect is caused by a Raid.
+         * e.g. entity with {@link org.bukkit.potion.PotionEffectType#BAD_OMEN} goes to a villager and trigger a raid
+         * or Player wins a raid
+         *
+         */
+        RAID,
+        /**
          * When a spider gets effects when spawning on hard difficulty.
          */
         SPIDER_SPAWN,
@@ -261,6 +279,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          * When the entity gets effects from a totem item saving its life.
          */
         TOTEM,
+        /**
+         * When the entity gets close to a Trial Spawner with {@link org.bukkit.potion.PotionEffectType#BAD_OMEN}.
+         */
+        TRIAL_SPAWNER,
         /**
          * When the entity gets water breathing by wearing a turtle helmet.
          */
