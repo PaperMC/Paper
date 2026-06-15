@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -712,5 +713,10 @@ public class CraftBlock implements Block {
     public void randomTick() {
         final ServerLevel level = this.level.getMinecraftWorld();
         this.getBlockState().randomTick(level, this.position, level.getRandom());
+    }
+
+    @Override
+    public <T> T getAttributeValue(final EnvironmentalAttributeType<T> type) {
+        return this.getCraftWorld().getEnvironmentalAttribute(type).getPositioned(this.position);
     }
 }
