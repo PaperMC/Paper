@@ -200,28 +200,37 @@
  
          this.pickup = switch (owner) {
              case Player ignored when this.pickup == AbstractArrow.Pickup.DISALLOWED -> AbstractArrow.Pickup.ALLOWED;
-@@ -650,9 +_,22 @@
+@@ -650,17 +_,29 @@
      @Override
      public void playerTouch(final Player player) {
          if (!this.level().isClientSide() && (this.isInGround() || this.isNoPhysics()) && this.shakeTime <= 0) {
 -            if (this.tryPickup(player)) {
 +            // CraftBukkit start
-+            ItemStack itemstack = this.getPickupItem();
-+            if (this.pickup == Pickup.ALLOWED && !itemstack.isEmpty() && player.getInventory().canHold(itemstack) > 0) {
-+                net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), itemstack);
++            ItemStack pickupItem = this.getPickupItem();
++            if (this.pickup == Pickup.ALLOWED && !pickupItem.isEmpty() && player.getInventory().canHold(pickupItem) > 0) {
++                net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), pickupItem);
 +                org.bukkit.event.player.PlayerPickupArrowEvent event = new org.bukkit.event.player.PlayerPickupArrowEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.Item) item.getBukkitEntity(), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
-+                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
++                // event.setCancelled(!player.canPickUpLoot()); TODO
 +                if (!event.callEvent()) {
 +                    return;
 +                }
-+                itemstack = item.getItem();
++                pickupItem = item.getItem();
 +            }
-+
-+            if ((this.pickup == AbstractArrow.Pickup.ALLOWED && player.getInventory().add(itemstack)) || (this.pickup == AbstractArrow.Pickup.CREATIVE_ONLY && player.getAbilities().instabuild)) {
++            if (this.tryPickup(player, pickupItem)) {
 +                // CraftBukkit end
                  player.take(this, 1);
 -                this.discard();
 +                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
              }
          }
+     }
+ 
+-    protected boolean tryPickup(final Player player) {
++    protected boolean tryPickup(final Player player, final ItemStack pickupItem) { // Paper - pass custom pickup item
+         return switch (this.pickup) {
+             case DISALLOWED -> false;
+-            case ALLOWED -> player.getInventory().add(this.getPickupItem());
++            case ALLOWED -> player.getInventory().add(pickupItem); // Paper - pass custom pickup item
+             case CREATIVE_ONLY -> player.hasInfiniteMaterials();
+         };
      }

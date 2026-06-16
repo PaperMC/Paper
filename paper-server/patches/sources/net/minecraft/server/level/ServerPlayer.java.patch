@@ -125,13 +125,18 @@
          if (this.isSleeping()) {
              this.stopSleeping();
          }
-@@ -405,6 +_,19 @@
+@@ -405,12 +_,26 @@
          this.respawnConfig = input.read("respawn", ServerPlayer.RespawnConfig.CODEC).orElse(null);
          this.spawnExtraParticlesOnFall = input.getBooleanOr("spawn_extra_particles_on_fall", false);
          this.raidOmenPosition = input.read("raid_omen_position", BlockPos.CODEC).orElse(null);
-+        // Paper start - Expand PlayerGameModeChangeEvent
-+        this.loadGameTypes(input);
-+    }
+-        this.gameMode
+-            .setGameModeForPlayer(this.calculateGameModeForNewPlayer(readPlayerMode(input, "playerGameType")), readPlayerMode(input, "previousPlayerGameType"));
++        this.loadGameTypes(input); // Paper - Expand PlayerGameModeChangeEvent
+         this.setShoulderEntityLeft(input.read("ShoulderEntityLeft", CompoundTag.CODEC).orElseGet(CompoundTag::new));
+         this.setShoulderEntityRight(input.read("ShoulderEntityRight", CompoundTag.CODEC).orElseGet(CompoundTag::new));
+     }
+ 
++    // Paper start - Expand PlayerGameModeChangeEvent
 +    private void loadGameTypes(ValueInput input) {
 +        if (this.server.getForcedGameType() != null && this.server.getForcedGameType() != readPlayerMode(input, "playerGameType")) {
 +            if (new org.bukkit.event.player.PlayerGameModeChangeEvent(this.getBukkitEntity(), org.bukkit.GameMode.getByValue(this.server.getDefaultGameType().getId()), org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, null).callEvent()) {
@@ -141,10 +146,14 @@
 +            }
 +            return;
 +        }
-+        // Paper end - Expand PlayerGameModeChangeEvent
-         this.gameMode
-             .setGameModeForPlayer(this.calculateGameModeForNewPlayer(readPlayerMode(input, "playerGameType")), readPlayerMode(input, "previousPlayerGameType"));
-         this.setShoulderEntityLeft(input.read("ShoulderEntityLeft", CompoundTag.CODEC).orElseGet(CompoundTag::new));
++        this.gameMode
++            .setGameModeForPlayer(this.calculateGameModeForNewPlayer(readPlayerMode(input, "playerGameType")), readPlayerMode(input, "previousPlayerGameType"));
++    }
++    // Paper end - Expand PlayerGameModeChangeEvent
++
+     @Override
+     protected void addAdditionalSaveData(final ValueOutput output) {
+         super.addAdditionalSaveData(output);
 @@ -433,12 +_,24 @@
          if (!this.getShoulderEntityRight().isEmpty()) {
              output.store("ShoulderEntityRight", CompoundTag.CODEC, this.getShoulderEntityRight());
@@ -240,7 +249,7 @@
      public void doTick() {
          try {
 -            if (!this.isSpectator() || !this.touchingUnloadedChunk()) {
-+            if (valid && !this.isSpectator() || !this.touchingUnloadedChunk()) { // Paper - don't tick dead players that are not in the world currently (pending respawn)
++            if (this.valid && (!this.isSpectator() || !this.touchingUnloadedChunk())) { // Paper - don't tick dead players that are not in the world currently (pending respawn)
                  super.tick();
                  if (!this.containerMenu.stillValid(this)) {
 -                    this.closeContainer();
@@ -1362,14 +1371,14 @@
          if (oldCamera != this.camera) {
 +            // Paper start - Add PlayerStartSpectatingEntityEvent and PlayerStopSpectatingEntity
 +            if (this.camera == this) {
-+                com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent(this.getBukkitEntity(), camera.getBukkitEntity());
-+                if (!playerStopSpectatingEntityEvent.callEvent()) {
++                com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent spectateEvent = new com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent(this.getBukkitEntity(), oldCamera.getBukkitEntity());
++                if (!spectateEvent.callEvent()) {
 +                    this.camera = oldCamera; // rollback camera entity again
 +                    return;
 +                }
 +            } else {
-+                com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent(this.getBukkitEntity(), camera.getBukkitEntity(), newCamera.getBukkitEntity());
-+                if (!playerStartSpectatingEntityEvent.callEvent()) {
++                com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent spectateEvent = new com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent(this.getBukkitEntity(), oldCamera.getBukkitEntity(), newCamera.getBukkitEntity());
++                if (!spectateEvent.callEvent()) {
 +                    this.camera = oldCamera; // rollback camera entity again
 +                    return;
 +                }

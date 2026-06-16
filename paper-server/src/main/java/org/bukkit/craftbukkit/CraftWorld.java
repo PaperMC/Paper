@@ -42,8 +42,6 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.core.QuartPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
@@ -103,7 +101,6 @@ import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.DragonBattle;
 import org.bukkit.craftbukkit.block.CraftBiome;
@@ -119,8 +116,6 @@ import org.bukkit.craftbukkit.generator.structure.CraftGeneratedStructure;
 import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
-import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
-import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftBiomeSearchResult;
 import org.bukkit.craftbukkit.util.CraftDifficulty;
 import org.bukkit.craftbukkit.util.CraftLocation;
@@ -169,7 +164,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class CraftWorld extends CraftRegionAccessor implements World {
-    private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
     private static final PointersSupplier<World> POINTERS_SUPPLIER = PointersSupplier.<World>builder()
         .resolving(net.kyori.adventure.identity.Identity.NAME, World::getName)
         // todo key pointer
@@ -181,7 +175,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private final List<BlockPopulator> populators = new ArrayList<>();
     private final BlockMetadataStore blockMetadata = new BlockMetadataStore(this);
     private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
-    private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftWorld.DATA_TYPE_REGISTRY);
     private final ServerLevel world;
     private final NamespacedKey key;
     private final Environment environment;
@@ -1977,19 +1970,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public PersistentDataContainer getPersistentDataContainer() {
-        return this.persistentDataContainer;
-    }
-
-    public void storeBukkitValues(CompoundTag tag) {
-        if (!this.persistentDataContainer.isEmpty()) {
-            tag.put("BukkitValues", this.persistentDataContainer.toTagCompound());
-        }
-    }
-
-    public void readBukkitValues(Tag tag) {
-        if (tag instanceof CompoundTag compoundTag) {
-            this.persistentDataContainer.putAll(compoundTag);
-        }
+        return this.getHandle().persistentDataContainer;
     }
 
     // Spigot start

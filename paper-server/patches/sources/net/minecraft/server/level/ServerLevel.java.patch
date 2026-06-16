@@ -9,7 +9,7 @@
      private final EntityTickList entityTickList = new EntityTickList();
      private final ServerWaypointManager waypointManager;
      private EnvironmentAttributeSystem environmentAttributes;
-@@ -222,24 +_,199 @@
+@@ -222,24 +_,201 @@
      private final boolean tickTime;
      private final LevelDebugSynchronizers debugSynchronizers = new LevelDebugSynchronizers(this);
  
@@ -25,6 +25,8 @@
 +    private @Nullable ServerClockManager clockManager;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
++    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
++    public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 +
 +    @Override
 +    public @Nullable LevelChunk getChunkIfLoaded(int x, int z) {
@@ -192,7 +194,7 @@
 +        }
 +        // Paper end - per-world time
 +        if (loadedWorldData.pdc() != null) {
-+            this.getWorld().readBukkitValues(loadedWorldData.pdc().persistentData().toTagCompound());
++            this.persistentDataContainer.putAll(loadedWorldData.pdc().persistentData().toTagCompound());
 +        }
 +
 +        if (biomeProvider != null) {
@@ -589,7 +591,7 @@
  
      private void saveLevelData(final boolean sync) {
          SavedDataStorage savedDataStorage = this.getChunkSource().getDataStorage();
-+        savedDataStorage.computeIfAbsent(io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE).setFrom((org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer) this.getWorld().getPersistentDataContainer()); // Paper
++        savedDataStorage.computeIfAbsent(io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE).setFrom(this.persistentDataContainer); // Paper
          if (sync) {
              savedDataStorage.saveAndJoin();
          } else {
