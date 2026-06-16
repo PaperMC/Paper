@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit;
 
 import ca.spottedleaf.moonrise.common.time.TickData;
+import ch.alexinf.alpes.commands.EnchantCommand;
+import ch.alexinf.alpes.commands.SummonCommand;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -261,7 +263,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.MarkedYAMLException;
 
 public final class CraftServer implements Server {
-    private final String serverName = io.papermc.paper.ServerBuildInfo.buildInfo().brandName();
+    private final String serverName = "Alpes";
     private final String serverVersion;
     private final String bukkitVersion = Versioning.getBukkitVersion();
     private final Logger logger = Logger.getLogger("Minecraft");
@@ -403,7 +405,9 @@ public final class CraftServer implements Server {
                 return player.getBukkitEntity();
             }
         }));
-        this.serverVersion = io.papermc.paper.ServerBuildInfo.buildInfo().asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_SIMPLE); // Paper - improve version
+        String rawVersion = io.papermc.paper.ServerBuildInfo.buildInfo().asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_SIMPLE);
+// Wenn die Version mit "26." beginnt (z.B. 26.1.2 oder 26.2), ersetze es durch "1.22."
+        this.serverVersion = rawVersion.startsWith("26.") ? rawVersion.replaceFirst("26\\.", "1.22.") : rawVersion;
         this.structureManager = new CraftStructureManager(console.getStructureManager(), console.registryAccess());
         this.serverTickManager = new CraftServerTickManager(console.tickRateManager());
         this.serverLinks = new CraftServerLinks(console);
@@ -415,6 +419,8 @@ public final class CraftServer implements Server {
         this.paperPluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(this, this.commandMap, pluginManager);
         this.pluginManager.paperPluginManager = this.paperPluginManager;
          // Paper end
+        this.commandMap.register("enchant", new EnchantCommand("enchant"));
+        this.commandMap.register("summon", new SummonCommand("summon"));
 
         CraftRegistry.setMinecraftRegistry(console.registryAccess());
 
