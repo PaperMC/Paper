@@ -256,9 +256,9 @@
 +                }
 +                double speed;
 +                if (this.player.getAbilities().flying) {
-+                    speed = this.player.getAbilities().flyingSpeed * 20f;
++                    speed = this.player.getAbilities().getFlyingSpeed() * 20f;
 +                } else {
-+                    speed = this.player.getAbilities().walkingSpeed * 10f;
++                    speed = this.player.getAbilities().getWalkingSpeed() * 10f;
 +                }
 +                speed *= 2f; // TODO: Get the speed of the vehicle instead of the player
 +
@@ -755,16 +755,16 @@
                                          deltaPackets = 1;
                                      }
 +                                    // CraftBukkit start - handle custom speeds and skipped ticks
-+                                    if (packet.hasRot || movedDist > 0) {
++                                    if (packet.hasRotation() || movedDist > 0) {
 +                                        this.allowedPlayerTicks -= 1;
 +                                    } else {
 +                                        this.allowedPlayerTicks = 20;
 +                                    }
 +                                    double speed;
 +                                    if (this.player.getAbilities().flying) {
-+                                        speed = this.player.getAbilities().flyingSpeed * 20f;
++                                        speed = this.player.getAbilities().getFlyingSpeed() * 20f;
 +                                    } else {
-+                                        speed = this.player.getAbilities().walkingSpeed * 10f;
++                                        speed = this.player.getAbilities().getWalkingSpeed() * 10f;
 +                                    }
 +                                    // Paper start - Prevent moving into unloaded chunks
 +                                    if (this.player.level().paperConfig().chunks.preventMovingIntoUnloadedChunks && (this.player.getX() != targetX || this.player.getZ() != targetZ) && !level.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(targetX, targetY, targetZ).subtract(this.player.position())))) {
@@ -821,16 +821,16 @@
 +                                    Location to = player.getLocation().clone(); // Start off the To location as the Players current location.
 +
 +                                    // If the packet contains movement information then we update the To location with the correct XYZ.
-+                                    if (packet.hasPos) {
-+                                        to.setX(packet.x);
-+                                        to.setY(packet.y);
-+                                        to.setZ(packet.z);
++                                    if (packet.hasPosition()) {
++                                        to.setX(packet.getX(0.0));
++                                        to.setY(packet.getY(0.0));
++                                        to.setZ(packet.getZ(0.0));
 +                                    }
 +
 +                                    // If the packet contains look information then we update the To location with the correct Yaw & Pitch.
-+                                    if (packet.hasRot) {
-+                                        to.setYaw(packet.yRot);
-+                                        to.setPitch(packet.xRot);
++                                    if (packet.hasRotation()) {
++                                        to.setYaw(packet.getYRot(0.0F));
++                                        to.setPitch(packet.getXRot(0.0F));
 +                                    }
 +
 +                                    com.destroystokyo.paper.event.player.PlayerJumpEvent event = new com.destroystokyo.paper.event.player.PlayerJumpEvent(player, from, to);
@@ -915,23 +915,23 @@
 +                                    Location to = player.getLocation().clone(); // Start off the To location as the Players current location.
 +
 +                                    // If the packet contains movement information then we update the To location with the correct XYZ.
-+                                    if (packet.hasPos) {
-+                                        to.setX(packet.x);
-+                                        to.setY(packet.y);
-+                                        to.setZ(packet.z);
++                                    if (packet.hasPosition()) {
++                                        to.setX(packet.getX(0.0));
++                                        to.setY(packet.getY(0.0));
++                                        to.setZ(packet.getZ(0.0));
 +                                    }
 +
 +                                    // If the packet contains look information then we update the To location with the correct Yaw & Pitch.
-+                                    if (packet.hasRot) {
-+                                        to.setYaw(packet.yRot);
-+                                        to.setPitch(packet.xRot);
++                                    if (packet.hasRotation()) {
++                                        to.setYaw(packet.getYRot(0.0F));
++                                        to.setPitch(packet.getXRot(0.0F));
 +                                    }
 +
 +                                    // Prevent 40 event-calls for less than a single pixel of movement >.>
 +                                    double delta = Mth.square(this.lastPosX - to.getX()) + Mth.square(this.lastPosY - to.getY()) + Mth.square(this.lastPosZ - to.getZ());
 +                                    float deltaAngle = Math.abs(this.lastYaw - to.getYaw()) + Math.abs(this.lastPitch - to.getPitch());
 +
-+                                    if ((delta > 1f / 256 || deltaAngle > 10f) && !this.player.isImmobile()) {
++                                    if ((delta > 1f / 256 || deltaAngle > 10.0F) && !this.player.isImmobile()) {
 +                                        this.lastPosX = to.getX();
 +                                        this.lastPosY = to.getY();
 +                                        this.lastPosZ = to.getZ();

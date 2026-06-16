@@ -189,7 +189,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
             this.setProfile(
                 player != null
                     ? ResolvableProfile.createResolved(player.getGameProfile())
-                    : new ResolvableProfile.Dynamic(Either.left(name), PlayerSkin.Patch.EMPTY)
+                    : ResolvableProfile.createUnresolved(name)
             );
         }
 
@@ -203,7 +203,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         } else if (owner instanceof CraftPlayer craftPlayer) {
             this.setProfile(ResolvableProfile.createResolved(craftPlayer.getProfile()));
         } else {
-            this.setProfile(new ResolvableProfile.Dynamic(Either.right(owner.getUniqueId()), PlayerSkin.Patch.EMPTY));
+            this.setProfile(ResolvableProfile.createUnresolved(owner.getUniqueId()));
         }
 
         return true;

@@ -304,12 +304,12 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
     @Override
     public int getRequiredPlayerRange() {
-        return this.snapshot.trialSpawner.getRequiredPlayerRange();
+        return this.snapshot.getTrialSpawner().getRequiredPlayerRange();
     }
 
     @Override
     public void setRequiredPlayerRange(int requiredPlayerRange) {
-        this.snapshot.trialSpawner.config = this.snapshot.trialSpawner.config.overrideRequiredPlayerRange(requiredPlayerRange);
+        this.snapshot.getTrialSpawner().config = this.snapshot.getTrialSpawner().config.overrideRequiredPlayerRange(requiredPlayerRange);
     }
 
     private TrialSpawnerStateData getTrialData() {

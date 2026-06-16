@@ -32,6 +32,7 @@ public interface PaperSharedSpawnerLogic extends Spawner {
     RegistryAccess getRegistryAccess();
 
     BlockPos getInternalPosition();
+
     default boolean isActivated() {
         return this.getSpawner().isNearPlayer(this.getInternalWorld(), this.getInternalPosition());
     }

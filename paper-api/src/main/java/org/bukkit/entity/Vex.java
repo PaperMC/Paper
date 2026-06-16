@@ -57,11 +57,12 @@ public interface Vex extends Monster {
      * Gets the remaining lifespan of this entity.
      *
      * @return life in ticks
-     * @deprecated This API duplicates existing API which uses the more
-     * preferable name due to mirroring internals better
+     * @deprecated use {@link #getLimitedLifetimeTicks()}
      */
     @Deprecated
-    int getLifeTicks();
+    default int getLifeTicks() {
+        return this.getLimitedLifetimeTicks();
+    }
 
     /**
      * Sets the remaining lifespan of this entity.
@@ -77,11 +78,12 @@ public interface Vex extends Monster {
      * Gets if the entity has a limited life.
      *
      * @return true if the entity has limited life
-     * @deprecated This API duplicates existing API which uses the more
-     * preferable name due to mirroring internals better
+     * @deprecated use {@link #hasLimitedLifetime()}
      */
     @Deprecated
-    boolean hasLimitedLife();
+    default boolean hasLimitedLife() {
+        return this.hasLimitedLifetime();
+    }
     // Paper start
 
     /**

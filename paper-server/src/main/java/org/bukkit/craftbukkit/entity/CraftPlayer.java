@@ -557,7 +557,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void playerListName(net.kyori.adventure.text.Component name) {
         getHandle().listName = name == null ? null : io.papermc.paper.adventure.PaperAdventure.asVanilla(name);
         if (getHandle().connection == null) return; // Updates are possible before the player has fully joined
-        for (ServerPlayer player : server.getHandle().players) {
+        for (ServerPlayer player : server.getHandle().getPlayers()) {
             if (player.getBukkitEntity().canSee(this)) {
                 player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME, getHandle()));
             }
@@ -588,7 +588,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         }
         this.getHandle().listName = name.equals(this.getName()) ? null : CraftChatMessage.fromStringOrNull(name);
         if (this.getHandle().connection == null) return; // Paper - Updates are possible before the player has fully joined
-        for (ServerPlayer player : this.server.getHandle().players) {
+        for (ServerPlayer player : this.server.getHandle().getPlayers()) {
             if (player.getBukkitEntity().canSee(this)) {
                 player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME, this.getHandle()));
             }
@@ -607,7 +607,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         this.getHandle().listOrder = order;
         // Paper start - Send update packet
         if (getHandle().connection == null) return; // Updates are possible before the player has fully joined
-        for (ServerPlayer player : server.getHandle().players) {
+        for (ServerPlayer player : server.getHandle().getPlayers()) {
             if (player.getBukkitEntity().canSee(this)) {
                 player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LIST_ORDER, getHandle()));
             }
@@ -786,12 +786,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public void playSound(Location loc, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        this.playSound(loc, sound, category, volume, pitch, this.getHandle().random.nextLong());
+        this.playSound(loc, sound, category, volume, pitch, this.getHandle().getRandom().nextLong());
     }
 
     @Override
     public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        this.playSound(loc, sound, category, volume, pitch, this.getHandle().random.nextLong());
+        this.playSound(loc, sound, category, volume, pitch, this.getHandle().getRandom().nextLong());
     }
 
     @Override
@@ -819,12 +819,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public void playSound(org.bukkit.entity.Entity entity, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        this.playSound(entity, sound, category, volume, pitch, this.getHandle().random.nextLong());
+        this.playSound(entity, sound, category, volume, pitch, this.getHandle().getRandom().nextLong());
     }
 
     @Override
     public void playSound(org.bukkit.entity.Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
-        this.playSound(entity, sound, category, volume, pitch, this.getHandle().random.nextLong());
+        this.playSound(entity, sound, category, volume, pitch, this.getHandle().getRandom().nextLong());
     }
 
     @Override
@@ -1312,7 +1312,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         }
         // Minecraft does not currently support teleporting players between worlds with passengers.
         // It causes them to be dismounted, and causes weird behavior.
-        if (location.getWorld() != this.getWorld() && !this.getHandle().passengers.isEmpty()) {
+        if (location.getWorld() != this.getWorld() && this.getHandle().isVehicle()) {
             return false;
         }
 
@@ -1742,8 +1742,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     @Override
     public void setLevel(int level) {
         Preconditions.checkArgument(level >= 0, "Experience level must not be negative (%s)", level);
-        this.getHandle().experienceLevel = level;
-        this.getHandle().lastSentExp = -1;
+        this.getHandle().setExperienceLevels(level);
     }
 
     @Override
@@ -1984,7 +1983,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
             self.gameProfile = gameProfile;
             return;
         }
-        List<ServerPlayer> players = this.server.getServer().getPlayerList().players;
+        List<ServerPlayer> players = this.server.getServer().getPlayerList().getPlayers();
         // First unregister the player for all players with the OLD game profile
         for (ServerPlayer player : players) {
             CraftPlayer bukkitPlayer = player.getBukkitEntity();
@@ -2468,7 +2467,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void setFlySpeed(float value) {
         this.validateSpeed(value);
         ServerPlayer player = this.getHandle();
-        player.getAbilities().flyingSpeed = value / 2f;
+        player.getAbilities().setFlyingSpeed(value / 2.0F);
         player.onUpdateAbilities();
 
     }
@@ -2477,23 +2476,23 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void setWalkSpeed(float value) {
         this.validateSpeed(value);
         ServerPlayer player = this.getHandle();
-        player.getAbilities().walkingSpeed = value / 2f;
+        player.getAbilities().setWalkingSpeed(value / 2.0F);
         player.onUpdateAbilities();
-        this.getHandle().getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(player.getAbilities().walkingSpeed); // SPIGOT-5833: combination of the two in 1.16+
+        this.getHandle().getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(player.getAbilities().getWalkingSpeed()); // SPIGOT-5833: combination of the two in 1.16+
     }
 
     @Override
     public float getFlySpeed() {
-        return this.getHandle().getAbilities().flyingSpeed * 2f;
+        return this.getHandle().getAbilities().getFlyingSpeed() * 2.0F;
     }
 
     @Override
     public float getWalkSpeed() {
-        return this.getHandle().getAbilities().walkingSpeed * 2f;
+        return this.getHandle().getAbilities().getWalkingSpeed() * 2.0F;
     }
 
     private void validateSpeed(float value) {
-        Preconditions.checkArgument(value <= 1f && value >= -1f, "Speed value (%s) need to be between -1f and 1f", value);
+        Preconditions.checkArgument(value <= 1.0F && value >= -1.0F, "Speed value (%s) need to be between -1 and 1", value);
     }
 
     @Override

@@ -105,7 +105,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
 
     @Override
     public long getSeed() {
-        return this.getHandle().lootTableSeed;
+        return this.getHandle().getLootTableSeed();
     }
 
     @Override

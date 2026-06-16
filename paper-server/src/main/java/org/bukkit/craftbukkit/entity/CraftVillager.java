@@ -231,7 +231,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public void clearReputations() {
-        this.getHandle().getGossips().gossips.clear();
+        this.getHandle().getGossips().clear();
     }
 
     @Override

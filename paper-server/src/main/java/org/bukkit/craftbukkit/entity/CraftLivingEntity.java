@@ -538,7 +538,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public Collection<PotionEffect> getActivePotionEffects() {
         List<PotionEffect> effects = new ArrayList<>();
-        for (MobEffectInstance handle : this.getHandle().activeEffects.values()) {
+        for (MobEffectInstance handle : this.getHandle().getActiveEffects()) {
             effects.add(org.bukkit.craftbukkit.potion.CraftPotionUtil.toBukkit(handle)); // Paper
         }
         return effects;
@@ -996,7 +996,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean isJumping() {
-        return this.getHandle().jumping;
+        return this.getHandle().isJumping();
     }
 
     @Override

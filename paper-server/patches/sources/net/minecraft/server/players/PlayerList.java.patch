@@ -4,8 +4,8 @@
      private static final int SEND_PLAYER_INFO_INTERVAL = 600;
      private static final SimpleDateFormat BAN_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z", Locale.ROOT);
      private final MinecraftServer server;
--    public final List<ServerPlayer> players = Lists.newArrayList();
-+    public final List<ServerPlayer> players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
+-    private final List<ServerPlayer> players = Lists.newArrayList();
++    private final List<ServerPlayer> players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
      private final Map<UUID, ServerPlayer> playersByUUID = Maps.newHashMap();
      private final UserBanList bans;
      private final IpBanList ipBans;
@@ -171,7 +171,7 @@
 +        // Paper end - Use single player info update packet on join
 +        player.sentListPacket = true;
 +        player.suppressTrackerForLogin = false; // Paper - Fire PlayerJoinEvent when Player is actually ready
-+        ((ServerLevel)player.level()).getChunkSource().chunkMap.addEntity(player); // Paper - Fire PlayerJoinEvent when Player is actually ready; track entity now
++        player.level().getChunkSource().addEntity(player); // Paper - Fire PlayerJoinEvent when Player is actually ready; track entity now
 +        // CraftBukkit end
 +
 +        //player.refreshEntityData(player); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn // Paper - THIS IS NOT NEEDED ANYMORE
@@ -501,7 +501,7 @@
  
 +        // Paper start - Once we not reuse the player entity we can remove this.
 +        if (!keepAllPlayerData) serverPlayer.reset();
-+        player.spawnIn(level);
++        player.setServerLevel(level);
 +        player.unsetRemoved();
 +        player.setShiftKeyDown(false);
 +        // Paper end

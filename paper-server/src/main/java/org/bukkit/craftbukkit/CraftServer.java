@@ -59,7 +59,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ReloadableServerRegistries;
-import net.minecraft.server.WorldLoader;
 import net.minecraft.server.bossevents.CustomBossEvent;
 import net.minecraft.server.commands.ReloadCommand;
 import net.minecraft.server.dedicated.DedicatedPlayerList;
@@ -77,6 +76,7 @@ import net.minecraft.server.players.UserBanListEntry;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
+import net.minecraft.util.Util;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityType;
@@ -398,7 +398,7 @@ public final class CraftServer implements Server {
     public CraftServer(DedicatedServer console, PlayerList playerList) {
         this.console = console;
         this.playerList = (DedicatedPlayerList) playerList;
-        this.playerView = MCUtil.transformUnmodifiable(playerList.players, ServerPlayer::getBukkitEntity);
+        this.playerView = MCUtil.transformUnmodifiable(playerList.getPlayers(), ServerPlayer::getBukkitEntity);
         this.serverVersion = io.papermc.paper.ServerBuildInfo.buildInfo().asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_SIMPLE); // Paper - improve version
         this.structureManager = new CraftStructureManager(console.getStructureManager(), console.registryAccess());
         this.serverTickManager = new CraftServerTickManager(console.tickRateManager());
@@ -610,7 +610,7 @@ public final class CraftServer implements Server {
         Commands dispatcher = this.getHandle().getServer().getCommands(); // Paper - We now register directly to the dispatcher.
 
         // Refresh commands
-        for (ServerPlayer player : this.getHandle().players) {
+        for (ServerPlayer player : this.getHandle().getPlayers()) {
             dispatcher.sendCommands(player);
         }
     }
@@ -1284,7 +1284,7 @@ public final class CraftServer implements Server {
 
         ServerLevel serverLevel = new ServerLevel(
             this.console,
-            this.console.executor,
+            Util.backgroundExecutor(),
             this.console.storageSource,
             genSettingsFinal,
             dimensionKey,
@@ -2183,7 +2183,7 @@ public final class CraftServer implements Server {
 
     @Override
     public OfflinePlayer[] getOfflinePlayers() {
-        PlayerDataStorage storage = this.console.playerDataStorage;
+        PlayerDataStorage storage = this.console.getPlayerList().playerIo;
         String[] files = storage.getPlayerDir().list((dir, name) -> name.endsWith(".dat"));
         Set<OfflinePlayer> players = new HashSet<>();
 

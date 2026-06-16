@@ -27,7 +27,7 @@ public abstract class CraftContainer<T extends BaseContainerBlockEntity> extends
 
     @Override
     public boolean isLocked() {
-        return this.getSnapshot().lockKey != LockCode.NO_LOCK;
+        return this.getSnapshot().isLocked();
     }
 
     @Override
@@ -74,7 +74,7 @@ public abstract class CraftContainer<T extends BaseContainerBlockEntity> extends
     @Override
     public String getCustomName() {
         T container = this.getSnapshot();
-        return container.name != null ? CraftChatMessage.fromComponent(container.getCustomName()) : null;
+        return container.getCustomName() != null ? CraftChatMessage.fromComponent(container.getCustomName()) : null;
     }
 
     @Override
@@ -86,7 +86,7 @@ public abstract class CraftContainer<T extends BaseContainerBlockEntity> extends
     public void applyTo(T blockEntity) {
         super.applyTo(blockEntity);
 
-        if (this.getSnapshot().name == null) {
+        if (this.getSnapshot().getCustomName() == null) {
             blockEntity.name = null;
         }
     }

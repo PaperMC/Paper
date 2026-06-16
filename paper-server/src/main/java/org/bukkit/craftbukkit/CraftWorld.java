@@ -259,7 +259,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public BiomeProvider vanillaBiomeProvider() {
-        ServerChunkCache serverCache = this.getHandle().chunkSource;
+        ServerChunkCache serverCache = this.getHandle().getChunkSource();
 
         final net.minecraft.world.level.chunk.ChunkGenerator gen = serverCache.getGenerator();
         net.minecraft.world.level.biome.BiomeSource biomeSource;
@@ -432,7 +432,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Chunk[] getLoadedChunks() {
-        ServerChunkCache serverChunkCache = this.getHandle().chunkSource;
+        ServerChunkCache serverChunkCache = this.getHandle().getChunkSource();
         ReferenceList<Chunk> chunks = new ReferenceList<>(new Chunk[serverChunkCache.fullChunks.size()]);
 
         for (PrimitiveIterator.OfLong iterator = serverChunkCache.fullChunks.keyIterator(); iterator.hasNext();) {
@@ -570,7 +570,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(plugin != null, "null plugin");
         Preconditions.checkArgument(plugin.isEnabled(), "plugin is not enabled");
 
-        final DistanceManager distanceManager = this.world.getChunkSource().chunkMap.distanceManager;
+        final DistanceManager distanceManager = this.world.getChunkSource().chunkMap.getDistanceManager();
         if (distanceManager.ticketStorage.addPluginRegionTicket(new ChunkPos(x, z), plugin)) {
             this.getChunkAt(x, z); // ensure it's loaded
             return true;
@@ -583,7 +583,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public boolean removePluginChunkTicket(int x, int z, Plugin plugin) {
         Preconditions.checkNotNull(plugin, "null plugin");
 
-        final DistanceManager distanceManager = this.world.getChunkSource().chunkMap.distanceManager;
+        final DistanceManager distanceManager = this.world.getChunkSource().chunkMap.getDistanceManager();
         return distanceManager.ticketStorage.removePluginRegionTicket(new ChunkPos(x, z), plugin);
     }
 
@@ -591,7 +591,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public void removePluginChunkTickets(Plugin plugin) {
         Preconditions.checkNotNull(plugin, "null plugin");
 
-        DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
+        DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.getDistanceManager();
         chunkDistanceManager.ticketStorage.removeAllPluginRegionTickets(TicketType.PLUGIN_TICKET, ChunkMap.FORCED_TICKET_LEVEL, plugin);
     }
 
@@ -836,7 +836,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public long getGameTime() {
-        return this.world.levelData.getGameTime();
+        return this.world.getLevelData().getGameTime();
     }
 
     @Override
@@ -1935,7 +1935,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper start - more Raid API
     @Override
     public @Nullable Raid getRaid(final int id) {
-        final net.minecraft.world.entity.raid.@Nullable Raid nmsRaid = this.world.getRaids().raidMap.get(id);
+        final net.minecraft.world.entity.raid.@Nullable Raid nmsRaid = this.world.getRaids().get(id);
         return nmsRaid != null ? new CraftRaid(nmsRaid, this.world) : null;
     }
     // Paper end - more Raid API

@@ -79,20 +79,10 @@ public class CraftVex extends CraftMonster implements Vex {
     }
 
     @Override
-    public int getLifeTicks() {
-        return this.getHandle().limitedLifeTicks;
-    }
-
-    @Override
     public void setLifeTicks(int lifeTicks) {
         this.getHandle().setLimitedLife(lifeTicks);
         if (lifeTicks < 0) {
             this.getHandle().hasLimitedLife = false;
         }
-    }
-
-    @Override
-    public boolean hasLimitedLife() {
-        return this.getHandle().hasLimitedLife;
     }
 }

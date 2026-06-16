@@ -251,9 +251,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isOnGround() {
-        if (this.entity instanceof AbstractArrow abstractArrow) {
-            return abstractArrow.isInGround();
-        }
         return this.entity.onGround();
     }
 

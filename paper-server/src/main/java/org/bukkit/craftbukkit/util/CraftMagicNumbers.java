@@ -474,7 +474,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         final int dataVersion = data.get(SharedConstants.DATA_VERSION_TAG).getAsInt();
         final int currentVersion = this.getDataVersion();
-        data = (com.google.gson.JsonObject) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic<>(com.mojang.serialization.JsonOps.INSTANCE, data), dataVersion, currentVersion).getValue();
+        data = (com.google.gson.JsonObject) MinecraftServer.getServer().getFixerUpper().update(References.ITEM_STACK, new Dynamic<>(com.mojang.serialization.JsonOps.INSTANCE, data), dataVersion, currentVersion).getValue();
         com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(ops, data).getOrThrow(IllegalArgumentException::new));
     }
@@ -548,7 +548,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         CompoundTag tag = MCUtil.deserializeTagFromBytes(data);
         int dataVersion = NbtUtils.getDataVersion(tag, 0);
         Preconditions.checkArgument(dataVersion <= Bukkit.getUnsafe().getDataVersion(), "Newer version! Server downgrades are not supported!");
-        tag = PlatformHooks.get().convertNBT(References.ENTITY, MinecraftServer.getServer().fixerUpper, tag, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
+        tag = PlatformHooks.get().convertNBT(References.ENTITY, MinecraftServer.getServer().getFixerUpper(), tag, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
         if (!preservePassengers) {
             tag.remove(Entity.TAG_PASSENGERS);
         }

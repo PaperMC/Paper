@@ -15,7 +15,7 @@ Adds villagers as separate config
 
 diff --git a/io/papermc/paper/entity/activation/ActivationRange.java b/io/papermc/paper/entity/activation/ActivationRange.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fe05c3bd9adeddc2dd740af3546f835c1c2de311
+index 0000000000000000000000000000000000000000..829f7685904fd741e00403647ae76d32275c34a3
 --- /dev/null
 +++ b/io/papermc/paper/entity/activation/ActivationRange.java
 @@ -0,0 +1,335 @@
@@ -243,7 +243,7 @@ index 0000000000000000000000000000000000000000..fe05c3bd9adeddc2dd740af3546f835c
 +        }
 +        // special cases.
 +        if (entity instanceof final LivingEntity living) {
-+            if (living.blockPosition().equals(living.getLastClimbablePos().orElse(null)) || living.jumping || living.hurtTime > 0 || !living.activeEffects.isEmpty() || living.isFreezing()) {
++            if (living.blockPosition().equals(living.getLastClimbablePos().orElse(null)) || living.isJumping() || living.hurtTime > 0 || !living.getActiveEffectsMap().isEmpty() || living.isFreezing()) {
 +                return 1;
 +            }
 +            if (entity instanceof final Mob mob && mob.getTarget() != null) {
@@ -316,7 +316,7 @@ index 0000000000000000000000000000000000000000..fe05c3bd9adeddc2dd740af3546f835c
 +        }
 +        // special case always immunities
 +        // immunize brand-new entities, dead entities, and portal scenarios
-+        if (entity.defaultActivationState || entity.tickCount < 20 * 10 || !entity.isAlive() || (entity.portalProcess != null && !entity.portalProcess.hasExpired()) || entity.portalCooldown > 0) {
++        if (entity.defaultActivationState || entity.tickCount < 20 * 10 || !entity.isAlive() || (entity.portalProcess != null && !entity.portalProcess.hasExpired()) || entity.getPortalCooldown() > 0) {
 +            return true;
 +        }
 +        // immunize leashed entities
@@ -355,7 +355,7 @@ index 0000000000000000000000000000000000000000..fe05c3bd9adeddc2dd740af3546f835c
 +    }
 +}
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 4b67719f536fcf1d3d0f416c395b603aaf471c82..e8d9eff03d098ce65d44ee0172b70b7e90a658d4 100644
+index 7861b180e1e0ed73c1702fee7181d5670aaeed8b..639b301f3ab82ea44d5c0e4ecec3983b9c0c02c3 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -877,6 +877,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
@@ -442,7 +442,7 @@ index dad587ec02f434c0ce91244d9668664a9681f354..3cf4c6af77a315b7a6d05571192b1249
      public void aiStep() {
          super.aiStep();
 diff --git a/net/minecraft/world/entity/AreaEffectCloud.java b/net/minecraft/world/entity/AreaEffectCloud.java
-index 8948755478b9d8bcf49593be695daca45a4e65ad..76ad0a8c9161e5c8602f015deb9003b8ee095c23 100644
+index 271ed1128959287f6c1b6ca59ded377b88f5afff..f03fa06c0ba56f7f5e1e45bc1568a490751efde3 100644
 --- a/net/minecraft/world/entity/AreaEffectCloud.java
 +++ b/net/minecraft/world/entity/AreaEffectCloud.java
 @@ -140,6 +140,16 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
@@ -463,7 +463,7 @@ index 8948755478b9d8bcf49593be695daca45a4e65ad..76ad0a8c9161e5c8602f015deb9003b8
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 88b8d13309a72c5745df8e0e1fa0c0cdc6f8316a..c793f9117cf3c0560f4fd2028d0beeaa0e99ed78 100644
+index d462bb751b14c2fffc970c7450f3c6b5d7909e53..f3b55daf9d3b88fcb5a5e88926f33e437297647b 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -382,6 +382,15 @@ public abstract class Entity
@@ -522,7 +522,7 @@ index 88b8d13309a72c5745df8e0e1fa0c0cdc6f8316a..c793f9117cf3c0560f4fd2028d0beeaa
              delta = this.maybeBackOffFromEdge(delta, moverType);
              Vec3 movement = this.collide(delta);
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 3f7ca2206ec29e77613c85129ad06f642b53a213..98a9aa825dd7dd17af1b3c269d48d758352328c8 100644
+index 08e3437671b19be4415e23da7f975b6833039810..a6e4a0f0201b265d5c4a3dd3dc4d64935559fe88 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -3404,6 +3404,14 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
@@ -541,7 +541,7 @@ index 3f7ca2206ec29e77613c85129ad06f642b53a213..98a9aa825dd7dd17af1b3c269d48d758
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index 93fcc0dad95bf5120f7a028ced365d279fa6bccf..f5fb78892596c96a4c3d66dcf8737450ef5e08e2 100644
+index 5d45532ccaf362a6ed9d40453b31a291fb23dd5c..a521068fe97243adbf1e7e9b14fe7f0b19f1e65c 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
 @@ -216,6 +216,20 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
@@ -759,7 +759,7 @@ index eac6a80bc21280f9872344583ad825df40e03640..325bdcd8c7dd4e03aa6f649c8f76b031
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/projectile/arrow/Arrow.java b/net/minecraft/world/entity/projectile/arrow/Arrow.java
-index 3bdfe511c6df6188ea8a4ecd38864b268f42b5c6..546503142ad5330fdf8ed2acbe9ac18e6b9e3e80 100644
+index 7c62081d5af4f47d053674479188c85b04f5df9a..cd7a719bf922246a2497cc5ad897c306379e40df 100644
 --- a/net/minecraft/world/entity/projectile/arrow/Arrow.java
 +++ b/net/minecraft/world/entity/projectile/arrow/Arrow.java
 @@ -71,6 +71,16 @@ public class Arrow extends AbstractArrow {
@@ -819,7 +819,7 @@ index f46cca0467bb4da5511bc953ce5b43fa606bf978..445c5cafad71028171c1f26193966177
 +
  }
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 93bc56704ef8019423d0605d176ab73d6f63d39e..5f040613ef5d1eab58ac82719cbb02a9201432e4 100644
+index c3f716f8cd7326af411f6e1648a3db49b5f34c36..bc03996ce2d7a885e162909958a2a06e2947523c 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -156,6 +156,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
