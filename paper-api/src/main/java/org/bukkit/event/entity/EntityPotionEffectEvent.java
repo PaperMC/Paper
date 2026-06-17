@@ -40,8 +40,14 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         this.entitySource = entitySource;
     }
 
+    @Override
+    public LivingEntity getEntity() {
+        return (LivingEntity) super.getEntity();
+    }
+
     /**
-     * Gets the entity which caused the effect change.
+     * Gets the entity which caused the effect change
+     * (Not applicable for {@link Action#REMOVED}).
      *
      * @return The entity which caused the effect change or {@code null}
      */
@@ -93,15 +99,12 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      * @return The effect type which will be modified on the entity.
      */
     public PotionEffectType getModifiedType() {
-        if (this.oldEffect == null && this.newEffect == null) {
-            throw new IllegalStateException("The event not has any effect, this can be caused by a plugin");
-        }
         return this.oldEffect == null ? this.newEffect.getType() : this.oldEffect.getType();
     }
 
     /**
      * Returns if the new potion effect will override the old potion effect
-     * (Only applicable for the CHANGED Action).
+     * (Only applicable for {@link Action#CHANGED}).
      *
      * @return If the new effect will override the old one.
      */
@@ -110,8 +113,8 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
     }
 
     /**
-     * Sets if the new potion effect will override the old potion effect (Only
-     * applicable for the CHANGED action).
+     * Sets if the new potion effect will override the old potion effect
+     * (Only applicable for {@link Action#CHANGED}).
      *
      * @param override If the new effect will override the old one.
      */
