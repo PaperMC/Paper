@@ -46,16 +46,6 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
     }
 
     /**
-     * Gets the entity which caused the effect to change
-     * (Not applicable for {@link Action#REMOVED}).
-     *
-     * @return The entity which caused the effect to change or {@code null}
-     */
-    public @Nullable Entity getSource() {
-        return this.entitySource;
-    }
-
-    /**
      * Gets the old potion effect of the changed type, which will be removed.
      *
      * @return The old potion effect or {@code null} if the entity did not have the
@@ -73,6 +63,16 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      */
     public @Nullable PotionEffect getNewEffect() {
         return this.newEffect;
+    }
+
+    /**
+     * Gets the entity which caused the effect to change
+     * (Not applicable for {@link Action#REMOVED}).
+     *
+     * @return The entity which caused the effect to change or {@code null}
+     */
+    public @Nullable Entity getSource() {
+        return this.entitySource;
     }
 
     /**
