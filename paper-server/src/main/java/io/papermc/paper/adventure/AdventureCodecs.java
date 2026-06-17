@@ -171,15 +171,15 @@ public final class AdventureCodecs {
     }
 
     public static final Function<ClickEvent, ClickEventType> GET_CLICK_EVENT_TYPE =
-        he -> switch (he.action()) {
-            case ClickEvent.Action.ChangePage ignored -> CHANGE_PAGE_CLICK_EVENT_TYPE;
-            case ClickEvent.Action.CopyToClipboard ignored -> COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE;
-            case ClickEvent.Action.OpenFile ignored -> OPEN_FILE_CLICK_EVENT_TYPE;
-            case ClickEvent.Action.OpenUrl ignored -> OPEN_URL_CLICK_EVENT_TYPE;
-            case ClickEvent.Action.RunCommand ignored -> RUN_COMMAND_CLICK_EVENT_TYPE;
-            case ClickEvent.Action.SuggestCommand ignored -> SUGGEST_COMMAND_CLICK_EVENT_TYPE;
-            case ClickEvent.Action.ShowDialog ignored -> SHOW_DIALOG_CLICK_EVENT_TYPE;
-            case ClickEvent.Action.Custom ignored -> CUSTOM_CLICK_EVENT_TYPE;
+        ce -> switch (ce.action()) {
+            case ClickEvent.Action.ChangePage _ -> CHANGE_PAGE_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.CopyToClipboard _ -> COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.OpenFile _ -> OPEN_FILE_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.OpenUrl _ -> OPEN_URL_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.RunCommand _ -> RUN_COMMAND_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.SuggestCommand _ -> SUGGEST_COMMAND_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.ShowDialog _ -> SHOW_DIALOG_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.Custom _ -> CUSTOM_CLICK_EVENT_TYPE;
         };
 
     static final Codec<ClickEvent> CLICK_EVENT_CODEC = CLICK_EVENT_TYPE_CODEC.dispatch("action", GET_CLICK_EVENT_TYPE, ClickEventType::codec);
