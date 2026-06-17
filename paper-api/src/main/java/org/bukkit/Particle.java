@@ -3,7 +3,11 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.NotNull;
+
+import static io.papermc.paper.util.BoundChecker.requirePositive;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public enum Particle implements Keyed {
     POOF("poof"),
@@ -263,7 +267,7 @@ public enum Particle implements Keyed {
         public DustOptions(@NotNull Color color, float size) {
             Preconditions.checkArgument(color != null, "color");
             this.color = color;
-            this.size = size;
+            this.size = requireRange(size, "size", 0.01F, 4.0F);
         }
 
         /**
@@ -320,10 +324,10 @@ public enum Particle implements Keyed {
         private final Color color;
         private final int duration;
 
-        public Trail(@NotNull Location target, @NotNull Color color, int duration) {
+        public Trail(@NotNull Location target, @NotNull Color color, @Positive int duration) {
             this.target = target;
             this.color = color;
-            this.duration = duration;
+            this.duration = requirePositive(duration, "duration");
         }
 
         /**
@@ -351,7 +355,7 @@ public enum Particle implements Keyed {
          *
          * @return trail duration
          */
-        public int getDuration() {
+        public @Positive int getDuration() {
             return duration;
         }
     }
@@ -422,9 +426,8 @@ public enum Particle implements Keyed {
 
         private final int waterBlocks;
 
-        protected AbstractGeyser(final int waterBlocks) {
-            Preconditions.checkArgument(waterBlocks > 0, "waterBlocks must be positive");
-            this.waterBlocks = waterBlocks;
+        protected AbstractGeyser(final @Positive int waterBlocks) {
+            this.waterBlocks = requirePositive(waterBlocks, "waterBlocks");
         }
 
         /**
@@ -433,7 +436,7 @@ public enum Particle implements Keyed {
          *
          * @return the number of water blocks
          */
-        public int getWaterBlocks() {
+        public @Positive int getWaterBlocks() {
             return waterBlocks;
         }
     }
