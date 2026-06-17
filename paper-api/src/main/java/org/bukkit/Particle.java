@@ -423,7 +423,7 @@ public enum Particle implements Keyed {
         private final int waterBlocks;
 
         protected AbstractGeyser(final int waterBlocks) {
-            Preconditions.checkArgument(waterBlocks > 1, "waterBlocks must be positive");
+            Preconditions.checkArgument(waterBlocks > 0, "waterBlocks must be positive");
             this.waterBlocks = waterBlocks;
         }
 
