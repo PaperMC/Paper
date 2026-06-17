@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.event;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
@@ -25,6 +24,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import net.minecraft.Optionull;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -1885,31 +1885,30 @@ public class CraftEventFactory {
     }
 
     public static EntityPotionEffectEvent callEntityPotionEffectChangeEvent(net.minecraft.world.entity.LivingEntity entity, @Nullable MobEffectInstance oldEffect, @Nullable MobEffectInstance newEffect, EntityPotionEffectEvent.Cause cause) {
-        return CraftEventFactory.callEntityPotionEffectChangeEvent(entity, oldEffect, newEffect, cause, true);
+        return CraftEventFactory.callEntityPotionEffectChangeEvent(entity, oldEffect, newEffect, null, cause, null, true);
     }
 
     public static EntityPotionEffectEvent callEntityPotionEffectChangeEvent(net.minecraft.world.entity.LivingEntity entity, @Nullable MobEffectInstance oldEffect, @Nullable MobEffectInstance newEffect, EntityPotionEffectEvent.Cause cause, EntityPotionEffectEvent.Action action) {
-        return CraftEventFactory.callEntityPotionEffectChangeEvent(entity, oldEffect, newEffect, cause, action, true);
+        return CraftEventFactory.callEntityPotionEffectChangeEvent(entity, oldEffect, newEffect, null, cause, action, true);
     }
 
-    public static EntityPotionEffectEvent callEntityPotionEffectChangeEvent(net.minecraft.world.entity.LivingEntity entity, @Nullable MobEffectInstance oldEffect, @Nullable MobEffectInstance newEffect, EntityPotionEffectEvent.Cause cause, boolean willOverride) {
-        EntityPotionEffectEvent.Action action = EntityPotionEffectEvent.Action.CHANGED;
+    private static EntityPotionEffectEvent.Action computeEffectAction(@Nullable MobEffectInstance oldEffect, @Nullable MobEffectInstance newEffect) {
         if (oldEffect == null) {
-            action = EntityPotionEffectEvent.Action.ADDED;
-        } else if (newEffect == null) {
-            action = EntityPotionEffectEvent.Action.REMOVED;
+            return EntityPotionEffectEvent.Action.ADDED;
         }
-
-        return CraftEventFactory.callEntityPotionEffectChangeEvent(entity, oldEffect, newEffect, cause, action, willOverride);
+        if (newEffect == null) {
+            return EntityPotionEffectEvent.Action.REMOVED;
+        }
+        return EntityPotionEffectEvent.Action.CHANGED;
     }
 
-    public static EntityPotionEffectEvent callEntityPotionEffectChangeEvent(net.minecraft.world.entity.LivingEntity entity, @Nullable MobEffectInstance oldEffect, @Nullable MobEffectInstance newEffect, EntityPotionEffectEvent.Cause cause, EntityPotionEffectEvent.Action action, boolean willOverride) {
+    public static EntityPotionEffectEvent callEntityPotionEffectChangeEvent(net.minecraft.world.entity.LivingEntity entity, @Nullable MobEffectInstance oldEffect, @Nullable MobEffectInstance newEffect, @Nullable net.minecraft.world.entity.Entity source, EntityPotionEffectEvent.Cause cause, @Nullable EntityPotionEffectEvent.Action knownAction, boolean willOverride) {
+        assert oldEffect != null || newEffect != null;
+
         PotionEffect bukkitOldEffect = (oldEffect == null) ? null : CraftPotionUtil.toBukkit(oldEffect);
         PotionEffect bukkitNewEffect = (newEffect == null) ? null : CraftPotionUtil.toBukkit(newEffect);
 
-        Preconditions.checkState(bukkitOldEffect != null || bukkitNewEffect != null, "Old and new potion effect are both null");
-
-        EntityPotionEffectEvent event = new EntityPotionEffectEvent((LivingEntity) entity.getBukkitEntity(), bukkitOldEffect, bukkitNewEffect, cause, action, willOverride);
+        EntityPotionEffectEvent event = new EntityPotionEffectEvent((LivingEntity) entity.getBukkitEntity(), bukkitOldEffect, bukkitNewEffect, Optionull.map(source, Entity::getBukkitEntity), cause, knownAction != null ? knownAction : computeEffectAction(oldEffect, newEffect), willOverride);
         Bukkit.getPluginManager().callEvent(event);
 
         return event;
