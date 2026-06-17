@@ -34,10 +34,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         super(livingEntity);
         this.oldEffect = oldEffect;
         this.newEffect = newEffect;
+        this.entitySource = entitySource;
         this.cause = cause;
         this.action = action;
         this.override = override;
-        this.entitySource = entitySource;
     }
 
     @Override
@@ -46,10 +46,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
     }
 
     /**
-     * Gets the entity which caused the effect change
+     * Gets the entity which caused the effect to change
      * (Not applicable for {@link Action#REMOVED}).
      *
-     * @return The entity which caused the effect change or {@code null}
+     * @return The entity which caused the effect to change or {@code null}
      */
     public @Nullable Entity getSource() {
         return this.entitySource;
