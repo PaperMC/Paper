@@ -6,34 +6,33 @@ package org.bukkit.entity;
 public interface AbstractCubeMob extends Creature {
 
     /**
-     * @return the size of the slime
+     * @return the size of the cube mob
      */
     int getSize();
 
     /**
-     * Setting the size of the slime (regardless of previous size)
+     * Setting the size of the cube mob (regardless of previous size)
      * will set the following attributes:
      * <ul>
      *     <li>{@link org.bukkit.attribute.Attribute#MAX_HEALTH}</li>
      *     <li>{@link org.bukkit.attribute.Attribute#MOVEMENT_SPEED}</li>
-     *     <li>{@link org.bukkit.attribute.Attribute#ATTACK_DAMAGE}</li>
      * </ul>
      * to their per-size defaults and heal the
-     * slime to its max health (assuming it's alive).
+     * cube mob to its max health (assuming it's alive).
      *
-     * @param size the new size of the slime.
+     * @param size the new size of the cube mob.
      */
     void setSize(int size);
 
     /**
-     * Get whether this slime can randomly wander/jump around on its own
+     * Get whether this cube mob can randomly wander/jump around on its own
      *
      * @return {@code true} if can wander
      */
     boolean canWander();
 
     /**
-     * Set whether this slime can randomly wander/jump around on its own
+     * Set whether this cube mob can randomly wander/jump around on its own
      *
      * @param canWander {@code true} if can wander
      */
