@@ -161,7 +161,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
         WHITELIST,
         BANNED,
         IP_BANNED,
-        KICK_COMMAND,
+        KICK,
         FLYING_PLAYER,
         FLYING_VEHICLE,
         TIMEOUT,
@@ -190,6 +190,12 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
         /**
          * Fallback cause
          */
-        UNKNOWN,
+        UNKNOWN;
+
+        /**
+         * @deprecated use {@link #KICK}, kicks can also occur through the server management protocol.
+         */
+        @Deprecated(since = "26.2")
+        public static final Cause KICK_COMMAND = KICK;
     }
 }
