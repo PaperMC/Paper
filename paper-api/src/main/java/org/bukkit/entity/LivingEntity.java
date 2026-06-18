@@ -1063,7 +1063,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
 
     /**
      * Returns true if this entity can breathe underwater and will not take
-     * suffocation damage when its air supply reaches zero.
+     * drowning damage when its air supply reaches zero.
      *
      * @return <code>true</code> if the entity can breathe underwater
      */
