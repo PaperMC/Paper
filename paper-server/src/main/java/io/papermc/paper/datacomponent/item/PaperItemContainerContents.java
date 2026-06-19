@@ -19,7 +19,7 @@ public record PaperItemContainerContents(
 
     @Override
     public List<ItemStack> contents() {
-        return MCUtil.transformUnmodifiable(this.impl.items, optional -> optional.map(CraftItemStack::asBukkitCopy).orElse(null));
+        return MCUtil.transformUnmodifiable(this.impl.items, optional -> optional.map(CraftItemStack::asBukkitCopy).orElse(ItemStack.empty()));
     }
 
     static final class BuilderImpl implements ItemContainerContents.Builder {
