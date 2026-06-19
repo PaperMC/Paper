@@ -1756,10 +1756,14 @@ public final class Bukkit {
     // Paper end
 
     /**
-     * Gets the folder that contains all the various {@link World}s.
+     * Gets the folder that contains {@link Server#getLevelDirectory()}.
      *
-     * @return folder that contains all worlds
+     * <p>This is usually the server's current working directory
+     * but can be overridden using command line flags (i.e. {@code --universe} or {@code --world-container}).</p>
+     *
+     * @return folder that contains the level directory
      */
+    @ApiStatus.Obsolete
     @NotNull
     public static File getWorldContainer() {
         return server.getWorldContainer();
