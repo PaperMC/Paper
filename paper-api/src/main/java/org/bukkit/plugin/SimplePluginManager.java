@@ -720,7 +720,6 @@ public final class SimplePluginManager implements PluginManager {
             throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
         }
 
-        executor = new co.aikar.timings.TimedEventExecutor(executor, plugin, null, event); // Paper
         if (false) { // Spigot - RL handles useTimings check now // Paper
             getEventListeners(event).register(new TimedRegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
         } else {
