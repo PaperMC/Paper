@@ -18,7 +18,6 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.SignalGetter;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.RedStoneWireBlock;
 import net.minecraft.world.level.block.SaplingBlock;
@@ -186,37 +185,18 @@ public class CraftBlock implements Block {
     }
 
     boolean setBlockState(final net.minecraft.world.level.block.state.BlockState state, final boolean applyPhysics) {
-        return setBlockState(this.level, this.position, this.getBlockState(), state, applyPhysics);
+        return setBlockState(this.level, this.position, state, applyPhysics);
     }
 
-    public static boolean setBlockState(LevelAccessor world, BlockPos pos, net.minecraft.world.level.block.state.BlockState oldState, net.minecraft.world.level.block.state.BlockState newState, boolean applyPhysics) {
-        // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in block entity cleanup
-        if (oldState.hasBlockEntity() && newState.getBlock() != oldState.getBlock()) { // SPIGOT-3725 remove old block entity if block changes
-            // SPIGOT-4612: faster - just clear tile
-            if (world instanceof net.minecraft.world.level.Level) {
-                ((net.minecraft.world.level.Level) world).removeBlockEntity(pos);
-            } else {
-                world.setBlock(pos, Blocks.AIR.defaultBlockState(), 0);
-            }
+    public static boolean setBlockState(LevelAccessor level, BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, boolean applyPhysics) {
+        int updateFlags = net.minecraft.world.level.block.Block.UPDATE_CLIENTS;
+        if (applyPhysics) {
+            updateFlags |= net.minecraft.world.level.block.Block.UPDATE_NEIGHBORS;
+        } else {
+            updateFlags |= net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE | net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE;
         }
 
-        if (applyPhysics) {
-            return world.setBlock(pos, newState, net.minecraft.world.level.block.Block.UPDATE_ALL);
-        } else {
-            boolean success = world.setBlock(pos, newState,
-                    net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
-                    net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
-                    net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
-            if (success && world instanceof net.minecraft.world.level.Level) {
-                world.getMinecraftWorld().sendBlockUpdated(
-                    pos,
-                    oldState,
-                    newState,
-                    net.minecraft.world.level.block.Block.UPDATE_ALL
-                );
-            }
-            return success;
-        }
+        return level.setBlock(pos, newState, updateFlags);
     }
 
     @Override

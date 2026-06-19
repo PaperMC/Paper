@@ -20,6 +20,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.level.MoonPhase;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
@@ -112,11 +113,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public void setBlockData(int x, int y, int z, BlockData blockData) {
-        WorldGenLevel world = this.getHandle();
         BlockPos pos = new BlockPos(x, y, z);
-        net.minecraft.world.level.block.state.BlockState old = this.getHandle().getBlockState(pos);
-
-        CraftBlock.setBlockState(world, pos, old, ((CraftBlockData) blockData).getState(), true);
+        this.getHandle().setBlock(pos, ((CraftBlockData) blockData).getState(), Block.UPDATE_ALL);
     }
 
     @Override
