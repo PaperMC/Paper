@@ -30,7 +30,7 @@ public final class BoundChecker {
         if (Float.compare(value, min) >= 0 && Float.compare(value, max) <= 0) {
             return value;
         }
-        throw new IllegalArgumentException("argument " + field + " must be in [" + min + "," + max +"]: " + value);
+        throw new IllegalArgumentException("argument " + field + " must be in [" + min + "," + max + "]: " + value);
     }
 
     public static float requireNonNegative(final float value, final String field) {

@@ -7,9 +7,12 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents one of the configurations of a trial spawner.
+ *
+ * @deprecated in favor of {@link io.papermc.paper.block.TrialSpawnerConfig}
  */
 @NullMarked
-@ApiStatus.Experimental
+@ApiStatus.ScheduledForRemoval(inVersion = "26.3")
+@Deprecated(since = "26.1", forRemoval = true)
 public interface TrialSpawnerConfiguration extends BaseSpawner {
 
     /**
