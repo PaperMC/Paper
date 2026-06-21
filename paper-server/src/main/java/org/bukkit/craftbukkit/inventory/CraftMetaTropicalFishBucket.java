@@ -9,6 +9,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.TypedEntityData;
 import org.bukkit.DyeColor;
@@ -83,7 +84,7 @@ public class CraftMetaTropicalFishBucket extends CraftMetaItem implements Tropic
                 this.baseColor = net.minecraft.world.entity.animal.fish.TropicalFish.getBaseColor(packedVariant);
                 this.patternColor = net.minecraft.world.entity.animal.fish.TropicalFish.getPatternColor(packedVariant);
                 entityTag.remove(CraftMetaTropicalFishBucket.VARIANT.NBT);
-                if (entityTag.isEmpty()) {
+                if (this.isEmptyEntityTag(entityTag, EntityTypes.TROPICAL_FISH)) {
                     this.entityTag = null;
                 }
             });
@@ -132,8 +133,12 @@ public class CraftMetaTropicalFishBucket extends CraftMetaItem implements Tropic
     void deserializeInternal(CompoundTag tag, Object context) {
         super.deserializeInternal(tag, context);
 
-        this.entityTag = tag.getCompound(CraftMetaTropicalFishBucket.ENTITY_TAG.NBT).orElse(this.entityTag);
-        this.bucketEntityTag = tag.getCompound(CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.NBT).orElse(this.bucketEntityTag);
+        tag.getCompound(CraftMetaTropicalFishBucket.ENTITY_TAG.NBT).ifPresent(entityTag -> {
+            this.entityTag = entityTag;
+        });
+        tag.getCompound(CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.NBT).ifPresent(entityTag -> {
+            this.bucketEntityTag = entityTag;
+        });
     }
 
     @Override

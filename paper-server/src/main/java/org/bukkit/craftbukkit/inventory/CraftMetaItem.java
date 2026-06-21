@@ -62,6 +62,8 @@ import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Unit;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.AdventureModePredicate;
@@ -820,6 +822,19 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
         if (tag.getList(CraftMetaItem.ATTRIBUTES.NBT).isPresent()) {
             this.attributeModifiers = CraftMetaItem.buildModifiersLegacy(tag, CraftMetaItem.ATTRIBUTES);
         }
+    }
+
+    protected boolean isEmptyEntityTag(CompoundTag tag, EntityType<?> type) {
+        if (tag.isEmpty()) {
+            return true;
+        }
+
+        if (tag.size() > 1) {
+            return false;
+        }
+
+        String expectedId = EntityType.getKey(type).toString();
+        return tag.getString(Entity.TAG_ID).filter(id -> id.equals(expectedId)).isPresent();
     }
 
     private static Multimap<Attribute, AttributeModifier> buildModifiersLegacy(CompoundTag tag, ItemMetaKey key) {

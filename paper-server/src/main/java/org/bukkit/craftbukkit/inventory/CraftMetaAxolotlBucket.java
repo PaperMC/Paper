@@ -8,6 +8,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.TypedEntityData;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -66,7 +67,7 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
             entityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT).ifPresent(variantId -> {
                 this.variant = net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.byId(variantId);
                 entityTag.remove(CraftMetaAxolotlBucket.VARIANT.NBT);
-                if (entityTag.isEmpty()) {
+                if (this.isEmptyEntityTag(entityTag, EntityTypes.AXOLOTL)) {
                     this.entityTag = null;
                 }
             });
@@ -98,8 +99,12 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
     void deserializeInternal(CompoundTag tag, Object context) {
         super.deserializeInternal(tag, context);
 
-        this.entityTag = tag.getCompound(CraftMetaAxolotlBucket.ENTITY_TAG.NBT).orElse(this.entityTag);
-        this.bucketEntityTag = tag.getCompound(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.NBT).orElse(this.bucketEntityTag);
+        tag.getCompound(CraftMetaAxolotlBucket.ENTITY_TAG.NBT).ifPresent(entityTag -> {
+            this.entityTag = entityTag;
+        });
+        tag.getCompound(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.NBT).ifPresent(entityTag -> {
+            this.bucketEntityTag = entityTag;
+        });
     }
 
     @Override
@@ -161,12 +166,6 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
             return false;
         }
         if (meta instanceof final CraftMetaAxolotlBucket other) {
-            System.out.println(this.variant);
-            System.out.println(this.entityTag);
-            System.out.println(this.bucketEntityTag);
-            System.out.println(other.variant);
-            System.out.println(other.entityTag);
-            System.out.println(other.bucketEntityTag);
             return Objects.equals(this.variant, other.variant)
                     && Objects.equals(this.entityTag, other.entityTag)
                     && Objects.equals(this.bucketEntityTag, other.bucketEntityTag);
