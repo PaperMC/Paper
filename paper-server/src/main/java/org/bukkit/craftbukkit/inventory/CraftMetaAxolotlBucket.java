@@ -161,12 +161,6 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
             return false;
         }
         if (meta instanceof final CraftMetaAxolotlBucket other) {
-            System.out.println(this.variant);
-            System.out.println(this.entityTag);
-            System.out.println(this.bucketEntityTag);
-            System.out.println(other.variant);
-            System.out.println(other.entityTag);
-            System.out.println(other.bucketEntityTag);
             return Objects.equals(this.variant, other.variant)
                     && Objects.equals(this.entityTag, other.entityTag)
                     && Objects.equals(this.bucketEntityTag, other.bucketEntityTag);
