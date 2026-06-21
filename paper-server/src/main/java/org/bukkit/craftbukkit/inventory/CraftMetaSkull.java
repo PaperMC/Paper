@@ -27,7 +27,7 @@ import org.bukkit.profile.PlayerProfile;
 import org.jetbrains.annotations.Nullable;
 
 @DelegateDeserialization(SerializableMeta.class)
-class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+public class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<ResolvableProfile> SKULL_PROFILE = new ItemMetaKeyType<>(DataComponents.PROFILE, "SkullProfile");

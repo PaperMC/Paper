@@ -163,7 +163,7 @@ import static java.util.Objects.requireNonNull;
  */
 @DelegateDeserialization(SerializableMeta.class)
 // Important: ItemMeta needs to be the first interface see #applicableTo(Material)
-class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     static final Logger LOGGER = LogUtils.getLogger();
 
@@ -2456,7 +2456,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> map = new HashMap<>();
                 map.put(CraftMetaArmor.class, Set.of(CraftMetaArmor.TRIM.TYPE));
                 map.put(CraftMetaArmorStand.class, Set.of(CraftMetaArmorStand.ENTITY_TAG.TYPE));
-                map.put(CraftMetaAxolotlBucket.class, Set.of(CraftMetaAxolotlBucket.ENTITY_TAG.TYPE, CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.TYPE));
+                map.put(CraftMetaAxolotlBucket.class, Set.of(CraftMetaAxolotlBucket.ENTITY_TAG.TYPE, CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.TYPE, CraftMetaAxolotlBucket.AXOLOTL_VARIANT.TYPE));
                 map.put(CraftMetaBanner.class, Set.of(CraftMetaBanner.PATTERNS.TYPE)); // banner uses same tag as block state
                 map.put(CraftMetaShield.class, Set.of(CraftMetaShield.BASE_COLOR.TYPE, CraftMetaBanner.PATTERNS.TYPE));
                 map.put(CraftMetaBlockState.class, Set.of(CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE));
@@ -2479,7 +2479,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 map.put(CraftMetaSkull.class, Set.of(CraftMetaSkull.SKULL_PROFILE.TYPE, CraftMetaSkull.NOTE_BLOCK_SOUND.TYPE));
                 map.put(CraftMetaSpawnEgg.class, Set.of(CraftMetaSpawnEgg.ENTITY_TAG.TYPE));
                 map.put(CraftMetaSuspiciousStew.class, Set.of(CraftMetaSuspiciousStew.EFFECTS.TYPE));
-                map.put(CraftMetaTropicalFishBucket.class, Set.of(CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE, CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.TYPE));
+                map.put(CraftMetaTropicalFishBucket.class, Set.of(CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE, CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.TYPE, CraftMetaTropicalFishBucket.PATTERN.TYPE, CraftMetaTropicalFishBucket.PATTERN_COLOR.TYPE, CraftMetaTropicalFishBucket.BASE_COLOR.TYPE));
 
                 for (final Map.Entry<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> entry : map.entrySet()) {
                     final ArrayList<DataComponentType<?>> topLevelTags = new ArrayList<>(entry.getValue());

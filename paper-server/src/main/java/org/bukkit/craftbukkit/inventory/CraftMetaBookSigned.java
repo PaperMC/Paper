@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
+
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<WrittenBookContent> BOOK_CONTENT = new ItemMetaKeyType<>(DataComponents.WRITTEN_BOOK_CONTENT);
     static final ItemMetaKey BOOK_TITLE = new ItemMetaKey("title");
@@ -34,6 +35,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
     static final ItemMetaKey BOOK_PAGES = new ItemMetaKey("pages");
     static final ItemMetaKey RESOLVED = new ItemMetaKey("resolved");
     static final ItemMetaKey GENERATION = new ItemMetaKey("generation");
+
     static final int MAX_PAGE_LENGTH = WritableBookContent.PAGE_EDIT_LENGTH; // SPIGOT-6911: Use Minecraft limits
     static final int MAX_TITLE_LENGTH = WrittenBookContent.TITLE_MAX_LENGTH; // SPIGOT-6911: Use Minecraft limits
 

@@ -20,8 +20,9 @@ public class CraftMetaEntityTag extends CraftMetaItem {
     private static final Set<Material> ENTITY_TAGGABLE_MATERIALS = Sets.newHashSet(
             Material.COD_BUCKET,
             Material.PUFFERFISH_BUCKET,
-            Material.SALMON_BUCKET,
             Material.TADPOLE_BUCKET,
+            Material.SALMON_BUCKET,
+            Material.SULFUR_CUBE_BUCKET,
             Material.ITEM_FRAME,
             Material.GLOW_ITEM_FRAME,
             Material.PAINTING
