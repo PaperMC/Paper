@@ -42,6 +42,7 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractCow;
+import org.bukkit.entity.AbstractCubeMob;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Cow;
@@ -53,6 +54,7 @@ import org.bukkit.entity.LargeFireball;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Minecart;
 import org.bukkit.entity.SizedFireball;
+import org.bukkit.entity.Slime;
 import org.bukkit.entity.SplashPotion;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.TippedArrow;
@@ -409,7 +411,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     public abstract void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
 
-    @SuppressWarnings("unchecked")
     public net.minecraft.world.entity.Entity createEntity(Location location, Class<? extends Entity> clazz, boolean randomizeData) throws IllegalArgumentException {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(clazz != null, "Entity class cannot be null");
@@ -433,6 +434,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         } else if (clazz == TippedArrow.class) {
             clazz = Arrow.class;
             runOld = other -> ((Arrow) other.getBukkitEntity()).setBasePotionType(PotionType.WATER);
+        } else if (clazz == AbstractCubeMob.class) {
+            clazz = Slime.class;
         }
 
         CraftEntityTypes.EntityTypeData<?, ?> entityTypeData = CraftEntityTypes.getEntityTypeData(clazz);
