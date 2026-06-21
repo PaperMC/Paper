@@ -56,10 +56,13 @@ public class CraftMetaTropicalFishBucket extends CraftMetaItem implements Tropic
     CraftMetaTropicalFishBucket(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
         super(patch, extraHandledComponents);
 
+        getOrEmpty(patch, CraftMetaTropicalFishBucket.ENTITY_TAG).ifPresent((entityData) -> {
+            this.entityTag = entityData.copyTagWithEntityId();
+        });
         getOrEmpty(patch, CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG).ifPresent((customData) -> {
             this.bucketEntityTag = customData.copyTag();
         });
-        if (this.bucketEntityTag == null || !this.migrateLegacyItem(this.bucketEntityTag)) {
+        if (!this.migrateLegacyItem(this.entityTag, this.bucketEntityTag)) {
             getOrEmpty(patch, CraftMetaTropicalFishBucket.PATTERN).ifPresent((pattern) -> {
                 this.pattern = pattern;
             });
@@ -73,16 +76,29 @@ public class CraftMetaTropicalFishBucket extends CraftMetaItem implements Tropic
     }
 
     @Deprecated
-    private boolean migrateLegacyItem(CompoundTag bucketEntityTag) {
-        bucketEntityTag.getInt(CraftMetaTropicalFishBucket.VARIANT.NBT).ifPresent(packedVariant -> {
-            this.pattern = net.minecraft.world.entity.animal.fish.TropicalFish.getPattern(packedVariant);
-            this.baseColor = net.minecraft.world.entity.animal.fish.TropicalFish.getBaseColor(packedVariant);
-            this.patternColor = net.minecraft.world.entity.animal.fish.TropicalFish.getPatternColor(packedVariant);
-            bucketEntityTag.remove(CraftMetaTropicalFishBucket.VARIANT.NBT);
-            if (bucketEntityTag.isEmpty()) {
-                this.bucketEntityTag = null;
-            }
-        });
+    private boolean migrateLegacyItem(@Nullable CompoundTag entityTag, @Nullable CompoundTag bucketEntityTag) {
+        if (entityTag != null) {
+            entityTag.getInt(CraftMetaTropicalFishBucket.VARIANT.NBT).ifPresent(packedVariant -> {
+                this.pattern = net.minecraft.world.entity.animal.fish.TropicalFish.getPattern(packedVariant);
+                this.baseColor = net.minecraft.world.entity.animal.fish.TropicalFish.getBaseColor(packedVariant);
+                this.patternColor = net.minecraft.world.entity.animal.fish.TropicalFish.getPatternColor(packedVariant);
+                entityTag.remove(CraftMetaTropicalFishBucket.VARIANT.NBT);
+                if (entityTag.isEmpty()) {
+                    this.entityTag = null;
+                }
+            });
+        }
+        if (bucketEntityTag != null) {
+            bucketEntityTag.getInt(CraftMetaTropicalFishBucket.VARIANT.NBT).ifPresent(packedVariant -> {
+                this.pattern = net.minecraft.world.entity.animal.fish.TropicalFish.getPattern(packedVariant);
+                this.baseColor = net.minecraft.world.entity.animal.fish.TropicalFish.getBaseColor(packedVariant);
+                this.patternColor = net.minecraft.world.entity.animal.fish.TropicalFish.getPatternColor(packedVariant);
+                bucketEntityTag.remove(CraftMetaTropicalFishBucket.VARIANT.NBT);
+                if (bucketEntityTag.isEmpty()) {
+                    this.bucketEntityTag = null;
+                }
+            });
+        }
         return this.pattern != null && this.baseColor != null && this.patternColor != null;
     }
 
