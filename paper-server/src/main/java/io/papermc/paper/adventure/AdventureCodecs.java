@@ -144,7 +144,7 @@ public final class AdventureCodecs {
         Codec.STRING.fieldOf("value").forGetter(TEXT_PAYLOAD_EXTRACTOR)
     ).apply(instance, ClickEvent::copyToClipboard));
     // needs to be lazy loaded due to depending on PaperDialogCodecs static init
-    static final MapCodec<ClickEvent> SHOW_DIALOG_CODEC = MapCodec.recursive("show_dialog", ignored -> mapCodec((instance) -> instance.group(
+    static final MapCodec<ClickEvent> SHOW_DIALOG_CODEC = MapCodec.recursive("show_dialog", _ -> mapCodec((instance) -> instance.group(
         PaperDialogCodecs.DIALOG_CODEC.fieldOf("dialog").forGetter(a -> (Dialog) ((ClickEvent.Payload.Dialog) a.payload()).dialog())
     ).apply(instance, ClickEvent::showDialog)));
     static final MapCodec<ClickEvent> CUSTOM_CODEC = mapCodec((instance) -> instance.group(

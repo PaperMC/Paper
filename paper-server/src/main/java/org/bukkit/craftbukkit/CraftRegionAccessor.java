@@ -423,19 +423,17 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             clazz = Horse.class;
         } else if (clazz == AbstractCow.class) {
             clazz = Cow.class;
-        } else if (clazz == Fireball.class) {
+        } else if (clazz == AbstractCubeMob.class) {
+            clazz = Slime.class;
+        } else if (clazz == Fireball.class || clazz == SizedFireball.class) {
             clazz = LargeFireball.class;
         } else if (clazz == ThrownPotion.class) {
             clazz = SplashPotion.class;
         } else if (clazz == Minecart.class) {
             clazz = RideableMinecart.class;
-        } else if (clazz == SizedFireball.class) {
-            clazz = LargeFireball.class;
         } else if (clazz == TippedArrow.class) {
             clazz = Arrow.class;
             runOld = other -> ((Arrow) other.getBukkitEntity()).setBasePotionType(PotionType.WATER);
-        } else if (clazz == AbstractCubeMob.class) {
-            clazz = Slime.class;
         }
 
         CraftEntityTypes.EntityTypeData<?, ?> entityTypeData = CraftEntityTypes.getEntityTypeData(clazz);
