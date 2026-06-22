@@ -73,7 +73,7 @@ public class RestartCommand extends Command {
             System.exit(0);
         } else {
             // Mark the server to shutdown at the end of the tick
-            MinecraftServer.getServer().safeShutdown(false, isRestarting);
+            MinecraftServer.getServer().halt(false, isRestarting);
 
             // wait 10 seconds to see if we're actually going to try shutdown
             try {

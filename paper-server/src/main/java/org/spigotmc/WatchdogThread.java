@@ -133,7 +133,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
                         }
                         // try one last chance to safe shutdown on main in case it 'comes back'
                         server.abnormalExit = true;
-                        server.safeShutdown(false, this.restart);
+                        server.halt(false, this.restart);
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
