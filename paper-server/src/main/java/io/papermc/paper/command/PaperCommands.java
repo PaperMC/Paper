@@ -24,6 +24,10 @@ public final class PaperCommands {
     public static void registerCommands(final MinecraftServer server) {
         COMMANDS.put("paper", new PaperCommand("paper"));
         COMMANDS.put("mspt", new MSPTCommand("mspt"));
+        COMMANDS.put("ping", new PingCommand("ping"));
+        COMMANDS.put("seen", new SeenCommand("seen"));
+        COMMANDS.put("playtime", new PlaytimeCommand("playtime"));
+        COMMANDS.put("invsee", new InvSeeCommand("invsee"));
 
         COMMANDS.forEach((s, command) -> {
             server.server.getCommandMap().register(s, "Paper", command);
