@@ -12,7 +12,10 @@ import org.jetbrains.annotations.NotNull;
  * See the
  * <a href="https://minecraft.wiki/w/Loot_table#List_of_loot_tables">
  * Minecraft Wiki</a> for more information on loot tables.
+ *
+ * @deprecated loot table is now a proper registry, see {@link io.papermc.paper.loot.LootTables}
  */
+@Deprecated(since = "26.1")
 public enum LootTables implements Keyed {
 
     // Chests/Dispensers - treasure chests
