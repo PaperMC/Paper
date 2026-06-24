@@ -65,6 +65,15 @@ gradle.lifecycle.beforeProject {
         "$mcVersion.build.$paperBuildNumber-${paperVersionChannel.lowercase()}"
     }
     version = versionString
+    println(
+    """
+    =====================[ Paper Build Info ]=====================
+    Minecraft Version : $mcVersion
+    Paper Version     : $versionString
+    Build Type        : ${if (paperBuildNumber == null) "Local Development" else "CI/Release Build"}
+    ==============================================================
+    """.trimIndent()
+)
 }
 
 if (providers.gradleProperty("paperBuildCacheEnabled").orNull.toBoolean()) {
