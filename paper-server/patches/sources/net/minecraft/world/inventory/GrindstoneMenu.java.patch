@@ -22,7 +22,7 @@
      public static final int MAX_NAME_LENGTH = 35;
      public static final int INPUT_SLOT = 0;
      public static final int ADDITIONAL_SLOT = 1;
-@@ -29,14 +_,8 @@
+@@ -29,22 +_,36 @@
      private static final int INV_SLOT_END = 30;
      private static final int USE_ROW_SLOT_START = 30;
      private static final int USE_ROW_SLOT_END = 39;
@@ -38,8 +38,13 @@
 +    final Container repairSlots; // Paper - Add missing InventoryHolders - move down
      private final ContainerLevelAccess access;
  
++    // Paper start
++    private int customXpToDrop = -1;
++    // Paper end
++
      public GrindstoneMenu(final int containerId, final Inventory inventory) {
-@@ -45,6 +_,22 @@
+         this(containerId, inventory, ContainerLevelAccess.NULL);
+     }
  
      public GrindstoneMenu(final int containerId, final Inventory inventory, final ContainerLevelAccess access) {
          super(MenuType.GRINDSTONE, containerId);
@@ -62,13 +67,23 @@
          this.access = access;
          this.addSlot(new Slot(this.repairSlots, 0, 49, 19) {
              @Override
-@@ -68,7 +_,11 @@
+@@ -66,9 +_,22 @@
+ 
+             @Override
              public void onTake(final Player player, final ItemStack carried) {
++                // Paper start - Add GrindstoneDisenchantEvent
++                if (!GrindstoneMenu.this.callGrindstoneEvent(player, carried)) {
++                    return;
++                }
++
++                final int xpToDrop = GrindstoneMenu.this.customXpToDrop != -1 ? GrindstoneMenu.this.customXpToDrop : this.getExperienceAmount(player.level());
++                GrindstoneMenu.this.customXpToDrop = -1;
++                // Paper end - Add GrindstoneDisenchantEvent
                  access.execute((level, pos) -> {
                      if (level instanceof ServerLevel) {
 -                        ExperienceOrb.award((ServerLevel)level, Vec3.atCenterOf(pos), this.getExperienceAmount(level));
 +                        // Paper start - Fire BlockExpEvent on grindstone use
-+                        org.bukkit.event.block.BlockExpEvent event = new org.bukkit.event.block.BlockExpEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), this.getExperienceAmount(level));
++                        org.bukkit.event.block.BlockExpEvent event = new org.bukkit.event.block.BlockExpEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), xpToDrop);
 +                        event.callEvent();
 +                        ExperienceOrb.awardWithDirection((ServerLevel) level, Vec3.atCenterOf(pos), Vec3.ZERO, event.getExpToDrop(), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player, null);
 +                        // Paper end - Fire BlockExpEvent on grindstone use
@@ -106,3 +121,76 @@
          return stillValid(this.access, player, Blocks.GRINDSTONE);
      }
  
+@@ -219,6 +_,11 @@
+             ItemStack input = this.repairSlots.getItem(0);
+             ItemStack additional = this.repairSlots.getItem(1);
+             if (slotIndex == 2) {
++                // Paper start - Add GrindstoneEvent helper (Shift-click block)
++                if (!this.callGrindstoneEvent(player, item)) {
++                    return ItemStack.EMPTY;
++                }
++                // Paper end
+                 if (!this.moveItemStackTo(item, 3, 39, true)) {
+                     return ItemStack.EMPTY;
+                 }
+@@ -255,4 +_,60 @@
+ 
+         return clicked;
+     }
++
++    // Paper start - Block drop from result slot when canceled
++    @Override
++    public void clicked(final int slotIndex, final int buttonNum, final net.minecraft.world.inventory.ContainerInput containerInput, final net.minecraft.world.entity.player.Player player) {
++        if (slotIndex == 2) {
++            if (containerInput == net.minecraft.world.inventory.ContainerInput.THROW) {
++                Slot slot = this.getSlot(slotIndex);
++                if (slot.hasItem()) {
++                    if (!this.callGrindstoneEvent(player, slot.getItem())) {
++                        return;
++                    }
++                }
++            }
++        }
++
++        super.clicked(slotIndex, buttonNum, containerInput, player);
++    }
++    // Paper end
++
++    // Paper start - Add GrindstoneDisenchantEvent helper
++    private boolean callGrindstoneEvent(Player player, ItemStack carried) {
++        org.bukkit.entity.Player bukkitPlayer = (org.bukkit.entity.Player) player.getBukkitEntity();
++        org.bukkit.inventory.ItemStack bukkitItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(carried);
++        org.bukkit.inventory.ItemStack firstItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.repairSlots.getItem(0));
++        org.bukkit.inventory.ItemStack secondItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.repairSlots.getItem(1));
++
++        int amount = 0;
++        for (int i = 0; i < 2; i++) {
++            ItemStack item = this.repairSlots.getItem(i);
++            net.minecraft.world.item.enchantment.ItemEnchantments enchantments = net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantmentsForCrafting(item);
++            for (it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment>> entry : enchantments.entrySet()) {
++                if (!entry.getKey().is(net.minecraft.tags.EnchantmentTags.CURSE)) {
++                    amount += entry.getKey().value().getMinCost(entry.getIntValue());
++                }
++            }
++        }
++        int vanillaXp = 0;
++        if (amount > 0) {
++            int halfAmount = (int) Math.ceil(amount / 2.0);
++            vanillaXp = halfAmount + player.level().getRandom().nextInt(halfAmount);
++        }
++
++        io.papermc.paper.event.inventory.GrindstoneDisenchantEvent grindstoneEvent = new io.papermc.paper.event.inventory.GrindstoneDisenchantEvent(bukkitPlayer, firstItem, secondItem, bukkitItem, vanillaXp);
++
++        if (!grindstoneEvent.callEvent()) {
++            bukkitPlayer.setItemOnCursor(null);
++            this.createResult();
++            this.sendAllDataToRemote();
++            bukkitPlayer.updateInventory();
++            return false;
++        }
++
++        this.customXpToDrop = grindstoneEvent.getExperience();
++        return true;
++    }
++    // Paper end
+ }
