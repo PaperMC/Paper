@@ -10,17 +10,23 @@ import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
 import io.papermc.paper.registry.data.CowVariantRegistryEntry;
 import io.papermc.paper.registry.data.DamageTypeRegistryEntry;
+import io.papermc.paper.registry.data.DimensionTypeRegistryEntry;
 import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.FrogVariantRegistryEntry;
 import io.papermc.paper.registry.data.GameEventRegistryEntry;
 import io.papermc.paper.registry.data.InstrumentRegistryEntry;
 import io.papermc.paper.registry.data.JukeboxSongRegistryEntry;
+import io.papermc.paper.registry.data.LevelStemRegistryEntry;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PigVariantRegistryEntry;
 import io.papermc.paper.registry.data.SoundEventRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
+import io.papermc.paper.world.WorldPreset;
+import io.papermc.paper.world.worldgen.DimensionType;
+import io.papermc.paper.world.worldgen.DimensionTypes;
+import io.papermc.paper.world.worldgen.LevelStem;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -69,7 +75,9 @@ import net.minecraft.world.item.equipment.trim.TrimPatterns;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BannerPatterns;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.levelgen.presets.WorldPresets;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.saveddata.maps.MapDecorationTypes;
@@ -203,7 +211,10 @@ public final class RegistryEntries {
         entry(Registries.PIG_VARIANT, PigVariants.class, Pig.Variant.class).writableApiRegistryBuilder(PigVariantRegistryEntry.Builder.class, "PaperPigVariantRegistryEntry.PaperBuilder"),
         entry(Registries.PIG_SOUND_VARIANT, PigSoundVariants.class, Pig.SoundVariant.class),
         entry(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilusVariants.class, ZombieNautilus.Variant.class).writableApiRegistryBuilder(ZombieNautilusVariantRegistryEntry.Builder.class, "PaperZombieNautilusVariantRegistryEntry.PaperBuilder"),
-        entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder")
+        entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder"),
+        entry(Registries.WORLD_PRESET, WorldPresets.class, WorldPreset.class, "Paper").preload(io.papermc.paper.world.WorldPresets.class),
+        entry(Registries.DIMENSION_TYPE, BuiltinDimensionTypes.class, DimensionType.class, "Paper").preload(DimensionTypes.class).writableApiRegistryBuilder(DimensionTypeRegistryEntry.Builder.class, "PaperDimensionTypeRegistryEntry.PaperBuilder"),
+        entry(Registries.LEVEL_STEM, net.minecraft.world.level.dimension.LevelStem.class, LevelStem.class, "Paper").writableApiRegistryBuilder(LevelStemRegistryEntry.Builder.class, "PaperLevelStemRegistryEntry.PaperBuilder")
     );
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(

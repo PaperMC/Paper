@@ -38,13 +38,13 @@ public class Conversions {
     }
 
     private final RegistryOps.RegistryInfoLookup lookup;
-    private final WrapperAwareSerializer serializer;
     private final RegistryOps<Object> javaOps;
+    private final WrapperAwareSerializer serializer;
 
     public Conversions(final RegistryOps.RegistryInfoLookup lookup) {
         this.lookup = lookup;
-        this.serializer = new WrapperAwareSerializer(() -> RegistryOps.create(JavaOps.INSTANCE, lookup));
         this.javaOps = RegistryOps.create(JavaOps.INSTANCE, lookup);
+        this.serializer = new WrapperAwareSerializer(() -> this.javaOps);
     }
 
     public <OUT, IN> OUT convert(final IN in, final Codec<OUT> outCodec, final Codec<IN> inCodec) {
@@ -116,4 +116,8 @@ public class Conversions {
         return new PaperRegistryBuilderFactory<>(resourceRegistryKey, this, buildableMeta.builderFiller(), lookupForBuilders::getValueForCopying);
     }
 
+    public <T> T clone(final T obj, final Codec<T> directCodec) {
+        final Object serialized = directCodec.encodeStart(this.javaOps, obj).getOrThrow(IllegalArgumentException::new);
+        return directCodec.parse(this.javaOps, serialized).getOrThrow(IllegalArgumentException::new);
+    }
 }

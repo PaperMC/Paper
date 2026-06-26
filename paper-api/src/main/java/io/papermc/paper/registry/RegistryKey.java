@@ -4,6 +4,9 @@ import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.world.WorldPreset;
+import io.papermc.paper.world.worldgen.DimensionType;
+import io.papermc.paper.world.worldgen.LevelStem;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
@@ -139,6 +142,7 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<GameRule<?>> GAME_RULE = create("game_rule");
 
+
     /* ********************** *
      * Data-driven Registries *
      * ********************** */
@@ -257,6 +261,21 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.DialogKeys
      */
     RegistryKey<Dialog> DIALOG = create("dialog");
+    /**
+     * Data-driven registry for world presets.
+     * @see io.papermc.paper.registry.keys.WorldPresetKeys
+     */
+    RegistryKey<WorldPreset> WORLD_PRESET = create("worldgen/world_preset");
+    /**
+     * Data-driven registry for dimension types.
+     * @see io.papermc.paper.registry.keys.DimensionTypeKeys
+     */
+    RegistryKey<DimensionType> DIMENSION_TYPE = create("dimension_type");
+    /**
+     * Data-driven registry for level stems.
+     * @see io.papermc.paper.registry.keys.LevelStemKeys
+     */
+    RegistryKey<LevelStem> LEVEL_STEM = create("dimension");
 
 
     /* ******************* *
