@@ -9,6 +9,7 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.block.bed.BedEnterProblem;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
+import io.papermc.paper.event.block.BlockDropResourcesEvent;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
@@ -28,6 +29,7 @@ import net.minecraft.Optionull;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
@@ -106,6 +108,7 @@ import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftEntityFactory;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.entity.CraftSpellcaster;
@@ -2424,5 +2427,32 @@ public class CraftEventFactory {
             return PrimedTnt.NO_FUSE;
         }
         return event.getFuseTime();
+    }
+
+    public static List<ItemStack> callBlockDropResourcesEvent(List<ItemStack> drops, LevelAccessor level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @Nullable Entity breaker, @Nullable ItemStack tool) {
+        if (BlockDropResourcesEvent.getHandlerList().getRegisteredListeners().length == 0) {
+            return drops; // No listeners, skip event creation
+        }
+
+        var converted = new ArrayList<org.bukkit.inventory.ItemStack>();
+        for (var drop : drops) {
+            converted.add(CraftItemStack.asCraftMirror(drop));
+        }
+
+        var stateSnapshot = CraftBlockStates.getBlockState(level, pos);
+        stateSnapshot.setBlock(state);
+
+        var event = new BlockDropResourcesEvent(
+            CraftBlock.at(level, pos),
+            stateSnapshot,
+            converted, breaker == null ? null : breaker.getBukkitEntity(),
+            tool == null ? null : CraftItemStack.asCraftMirror(tool))
+            ;
+        if (event.callEvent()) {
+            // convert items back
+            return event.getItems().stream().map(CraftItemStack::asNMSCopy).toList();
+        }
+
+        return List.of(); // return nothing if event was cancelled
     }
 }
