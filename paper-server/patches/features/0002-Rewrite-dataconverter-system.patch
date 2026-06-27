@@ -1626,6 +1626,67 @@ index 0000000000000000000000000000000000000000..1a6d02df13f3461402fed429f7fbdb5a
 +
 +    private ConverterAbstractOldAttributesRename() {}
 +}
+diff --git a/ca/spottedleaf/dataconverter/minecraft/converters/attributes/ConverterAbstractPostV4307AttributesRename.java b/ca/spottedleaf/dataconverter/minecraft/converters/attributes/ConverterAbstractPostV4307AttributesRename.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..00df573bda5c14879bee6dc9b606c4e08123f3c6
+--- /dev/null
++++ b/ca/spottedleaf/dataconverter/minecraft/converters/attributes/ConverterAbstractPostV4307AttributesRename.java
+@@ -0,0 +1,55 @@
++package ca.spottedleaf.dataconverter.minecraft.converters.attributes;
++
++import ca.spottedleaf.dataconverter.converters.DataConverter;
++import ca.spottedleaf.dataconverter.minecraft.converters.helpers.RenameHelper;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import ca.spottedleaf.dataconverter.types.ListType;
++import ca.spottedleaf.dataconverter.types.MapType;
++import ca.spottedleaf.dataconverter.types.ObjectType;
++import java.util.function.Function;
++
++public final class ConverterAbstractPostV4307AttributesRename {
++
++    public static void register(final int version, final Function<String, String> renamer) {
++        register(version, 0, renamer);
++    }
++
++    public static void register(final int version, final int versionStep, final Function<String, String> renamer) {
++        MCTypeRegistry.DATA_COMPONENTS.addStructureConverter(new DataConverter<>(version, versionStep) {
++            @Override
++            public MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
++                final ListType modifiers = data.getList("minecraft:attribute_modifiers", ObjectType.MAP);
++                if (modifiers == null) {
++                    return null;
++                }
++
++                for (int i = 0, len = modifiers.size(); i < len; ++i) {
++                    RenameHelper.renameString(modifiers.getMap(i), "type", renamer);
++                }
++
++                return null;
++            }
++        });
++
++        final DataConverter<MapType, MapType> entityConverter = new DataConverter<>(version, versionStep) {
++            @Override
++            public MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
++                final ListType modifiers = data.getList("attributes", ObjectType.MAP);
++                if (modifiers == null) {
++                    return null;
++                }
++
++                for (int i = 0, len = modifiers.size(); i < len; ++i) {
++                    RenameHelper.renameString(modifiers.getMap(i), "id", renamer);
++                }
++
++                return null;
++            }
++        };
++
++        MCTypeRegistry.ENTITY.addStructureConverter(entityConverter);
++        MCTypeRegistry.PLAYER.addStructureConverter(entityConverter);
++    }
++
++    private ConverterAbstractPostV4307AttributesRename() {}
++}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/converters/attributes/ConverterEntityAttributesBaseValueUpdater.java b/ca/spottedleaf/dataconverter/minecraft/converters/attributes/ConverterEntityAttributesBaseValueUpdater.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..071272260593f834b03b195a1e4c71c81a051be5
@@ -27892,14 +27953,14 @@ index 0000000000000000000000000000000000000000..25fa86f6c07a9fc5364fddab15769a57
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V4888.java b/ca/spottedleaf/dataconverter/minecraft/versions/V4888.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bc32afe73b2c3091879d34af4ba3895880bba71c
+index 0000000000000000000000000000000000000000..64dbee248518a4dbd4a4b626beae24329a87cfab
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V4888.java
 @@ -0,0 +1,19 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.dataconverter.minecraft.MCVersions;
-+import ca.spottedleaf.dataconverter.minecraft.converters.attributes.ConverterAbstractAttributesRename;
++import ca.spottedleaf.dataconverter.minecraft.converters.attributes.ConverterAbstractPostV4307AttributesRename;
 +
 +public final class V4888 {
 +
@@ -27910,7 +27971,7 @@ index 0000000000000000000000000000000000000000..bc32afe73b2c3091879d34af4ba38958
 +    }
 +
 +    public static void register() {
-+        ConverterAbstractAttributesRename.register(VERSION, V4888::rename);
++        ConverterAbstractPostV4307AttributesRename.register(VERSION, V4888::rename);
 +    }
 +
 +    private V4888() {}
@@ -33709,7 +33770,7 @@ index 945fdc4b3958a88342cc881edd6270c2123a8249..212172b6451a073e7c64a336fe4c0650
          return structureTemplate.save(new CompoundTag());
      }
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index b9d4161dedfd43a1542ee8e5bc57a66ce5e39dba..884c5ca1d6c1d20a67acb31d1e014d081a22ff62 100644
+index 0fe6e0470f67709f4112095780924bd765b77b25..0deb69356a5f82c30dff84957e0a471fa76add08 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -298,6 +298,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
