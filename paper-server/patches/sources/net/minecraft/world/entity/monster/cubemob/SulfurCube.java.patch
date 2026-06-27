@@ -133,8 +133,29 @@
          if (source.getEntity() != null && this.hasBodyItem()) {
              float horizontalHitAngleScale = 1.6F;
              float verticalHitAngleScale = 0.5F;
-@@ -874,7 +_,7 @@
-             this.setDeltaMovement(deltaMovement.x - horizontalKnockback.x, deltaMovement.y + verticalPower * 1.2, deltaMovement.z - horizontalKnockback.z);
+@@ -865,16 +_,26 @@
+             double knockBackResistance = this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
+             horizontalPower *= (float)(1.0 - knockBackResistance);
+             verticalPower *= (float)(1.0 - knockBackResistance);
+-            this.needsSync = true;
++            // this.needsSync = true; // Paper - moved down
+             Vec3 deltaMovement = this.getDeltaMovement();
+             horizontalPower *= 0.4F;
+             horizontalPower = Mth.clamp(horizontalPower, -128.0F, 128.0F);
+             verticalPower = Mth.clamp(verticalPower, -128.0F, 128.0F);
+             Vec3 horizontalKnockback = new Vec3(xd, 0.0, zd).normalize().scale(horizontalPower);
+-            this.setDeltaMovement(deltaMovement.x - horizontalKnockback.x, deltaMovement.y + verticalPower * 1.2, deltaMovement.z - horizontalKnockback.z);
++            // Paper start - knockback events
++            Vec3 targetMovement = new Vec3(
++                deltaMovement.x - horizontalKnockback.x, deltaMovement.y + verticalPower * 1.2, deltaMovement.z - horizontalKnockback.z
++            );
++            Vec3 knockback = targetMovement.subtract(deltaMovement);
++            io.papermc.paper.event.entity.EntityKnockbackEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) this.getBukkitEntity(), attacker, attacker, eventCause, power, knockback);
++            if (!event.isCancelled()) {
++                this.needsSync = true;
++                this.setDeltaMovement(deltaMovement.add(event.getKnockback().getX(), event.getKnockback().getY(), event.getKnockback().getZ()));
++            }
++            // Paper end - knockback events
              this.playSound(hitSound.value());
          } else {
 -            super.knockback(power, xd, zd, source, damage, comesFromEffect);

@@ -1118,10 +1118,9 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     }
 
     /**
-     * @return The {@link org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason} that initially spawned this entity. <!-- Paper - added "initially" to clarify that the SpawnReason doesn't change after the Entity was initially spawned" -->
+     * {@return the {@link org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason} that initially spawned this entity or null if not yet spawned}
      */
-    @NotNull
-    org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason getEntitySpawnReason();
+    org.bukkit.event.entity.CreatureSpawnEvent.@Nullable SpawnReason getEntitySpawnReason();
 
     /**
      * Check if entity is underwater

@@ -28,9 +28,11 @@ import org.jetbrains.annotations.NotNull;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBookMeta {
+
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<WritableBookContent> BOOK_CONTENT = new ItemMetaKeyType<>(DataComponents.WRITABLE_BOOK_CONTENT);
     static final ItemMetaKey BOOK_PAGES = new ItemMetaKey("pages");
+
     static final int MAX_PAGES = WritableBookContent.MAX_PAGES; // SPIGOT-6911: Use Minecraft limits // Paper
     static final int MAX_PAGE_LENGTH = WritableBookContent.PAGE_EDIT_LENGTH; // SPIGOT-6911: Use Minecraft limits
 

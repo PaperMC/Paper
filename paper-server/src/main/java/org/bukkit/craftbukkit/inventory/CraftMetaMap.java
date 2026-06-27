@@ -16,7 +16,8 @@ import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.MapView;
 
 @DelegateDeserialization(SerializableMeta.class)
-class CraftMetaMap extends CraftMetaItem implements MapMeta {
+public class CraftMetaMap extends CraftMetaItem implements MapMeta {
+
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<MapPostProcessing> MAP_POST_PROCESSING = new ItemMetaKeyType<>(DataComponents.MAP_POST_PROCESSING);
     static final ItemMetaKey MAP_SCALING = new ItemMetaKey("scaling");
@@ -24,6 +25,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
     static final ItemMetaKey MAP_LOC_NAME = new ItemMetaKey("display-loc-name");
     static final ItemMetaKeyType<MapItemColor> MAP_COLOR = new ItemMetaKeyType<>(DataComponents.MAP_COLOR, "display-map-color");
     static final ItemMetaKeyType<MapId> MAP_ID = new ItemMetaKeyType<>(DataComponents.MAP_ID, "map-id");
+
     static final byte SCALING_EMPTY = (byte) 0;
     static final byte SCALING_TRUE = (byte) 1;
     static final byte SCALING_FALSE = (byte) 2;

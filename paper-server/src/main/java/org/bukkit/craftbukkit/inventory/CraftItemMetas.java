@@ -163,10 +163,10 @@ public final class CraftItemMetas {
         if (itemType == ItemType.AIR) {
             return CraftItemMetas.asType(CraftItemMetas.EMPTY_META_DATA);
         }
-        if (itemType == ItemType.WRITTEN_BOOK) {
+        if (itemType == ItemType.WRITTEN_BOOK) { // sync with CraftMetaBookSigned#applicableTo
             return CraftItemMetas.asType(CraftItemMetas.SIGNED_BOOK_META_DATA);
         }
-        if (itemType == ItemType.WRITABLE_BOOK) {
+        if (itemType == ItemType.WRITABLE_BOOK) { // sync with CraftMetaBook#applicableTo
             return CraftItemMetas.asType(CraftItemMetas.WRITABLE_BOOK_META_DATA);
         }
         if (itemType == ItemType.CREEPER_HEAD || itemType == ItemType.DRAGON_HEAD
@@ -246,7 +246,7 @@ public final class CraftItemMetas {
         }
         if (itemType == ItemType.COD_BUCKET || itemType == ItemType.PUFFERFISH_BUCKET || itemType == ItemType.TADPOLE_BUCKET
                 || itemType == ItemType.SALMON_BUCKET || itemType == ItemType.SULFUR_CUBE_BUCKET || itemType == ItemType.ITEM_FRAME
-                || itemType == ItemType.GLOW_ITEM_FRAME || itemType == ItemType.PAINTING) {
+                || itemType == ItemType.GLOW_ITEM_FRAME || itemType == ItemType.PAINTING) { // sync with CraftMetaEntityTag#applicableTo
             return CraftItemMetas.asType(CraftItemMetas.ENTITY_TAG_META_DATA);
         }
         if (itemType == ItemType.COMPASS) {

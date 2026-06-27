@@ -4,6 +4,32 @@ Date: Mon, 9 Feb 2026 19:09:12 -0700
 Subject: [PATCH] Add explicit flush support to Log4j AsyncAppender
 
 
+diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
+index 5c369a0b14253f119cdf3578e26451d873e703a2..82377ee76caac220f7565cb729b9e608206a685a 100644
+--- a/io/papermc/paper/FeatureHooks.java
++++ b/io/papermc/paper/FeatureHooks.java
+@@ -190,6 +190,20 @@ public final class FeatureHooks {
+     }
+ 
+     public static void flushAsyncAppenders() {
++        // Paper start - add explicit flush method
++        if (!(org.apache.logging.log4j.LogManager.getContext(false) instanceof org.apache.logging.log4j.core.LoggerContext context)) {
++            return;
++        }
++
++        for (final org.apache.logging.log4j.core.Appender appender : context.getConfiguration().getAppenders().values()) {
++            if (appender instanceof org.apache.logging.log4j.core.appender.AsyncAppender asyncAppender) {
++                final boolean flushed = asyncAppender.flush(100, java.util.concurrent.TimeUnit.MILLISECONDS);
++                if (!flushed) {
++                    net.minecraft.server.MinecraftServer.LOGGER.warn("Failed to flush log messages before plugin unload.");
++                }
++            }
++        }
++        // Paper end - add explicit flush method
+     }
+ 
+ }
+\ No newline at end of file
 diff --git a/org/apache/logging/log4j/core/appender/AsyncAppender.java b/org/apache/logging/log4j/core/appender/AsyncAppender.java
 index f84870712345cd688a90ea53ad47eb33fe658863..126a5d1bc4239ba83565600a060877c22e39e06b 100644
 --- a/org/apache/logging/log4j/core/appender/AsyncAppender.java

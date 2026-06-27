@@ -3236,6 +3236,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      *
      * @return the ItemMeta class of this ItemType
      */
+    @ApiStatus.Internal
     Class<? extends ItemMeta> getItemMetaClass();
 
     /**
