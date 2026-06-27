@@ -38,10 +38,11 @@ public class PlayerConnectionValidateLoginEvent extends Event {
     /**
      * Gets the connection of the player in this event.
      * <p>
+     * However, these underlying connection types are not guaranteed to be stable across versions.
+     * <p>
      * Note: Since 1.21.7, this connection is either
      * {@link PlayerLoginConnection} or {@link PlayerConfigurationConnection}
      * depending on which phase it is fired in, allowing access to phase-specific API.
-     * <br>However, these underlying connection types are not guaranteed to be stable across versions.
      *
      * @return connection
      * @apiNote disconnecting the player through this connection

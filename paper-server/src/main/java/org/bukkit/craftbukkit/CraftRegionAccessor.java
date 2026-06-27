@@ -14,6 +14,7 @@ import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
@@ -36,6 +37,7 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.entity.CraftEntityTypes;
 import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 import org.bukkit.craftbukkit.util.CraftLocation;
@@ -450,6 +452,10 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
         if (!this.isEnabled(entityTypeData.entityType())) {
             throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName() + " because it is not an enabled feature");
+        }
+
+        if (this.getHandle().getDifficulty() == Difficulty.PEACEFUL && !CraftEntityType.bukkitToMinecraft(entityTypeData.entityType()).isAllowedInPeaceful()) {
+            throw new IllegalStateException("Cannot spawn monster for " + clazz.getName() + " in Peaceful difficulty");
         }
 
         net.minecraft.world.entity.Entity entity = entityTypeData.spawnFunction().apply(new CraftEntityTypes.SpawnData(this.getHandle(), location, randomizeData, this.isNormalWorld()));
