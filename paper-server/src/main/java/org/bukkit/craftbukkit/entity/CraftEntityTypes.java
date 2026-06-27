@@ -11,6 +11,7 @@ import java.util.function.Function;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntitySpawnRequest;
 import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
@@ -218,13 +219,14 @@ import org.bukkit.entity.minecart.RideableMinecart;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.util.Vector;
+import org.jspecify.annotations.Nullable;
 
 public final class CraftEntityTypes {
 
     public record EntityTypeData<E extends Entity, M extends net.minecraft.world.entity.Entity>(EntityType entityType,
                                                                                                 Class<E> entityClass,
                                                                                                 BiFunction<CraftServer, M, E> convertFunction,
-                                                                                                Function<SpawnData, M> spawnFunction) {
+                                                                                                Function<SpawnData, @Nullable M> spawnFunction) {
     }
 
     public record SpawnData(WorldGenLevel world, Location location, boolean randomizeData, boolean normalWorld) {
@@ -506,12 +508,16 @@ public final class CraftEntityTypes {
         }
     }
 
-    private static <R extends net.minecraft.world.entity.Entity> Function<SpawnData, R> fromEntityType(net.minecraft.world.entity.EntityType<R> entityTypes) {
-        return spawnData -> entityTypes.create(spawnData.minecraftWorld(), EntitySpawnReason.COMMAND);
+    private static <R extends net.minecraft.world.entity.Entity> Function<SpawnData, @Nullable R> fromEntityType(net.minecraft.world.entity.EntityType<R> entityTypes) {
+        return spawnData -> entityTypes.create(spawnData.minecraftWorld(), new EntitySpawnRequest(EntitySpawnReason.COMMAND, true));
     }
 
-    private static <R extends net.minecraft.world.entity.LivingEntity> Function<SpawnData, R> createLiving(net.minecraft.world.entity.EntityType<R> entityTypes) {
-        return CraftEntityTypes.combine(CraftEntityTypes.fromEntityType(entityTypes), CraftEntityTypes.ABS_MOVE);
+    private static <R extends net.minecraft.world.entity.LivingEntity> Function<SpawnData, @Nullable R> createLiving(net.minecraft.world.entity.EntityType<R> entityTypes) {
+        return CraftEntityTypes.combine(CraftEntityTypes.fromEntityType(entityTypes), (spawnData, livingEntity) -> {
+            if (livingEntity != null) {
+                CraftEntityTypes.ABS_MOVE.accept(spawnData, livingEntity);
+            }
+        });
     }
 
     private static <R extends AbstractHurtingProjectile> Function<SpawnData, R> createFireball(net.minecraft.world.entity.EntityType<R> entityTypes) {
@@ -594,7 +600,7 @@ public final class CraftEntityTypes {
         };
     }
 
-    private static <T, R> Function<T, R> combine(Function<T, R> before, BiConsumer<T, ? super R> after) {
+    private static <T, R> Function<T, R> combine(Function<T, @Nullable R> before, BiConsumer<T, @Nullable ? super R> after) {
         return (t) -> {
             R r = before.apply(t);
             after.accept(t, r);
