@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.object.ObjectContents;
+import net.kyori.adventure.text.object.ObjectContentsLike;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.BanEntry;
@@ -69,7 +71,7 @@ import org.jspecify.annotations.Nullable;
  * Represents a player, connected or not
  */
 @NullMarked
-public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient { // Paper
+public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient, ObjectContentsLike { // Paper
 
     // Paper start
     @Override
@@ -4013,4 +4015,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @ApiStatus.Experimental
     PlayerGameConnection getConnection();
+
+    @Override
+    default ObjectContents asObjectContents() {
+        return this.getPlayerProfile().asObjectContents();
+    }
 }
