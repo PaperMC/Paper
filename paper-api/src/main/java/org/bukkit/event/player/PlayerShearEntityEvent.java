@@ -72,12 +72,12 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * Get a list of drops for this shearing.
+     * Get an immutable list of drops for this shearing.
      *
      * @return the shearing drops
      * @see #setDrops(java.util.List)
      */
-    public @NotNull List<ItemStack> getDrops() {
+    public @NotNull @Unmodifiable List<ItemStack> getDrops() {
         return this.drops;
     }
 
