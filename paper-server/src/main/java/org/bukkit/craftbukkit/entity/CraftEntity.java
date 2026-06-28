@@ -52,6 +52,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
@@ -563,6 +564,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public EntityDamageEvent getLastDamageCause() {
         return this.lastDamageEvent;
+    }
+
+    @Override
+    public @NotNull ItemStack getWeaponItem() {
+        net.minecraft.world.item.ItemStack stack = this.getHandle().getWeaponItem();
+        return stack == null ? ItemStack.empty() : stack.asBukkitCopy();
     }
 
     @Override
