@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -83,9 +_,9 @@
+@@ -76,9 +_,9 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final int CONVERSION_RETRY_DELAY_MS = 5000;
      private static final int CONVERSION_RETRIES = 2;
@@ -12,33 +12,33 @@
      private @Nullable RconThread rconThread;
      public DedicatedServerSettings settings;
      private @Nullable MinecraftServerGui gui;
-@@ -98,6 +_,7 @@
-     private long lastHeartbeat;
+@@ -90,6 +_,7 @@
+     private final @Nullable ManagementServer jsonRpcServer;
  
      public DedicatedServer(
 +        joptsimple.OptionSet options, net.minecraft.server.WorldLoader.DataLoadContext worldLoader, // CraftBukkit - Signature changed
          final Thread serverThread,
          final LevelStorageSource.LevelStorageAccess levelStorageSource,
          final PackRepository packRepository,
-@@ -108,6 +_,7 @@
-         final Services services
+@@ -102,6 +_,7 @@
+         final NotificationManager notificationManager
      ) {
          super(
 +            options, worldLoader, // CraftBukkit - Signature changed
              serverThread,
              levelStorageSource,
              packRepository,
-@@ -120,7 +_,8 @@
-             true
+@@ -115,7 +_,8 @@
+             notificationManager
          );
          this.settings = settings;
 -        this.rconConsoleSource = new RconConsoleSource(this);
 +        this.setMotd(settings.getProperties().motd.get()); // Paper - set field from initial properties
 +        //this.rconConsoleSource = new RconConsoleSource(this); // CraftBukkit - remove field
          this.serverTextFilter = ServerTextFilter.createFromConfig(settings.getProperties());
+         this.jsonRpcServer = jsonRpcServer;
          this.serverLinks = createServerLinks(settings);
-         if (settings.getProperties().codeOfConduct) {
-@@ -206,6 +_,10 @@
+@@ -167,6 +_,10 @@
          Thread consoleThread = new Thread("Server console handler") {
              @Override
              public void run() {
@@ -49,7 +49,7 @@
                  BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
  
                  String line;
-@@ -216,16 +_,41 @@
+@@ -177,16 +_,41 @@
                  } catch (IOException e) {
                      DedicatedServer.LOGGER.error("Exception handling console input", e);
                  }
@@ -92,7 +92,7 @@
          LOGGER.info("Loading properties");
          DedicatedServerProperties properties = this.settings.getProperties();
          if (this.isSingleplayer()) {
-@@ -236,8 +_,45 @@
+@@ -197,8 +_,45 @@
              this.setLocalIp(properties.serverIp);
          }
  
@@ -139,7 +139,7 @@
          InetAddress localAddress = null;
          if (!this.getLocalIp().isEmpty()) {
              localAddress = InetAddress.getByName(this.getLocalIp());
-@@ -246,47 +_,73 @@
+@@ -207,47 +_,73 @@
          if (this.getPort() < 0) {
              this.setPort(properties.serverPort);
          }
@@ -221,16 +221,16 @@
          }
  
          if (properties.enableQuery) {
-@@ -299,7 +_,7 @@
+@@ -260,7 +_,7 @@
              this.rconThread = RconThread.create(this);
          }
  
 -        if (this.getMaxTickLength() > 0L) {
 +        if (false && this.getMaxTickLength() > 0L) { // Spigot - disable
-             Thread watchdog = new Thread(new ServerWatchdog(this));
+             Thread watchdog = new Thread(new ServerWatchdog(this), "Server Watchdog");
              watchdog.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(LOGGER));
-             watchdog.setName("Server Watchdog");
-@@ -317,6 +_,12 @@
+             watchdog.setDaemon(true);
+@@ -277,6 +_,12 @@
          return true;
      }
  
@@ -243,7 +243,7 @@
      @Override
      public boolean isEnforceWhitelist() {
          return this.settings.getProperties().enforceWhitelist.get();
-@@ -334,6 +_,7 @@
+@@ -294,6 +_,7 @@
  
      @Override
      public void setUsingWhitelist(final boolean usingWhitelist) {
@@ -251,7 +251,19 @@
          this.settings.update(p -> p.whiteList.update(this.registryAccess(), usingWhitelist));
      }
  
-@@ -395,7 +_,7 @@
+@@ -306,9 +_,9 @@
+     }
+ 
+     @Override
+-    public boolean saveAllChunks(final boolean silent, final boolean flush, final boolean force) {
++    public boolean saveAllChunks(final boolean silent, final boolean flush, final boolean force, final boolean close) { // Paper - add close param
+         this.notificationManager().serverSaveStarted();
+-        boolean savedChunks = super.saveAllChunks(silent, flush, force);
++        boolean savedChunks = super.saveAllChunks(silent, flush, force, close); // Paper - add close param
+         this.notificationManager().serverSaveCompleted();
+         return savedChunks;
+     }
+@@ -345,7 +_,7 @@
  
      @Override
      protected void forceDifficulty() {
@@ -260,7 +272,7 @@
      }
  
      public int viewDistance() {
-@@ -451,11 +_,11 @@
+@@ -403,11 +_,11 @@
          }
  
          if (this.rconThread != null) {
@@ -270,11 +282,11 @@
  
          if (this.queryThreadGs4 != null) {
 -            this.queryThreadGs4.stop();
-+            // this.remoteStatusListener.stop(); // Paper - don't wait for remote connections
++            // this.queryThreadGs4.stop(); // Paper - don't wait for remote connections
          }
  
          if (this.jsonRpcServer != null) {
-@@ -465,6 +_,9 @@
+@@ -417,6 +_,9 @@
                  LOGGER.error("Interrupted while stopping the management server", e);
              }
          }
@@ -284,7 +296,7 @@
      }
  
      @Override
-@@ -474,12 +_,20 @@
+@@ -426,12 +_,20 @@
      }
  
      public void handleConsoleInput(final String msg, final CommandSourceStack source) {
@@ -308,7 +320,7 @@
              this.getCommands().performPrefixedCommand(input.source, input.msg);
          }
      }
-@@ -625,12 +_,15 @@
+@@ -592,12 +_,15 @@
  
      @Override
      public String getMotd() {
@@ -326,7 +338,7 @@
      }
  
      @Override
-@@ -656,7 +_,11 @@
+@@ -623,7 +_,11 @@
      @Override
      public boolean enforceSecureProfile() {
          DedicatedServerProperties properties = this.getProperties();
@@ -339,7 +351,7 @@
      }
  
      @Override
-@@ -741,21 +_,60 @@
+@@ -708,21 +_,60 @@
  
      @Override
      public String getPluginNames() {
@@ -405,7 +417,7 @@
      }
  
      @Override
-@@ -883,4 +_,15 @@
+@@ -850,4 +_,15 @@
      public Map<String, String> getCodeOfConducts() {
          return this.codeOfConductTexts;
      }

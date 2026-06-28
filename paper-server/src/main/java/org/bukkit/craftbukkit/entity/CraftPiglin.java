@@ -25,12 +25,12 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin, com.dest
 
     @Override
     public boolean isAbleToHunt() {
-        return this.getHandle().cannotHunt;
+        return !this.getHandle().cannotHunt;
     }
 
     @Override
     public void setIsAbleToHunt(boolean flag) {
-        this.getHandle().cannotHunt = flag;
+        this.getHandle().cannotHunt = !flag;
     }
 
     @Override
@@ -77,7 +77,7 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin, com.dest
 
     @Override
     public Inventory getInventory() {
-        return new CraftInventory(this.getHandle().inventory);
+        return new CraftInventory(this.getHandle().getInventory());
     }
 
     @Override

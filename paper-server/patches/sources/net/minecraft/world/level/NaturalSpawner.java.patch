@@ -14,13 +14,13 @@
                      BlockPos pos = entity.blockPosition();
                      chunkGetter.query(ChunkPos.pack(pos), chunk -> {
                          MobSpawnSettings.MobSpawnCost mobSpawnCost = getRoughBiome(pos, chunk).getMobSettings().getMobSpawnCost(entity.getType());
-@@ -101,17 +_,34 @@
+@@ -101,13 +_,30 @@
          return chunk.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ())).value();
      }
  
 +    // CraftBukkit start - add server
      public static List<MobCategory> getFilteredSpawningCategories(
--        final NaturalSpawner.SpawnState state, final boolean spawnFriendlies, final boolean spawnEnemies, final boolean spawnPersistent
+-        final NaturalSpawner.SpawnState state, final boolean spawnEnemies, final boolean spawnPersistent
 +        final NaturalSpawner.SpawnState state, final boolean spawnFriendlies, final boolean spawnEnemies, final boolean spawnPersistent, final ServerLevel level
      ) {
 +        net.minecraft.world.level.storage.LevelData worlddata = level.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
@@ -28,6 +28,7 @@
          List<MobCategory> spawningCategories = new ArrayList<>(SPAWNING_CATEGORIES.length);
  
          for (MobCategory mobCategory : SPAWNING_CATEGORIES) {
+-            if ((spawnEnemies || mobCategory.isFriendly()) && (spawnPersistent || !mobCategory.isPersistent()) && state.canSpawnForCategoryGlobal(mobCategory)) {
 +            // CraftBukkit start - Use per-world spawn limits
 +            boolean spawnThisTick = true;
 +            int limit = mobCategory.getMaxInstancesPerChunk();
@@ -41,17 +42,12 @@
 +                continue;
 +            }
 +
-             if ((spawnFriendlies || !mobCategory.isFriendly())
-                 && (spawnEnemies || mobCategory.isFriendly())
-                 && (spawnPersistent || !mobCategory.isPersistent())
--                && state.canSpawnForCategoryGlobal(mobCategory)) {
-+                && state.canSpawnForCategoryGlobal(mobCategory, limit)) { // Paper - Optional per player mob spawns; remove global check, check later during the local one
-                 spawningCategories.add(mobCategory);
++            if ((spawnFriendlies || !mobCategory.isFriendly()) && (spawnEnemies || mobCategory.isFriendly()) && (spawnPersistent || !mobCategory.isPersistent()) && state.canSpawnForCategoryGlobal(mobCategory, limit)) { // Paper - Optional per player mob spawns; remove global check, check later during the local one
 +                // CraftBukkit end
+                 spawningCategories.add(mobCategory);
              }
          }
- 
-@@ -133,6 +_,16 @@
+@@ -130,6 +_,16 @@
          profiler.pop();
      }
  
@@ -68,7 +64,7 @@
      public static void spawnCategoryForChunk(
          final MobCategory mobCategory,
          final ServerLevel level,
-@@ -162,8 +_,8 @@
+@@ -159,8 +_,8 @@
          StructureManager structureManager = level.structureManager();
          ChunkGenerator generator = level.getChunkSource().getGenerator();
          int yStart = start.getY();
@@ -79,7 +75,7 @@
              BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
              int clusterSize = 0;
  
-@@ -185,7 +_,7 @@
+@@ -182,7 +_,7 @@
                      Player nearestPlayer = level.getNearestPlayer(xx, yStart, zz, -1.0, false);
                      if (nearestPlayer != null) {
                          double nearestPlayerDistanceSqr = nearestPlayer.distanceToSqr(xx, yStart, zz);
@@ -88,7 +84,7 @@
                              if (currentSpawnData == null) {
                                  Optional<MobSpawnSettings.SpawnerData> nextSpawnData = getRandomSpawnMobAt(
                                      level, structureManager, generator, mobCategory, level.random, pos
-@@ -198,7 +_,13 @@
+@@ -195,7 +_,13 @@
                                  max = currentSpawnData.minCount() + level.random.nextInt(1 + currentSpawnData.maxCount() - currentSpawnData.minCount());
                              }
  
@@ -103,7 +99,7 @@
                                  && extraTest.test(currentSpawnData.type(), pos, chunk)) {
                                  Mob mob = getMobForSpawn(level, currentSpawnData.type());
                                  if (mob == null) {
-@@ -210,10 +_,15 @@
+@@ -207,10 +_,15 @@
                                      groupData = mob.finalizeSpawn(
                                          level, level.getCurrentDifficultyAt(mob.blockPosition()), EntitySpawnReason.NATURAL, groupData
                                      );
@@ -123,7 +119,7 @@
                                      if (clusterSize >= mob.getMaxSpawnClusterSize()) {
                                          return;
                                      }
-@@ -247,7 +_,15 @@
+@@ -244,7 +_,15 @@
          return Objects.equals(chunkPos, chunk.getPos()) || level.canSpawnEntitiesInChunk(chunkPos);
      }
  
@@ -140,7 +136,7 @@
          final ServerLevel level,
          final MobCategory mobCategory,
          final StructureManager structureManager,
-@@ -256,14 +_,27 @@
+@@ -253,14 +_,27 @@
          final BlockPos.MutableBlockPos pos,
          final double nearestPlayerDistanceSqr
      ) {
@@ -169,7 +165,7 @@
      }
  
      private static @Nullable Mob getMobForSpawn(final ServerLevel level, final EntityType<?> type) {
-@@ -275,6 +_,7 @@
+@@ -272,6 +_,7 @@
              LOGGER.warn("Can't spawn entity of type: {}", BuiltInRegistries.ENTITY_TYPE.getKey(type));
          } catch (Exception e) {
              LOGGER.warn("Failed to create mob", e);
@@ -177,7 +173,7 @@
          }
  
          return null;
-@@ -402,6 +_,7 @@
+@@ -399,6 +_,7 @@
                                      entity = spawnerData.type().create(level.getLevel(), EntitySpawnReason.NATURAL);
                                  } catch (Exception e) {
                                      LOGGER.warn("Failed to create mob", e);
@@ -185,7 +181,7 @@
                                      continue;
                                  }
  
-@@ -416,7 +_,7 @@
+@@ -413,7 +_,7 @@
                                      groupSpawnData = mob.finalizeSpawn(
                                          level, level.getCurrentDifficultyAt(mob.blockPosition()), EntitySpawnReason.CHUNK_GENERATION, groupSpawnData
                                      );
@@ -194,7 +190,7 @@
                                      success = true;
                                  }
                              }
-@@ -534,8 +_,10 @@
+@@ -531,8 +_,10 @@
              return this.unmodifiableMobCategoryCounts;
          }
  

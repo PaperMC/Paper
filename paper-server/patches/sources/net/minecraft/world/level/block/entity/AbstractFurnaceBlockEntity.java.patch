@@ -69,26 +69,24 @@
          ContainerHelper.saveAllItems(output, this.items);
          output.store("RecipesUsed", RECIPES_USED_CODEC, this.recipesUsed);
      }
-@@ -161,24 +_,48 @@
-                     int maxStackSize = entity.getMaxStackSize();
-                     ItemStack burnResult = recipe.value().assemble(input);
+@@ -163,22 +_,47 @@
                      if (!burnResult.isEmpty() && canBurn(entity.items, maxStackSize, burnResult)) {
-+                        // CraftBukkit start
-+                        org.bukkit.event.inventory.FurnaceBurnEvent furnaceBurnEvent = new org.bukkit.event.inventory.FurnaceBurnEvent(
-+                            org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
-+                            org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(fuel),
-+                            entity.getBurnDuration(level.fuelValues(), fuel)
-+                        );
-+                        if (!furnaceBurnEvent.callEvent()) return;
-+                        // CraftBukkit end
                          if (!isLit) {
--                            int newLitTime = entity.getBurnDuration(level.fuelValues(), fuel);
-+                            int newLitTime = furnaceBurnEvent.getBurnTime(); // CraftBukkit - respect event output
+                             int newLitTime = entity.getBurnDuration(level.fuelValues(), fuel);
++                            // CraftBukkit start
++                            org.bukkit.event.inventory.FurnaceBurnEvent burnEvent = new org.bukkit.event.inventory.FurnaceBurnEvent(
++                                org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
++                                org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(fuel),
++                                newLitTime
++                            );
++                            if (!burnEvent.callEvent()) return;
++                            newLitTime = burnEvent.getBurnTime();
++                            // CraftBukkit end
                              entity.litTimeRemaining = newLitTime;
                              entity.litTotalTime = newLitTime;
 -                            if (newLitTime > 0) {
-+                            if (newLitTime > 0 && furnaceBurnEvent.isBurning()) { // CraftBukkit - respect event output // TODO - snapshot - double check surrounding diff post squash
-+                                if (furnaceBurnEvent.willConsumeFuel()) { // Paper - add consumeFuel to FurnaceBurnEvent
++                            if (newLitTime > 0 && burnEvent.isBurning()) { // CraftBukkit - respect event output
++                                if (burnEvent.willConsumeFuel()) { // Paper - add consumeFuel to FurnaceBurnEvent
                                  consumeFuel(entity.items, fuel);
 +                                } // Paper - add consumeFuel to FurnaceBurnEvent
                                  isLit = true;
@@ -99,15 +97,15 @@
                          if (isLit) {
 +                            // CraftBukkit start
 +                            if (entity.cookingTimer == 0) {
-+                                org.bukkit.event.inventory.FurnaceStartSmeltEvent event = new org.bukkit.event.inventory.FurnaceStartSmeltEvent(
++                                org.bukkit.event.inventory.FurnaceStartSmeltEvent smeltEvent = new org.bukkit.event.inventory.FurnaceStartSmeltEvent(
 +                                    org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
 +                                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(ingredient),
 +                                    (org.bukkit.inventory.CookingRecipe<?>) recipe.toBukkitRecipe(),
 +                                    getTotalCookTime(level, entity, entity.recipeType, entity.cookSpeedMultiplier) // Paper - cook speed multiplier API
 +                                );
-+                                event.callEvent();
++                                smeltEvent.callEvent();
 +
-+                                entity.cookingTotalTime = event.getTotalCookTime();
++                                entity.cookingTotalTime = smeltEvent.getTotalCookTime();
 +                            }
 +                            // CraftBukkit end
                              entity.cookingTimer++;

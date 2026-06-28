@@ -62,7 +62,7 @@ public class StandardMessenger implements Messenger {
                 channels.remove(channel);
 
                 if (channels.isEmpty()) {
-                    outgoingByChannel.remove(channel);
+                    outgoingByPlugin.remove(plugin);
                 }
             }
         }
@@ -75,7 +75,7 @@ public class StandardMessenger implements Messenger {
             if (channels != null) {
                 String[] toRemove = channels.toArray(new String[channels.size()]);
 
-                outgoingByPlugin.remove(plugin);
+                outgoingByPlugin.remove(plugin); // todo test
 
                 for (String channel : toRemove) {
                     removeFromOutgoing(plugin, channel);

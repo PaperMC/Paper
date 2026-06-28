@@ -89,6 +89,13 @@ public final class GameEventKeys {
     public static final TypedKey<GameEvent> BLOCK_PLACE = create(key("block_place"));
 
     /**
+     * {@code minecraft:bounce}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<GameEvent> BOUNCE = create(key("bounce"));
+
+    /**
      * {@code minecraft:container_close}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

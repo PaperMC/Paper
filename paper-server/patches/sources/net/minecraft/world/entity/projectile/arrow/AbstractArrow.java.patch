@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
 +++ b/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
-@@ -92,7 +_,14 @@
+@@ -93,7 +_,14 @@
          final ItemStack pickupItemStack,
          final @Nullable ItemStack firedFromWeapon
      ) {
@@ -15,7 +15,7 @@
          this.pickupItemStack = pickupItemStack.copy();
          this.applyComponentsFromItemStack(pickupItemStack);
          Unit intangible = pickupItemStack.remove(DataComponents.INTANGIBLE_PROJECTILE);
-@@ -121,8 +_,8 @@
+@@ -122,8 +_,8 @@
          final ItemStack pickupItemStack,
          final @Nullable ItemStack firedFromWeapon
      ) {
@@ -26,7 +26,7 @@
      }
  
      public void setSoundEvent(final SoundEvent soundEvent) {
-@@ -156,7 +_,11 @@
+@@ -157,7 +_,11 @@
      @Override
      public void lerpMotion(final Vec3 movement) {
          super.lerpMotion(movement);
@@ -39,7 +39,7 @@
          if (this.isInGround() && movement.lengthSqr() > 0.0) {
              this.setInGround(false);
          }
-@@ -217,6 +_,10 @@
+@@ -218,6 +_,10 @@
                  this.setSharedFlagOnFire(this.getRemainingFireTicks() > 0);
              }
          } else {
@@ -50,7 +50,7 @@
              this.inGroundTime = 0;
              Vec3 originalPosition = this.position();
              if (this.isInWater()) {
-@@ -288,7 +_,7 @@
+@@ -294,7 +_,7 @@
  
              if (entitiesHit.isEmpty()) {
                  if (this.isAlive() && blockHitResult.getType() != HitResult.Type.MISS) {
@@ -59,7 +59,7 @@
                      this.needsSync = true;
                  }
                  break;
-@@ -305,7 +_,7 @@
+@@ -311,7 +_,7 @@
  
      private ProjectileDeflection hitTargetsOrDeflectSelf(final Collection<EntityHitResult> entityHitResults) {
          for (EntityHitResult e : entityHitResults) {
@@ -68,7 +68,7 @@
              if (!this.isAlive() || deflection != ProjectileDeflection.NONE) {
                  return deflection;
              }
-@@ -337,20 +_,37 @@
+@@ -343,20 +_,37 @@
          }
      }
  
@@ -108,7 +108,7 @@
      }
  
      public boolean isInGround() {
-@@ -376,8 +_,8 @@
+@@ -382,8 +_,8 @@
  
      protected void tickDespawn() {
          this.life++;
@@ -119,7 +119,7 @@
          }
      }
  
-@@ -411,9 +_,9 @@
+@@ -417,9 +_,9 @@
      }
  
      @Override
@@ -131,7 +131,7 @@
          }
      }
  
-@@ -440,7 +_,7 @@
+@@ -446,7 +_,7 @@
              }
  
              if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
@@ -140,12 +140,12 @@
                  return;
              }
  
-@@ -456,10 +_,16 @@
+@@ -462,10 +_,16 @@
              livingOwner.setLastHurtMob(entity);
          }
  
 +        if (this.isCritArrow()) damageSource = damageSource.critical(); // Paper - add critical damage API
-         boolean isEnderman = entity.is(EntityType.ENDERMAN);
+         boolean isEnderman = entity.is(EntityTypes.ENDERMAN);
          int remainingFireTicks = entity.getRemainingFireTicks();
          if (this.isOnFire() && !isEnderman) {
 -            entity.igniteForSeconds(5.0F);
@@ -158,7 +158,7 @@
          }
  
          if (entity.hurtOrSimulate(damageSource, damage)) {
-@@ -497,7 +_,7 @@
+@@ -503,7 +_,7 @@
  
              this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
              if (this.getPierceLevel() <= 0) {
@@ -167,7 +167,7 @@
              }
          } else {
              entity.setRemainingFireTicks(remainingFireTicks);
-@@ -508,7 +_,7 @@
+@@ -514,7 +_,7 @@
                      this.spawnAtLocation(level, this.getPickupItem(), 0.1F);
                  }
  
@@ -176,7 +176,7 @@
              }
          }
      }
-@@ -521,7 +_,7 @@
+@@ -527,7 +_,7 @@
              double knockbackResistance = Math.max(0.0, 1.0 - mob.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
              Vec3 movement = this.getDeltaMovement().multiply(1.0, 0.0, 1.0).normalize().scale(knockback * 0.6 * knockbackResistance);
              if (movement.lengthSqr() > 0.0) {
@@ -185,7 +185,7 @@
              }
          }
      }
-@@ -632,7 +_,14 @@
+@@ -638,7 +_,14 @@
  
      @Override
      public void setOwner(final @Nullable Entity owner) {
@@ -200,28 +200,37 @@
  
          this.pickup = switch (owner) {
              case Player ignored when this.pickup == AbstractArrow.Pickup.DISALLOWED -> AbstractArrow.Pickup.ALLOWED;
-@@ -644,9 +_,22 @@
+@@ -650,17 +_,29 @@
      @Override
      public void playerTouch(final Player player) {
          if (!this.level().isClientSide() && (this.isInGround() || this.isNoPhysics()) && this.shakeTime <= 0) {
 -            if (this.tryPickup(player)) {
 +            // CraftBukkit start
-+            ItemStack itemstack = this.getPickupItem();
-+            if (this.pickup == Pickup.ALLOWED && !itemstack.isEmpty() && player.getInventory().canHold(itemstack) > 0) {
-+                net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), itemstack);
++            ItemStack pickupItem = this.getPickupItem();
++            if (this.pickup == Pickup.ALLOWED && !pickupItem.isEmpty() && player.getInventory().canHold(pickupItem) > 0) {
++                net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), pickupItem);
 +                org.bukkit.event.player.PlayerPickupArrowEvent event = new org.bukkit.event.player.PlayerPickupArrowEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.Item) item.getBukkitEntity(), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
-+                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
++                // event.setCancelled(!player.canPickUpLoot()); TODO
 +                if (!event.callEvent()) {
 +                    return;
 +                }
-+                itemstack = item.getItem();
++                pickupItem = item.getItem();
 +            }
-+
-+            if ((this.pickup == AbstractArrow.Pickup.ALLOWED && player.getInventory().add(itemstack)) || (this.pickup == AbstractArrow.Pickup.CREATIVE_ONLY && player.getAbilities().instabuild)) {
++            if (this.tryPickup(player, pickupItem)) {
 +                // CraftBukkit end
                  player.take(this, 1);
 -                this.discard();
 +                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
              }
          }
+     }
+ 
+-    protected boolean tryPickup(final Player player) {
++    protected boolean tryPickup(final Player player, final ItemStack pickupItem) { // Paper - pass custom pickup item
+         return switch (this.pickup) {
+             case DISALLOWED -> false;
+-            case ALLOWED -> player.getInventory().add(this.getPickupItem());
++            case ALLOWED -> player.getInventory().add(pickupItem); // Paper - pass custom pickup item
+             case CREATIVE_ONLY -> player.hasInfiniteMaterials();
+         };
      }

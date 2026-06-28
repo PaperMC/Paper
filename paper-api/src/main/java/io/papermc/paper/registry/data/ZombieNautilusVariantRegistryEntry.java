@@ -31,14 +31,14 @@ public interface ZombieNautilusVariantRegistryEntry {
     /**
      * Provides the client texture asset of the variant, which represents the texture to use.
      *
-     * @return the client texture asset.
+     * @return the client texture asset
      */
     ClientTextureAsset clientTextureAsset();
 
     /**
      * Provides the model of the variant.
      *
-     * @return the model.
+     * @return the model
      */
     Model model();
 
@@ -58,8 +58,8 @@ public interface ZombieNautilusVariantRegistryEntry {
         /**
          * Sets the client texture asset of the variant, which is the location of the texture to use.
          *
-         * @param clientTextureAsset the client texture asset.
-         * @return this builder instance.
+         * @param clientTextureAsset the client texture asset
+         * @return this builder instance
          * @see ZombieNautilusVariantRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -68,8 +68,8 @@ public interface ZombieNautilusVariantRegistryEntry {
         /**
          * Sets the model to use for this variant.
          *
-         * @param model the model.
-         * @return this builder instance.
+         * @param model the model
+         * @return this builder instance
          * @see ZombieNautilusVariantRegistryEntry#model()
          */
         @Contract(value = "_ -> this", mutates = "this")

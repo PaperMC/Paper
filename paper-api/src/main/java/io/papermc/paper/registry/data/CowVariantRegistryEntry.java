@@ -36,21 +36,21 @@ public interface CowVariantRegistryEntry {
     /**
      * Provides the client texture asset of the cow variant, which represents the texture to use.
      *
-     * @return the client texture asset.
+     * @return the client texture asset
      */
     ClientTextureAsset clientTextureAsset();
 
     /**
      * Provides the client texture asset of the baby cow variant, which represents the texture to use.
      *
-     * @return the baby client texture asset.
+     * @return the baby client texture asset
      */
     ClientTextureAsset babyClientTextureAsset();
 
     /**
      * Provides the model of the cow variant.
      *
-     * @return the model.
+     * @return the model
      */
     Model model();
 
@@ -71,8 +71,8 @@ public interface CowVariantRegistryEntry {
         /**
          * Sets the client texture asset of the cow variant, which is the location of the texture to use.
          *
-         * @param clientTextureAsset the client texture asset.
-         * @return this builder instance.
+         * @param clientTextureAsset the client texture asset
+         * @return this builder instance
          * @see CowVariantRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -81,8 +81,8 @@ public interface CowVariantRegistryEntry {
         /**
          * Sets the client texture asset of the baby cow variant, which is the location of the texture to use.
          *
-         * @param babyClientTextureAsset the baby client texture asset.
-         * @return this builder instance.
+         * @param babyClientTextureAsset the baby client texture asset
+         * @return this builder instance
          * @see CowVariantRegistryEntry#babyClientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -91,8 +91,8 @@ public interface CowVariantRegistryEntry {
         /**
          * Sets the model to use for this cow variant.
          *
-         * @param model the model.
-         * @return this builder instance.
+         * @param model the model
+         * @return this builder instance
          * @see CowVariantRegistryEntry#model()
          */
         @Contract(value = "_ -> this", mutates = "this")

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/EntityType.java
 +++ b/net/minecraft/world/entity/EntityType.java
-@@ -187,6 +_,7 @@
+@@ -52,6 +_,7 @@
  import org.slf4j.Logger;
  
  public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>, FeatureElement {
@@ -8,7 +8,7 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      private final Holder.Reference<EntityType<?>> builtInRegistryHolder = BuiltInRegistries.ENTITY_TYPE.createIntrusiveHolder(this);
      public static final Codec<EntityType<?>> CODEC = BuiltInRegistries.ENTITY_TYPE.byNameCodec();
-@@ -1288,6 +_,22 @@
+@@ -120,6 +_,22 @@
          final boolean tryMoveDown,
          final boolean movedUp
      ) {
@@ -28,20 +28,20 @@
 +        final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason createSpawnReason
 +    ) {
 +        // CraftBukkit end
-         Consumer<T> postSpawnConfig;
+         PostSpawnProcessor<T> postSpawnConfig;
          if (itemStack != null) {
              postSpawnConfig = createDefaultStackConfig(level, itemStack, user);
-@@ -1295,7 +_,7 @@
-             postSpawnConfig = entity -> {};
+@@ -127,7 +_,7 @@
+             postSpawnConfig = PostSpawnProcessor.nop();
          }
  
 -        return this.spawn(level, postSpawnConfig, spawnPos, spawnReason, tryMoveDown, movedUp);
 +        return this.spawn(level, postSpawnConfig, spawnPos, spawnReason, tryMoveDown, movedUp, createSpawnReason); // CraftBukkit
      }
  
-     public static <T extends Entity> Consumer<T> createDefaultStackConfig(final Level level, final ItemStack itemStack, final @Nullable LivingEntity user) {
-@@ -1316,11 +_,30 @@
-         final Consumer<T> initialConfig, final Level level, final ItemStack itemStack, final @Nullable LivingEntity user
+     public static <T extends Entity> PostSpawnProcessor<T> createDefaultStackConfig(
+@@ -150,11 +_,30 @@
+         final PostSpawnProcessor<T> initialConfig, final Level level, final ItemStack itemStack, final @Nullable LivingEntity user
      ) {
          TypedEntityData<EntityType<?>> entityData = itemStack.get(DataComponents.ENTITY_DATA);
 -        return entityData != null ? initialConfig.andThen(entity -> updateCustomEntityTag(level, user, entity, entityData)) : initialConfig;
@@ -73,7 +73,7 @@
      }
  
      public @Nullable T spawn(
-@@ -1331,9 +_,39 @@
+@@ -165,9 +_,39 @@
          final boolean tryMoveDown,
          final boolean movedUp
      ) {
@@ -84,7 +84,7 @@
 +    @Nullable
 +    public T spawn(
 +        final ServerLevel level,
-+        final @Nullable Consumer<T> postSpawnConfig,
++        final @Nullable PostSpawnProcessor<T> postSpawnConfig,
 +        final BlockPos spawnPos,
 +        final EntitySpawnReason spawnReason,
 +        final boolean tryMoveDown,
@@ -114,7 +114,7 @@
              if (entity instanceof Mob mob) {
                  mob.playAmbientSound();
              }
-@@ -1396,6 +_,13 @@
+@@ -230,6 +_,13 @@
                  if (level.isClientSide()
                      || !entity.getType().onlyOpCanSetNbt()
                      || user instanceof Player player && server.getPlayerList().isOp(player.nameAndId())) {
@@ -128,18 +128,18 @@
                      entityData.loadInto(entity);
                  }
              }
-@@ -1466,10 +_,28 @@
+@@ -308,10 +_,28 @@
      }
  
-     public static Optional<Entity> create(final ValueInput input, final Level level, final EntitySpawnReason reason) {
+     public static Optional<Entity> create(final ValueInput input, final Level level, final EntitySpawnRequest request) {
 +        // Paper start - Don't fire sync event during generation
-+        return create(input, level, reason, false);
++        return create(input, level, request, false);
 +    }
 +
-+    public static Optional<Entity> create(final ValueInput input, final Level level, final EntitySpawnReason reason, final boolean generation) {
++    public static Optional<Entity> create(final ValueInput input, final Level level, final EntitySpawnRequest request, final boolean generation) {
 +        // Paper end - Don't fire sync event during generation
          return Util.ifElse(
-             by(input).map(type -> type.create(level, reason)),
+             by(input).map(type -> type.create(level, request)),
 -            entity -> entity.load(input),
 -            () -> LOGGER.warn("Skipping Entity with id {}", input.getStringOr("id", "[invalid]"))
 +            // Paper start - Don't fire sync event during generation
@@ -159,28 +159,12 @@
          );
      }
  
-@@ -1610,8 +_,23 @@
+@@ -460,7 +_,7 @@
          return this.builtInRegistryHolder;
      }
  
 -    public boolean isAllowedInPeaceful() {
-+    // Paper start
-+    public final boolean isTypeAllowedInPeaceful() {
-         return this.allowedInPeaceful;
-+    }
-+    public final boolean isAllowedInPeaceful(@Nullable CompoundTag tag) {
-+        if (tag == null || tag.isEmpty()) {
-+            return this.isTypeAllowedInPeaceful();
-+        }
-+        final var input = TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING, MinecraftServer.getServer().registryAccess(), tag);
-+        final var override = Mob.readDespawnInPeacefulOverride(input);
-+        return !override.toBooleanOrElse(!this.isTypeAllowedInPeaceful());
-+    }
-+    // Audit all vanilla uses of this method to ensure per-entity override API applies where possible
-+    @io.papermc.paper.annotation.DoNotUse
 +    public final boolean isAllowedInPeaceful() {
-+        return this.isTypeAllowedInPeaceful();
-+        // Paper end
+         return this.allowedInPeaceful;
      }
  
-     private static EntityType.EntityFactory<Boat> boatFactory(final Supplier<Item> boatItem) {

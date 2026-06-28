@@ -31,6 +31,7 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntitySpawnRequest;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
@@ -250,9 +251,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isOnGround() {
-        if (this.entity instanceof AbstractArrow abstractArrow) {
-            return abstractArrow.isInGround();
-        }
         return this.entity.onGround();
     }
 
@@ -1029,7 +1027,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             final TagValueOutput output = TagValueOutput.createWithContext(problemReporter, level.registryAccess());
             this.getHandle().saveAsPassenger(output, false, true, true);
 
-            return net.minecraft.world.entity.EntityType.loadEntityRecursive(output.buildResult(), level, EntitySpawnReason.LOAD, EntityProcessor.NOP);
+            return net.minecraft.world.entity.EntityType.loadEntityRecursive(output.buildResult(), level, new EntitySpawnRequest(EntitySpawnReason.LOAD, false), EntityProcessor.NOP);
         }
     }
 

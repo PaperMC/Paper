@@ -623,9 +623,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param effect PotionEffect to be added
      * @return whether the effect could be added
      */
-    default boolean addPotionEffect(@NotNull PotionEffect effect) {
-        return this.addPotionEffect(effect, false);
-    }
+    boolean addPotionEffect(@NotNull PotionEffect effect);
 
     /**
      * Adds the given {@link PotionEffect} to the living entity.
@@ -639,7 +637,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * now supported.
      */
     @Deprecated(since = "1.15.2")
-    public boolean addPotionEffect(@NotNull PotionEffect effect, boolean force);
+    default boolean addPotionEffect(@NotNull PotionEffect effect, boolean force) {
+        return this.addPotionEffect(effect);
+    }
 
     /**
      * Attempts to add all of the given {@link PotionEffect} to the living
@@ -1063,7 +1063,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
 
     /**
      * Returns true if this entity can breathe underwater and will not take
-     * suffocation damage when its air supply reaches zero.
+     * drowning damage when its air supply reaches zero.
      *
      * @return <code>true</code> if the entity can breathe underwater
      */
