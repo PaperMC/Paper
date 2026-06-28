@@ -11,6 +11,11 @@ public abstract class HolderableBase<M> implements Holderable<M> {
     protected HolderableBase(final Holder<M> holder) {
         this.holder = holder;
     }
+    
+    @Override
+    public String toString() {
+        return Holderable.super.implToString();
+    }
 
     // methods below are overridden to make final
     @Override
@@ -31,11 +36,6 @@ public abstract class HolderableBase<M> implements Holderable<M> {
     @Override
     public final boolean equals(final Object obj) {
         return Holderable.super.implEquals(obj);
-    }
-
-    @Override
-    public final String toString() {
-        return Holderable.super.implToString();
     }
 
     @Override
