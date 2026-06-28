@@ -54,7 +54,7 @@ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable
     }
 
     /**
-     * Retrieves a list of all effected entities
+     * Retrieves a list of all affected entities
      *
      * @return A fresh copy of the affected entity list
      */
