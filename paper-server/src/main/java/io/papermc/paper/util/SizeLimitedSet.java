@@ -27,7 +27,7 @@ public class SizeLimitedSet<E> extends ForwardingSet<E> {
 
     @Override
     public boolean addAll(final Collection<? extends @Nullable E> collection) {
-        if ((collection.size() + this.size()) >= this.maxSize) {
+        if ((collection.size() + this.size()) > this.maxSize) {
             return false;
         }
         boolean edited = false;
