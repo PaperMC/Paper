@@ -24,7 +24,7 @@ public class PaperRegistryAccess implements RegistryAccess {
     // We want to do registration there, so we have access to the nms.Registry instance in order to wrap it in a CraftRegistry instance.
     // The memoized Supplier is needed because we *can't* instantiate any CraftRegistry class until **all** the BuiltInRegistries have been added
     // to this map because that would class-load org.bukkit.Registry which would query this map.
-    private final Map<RegistryKey<?>, RegistryHolder<?>> registries = new ConcurrentHashMap<>(); // is "identity" because RegistryKey overrides equals and hashCode
+    private final Map<RegistryKey<?>, RegistryHolder<?>> registries = new ConcurrentHashMap<>();
 
     public static PaperRegistryAccess instance() {
         return (PaperRegistryAccess) RegistryAccessHolder.INSTANCE.orElseThrow(() -> new IllegalStateException("No RegistryAccess implementation found"));
