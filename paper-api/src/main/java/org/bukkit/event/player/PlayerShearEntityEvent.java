@@ -32,7 +32,7 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
         this.entity = entity;
         this.item = item;
         this.hand = hand;
-        this.drops = drops;
+        this.drops = List.copyOf(drops);
     }
 
     @ApiStatus.Internal
@@ -72,12 +72,12 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * Get an immutable list of drops for this shearing.
+     * Get a list of drops for this shearing.
      *
      * @return the shearing drops
      * @see #setDrops(java.util.List)
      */
-    public @NotNull @Unmodifiable List<ItemStack> getDrops() {
+    public @NotNull List<ItemStack> getDrops() {
         return this.drops;
     }
 
