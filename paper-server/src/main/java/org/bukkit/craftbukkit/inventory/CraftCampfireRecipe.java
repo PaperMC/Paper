@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.inventory;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.item.crafting.CampfireCookingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -26,15 +25,19 @@ public class CraftCampfireRecipe extends CampfireRecipe implements CraftRecipe {
     }
 
     @Override
-    public void addToRecipeManager() {
-        CampfireCookingRecipe recipe = new net.minecraft.world.item.crafting.CampfireCookingRecipe(
+    public RecipeHolder<?> toMinecraftRecipe() {
+        return new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), new net.minecraft.world.item.crafting.CampfireCookingRecipe(
             new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
             new net.minecraft.world.item.crafting.AbstractCookingRecipe.CookingBookInfo(CraftRecipe.getCategory(this.getCategory()), this.getGroup()),
             CraftRecipe.toIngredient(this.getInputChoice(), true),
             CraftItemStack.asTemplate(this.getResult()),
             this.getExperience(),
             this.getCookingTime()
-        );
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe));
+        ));
+    }
+
+    @Override
+    public void addToRecipeManager() {
+        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
     }
 }

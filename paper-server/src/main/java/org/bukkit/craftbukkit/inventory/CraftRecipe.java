@@ -10,15 +10,28 @@ import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import org.bukkit.inventory.BlastingRecipe;
+import org.bukkit.inventory.CampfireRecipe;
+import org.bukkit.inventory.ComplexRecipe;
+import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.ShapelessRecipe;
+import org.bukkit.inventory.SmithingTransformRecipe;
+import org.bukkit.inventory.SmithingTrimRecipe;
+import org.bukkit.inventory.SmokingRecipe;
+import org.bukkit.inventory.StonecuttingRecipe;
+import org.bukkit.inventory.TransmuteRecipe;
 import org.bukkit.inventory.recipe.CookingBookCategory;
 import org.bukkit.inventory.recipe.CraftingBookCategory;
 import org.jspecify.annotations.Nullable;
 
 public interface CraftRecipe extends Recipe {
 
+    RecipeHolder<?> toMinecraftRecipe();
     void addToRecipeManager();
 
     static Optional<Ingredient> toPossibleIngredient(@Nullable RecipeChoice bukkit, boolean requireNotEmpty) {
@@ -90,5 +103,23 @@ public interface CraftRecipe extends Recipe {
 
     static CookingBookCategory getCategory(net.minecraft.world.item.crafting.CookingBookCategory internal) {
         return CookingBookCategory.valueOf(internal.name());
+    }
+
+    static CraftRecipe fromBukkitRecipe(Recipe recipe) {
+        return switch (recipe) {
+            case CraftRecipe craftRecipe -> craftRecipe;
+            case ShapedRecipe shapedRecipe -> CraftShapedRecipe.fromBukkitRecipe(shapedRecipe);
+            case ShapelessRecipe shapelessRecipe -> CraftShapelessRecipe.fromBukkitRecipe(shapelessRecipe);
+            case FurnaceRecipe furnaceRecipe -> CraftFurnaceRecipe.fromBukkitRecipe(furnaceRecipe);
+            case BlastingRecipe blastingRecipe -> CraftBlastingRecipe.fromBukkitRecipe(blastingRecipe);
+            case CampfireRecipe campfireRecipe -> CraftCampfireRecipe.fromBukkitRecipe(campfireRecipe);
+            case SmokingRecipe smokingRecipe -> CraftSmokingRecipe.fromBukkitRecipe(smokingRecipe);
+            case StonecuttingRecipe stonecuttingRecipe -> CraftStonecuttingRecipe.fromBukkitRecipe(stonecuttingRecipe);
+            case SmithingTransformRecipe smithingTransformRecipe -> CraftSmithingTransformRecipe.fromBukkitRecipe(smithingTransformRecipe);
+            case SmithingTrimRecipe smithingTrimRecipe -> CraftSmithingTrimRecipe.fromBukkitRecipe(smithingTrimRecipe);
+            case TransmuteRecipe transmuteRecipe -> CraftTransmuteRecipe.fromBukkitRecipe(transmuteRecipe);
+            case ComplexRecipe ignored -> throw new UnsupportedOperationException("Cannot convert custom complex recipe");
+            default -> null;
+        };
     }
 }

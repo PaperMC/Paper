@@ -29,15 +29,19 @@ public class CraftSmithingTrimRecipe extends SmithingTrimRecipe implements Craft
     }
 
     @Override
-    public void addToRecipeManager() {
-        final net.minecraft.world.item.crafting.SmithingTrimRecipe recipe = new net.minecraft.world.item.crafting.SmithingTrimRecipe(
+    public RecipeHolder<?> toMinecraftRecipe() {
+        return new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), new net.minecraft.world.item.crafting.SmithingTrimRecipe(
             new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
             CraftRecipe.toIngredient(this.getTemplate(), false),
             CraftRecipe.toIngredient(this.getBase(), false),
             CraftRecipe.toIngredient(this.getAddition(), false),
             CraftTrimPattern.bukkitToMinecraftHolder(this.getTrimPattern()),
             this.willCopyDataComponents()
-        );
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe));
+        ));
+    }
+
+    @Override
+    public void addToRecipeManager() {
+        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
     }
 }

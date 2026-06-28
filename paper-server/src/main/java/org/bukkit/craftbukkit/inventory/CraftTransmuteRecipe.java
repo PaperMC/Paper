@@ -26,8 +26,8 @@ public class CraftTransmuteRecipe extends TransmuteRecipe implements CraftRecipe
     }
 
     @Override
-    public void addToRecipeManager() {
-        net.minecraft.world.item.crafting.TransmuteRecipe recipe = new net.minecraft.world.item.crafting.TransmuteRecipe(
+    public RecipeHolder<?> toMinecraftRecipe() {
+        return new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), new net.minecraft.world.item.crafting.TransmuteRecipe(
             new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
             new net.minecraft.world.item.crafting.CraftingRecipe.CraftingBookInfo(CraftRecipe.getCategory(this.getCategory()), this.getGroup()),
             CraftRecipe.toIngredient(this.getInput(), true),
@@ -35,7 +35,11 @@ public class CraftTransmuteRecipe extends TransmuteRecipe implements CraftRecipe
             net.minecraft.world.item.crafting.TransmuteRecipe.DEFAULT_MATERIAL_COUNT,
             CraftItemStack.asTemplate(this.getResult()),
             false
-        );
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe));
+        ));
+    }
+
+    @Override
+    public void addToRecipeManager() {
+        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
     }
 }
