@@ -1,20 +1,21 @@
 --- a/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
 +++ b/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
-@@ -295,13 +_,31 @@
+@@ -295,13 +_,33 @@
  
          if (!this.explosionData.isEmpty()) {
              if (this.fuse == 0) {
 -                this.dropLeash();
 -                this.dead = true;
 +                // Paper start - Fire events for SulfurCube explosions
-+                // todo - snapshot - only call if the explosion really occur after the prime event, also see MC-308659 for later change (if confirmed)
-+                final org.bukkit.event.entity.EntityUnleashEvent unleashEvent = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.LEASHED_GONE, true);
-+                unleashEvent.callEvent();
-+                if (unleashEvent.isDropLeash()) {
-+                    this.dropLeash();
-+                } else {
-+                    this.removeLeash();
-+                }
++                Runnable afterEvent = () -> {
++                    final org.bukkit.event.entity.EntityUnleashEvent unleashEvent = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.LEASHED_GONE, true);
++                    unleashEvent.callEvent();
++                    if (unleashEvent.isDropLeash()) {
++                        this.dropLeash();
++                    } else {
++                        this.removeLeash();
++                    }
++                };
 +                // Paper end - Fire events for SulfurCube explosions
 +                // this.dead = true; // Paper - move after prime event so that the entity is alive during the event
                  if (this.level() instanceof ServerLevel level) {
@@ -29,12 +30,13 @@
 +                            this.entityData.set(MAX_FUSE, PrimedTnt.NO_FUSE);
 +                            return;
 +                        }
++                        afterEvent.run();
 +                        // Paper end - Fire events for SulfurCube explosions
 +                        this.dead = true; // Paper - moved from above
                          level.explode(
                              this,
                              Explosion.getDefaultDamageSource(this.level(), this),
-@@ -309,16 +_,20 @@
+@@ -309,16 +_,21 @@
                              this.getX(),
                              this.getY(0.0625),
                              this.getZ(),
@@ -46,6 +48,7 @@
                          );
 +                        // Paper start - moved from above
 +                    } else {
++                        afterEvent.run();
 +                        this.dead = true;
 +                        // Paper end - moved from above
                      }
