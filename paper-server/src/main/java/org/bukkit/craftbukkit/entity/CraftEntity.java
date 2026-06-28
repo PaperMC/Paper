@@ -45,6 +45,7 @@ import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.PistonMoveReaction;
@@ -609,6 +610,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public Sound getSwimHighSpeedSplashSound() {
         return CraftSound.minecraftToBukkit(this.getHandle().getSwimHighSpeedSplashSound());
+    }
+
+    @Override
+    public SoundCategory getSoundCategory() {
+        return SoundCategory.valueOf(this.getHandle().getSoundSource().name());
     }
 
     @Override

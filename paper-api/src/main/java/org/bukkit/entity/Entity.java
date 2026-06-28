@@ -13,6 +13,7 @@ import org.bukkit.Material;
 import org.bukkit.Nameable;
 import org.bukkit.Server;
 import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.PistonMoveReaction;
@@ -714,6 +715,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @NotNull
     public Sound getSwimHighSpeedSplashSound();
+
+    /**
+     * Get the {@link SoundCategory} this entity will use when playing its sounds.
+     *
+     * @return the sound category for this entity
+     */
+    @NotNull
+    SoundCategory getSoundCategory();
 
     /**
      * Returns whether this entity is inside a vehicle.
