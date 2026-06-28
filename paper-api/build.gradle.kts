@@ -202,7 +202,6 @@ tasks.withType<Javadoc>().configureEach {
         "https://www.javadocs.dev/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
     options.tags("apiNote:a:API Note:")
-    options.tags("implNote:a:Implementation Note:")
 
     inputs.files(javadocSourcepath).ignoreEmptyDirectories().withPropertyName(javadocSourcepath.name + "-configuration")
     val javadocSourcepathElements = javadocSourcepath.elements
