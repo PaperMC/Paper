@@ -743,7 +743,7 @@ public class CraftEventFactory {
                 return true;
             }
             event = CraftEventFactory.callLightningStrikeEvent((LightningStrike) entity.getBukkitEntity(), cause);
-        } else if (!(entity instanceof ServerPlayer)) {
+        } else if (!(entity instanceof ServerPlayer) && !(entity instanceof net.minecraft.world.entity.ExperienceOrb)) {
             event = CraftEventFactory.callEntitySpawnEvent(entity);
         }
 
