@@ -506,7 +506,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             } else {
                 // Ensure misc flag is not needed
                 Preconditions.checkArgument(
-                    nmsEntity.getType().canSerialize() || allowMiscSerialization,
+                    e.getType().canSerialize() || allowMiscSerialization,
                     "Cannot serialize misc non-saveable entity %s(%s) without the MISC flag",
                     e.getType().toShortString(),
                     e.getStringUUID()
