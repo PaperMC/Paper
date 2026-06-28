@@ -101,14 +101,14 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     }
 
     /**
-     * Gets the {@link BlockState} at the given {@link Location}.
+     * Gets the {@link BlockState} at the given {@link Vector}.
      *
-     * @param location The location of the block state
-     * @return Block state at the given location
+     * @param vector The vector of the block state
+     * @return Block state at the given vector
      */
     @NotNull
-    default BlockState getBlockState(@NotNull Vector location) {
-        return this.getBlockState(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    default BlockState getBlockState(@NotNull Vector vector) {
+        return this.getBlockState(vector.getBlockX(), vector.getBlockY(), vector.getBlockZ());
     }
 
     /**
