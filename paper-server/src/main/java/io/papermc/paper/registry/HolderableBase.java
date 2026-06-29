@@ -11,11 +11,6 @@ public abstract class HolderableBase<M> implements Holderable<M> {
     protected HolderableBase(final Holder<M> holder) {
         this.holder = holder;
     }
-    
-    @Override
-    public String toString() {
-        return Holderable.super.implToString();
-    }
 
     // methods below are overridden to make final
     @Override
