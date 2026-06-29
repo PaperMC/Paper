@@ -58,7 +58,7 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
     @ApiStatus.Internal
     public PaperServerListPingEvent(@NotNull StatusClient client, @NotNull net.kyori.adventure.text.Component motd, int numPlayers, int maxPlayers,
                                     @NotNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
-        super("", client.getAddress().getAddress(), motd, numPlayers, maxPlayers);
+        super("", client.getSocketAddress(), motd, numPlayers, maxPlayers);
         this.client = client;
         this.numPlayers = numPlayers;
         this.version = version;
