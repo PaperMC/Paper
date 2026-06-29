@@ -1,5 +1,6 @@
 package org.bukkit.event.entity;
 
+import java.util.Objects;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
@@ -99,7 +100,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      * @return The effect type which will be modified on the entity.
      */
     public PotionEffectType getModifiedType() {
-        return this.oldEffect == null ? this.newEffect.getType() : this.oldEffect.getType();
+        return this.oldEffect == null ? Objects.requireNonNull(this.newEffect).getType() : this.oldEffect.getType();
     }
 
     /**
@@ -147,12 +148,12 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
     public enum Action {
 
         /**
-         * When the potion effect is added because the entity didn't have its
+         * When the effect is added because an entity didn't have its
          * type.
          */
         ADDED,
         /**
-         * When the entity already had the potion effect type, but the effect is
+         * When an entity already had the effect type, but the effect is
          * changed.
          */
         CHANGED,
@@ -161,7 +162,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         CLEARED,
         /**
-         * When the potion effect type is completely removed.
+         * When the effect type is completely removed.
          */
         REMOVED
     }
@@ -172,37 +173,60 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
     public enum Cause {
 
         /**
-         * When the entity stands inside an area effect cloud.
+         * When an entity stands inside an effect cloud.
          */
-        AREA_EFFECT_CLOUD,
+        EFFECT_CLOUD,
         /**
-         * When the entity is hit by a spectral or tipped arrow.
+         * When an entity is hit by a spectral or tipped arrow.
          */
         ARROW,
         /**
-         * When the entity is inflicted with a potion effect due to an entity
+         * When an entity is inflicted with a potion effect due to an entity
          * attack (e.g. a cave spider or a shulker bullet).
          */
         ATTACK,
         /**
-         * When an entity gets the effect from an axolotl.
+         * When an entity gets a positive effect or a negative effect is removed as a gift made by another entity (like a dolphin or an axolotl)
          */
+        ENTITY_GIFT,
+        /**
+         * When an entity gets the effect from an axolotl.
+         *
+         * @deprecated use {@link #ENTITY_GIFT} and check the source with {@link #getSource()}
+         */
+        @Deprecated(since = "26.2")
         AXOLOTL,
         /**
-         * When beacon effects get applied due to the entity being nearby.
+         * When an entity plays dead (currently only for the axolotl).
+         */
+        FAKE_DEATH,
+        /**
+         * When an entity consume an item.
+         */
+        CONSUME,
+        /**
+         * When beacon effects get applied due to an entity being nearby.
          */
         BEACON,
         /**
-         * When a potion effect is changed due to the /effect command.
+         * When an entity gets the effect from a bell.
          */
-        COMMAND,
+        BELL,
         /**
-         * When the entity gets the effect from a conduit.
+         * When an entity comes in contact with a wither rose.
+         */
+        WITHER_ROSE,
+        /**
+         * When an entity comes in contact with an eye blossom.
+         */
+        EYE_BLOSSOM,
+        /**
+         * When an entity gets the effect from a conduit.
          */
         CONDUIT,
         /**
-         * When a conversion from a villager zombie to a villager is started or
-         * finished.
+         * When a conversion started or finished (e.g. a villager zombie to a villager) or a cube mob
+         * is split.
          */
         CONVERSION,
         /**
@@ -210,8 +234,11 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         DEATH,
         /**
-         * When the entity gets the effect from a dolphin.
+         * When an entity gets the effect from a dolphin.
+         *
+         * @deprecated use {@link #ENTITY_GIFT} and check the source with {@link #getSource()}
          */
+        @Deprecated(since = "26.2")
         DOLPHIN,
         /**
          * When the effect was removed due to expiration.
@@ -220,7 +247,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         /**
          * When an effect is inflicted due to food (e.g. when a player eats or a
          * cookie is given to a parrot).
+         *
+         * @deprecated use {@link #CONSUME} and check the item in hand if needed
          */
+        @Deprecated(since = "26.2")
         FOOD,
         /**
          * When an illusion illager makes himself disappear.
@@ -228,12 +258,15 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         ILLUSION,
         /**
          * When all effects are removed due to a bucket of milk.
+         *
+         * @deprecated use {@link #CONSUME} and check the item in hand if needed
          */
+        @Deprecated(since = "26.2")
         MILK,
         /**
-         * When the entity gets the effect from a nautilus.
+         * When an entity gets the effect from a nautilus.
          */
-        NAUTILUS,
+        NAUTILUS, // TODO: should be ENTITY_GIFT but for now the source is not set (unless MC-309103 its confirmed)
         /**
          * When a player gets bad omen after killing a patrol captain.
          *
@@ -242,33 +275,46 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         @Deprecated(since = "1.21", forRemoval = true)
         PATROL_CAPTAIN,
         /**
-         * When a potion effect is modified through the plugin methods.
+         * When an entity drinks a potion.
+         *
+         * @deprecated use {@link #CONSUME} and check the item in hand if needed
          */
-        PLUGIN,
-        /**
-         * When the entity drinks a potion.
-         */
+        @Deprecated(since = "26.2")
         POTION_DRINK,
         /**
-         * When the entity is inflicted with an effect due to a splash potion.
+         * When an entity is inflicted with an effect due to a splash potion.
          */
         POTION_SPLASH,
         /**
+         * When a {@link org.bukkit.potion.PotionEffectType#BAD_OMEN} effect expires and cause a {@link org.bukkit.potion.PotionEffectType#RAID_OMEN}
+         * to trigger.
+         */
+        BAD_OMEN,
+        /**
+         * When an entity gets close to a trial spawner with {@link org.bukkit.potion.PotionEffectType#BAD_OMEN}.
+         */
+        TRIAL_SPAWNER,
+        /**
+         * When the effect is caused by a raid.
+         * e.g. entity with {@link org.bukkit.potion.PotionEffectType#BAD_OMEN} goes to a villager and trigger a raid
+         * or Player wins a raid.
+         */
+        RAID,
+        /**
          * When a spider gets effects when spawning on hard difficulty.
          */
-        SPIDER_SPAWN,
+        SPIDER_SPAWN, // possibly move to a more generic ENTITY_SPAWN later
         /**
-         * When the entity gets effects from a totem item saving its life.
+         * When an entity gets effects from a totem item saving its life.
+         *
+         * @deprecated use {@link #CONSUME} and check the used item in {@link EntityResurrectEvent}
          */
+        @Deprecated(since = "26.2")
         TOTEM,
         /**
-         * When the entity gets water breathing by wearing a turtle helmet.
+         * When an entity gets water breathing by wearing a turtle helmet.
          */
         TURTLE_HELMET,
-        /**
-         * When the Cause is missing.
-         */
-        UNKNOWN,
         /**
          * When a villager gets regeneration after a trade.
          */
@@ -278,8 +324,24 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         WARDEN,
         /**
-         * When an entity comes in contact with a wither rose.
+         * When a potion effect is changed due to the /effect or /raid command.
          */
-        WITHER_ROSE
+        COMMAND,
+        /**
+         * When a potion effect is modified through the plugin methods.
+         */
+        PLUGIN,
+        /**
+         * When the Cause is missing.
+         */
+        UNKNOWN;
+
+        /**
+         * When an entity stands inside an area effect cloud.
+         *
+         * @deprecated use {@link #EFFECT_CLOUD} and check the source with {@link #getSource()}
+         */
+        @Deprecated(since = "26.2")
+        public static final Cause AREA_EFFECT_CLOUD = EFFECT_CLOUD;
     }
 }
