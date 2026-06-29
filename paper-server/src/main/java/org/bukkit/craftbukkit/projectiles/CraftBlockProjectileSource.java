@@ -90,7 +90,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
         Position position = dispenseConfig.positionFunction().getDispensePosition(source, direction);
         net.minecraft.world.entity.projectile.Projectile launch = projectileItem.asProjectile(level, position, itemstack, direction);
         launch.projectileSource = this;
-        projectileItem.shoot(launch, direction.getStepX(), direction.getStepY(), direction.getStepZ(), dispenseConfig.power(), dispenseConfig.uncertainty());
+        projectileItem.shoot(launch, direction.getStepX(), direction.getStepY(), direction.getStepZ(), dispenseConfig.power(), io.papermc.paper.configuration.ProjectileUncertainty.resolve(launch.getType(), dispenseConfig.uncertainty())); // Paper - configurable projectile uncertainty
 
         if (velocity != null) {
             launch.getBukkitEntity().setVelocity(velocity);
