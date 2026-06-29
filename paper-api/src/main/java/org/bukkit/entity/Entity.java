@@ -536,6 +536,18 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     public void setPersistent(boolean persistent);
 
+    // Paper start
+    /**
+     * @return Returns the amount of time in ticks that the entity will live before being discarded.
+     */
+    int getDespawnTime();
+
+    /**
+     * @param ticks Set the amount of time in ticks that the entity will live before being discarded.
+     */
+    void setDespawnTime(int ticks);
+    // Paper end
+
     /**
      * Gets the primary passenger of a vehicle. For vehicles that could have
      * multiple passengers, this will only return the primary passenger.
