@@ -25,6 +25,22 @@ public interface Bisected extends BlockData {
     void setHalf(@NotNull Half half);
 
     /**
+     * Determines whether this bisected block fits within a single block space.
+     * <p>
+     * Returns {@code true} for blocks like {@link org.bukkit.Tag#TRAPDOORS trapdoors} and {@link org.bukkit.Tag#STAIRS stairs},
+     * which are bisected but occupy only one block in height. Blocks that span two blocks vertically, such as doors or tall plants,
+     * return {@code false}.
+     * <p>
+     * The result influences in-game terminology: single-block bisected types use {@code top}/{@code bottom},
+     * while two-block structures use {@code upper}/{@code lower}.
+     *
+     * @return true if the block fits within a single block space; false otherwise
+     */
+    default boolean isSingleBlock() {
+        return false;
+    }
+
+    /**
      * The half of a vertically bisected block.
      */
     public enum Half {
