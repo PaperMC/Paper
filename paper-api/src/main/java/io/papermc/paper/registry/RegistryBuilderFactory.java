@@ -15,7 +15,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface RegistryBuilderFactory<T, B extends RegistryBuilder<T>> {
+public interface RegistryBuilderFactory<T, B extends RegistryBuilder<? extends T>> {
 
     /**
      * Creates a new empty {@link RegistryBuilder}.
@@ -35,5 +35,5 @@ public interface RegistryBuilderFactory<T, B extends RegistryBuilder<T>> {
      * @throws IllegalArgumentException if key doesn't exist
      */
     @Contract("_ -> new")
-    B copyFrom(TypedKey<T> key);
+    B copyFrom(TypedKey<? extends T> key);
 }

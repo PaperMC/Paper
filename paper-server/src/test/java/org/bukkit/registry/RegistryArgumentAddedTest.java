@@ -36,6 +36,7 @@ public class RegistryArgumentAddedTest {
                     }
                 });
 
+        loadedRegistries.remove(io.papermc.paper.registry.RegistryKey.TRIGGER_TYPE); // remove because it's only partially implemented (only supports adding custom ones for now)
         assertTrue(loadedRegistries.isEmpty(), String.format("""
                 There are registries present, which are not registered in RegistriesArgumentProvider.
 
