@@ -1300,6 +1300,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
+    public void setRotation(final float yaw, final boolean relativeYaw, final float pitch, final boolean relativePitch) {
+        if (this.getHandle().connection == null) return;
+
+        super.setRotation(yaw, relativeYaw, pitch, relativePitch);
+    }
+
+    @Override
     public void lookAt(org.bukkit.entity.@NonNull Entity entity, @NonNull LookAnchor playerAnchor, @NonNull LookAnchor entityAnchor) {
         this.getHandle().lookAt(toNmsAnchor(playerAnchor), ((CraftEntity) entity).getHandle(), toNmsAnchor(entityAnchor));
     }

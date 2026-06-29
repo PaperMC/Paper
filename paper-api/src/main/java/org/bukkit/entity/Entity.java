@@ -135,6 +135,16 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     public void setRotation(float yaw, float pitch);
 
+    /**
+     * Sets the entity's rotation.
+     *
+     * @param yaw the yaw
+     * @param relativeYaw whether the yaw is relative to the current yaw
+     * @param pitch the pitch
+     * @param relativePitch whether the pitch is relative to the current pitch
+     */
+    void setRotation(float yaw, boolean relativeYaw, float pitch, boolean relativePitch);
+
     // Paper start - Teleport API
     /**
      * Teleports this entity to the given location.
