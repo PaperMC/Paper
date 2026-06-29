@@ -2444,8 +2444,8 @@ public class CraftEventFactory {
             CraftBlock.at(level, pos),
             stateSnapshot,
             converted, breaker == null ? null : breaker.getBukkitEntity(),
-            tool == null ? null : CraftItemStack.asCraftMirror(tool))
-            ;
+            tool == null ? null : CraftItemStack.asCraftMirror(tool)
+        );
         if (event.callEvent()) {
             // convert items back
             return event.getItems().stream().map(CraftItemStack::asNMSCopy).toList();
