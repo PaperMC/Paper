@@ -103,12 +103,12 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     /**
      * Gets the {@link BlockState} at the given {@link Vector}.
      *
-     * @param vector The vector of the block state
-     * @return Block state at the given vector
+     * @param location The location of the block state
+     * @return Block state at the given location
      */
     @NotNull
-    default BlockState getBlockState(@NotNull Vector vector) {
-        return this.getBlockState(vector.getBlockX(), vector.getBlockY(), vector.getBlockZ());
+    default BlockState getBlockState(@NotNull Vector location) {
+        return this.getBlockState(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
     /**
@@ -169,7 +169,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     }
 
     /**
-     * Gets the {@link BlockData} at the given {@link Location}.
+     * Gets the {@link BlockData} at the given {@link Vector}.
      *
      * @param location The location of the block data
      * @return Block data at the given location
@@ -223,7 +223,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     }
 
     /**
-     * Sets the {@link BlockData} at the given {@link Location}.
+     * Sets the {@link BlockData} at the given {@link Vector}.
      *
      * @param location The location of the block
      * @param blockData The block data to set the block to
