@@ -743,7 +743,7 @@ public class CraftEventFactory {
                 return true;
             }
             event = CraftEventFactory.callLightningStrikeEvent((LightningStrike) entity.getBukkitEntity(), cause);
-        } else if (!(entity instanceof ServerPlayer) && !(entity instanceof net.minecraft.world.entity.ExperienceOrb)) {
+        } else if (!(entity instanceof ServerPlayer)) {
             event = CraftEventFactory.callEntitySpawnEvent(entity);
         }
 
@@ -760,7 +760,7 @@ public class CraftEventFactory {
         }
 
         // Spigot start - SPIGOT-7523: Merge after spawn event and only merge if the event was not cancelled (gets checked above)
-        if (entity instanceof net.minecraft.world.entity.ExperienceOrb xp) {
+        if (entity instanceof net.minecraft.world.entity.ExperienceOrb xp && event == null) {
             double radius = level.spigotConfig.expMerge;
             event = CraftEventFactory.callEntitySpawnEvent(entity); // Call spawn event for ExperienceOrb entities
             if (radius > 0 && !event.isCancelled() && !entity.isRemoved()) {
