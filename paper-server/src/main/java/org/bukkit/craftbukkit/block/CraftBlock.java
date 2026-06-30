@@ -542,7 +542,7 @@ public class CraftBlock implements Block {
             }
         }
 
-        return result == InteractionResult.SUCCESS && (event == null || !event.isCancelled());
+        return (result == InteractionResult.SUCCESS || result == InteractionResult.SUCCESS_SERVER) && (event == null || !event.isCancelled());
     }
 
     @Override
