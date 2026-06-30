@@ -446,6 +446,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(this.equals(inventory.getPlayer()), "InventoryView must belong to the opening player");
         if (!(this.getHandle() instanceof ServerPlayer)) return; // TODO: NPC support?
         if (((ServerPlayer) this.getHandle()).connection == null) return;
+        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.entity, "Cannot open inventory view async"); // Paper - block async calls
         if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
             // fire INVENTORY_CLOSE if one already open
             ((ServerPlayer) this.getHandle()).connection.handleContainerClose(new ServerboundContainerClosePacket(this.getHandle().containerMenu.containerId), org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper - Inventory close reason

@@ -1619,7 +1619,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void playSound(final net.kyori.adventure.sound.Sound sound, final double x, final double y, final double z) {
-        TickThread.ensureTickThread(this.getHandle(), ((int) x) >> 4, ((int) z) >> 4, "Cannot play sound async"); // Paper - block async calls
+        TickThread.ensureTickThread(this.getHandle(), Mth.floor(x) >> 4, Mth.floor(z) >> 4, "Cannot play sound async"); // Paper - block async calls
         io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, x, y, z, sound.seed().orElseGet(this.world.getRandom()::nextLong), this.playSound0(x, y, z));
     }
 
