@@ -570,7 +570,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     private InventoryView openInventory(Location location, boolean force, Material material) {
-        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.entity, "Cannot open inventory async"); // Paper - block async calls
+        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.entity, "Cannot open " + material + " inventory async"); // Paper - block async calls
         if (location == null) {
             location = this.getLocation();
         }
