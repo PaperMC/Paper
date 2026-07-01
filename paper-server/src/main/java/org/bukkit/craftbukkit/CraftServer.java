@@ -10,6 +10,7 @@ import com.google.common.collect.MapMaker;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.JsonOps;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
@@ -1168,6 +1169,9 @@ public final class CraftServer implements Server {
         Preconditions.checkState(this.console.getAllLevels().iterator().hasNext(), "Cannot create additional worlds on STARTUP");
         //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot create a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
         Preconditions.checkArgument(creator != null, "WorldCreator cannot be null");
+        if ((creator.environment() == Environment.CUSTOM) == (creator.customEnvironmentKey() == null)) {
+            throw new IllegalArgumentException("Custom environment key cannot be null when environment is CUSTOM and vice versa");
+        }
 
         String name = creator.name();
         ChunkGenerator chunkGenerator = creator.generator();
@@ -1194,7 +1198,7 @@ public final class CraftServer implements Server {
             case NORMAL -> LevelStem.OVERWORLD;
             case NETHER -> LevelStem.NETHER;
             case THE_END -> LevelStem.END;
-            default -> throw new IllegalArgumentException("Illegal dimension (" + creator.environment() + ")");
+            case CUSTOM -> PaperAdventure.asVanilla(Registries.LEVEL_STEM, creator.customEnvironmentKey());
         };
 
         RegistryAccess registryAccess = this.console.registryAccess();
@@ -1271,7 +1275,7 @@ public final class CraftServer implements Server {
             throw new IllegalStateException("Missing level stem for world " + name + " using key " + actualDimension);
         }
 
-        WorldInfo worldInfo = new CraftWorldInfo(loadedWorldData.bukkitName(), CraftNamespacedKey.fromMinecraft(dimensionKey.identifier()), genSettingsFinal.options().seed(), primaryLevelData.enabledFeatures(), creator.environment(), customStem.type().value(), customStem.generator(), registryAccess, loadedWorldData.uuid());
+        WorldInfo worldInfo = new CraftWorldInfo(loadedWorldData.bukkitName(), CraftNamespacedKey.fromMinecraft(dimensionKey.identifier()), genSettingsFinal.options().seed(), primaryLevelData.enabledFeatures(), creator.environment(), io.papermc.paper.adventure.PaperAdventure.asAdventureKey(actualDimension), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess(), loadedWorldData.uuid());
         if (biomeProvider == null && chunkGenerator != null) {
             biomeProvider = chunkGenerator.getDefaultBiomeProvider(worldInfo);
         }
