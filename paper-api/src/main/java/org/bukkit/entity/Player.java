@@ -2066,6 +2066,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public net.kyori.adventure.util.TriState hasFlyingFallDamage();
     // Paper end
 
+    // Paper start - reset flying ticks
+    public void resetFlyingTicks();
+
     /**
      * Hides a player from this player
      *
