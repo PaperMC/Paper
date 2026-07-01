@@ -9,7 +9,7 @@ import java.util.Map;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.EntityType;
@@ -57,19 +57,19 @@ public class StatisticRewriter {
         .put("OPEN_SHULKER_BOX", "SHULKER_BOX_OPENED")
         .buildOrThrow();
 
-    public static class Custom extends EnumRegistryRewriter<ResourceLocation> {
+    public static class Custom extends EnumRegistryRewriter<Identifier> {
 
         public Custom() {
             super(Registries.CUSTOM_STAT, false);
         }
 
         @Override
-        protected EnumValue.Builder rewriteEnumValue(Holder.Reference<ResourceLocation> reference) {
+        protected EnumValue.Builder rewriteEnumValue(Holder.Reference<Identifier> reference) {
             return super.rewriteEnumValue(reference).rename(name -> FIELD_RENAMES.getOrDefault(name, name));
         }
     }
 
-    public static class CraftCustom extends EnumRegistryRewriter<ResourceLocation> {
+    public static class CraftCustom extends EnumRegistryRewriter<Identifier> {
 
         private static final Map<String, String> INTERNAL_FIELD_RENAMES = Map.of(
             "SNEAK_TIME", "CROUCH_TIME"
@@ -80,8 +80,8 @@ public class StatisticRewriter {
         }
 
         @Override
-        protected EnumValue.Builder rewriteEnumValue(Holder.Reference<ResourceLocation> reference) {
-            String keyedName = Formatting.formatKeyAsField(reference.key().location().getPath());
+        protected EnumValue.Builder rewriteEnumValue(Holder.Reference<Identifier> reference) {
+            String keyedName = Formatting.formatKeyAsField(reference.key().identifier().getPath());
 
             return super.rewriteEnumValue(reference)
                 .rename(name -> FIELD_RENAMES.getOrDefault(name, name))
@@ -137,7 +137,7 @@ public class StatisticRewriter {
         protected EnumValue.Builder rewriteEnumValue(Holder.Reference<StatType<?>> reference) {
             return super.rewriteEnumValue(reference)
                 .rename(name -> FIELD_RENAMES.getOrDefault(name, name))
-                .argument("%s.withDefaultNamespace(%s)".formatted(ResourceLocation.class.getSimpleName(), quoted(reference.key().location().getPath())));
+                .argument("%s.withDefaultNamespace(%s)".formatted(Identifier.class.getSimpleName(), quoted(reference.key().identifier().getPath())));
         }
     }
 }

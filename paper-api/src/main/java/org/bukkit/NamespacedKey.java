@@ -87,8 +87,12 @@ public final class NamespacedKey implements Key, com.destroystokyo.paper.Namespa
 
     private static void checkError(String pattern, String name, String value, OptionalInt index) {
         index.ifPresent(indexValue -> {
-            char character = value.charAt(indexValue);
-            throw new IllegalArgumentException(String.format("Non %s character in %s '%s' at index %d ('%s', bytes: %s)", pattern, name, value, indexValue, character, Arrays.toString(String.valueOf(character).getBytes(StandardCharsets.UTF_8))));
+            if (indexValue == -1) {
+                throw new IllegalArgumentException(String.format("'%s' is not a valid value for %s", value, name));
+            } else {
+                char character = value.charAt(indexValue);
+                throw new IllegalArgumentException(String.format("Non %s character in %s '%s' at index %d ('%s', bytes: %s)", pattern, name, value, indexValue, character, Arrays.toString(String.valueOf(character).getBytes(StandardCharsets.UTF_8))));
+            }
         });
     }
 

@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/item/SnowballItem.java
 +++ b/net/minecraft/world/item/SnowballItem.java
-@@ -23,22 +_,41 @@
+@@ -23,22 +_,40 @@
      @Override
-     public InteractionResult use(Level level, Player player, InteractionHand hand) {
-         ItemStack itemInHand = player.getItemInHand(hand);
+     public InteractionResult use(final Level level, final Player player, final InteractionHand hand) {
+         ItemStack itemStack = player.getItemInHand(hand);
 -        level.playSound(
 -            null,
 -            player.getX(),
@@ -16,19 +16,18 @@
 -        );
 +        // CraftBukkit start - moved down
          if (level instanceof ServerLevel serverLevel) {
--            Projectile.spawnProjectileFromRotation(Snowball::new, serverLevel, itemInHand, player, 0.0F, PROJECTILE_SHOOT_POWER, 1.0F);
+-            Projectile.spawnProjectileFromRotation(Snowball::new, serverLevel, itemStack, player, 0.0F, 1.5F, 1.0F);
 +            // Paper start - PlayerLaunchProjectileEvent
-+            final Projectile.Delayed<Snowball> snowball = Projectile.spawnProjectileFromRotationDelayed(Snowball::new, serverLevel, itemInHand, player, 0.0F, SnowballItem.PROJECTILE_SHOOT_POWER, 1.0F);
-+            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemInHand), (org.bukkit.entity.Projectile) snowball.projectile().getBukkitEntity());
++            final Projectile.Delayed<Snowball> snowball = Projectile.spawnProjectileFromRotationDelayed(Snowball::new, serverLevel, itemStack, player, 0.0F, SnowballItem.PROJECTILE_SHOOT_POWER, 1.0F);
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Projectile) snowball.projectile().getBukkitEntity());
 +            if (event.callEvent() && snowball.attemptSpawn()) {
 +                player.awardStat(Stats.ITEM_USED.get(this));
 +                if (event.shouldConsume()) {
-+                    itemInHand.consume(1, player);
++                    itemStack.consume(1, player);
 +                } else {
 +                    player.containerMenu.forceHeldSlot(hand);
 +                }
 +                // Paper end - PlayerLaunchProjectileEvent
-+
 +                level.playSound(
 +                    null,
 +                    player.getX(),
@@ -49,9 +48,9 @@
          }
  
 -        player.awardStat(Stats.ITEM_USED.get(this));
--        itemInHand.consume(1, player);
+-        itemStack.consume(1, player);
 +        // Paper - PlayerLaunchProjectileEvent - moved up
-+        // itemInHand.consume(1, player); // CraftBukkit - moved up
++        // itemStack.consume(1, player); // CraftBukkit - moved up
          return InteractionResult.SUCCESS;
      }
  

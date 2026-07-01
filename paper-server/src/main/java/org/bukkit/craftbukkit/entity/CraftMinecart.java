@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.vehicle.AbstractMinecart;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
@@ -42,7 +42,7 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
 
     @Override
     public void setMaxSpeed(double speed) {
-        if (speed >= 0D) {
+        if (speed >= 0) {
             this.getHandle().maxSpeed = speed;
         }
     }
@@ -102,8 +102,7 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
 
     @Override
     public BlockData getDisplayBlockData() {
-        BlockState state = this.getHandle().getDisplayBlockState();
-        return CraftBlockData.fromData(state);
+        return this.getHandle().getDisplayBlockState().asBlockData();
     }
 
     @Override

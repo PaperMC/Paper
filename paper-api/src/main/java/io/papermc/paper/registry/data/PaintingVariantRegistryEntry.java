@@ -19,7 +19,7 @@ public interface PaintingVariantRegistryEntry {
     /**
      * Provides the width of this painting in blocks.
      *
-     * @return the width.
+     * @return the width
      * @see Art#getBlockWidth()
      */
     @Range(from = 1, to = 16) int width();
@@ -27,7 +27,7 @@ public interface PaintingVariantRegistryEntry {
     /**
      * Provides the height of this painting in blocks.
      *
-     * @return the height.
+     * @return the height
      * @see Art#getBlockHeight()
      */
     @Range(from = 1, to = 16) int height();
@@ -35,7 +35,7 @@ public interface PaintingVariantRegistryEntry {
     /**
      * Provides the title of the painting visible in the creative inventory.
      *
-     * @return the title.
+     * @return the title
      * @see Art#title()
      */
     @Nullable Component title();
@@ -43,7 +43,7 @@ public interface PaintingVariantRegistryEntry {
     /**
      * Provides the author of the painting visible in the creative inventory.
      *
-     * @return the author.
+     * @return the author
      * @see Art#author()
      */
     @Nullable Component author();
@@ -51,7 +51,7 @@ public interface PaintingVariantRegistryEntry {
     /**
      * Provides the asset id of the painting, which is the location of the sprite to use.
      *
-     * @return the asset id.
+     * @return the asset id
      * @see Art#assetId()
      */
     Key assetId();
@@ -73,8 +73,8 @@ public interface PaintingVariantRegistryEntry {
         /**
          * Sets the width of the painting in blocks.
          *
-         * @param width the width in blocks.
-         * @return this builder instance.
+         * @param width the width in blocks
+         * @return this builder instance
          * @see PaintingVariantRegistryEntry#width()
          * @see Art#getBlockWidth()
          */
@@ -84,8 +84,8 @@ public interface PaintingVariantRegistryEntry {
         /**
          * Sets the height of the painting in blocks.
          *
-         * @param height the height in blocks.
-         * @return this builder instance.
+         * @param height the height in blocks
+         * @return this builder instance
          * @see PaintingVariantRegistryEntry#height()
          * @see Art#getBlockHeight()
          */
@@ -95,8 +95,8 @@ public interface PaintingVariantRegistryEntry {
         /**
          * Sets the title of the painting.
          *
-         * @param title the title.
-         * @return this builder instance.
+         * @param title the title
+         * @return this builder instance
          * @see PaintingVariantRegistryEntry#title()
          * @see Art#title()
          */
@@ -106,8 +106,8 @@ public interface PaintingVariantRegistryEntry {
         /**
          * Sets the author of the painting.
          *
-         * @param author the author.
-         * @return this builder instance.
+         * @param author the author
+         * @return this builder instance
          * @see PaintingVariantRegistryEntry#author()
          * @see Art#author()
          */
@@ -117,8 +117,8 @@ public interface PaintingVariantRegistryEntry {
         /**
          * Sets the asset id of the painting, which is the location of the sprite to use.
          *
-         * @param assetId the asset id.
-         * @return this builder instance.
+         * @param assetId the asset id
+         * @return this builder instance
          * @see PaintingVariantRegistryEntry#assetId()
          * @see Art#assetId()
          */

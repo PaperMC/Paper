@@ -1,15 +1,14 @@
 package org.bukkit.registry;
 
-import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.base.Joiner;
 import java.util.HashSet;
 import java.util.Set;
 import org.bukkit.Registry;
 import org.bukkit.support.environment.AllFeatures;
-import org.bukkit.support.extension.AllFeaturesExtension;
 import org.bukkit.support.provider.RegistriesArgumentProvider;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.provider.Arguments;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This class tests, if all default registries present in {@link Registry} are added to {@link RegistriesArgumentProvider}
@@ -30,12 +29,10 @@ public class RegistryArgumentAddedTest {
 
         RegistriesArgumentProvider
                 .getData()
-                .map(Arguments::get)
-                .map(array -> array[0])
-                .map(clazz -> (io.papermc.paper.registry.RegistryKey<?>) clazz) // Paper
-                .forEach(clazz -> {
-                    if (!loadedRegistries.remove(clazz)) {
-                        notFound.add(clazz);
+                .map(RegistriesArgumentProvider.RegistryArgument::apiRegistryKey)
+                .forEach(key -> {
+                    if (!loadedRegistries.remove(key)) {
+                        notFound.add(key);
                     }
                 });
 

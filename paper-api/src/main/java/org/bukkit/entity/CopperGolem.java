@@ -26,6 +26,20 @@ public interface CopperGolem extends Golem, Shearable {
     void setWeatheringState(WeatheringCopperState state);
 
     /**
+     * Get the current copper golem state of the copper golem.
+     *
+     * @return the copper golem state
+     */
+    CopperGolem.State getGolemState();
+
+    /**
+     * Set the copper golem state of the copper golem.
+     *
+     * @param state the new copper golem state
+     */
+    void setGolemState(CopperGolem.State state);
+
+    /**
      * Get the current oxidizing state of the copper golem.
      *
      * @return the oxidizing state
@@ -124,5 +138,16 @@ public interface CopperGolem extends Golem, Shearable {
          */
         @ApiStatus.Internal
         record AtTimeImpl(long time) implements AtTime {}
+    }
+
+    @NullMarked
+    enum State {
+        // Start generate - CopperGolemState
+        IDLE,
+        GETTING_ITEM,
+        GETTING_NO_ITEM,
+        DROPPING_ITEM,
+        DROPPING_NO_ITEM;
+        // End generate - CopperGolemState
     }
 }

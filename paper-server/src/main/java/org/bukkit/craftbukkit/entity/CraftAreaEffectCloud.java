@@ -2,9 +2,11 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.Optionull;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityReference;
@@ -47,7 +49,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public int getWaitTime() {
-        return this.getHandle().waitTime;
+        return this.getHandle().getWaitTime();
     }
 
     @Override
@@ -67,12 +69,12 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public int getDurationOnUse() {
-        return this.getHandle().durationOnUse;
+        return this.getHandle().getDurationOnUse();
     }
 
     @Override
     public void setDurationOnUse(int duration) {
-        this.getHandle().durationOnUse = duration;
+        this.getHandle().setDurationOnUse(duration);
     }
 
     @Override
@@ -87,7 +89,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public float getRadiusOnUse() {
-        return this.getHandle().radiusOnUse;
+        return this.getHandle().getRadiusOnUse();
     }
 
     @Override
@@ -97,7 +99,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public float getRadiusPerTick() {
-        return this.getHandle().radiusPerTick;
+        return this.getHandle().getRadiusPerTick();
     }
 
     @Override
@@ -122,13 +124,13 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public Color getColor() {
-        return Color.fromRGB(this.getHandle().potionContents.getColor() & 0x00FFFFFF); // Paper - skip alpha channel
+        return Color.fromRGB(this.potionContents().getColor() & 0x00FFFFFF); // Paper - skip alpha channel
     }
 
     @Override
     public void setColor(Color color) {
-        PotionContents old = this.getHandle().potionContents;
-        this.getHandle().setPotionContents(new PotionContents(old.potion(), Optional.ofNullable(color).map(Color::asRGB), old.customEffects(), old.customName()));
+        PotionContents current = this.potionContents();
+        this.getHandle().setPotionContents(new PotionContents(current.potion(), Optional.ofNullable(color).map(Color::asRGB), current.customEffects(), current.customName()));
     }
 
     @Override
@@ -145,14 +147,14 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public void clearCustomEffects() {
-        PotionContents old = this.getHandle().potionContents;
-        this.getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), List.of(), old.customName()));
+        PotionContents current = this.potionContents();
+        this.getHandle().setPotionContents(new PotionContents(current.potion(), current.customColor(), List.of(), current.customName()));
     }
 
     @Override
     public List<PotionEffect> getCustomEffects() {
         ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
-        for (MobEffectInstance effect : this.getHandle().potionContents.customEffects()) {
+        for (MobEffectInstance effect : this.potionContents().customEffects()) {
             builder.add(CraftPotionUtil.toBukkit(effect));
         }
         return builder.build();
@@ -160,7 +162,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public boolean hasCustomEffect(PotionEffectType type) {
-        for (MobEffectInstance effect : this.getHandle().potionContents.customEffects()) {
+        for (MobEffectInstance effect : this.potionContents().customEffects()) {
             if (CraftPotionUtil.equals(effect.getEffect(), type)) {
                 return true;
             }
@@ -170,7 +172,7 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public boolean hasCustomEffects() {
-        return !this.getHandle().potionContents.customEffects().isEmpty();
+        return !this.potionContents().customEffects().isEmpty();
     }
 
     @Override
@@ -178,10 +180,10 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
         if (!this.hasCustomEffect(effect)) {
             return false;
         }
-        Holder<MobEffect> minecraft = CraftPotionEffectType.bukkitToMinecraftHolder(effect);
 
-        PotionContents old = this.getHandle().potionContents;
-        this.getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), old.customEffects().stream().filter((mobEffect) -> !mobEffect.getEffect().equals(minecraft)).toList(), old.customName()));
+        Holder<MobEffect> minecraft = CraftPotionEffectType.bukkitToMinecraftHolder(effect);
+        PotionContents current = this.potionContents();
+        this.getHandle().setPotionContents(new PotionContents(current.potion(), current.customColor(), current.customEffects().stream().filter((mobEffect) -> !mobEffect.getEffect().equals(minecraft)).toList(), current.customName()));
         return true;
     }
 
@@ -198,16 +200,20 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
     @Override
     public void setBasePotionType(PotionType potionType) {
         if (potionType != null) {
-            this.getHandle().setPotionContents(this.getHandle().potionContents.withPotion(CraftPotionType.bukkitToMinecraftHolder(potionType)));
+            this.getHandle().setPotionContents(this.potionContents().withPotion(CraftPotionType.bukkitToMinecraftHolder(potionType)));
         } else {
-            PotionContents old = this.getHandle().potionContents;
-            this.getHandle().setPotionContents(new PotionContents(Optional.empty(), old.customColor(), old.customEffects(), old.customName()));
+            PotionContents current = this.potionContents();
+            this.getHandle().setPotionContents(new PotionContents(Optional.empty(), current.customColor(), current.customEffects(), current.customName()));
         }
     }
 
     @Override
     public PotionType getBasePotionType() {
-        return this.getHandle().potionContents.potion().map(CraftPotionType::minecraftHolderToBukkit).orElse(null);
+        return this.potionContents().potion().map(CraftPotionType::minecraftHolderToBukkit).orElse(null);
+    }
+
+    private PotionContents potionContents() {
+        return Objects.requireNonNull(this.getHandle().get(DataComponents.POTION_CONTENTS));
     }
 
     @Override

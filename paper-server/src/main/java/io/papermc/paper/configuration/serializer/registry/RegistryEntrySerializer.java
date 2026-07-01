@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.configurate.serialize.ScalarSerializer;
 import org.spongepowered.configurate.serialize.SerializationException;
 
@@ -57,15 +57,15 @@ abstract class RegistryEntrySerializer<T, R> extends ScalarSerializer.Annotated<
     @Override
     protected final Object serialize(final AnnotatedType type, final T item, final Predicate<Class<?>> typeSupported) {
         final ResourceKey<R> key = this.convertToResourceKey(item);
-        if (this.omitMinecraftNamespace && key.location().getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
-            return key.location().getPath();
+        if (this.omitMinecraftNamespace && key.identifier().getNamespace().equals(Identifier.DEFAULT_NAMESPACE)) {
+            return key.identifier().getPath();
         } else {
-            return key.location().toString();
+            return key.identifier().toString();
         }
     }
 
     private ResourceKey<R> deserializeKey(final Object input) throws SerializationException {
-        final ResourceLocation key = ResourceLocation.tryParse(input.toString());
+        final Identifier key = Identifier.tryParse(input.toString());
         if (key == null) {
             throw new SerializationException("Could not create a key from " + input);
         }

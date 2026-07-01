@@ -15,7 +15,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.login.custom.CustomQueryPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.ProfilePublicKey;
 
 /**
@@ -35,7 +35,7 @@ public class VelocityProxy {
     public static final int MODERN_FORWARDING_WITH_KEY_V2 = 3;
     public static final int MODERN_LAZY_SESSION = 4;
     public static final byte MAX_SUPPORTED_FORWARDING_VERSION = MODERN_LAZY_SESSION;
-    public static final ResourceLocation PLAYER_INFO_CHANNEL = ResourceLocation.fromNamespaceAndPath("velocity", "player_info");
+    public static final Identifier PLAYER_INFO_CHANNEL = Identifier.fromNamespaceAndPath("velocity", "player_info");
 
     public static boolean checkIntegrity(final FriendlyByteBuf buf) {
         final byte[] signature = new byte[32];

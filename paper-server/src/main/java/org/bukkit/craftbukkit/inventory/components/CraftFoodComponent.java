@@ -1,12 +1,14 @@
 package org.bukkit.craftbukkit.inventory.components;
 
-import com.google.common.base.Preconditions;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.minecraft.world.food.FoodProperties;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.inventory.SerializableMeta;
 import org.bukkit.inventory.meta.components.FoodComponent;
+import org.checkerframework.checker.index.qual.NonNegative;
+
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
 @SerializableAs("Food")
 public final class CraftFoodComponent implements FoodComponent {
@@ -49,9 +51,8 @@ public final class CraftFoodComponent implements FoodComponent {
     }
 
     @Override
-    public void setNutrition(int nutrition) {
-        Preconditions.checkArgument(nutrition >= 0, "Nutrition cannot be negative");
-        this.handle = new FoodProperties(nutrition, this.handle.saturation(), this.handle.canAlwaysEat());
+    public void setNutrition(@NonNegative int nutrition) {
+        this.handle = new FoodProperties(requireNonNegative(nutrition, "nutrition"), this.handle.saturation(), this.handle.canAlwaysEat());
     }
 
     @Override

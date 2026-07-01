@@ -40,7 +40,8 @@ public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Gets the knockback force that will be applied to the entity. <br>
+     * Gets the knockback force that will be applied to the entity.
+     * <br>
      * This value is read-only, changes made to it <b>will not</b> have any
      * effect on the final knockback received. Use {@link #setKnockback(Vector)}
      * to make changes.

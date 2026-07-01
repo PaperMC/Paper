@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.legacy;
 import java.util.function.BiFunction;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.banner.PatternType;
@@ -44,6 +45,9 @@ public class FieldRename {
             case "org/bukkit/attribute/Attribute" -> FieldRename.convertAttributeName(apiVersion, from).replace('.', '_');
             case "org/bukkit/map/MapCursor$Type" -> FieldRename.convertMapCursorTypeName(apiVersion, from);
             case "org/bukkit/inventory/ItemFlag" -> FieldRename.convertItemFlagName(apiVersion, from);
+            case "org/bukkit/Sound" -> FieldRename.convertSoundName(apiVersion, from);
+            case "org/bukkit/inventory/ItemType" -> FieldRename.convertItemTypeName(apiVersion, from);
+            case "org/bukkit/block/BlockType" -> FieldRename.convertBlockTypeName(apiVersion, from);
             default -> from;
         };
     }
@@ -460,5 +464,42 @@ public class FieldRename {
     public static ItemFlag valueOf_ItemFlag(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
         return ItemFlag.valueOf(FieldRename.convertItemFlagName(ApiVersion.CURRENT, name));
+    }
+
+    // Sound
+    private static final FieldRenameData SOUND_DATA = FieldRenameData.Builder.newBuilder()
+        .forAllVersions()
+        .change("ENTITY_LEASH_KNOT_PLACE", "ITEM_LEAD_TIED")
+        .change("ENTITY_LEASH_KNOT_BREAK", "ITEM_LEAD_BREAK")
+        .build();
+
+    @DoNotReroute
+    public static String convertSoundName(ApiVersion version, String from) {
+        return FieldRename.SOUND_DATA.getReplacement(version, from);
+    }
+
+    @RerouteMethodName("valueOf")
+    @RerouteStatic("org/bukkit/Sound")
+    public static Sound valueOf_Sound(String name) {
+        return Sound.valueOf(FieldRename.convertSoundName(ApiVersion.CURRENT, name));
+    }
+
+    // ItemType
+    private static final FieldRenameData ITEM_TYPE_DATA = FieldRenameData.Builder.newBuilder()
+        .forAllVersions()
+        .change("CHAIN", "IRON_CHAIN")
+        .build();
+
+    @DoNotReroute
+    public static String convertItemTypeName(ApiVersion version, String from) {
+        return FieldRename.ITEM_TYPE_DATA.getReplacement(version, from);
+    }
+
+    // BlockType
+    private static final FieldRenameData BLOCK_TYPE_DATA = ITEM_TYPE_DATA;
+
+    @DoNotReroute
+    public static String convertBlockTypeName(ApiVersion version, String from) {
+        return FieldRename.BLOCK_TYPE_DATA.getReplacement(version, from);
     }
 }

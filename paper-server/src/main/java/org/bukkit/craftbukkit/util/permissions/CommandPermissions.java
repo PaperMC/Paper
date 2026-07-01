@@ -84,6 +84,7 @@ public final class CommandPermissions {
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "spreadplayers", "Allows the user to teleport entities to random locations", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "stopsound", "Allows the user to stop a sound", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "summon", "Allows the user to summon an entity", PermissionDefault.OP, commands);
+        DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "swing", "Allows the user to swing arms of an entity", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "tag", "Allows the user to control entity tags", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "team", "Allows the user to control teams", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "teammsg", "Allows the user to specify the message to send to team", PermissionDefault.TRUE, commands); // defaults to all players
@@ -98,6 +99,7 @@ public final class CommandPermissions {
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "weather", "Allows the user to set the weather", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "whitelist", "Allows the user to manage the server whitelist", PermissionDefault.OP, commands);
         DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "worldborder", "Allows the user to manage the world border", PermissionDefault.OP, commands);
+        DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "stopwatch", "Allows the user to use the /stopwatch command", PermissionDefault.OP, commands);
         // Paper end
 
         DefaultPermissions.registerPermission("minecraft.admin.command_feedback", "Receive command broadcasts when sendCommandFeedback is true", PermissionDefault.OP, commands);

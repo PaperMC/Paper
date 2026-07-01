@@ -2,6 +2,7 @@ package io.papermc.paper.registry;
 
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -9,6 +10,7 @@ import net.kyori.adventure.key.Keyed;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
+import org.bukkit.GameRule;
 import org.bukkit.JukeboxSong;
 import org.bukkit.MusicInstrument;
 import org.bukkit.Particle;
@@ -25,8 +27,10 @@ import org.bukkit.entity.Cow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Pig;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.ZombieNautilus;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
@@ -91,6 +95,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<Villager.Profession> VILLAGER_PROFESSION = create("villager_profession");
     /**
+     * Built-in registry for poi types.
+     * @see io.papermc.paper.registry.keys.PoiTypeKeys
+     */
+    RegistryKey<PoiType> POINT_OF_INTEREST_TYPE = create("point_of_interest_type");
+    /**
      * Built-in registry for villager types.
      * @see io.papermc.paper.registry.keys.VillagerTypeKeys
      */
@@ -125,8 +134,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.DataComponentTypeKeys
      */
     RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
-
-
+    /**
+     * Built-in registry for game rules.
+     * @see io.papermc.paper.registry.keys.GameRuleKeys
+     */
+    RegistryKey<GameRule<?>> GAME_RULE = create("game_rule");
 
     /* ********************** *
      * Data-driven Registries *
@@ -197,6 +209,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<Cat.Type> CAT_VARIANT = create("cat_variant");
     /**
+     * Data-driven registry for cat sound variants.
+     * @see io.papermc.paper.registry.keys.CatSoundVariantKeys
+     */
+    RegistryKey<Cat.SoundVariant> CAT_SOUND_VARIANT = create("cat_sound_variant");
+    /**
      * Data-driven registry for frog variants.
      * @see io.papermc.paper.registry.keys.FrogVariantKeys
      */
@@ -207,15 +224,40 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<Chicken.Variant> CHICKEN_VARIANT = create("chicken_variant");
     /**
+     * Data-driven registry for chicken sound variants.
+     * @see io.papermc.paper.registry.keys.ChickenSoundVariantKeys
+     */
+    RegistryKey<Chicken.SoundVariant> CHICKEN_SOUND_VARIANT = create("chicken_sound_variant");
+    /**
      * Data-driven registry for cow variants.
      * @see io.papermc.paper.registry.keys.CowVariantKeys
      */
     RegistryKey<Cow.Variant> COW_VARIANT = create("cow_variant");
     /**
+     * Data-driven registry for cow sound variants.
+     * @see io.papermc.paper.registry.keys.CowSoundVariantKeys
+     */
+    RegistryKey<Cow.SoundVariant> COW_SOUND_VARIANT = create("cow_sound_variant");
+    /**
      * Data-driven registry for pig variants.
      * @see io.papermc.paper.registry.keys.PigVariantKeys
      */
     RegistryKey<Pig.Variant> PIG_VARIANT = create("pig_variant");
+    /**
+     * Data-driven registry for pig sound variants.
+     * @see io.papermc.paper.registry.keys.PigSoundVariantKeys
+     */
+    RegistryKey<Pig.SoundVariant> PIG_SOUND_VARIANT = create("pig_sound_variant");
+    /**
+     * Data-driven registry for zombie nautilus variants.
+     * @see io.papermc.paper.registry.keys.ZombieNautilusVariantKeys
+     */
+    RegistryKey<ZombieNautilus.Variant> ZOMBIE_NAUTILUS_VARIANT = create("zombie_nautilus_variant");
+    /**
+     * Data-driven registry for sulfur cube archetypes.
+     * @see io.papermc.paper.registry.keys.SulfurCubeArchetypeKeys
+     */
+    RegistryKey<SulfurCube.Archetype> SULFUR_CUBE_ARCHETYPE = create("sulfur_cube_archetype");
     /**
      * Data-driven registry for dialogs.
      * @see io.papermc.paper.registry.keys.DialogKeys

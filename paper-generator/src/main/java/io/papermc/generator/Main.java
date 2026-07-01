@@ -17,14 +17,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.RegistryDataLoader;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.RegistryLayer;
@@ -34,6 +34,7 @@ import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.repository.ServerPacksSource;
 import net.minecraft.server.packs.resources.CloseableResourceManager;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.tags.TagKey;
 import net.minecraft.tags.TagLoader;
 import net.minecraft.world.flag.FeatureFlagSet;
@@ -78,16 +79,16 @@ public class Main implements Callable<Integer> {
 
         PackRepository packRepository = ServerPacksSource.createVanillaTrustedRepository();
         FeatureFlagSet flags = FeatureFlags.REGISTRY.allFlags();
-        MinecraftServer.configurePackRepository(packRepository, new WorldDataConfiguration(new DataPackConfig(FeatureFlags.REGISTRY.toNames(flags).stream().map(ResourceLocation::getPath).toList(), List.of()), flags), true, false);
+        MinecraftServer.configurePackRepository(packRepository, new WorldDataConfiguration(new DataPackConfig(FeatureFlags.REGISTRY.toNames(flags).stream().map(Identifier::getPath).toList(), List.of()), flags), true, false);
         CloseableResourceManager resourceManager = new MultiPackResourceManager(PackType.SERVER_DATA, packRepository.openAllSelected());
 
         LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
         List<Registry.PendingTags<?>> pendingTags = TagLoader.loadTagsForExistingRegistries(resourceManager, layers.getLayer(RegistryLayer.STATIC));
         List<HolderLookup.RegistryLookup<?>> worldGenLayer = TagLoader.buildUpdatedLookups(layers.getAccessForLoading(RegistryLayer.WORLDGEN), pendingTags);
-        RegistryAccess.Frozen frozenWorldgenRegistries = RegistryDataLoader.load(resourceManager, worldGenLayer, RegistryDataLoader.WORLDGEN_REGISTRIES);
+        RegistryAccess.Frozen frozenWorldgenRegistries = RegistryDataLoader.load(resourceManager, worldGenLayer, RegistryDataLoader.WORLDGEN_REGISTRIES, Util.backgroundExecutor()).join();
         layers = layers.replaceFrom(RegistryLayer.WORLDGEN, frozenWorldgenRegistries);
         List<HolderLookup.RegistryLookup<?>> staticAndWorldgenLookups = Stream.concat(worldGenLayer.stream(), frozenWorldgenRegistries.listRegistries()).toList();
-        RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES);
+        RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES, Util.backgroundExecutor()).join();
         layers = layers.replaceFrom(RegistryLayer.DIMENSIONS, dimensionRegistries);
         REGISTRY_ACCESS = layers.compositeAccess().freeze();
         if (withTags) {
@@ -97,7 +98,7 @@ public class Main implements Callable<Integer> {
                 pendingTags,
                 flags,
                 Commands.CommandSelection.DEDICATED,
-                Commands.LEVEL_GAMEMASTERS,
+                LevelBasedPermissionSet.GAMEMASTER,
                 Util.backgroundExecutor(),
                 Runnable::run
             ).whenComplete((result, ex) -> {
@@ -105,7 +106,7 @@ public class Main implements Callable<Integer> {
                     resourceManager.close();
                 }
             }).thenAccept(resources -> {
-                resources.updateStaticRegistryTags();
+                resources.updateComponentsAndStaticRegistryTags();
                 EXPERIMENTAL_TAGS = ExperimentalCollector.collectTags(resourceManager);
             });
         } else {

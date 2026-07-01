@@ -5,6 +5,7 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
@@ -281,6 +282,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     Registry<Villager.Profession> VILLAGER_PROFESSION = registryFor(RegistryKey.VILLAGER_PROFESSION);
     /**
+     * Point of interest types.
+     *
+     * @see PoiType
+     */
+    Registry<PoiType> POINT_OF_INTEREST_TYPE = registryFor(RegistryKey.POINT_OF_INTEREST_TYPE);
+    /**
      * Villager type.
      *
      * @see Villager.Type
@@ -348,7 +355,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see DataComponentType
      */
-    Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE); // Paper
+    Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE);
+    /**
+     * Game rules.
+     *
+     * @see GameRule
+     */
+    Registry<GameRule<?>> GAME_RULE = registryFor(RegistryKey.GAME_RULE);
 
     //<editor-fold desc="renames" defaultstate="collapsed">
     /**
@@ -557,7 +570,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @deprecated this method's behavior is broken and not useful. If you want to get an object
      * based on its vanilla name, or a key, wrap it in a {@link NamespacedKey} object and use {@link #get(NamespacedKey)}
      */
-    // Paper
     @Deprecated(forRemoval = true)
     default @Nullable T match(final String input) {
         Preconditions.checkArgument(input != null, "input must not be null");

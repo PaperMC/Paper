@@ -76,6 +76,8 @@ public final class DamageTypeTags {
 
     public static final Tag<DamageType> PANIC_ENVIRONMENTAL_CAUSES = getTag("panic_environmental_causes");
 
+    public static final Tag<DamageType> SULFUR_CUBE_WITH_BLOCK_IMMUNE_TO = getTag("sulfur_cube_with_block_immune_to");
+
     public static final Tag<DamageType> WITCH_RESISTANT_TO = getTag("witch_resistant_to");
 
     public static final Tag<DamageType> WITHER_IMMUNE_TO = getTag("wither_immune_to");

@@ -2,10 +2,10 @@ package org.bukkit.craftbukkit.inventory;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -46,7 +46,6 @@ import org.bukkit.inventory.meta.KnowledgeBookMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
@@ -154,21 +153,6 @@ public class ItemMetaTest {
         ItemStack bukkit = new ItemStack(craft);
         assertThat(craft, is(bukkit));
         assertThat(bukkit, is(craft));
-    }
-
-    @Test
-    public void testSpawnEggsHasMeta() {
-        for (Item item : BuiltInRegistries.ITEM) {
-            if (item instanceof net.minecraft.world.item.SpawnEggItem) {
-                Material material = CraftItemType.minecraftToBukkit(item);
-                CraftMetaItem baseMeta = (CraftMetaItem) Bukkit.getItemFactory().getItemMeta(material);
-                ItemMeta baseMetaItem = CraftItemStack.getItemMeta(item.getDefaultInstance());
-
-                assertTrue(baseMeta instanceof CraftMetaSpawnEgg, material + " is not handled in CraftItemFactory");
-                assertTrue(baseMeta.applicableTo(material), material + " is not applicable to CraftMetaSpawnEgg");
-                assertTrue(baseMetaItem instanceof SpawnEggMeta, material + " is not handled in CraftItemStack");
-            }
-        }
     }
 
     // Paper start - check entity tag metas
@@ -347,7 +331,7 @@ public class ItemMetaTest {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaArmorStand meta = (CraftMetaArmorStand) cleanStack.getItemMeta();
                     meta.entityTag = new CompoundTag();
-                    meta.entityTag.putString("id", EntityType.getKey(EntityType.ARMOR_STAND).toString());
+                    meta.entityTag.putString("id", EntityType.getKey(EntityTypes.ARMOR_STAND).toString());
                     meta.entityTag.putBoolean("Small", true);
                     meta.setInvisible(true); // Paper
                     cleanStack.setItemMeta(meta);
@@ -366,7 +350,7 @@ public class ItemMetaTest {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaEntityTag meta = ((CraftMetaEntityTag) cleanStack.getItemMeta());
                     meta.entityTag = new CompoundTag();
-                    meta.entityTag.putString("id", EntityType.getKey(EntityType.ITEM_FRAME).toString());
+                    meta.entityTag.putString("id", EntityType.getKey(EntityTypes.ITEM_FRAME).toString());
                     meta.entityTag.putBoolean("Invisible", true);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
@@ -424,20 +408,20 @@ public class ItemMetaTest {
 
     @Test
     public void testAttributeModifiers() {
-        UUID sameUUID = UUID.randomUUID();
         ItemMeta itemMeta = Bukkit.getItemFactory().getItemMeta(Material.DIAMOND_PICKAXE);
-        itemMeta.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 10, AttributeModifier.Operation.ADD_NUMBER));
+        NamespacedKey sameKey = NamespacedKey.minecraft("abc");
+        itemMeta.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(sameKey, 10, AttributeModifier.Operation.ADD_NUMBER));
 
         ItemMeta equalMeta = Bukkit.getItemFactory().getItemMeta(Material.DIAMOND_PICKAXE);
-        equalMeta.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 10, AttributeModifier.Operation.ADD_NUMBER));
+        equalMeta.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(sameKey, 10, AttributeModifier.Operation.ADD_NUMBER));
 
         assertThat(itemMeta.equals(equalMeta), is(true));
 
         ItemMeta itemMeta2 = Bukkit.getItemFactory().getItemMeta(Material.DIAMOND_PICKAXE);
-        itemMeta2.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 10, AttributeModifier.Operation.ADD_NUMBER));
+        itemMeta2.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(sameKey, 10, AttributeModifier.Operation.ADD_NUMBER));
 
         ItemMeta notEqualMeta2 = Bukkit.getItemFactory().getItemMeta(Material.DIAMOND_PICKAXE);
-        notEqualMeta2.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 11, AttributeModifier.Operation.ADD_NUMBER));
+        notEqualMeta2.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(sameKey, 11, AttributeModifier.Operation.ADD_NUMBER));
 
         assertThat(itemMeta2.equals(notEqualMeta2), is(false));
     }
@@ -445,8 +429,8 @@ public class ItemMetaTest {
     @Test
     public void testBlockData() {
         BlockDataMeta itemMeta = (BlockDataMeta) Bukkit.getItemFactory().getItemMeta(Material.CHEST);
-        itemMeta.setBlockData(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]"));
-        assertThat(itemMeta.getBlockData(Material.CHEST), is(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]")));
+        itemMeta.setBlockData(CraftBlockData.fromString(null, "minecraft:chest[waterlogged=true]"));
+        assertThat(itemMeta.getBlockData(Material.CHEST), is(CraftBlockData.fromString(null, "minecraft:chest[waterlogged=true]")));
     }
 
     @Test

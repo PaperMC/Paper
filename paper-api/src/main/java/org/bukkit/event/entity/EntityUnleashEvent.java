@@ -102,6 +102,10 @@ public class EntityUnleashEvent extends EntityEvent implements Cancellable {
          * When the entity's leashholder is more than 10 blocks away
          */
         DISTANCE,
+        /**
+         * When the leashed entity is removed from the game
+         */
+        LEASHED_GONE,
         UNKNOWN;
     }
 }

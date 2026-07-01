@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -212,7 +213,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     /**
      * Get world type (level-type setting) for default world.
      *
-     * @return the value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)
+     * @return the value of level-type (e.g. minecraft:normal, minecraft:flat, minecraft:large_biomes, minecraft:amplified)
      */
     @NotNull
     public String getWorldType();
@@ -243,7 +244,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Separate from the portal game rule.
      *
      * @return whether this server allows the Nether or not
-     * @see GameRule#ALLOW_ENTERING_NETHER_USING_PORTALS
+     * @see GameRules#ALLOW_ENTERING_NETHER_USING_PORTALS
      */
     public boolean getAllowNether();
 
@@ -792,11 +793,15 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public void setRespawnWorld(@NotNull World world);
 
     /**
-     * Gets the world with the given name.
+     * Gets the world with the given legacy Bukkit name.
      *
-     * @param name the name of the world to retrieve
-     * @return a world with the given name, or null if none exists
+     * <p>This method is considered obsolete and is a candidate for future deprecation.
+     * Prefer using {@link #getWorld(NamespacedKey)}.</p>
+     *
+     * @param name the legacy Bukkit name of the world to retrieve
+     * @return a world with the given legacy Bukkit name, or null if none exists
      */
+    @ApiStatus.Obsolete
     @Nullable
     public World getWorld(@NotNull String name);
 
@@ -835,7 +840,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Create a new virtual {@link WorldBorder}.
      * <p>
      * Note that world borders created by the server will not respect any world
-     * scaling effects (i.e. coordinates are not divided by 8 in the nether).
+     * scaling effects (i.e. coordinates are not divided by 8 in the nether)
+     * and will not deal damage to players outside their bounds.
      *
      * @return the created world border instance
      *
@@ -1374,7 +1380,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return an offline player
      * @see #getOfflinePlayer(java.util.UUID)
      */
-    // @Deprecated(since = "1.7.5") // Paper
     @NotNull
     public OfflinePlayer getOfflinePlayer(@NotNull String name);
 
@@ -1564,7 +1569,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     @NotNull
     public ConsoleCommandSender getConsoleSender();
 
-    // Paper start
     /**
      * Creates a special {@link CommandSender} which redirects command feedback (in the form of chat messages) to the
      * specified listener. The returned sender will have the same effective permissions as {@link #getConsoleSender()}.
@@ -1574,15 +1578,30 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     @NotNull
     public CommandSender createCommandSender(final @NotNull java.util.function.Consumer<? super net.kyori.adventure.text.Component> feedback);
-    // Paper end
 
     /**
-     * Gets the folder that contains all of the various {@link World}s.
+     * Gets the folder that contains {@link #getLevelDirectory()}.
      *
-     * @return folder that contains all worlds
+     * <p>This is usually the server's current working directory
+     * but can be overridden using command line flags (i.e. {@code --universe} or {@code --world-container}).</p>
+     *
+     * @return folder that contains the level directory
      */
+    @ApiStatus.Obsolete
     @NotNull
     public File getWorldContainer();
+
+    /**
+     * Gets the level directory.
+     *
+     * <p>This is the {@code ./world} directory in a fresh default server. Contains player data, dimensions, datapacks,
+     * and other world data.</p>
+     *
+     * @return the level directory
+     */
+    @ApiStatus.Experimental
+    @NotNull
+    Path getLevelDirectory();
 
     /**
      * Gets every player that has ever played on this server.
@@ -2390,9 +2409,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
         // Paper start
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
-        {
-            throw new UnsupportedOperationException( "Not supported yet." );
+        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         /**
@@ -2404,8 +2422,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          */
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
-        {
+        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -2418,8 +2435,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          */
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig()
-        {
+        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
         // Paper end
