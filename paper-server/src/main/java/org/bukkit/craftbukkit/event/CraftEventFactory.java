@@ -576,7 +576,7 @@ public class CraftEventFactory {
     }
 
     public static PlayerBucketFillEvent callPlayerBucketFillEvent(Level level, net.minecraft.world.entity.player.Player player, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack itemInHand, net.minecraft.world.item.Item bucket, InteractionHand hand) {
-        return (PlayerBucketFillEvent) CraftEventFactory.getPlayerBucketEvent(true, level, player, clicked, changed, clickedFace, itemInHand, bucket, hand);
+        return (PlayerBucketFillEvent) CraftEventFactory.getPlayerBucketEvent(true, level, player, changed, clicked, clickedFace, itemInHand, bucket, hand);
     }
 
     private static PlayerEvent getPlayerBucketEvent(boolean isFilling, Level level, net.minecraft.world.entity.player.Player player, BlockPos changed, BlockPos clicked, Direction clickedFace, ItemStack bucket, net.minecraft.world.item.Item item, InteractionHand hand) {
@@ -762,8 +762,7 @@ public class CraftEventFactory {
         // Spigot start - SPIGOT-7523: Merge after spawn event and only merge if the event was not cancelled (gets checked above)
         if (entity instanceof net.minecraft.world.entity.ExperienceOrb xp) {
             double radius = level.spigotConfig.expMerge;
-            event = CraftEventFactory.callEntitySpawnEvent(entity); // Call spawn event for ExperienceOrb entities
-            if (radius > 0 && !event.isCancelled() && !entity.isRemoved()) {
+            if (radius > 0) {
                 // Paper start - Maximum exp value when merging; Whole section has been tweaked, see comments for specifics
                 final long maxValue = level.paperConfig().entities.behavior.experienceMergeMaxValue;
                 final boolean mergeUnconditionally = maxValue <= 0;

@@ -76,7 +76,7 @@ public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * The reason for why a PlayerExhaustionEvent takes place
+     * The reason for why a EntityExhaustionEvent takes place
      */
     public enum ExhaustionReason {
 

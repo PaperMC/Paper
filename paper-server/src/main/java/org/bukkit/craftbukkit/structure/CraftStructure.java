@@ -87,7 +87,7 @@ public class CraftStructure implements Structure {
         Preconditions.checkArgument(entityTransformers != null, "EntityTransformers cannot be null");
         location.checkFinite();
 
-        Preconditions.checkArgument(integrity >= 0F && integrity <= 1F, "Integrity value (%S) must be between 0 and 1 inclusive", integrity);
+        Preconditions.checkArgument(integrity >= 0F && integrity <= 1F, "Integrity value (%s) must be between 0 and 1 inclusive", integrity);
 
         RandomSource randomSource = new RandomSourceWrapper(random);
         StructurePlaceSettings definedstructureinfo = new StructurePlaceSettings()

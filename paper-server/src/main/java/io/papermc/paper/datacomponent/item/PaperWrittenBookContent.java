@@ -63,7 +63,7 @@ public record PaperWrittenBookContent(
     public Book asBook() {
         final Filtered<String> title = this.title();
         return Book.book(
-            Component.text(Objects.requireNonNull(title.filtered(), title::raw)),
+            Component.text(Objects.requireNonNullElseGet(title.filtered(), title::raw)),
             Component.text(this.author()),
             this.pages()
                 .stream()
