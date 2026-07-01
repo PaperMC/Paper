@@ -6,13 +6,13 @@ import org.bukkit.entity.WanderingTrader;
 
 public class CraftWanderingTrader extends CraftAbstractVillager implements WanderingTrader {
 
-    public CraftWanderingTrader(CraftServer server, net.minecraft.world.entity.npc.WanderingTrader entity) {
+    public CraftWanderingTrader(CraftServer server, net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.npc.WanderingTrader getHandle() {
-        return (net.minecraft.world.entity.npc.WanderingTrader) this.entity;
+    public net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader getHandle() {
+        return (net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader) this.entity;
     }
 
     @Override
@@ -59,7 +59,7 @@ public class CraftWanderingTrader extends CraftAbstractVillager implements Wande
     public void setWanderingTowards(org.bukkit.Location location) {
         net.minecraft.core.BlockPos pos = null;
         if (location != null) {
-            pos = CraftLocation.toBlockPosition(location);
+            pos = CraftLocation.toBlockPos(location);
         }
 
         this.getHandle().setWanderTarget(pos);

@@ -83,19 +83,6 @@ public final class CraftProfileProperty {
         return Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
     }
 
-    public static String toString(Property property) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("{");
-        builder.append("name=");
-        builder.append(property.name());
-        builder.append(", value=");
-        builder.append(property.value());
-        builder.append(", signature=");
-        builder.append(property.signature());
-        builder.append("}");
-        return builder.toString();
-    }
-
     public static int hashCode(Property property) {
         int result = 1;
         result = 31 * result + Objects.hashCode(property.name());

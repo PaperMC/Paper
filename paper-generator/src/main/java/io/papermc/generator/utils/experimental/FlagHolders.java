@@ -3,7 +3,7 @@ package io.papermc.generator.utils.experimental;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.world.flag.FeatureFlag;
 import net.minecraft.world.flag.FeatureFlags;
 import org.bukkit.MinecraftExperimental;

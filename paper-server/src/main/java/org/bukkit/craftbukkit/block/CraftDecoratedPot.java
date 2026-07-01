@@ -18,6 +18,7 @@ import org.bukkit.block.DecoratedPot;
 import org.bukkit.craftbukkit.inventory.CraftInventoryDecoratedPot;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.inventory.DecoratedPotInventory;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEntity> implements DecoratedPot {
 
@@ -128,5 +129,17 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
     @Override
     public CraftDecoratedPot copy(Location location) {
         return new CraftDecoratedPot(this, location);
+    }
+
+    @Override
+    public void startWobble(@NotNull final WobbleStyle style) {
+        Preconditions.checkArgument(style != null, "style must not be null");
+        this.requirePlaced();
+
+        DecoratedPotBlockEntity.WobbleStyle originalStyle = switch (style) {
+            case POSITIVE -> DecoratedPotBlockEntity.WobbleStyle.POSITIVE;
+            case NEGATIVE -> DecoratedPotBlockEntity.WobbleStyle.NEGATIVE;
+        };
+        this.getBlockEntity().wobble(originalStyle);
     }
 }

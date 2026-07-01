@@ -29,13 +29,13 @@ import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 
 @DelegateDeserialization(SerializableMeta.class)
-class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+public class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
 
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<PotionContents> POTION_CONTENTS = new ItemMetaKeyType<>(DataComponents.POTION_CONTENTS);
     static final ItemMetaKey POTION_EFFECTS = new ItemMetaKey("custom-effects");
     static final ItemMetaKey POTION_COLOR = new ItemMetaKey("custom-color");
-    static final ItemMetaKey CUSTOM_NAME = new ItemMetaKey("custom-name");
+    static final ItemMetaKey POTION_CUSTOM_NAME = new ItemMetaKey("custom-name");
     static final ItemMetaKey DEFAULT_POTION = new ItemMetaKey("potion-type");
 
     private PotionType type;
@@ -56,9 +56,9 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         }
     }
 
-    CraftMetaPotion(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
-        getOrEmpty(tag, CraftMetaPotion.POTION_CONTENTS).ifPresent((potionContents) -> {
+    CraftMetaPotion(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
+        getOrEmpty(patch, CraftMetaPotion.POTION_CONTENTS).ifPresent((potionContents) -> {
             potionContents.potion().ifPresent((potion) -> {
                 this.type = CraftPotionType.minecraftHolderToBukkit(potion);
             });
@@ -109,7 +109,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
             this.setColor(color);
         }
 
-        String name = SerializableMeta.getString(map, CraftMetaPotion.CUSTOM_NAME.BUKKIT, true);
+        String name = SerializableMeta.getString(map, CraftMetaPotion.POTION_CUSTOM_NAME.BUKKIT, true);
         if (name != null) {
             this.setCustomPotionName(name);
         }
@@ -397,7 +397,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         }
 
         if (this.hasCustomPotionName()) {
-            builder.put(CraftMetaPotion.CUSTOM_NAME.BUKKIT, this.getCustomPotionName());
+            builder.put(CraftMetaPotion.POTION_CUSTOM_NAME.BUKKIT, this.getCustomPotionName());
         }
 
         if (this.hasCustomEffects()) {

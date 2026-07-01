@@ -1,25 +1,28 @@
 package org.bukkit.event.entity;
 
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a potion effect is modified on an entity.
  * <p>
  * If the event is cancelled, no change will be made on the entity.
  */
+@NullMarked
 public class EntityPotionEffectEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final PotionEffect oldEffect;
-    private final PotionEffect newEffect;
+    private final @Nullable PotionEffect oldEffect;
+    private final @Nullable PotionEffect newEffect;
+    private final @Nullable Entity entitySource;
     private final Cause cause;
     private final Action action;
     private boolean override;
@@ -27,13 +30,19 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public EntityPotionEffectEvent(@NotNull LivingEntity livingEntity, @Nullable PotionEffect oldEffect, @Nullable PotionEffect newEffect, @NotNull Cause cause, @NotNull Action action, boolean override) {
+    public EntityPotionEffectEvent(final LivingEntity livingEntity, final @Nullable PotionEffect oldEffect, final @Nullable PotionEffect newEffect, final @Nullable Entity entitySource, final Cause cause, final Action action, final boolean override) {
         super(livingEntity);
         this.oldEffect = oldEffect;
         this.newEffect = newEffect;
+        this.entitySource = entitySource;
         this.cause = cause;
         this.action = action;
         this.override = override;
+    }
+
+    @Override
+    public LivingEntity getEntity() {
+        return (LivingEntity) super.getEntity();
     }
 
     /**
@@ -42,8 +51,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      * @return The old potion effect or {@code null} if the entity did not have the
      * changed effect type.
      */
-    @Nullable
-    public PotionEffect getOldEffect() {
+    public @Nullable PotionEffect getOldEffect() {
         return this.oldEffect;
     }
 
@@ -53,9 +61,18 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      * @return The new potion effect or {@code null} if the effect of the changed type
      * will be removed.
      */
-    @Nullable
-    public PotionEffect getNewEffect() {
+    public @Nullable PotionEffect getNewEffect() {
         return this.newEffect;
+    }
+
+    /**
+     * Gets the entity which caused the effect to change
+     * (Not applicable for {@link Action#REMOVED}).
+     *
+     * @return The entity which caused the effect to change or {@code null}
+     */
+    public @Nullable Entity getSource() {
+        return this.entitySource;
     }
 
     /**
@@ -63,7 +80,6 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      *
      * @return A Cause value why the effect has changed.
      */
-    @NotNull
     public Cause getCause() {
         return this.cause;
     }
@@ -73,7 +89,6 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      *
      * @return An action to be performed on the potion effect type.
      */
-    @NotNull
     public Action getAction() {
         return this.action;
     }
@@ -83,14 +98,13 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
      *
      * @return The effect type which will be modified on the entity.
      */
-    @NotNull
     public PotionEffectType getModifiedType() {
-        return (this.oldEffect == null) ? ((this.newEffect == null) ? null : this.newEffect.getType()) : this.oldEffect.getType(); // todo not null?
+        return this.oldEffect == null ? this.newEffect.getType() : this.oldEffect.getType();
     }
 
     /**
      * Returns if the new potion effect will override the old potion effect
-     * (Only applicable for the CHANGED Action).
+     * (Only applicable for {@link Action#CHANGED}).
      *
      * @return If the new effect will override the old one.
      */
@@ -99,8 +113,8 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
     }
 
     /**
-     * Sets if the new potion effect will override the old potion effect (Only
-     * applicable for the CHANGED action).
+     * Sets if the new potion effect will override the old potion effect
+     * (Only applicable for {@link Action#CHANGED}).
      *
      * @param override If the new effect will override the old one.
      */
@@ -118,13 +132,11 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         this.cancelled = cancel;
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
@@ -218,6 +230,10 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          * When all effects are removed due to a bucket of milk.
          */
         MILK,
+        /**
+         * When the entity gets the effect from a nautilus.
+         */
+        NAUTILUS,
         /**
          * When a player gets bad omen after killing a patrol captain.
          *

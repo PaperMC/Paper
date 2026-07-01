@@ -2,9 +2,10 @@ package org.bukkit.entity;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.DyeColor;
 import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -131,8 +132,8 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
         // End generate - WolfVariant
 
         @NotNull
-        private static Variant getVariant(@NotNull String key) {
-            return RegistryAccess.registryAccess().getRegistry(RegistryKey.WOLF_VARIANT).getOrThrow(NamespacedKey.minecraft(key));
+        private static Variant getVariant(@NotNull @KeyPattern.Value String key) {
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.WOLF_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }
 
@@ -158,8 +159,8 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
         // End generate - WolfSoundVariant
 
         @NotNull
-        private static SoundVariant getSoundVariant(@NotNull String key) {
-            return RegistryAccess.registryAccess().getRegistry(RegistryKey.WOLF_SOUND_VARIANT).getOrThrow(NamespacedKey.minecraft(key));
+        private static SoundVariant getSoundVariant(@NotNull @KeyPattern.Value String key) {
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.WOLF_SOUND_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }
 }

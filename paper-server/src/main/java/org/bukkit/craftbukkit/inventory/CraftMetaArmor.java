@@ -31,12 +31,12 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
         }
     }
 
-    CraftMetaArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaArmor(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaArmor.TRIM).ifPresent((trimCompound) -> {
-            TrimMaterial trimMaterial = CraftTrimMaterial.minecraftHolderToBukkit(trimCompound.material());
-            TrimPattern trimPattern = CraftTrimPattern.minecraftHolderToBukkit(trimCompound.pattern());
+        getOrEmpty(patch, CraftMetaArmor.TRIM).ifPresent((armorTrim) -> {
+            TrimMaterial trimMaterial = CraftTrimMaterial.minecraftHolderToBukkit(armorTrim.material());
+            TrimPattern trimPattern = CraftTrimPattern.minecraftHolderToBukkit(armorTrim.pattern());
 
             this.trim = new ArmorTrim(trimMaterial, trimPattern);
         });

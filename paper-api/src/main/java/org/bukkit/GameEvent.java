@@ -1,8 +1,8 @@
 package org.bukkit;
 
-import com.google.common.collect.Lists;
 import java.util.Collection;
-import java.util.Collections;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,6 +29,8 @@ public abstract class GameEvent implements Keyed {
     public static final GameEvent BLOCK_OPEN = getEvent("block_open");
 
     public static final GameEvent BLOCK_PLACE = getEvent("block_place");
+
+    public static final GameEvent BOUNCE = getEvent("bounce");
 
     public static final GameEvent CONTAINER_CLOSE = getEvent("container_close");
 
@@ -250,17 +252,17 @@ public abstract class GameEvent implements Keyed {
      * Returns the set of all GameEvents.
      *
      * @return the memoryKeys
-     * @deprecated use {@link Registry#iterator()}.
+     * @deprecated use {@link Registry#stream()}.
      */
     @NotNull
     @Deprecated(since = "1.20.1")
     public static Collection<GameEvent> values() {
-        return Collections.unmodifiableCollection(Lists.newArrayList(Registry.GAME_EVENT));
+        return Registry.GAME_EVENT.stream().toList();
     }
 
     @NotNull
-    private static GameEvent getEvent(@NotNull String key) {
-        return Registry.GAME_EVENT.getOrThrow(NamespacedKey.minecraft(key));
+    private static GameEvent getEvent(@NotNull @KeyPattern.Value String key) {
+        return Registry.GAME_EVENT.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
     // Paper start
     /**

@@ -23,7 +23,7 @@ class MetaHandledTagsTest {
             assertFalse(subclasses.isEmpty(), "found 0 sub types");
             for (final ClassInfo subclass : subclasses) {
                 final Class<CraftMetaItem> clazz = subclass.loadClass(CraftMetaItem.class);
-                CraftMetaItem.getTopLevelHandledDcts(clazz); // load into map
+                CraftMetaItem.getTopLevelHandledComponents(clazz); // load into map
                 assertTrue(CraftMetaItem.HANDLED_DCTS_PER_TYPE.containsKey(clazz), subclass.getName() + " not found in handled tags map");
             }
         } catch (Exception e) {

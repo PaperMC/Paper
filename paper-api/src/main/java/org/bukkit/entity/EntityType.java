@@ -1,10 +1,10 @@
 package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.InternalAPIBridge;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -37,8 +37,6 @@ import org.bukkit.entity.minecart.PoweredMinecart;
 import org.bukkit.entity.minecart.RideableMinecart;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -66,6 +64,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     BREEZE("breeze", Breeze.class, -1),
     BREEZE_WIND_CHARGE("breeze_wind_charge", BreezeWindCharge.class, -1),
     CAMEL("camel", Camel.class, -1),
+    CAMEL_HUSK("camel_husk", CamelHusk.class, -1),
     CAT("cat", Cat.class, -1),
     CAVE_SPIDER("cave_spider", CaveSpider.class, 59),
     CHERRY_BOAT("cherry_boat", CherryBoat.class, -1),
@@ -97,7 +96,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     EXPERIENCE_ORB("experience_orb", ExperienceOrb.class, 2),
     EYE_OF_ENDER("eye_of_ender", EnderSignal.class, 15),
     FALLING_BLOCK("falling_block", FallingBlock.class, 21),
-    FIREBALL("fireball", Fireball.class, 12),
+    FIREBALL("fireball", LargeFireball.class, 12),
     FIREWORK_ROCKET("firework_rocket", Firework.class, 22),
     FISHING_BOBBER("fishing_bobber", FishHook.class, -1, false),
     FOX("fox", Fox.class, -1),
@@ -135,6 +134,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     MINECART("minecart", RideableMinecart.class, 42),
     MOOSHROOM("mooshroom", MushroomCow.class, 96),
     MULE("mule", Mule.class, 32),
+    NAUTILUS("nautilus", Nautilus.class, -1),
     OAK_BOAT("oak_boat", OakBoat.class, -1),
     OAK_CHEST_BOAT("oak_chest_boat", OakChestBoat.class, -1),
     OCELOT("ocelot", Ocelot.class, 98),
@@ -143,6 +143,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     PALE_OAK_BOAT("pale_oak_boat", PaleOakBoat.class, -1),
     PALE_OAK_CHEST_BOAT("pale_oak_chest_boat", PaleOakChestBoat.class, -1),
     PANDA("panda", Panda.class, -1),
+    PARCHED("parched", Parched.class, -1),
     PARROT("parrot", Parrot.class, 105),
     PHANTOM("phantom", Phantom.class, -1),
     PIG("pig", Pig.class, 90),
@@ -175,6 +176,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     SQUID("squid", Squid.class, 94),
     STRAY("stray", Stray.class, 6),
     STRIDER("strider", Strider.class, -1),
+    SULFUR_CUBE("sulfur_cube", SulfurCube.class, -1),
     TADPOLE("tadpole", Tadpole.class, -1),
     TEXT_DISPLAY("text_display", TextDisplay.class, -1),
     TNT("tnt", TNTPrimed.class, 20),
@@ -197,6 +199,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     ZOGLIN("zoglin", Zoglin.class, -1),
     ZOMBIE("zombie", Zombie.class, 54),
     ZOMBIE_HORSE("zombie_horse", ZombieHorse.class, 29),
+    ZOMBIE_NAUTILUS("zombie_nautilus", ZombieNautilus.class, -1),
     ZOMBIE_VILLAGER("zombie_villager", ZombieVillager.class, 27),
     ZOMBIFIED_PIGLIN("zombified_piglin", PigZombie.class, 57),
     // End generate - EntityType
@@ -327,7 +330,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     @NotNull
     @Deprecated(forRemoval = true) // Paper
     public String getTranslationKey() {
-        return Bukkit.getUnsafe().getTranslationKey(this);
+        return this.translationKey();
     }
 
     // Paper start
@@ -337,7 +340,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     @Override
     public @NotNull String translationKey() {
         Preconditions.checkArgument(this != UNKNOWN, "UNKNOWN entities do not have translation keys");
-        return org.bukkit.Bukkit.getUnsafe().getTranslationKey(this);
+        return InternalAPIBridge.get().getTranslationKey(this);
     }
 
     /**
@@ -346,7 +349,10 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
      * @return true if it has default attributes
      */
     public boolean hasDefaultAttributes() {
-        return org.bukkit.Bukkit.getUnsafe().hasDefaultEntityAttributes(this.key);
+        if (this == UNKNOWN) {
+            return false;
+        }
+        return InternalAPIBridge.get().hasDefaultEntityAttributes(this.key);
     }
 
     /**
@@ -356,7 +362,8 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
      * @throws IllegalArgumentException if the entity does not exist of have default attributes (use {@link #hasDefaultAttributes()} first)
      */
     public @NotNull org.bukkit.attribute.Attributable getDefaultAttributes() {
-        return org.bukkit.Bukkit.getUnsafe().getDefaultEntityAttributes(this.key);
+        Preconditions.checkArgument(this.hasDefaultAttributes(), this.key + " doesn't have default attributes");
+        return InternalAPIBridge.get().getDefaultEntityAttributes(this.key);
     }
     // Paper end
 }

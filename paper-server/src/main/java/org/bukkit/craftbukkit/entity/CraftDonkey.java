@@ -6,7 +6,7 @@ import org.bukkit.entity.Horse.Variant;
 
 public class CraftDonkey extends CraftChestedHorse implements Donkey {
 
-    public CraftDonkey(CraftServer server, net.minecraft.world.entity.animal.horse.Donkey entity) {
+    public CraftDonkey(CraftServer server, net.minecraft.world.entity.animal.equine.Donkey entity) {
         super(server, entity);
     }
 

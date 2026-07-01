@@ -82,7 +82,10 @@ public class Commodore {
             "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent",
             "org/bukkit/block/data/type/Crafter$Orientation", "org/bukkit/block/Orientation",
             "org/bukkit/block/data/type/Jigsaw$Orientation", "org/bukkit/block/Orientation",
-            "org/bukkit/block/data/type/MossyCarpet$Height", "org/bukkit/block/data/type/Wall$Height"
+            "org/bukkit/block/data/type/MossyCarpet$Height", "org/bukkit/block/data/type/Wall$Height",
+            "org/bukkit/block/data/type/PinkPetals", "org/bukkit/block/data/type/FlowerBed",
+            "org/bukkit/block/data/type/PointedDripstone", "org/bukkit/block/data/type/Speleothem",
+            "org/bukkit/block/data/type/PointedDripstone$Thickness", "org/bukkit/block/data/type/Speleothem$Thickness"
     );
 
     private static final Map<String, String> CLASS_TO_INTERFACE = Map.ofEntries(
@@ -135,24 +138,13 @@ public class Commodore {
 
     // Paper start - Plugin rewrites
     private static final String CB_PACKAGE_PREFIX = "org/bukkit/".concat("craftbukkit/");
-    private static final String LEGACY_CB_PACKAGE_PREFIX = CB_PACKAGE_PREFIX + io.papermc.paper.util.MappingEnvironment.LEGACY_CB_VERSION + "/";
     private static String runtimeCbPkgPrefix() {
-        if (io.papermc.paper.util.MappingEnvironment.reobf()) {
-            return LEGACY_CB_PACKAGE_PREFIX;
-        }
         return CB_PACKAGE_PREFIX;
     }
 
     @Nonnull
     private static String getOriginalOrRewrite(@Nonnull String original)
     {
-        // Relocation is applied in reobf, and when mappings are present they handle the relocation
-        if (!io.papermc.paper.util.MappingEnvironment.reobf() && !io.papermc.paper.util.MappingEnvironment.hasMappings()) {
-            if (original.contains(LEGACY_CB_PACKAGE_PREFIX)) {
-                original = original.replace(LEGACY_CB_PACKAGE_PREFIX, CB_PACKAGE_PREFIX);
-            }
-        }
-
         return original;
     }
     // Paper end - Plugin rewrites
@@ -226,16 +218,15 @@ public class Commodore {
         ClassReader cr = new ClassReader(b);
         ClassWriter cw = new ClassWriter(cr, 0);
 
-        ClassVisitor visitor = cw;
-
-        visitor = io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(visitor); // Paper
-
         Map<String, String> renames = new HashMap<>(RENAMES);
         if (pluginVersion.isOlderThan(ApiVersion.ABSTRACT_COW)) {
             renames.put("org/bukkit/entity/Cow", "org/bukkit/entity/AbstractCow");
         }
+        if (pluginVersion.isOlderThan(ApiVersion.ABSTRACT_CUBE_MOB)) {
+            renames.put("org/bukkit/entity/Slime", "org/bukkit/entity/AbstractCubeMob");
+        }
 
-        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, visitor) {
+        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, cw) {
             final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
             String className;
             boolean isInterface;
@@ -459,7 +450,7 @@ public class Commodore {
                         }
 
                         // Paper start - Rewrite plugins
-                        owner = getOriginalOrRewrite(owner) ;
+                        owner = getOriginalOrRewrite(owner);
                         if (desc != null) {
                             desc = getOriginalOrRewrite(desc);
                         }
@@ -682,7 +673,7 @@ public class Commodore {
             public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
                 // Paper start - Rewrite plugins
                 descriptor = getOriginalOrRewrite(descriptor);
-                if ( signature != null ) {
+                if (signature != null) {
                     signature = getOriginalOrRewrite(signature);
                 }
                 // Paper end

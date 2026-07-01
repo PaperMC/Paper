@@ -1,7 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.Set;
-import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;
@@ -68,7 +69,7 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
     @Override
     public void lastOutput(net.kyori.adventure.text.Component lastOutput) {
         io.papermc.paper.commands.PaperCommandBlockHolder.super.lastOutput(lastOutput);
-        this.getCommandBlockHandle().onUpdated();
+        this.getCommandBlockHandle().onUpdated((ServerLevel) this.getHandle().level());
     }
 
     @Override

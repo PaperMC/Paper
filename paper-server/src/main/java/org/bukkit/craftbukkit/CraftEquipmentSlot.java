@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit;
 import java.util.Locale;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.EnumBiMap;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import org.bukkit.inventory.EquipmentSlot;

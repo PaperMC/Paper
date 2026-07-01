@@ -61,6 +61,10 @@ public enum EntityEffect {
      */
     RESET_SPAWNER_MINECART_DELAY(1, SpawnerMinecart.class),
     /**
+     * When a kinetic weapon hits an entity.
+     */
+    HIT(2, LivingEntity.class),
+    /**
      * When mobs get hurt.
      *
      * @deprecated use {@link LivingEntity#playHurtAnimation(float)}
@@ -197,7 +201,7 @@ public enum EntityEffect {
      * <p>
      * <b>This will cause client-glitches!</b>
      */
-    TNT_MINECART_IGNITE(10, ExplosiveMinecart.class),
+    TNT_MINECART_IGNITE(70, ExplosiveMinecart.class),
     /**
      * When an Iron Golem gives a rose.
      */

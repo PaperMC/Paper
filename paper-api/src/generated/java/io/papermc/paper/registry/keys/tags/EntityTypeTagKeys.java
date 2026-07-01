@@ -82,6 +82,13 @@ public final class EntityTypeTagKeys {
     public static final TagKey<EntityType> BOAT = create(key("boat"));
 
     /**
+     * {@code #minecraft:burn_in_daylight}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> BURN_IN_DAYLIGHT = create(key("burn_in_daylight"));
+
+    /**
      * {@code #minecraft:can_breathe_under_water}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -103,6 +110,13 @@ public final class EntityTypeTagKeys {
     public static final TagKey<EntityType> CAN_EQUIP_SADDLE = create(key("can_equip_saddle"));
 
     /**
+     * {@code #minecraft:can_float_while_ridden}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CAN_FLOAT_WHILE_RIDDEN = create(key("can_float_while_ridden"));
+
+    /**
      * {@code #minecraft:can_turn_in_boats}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -117,11 +131,25 @@ public final class EntityTypeTagKeys {
     public static final TagKey<EntityType> CAN_WEAR_HORSE_ARMOR = create(key("can_wear_horse_armor"));
 
     /**
+     * {@code #minecraft:can_wear_nautilus_armor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CAN_WEAR_NAUTILUS_ARMOR = create(key("can_wear_nautilus_armor"));
+
+    /**
      * {@code #minecraft:candidate_for_iron_golem_gift}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<EntityType> CANDIDATE_FOR_IRON_GOLEM_GIFT = create(key("candidate_for_iron_golem_gift"));
+
+    /**
+     * {@code #minecraft:cannot_be_age_locked}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CANNOT_BE_AGE_LOCKED = create(key("cannot_be_age_locked"));
 
     /**
      * {@code #minecraft:cannot_be_pushed_onto_boats}
@@ -229,6 +257,13 @@ public final class EntityTypeTagKeys {
     public static final TagKey<EntityType> INVERTED_HEALING_AND_HARM = create(key("inverted_healing_and_harm"));
 
     /**
+     * {@code #minecraft:nautilus_hostiles}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> NAUTILUS_HOSTILES = create(key("nautilus_hostiles"));
+
+    /**
      * {@code #minecraft:no_anger_from_wind_charge}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -241,6 +276,13 @@ public final class EntityTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<EntityType> NON_CONTROLLING_RIDER = create(key("non_controlling_rider"));
+
+    /**
+     * {@code #minecraft:not_affected_by_geysers}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> NOT_AFFECTED_BY_GEYSERS = create(key("not_affected_by_geysers"));
 
     /**
      * {@code #minecraft:not_scary_for_pufferfish}

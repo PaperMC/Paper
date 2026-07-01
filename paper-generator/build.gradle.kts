@@ -23,11 +23,11 @@ dependencies {
     implementation("io.papermc.typewriter:typewriter:1.0.1") {
         isTransitive = false // paper-api already have everything
     }
-    implementation("info.picocli:picocli:4.7.6")
-    implementation("io.github.classgraph:classgraph:4.8.47")
-    implementation("org.jetbrains:annotations:26.0.1")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation("info.picocli:picocli:4.7.7")
+    implementation("io.github.classgraph:classgraph:4.8.184")
+    implementation("org.jetbrains:annotations:26.0.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.0.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
 
     serverRuntimeClasspath(project(":paper-server", "runtimeConfiguration"))
 }
