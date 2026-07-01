@@ -326,6 +326,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public InventoryView openInventory(Inventory inventory) {
         if (!(this.getHandle() instanceof ServerPlayer)) return null;
+        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.entity, "Cannot open inventory async"); // Paper - block async calls
         ServerPlayer player = (ServerPlayer) this.getHandle();
         AbstractContainerMenu formerContainer = this.getHandle().containerMenu;
 
@@ -445,6 +446,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(this.equals(inventory.getPlayer()), "InventoryView must belong to the opening player");
         if (!(this.getHandle() instanceof ServerPlayer)) return; // TODO: NPC support?
         if (((ServerPlayer) this.getHandle()).connection == null) return;
+        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.entity, "Cannot open inventory view async"); // Paper - block async calls
         if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
             // fire INVENTORY_CLOSE if one already open
             ((ServerPlayer) this.getHandle()).connection.handleContainerClose(new ServerboundContainerClosePacket(this.getHandle().containerMenu.containerId), org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper - Inventory close reason
@@ -501,6 +503,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public InventoryView openMerchant(Merchant merchant, boolean force) {
         Preconditions.checkNotNull(merchant, "merchant cannot be null");
+        // Paper start - block async calls
+        if (merchant instanceof CraftEntity craftEntity) {
+            ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(craftEntity.entity, "Cannot open merchant screen async from merchant");
+        }
+        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.entity, "Cannot open merchant screen async");
+        // Paper end - block async calls
 
         if (!force && merchant.isTrading()) {
             return null;
@@ -562,7 +570,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     private InventoryView openInventory(Location location, boolean force, Material material) {
-        org.spigotmc.AsyncCatcher.catchOp("open" + material);
+        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.entity, "Cannot open " + material + " inventory async"); // Paper - block async calls
         if (location == null) {
             location = this.getLocation();
         }
