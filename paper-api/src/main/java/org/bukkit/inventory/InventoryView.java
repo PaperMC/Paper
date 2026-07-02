@@ -285,6 +285,16 @@ public interface InventoryView {
     default net.kyori.adventure.text.Component title() {
         return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(this.getTitle());
     }
+
+    /**
+     * Sets the title of this inventory window.
+     *
+     * @throws UnsupportedOperationException if the inventory does not support
+     *         dynamic title changes (e.g., if it is not viewed by a player).
+     */
+    default void title(@NotNull net.kyori.adventure.text.Component title) {
+        throw new UnsupportedOperationException();
+    }
     // Paper end
 
     /**

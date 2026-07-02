@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -14,6 +15,7 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import java.util.function.Function;
 
 public class CraftInventoryView<T extends AbstractContainerMenu, I extends Inventory> extends CraftAbstractInventoryView {
     protected final T container;
@@ -79,6 +81,12 @@ public class CraftInventoryView<T extends AbstractContainerMenu, I extends Inven
     }
 
     @Override
+    public void title(net.kyori.adventure.text.Component title) {
+        CraftInventoryView.sendInventoryTitleChange(this, title);
+        this.title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(title);
+    }
+
+    @Override
     public String getTitle() {
         return this.title;
     }
@@ -109,15 +117,27 @@ public class CraftInventoryView<T extends AbstractContainerMenu, I extends Inven
     }
 
     public static void sendInventoryTitleChange(InventoryView view, String title) {
-        Preconditions.checkArgument(view != null, "InventoryView cannot be null");
         Preconditions.checkArgument(title != null, "Title cannot be null");
+        sendInventoryTitleChangeInternal(view, t -> CraftChatMessage.fromString(t)[0], title);
+    }
+
+    public static void sendInventoryTitleChange(InventoryView view, net.kyori.adventure.text.Component title) {
+        Preconditions.checkArgument(title != null, "Title cannot be null");
+        sendInventoryTitleChangeInternal(view, t -> CraftChatMessage.fromJSON(net.kyori.adventure.text.serializer.json.JSONComponentSerializer.json().serialize(t)), title);
+    }
+
+    private static <T> void sendInventoryTitleChangeInternal(InventoryView view, Function<T, Component> titleSerializer, T title) {
+        Preconditions.checkArgument(view != null, "InventoryView cannot be null");
         Preconditions.checkArgument(view.getPlayer() instanceof Player, "NPCs are not currently supported for this function");
         Preconditions.checkArgument(view.getTopInventory().getType().isCreatable(), "Only creatable inventories can have their title changed");
 
         final ServerPlayer player = (ServerPlayer) ((CraftHumanEntity) view.getPlayer()).getHandle();
         final int containerId = player.containerMenu.containerId;
         final MenuType<?> windowType = CraftContainer.getNotchInventoryType(view.getTopInventory());
-        player.connection.send(new ClientboundOpenScreenPacket(containerId, windowType, CraftChatMessage.fromString(title)[0]));
+
+        final Component nmsTitle = titleSerializer.apply(title);
+
+        player.connection.send(new ClientboundOpenScreenPacket(containerId, windowType, nmsTitle));
         player.containerMenu.sendAllDataToRemote();
     }
 }

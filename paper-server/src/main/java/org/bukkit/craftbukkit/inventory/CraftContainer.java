@@ -77,6 +77,12 @@ public class CraftContainer extends AbstractContainerMenu {
             public net.kyori.adventure.text.Component title() {
                 return inventory instanceof CraftInventoryCustom custom ? custom.title() : inventory.getType().defaultTitle(); // Paper
             }
+
+            @Override
+            public void title(net.kyori.adventure.text.Component title) {
+                CraftInventoryView.sendInventoryTitleChange(this, title);
+                this.title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(title);
+            }
             // Paper end
 
             @Override
