@@ -542,7 +542,7 @@ public class CraftBlock implements Block {
             }
         }
 
-        return result == InteractionResult.SUCCESS && (event == null || !event.isCancelled());
+        return result.consumesAction() && (event == null || !event.isCancelled());
     }
 
     @Override
