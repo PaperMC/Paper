@@ -90,7 +90,7 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
         this.getHandle().setSoundVariant(CraftSoundVariant.bukkitToMinecraftHolder(soundVariant));
     }
 
-    public static class CraftVariant extends HolderableBase<WolfVariant> implements Variant {
+    public static class CraftVariant extends HolderableBase<WolfVariant, Variant> implements Variant {
 
         public static Variant minecraftHolderToBukkit(Holder<WolfVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.WOLF_VARIANT);
@@ -105,7 +105,7 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
         }
     }
 
-    public static class CraftSoundVariant extends HolderableBase<WolfSoundVariant> implements SoundVariant {
+    public static class CraftSoundVariant extends HolderableBase<WolfSoundVariant, SoundVariant> implements SoundVariant {
 
         public static SoundVariant minecraftHolderToBukkit(Holder<WolfSoundVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.WOLF_SOUND_VARIANT);

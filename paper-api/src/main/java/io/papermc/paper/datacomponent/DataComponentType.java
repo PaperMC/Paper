@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent;
 
+import io.papermc.paper.registry.RegistryElement;
 import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -7,7 +8,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface DataComponentType extends Keyed {
+public interface DataComponentType extends RegistryElement<DataComponentType>, Keyed {
 
     /**
      * Checks if this data component type is persistent, or

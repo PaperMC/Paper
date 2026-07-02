@@ -1,6 +1,7 @@
 package org.bukkit.inventory.meta.trim;
 
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -12,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a pattern that may be used in an {@link ArmorTrim}.
  */
-public interface TrimPattern extends Keyed, Translatable {
+public interface TrimPattern extends RegistryElement<TrimPattern>, Keyed, Translatable {
 
     // Start generate - TrimPattern
     TrimPattern BOLT = getTrimPattern("bolt");
