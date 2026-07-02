@@ -157,7 +157,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         CHANGED,
         /**
-         * When the potion effect is removed due to all them being removed.
+         * When the potion effect is removed as part of the removal of all effects.
          */
         CLEARED,
         /**
@@ -185,7 +185,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         ATTACK,
         /**
-         * When an entity gets a positive effect or a negative effect is removed as a gift made by another entity (like a dolphin or an axolotl)
+         * When an entity gets a positive effect or a negative effect is removed as a gift made by another entity (like a dolphin or an axolotl).
          */
         ENTITY_GIFT,
         /**
@@ -212,7 +212,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          */
         BEACON,
         /**
-         * When an entity gets the effect from a bell.
+         * When an entity gets revealed because of a bell.
          */
         BELL,
         /**
