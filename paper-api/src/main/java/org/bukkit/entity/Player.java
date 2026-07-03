@@ -2067,7 +2067,12 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     // Paper end
 
     /**
-     * Resets the player's flying tick counter used for flight/floating checks.
+
+     * Resets the player's flying tick counter used for flight checks.
+     * <p>
+     * Only valid once the player's connection is initialized.
+     *
+     * @throws IllegalStateException if the connection is not yet initialized
      */
     public void resetFlyingTicks();
 
