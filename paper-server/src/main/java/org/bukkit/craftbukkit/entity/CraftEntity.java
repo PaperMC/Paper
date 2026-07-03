@@ -597,6 +597,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
+    public SoundCategory getSoundCategory() {
+        return SoundCategory.valueOf(this.getHandle().getSoundSource().name());
+    }
+
+    @Override
+    public net.kyori.adventure.sound.Sound.Source soundSource() {
+        return this.getSoundCategory().soundSource();
+    }
+
+    @Override
     public Sound getSwimSound() {
         return CraftSound.minecraftToBukkit(this.getHandle().getSwimSound());
     }
@@ -609,16 +619,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public Sound getSwimHighSpeedSplashSound() {
         return CraftSound.minecraftToBukkit(this.getHandle().getSwimHighSpeedSplashSound());
-    }
-
-    @Override
-    public SoundCategory getSoundCategory() {
-        return SoundCategory.valueOf(this.getHandle().getSoundSource().name());
-    }
-
-    @Override
-    public net.kyori.adventure.sound.Sound.Source soundSource() {
-        return this.getSoundCategory().soundSource();
     }
 
     @Override

@@ -693,6 +693,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public EntityType getType();
 
     /**
+     * Get the {@link SoundCategory} this entity will use when playing its sounds.
+     *
+     * @return the sound category for this entity
+     */
+    @NotNull
+    SoundCategory getSoundCategory();
+
+    /**
      * Get the {@link Sound} this entity makes while swimming.
      *
      * @return the swimming sound
@@ -717,14 +725,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @NotNull
     public Sound getSwimHighSpeedSplashSound();
-
-    /**
-     * Get the {@link SoundCategory} this entity will use when playing its sounds.
-     *
-     * @return the sound category for this entity
-     */
-    @NotNull
-    SoundCategory getSoundCategory();
 
     /**
      * Returns whether this entity is inside a vehicle.
