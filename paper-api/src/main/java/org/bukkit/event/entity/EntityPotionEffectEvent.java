@@ -191,9 +191,9 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         /**
          * When an entity gets the effect from an axolotl.
          *
-         * @deprecated use {@link #ENTITY_GIFT} and check the source with {@link #getSource()}
+         * @deprecated no longer used, use {@link #ENTITY_GIFT} and check the source with {@link #getSource()}
          */
-        @Deprecated(since = "26.2")
+        @Deprecated(since = "26.2", forRemoval = true)
         AXOLOTL,
         /**
          * When an entity plays dead (currently only for the axolotl).
@@ -239,9 +239,9 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         /**
          * When an entity gets the effect from a dolphin.
          *
-         * @deprecated use {@link #ENTITY_GIFT} and check the source with {@link #getSource()}
+         * @deprecated no longer used, use {@link #ENTITY_GIFT} and check the source with {@link #getSource()}
          */
-        @Deprecated(since = "26.2")
+        @Deprecated(since = "26.2", forRemoval = true)
         DOLPHIN,
         /**
          * When the effect was removed due to expiration.
@@ -251,9 +251,9 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          * When an effect is inflicted due to food (e.g. when a player eats or a
          * cookie is given to a parrot).
          *
-         * @deprecated use {@link #SELF_CONSUME} and check the item in hand if needed or {@link #CONSUME_OTHER}
+         * @deprecated no longer used, use {@link #SELF_CONSUME} and check the item in hand if needed or {@link #CONSUME_OTHER}
          */
-        @Deprecated(since = "26.2")
+        @Deprecated(since = "26.2", forRemoval = true)
         FOOD,
         /**
          * When an illusion illager makes himself disappear.
@@ -262,9 +262,9 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         /**
          * When all effects are removed due to a bucket of milk.
          *
-         * @deprecated use {@link #SELF_CONSUME} and check the item in hand if needed
+         * @deprecated no longer used, use {@link #SELF_CONSUME} and check the item in hand if needed
          */
-        @Deprecated(since = "26.2")
+        @Deprecated(since = "26.2", forRemoval = true)
         MILK,
         /**
          * When an entity gets the effect from a nautilus.
@@ -280,9 +280,9 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         /**
          * When an entity drinks a potion.
          *
-         * @deprecated use {@link #SELF_CONSUME} and check the item in hand if needed
+         * @deprecated no longer used,use {@link #SELF_CONSUME} and check the item in hand if needed
          */
-        @Deprecated(since = "26.2")
+        @Deprecated(since = "26.2", forRemoval = true)
         POTION_DRINK,
         /**
          * When an entity is inflicted with an effect due to a splash potion.
@@ -305,9 +305,9 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
         /**
          * When an entity gets effects from a totem item saving its life.
          *
-         * @deprecated use {@link #SELF_CONSUME} and check the used item in {@link EntityResurrectEvent}
+         * @deprecated no longer used, use {@link #SELF_CONSUME} and check the used item in {@link EntityResurrectEvent}
          */
-        @Deprecated(since = "26.2")
+        @Deprecated(since = "26.2", forRemoval = true)
         TOTEM,
         /**
          * When an entity gets water breathing by wearing a turtle helmet.
