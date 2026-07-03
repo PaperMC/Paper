@@ -64,7 +64,7 @@
          ProfilerFiller profiler = Profiler.get();
          profiler.push("pathfind");
          BlockPos fromPos = above ? this.mob.blockPosition().above() : this.mob.blockPosition();
-@@ -172,6 +_,11 @@
+@@ -172,17 +_,116 @@
          return path;
      }
  
@@ -73,13 +73,94 @@
 +    private int pathfindFailures = 0;
 +    // Paper end - Perf: Optimise pathfinding
 +
++    // Paper start - async pathfinding
++    private volatile boolean processingPath = false;
++
++    private boolean asyncPathfindingEnabled() {
++        return this.level instanceof ServerLevel && this.level.paperConfig().entities.behavior.asyncPathfinding;
++    }
++
++    // Prepares the request on the main thread (validation, EntityPathfindEvent, region snapshot),
++    // offloads only the expensive A* search to a worker, then applies the finished path back on
++    // the main thread. Returns true optimistically so callers treat the move as accepted while the
++    // path is being computed - mobs already tolerate a null/stale path and simply recompute.
++    private boolean createPathAsyncAndMove(Set<BlockPos> targets, @Nullable Entity target, final int radiusOffset, final boolean above, final int reachRange, final double speedModifier) {
++        if (this.processingPath) {
++            // A search for this mob is already in flight; keep following the current path.
++            return true;
++        }
++        if (targets.isEmpty() || this.mob.getY() < this.level.getMinY() || !this.canUpdatePath()) {
++            return false;
++        }
++        if (this.path != null && !this.path.isDone() && targets.contains(this.targetPos)) {
++            return this.moveTo(this.path, speedModifier);
++        }
++
++        // EntityPathfindEvent + world border filtering (must run on the main thread).
++        boolean copiedSet = false;
++        for (final BlockPos possibleTarget : targets) {
++            if (!this.mob.level().getWorldBorder().isWithinBounds(possibleTarget) || !new com.destroystokyo.paper.event.entity.EntityPathfindEvent(this.mob.getBukkitEntity(),
++                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(possibleTarget, this.mob.level()), target == null ? null : target.getBukkitEntity()).callEvent()) {
++                if (!copiedSet) {
++                    copiedSet = true;
++                    targets = new java.util.HashSet<>(targets);
++                }
++                targets.remove(possibleTarget);
++                if (targets.isEmpty()) {
++                    return false;
++                }
++            }
++        }
++
++        final float maxPathLength = this.getMaxPathLength();
++        final BlockPos fromPos = above ? this.mob.blockPosition().above() : this.mob.blockPosition();
++        final int radius = (int) (maxPathLength + radiusOffset);
++        final PathNavigationRegion region = new PathNavigationRegion(this.level, fromPos.offset(-radius, -radius, -radius), fromPos.offset(radius, radius, radius));
++        // Thread-confined finder: never share this.pathFinder (mutable node evaluator) across threads.
++        final PathFinder finder = this.createPathFinder(Mth.floor(maxPathLength * 16.0F));
++        final Set<BlockPos> finalTargets = targets;
++        final float visitedMultiplier = this.maxVisitedNodesMultiplier;
++        final net.minecraft.server.MinecraftServer server = ((ServerLevel) this.level).getServer();
++
++        this.processingPath = true;
++        io.papermc.paper.entity.AsyncPathProcessor.execute(() -> {
++            Path computed;
++            try {
++                computed = finder.findPath(region, this.mob, finalTargets, maxPathLength, reachRange, visitedMultiplier);
++            } catch (final Throwable throwable) {
++                // Reading a concurrently-mutated region/mob failed; drop this cycle, the mob recomputes next time.
++                computed = null;
++            }
++            final Path result = computed;
++            server.execute(() -> {
++                this.processingPath = false;
++                if (this.mob.isRemoved()) {
++                    return;
++                }
++                if (result != null && result.getTarget() != null) {
++                    this.targetPos = result.getTarget();
++                    this.reachRange = reachRange;
++                    this.resetStuckTimeout();
++                }
++                this.moveTo(result, speedModifier);
++            });
++        });
++        return true;
++    }
++    // Paper end - async pathfinding
++
      public boolean moveTo(final double x, final double y, final double z, final double speedModifier) {
++        if (this.asyncPathfindingEnabled()) return this.createPathAsyncAndMove(ImmutableSet.of(BlockPos.containing(x, y, z)), null, 8, false, 1, speedModifier); // Paper - async pathfinding
          return this.moveTo(this.createPath(x, y, z, 1), speedModifier);
      }
-@@ -181,8 +_,23 @@
+ 
+     public boolean moveTo(final double x, final double y, final double z, final int reachRange, final double speedModifier) {
++        if (this.asyncPathfindingEnabled()) return this.createPathAsyncAndMove(ImmutableSet.of(BlockPos.containing(x, y, z)), null, 8, false, reachRange, speedModifier); // Paper - async pathfinding
+         return this.moveTo(this.createPath(x, y, z, reachRange), speedModifier);
      }
  
      public boolean moveTo(final Entity target, final double speedModifier) {
++        if (this.asyncPathfindingEnabled()) return this.createPathAsyncAndMove(ImmutableSet.of(target.blockPosition()), target, 16, true, 1, speedModifier); // Paper - async pathfinding
 +        // Paper start - Perf: Optimise pathfinding
 +        if (this.pathfindFailures > 10 && this.path == null && net.minecraft.server.MinecraftServer.currentTick < this.lastFailure + 40) {
 +            return false;

@@ -310,6 +310,8 @@ public class WorldConfiguration extends ConfigurationPart {
             }
 
             public boolean disablePlayerCrits = false;
+            @Comment("Runs mob A* pathfinding off the main thread (experimental). Reduces main-thread MSPT on mob-heavy servers. Paths may lag by a few ticks; disable if you see mob movement issues.")
+            public boolean asyncPathfinding = false;
             public boolean nerfPigmenFromNetherPortals = false;
             @Comment("Prevents merging items that are not on the same y level, preventing potential visual artifacts.")
             public boolean onlyMergeItemsHorizontally = false;
