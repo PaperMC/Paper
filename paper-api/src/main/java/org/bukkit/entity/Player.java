@@ -2066,7 +2066,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public net.kyori.adventure.util.TriState hasFlyingFallDamage();
     // Paper end
 
-    // Paper start - reset flying ticks
+    /**
+     * Resets the player's flying tick counter used for flight/floating checks.
+     */
     public void resetFlyingTicks();
 
     /**
