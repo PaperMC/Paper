@@ -32,9 +32,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntitySpawnRequest;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
@@ -615,6 +614,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public SoundCategory getSoundCategory() {
         return SoundCategory.valueOf(this.getHandle().getSoundSource().name());
+    }
+
+    @Override
+    public net.kyori.adventure.sound.Sound.Source soundSource() {
+        return this.getSoundCategory().soundSource();
     }
 
     @Override

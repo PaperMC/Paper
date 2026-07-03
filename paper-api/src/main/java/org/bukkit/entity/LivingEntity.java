@@ -1007,10 +1007,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Get the {@link Sound} this entity will make when damaged by the given {@link DamageSource}.
      *
      * @param damageSource the damage source to get the hurt sound of
-     * @return the hurt sound, or null if the entity does not make any sound for the given damage source
+     * @return the hurt sound, or null if the entity does not make any sound
      */
-    @Nullable
-    public Sound getHurtSound(@NotNull DamageSource damageSource);
+    @Nullable Sound getHurtSound(@NotNull DamageSource damageSource);
 
     /**
      * Get the {@link Sound} this entity will make on death.
@@ -1072,18 +1071,19 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public Sound getEatingSound(@NotNull ItemStack itemStack);
 
     /**
-     * Get the sound volume at which this entity plays its sounds with
+     * Get the sound volume at which this entity plays its sounds with.
      *
      * @return the sound volume of this entity
      */
-    public float getSoundVolume();
+    float getSoundVolume();
 
     /**
-     * Get the sound pitch at which this entity plays its sounds with
+     * Get the sound pitch at which this entity plays its sounds with.
+     * Might not be constant across all invocations.
      *
      * @return the sound pitch of this entity
      */
-    public float getSoundPitch();
+    float getSoundPitch();
 
     /**
      * Returns true if this entity can breathe underwater and will not take
