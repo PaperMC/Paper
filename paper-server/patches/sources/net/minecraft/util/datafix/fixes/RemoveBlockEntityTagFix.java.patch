@@ -1,0 +1,55 @@
+--- a/net/minecraft/util/datafix/fixes/RemoveBlockEntityTagFix.java
++++ b/net/minecraft/util/datafix/fixes/RemoveBlockEntityTagFix.java
+@@ -17,6 +_,7 @@
+ import net.minecraft.util.datafix.schemas.NamespacedSchema;
+ 
+ public class RemoveBlockEntityTagFix extends DataFix {
++    public static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry(); // Paper - call event on block entity removal
+     private final Set<String> blockEntityIdsToDrop;
+     private final boolean useLegacyDataStructure;
+ 
+@@ -102,6 +_,13 @@
+             chunkTypeOut,
+             input -> input.update(blockEntitiesF, blockEntitiesTypeOut, listTag -> {
+                 ArrayList<Object> keptBlockEntities = new ArrayList<>();
++                // Paper start - extract world for removal event
++                // The context is not part of the schema, so we need to grab it ourselves. Do this lazily and once.
++                final java.util.function.Supplier<net.kyori.adventure.key.@org.jspecify.annotations.Nullable Key> dimensionKey = com.google.common.base.Suppliers.memoize(() -> input.write()
++                    .flatMap(d -> d.get(ChunkHeightAndBiomeFix.DATAFIXER_CONTEXT_TAG).get("level_identifier").asString())
++                    .mapOrElse(net.kyori.adventure.key.Key::key, _ -> null)
++                );
++                // Paper end - extract world for removal event
+ 
+                 for (Object untypedBlockEntity : listTag) {
+                     Typed<?> typedBlockEntity = ExtraDataFixUtils.cast(blockEntityElementsType, untypedBlockEntity, input.getOps());
+@@ -109,6 +_,30 @@
+                     String blockEntityId = typedBlockEntityUnwrapped.getOptional(blockEntityIdF).orElse("");
+                     if (!this.blockEntityIdsToDrop.contains(blockEntityId)) {
+                         keptBlockEntities.add(untypedBlockEntity);
++                    // Paper start - call event on block entity removal
++                    } else {
++                        final net.kyori.adventure.key.Key worldKey = dimensionKey.get();
++                        if (worldKey == null) continue;
++
++                        final java.util.Optional<? extends com.mojang.serialization.Dynamic<?>> blockEntityOpt = typedBlockEntity.write().result();
++                        if (blockEntityOpt.isEmpty()) continue;
++
++                        final java.util.Optional<Number> x = blockEntityOpt.flatMap(e -> e.get("x").asNumber().result());
++                        final java.util.Optional<Number> y = blockEntityOpt.flatMap(e -> e.get("y").asNumber().result());
++                        final java.util.Optional<Number> z = blockEntityOpt.flatMap(e -> e.get("z").asNumber().result());
++                        if (x.isEmpty() || y.isEmpty() || z.isEmpty()) continue;
++
++                        final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer container = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++                        if (blockEntityOpt.get().get("PublicBukkitValues").orElseEmptyMap().convert(net.minecraft.nbt.NbtOps.INSTANCE).getValue() instanceof final net.minecraft.nbt.CompoundTag compoundTag) {
++                            container.putAll(compoundTag);
++                        }
++                        new io.papermc.paper.event.server.AsyncServerDataFixerRemoveBlockEntityEvent(
++                            worldKey,
++                            blockEntityId,
++                            io.papermc.paper.math.Position.block(x.get().intValue(), y.get().intValue(), z.get().intValue()),
++                            container
++                        ).callEvent();
++                    // Paper end - call event on block entity removal
+                     }
+                 }
+ 
