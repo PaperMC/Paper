@@ -870,8 +870,26 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public float getSoundVolume() {
+        return this.getHandle().getSoundVolume();
+    }
+
+    @Override
+    public float getSoundPitch() {
+        return this.getHandle().getVoicePitch();
+    }
+
+    @Override
     public Sound getHurtSound() {
         SoundEvent sound = this.getHandle().getHurtSound(this.getHandle().damageSources().generic());
+        return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
+    }
+
+    @Override
+    public Sound getHurtSound(org.bukkit.damage.DamageSource damageSource) {
+        Preconditions.checkArgument(damageSource != null, "damageSource cannot be null");
+
+        SoundEvent sound = this.getHandle().getHurtSound(((CraftDamageSource) damageSource).getHandle());
         return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
     }
 
