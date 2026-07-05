@@ -16,13 +16,13 @@ public class AsyncServerDataFixerRemoveBlockEntityEvent extends Event {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Key worldKey;
-    private final String blockEntityId;
+    private final Key blockEntityId;
     private final BlockPosition blockPosition;
     private final PersistentDataContainerView persistentDataContainerView;
 
     public AsyncServerDataFixerRemoveBlockEntityEvent(
         final Key worldKey,
-        final String blockEntityId,
+        final Key blockEntityId,
         final BlockPosition blockPosition,
         final PersistentDataContainerView persistentDataContainerView
     ) {
@@ -33,8 +33,7 @@ public class AsyncServerDataFixerRemoveBlockEntityEvent extends Event {
         this.persistentDataContainerView = persistentDataContainerView;
     }
 
-
-    public String getBlockEntityId() {
+    public Key getBlockEntityId() {
         return blockEntityId;
     }
 
