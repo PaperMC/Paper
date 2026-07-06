@@ -9,7 +9,9 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Extends RegisteredListener to include timing information
+ * @deprecated This class was part of Timings v1 and has gone unused for over a decade, timings will be removed in the future.
  */
+@Deprecated(forRemoval = true)
 public class TimedRegisteredListener extends RegisteredListener {
     private int count;
     private long totalTime;
