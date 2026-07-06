@@ -102,15 +102,15 @@ index 0000000000000000000000000000000000000000..66d6af2833d76af28fbeb2ce70c194a5
 +    }
 +}
 diff --git a/net/minecraft/server/network/CommonListenerCookie.java b/net/minecraft/server/network/CommonListenerCookie.java
-index d87a00ee3cd04ce25dbe46ae6b386b7f0799102c..ace440c2b82a6368aa27a85ff433ba2cbc8f39a5 100644
+index 021c2b0d4d8b55cb74b16a1210535e97576a83f1..da63706a8199ecfa9cd9de87bef20c8d1898a950 100644
 --- a/net/minecraft/server/network/CommonListenerCookie.java
 +++ b/net/minecraft/server/network/CommonListenerCookie.java
 @@ -3,8 +3,8 @@ package net.minecraft.server.network;
  import com.mojang.authlib.GameProfile;
  import net.minecraft.server.level.ClientInformation;
  
--public record CommonListenerCookie(GameProfile gameProfile, int latency, ClientInformation clientInformation, boolean transferred, @org.jspecify.annotations.Nullable String brandName, java.util.Set<String> channels) { // Paper
-+public record CommonListenerCookie(GameProfile gameProfile, int latency, ClientInformation clientInformation, boolean transferred, @org.jspecify.annotations.Nullable String brandName, java.util.Set<String> channels, io.papermc.paper.util.KeepAlive keepAlive) { // Paper // Paper
+-public record CommonListenerCookie(GameProfile gameProfile, int latency, ClientInformation clientInformation, boolean transferred, @org.jspecify.annotations.Nullable String clientBrand, java.util.Set<String> channels) { // Paper
++public record CommonListenerCookie(GameProfile gameProfile, int latency, ClientInformation clientInformation, boolean transferred, @org.jspecify.annotations.Nullable String clientBrand, java.util.Set<String> channels, io.papermc.paper.util.KeepAlive keepAlive) { // Paper // Paper
      public static CommonListenerCookie createInitial(final GameProfile gameProfile, final boolean transferred) {
 -        return new CommonListenerCookie(gameProfile, 0, ClientInformation.createDefault(), transferred, null, new java.util.HashSet<>()); // Paper
 +        return new CommonListenerCookie(gameProfile, 0, ClientInformation.createDefault(), transferred, null, new java.util.HashSet<>(), new io.papermc.paper.util.KeepAlive()); // Paper // Paper
@@ -147,7 +147,7 @@ index c5490b5b9adbffe9cc80074b1f83158fda267a04..8fb001daa4f87d56ee353cef2d495aa1
          this.latency = cookie.latency();
          this.transferred = cookie.transferred();
          // Paper start
-         this.playerBrand = cookie.brandName();
+         this.clientBrand = cookie.clientBrand();
          this.cserver = server.server;
          this.pluginMessagerChannels = cookie.channels();
 +        this.keepAlive = cookie.keepAlive();
@@ -238,14 +238,14 @@ index c5490b5b9adbffe9cc80074b1f83158fda267a04..8fb001daa4f87d56ee353cef2d495aa1
      }
  
      protected CommonListenerCookie createCookie(final ClientInformation clientInformation) {
--        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand, this.pluginMessagerChannels); // Paper
+-        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.clientBrand, this.pluginMessagerChannels); // Paper
 +        // Paper start - listener handoff should reset pending keepalive expectations
 +        return new CommonListenerCookie(
 +            this.playerProfile(),
 +            this.latency,
 +            clientInformation,
 +            this.transferred,
-+            this.playerBrand,
++            this.clientBrand,
 +            this.pluginMessagerChannels,
 +            this.keepAlive.copyForListenerHandoff()
 +        );
