@@ -1,6 +1,7 @@
 package io.papermc.paper.entity.poi;
 
 import io.papermc.paper.InternalAPIBridge;
+import io.papermc.paper.registry.RegistryElement;
 import org.bukkit.Keyed;
 import org.bukkit.block.data.BlockData;
 import org.jspecify.annotations.NullMarked;
@@ -15,7 +16,7 @@ import org.jspecify.annotations.NullMarked;
  * @see PoiTypes
  */
 @NullMarked
-public interface PoiType extends Keyed {
+public interface PoiType extends RegistryElement<PoiType>, Keyed {
 
     /**
      * Determines whether the provided BlockState is relevant to this
