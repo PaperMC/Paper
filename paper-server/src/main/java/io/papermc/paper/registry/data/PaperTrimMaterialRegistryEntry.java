@@ -39,7 +39,6 @@ public class PaperTrimMaterialRegistryEntry implements TrimMaterialRegistryEntry
         this.description = internal.description();
     }
 
-
     @Override
     @KeyPattern.Value
     public String baseAssetPath() {
@@ -102,7 +101,7 @@ public class PaperTrimMaterialRegistryEntry implements TrimMaterialRegistryEntry
             return new TrimMaterial(
                 new MaterialAssetGroup(
                     asConfigured(this.baseAssetPath, "baseAssetPath"),
-                    asConfigured(this.assetPathOverrides, "assetPathOverrides")
+                    this.assetPathOverrides
                 ),
                 asConfigured(this.description, "description")
             );
