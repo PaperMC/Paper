@@ -1,6 +1,9 @@
 package org.bukkit.support.provider;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.block.PaperTrialSpawnerConfig;
+import io.papermc.paper.block.TrialSpawnerConfig;
+import io.papermc.paper.block.TrialSpawnerConfigs;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
@@ -165,6 +168,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.GAME_RULE, GameRule.class, GameRules.class, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
         register(Registries.POINT_OF_INTEREST_TYPE, PoiType.class, PoiTypes.class, PaperPoiType.class, net.minecraft.world.entity.ai.village.poi.PoiType.class);
         register(Registries.SULFUR_CUBE_ARCHETYPE, SulfurCube.Archetype.class, CraftSulfurCube.CraftArchetype.class, SulfurCubeArchetype.class);
+        register(Registries.TRIAL_SPAWNER_CONFIG, TrialSpawnerConfig.class, TrialSpawnerConfigs.class, PaperTrialSpawnerConfig.class, net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerConfig.class);
     }
 
     private static <M, B extends Keyed> void register(ResourceKey<? extends Registry<? extends M>> registryKey, Class<B> api, Class<? extends B> impl, Class<M> internal) {
