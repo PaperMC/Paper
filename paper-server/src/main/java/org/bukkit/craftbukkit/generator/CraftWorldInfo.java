@@ -22,7 +22,7 @@ public class CraftWorldInfo implements WorldInfo {
     private final int maxHeight;
     private final FeatureFlagSet enabledFeatures;
     private final ChunkGenerator vanillaChunkGenerator;
-    private final RegistryAccess.Frozen registryAccess;
+    private final RegistryAccess registryAccess;
 
     public CraftWorldInfo(
         String name,
@@ -32,7 +32,7 @@ public class CraftWorldInfo implements WorldInfo {
         World.Environment environment,
         DimensionType dimensionType,
         ChunkGenerator vanillaChunkGenerator,
-        RegistryAccess.Frozen registryAccess,
+        RegistryAccess registryAccess,
         UUID uuid
     ) {
         this.name = name;

@@ -184,7 +184,7 @@ public class CraftBossBar implements BossBar {
 
     @Override
     public boolean isVisible() {
-        return this.handle.visible;
+        return this.handle.isVisible();
     }
 
     @Override

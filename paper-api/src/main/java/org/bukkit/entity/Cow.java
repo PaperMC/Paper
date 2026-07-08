@@ -54,7 +54,7 @@ public interface Cow extends AbstractCow {
         Variant WARM = getVariant("warm");
         // End generate - CowVariant
 
-        private static Variant getVariant(@KeyPattern.Value String key) {
+        private static Variant getVariant(@KeyPattern.Value final String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.COW_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }
@@ -70,7 +70,7 @@ public interface Cow extends AbstractCow {
         SoundVariant MOODY = getSoundVariant("moody");
         // End generate - CowSoundVariant
 
-        private static SoundVariant getSoundVariant(final @KeyPattern.Value String key) {
+        private static SoundVariant getSoundVariant(@KeyPattern.Value final String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.COW_SOUND_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }

@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sat, 7 Jun 2025 15:05:05 -0400
+Subject: [PATCH] DataConverter, Moonrise & co fixes
+
+
+diff --git a/ca/spottedleaf/dataconverter/minecraft/converters/attributes/ConverterAbstractOldAttributesRename.java b/ca/spottedleaf/dataconverter/minecraft/converters/attributes/ConverterAbstractOldAttributesRename.java
+index 1a6d02df13f3461402fed429f7fbdb5acee877c4..712cca21a6b4736a15d49dceaf7e6d641096b0a9 100644
+--- a/ca/spottedleaf/dataconverter/minecraft/converters/attributes/ConverterAbstractOldAttributesRename.java
++++ b/ca/spottedleaf/dataconverter/minecraft/converters/attributes/ConverterAbstractOldAttributesRename.java
+@@ -38,7 +38,13 @@ public final class ConverterAbstractOldAttributesRename {
+         MCTypeRegistry.ITEM_STACK.addStructureConverter(new DataConverter<>(version, versionStep) {
+             @Override
+             public MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
+-                final ListType attributes = data.getList("AttributeModifiers", ObjectType.MAP);
++                final MapType tag = data.getMap("tag");
++
++                if (tag == null) {
++                    return null;
++                }
++
++                final ListType attributes = tag.getList("AttributeModifiers", ObjectType.MAP);
+ 
+                 if (attributes == null) {
+                     return null;
+diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V4307.java b/ca/spottedleaf/dataconverter/minecraft/versions/V4307.java
+index d2877c20f389d0131e1dd208b464f590671e5d82..27bdc70d861ca39487ad16cb3afb89d604b462c8 100644
+--- a/ca/spottedleaf/dataconverter/minecraft/versions/V4307.java
++++ b/ca/spottedleaf/dataconverter/minecraft/versions/V4307.java
+@@ -87,10 +87,10 @@ public final class V4307 {
+ 
+             @Override
+             public MapType convert(final MapType root, final long sourceVersion, final long toVersion) {
+-                final Set<String> hiddenComponents = new LinkedHashSet<>();
+-
+-                unwrapBlockPredicates(root, "minecraft:can_break", hiddenComponents);
++                // Don't use a linked hash set, and ensure that it is added in the same (undefined) order as the vanilla datafixer
++                final Set<String> hiddenComponents = new java.util.HashSet<>();
+                 unwrapBlockPredicates(root, "minecraft:can_place_on", hiddenComponents);
++                unwrapBlockPredicates(root, "minecraft:can_break", hiddenComponents);
+ 
+                 updateComponent(root, "minecraft:trim", hiddenComponents);
+                 updateComponent(root, "minecraft:unbreakable", hiddenComponents);
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index 3b28b39ebf252d8de46f7d0ce27037cdb041f1b5..0b6d7f99edde802cb464baa5a4b2b4a4dcce684a 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -408,9 +408,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+     }
+ 
+     @Override
+-    public boolean saveAllChunks(final boolean silent, final boolean flush, final boolean force) {
++    public boolean saveAllChunks(final boolean silent, final boolean flush, final boolean force, final boolean close) { // Paper - add close param
+         this.notificationManager().serverSaveStarted();
+-        boolean savedChunks = super.saveAllChunks(silent, flush, force);
++        boolean savedChunks = super.saveAllChunks(silent, flush, force, close); // Paper - add close param
+         this.notificationManager().serverSaveCompleted();
+         return savedChunks;
+     }
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index a61fb7d1c65b8b940d66f02e64c131b20a3ee610..b4434d534677403c68f1ff657c42736333e2e15e 100644
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1798,9 +1798,14 @@ public class ServerGamePacketListenerImpl
+     private boolean hasNewCollision(final ServerLevel level, final Entity entity, final AABB oldBox, final AABB newBox) {
+         final List<AABB> collisionsBB = new java.util.ArrayList<>();
+         final List<VoxelShape> collisionsVoxel = new java.util.ArrayList<>();
++
++        int flags = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_BORDER;
++        if (level.paperConfig().chunks.preventMovingIntoUnloadedChunks) {
++            flags |= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_COLLIDE_WITH_UNLOADED_CHUNKS;
++        }
+         ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getCollisions(
+             level, entity, newBox, collisionsVoxel, collisionsBB,
+-            ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_COLLIDE_WITH_UNLOADED_CHUNKS | ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_BORDER,
++            flags,
+             null, null
+         );
+ 
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index d12080e80e51916cefb37a3b7bcb1dd9c092304e..9286d9bcf3ec4069e77d3133f3d7bf29b2370c5a 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -1537,7 +1537,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups)
+             return false;
+         // Paper start - optimise collisions
+-        final int flags = entity == null ? (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_BORDER | ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_ONLY) : ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_ONLY;
++        final int flags = entity != null ? (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_BORDER | ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_ONLY) : ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_ONLY;
+         if (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getCollisionsForBlocksOrWorldBorder((Level)(Object)this, entity, box, null, null, flags, null)) {
+             return false;
+         }

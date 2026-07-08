@@ -22,7 +22,7 @@ public interface InstrumentRegistryEntry {
     /**
      * Provides the sound event of the instrument.
      *
-     * @return the sound event.
+     * @return the sound event
      * @see MusicInstrument#getSound()
      */
     @Contract(pure = true)
@@ -31,7 +31,7 @@ public interface InstrumentRegistryEntry {
     /**
      * Provides the duration of the instrument, which is time to use.
      *
-     * @return the duration.
+     * @return the duration
      * @see MusicInstrument#getDuration()
      */
     @Contract(pure = true)
@@ -40,7 +40,7 @@ public interface InstrumentRegistryEntry {
     /**
      * Provides the range of the instrument, which is range of the sound.
      *
-     * @return the range.
+     * @return the range
      * @see MusicInstrument#getRange()
      */
     @Contract(pure = true)
@@ -49,7 +49,7 @@ public interface InstrumentRegistryEntry {
     /**
      * Provides the description of the instrument, which is used in the item tooltip.
      *
-     * @return the description.
+     * @return the description
      * @see MusicInstrument#description()
      */
     @Contract(pure = true)
@@ -78,7 +78,7 @@ public interface InstrumentRegistryEntry {
          * <p>This will override both {@link #soundEvent(Consumer)} and {@link #soundEvent(RegistryHolder)}</p>
          *
          * @param soundEvent the sound event
-         * @return this builder
+         * @return this builder instance
          * @see #soundEvent(Consumer)
          * @see InstrumentRegistryEntry#soundEvent()
          * @see MusicInstrument#getSound()
@@ -91,7 +91,7 @@ public interface InstrumentRegistryEntry {
          * <p>This will override both {@link #soundEvent(TypedKey)} and {@link #soundEvent(RegistryHolder)}</p>
          *
          * @param soundEvent the sound event
-         * @return this builder
+         * @return this builder instance
          * @see #soundEvent(TypedKey)
          * @see InstrumentRegistryEntry#soundEvent()
          * @see MusicInstrument#getSound()
@@ -104,7 +104,7 @@ public interface InstrumentRegistryEntry {
          * <p>This will override both {@link #soundEvent(Consumer)} and {@link #soundEvent(TypedKey)}</p>
          *
          * @param soundEvent the sound event
-         * @return this builder
+         * @return this builder instance
          * @see #soundEvent(TypedKey)
          * @see #soundEvent(Consumer)
          * @see InstrumentRegistryEntry#soundEvent()
@@ -117,7 +117,7 @@ public interface InstrumentRegistryEntry {
          * Sets the duration of use for this instrument.
          *
          * @param duration the duration (positive)
-         * @return this builder
+         * @return this builder instance
          * @see InstrumentRegistryEntry#duration()
          * @see MusicInstrument#getDuration()
          */
@@ -128,7 +128,7 @@ public interface InstrumentRegistryEntry {
          * Sets the range for this instrument.
          *
          * @param range the range (positive)
-         * @return this builder
+         * @return this builder instance
          * @see InstrumentRegistryEntry#range()
          * @see MusicInstrument#getRange()
          */
@@ -139,7 +139,7 @@ public interface InstrumentRegistryEntry {
          * Sets the description for this instrument.
          *
          * @param description the description
-         * @return this builder
+         * @return this builder instance
          * @see InstrumentRegistryEntry#description()
          * @see MusicInstrument#description()
          */
