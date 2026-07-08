@@ -96,10 +96,11 @@ public class MaterialTags {
 
     /**
      * Covers all colors of concrete.
+     *
+     * @deprecated in favour of {@link Tag#CONCRETE}
      */
-    public static final MaterialSetTag CONCRETES = new MaterialSetTag(keyFor("concretes"))
-        .endsWith("_CONCRETE")
-        .ensureSize("CONCRETES", 16).lock();
+    @Deprecated(since = "26.2")
+    public static final MaterialSetTag CONCRETES = replacedBy(Tag.CONCRETE, "concretes");
 
     /**
      * Covers all colors of concrete powder.
@@ -590,8 +591,8 @@ public class MaterialTags {
      */
     @SuppressWarnings("unchecked")
     public static final MaterialSetTag COLORABLE = new MaterialSetTag(keyFor("colorable"))
-        .add(Tag.WOOL, Tag.WOOL_CARPETS, Tag.SHULKER_BOXES, Tag.BEDS)
-        .add(STAINED_GLASS, STAINED_GLASS_PANES, CONCRETES)
+        .add(Tag.WOOL, Tag.WOOL_CARPETS, Tag.SHULKER_BOXES, Tag.BEDS, Tag.CONCRETE)
+        .add(STAINED_GLASS, STAINED_GLASS_PANES)
         .lock();
 
     /**
