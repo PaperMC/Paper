@@ -27,7 +27,7 @@ public class CraftFirework extends CraftProjectile implements Firework {
 
     @Override
     public FireworkMeta getFireworkMeta() {
-        return (FireworkMeta) CraftItemStack.getItemMeta(this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM), org.bukkit.inventory.ItemType.FIREWORK_ROCKET);
+        return (FireworkMeta) CraftItemStack.getItemMeta(this.getHandle().getItem(), org.bukkit.inventory.ItemType.FIREWORK_ROCKET);
     }
 
     @Override
@@ -71,11 +71,6 @@ public class CraftFirework extends CraftProjectile implements Firework {
     }
 
     @Override
-    public int getLife() {
-        return this.getHandle().life;
-    }
-
-    @Override
     public boolean setMaxLife(int ticks) {
         Preconditions.checkArgument(ticks > 0, "ticks must be greater than 0");
 
@@ -88,13 +83,8 @@ public class CraftFirework extends CraftProjectile implements Firework {
     }
 
     @Override
-    public int getMaxLife() {
-        return this.getHandle().lifetime;
-    }
-
-    @Override
     public void detonate() {
-        this.setLife(this.getMaxLife() + 1);
+        this.setLife(this.getTicksToDetonate() + 1);
     }
 
     @Override

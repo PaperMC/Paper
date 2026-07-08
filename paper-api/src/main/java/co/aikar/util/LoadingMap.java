@@ -178,7 +178,7 @@ public class LoadingMap <K, V> extends AbstractMap<K, V> {
      * @param loadFactor Load factor to use
      * @param <K> Key Type of the Map
      * @param <V> Value Type of the Map
-     * @return  Map that auto instantiates on .get()
+     * @return Map that auto instantiates on .get()
      */
     @NotNull
     public static <K, V> Map<K, V> newHashAutoMap(@NotNull final Class<? extends V> valueClass, int initialCapacity, float loadFactor) {

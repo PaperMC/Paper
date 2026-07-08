@@ -40,7 +40,7 @@ public class ChunkPacketBlockController {
 
     }
 
-    public void onPlayerLeftClickBlock(ServerPlayerGameMode serverPlayerGameMode, BlockPos blockPos, ServerboundPlayerActionPacket.Action action, Direction direction, int worldHeight, int sequence) {
+    public void onPlayerLeftClickBlock(Level level, BlockPos blockPos, ServerboundPlayerActionPacket.Action action, Direction direction, int worldHeight, int sequence) {
 
     }
 }

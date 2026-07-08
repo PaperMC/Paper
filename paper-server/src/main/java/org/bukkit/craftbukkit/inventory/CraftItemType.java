@@ -196,7 +196,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers() {
-        return this.getDefaultAttributeModifiers(sg -> true);
+        return this.getDefaultAttributeModifiers(_ -> true);
     }
 
     @Override

@@ -18,6 +18,9 @@ import io.papermc.paper.registry.data.JukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PigVariantRegistryEntry;
 import io.papermc.paper.registry.data.SoundEventRegistryEntry;
+import io.papermc.paper.registry.data.SulfurCubeArchetypeRegistryEntry;
+import io.papermc.paper.registry.data.TrimMaterialRegistryEntry;
+import io.papermc.paper.registry.data.TrimPatternRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import io.papermc.paper.registry.data.ZombieNautilusVariantRegistryEntry;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
@@ -42,6 +45,7 @@ import net.minecraft.server.dialog.Dialogs;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.SulfurCubeArchetypes;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.chicken.ChickenSoundVariants;
@@ -94,6 +98,7 @@ import org.bukkit.entity.Cow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Pig;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieNautilus;
@@ -183,8 +188,8 @@ public final class RegistryEntries {
     public static final List<RegistryEntry<?>> DATA_DRIVEN = List.of(
         entry(Registries.BIOME, Biomes.class, Biome.class).delayed(),
         entry(Registries.STRUCTURE, BuiltinStructures.class, Structure.class).delayed(),
-        entry(Registries.TRIM_MATERIAL, TrimMaterials.class, TrimMaterial.class).allowDirect().delayed(),
-        entry(Registries.TRIM_PATTERN, TrimPatterns.class, TrimPattern.class).allowDirect().delayed(),
+        entry(Registries.TRIM_MATERIAL, TrimMaterials.class, TrimMaterial.class).writableApiRegistryBuilder(TrimMaterialRegistryEntry.Builder.class, "PaperTrimMaterialRegistryEntry.PaperBuilder").allowDirect().delayed(),
+        entry(Registries.TRIM_PATTERN, TrimPatterns.class, TrimPattern.class).writableApiRegistryBuilder(TrimPatternRegistryEntry.Builder.class, "PaperTrimPatternRegistryEntry.PaperBuilder").allowDirect().delayed(),
         entry(Registries.DAMAGE_TYPE, DamageTypes.class, DamageType.class).writableApiRegistryBuilder(DamageTypeRegistryEntry.Builder.class, "PaperDamageTypeRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.WOLF_VARIANT, WolfVariants.class, Wolf.Variant.class).writableApiRegistryBuilder(WolfVariantRegistryEntry.Builder.class, "PaperWolfVariantRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.WOLF_SOUND_VARIANT, WolfSoundVariants.class, Wolf.SoundVariant.class),
@@ -203,11 +208,12 @@ public final class RegistryEntries {
         entry(Registries.PIG_VARIANT, PigVariants.class, Pig.Variant.class).writableApiRegistryBuilder(PigVariantRegistryEntry.Builder.class, "PaperPigVariantRegistryEntry.PaperBuilder"),
         entry(Registries.PIG_SOUND_VARIANT, PigSoundVariants.class, Pig.SoundVariant.class),
         entry(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilusVariants.class, ZombieNautilus.Variant.class).writableApiRegistryBuilder(ZombieNautilusVariantRegistryEntry.Builder.class, "PaperZombieNautilusVariantRegistryEntry.PaperBuilder"),
+        entry(Registries.SULFUR_CUBE_ARCHETYPE, SulfurCubeArchetypes.class, SulfurCube.Archetype.class).writableApiRegistryBuilder(SulfurCubeArchetypeRegistryEntry.Builder.class, "PaperSulfurCubeArchetypeRegistryEntry.PaperBuilder"),
         entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder")
     );
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(
-        entry(Registries.ENTITY_TYPE, net.minecraft.world.entity.EntityType.class, EntityType.class),
+        entry(Registries.ENTITY_TYPE, net.minecraft.world.entity.EntityTypes.class, EntityType.class),
         entry(Registries.PARTICLE_TYPE, ParticleTypes.class, Particle.class),
         entry(Registries.POTION, Potions.class, PotionType.class),
         entry(Registries.MEMORY_MODULE_TYPE, MemoryModuleType.class, MemoryKey.class)

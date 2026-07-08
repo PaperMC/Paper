@@ -8,6 +8,8 @@ import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.GeyserBaseParticleOptions;
+import net.minecraft.core.particles.GeyserParticleOptions;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.PowerParticleOption;
@@ -214,6 +216,23 @@ public abstract class CraftParticle<D> implements Keyed {
                 }
             };
 
+            BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> geyser = (name, particle) -> new CraftParticle<>(name, particle, Particle.Geyser.class) {
+                @Override
+                public ParticleOptions createParticleParam(Particle.Geyser data) {
+                    int waterBlocks = data.getWaterBlocks();
+                    return new GeyserParticleOptions((net.minecraft.core.particles.ParticleType<GeyserParticleOptions>) particle, waterBlocks);
+                }
+            };
+
+            BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> geyserBase = (name, particle) -> new CraftParticle<>(name, particle, Particle.GeyserBase.class) {
+                @Override
+                public ParticleOptions createParticleParam(Particle.GeyserBase data) {
+                    int waterBlocks = data.getWaterBlocks();
+                    float burstImpulse = data.getBurstImpulse();
+                    return new GeyserBaseParticleOptions((net.minecraft.core.particles.ParticleType<GeyserBaseParticleOptions>) particle, waterBlocks, burstImpulse);
+                }
+            };
+
             add("dust", dustOptionsFunction);
             add("item", itemStackFunction);
             add("block", blockDataFunction);
@@ -232,6 +251,11 @@ public abstract class CraftParticle<D> implements Keyed {
             add("trail", trailFunction);
             add("effect", spellFunction);
             add("instant_effect", spellFunction);
+            add("geyser", geyser);
+            add("geyser_plume", geyser);
+            add("geyser", geyser);
+            add("geyser_base", geyserBase);
+            add("geyser_poof", geyserBase);
         }
 
         private static void add(String name, BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> function) {

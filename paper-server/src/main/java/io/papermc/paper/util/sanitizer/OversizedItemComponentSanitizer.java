@@ -40,7 +40,7 @@ public final class OversizedItemComponentSanitizer {
             }
 
             // Disable further obfuscation to skip e.g. count.
-            try (final SafeAutoClosable ignored = ItemObfuscationSession.withContext(c -> c.level(ItemObfuscationSession.ObfuscationLevel.OVERSIZED))){
+            try (final SafeAutoClosable ignored = ItemObfuscationSession.withContext(c -> c.level(ItemObfuscationSession.ObfuscationLevel.OVERSIZED))) {
                 BundleContents.STREAM_CODEC.encode(buffer, sanitizeBundleContents(value));
             }
         }

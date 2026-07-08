@@ -77,7 +77,9 @@ public interface Firework extends Projectile {
      * @return the life ticks
      */
     @Deprecated(forRemoval = true, since = "1.18.2")
-    int getLife();
+    default int getLife() {
+        return this.getTicksFlown();
+    }
 
     /**
      * Set the time in ticks this firework will exist until it is detonated.
@@ -96,7 +98,9 @@ public interface Firework extends Projectile {
      * @return the maximum life in ticks
      */
     @Deprecated(forRemoval = true, since = "1.18.2")
-    int getMaxLife();
+    default int getMaxLife() {
+        return this.getTicksToDetonate();
+    }
 
     /**
      * Cause this firework to explode at earliest opportunity, as if it has no

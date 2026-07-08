@@ -1,24 +1,10 @@
 --- a/net/minecraft/world/item/component/ChargedProjectiles.java
 +++ b/net/minecraft/world/item/component/ChargedProjectiles.java
-@@ -18,10 +_,19 @@
- 
- public record ChargedProjectiles(List<ItemStackTemplate> items) implements TooltipProvider {
-     public static final ChargedProjectiles EMPTY = new ChargedProjectiles(List.of());
--    public static final Codec<ChargedProjectiles> CODEC = ItemStackTemplate.CODEC.listOf().xmap(ChargedProjectiles::new, projectiles -> projectiles.items);
-+    public static final Codec<ChargedProjectiles> CODEC = ItemStackTemplate.CODEC.sizeLimitedListOf(64).xmap(ChargedProjectiles::new, projectiles -> projectiles.items); // Paper - limit size
+@@ -27,6 +_,7 @@
+         .xmap(ChargedProjectiles::new, projectiles -> projectiles.items);
      public static final StreamCodec<RegistryFriendlyByteBuf, ChargedProjectiles> STREAM_CODEC = ItemStackTemplate.STREAM_CODEC
--        .apply(ByteBufCodecs.list())
-+        .apply(ByteBufCodecs.list(64)) // Paper - limit size
+         .apply(ByteBufCodecs.list(1024))
 +        .apply(ByteBufCodecs::increaseDepth) // Paper - Track codec depth
          .map(ChargedProjectiles::new, projectiles -> projectiles.items);
-+
-+    // Paper start - limit size
-+    public ChargedProjectiles {
-+        if (items.size() > 64) {
-+            throw new IllegalArgumentException("Too many items");
-+        }
-+    }
-+    // Paper end - limit size
  
-     public static ChargedProjectiles of(final ItemStackTemplate stack) {
-         return new ChargedProjectiles(List.of(stack));
+     public ChargedProjectiles {
