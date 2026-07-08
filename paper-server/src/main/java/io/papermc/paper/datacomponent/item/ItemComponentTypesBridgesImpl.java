@@ -183,11 +183,11 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
-    public UseRemainder useRemainder(final ItemStack stack) {
-        Preconditions.checkArgument(stack != null, "Item cannot be null");
-        Preconditions.checkArgument(!stack.isEmpty(), "Remaining item cannot be empty!");
+    public UseRemainder useRemainder(final ItemStack item) {
+        Preconditions.checkArgument(item != null, "item cannot be null");
+        Preconditions.checkArgument(!item.isEmpty(), "item cannot be empty!");
         return new PaperUseRemainder(
-            new net.minecraft.world.item.component.UseRemainder(CraftItemStack.asTemplate(stack))
+            new net.minecraft.world.item.component.UseRemainder(CraftItemStack.asTemplate(item))
         );
     }
 
@@ -285,5 +285,12 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
         return new PaperKineticWeapon.PaperKineticWeaponCondition(new net.minecraft.world.item.component.KineticWeapon.Condition(
             maxDurationTicks, minSpeed, requireNonNegative(minRelativeSpeed, "minRelativeSpeed")
         ));
+    }
+
+    @Override
+    public SulfurCubeContent sulfurCubeContent(final ItemStack absorbedItem) {
+        Preconditions.checkArgument(absorbedItem != null, "absorbedItem cannot be null");
+        Preconditions.checkArgument(!absorbedItem.isEmpty(), "absorbedItem cannot be empty");
+        return new PaperSulfurCubeContent(new net.minecraft.world.item.component.SulfurCubeContent(CraftItemStack.asTemplate(absorbedItem)));
     }
 }

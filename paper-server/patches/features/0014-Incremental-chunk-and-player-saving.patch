@@ -1,0 +1,166 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 9 Jun 2019 03:53:22 +0100
+Subject: [PATCH] Incremental chunk and player saving
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 1d422607ac31044da2eff88b9f020b8a76c4bd54..b1f5741d5d714f57795c53605db87d86ebb07051 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -936,7 +936,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+     public boolean saveAllChunks(final boolean silent, final boolean flush, final boolean force, final boolean close) {
+         // Paper end - add close param
+-        this.scoreboard.storeToSaveDataIfDirty(this.getDataStorage().computeIfAbsent(ScoreboardSaveData.TYPE));
++        this.saveGlobalData(flush); // Paper - move to saveGlobalData()
+         boolean result = false;
+ 
+         for (ServerLevel level : this.getAllLevels()) {
+@@ -948,13 +948,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             result = true;
+         }
+ 
+-        GameProfile singleplayerProfile = this.getSingleplayerProfile();
+-        this.storageSource.saveDataTag(this.worldData, singleplayerProfile == null ? null : singleplayerProfile.id());
+-        if (flush) {
+-            this.savedDataStorage.saveAndJoin();
+-        } else {
+-            this.savedDataStorage.scheduleSave();
+-        }
++        // Paper - move to saveGlobalData()
+ 
+         if (flush) {
+             for (ServerLevel level : this.getAllLevels()) {
+@@ -968,10 +962,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         return result;
+     }
+ 
++    // Paper start - split out global level data
++    public void saveGlobalData(final boolean flush) {
++        this.scoreboard.storeToSaveDataIfDirty(this.getDataStorage().computeIfAbsent(ScoreboardSaveData.TYPE));
++
++        GameProfile singleplayerProfile = this.getSingleplayerProfile();
++        this.storageSource.saveDataTag(this.worldData, singleplayerProfile == null ? null : singleplayerProfile.id());
++        if (flush) {
++            this.savedDataStorage.saveAndJoin();
++        } else {
++            this.savedDataStorage.scheduleSave();
++        }
++    }
++    // Paper end - split out global level data
++
+     public boolean saveEverything(final boolean silent, final boolean flush, final boolean force) {
+         try {
+             this.isSaving = true;
+-            this.getPlayerList().saveAll();
++            this.getPlayerList().saveAll(); // Paper - Incremental chunk and player saving; diff on change
+             boolean result = this.saveAllChunks(silent, flush, force);
+             this.warnOnLowDiskSpace();
+             return result;
+@@ -1617,9 +1625,31 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+ 
+         this.ticksUntilAutosave--;
+-        if (this.autosavePeriod > 0 && this.ticksUntilAutosave <= 0) { // CraftBukkit
+-            this.autoSave();
++        // Paper start - Incremental chunk and player saving
++        int playerSaveInterval = io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.rate;
++        if (playerSaveInterval < 0) {
++            playerSaveInterval = this.autosavePeriod;
++        }
++        Profiler.get().push("save");
++        final boolean fullSave = this.autosavePeriod > 0 && this.tickCount % this.autosavePeriod == 0;
++        try {
++            this.isSaving = true;
++            if (playerSaveInterval > 0) {
++                this.playerList.saveAll(playerSaveInterval);
++            }
++            if (fullSave) {
++                this.saveGlobalData(false);
++            }
++            for (final ServerLevel level : this.getAllLevels()) {
++                if (level.paperConfig().chunks.autoSaveInterval.value() > 0) {
++                    level.saveIncrementally(fullSave);
++                }
++            }
++        } finally {
++            this.isSaving = false;
+         }
++        Profiler.get().pop();
++        // Paper end - Incremental chunk and player saving
+ 
+         ProfilerFiller profiler = Profiler.get();
+         this.server.spark.executeMainThreadTasks(); // Paper - spark
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 4eee4a42425bef4f7bcf2fe8115e3cc03064ed5b..586b7de5147dccb9dfa84766c71db9b58bc39abc 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -1465,6 +1465,15 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     public boolean mayInteract(final Entity entity, final BlockPos pos) {
+         return !(entity instanceof Player player && (this.server.isUnderSpawnProtection(this, pos, player) || !this.getWorldBorder().isWithinBounds(pos)));
+     }
++    // Paper start - Incremental chunk and player saving
++    public void saveIncrementally(final boolean doFull) {
++        if (doFull) {
++            org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(this.getWorld()));
++            this.saveLevelData(false);
++        }
++        // chunk autosave is already called by the ChunkSystem during unload processing (ChunkMap#processUnloads)
++    }
++    // Paper end - Incremental chunk and player saving
+ 
+     public void save(final @Nullable ProgressListener progressListener, final boolean flush, final boolean noSave) {
+         // Paper start - add close param
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index 88173a3775734ca271d9ff6a7a253eeb343a82a4..6b6030282ccd7ee3f2d135f7f3278de68214aab6 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -208,6 +208,7 @@ import org.slf4j.Logger;
+ 
+ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer { // Paper - rewrite chunk system
+     private static final Logger LOGGER = LogUtils.getLogger();
++    public long lastSave = MinecraftServer.currentTick; // Paper - Incremental chunk and player saving
+     private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_XZ = 32;
+     private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
+     private static final int FLY_STAT_RECORDING_SPEED = 25;
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 1dbb1d49c797be89f3739c2fa226aef25f68ee87..779686f3d0c330b0c9ce4f37168503f3668b1f13 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -414,6 +414,7 @@ public abstract class PlayerList {
+ 
+     protected void save(final ServerPlayer player) {
+         if (!player.getBukkitEntity().isPersistent()) return; // CraftBukkit
++        player.lastSave = MinecraftServer.currentTick; // Paper - Incremental chunk and player saving
+         this.playerIo.save(player);
+         ServerStatsCounter stats = player.getStats(); // CraftBukkit
+         if (stats != null) {
+@@ -950,10 +951,24 @@ public abstract class PlayerList {
+     }
+ 
+     public void saveAll() {
++        // Paper start - Incremental chunk and player saving
++        this.saveAll(-1);
++    }
++    public void saveAll(final int interval) {
++        // Paper end - Incremental chunk and player saving
+         io.papermc.paper.util.MCUtil.ensureMain("Save Players" , () -> { // Paper - Ensure main
+-        for (int i = 0; i < this.players.size(); i++) {
+-            this.save(this.players.get(i));
+-        }
++        // Paper start - Incremental chunk and player saving
++            int numSaved = 0;
++            final long now = MinecraftServer.currentTick;
++            for (final ServerPlayer player : this.players) {
++            if (interval == -1 || now - player.lastSave >= interval) {
++                this.save(player);
++                if (interval != -1 && ++numSaved >= io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.maxPerTick()) {
++                    break;
++                }
++            }
++            }
++        // Paper end - Incremental chunk and player saving
+         return null; }); // Paper - ensure main
+     }
+ 

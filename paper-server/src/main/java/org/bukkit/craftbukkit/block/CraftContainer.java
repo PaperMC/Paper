@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.advancements.criterion.DataComponentMatchers;
-import net.minecraft.advancements.criterion.ItemPredicate;
+import net.minecraft.advancements.predicates.DataComponentMatchers;
+import net.minecraft.advancements.predicates.ItemPredicate;
 import net.minecraft.core.component.DataComponentExactPredicate;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
@@ -27,7 +27,7 @@ public abstract class CraftContainer<T extends BaseContainerBlockEntity> extends
 
     @Override
     public boolean isLocked() {
-        return this.getSnapshot().lockKey != LockCode.NO_LOCK;
+        return this.getSnapshot().isLocked();
     }
 
     @Override
@@ -74,7 +74,7 @@ public abstract class CraftContainer<T extends BaseContainerBlockEntity> extends
     @Override
     public String getCustomName() {
         T container = this.getSnapshot();
-        return container.name != null ? CraftChatMessage.fromComponent(container.getCustomName()) : null;
+        return container.getCustomName() != null ? CraftChatMessage.fromComponent(container.getCustomName()) : null;
     }
 
     @Override
@@ -86,7 +86,7 @@ public abstract class CraftContainer<T extends BaseContainerBlockEntity> extends
     public void applyTo(T blockEntity) {
         super.applyTo(blockEntity);
 
-        if (this.getSnapshot().name == null) {
+        if (this.getSnapshot().getCustomName() == null) {
             blockEntity.name = null;
         }
     }

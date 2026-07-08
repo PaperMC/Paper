@@ -93,7 +93,7 @@ public final class ItemComponentSanitizer {
         final ItemStack targetItemstack = obfuscationSession.context().itemStack();
 
         return switch (GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key)) {
-            case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop ignored -> Optional.empty();
+            case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop _ -> Optional.empty();
             case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Sanitize sanitize -> Optional.of(sanitize.sanitizer().apply(value.get()));
             case null -> value;
         };

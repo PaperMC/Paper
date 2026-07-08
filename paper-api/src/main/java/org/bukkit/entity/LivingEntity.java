@@ -16,6 +16,7 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.block.Block;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
@@ -623,9 +624,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param effect PotionEffect to be added
      * @return whether the effect could be added
      */
-    default boolean addPotionEffect(@NotNull PotionEffect effect) {
-        return this.addPotionEffect(effect, false);
-    }
+    boolean addPotionEffect(@NotNull PotionEffect effect);
 
     /**
      * Adds the given {@link PotionEffect} to the living entity.
@@ -639,7 +638,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * now supported.
      */
     @Deprecated(since = "1.15.2")
-    public boolean addPotionEffect(@NotNull PotionEffect effect, boolean force);
+    default boolean addPotionEffect(@NotNull PotionEffect effect, boolean force) {
+        return this.addPotionEffect(effect);
+    }
 
     /**
      * Attempts to add all of the given {@link PotionEffect} to the living
@@ -995,12 +996,35 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     <T> void setMemory(@NotNull MemoryKey<T> memoryKey, @Nullable T memoryValue);
 
     /**
+     * Get the sound volume at which this entity plays its sounds with.
+     *
+     * @return the sound volume of this entity
+     */
+    float getSoundVolume();
+
+    /**
+     * Get the sound pitch at which this entity plays its sounds with.
+     * Might not be constant across all invocations.
+     *
+     * @return the sound pitch of this entity
+     */
+    float getSoundPitch();
+
+    /**
      * Get the {@link Sound} this entity will make when damaged.
      *
      * @return the hurt sound, or null if the entity does not make any sound
      */
     @Nullable
     public Sound getHurtSound();
+
+    /**
+     * Get the {@link Sound} this entity will make when damaged by the given {@link DamageSource}.
+     *
+     * @param damageSource the damage source to get the hurt sound of
+     * @return the hurt sound, or null if the entity does not make any sound
+     */
+    @Nullable Sound getHurtSound(@NotNull DamageSource damageSource);
 
     /**
      * Get the {@link Sound} this entity will make on death.
@@ -1063,7 +1087,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
 
     /**
      * Returns true if this entity can breathe underwater and will not take
-     * suffocation damage when its air supply reaches zero.
+     * drowning damage when its air supply reaches zero.
      *
      * @return <code>true</code> if the entity can breathe underwater
      */

@@ -2,8 +2,8 @@ package org.bukkit.craftbukkit.block;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import net.minecraft.advancements.criterion.DataComponentMatchers;
-import net.minecraft.advancements.criterion.ItemPredicate;
+import net.minecraft.advancements.predicates.DataComponentMatchers;
+import net.minecraft.advancements.predicates.ItemPredicate;
 import net.minecraft.core.component.DataComponentExactPredicate;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
@@ -83,7 +83,7 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
     @Override
     public net.kyori.adventure.text.Component customName() {
         final BeaconBlockEntity beacon = this.getSnapshot();
-        return beacon.name != null ? io.papermc.paper.adventure.PaperAdventure.asAdventure(beacon.name) : null;
+        return beacon.getCustomName() != null ? io.papermc.paper.adventure.PaperAdventure.asAdventure(beacon.getCustomName()) : null;
     }
 
     @Override
@@ -94,7 +94,7 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
     @Override
     public String getCustomName() {
         BeaconBlockEntity beacon = this.getSnapshot();
-        return beacon.name != null ? CraftChatMessage.fromComponent(beacon.name) : null;
+        return beacon.getCustomName() != null ? CraftChatMessage.fromComponent(beacon.getCustomName()) : null;
     }
 
     @Override

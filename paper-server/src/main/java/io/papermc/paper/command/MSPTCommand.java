@@ -1,6 +1,6 @@
 package io.papermc.paper.command;
 
-import ca.spottedleaf.moonrise.common.time.TickData;
+import ca.spottedleaf.common.time.TickData;
 import net.kyori.adventure.text.Component;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Location;

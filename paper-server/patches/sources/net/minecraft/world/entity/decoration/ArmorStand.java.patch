@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/net/minecraft/world/entity/decoration/ArmorStand.java
-@@ -88,9 +_,16 @@
+@@ -89,9 +_,16 @@
      private boolean invisible = false;
      public long lastHit;
      public int disabledSlots = 0;
@@ -17,7 +17,7 @@
      }
  
      public ArmorStand(final Level level, final double x, final double y, final double z) {
-@@ -102,6 +_,13 @@
+@@ -103,6 +_,13 @@
          return createLivingAttributes().add(Attributes.STEP_HEIGHT, 0.0);
      }
  
@@ -31,7 +31,7 @@
      @Override
      public void refreshDimensions() {
          double oldX = this.getX();
-@@ -137,6 +_,14 @@
+@@ -138,6 +_,14 @@
          return slot != EquipmentSlot.BODY && slot != EquipmentSlot.SADDLE && !this.isDisabled(slot);
      }
  
@@ -46,7 +46,7 @@
      @Override
      protected void addAdditionalSaveData(final ValueOutput output) {
          super.addAdditionalSaveData(output);
-@@ -150,6 +_,7 @@
+@@ -151,6 +_,7 @@
          }
  
          output.store("Pose", ArmorStand.ArmorStandPose.CODEC, this.getArmorStandPose());
@@ -54,7 +54,7 @@
      }
  
      @Override
-@@ -163,10 +_,16 @@
+@@ -164,10 +_,16 @@
          this.setMarker(input.getBooleanOr("Marker", false));
          this.noPhysics = !this.hasPhysics();
          input.read("Pose", ArmorStand.ArmorStandPose.CODEC).ifPresent(this::setArmorStandPose);
@@ -72,7 +72,7 @@
          return false;
      }
  
-@@ -176,6 +_,7 @@
+@@ -177,6 +_,7 @@
  
      @Override
      protected void pushEntities() {
@@ -80,7 +80,7 @@
          for (Entity entity : this.level().getEntities(this, this.getBoundingBox(), RIDABLE_MINECARTS)) {
              if (this.distanceToSqr(entity) <= 0.2) {
                  entity.push(this);
-@@ -256,6 +_,23 @@
+@@ -257,6 +_,23 @@
              return false;
          }
  
@@ -104,7 +104,7 @@
          if (player.hasInfiniteMaterials() && itemStack.isEmpty() && !playerItemStack.isEmpty()) {
              this.setItemSlot(slot, playerItemStack.copyWithCount(1));
              return true;
-@@ -286,21 +_,38 @@
+@@ -287,21 +_,38 @@
          }
  
          if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
@@ -147,7 +147,7 @@
              if (this.isOnFire()) {
                  this.causeDamage(level, source, 0.15F);
              } else {
-@@ -309,9 +_,19 @@
+@@ -310,9 +_,19 @@
  
              return false;
          } else if (source.is(DamageTypeTags.BURNS_ARMOR_STANDS) && this.getHealth() > 0.5F) {
@@ -167,7 +167,7 @@
              boolean allowIncrementalBreaking = source.is(DamageTypeTags.CAN_BREAK_ARMOR_STAND);
              boolean shouldKill = source.is(DamageTypeTags.ALWAYS_KILLS_ARMOR_STANDS);
              if (!allowIncrementalBreaking && !shouldKill) {
-@@ -322,7 +_,7 @@
+@@ -323,7 +_,7 @@
                  if (source.isCreativePlayer()) {
                      this.playBrokenSound();
                      this.showBreakingParticles();
@@ -176,7 +176,7 @@
                      return true;
                  }
  
-@@ -332,9 +_,9 @@
+@@ -333,9 +_,9 @@
                      this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
                      this.lastHit = time;
                  } else {
@@ -188,7 +188,7 @@
                  }
  
                  return true;
-@@ -386,31 +_,42 @@
+@@ -387,31 +_,45 @@
          float health = this.getHealth();
          health -= dmg;
          if (health <= 0.5F) {
@@ -210,39 +210,39 @@
          result.set(DataComponents.CUSTOM_NAME, this.getCustomName());
 -        Block.popResource(this.level(), this.blockPosition(), result);
 -        this.brokenByAnything(level, source);
-+        this.drops.add(new DefaultDrop(result, stack -> Block.popResource(this.level(), this.blockPosition(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior
++        this.deathDropItems = new java.util.ArrayList<>(); // Paper
++        this.deathDropItems.add(new DefaultDrop(result, stack -> Block.popResource(this.level(), this.blockPosition(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior
 +        return this.brokenByAnything(level, source); // Paper
      }
  
 -    private void brokenByAnything(final ServerLevel level, final DamageSource source) {
 +    private org.bukkit.event.entity.EntityDeathEvent brokenByAnything(final ServerLevel level, final DamageSource source) { // Paper
          this.playBrokenSound();
--        this.dropAllDeathLoot(level, source);
-+        // this.dropAllDeathLoot(level, source); // CraftBukkit - moved down
++        if (this.deathDropItems == null) this.deathDropItems = new java.util.ArrayList<>(); // Paper
+         this.dropAllDeathLoot(level, source);
  
          for (EquipmentSlot slot : EquipmentSlot.VALUES) {
 -            ItemStack itemStack = this.equipment.set(slot, ItemStack.EMPTY);
-+            ItemStack itemStack = this.equipment.get(slot); // Paper - move equipment removal past event call
++            this.postDeathEventTasks.add(() -> this.equipment.set(slot, ItemStack.EMPTY)); // Paper - move equipment removal past event call
++            ItemStack itemStack = this.equipment.get(slot); // Paper
              if (!itemStack.isEmpty() && !EnchantmentHelper.has(itemStack, EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP)) {
 -                Block.popResource(this.level(), this.blockPosition().above(), itemStack);
--            }
--        }
-+                this.drops.add(new DefaultDrop(itemStack, stack -> Block.popResource(this.level(), this.blockPosition().above(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior; mirror so we can destroy it later - though this call site was safe & spawn drops correctly}
-+            }
++                this.deathDropItems.add(new DefaultDrop(itemStack, stack -> Block.popResource(this.level(), this.blockPosition().above(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior; mirror so we can destroy it later - though this call site was safe & spawn drops correctly}
+             }
+         }
++        // Paper start - call EntityDeathEvent
++        org.bukkit.event.entity.EntityDeathEvent deathEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(level, this, source, this.deathDropItems, true);
++        this.deathDropItems = null;
++        if (!deathEvent.isCancelled()) {
++            this.postDeathEventTasks.forEach(Runnable::run);
 +        }
-+        // Paper start - move equipment removal past event call
-+        org.bukkit.event.entity.EntityDeathEvent event = this.dropAllDeathLoot(level, source);
-+        if (!event.isCancelled()) {
-+            for (EquipmentSlot slot : EquipmentSlot.VALUES) {
-+                this.equipment.set(slot, ItemStack.EMPTY);
-+            }
-+        }
-+        return event;
-+        // Paper end - move equipment removal past event call
++        this.postDeathEventTasks.clear();
++        return deathEvent;
++        // Paper end - call EntityDeathEvent
      }
  
      private void playBrokenSound() {
-@@ -458,9 +_,40 @@
+@@ -459,9 +_,37 @@
          return this.isSmall();
      }
  
@@ -264,27 +264,24 @@
      @Override
      public void kill(final ServerLevel level) {
 -        this.remove(Entity.RemovalReason.KILLED);
-+        // CraftBukkit start - pass DamageSource for kill
++        // Paper start - pass damage source for event
 +        this.kill(level, null);
 +    }
 +
-+    public void kill(final ServerLevel level, @Nullable final DamageSource source) {
-+        // Paper start - make cancellable
++    public void kill(final ServerLevel level, final @Nullable DamageSource source) {
 +        this.kill(level, source, true);
 +    }
 +
-+    public void kill(final ServerLevel level, @Nullable final DamageSource source, final boolean callEvent) {
-+        if (callEvent) {
-+            org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, (source == null ? this.damageSources().genericKill() : source), this.drops); // CraftBukkit - call event
-+            if (event.isCancelled()) return;
++    public void kill(final ServerLevel level, final @Nullable DamageSource source, final boolean callEvent) {
++        if (callEvent && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(level, this, (source == null ? this.damageSources().genericKill() : source))) {
++            return;
 +        }
 +        // Paper end
 +        this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
-+        // CraftBukkit end
          this.gameEvent(GameEvent.ENTITY_DIE);
      }
  
-@@ -707,4 +_,13 @@
+@@ -708,4 +_,13 @@
                  .apply(i, ArmorStand.ArmorStandPose::new)
          );
      }

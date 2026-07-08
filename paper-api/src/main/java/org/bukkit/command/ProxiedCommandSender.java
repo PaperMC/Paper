@@ -1,6 +1,10 @@
 
 package org.bukkit.command;
 
+import net.kyori.adventure.audience.ForwardingAudience;
+import net.kyori.adventure.chat.ChatType;
+import net.kyori.adventure.chat.SignedMessage;
+import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 
 public interface ProxiedCommandSender extends CommandSender, net.kyori.adventure.audience.ForwardingAudience.Single { // Paper
@@ -23,8 +27,18 @@ public interface ProxiedCommandSender extends CommandSender, net.kyori.adventure
 
     // Paper start
     @Override
-    default void sendMessage(final net.kyori.adventure.identity.@NotNull Identity source, final net.kyori.adventure.text.@NotNull Component message, final net.kyori.adventure.audience.@NotNull MessageType type) {
-        net.kyori.adventure.audience.ForwardingAudience.Single.super.sendMessage(source, message, type);
+    default void sendMessage(final @NotNull Component message, final ChatType.@NotNull Bound boundChatType) {
+        ForwardingAudience.Single.super.sendMessage(message, boundChatType);
+    }
+
+    @Override
+    default void sendMessage(final @NotNull Component message) {
+        ForwardingAudience.Single.super.sendMessage(message);
+    }
+
+    @Override
+    default void sendMessage(final @NotNull SignedMessage signedMessage, final ChatType.@NotNull Bound boundChatType) {
+        ForwardingAudience.Single.super.sendMessage(signedMessage, boundChatType);
     }
 
     @NotNull

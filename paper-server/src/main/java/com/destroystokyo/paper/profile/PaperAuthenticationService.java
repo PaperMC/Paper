@@ -20,7 +20,7 @@ public class PaperAuthenticationService extends YggdrasilAuthenticationService {
 
     @Override
     public MinecraftSessionService createMinecraftSessionService() {
-        return new PaperMinecraftSessionService(this.getServicesKeySet(),  this.getProxy(), this.environment);
+        return new PaperMinecraftSessionService(this.getServicesKeySet(), this.getProxy(), this.environment);
     }
 
     @Override
