@@ -191,7 +191,7 @@
              }
          }
      }
-@@ -261,13 +_,53 @@
+@@ -261,21 +_,69 @@
  
      public boolean destroyBlock(final BlockPos pos) {
          BlockState state = this.level.getBlockState(pos);
@@ -200,6 +200,10 @@
 +        org.bukkit.block.Block bblock = org.bukkit.craftbukkit.block.CraftBlock.at(this.level, pos);
 +        org.bukkit.event.block.BlockBreakEvent event = null;
 +        if (this.player instanceof ServerPlayer) {
++            // Paper - moved up from below - Ensure BlockBreakEvent only fires for valid adventure breaks
++            if (this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) {
++                return false;
++            }
 +            // Sword + Creative mode pre-cancel
 +            boolean canAttackBlock = !this.player.getMainHandItem().canDestroyBlock(state, this.level, pos, this.player);
 +            event = new org.bukkit.event.block.BlockBreakEvent(bblock, this.player.getBukkitEntity());
@@ -215,7 +219,7 @@
 +                ItemStack itemInHand = this.player.getItemBySlot(EquipmentSlot.MAINHAND);
 +                event.setExpToDrop(block.getExpDrop(updatedBlockState, this.level, pos, itemInHand, true));
 +            }
-+
++            
 +            if (!event.callEvent()) {
 +                if (canAttackBlock) {
 +                    return false;
@@ -248,7 +252,9 @@
              this.level.sendBlockUpdated(pos, state, state, Block.UPDATE_ALL);
              return false;
          }
-@@ -276,6 +_,10 @@
+ 
+-        if (this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) {
++        if (false && this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) { // Paper - moved up - Ensure BlockBreakEvent only fires for valid adventure breaks
              return false;
          }
  
