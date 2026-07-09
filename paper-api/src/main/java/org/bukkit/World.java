@@ -2671,6 +2671,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * See {@link #setAllowMonsterSpawning(boolean)} if you want to dis/allow monster spawning.
      * Plugins can control natural spawning of animals via events like {@link org.bukkit.event.entity.EntitySpawnEvent} and the {@link org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason#NATURAL}.
      */
+    @Deprecated(since = "26.2", forRemoval = true)
     public void setSpawnFlags(boolean allowMonsters, boolean allowAnimals);
 
     /**
