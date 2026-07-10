@@ -100,6 +100,7 @@ public class CraftZombie extends CraftMonster implements Zombie {
     }
 
     @Override
+    @Deprecated
     public boolean shouldBurnInDay() {
         return super.burnsInDaylight();
     }

@@ -262,11 +262,6 @@ public interface Mob extends LivingEntity, Lootable, Leashable {
     int getPossibleExperienceReward();
 
     /**
-     * {@return whether this mob will burn when exposed to daylight, accounting for environment attributes, but not for fire immunity or sun protection items}
-     */
-    boolean burnsInDaylight();
-
-    /**
      * Sets whether this mob will burn in daylight, a value of {@link TriState#NOT_SET} makes default behavior apply.
      *
      * @param state a {@link TriState} representing the state of the override

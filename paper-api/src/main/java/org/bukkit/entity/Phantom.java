@@ -32,7 +32,7 @@ public interface Phantom extends Flying, Enemy {
      * Check if this phantom will burn in the sunlight
      *
      * @return True if phantom will burn in sunlight
-     * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#burnsInDaylight()} instead.
+     * @deprecated All mobs can now be changed to burn in daylight, use the {@link org.bukkit.Tag#ENTITY_TYPES_BURN_IN_DAYLIGHT} tag and {@link Mob#getBurnInDaylightOverride()} instead.
      */
     @Deprecated(since = "26.1")
     boolean shouldBurnInDay();

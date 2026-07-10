@@ -40,7 +40,7 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
      * immunity.
      *
      * @return True if skeleton will burn in sunlight
-     * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#burnsInDaylight()} instead.
+     * @deprecated All mobs can now be changed to burn in daylight, use the {@link org.bukkit.Tag#ENTITY_TYPES_BURN_IN_DAYLIGHT} tag and {@link Mob#getBurnInDaylightOverride()} instead.
      */
     @Deprecated(since = "26.2")
     boolean shouldBurnInDay();

@@ -201,8 +201,8 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
         return io.papermc.paper.entity.PaperLeashable.super.setLeashHolder(holder);
     }
 
-    @Override
-    public boolean burnsInDaylight() {
+    @Deprecated
+    protected boolean burnsInDaylight() {
         final net.minecraft.world.entity.Mob handle = this.getHandle();
 
         return handle.burnInDaylightOverride.toBooleanOrElse(handle.is(EntityTypeTags.BURN_IN_DAYLIGHT))

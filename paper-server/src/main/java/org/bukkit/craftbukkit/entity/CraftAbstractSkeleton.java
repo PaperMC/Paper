@@ -23,6 +23,7 @@ public abstract class CraftAbstractSkeleton extends CraftMonster implements Abst
     }
 
     @Override
+    @Deprecated
     public boolean shouldBurnInDay() {
         return super.burnsInDaylight();
     }

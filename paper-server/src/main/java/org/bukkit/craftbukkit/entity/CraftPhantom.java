@@ -36,6 +36,7 @@ public class CraftPhantom extends CraftMob implements Phantom, CraftEnemy {
     }
 
     @Override
+    @Deprecated
     public boolean shouldBurnInDay() {
         return super.burnsInDaylight();
     }

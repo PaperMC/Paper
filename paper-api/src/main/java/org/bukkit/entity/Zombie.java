@@ -154,7 +154,7 @@ public interface Zombie extends Monster, Ageable {
      * Check if this zombie will burn in the sunlight
      *
      * @return True if zombie will burn in sunlight
-     * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#burnsInDaylight()} instead.
+     * @deprecated All mobs can now be changed to burn in daylight, use the {@link org.bukkit.Tag#ENTITY_TYPES_BURN_IN_DAYLIGHT} tag and {@link Mob#getBurnInDaylightOverride()} instead.
      */
     @Deprecated(since = "26.2")
     boolean shouldBurnInDay();
