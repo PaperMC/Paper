@@ -6,7 +6,6 @@ import net.kyori.adventure.util.TriState;
 import net.minecraft.Optionull;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.EntityTypeTags;
-import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.Entity;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftLootTable;
