@@ -205,8 +205,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     protected boolean burnsInDaylight() {
         final net.minecraft.world.entity.Mob handle = this.getHandle();
 
-        return handle.burnInDaylightOverride.toBooleanOrElse(handle.is(EntityTypeTags.BURN_IN_DAYLIGHT))
-            && handle.level().environmentAttributes().getValue(EnvironmentAttributes.MONSTERS_BURN, handle.position());
+        return handle.burnInDaylightOverride.toBooleanOrElse(handle.is(EntityTypeTags.BURN_IN_DAYLIGHT));
     }
 
     @Override
