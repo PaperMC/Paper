@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import com.destroystokyo.paper.ClientOption;
+import com.google.common.base.Preconditions;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PlayerGiveResult;
@@ -16,6 +17,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.object.ObjectContents;
+import net.kyori.adventure.text.object.ObjectContentsLike;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.BanEntry;
@@ -68,7 +71,7 @@ import org.jspecify.annotations.Nullable;
  * Represents a player, connected or not
  */
 @NullMarked
-public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient { // Paper
+public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient, ObjectContentsLike { // Paper
 
     // Paper start
     @Override
@@ -3557,7 +3560,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     // Paper start
     @Override
     default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
-        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.of(this.getType().getKey(), this.getUniqueId(), this.displayName())));
+        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.showEntity(this.getType().getKey(), this.getUniqueId(), this.displayName())));
     }
     // Paper end
 
@@ -3616,24 +3619,22 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     <T> T getClientOption(ClientOption<T> option);
     // Paper end - client option API
 
-    // Paper start - elytra boost API
     /**
      * Boost a Player that's {@link #isGliding()} using a {@link Firework}.
      * If the creation of the entity is cancelled, no boosting is done.
      * This method does not fire {@link com.destroystokyo.paper.event.player.PlayerElytraBoostEvent}.
      *
-     * @param firework The {@link Material#FIREWORK_ROCKET} to boost the player with
+     * @param boosterItem The itemstack to boost the player with
      * @return The {@link Firework} boosting the Player or null if the spawning of the entity was cancelled
-     * @throws IllegalArgumentException if {@link #isGliding()} is false
-     * or if the {@code firework} isn't a {@link Material#FIREWORK_ROCKET}
+     * @throws IllegalStateException if {@link #isGliding()} is false
      * @deprecated use {@link HumanEntity#fireworkBoost(ItemStack)} instead. Note that this method <b>does not</b>
      * check if the player is gliding or not.
      */
-    default @Nullable Firework boostElytra(final ItemStack firework) {
-        com.google.common.base.Preconditions.checkState(this.isGliding(), "Player must be gliding");
-        return this.fireworkBoost(firework);
+    @Deprecated(since = "1.20.5")
+    default @Nullable Firework boostElytra(final ItemStack boosterItem) {
+        Preconditions.checkState(this.isGliding(), "Player must be gliding");
+        return this.fireworkBoost(boosterItem);
     }
-    // Paper end - elytra boost API
 
     // Paper start - sendOpLevel API
     /**
@@ -3772,20 +3773,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          */
         @Deprecated
         public int getPing() {
-            throw new UnsupportedOperationException( "Not supported yet." );
+            throw new UnsupportedOperationException("Not supported yet.");
         }
         // Paper end
     }
 
-    // Paper start - brand support
     /**
-     * Returns player's client brand name. If the client didn't send this information, the brand name will be null.<br>
-     * For the Notchian client this name defaults to <code>vanilla</code>. Some modified clients report other names such as <code>forge</code>.<br>
+     * Returns player's client brand name. If the client didn't send this information, the brand name will be null.
+     * <p>
+     * For the Notchian client this name defaults to {@code vanilla}. Some modified clients report other names such as {@code neoforge}.
+     *
      * @return client brand name
+     * @see io.papermc.paper.connection.PlayerCommonConnection#getClientBrandName()
      */
-    @Nullable
-    String getClientBrandName();
-    // Paper end
+    @Nullable String getClientBrandName();
 
     // Paper start - Teleport API
     /**
@@ -4014,4 +4015,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @ApiStatus.Experimental
     PlayerGameConnection getConnection();
+
+    @Override
+    default ObjectContents asObjectContents() {
+        return this.getPlayerProfile().asObjectContents();
+    }
 }

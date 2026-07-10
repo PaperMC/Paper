@@ -38,18 +38,16 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
 
     @Override
     public boolean shouldDespawnInPeaceful() {
-        return this.getHandle().shouldDespawnInPeaceful();
+        return !this.getHandle().getType().isAllowedInPeaceful(); // todo should be in the entity type at some point
     }
 
     @Override
     public void setDespawnInPeacefulOverride(final TriState state) {
-        Preconditions.checkArgument(state != null, "TriState cannot be null");
-        this.getHandle().despawnInPeacefulOverride = state;
     }
 
     @Override
     public TriState getDespawnInPeacefulOverride() {
-        return this.getHandle().despawnInPeacefulOverride;
+        return TriState.NOT_SET;
     }
 
     @Override
@@ -107,7 +105,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
 
     @Override
     public long getSeed() {
-        return this.getHandle().lootTableSeed;
+        return this.getHandle().getLootTableSeed();
     }
 
     @Override
@@ -207,7 +205,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     public boolean burnsInDaylight() {
         final net.minecraft.world.entity.Mob handle = this.getHandle();
 
-        return handle.burnInDaylightOverride.toBooleanOrElseGet(() -> handle.is(EntityTypeTags.BURN_IN_DAYLIGHT))
+        return handle.burnInDaylightOverride.toBooleanOrElse(handle.is(EntityTypeTags.BURN_IN_DAYLIGHT))
             && handle.level().environmentAttributes().getValue(EnvironmentAttributes.MONSTERS_BURN, handle.position());
     }
 

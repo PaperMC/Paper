@@ -42,7 +42,7 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
      * @return True if skeleton will burn in sunlight
      * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#burnsInDaylight()} instead.
      */
-    @Deprecated(since = "26.1")
+    @Deprecated(since = "26.2")
     boolean shouldBurnInDay();
 
     /**
@@ -53,6 +53,6 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
      * @param shouldBurnInDay True to burn in sunlight
      * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#setBurnInDaylightOverride(TriState)} instead.
      */
-    @Deprecated(since = "26.1")
+    @Deprecated(since = "26.2")
     void setShouldBurnInDay(boolean shouldBurnInDay);
 }

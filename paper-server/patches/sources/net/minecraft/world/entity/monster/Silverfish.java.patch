@@ -1,15 +1,15 @@
 --- a/net/minecraft/world/entity/monster/Silverfish.java
 +++ b/net/minecraft/world/entity/monster/Silverfish.java
-@@ -117,7 +_,7 @@
-         } else if (EntitySpawnReason.isSpawner(spawnReason)) {
+@@ -120,7 +_,7 @@
              return true;
-         } else {
--            Player nearestPlayer = level.getNearestPlayer(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5.0, true);
-+            Player nearestPlayer = level.getNearestPlayerThatAffectsSpawning(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5.0, true); // Paper - Affects Spawning API
-             return nearestPlayer == null;
          }
+ 
+-        Player nearestPlayer = level.getNearestPlayer(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5.0, true);
++        Player nearestPlayer = level.getNearestPlayerThatAffectsSpawning(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5.0, true); // Paper - Affects Spawning API
+         return nearestPlayer == null;
      }
-@@ -168,9 +_,14 @@
+ 
+@@ -172,9 +_,14 @@
                  BlockPos pos = BlockPos.containing(this.mob.getX(), this.mob.getY() + 0.5, this.mob.getZ()).relative(this.selectedDirection);
                  BlockState blockState = level.getBlockState(pos);
                  if (InfestedBlock.isCompatibleHostBlock(blockState)) {
@@ -25,12 +25,12 @@
                  }
              }
          }
-@@ -210,6 +_,12 @@
+@@ -213,6 +_,12 @@
+                             BlockPos testPos = basePos.offset(xOff, yOff, zOff);
                              BlockState blockState = level.getBlockState(testPos);
-                             Block block = blockState.getBlock();
-                             if (block instanceof InfestedBlock) {
+                             if (blockState.getBlock() instanceof InfestedBlock infestedBlock) {
 +                                // CraftBukkit start
-+                                BlockState afterState = getServerLevel(level).getGameRules().get(GameRules.MOB_GRIEFING) ? blockState.getFluidState().createLegacyBlock() : ((InfestedBlock) block).hostStateByInfested(level.getBlockState(testPos)); // Paper - fix wrong block state
++                                BlockState afterState = getServerLevel(level).getGameRules().get(GameRules.MOB_GRIEFING) ? blockState.getFluidState().createLegacyBlock() : infestedBlock.hostStateByInfested(level.getBlockState(testPos)); // Paper - fix wrong block state
 +                                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, testPos, afterState)) { // Paper - fix wrong block state
 +                                    continue;
 +                                }

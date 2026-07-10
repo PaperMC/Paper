@@ -16,7 +16,7 @@ public interface FrogVariantRegistryEntry {
     /**
      * Provides the client texture asset of the frog variant, which represents the texture to use.
      *
-     * @return the client texture asset.
+     * @return the client texture asset
      */
     ClientTextureAsset clientTextureAsset();
 
@@ -35,8 +35,8 @@ public interface FrogVariantRegistryEntry {
         /**
          * Sets the client texture asset of the frog variant, which is the location of the texture to use.
          *
-         * @param clientTextureAsset the client texture asset.
-         * @return this builder instance.
+         * @param clientTextureAsset the client texture asset
+         * @return this builder instance
          * @see FrogVariantRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")

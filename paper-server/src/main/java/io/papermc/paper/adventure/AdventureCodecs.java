@@ -144,7 +144,7 @@ public final class AdventureCodecs {
         Codec.STRING.fieldOf("value").forGetter(TEXT_PAYLOAD_EXTRACTOR)
     ).apply(instance, ClickEvent::copyToClipboard));
     // needs to be lazy loaded due to depending on PaperDialogCodecs static init
-    static final MapCodec<ClickEvent> SHOW_DIALOG_CODEC = MapCodec.recursive("show_dialog", ignored -> mapCodec((instance) -> instance.group(
+    static final MapCodec<ClickEvent> SHOW_DIALOG_CODEC = MapCodec.recursive("show_dialog", _ -> mapCodec((instance) -> instance.group(
         PaperDialogCodecs.DIALOG_CODEC.fieldOf("dialog").forGetter(a -> (Dialog) ((ClickEvent.Payload.Dialog) a.payload()).dialog())
     ).apply(instance, ClickEvent::showDialog)));
     static final MapCodec<ClickEvent> CUSTOM_CODEC = mapCodec((instance) -> instance.group(
@@ -171,15 +171,15 @@ public final class AdventureCodecs {
     }
 
     public static final Function<ClickEvent, ClickEventType> GET_CLICK_EVENT_TYPE =
-        he -> switch (he.action()) {
-            case OPEN_URL -> OPEN_URL_CLICK_EVENT_TYPE;
-            case OPEN_FILE -> OPEN_FILE_CLICK_EVENT_TYPE;
-            case RUN_COMMAND -> RUN_COMMAND_CLICK_EVENT_TYPE;
-            case SUGGEST_COMMAND -> SUGGEST_COMMAND_CLICK_EVENT_TYPE;
-            case CHANGE_PAGE -> CHANGE_PAGE_CLICK_EVENT_TYPE;
-            case COPY_TO_CLIPBOARD -> COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE;
-            case SHOW_DIALOG -> SHOW_DIALOG_CLICK_EVENT_TYPE;
-            case CUSTOM -> CUSTOM_CLICK_EVENT_TYPE;
+        ce -> switch (ce.action()) {
+            case ClickEvent.Action.ChangePage _ -> CHANGE_PAGE_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.CopyToClipboard _ -> COPY_TO_CLIPBOARD_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.OpenFile _ -> OPEN_FILE_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.OpenUrl _ -> OPEN_URL_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.RunCommand _ -> RUN_COMMAND_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.SuggestCommand _ -> SUGGEST_COMMAND_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.ShowDialog _ -> SHOW_DIALOG_CLICK_EVENT_TYPE;
+            case ClickEvent.Action.Custom _ -> CUSTOM_CLICK_EVENT_TYPE;
         };
 
     static final Codec<ClickEvent> CLICK_EVENT_CODEC = CLICK_EVENT_TYPE_CODEC.dispatch("action", GET_CLICK_EVENT_TYPE, ClickEventType::codec);
@@ -283,8 +283,7 @@ public final class AdventureCodecs {
     static final MapCodec<TextComponent> TEXT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
         return instance.group(Codec.STRING.fieldOf("text").forGetter(TextComponent::content)).apply(instance, Component::text);
     });
-    static final Codec<Object> PRIMITIVE_ARG_CODEC = ExtraCodecs.JAVA.validate(TranslatableContents::filterAllowedArguments);
-    static final Codec<TranslationArgument> ARG_CODEC = Codec.either(PRIMITIVE_ARG_CODEC, COMPONENT_CODEC).flatXmap((primitiveOrComponent) -> {
+    static final Codec<TranslationArgument> ARG_CODEC = Codec.either(TranslatableContents.PRIMITIVE_ARG_CODEC, COMPONENT_CODEC).flatXmap((primitiveOrComponent) -> {
         return primitiveOrComponent.map(o -> {
             final TranslationArgument arg;
             if (o instanceof String s) {
@@ -470,7 +469,7 @@ public final class AdventureCodecs {
         }
     }
 
-    static final MapCodec<NBTComponent<?, ?>> NBT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
+    static final MapCodec<NBTComponent<?>> NBT_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
         return instance.group(
             Codec.STRING.fieldOf("nbt").forGetter(NBTComponent::nbtPath),
             Codec.BOOL.lenientOptionalFieldOf("interpret", false).forGetter(NBTComponent::interpret),
@@ -505,7 +504,7 @@ public final class AdventureCodecs {
     static final ComponentType<ObjectComponent> OBJECT = new ComponentType<>(OBJECT_COMPONENT_MAP_CODEC, ObjectComponent.class::isInstance, "object");
     static final ComponentType<ScoreComponent> SCORE = new ComponentType<>(SCORE_COMPONENT_MAP_CODEC, ScoreComponent.class::isInstance, "score");
     static final ComponentType<SelectorComponent> SELECTOR = new ComponentType<>(SELECTOR_COMPONENT_MAP_CODEC, SelectorComponent.class::isInstance, "selector");
-    static final ComponentType<NBTComponent<?, ?>> NBT = new ComponentType<>(NBT_COMPONENT_MAP_CODEC, NBTComponent.class::isInstance, "nbt");
+    static final ComponentType<NBTComponent<?>> NBT = new ComponentType<>(NBT_COMPONENT_MAP_CODEC, NBTComponent.class::isInstance, "nbt");
 
     static Codec<Component> createCodec(final Codec<Component> selfCodec) {
         final ExtraCodecs.LateBoundIdMapper<String, MapCodec<? extends Component>> lateBoundIdMapper = new ExtraCodecs.LateBoundIdMapper<>();

@@ -38,7 +38,7 @@
          this.serverActivityMonitor = this.server.getServerActivityMonitor();
          this.challenge = Ints.toByteArray(RandomSource.create().nextInt());
          this.transferred = transferred;
-+        this.paperLoginConnection  = new io.papermc.paper.connection.PaperPlayerLoginConnection(this); // Paper
++        this.paperLoginConnection = new io.papermc.paper.connection.PaperPlayerLoginConnection(this); // Paper
      }
  
      @Override
@@ -143,7 +143,7 @@
              }
          }
      }
-@@ -139,9 +_,9 @@
+@@ -139,11 +_,11 @@
  
      private void verifyLoginAndFinishConnectionSetup(final GameProfile profile) {
          PlayerList playerList = this.server.getPlayerList();
@@ -152,10 +152,13 @@
          if (error != null) {
 -            this.disconnect(error);
 +            this.disconnectAsync(error); // Paper
+         } else if (this.connection.getIntendedProfileId() != null && !profile.id().equals(this.connection.getIntendedProfileId())) {
+-            this.disconnect(CommonComponents.CONNECT_FAILED);
++            this.disconnectAsync(CommonComponents.CONNECT_FAILED); // Paper
          } else {
              if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
                  this.connection
-@@ -151,7 +_,7 @@
+@@ -153,7 +_,7 @@
                      );
              }
  
@@ -164,25 +167,25 @@
              if (waitForDisconnection) {
                  this.state = ServerLoginPacketListenerImpl.State.WAITING_FOR_DUPE_DISCONNECT;
              } else {
-@@ -163,6 +_,7 @@
+@@ -165,6 +_,7 @@
      private void finishLoginAndWaitForClient(final GameProfile gameProfile) {
          this.state = ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING;
-         this.connection.send(new ClientboundLoginFinishedPacket(gameProfile));
+         this.connection.send(new ClientboundLoginFinishedPacket(gameProfile, this.server.getConnection().getSessionId()));
 +        this.server.services().paper().filledProfileCache().add(gameProfile); // Paper - update profile cache
      }
  
      @Override
-@@ -186,7 +_,8 @@
-             throw new IllegalStateException("Protocol error", var7);
+@@ -188,7 +_,8 @@
+             throw new IllegalStateException("Protocol error", e);
          }
  
 -        Thread thread = new Thread("User Authenticator #" + UNIQUE_THREAD_ID.incrementAndGet()) {
 +        // Paper start - Virtual authenticator threads
 +        authenticatorPool.execute(new Runnable() {
-             {
-                 Objects.requireNonNull(ServerLoginPacketListenerImpl.this);
-             }
-@@ -202,12 +_,18 @@
+             @Override
+             public void run() {
+                 String name = Objects.requireNonNull(ServerLoginPacketListenerImpl.this.requestedUsername, "Player name not initialized");
+@@ -200,12 +_,18 @@
                          .hasJoinedServer(name, digest, this.getAddress());
                      if (result != null) {
                          GameProfile profile = result.profile();
@@ -202,8 +205,8 @@
                      } else {
                          ServerLoginPacketListenerImpl.this.disconnect(Component.translatable("multiplayer.disconnect.unverified_username"));
                          ServerLoginPacketListenerImpl.LOGGER.error("Username '{}' tried to join with an invalid session", name);
-@@ -215,11 +_,16 @@
-                 } catch (AuthenticationUnavailableException var4) {
+@@ -213,11 +_,16 @@
+                 } catch (AuthenticationUnavailableException ignored) {
                      if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
                          ServerLoginPacketListenerImpl.LOGGER.warn("Authentication servers are down but will let them in anyway!");
 -                        ServerLoginPacketListenerImpl.this.startClientVerification(UUIDUtil.createOfflineProfile(name));
@@ -221,8 +224,8 @@
                  }
              }
  
-@@ -229,18 +_,123 @@
-                     ? ((InetSocketAddress)remoteAddress).getAddress()
+@@ -227,18 +_,123 @@
+                     ? inetSocketAddress.getAddress()
                      : null;
              }
 -        };
@@ -349,7 +352,7 @@
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet");
          this.connection.setupOutboundProtocol(ConfigurationProtocols.CLIENTBOUND);
          CommonListenerCookie cookie = CommonListenerCookie.createInitial(Objects.requireNonNull(this.authenticatedProfile), this.transferred);
-@@ -257,8 +_,31 @@
+@@ -255,8 +_,31 @@
  
      @Override
      public void handleCookieResponse(final ServerboundCookieResponsePacket packet) {
@@ -379,5 +382,5 @@
 +    }
 +    // Spigot end
  
-     public static enum State {
+     public enum State {
          HELLO,

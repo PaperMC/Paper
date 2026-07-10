@@ -13,9 +13,9 @@
      private volatile @Nullable PacketListener packetListener;
      private @Nullable DisconnectionDetails disconnectionDetails;
 @@ -81,6 +_,44 @@
-     private boolean handlingFault;
      private volatile @Nullable DisconnectionDetails delayedDisconnect;
      private @Nullable BandwidthDebugMonitor bandwidthDebugMonitor;
+     private @Nullable UUID intendedProfileId;
 +    public String hostname = ""; // CraftBukkit - add field
 +    public boolean handleConnectionDisconnectOnNextTick = false; // Paper - Force kill connection ticking
 +    // Paper start - NetworkClient implementation
@@ -109,9 +109,9 @@
 -                        if (this.getSending() == PacketFlow.CLIENTBOUND) {
 +                        boolean doesDisconnectExist = this.packetListener.protocol() != ConnectionProtocol.STATUS && this.packetListener.protocol() != ConnectionProtocol.HANDSHAKING; // Paper
 +                        if (this.getSending() == PacketFlow.CLIENTBOUND && doesDisconnectExist) { // Paper
-                             Packet<?> packet = (Packet<?>)(this.sendLoginDisconnect
+                             Packet<?> packet = this.sendLoginDisconnect
                                  ? new ClientboundLoginDisconnectPacket(reason)
-                                 : new ClientboundDisconnectPacket(reason));
+                                 : new ClientboundDisconnectPacket(reason);
 @@ -141,6 +_,7 @@
                  }
              }
@@ -120,67 +120,68 @@
      }
  
      @Override
-@@ -150,10 +_,60 @@
+@@ -150,11 +_,60 @@
              if (packetListener == null) {
                  throw new IllegalStateException("Received a packet before the packet listener was initialized");
-             } else {
-+                // Paper start - packet limiter
-+                if (this.stopReadingPackets) {
-+                    return;
-+                }
-+                if (this.allPacketCounts != null ||
-+                    io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.containsKey(packet.getClass())) {
-+                    long time = System.nanoTime();
-+                    synchronized (PACKET_LIMIT_LOCK) {
-+                        if (this.allPacketCounts != null) {
-+                            this.allPacketCounts.updateAndAdd(1, time);
-+                            if (this.allPacketCounts.getRate() >= io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.maxPacketRate()) {
-+                                this.killForPacketSpam();
-+                                return;
-+                            }
+             }
+-
++            // Paper start - packet limiter
++            if (this.stopReadingPackets) {
++                return;
++            }
++            if (this.allPacketCounts != null ||
++                io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.containsKey(packet.getClass())) {
++                long time = System.nanoTime();
++                synchronized (PACKET_LIMIT_LOCK) {
++                    if (this.allPacketCounts != null) {
++                        this.allPacketCounts.updateAndAdd(1, time);
++                        if (this.allPacketCounts.getRate() >= io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.allPackets.maxPacketRate()) {
++                            this.killForPacketSpam();
++                            return;
 +                        }
++                    }
 +
-+                        for (Class<?> check = packet.getClass(); check != Object.class; check = check.getSuperclass()) {
-+                            io.papermc.paper.configuration.GlobalConfiguration.PacketLimiter.PacketLimit packetSpecificLimit =
-+                                io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.get(check);
-+                            if (packetSpecificLimit == null || !packetSpecificLimit.isEnabled()) {
-+                                continue;
-+                            }
-+                            io.papermc.paper.util.IntervalledCounter counter = this.packetSpecificLimits.computeIfAbsent((Class)check, (clazz) -> {
-+                                return new io.papermc.paper.util.IntervalledCounter((long)(packetSpecificLimit.interval() * 1.0e9));
-+                            });
-+                            counter.updateAndAdd(1, time);
-+                            if (counter.getRate() >= packetSpecificLimit.maxPacketRate()) {
-+                                switch (packetSpecificLimit.action()) {
-+                                    case DROP:
-+                                        return;
-+                                    case KICK:
-+                                        String deobfedPacketName = check.getName();
++                    for (Class<?> check = packet.getClass(); check != Object.class; check = check.getSuperclass()) {
++                        io.papermc.paper.configuration.GlobalConfiguration.PacketLimiter.PacketLimit packetSpecificLimit =
++                            io.papermc.paper.configuration.GlobalConfiguration.get().packetLimiter.overrides.get(check);
++                        if (packetSpecificLimit == null || !packetSpecificLimit.isEnabled()) {
++                            continue;
++                        }
++                        io.papermc.paper.util.IntervalledCounter counter = this.packetSpecificLimits.computeIfAbsent((Class)check, (clazz) -> {
++                            return new io.papermc.paper.util.IntervalledCounter((long)(packetSpecificLimit.interval() * 1.0e9));
++                        });
++                        counter.updateAndAdd(1, time);
++                        if (counter.getRate() >= packetSpecificLimit.maxPacketRate()) {
++                            switch (packetSpecificLimit.action()) {
++                                case DROP:
++                                    return;
++                                case KICK:
++                                    String deobfedPacketName = check.getName();
 +
-+                                        String playerName;
-+                                        if (this.packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl impl) {
-+                                            playerName = impl.getOwner().name();
-+                                        } else {
-+                                            playerName = this.getLoggableAddress(net.minecraft.server.MinecraftServer.getServer().logIPs());
-+                                        }
++                                    String playerName;
++                                    if (this.packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl impl) {
++                                        playerName = impl.getOwner().name();
++                                    } else {
++                                        playerName = this.getLoggableAddress(net.minecraft.server.MinecraftServer.getServer().logIPs());
++                                    }
 +
-+                                        Connection.LOGGER.warn("{} kicked for packet spamming: {}", playerName, deobfedPacketName.substring(deobfedPacketName.lastIndexOf(".") + 1));
-+                                        this.killForPacketSpam();
-+                                        return;
-+                                }
++                                    Connection.LOGGER.warn("{} kicked for packet spamming: {}", playerName, deobfedPacketName.substring(deobfedPacketName.lastIndexOf(".") + 1));
++                                    this.killForPacketSpam();
++                                    return;
 +                            }
 +                        }
 +                    }
 +                }
-+                // Paper end - packet limiter
-                 if (packetListener.shouldHandleMessage(packet)) {
-                     try {
-                         genericsFtw(packet, packetListener);
-                     } catch (RunningOnDifferentThreadException var5) {
-+                    } catch (io.papermc.paper.util.ServerStopRejectedExecutionException ignored) { // Paper - do not prematurely disconnect players on stop
-                     } catch (RejectedExecutionException var6) {
-                         this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
-                     } catch (ClassCastException var7) {
++            }
++            // Paper end - packet limiter
+             if (packetListener.shouldHandleMessage(packet)) {
+                 try {
+                     genericsFtw(packet, packetListener);
+                 } catch (RunningOnDifferentThreadException var5) {
++                } catch (io.papermc.paper.util.ServerStopRejectedExecutionException ignored) { // Paper - do not prematurely disconnect players on stop
+                 } catch (RejectedExecutionException ignored) {
+                     this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
+                 } catch (ClassCastException exception) {
 @@ -344,10 +_,30 @@
          }
      }

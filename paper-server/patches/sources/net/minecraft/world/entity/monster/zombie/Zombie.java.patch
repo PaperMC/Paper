@@ -25,7 +25,7 @@
  
      public Zombie(final EntityType<? extends Zombie> type, final Level level) {
          super(type, level);
-+        this.breakDoorGoal = new BreakDoorGoal(this, com.google.common.base.Predicates.in(level.paperConfig().entities.behavior.doorBreakingDifficulty.getOrDefault(type, level.paperConfig().entities.behavior.doorBreakingDifficulty.get(EntityType.ZOMBIE)))); // Paper - Configurable door breaking difficulty
++        this.breakDoorGoal = new BreakDoorGoal(this, com.google.common.base.Predicates.in(level.paperConfig().entities.behavior.doorBreakingDifficulty.getOrDefault(type, level.paperConfig().entities.behavior.doorBreakingDifficulty.get(EntityTypes.ZOMBIE)))); // Paper - Configurable door breaking difficulty
      }
  
      public Zombie(final Level level) {
@@ -110,9 +110,9 @@
 +    public static @Nullable ZombieVillager convertVillagerToZombieVillager(final ServerLevel level, final Villager villager, final net.minecraft.core.BlockPos blockPosition, boolean silent, org.bukkit.event.entity.EntityTransformEvent.TransformReason transformReason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
 +        // CraftBukkit end
          ZombieVillager zombieVillager = villager.convertTo(
-             EntityType.ZOMBIE_VILLAGER,
+             EntityTypes.ZOMBIE_VILLAGER,
              ConversionParams.single(villager, true, true),
-@@ -268,12 +_,13 @@
+@@ -269,12 +_,13 @@
                  zombie.setGossips(villager.getGossips().copy());
                  zombie.setTradeOffers(villager.getOffers().copy());
                  zombie.setVillagerXp(villager.getVillagerXp());
@@ -131,26 +131,24 @@
      }
  
      public boolean isSunSensitive() {
-@@ -311,15 +_,15 @@
-                     if (SpawnPlacements.isSpawnPositionOk(type, level, spawnPos)
-                         && SpawnPlacements.checkSpawnRules(type, level, EntitySpawnReason.REINFORCEMENT, spawnPos, level.getRandom())) {
-                         reinforcement.setPos(xt, yt, zt);
--                        if (!level.hasNearbyAlivePlayer(xt, yt, zt, 7.0)
-+                        if (!level.hasNearbyAlivePlayerThatAffectsSpawning(xt, yt, zt, 7.0) // Paper - affects spawning api
-                             && level.isUnobstructed(reinforcement)
-                             && level.noCollision(reinforcement)
-                             && (reinforcement.canSpawnInLiquids() || !level.containsAnyLiquid(reinforcement.getBoundingBox()))) {
--                            reinforcement.setTarget(target);
-+                            reinforcement.setTarget(target, org.bukkit.event.entity.EntityTargetEvent.TargetReason.REINFORCEMENT_TARGET); // CraftBukkit
-                             reinforcement.finalizeSpawn(
-                                 level, level.getCurrentDifficultyAt(reinforcement.blockPosition()), EntitySpawnReason.REINFORCEMENT, null
-                             );
--                            level.addFreshEntityWithPassengers(reinforcement);
-+                            level.addFreshEntityWithPassengers(reinforcement, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
-                             AttributeInstance attribute = this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE);
-                             AttributeModifier modifier = attribute.getModifier(REINFORCEMENT_CALLER_CHARGE_ID);
-                             double existingAmount = modifier != null ? modifier.amount() : 0.0;
-@@ -344,7 +_,12 @@
+@@ -313,13 +_,13 @@
+                 if (SpawnPlacements.isSpawnPositionOk(type, level, spawnPos)
+                     && SpawnPlacements.checkSpawnRules(type, level, EntitySpawnReason.REINFORCEMENT, spawnPos, level.getRandom())) {
+                     reinforcement.setPos(xt, yt, zt);
+-                    if (!level.hasNearbyAlivePlayer(xt, yt, zt, 7.0)
++                    if (!level.hasNearbyAlivePlayerThatAffectsSpawning(xt, yt, zt, 7.0) // Paper - affects spawning api
+                         && level.isUnobstructed(reinforcement)
+                         && level.noCollision(reinforcement)
+                         && (reinforcement.canSpawnInLiquids() || !level.containsAnyLiquid(reinforcement.getBoundingBox()))) {
+-                        reinforcement.setTarget(target);
++                        reinforcement.setTarget(target, org.bukkit.event.entity.EntityTargetEvent.TargetReason.REINFORCEMENT_TARGET); // CraftBukkit
+                         reinforcement.finalizeSpawn(level, level.getCurrentDifficultyAt(reinforcement.blockPosition()), EntitySpawnReason.REINFORCEMENT, null);
+-                        level.addFreshEntityWithPassengers(reinforcement);
++                        level.addFreshEntityWithPassengers(reinforcement, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
+                         AttributeInstance attribute = this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE);
+                         AttributeModifier modifier = attribute.getModifier(REINFORCEMENT_CALLER_CHARGE_ID);
+                         double existingAmount = modifier != null ? modifier.amount() : 0.0;
+@@ -343,7 +_,12 @@
          if (result) {
              float difficulty = level.getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
              if (this.getMainHandItem().isEmpty() && this.isOnFire() && this.random.nextFloat() < difficulty * 0.3F) {
@@ -164,7 +162,7 @@
              }
          }
  
-@@ -420,13 +_,15 @@
+@@ -419,13 +_,15 @@
          } else {
              this.getEntityData().set(DATA_DROWNED_CONVERSION_ID, false);
          }
@@ -182,7 +180,7 @@
                  return perished;
              }
  
-@@ -461,7 +_,7 @@
+@@ -460,7 +_,7 @@
          groupData = super.finalizeSpawn(level, difficulty, spawnReason, groupData);
          float difficultyModifier = difficulty.getSpecialMultiplier();
          if (spawnReason != EntitySpawnReason.CONVERSION) {
@@ -191,7 +189,7 @@
          }
  
          if (groupData == null) {
-@@ -488,7 +_,7 @@
+@@ -487,7 +_,7 @@
                              chicken.finalizeSpawn(level, difficulty, EntitySpawnReason.JOCKEY, null);
                              chicken.setChickenJockey(true);
                              this.startRiding(chicken, false, false);
@@ -200,7 +198,7 @@
                          }
                      }
                  }
-@@ -514,7 +_,7 @@
+@@ -513,7 +_,7 @@
      protected void onOffspringSpawnedFromEgg(final Player spawner, final Mob offspring) {
          if (this.level() instanceof ServerLevel serverLevel) {
              float difficultyModifier = serverLevel.getCurrentDifficultyAt(offspring.blockPosition()).getSpecialMultiplier();

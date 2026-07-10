@@ -71,7 +71,7 @@ public class MaterialTags {
      */
     public static final MaterialSetTag BUCKETS = new MaterialSetTag(keyFor("buckets"))
         .endsWith("BUCKET")
-        .ensureSize("BUCKETS", 11).lock();
+        .ensureSize("BUCKETS", 12).lock();
 
     /**
      * Covers coal and charcoal.
@@ -96,18 +96,19 @@ public class MaterialTags {
 
     /**
      * Covers all colors of concrete.
+     *
+     * @deprecated in favour of {@link Tag#CONCRETE}
      */
-    public static final MaterialSetTag CONCRETES = new MaterialSetTag(keyFor("concretes"))
-        .endsWith("_CONCRETE")
-        .ensureSize("CONCRETES", 16).lock();
+    @Deprecated(since = "26.2")
+    public static final MaterialSetTag CONCRETES = replacedBy(Tag.CONCRETE, "concretes");
 
     /**
      * Covers all colors of concrete powder.
      *
-     * @deprecated in favour of {@link Tag#CONCRETE_POWDER}
+     * @deprecated in favour of {@link Tag#CONCRETE_POWDERS}
      */
     @Deprecated(since = "1.21.8")
-    public static final MaterialSetTag CONCRETE_POWDER = replacedBy(Tag.CONCRETE_POWDER);
+    public static final MaterialSetTag CONCRETE_POWDER = replacedBy(Tag.CONCRETE_POWDERS);
 
     /**
      * Covers the two types of cooked fish.
@@ -170,10 +171,11 @@ public class MaterialTags {
 
     /**
      * Covers all glazed terracotta blocks.
+     *
+     * @deprecated in favour of {@link Tag#GLAZED_TERRACOTTA}
      */
-    public static final MaterialSetTag GLAZED_TERRACOTTA = new MaterialSetTag(keyFor("glazed_terracotta"))
-        .endsWith("GLAZED_TERRACOTTA")
-        .ensureSize("GLAZED_TERRACOTTA", 16).lock();
+    @Deprecated(since = "26.2")
+    public static final MaterialSetTag GLAZED_TERRACOTTA = replacedBy(Tag.GLAZED_TERRACOTTA);
 
     /**
      * Covers the colors of stained terracotta.
@@ -341,7 +343,7 @@ public class MaterialTags {
      */
     public static final MaterialSetTag SPAWN_EGGS = new MaterialSetTag(keyFor("spawn_eggs"))
         .endsWith("_SPAWN_EGG")
-        .ensureSize("SPAWN_EGGS", 87).lock();
+        .ensureSize("SPAWN_EGGS", 88).lock();
 
     /**
      * Covers all colors of stained glass.
@@ -589,8 +591,8 @@ public class MaterialTags {
      */
     @SuppressWarnings("unchecked")
     public static final MaterialSetTag COLORABLE = new MaterialSetTag(keyFor("colorable"))
-        .add(Tag.WOOL, Tag.WOOL_CARPETS, Tag.SHULKER_BOXES, Tag.BEDS)
-        .add(STAINED_GLASS, STAINED_GLASS_PANES, CONCRETES)
+        .add(Tag.WOOL, Tag.WOOL_CARPETS, Tag.SHULKER_BOXES, Tag.BEDS, Tag.CONCRETE)
+        .add(STAINED_GLASS, STAINED_GLASS_PANES)
         .lock();
 
     /**

@@ -121,11 +121,11 @@ public interface Zombie extends Monster, Ageable {
     /**
      * Make zombie start drowning
      *
-     * @param drownedConversionTime Amount of time until zombie converts from drowning
+     * @param time Amount of time until zombie converts from drowning
      * @deprecated See {@link #setConversionTime(int)}
      */
     @Deprecated
-    void startDrowning(int drownedConversionTime);
+    void startDrowning(int time);
 
     /**
      * Stop a zombie from starting the drowning conversion process
@@ -156,7 +156,7 @@ public interface Zombie extends Monster, Ageable {
      * @return True if zombie will burn in sunlight
      * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#burnsInDaylight()} instead.
      */
-    @Deprecated(since = "26.1")
+    @Deprecated(since = "26.2")
     boolean shouldBurnInDay();
 
     /**
@@ -165,7 +165,7 @@ public interface Zombie extends Monster, Ageable {
      * @param shouldBurnInDay True to burn in sunlight
      * @deprecated All mobs can now be changed to burn in daylight, use {@link Mob#setBurnInDaylightOverride(TriState)} instead.
      */
-    @Deprecated(since = "26.1")
+    @Deprecated(since = "26.2")
     void setShouldBurnInDay(boolean shouldBurnInDay);
 
     /**

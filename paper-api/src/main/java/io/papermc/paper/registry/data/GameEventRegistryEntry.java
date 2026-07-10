@@ -16,7 +16,7 @@ public interface GameEventRegistryEntry {
     /**
      * Provides the range in which this game event will notify its listeners.
      *
-     * @return the range of blocks, represented as an int.
+     * @return the range of blocks, represented as an int
      * @see GameEvent#getRange()
      */
     @NonNegative int range();
@@ -36,8 +36,8 @@ public interface GameEventRegistryEntry {
         /**
          * Sets the range in which this game event should notify its listeners.
          *
-         * @param range the range of blocks.
-         * @return this builder instance.
+         * @param range the range of blocks
+         * @return this builder instance
          * @see GameEventRegistryEntry#range()
          * @see GameEvent#getRange()
          */

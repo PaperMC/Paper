@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.UUID;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.Main;
 import net.minecraft.server.MinecraftServer;
@@ -22,7 +21,6 @@ import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.PrimaryLevelData;
 import net.minecraft.world.level.storage.SavedDataStorage;
-import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -74,17 +72,9 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
         return new WorldLoadingInfoAndData(info, loadedWorldData);
     }
 
-    public static ResourceKey<Level> dimensionKey(final ResourceKey<LevelStem> stemKey) {
-        return ResourceKey.create(Registries.DIMENSION, stemKey.identifier());
-    }
-
-    public static ResourceKey<Level> dimensionKey(final NamespacedKey key) {
-        return ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(key.namespace(), key.value()));
-    }
-
     private WorldLoadingInfo getWorldInfo(final LevelStem stem) {
         final ResourceKey<LevelStem> stemKey = this.server.registryAccess().lookupOrThrow(Registries.LEVEL_STEM).getResourceKey(stem).orElseThrow();
-        final ResourceKey<Level> dimensionKey = dimensionKey(stemKey);
+        final ResourceKey<Level> dimensionKey = Registries.levelStemToLevel(stemKey);
         boolean enabled = true;
         final World.Environment environment;
         if (stemKey == LevelStem.NETHER) {

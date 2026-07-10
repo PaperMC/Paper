@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -192,11 +_,13 @@
+@@ -190,11 +_,13 @@
  import org.slf4j.Logger;
  
  public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements CommandSource, ServerInfo, ChunkIOErrorReporter {
@@ -15,8 +15,8 @@
      private static final int OVERLOADED_TICKS_THRESHOLD = 20;
      private static final long OVERLOADED_WARNING_INTERVAL_NANOS = 10L * TimeUtil.NANOSECONDS_PER_SECOND;
      private static final int OVERLOADED_TICKS_WARNING_INTERVAL = 100;
-@@ -219,7 +_,7 @@
-     public final PlayerDataStorage playerDataStorage;
+@@ -218,7 +_,7 @@
+     protected final PlayerDataStorage playerDataStorage;
      private final SavedDataStorage savedDataStorage;
      private final List<Runnable> tickables = Lists.newArrayList();
 -    private final GameRules gameRules;
@@ -24,7 +24,7 @@
      private MetricsRecorder metricsRecorder = InactiveMetricsRecorder.INSTANCE;
      private Consumer<ProfileResults> onMetricsRecordingStopped = results -> this.stopRecordingMetrics();
      private Consumer<Path> onMetricsRecordingFinished = ignored -> {};
-@@ -227,7 +_,7 @@
+@@ -226,7 +_,7 @@
      private MinecraftServer.@Nullable TimeProfiler debugCommandProfiler;
      private boolean debugCommandProfilerDelayStart;
      private ServerConnectionListener connection;
@@ -33,7 +33,7 @@
      private @Nullable ServerStatus status;
      private ServerStatus.@Nullable Favicon statusIcon;
      private final RandomSource random = RandomSource.create();
-@@ -238,13 +_,14 @@
+@@ -237,13 +_,14 @@
      private Map<ResourceKey<Level>, ServerLevel> levels = Maps.newLinkedHashMap();
      private PlayerList playerList;
      private volatile boolean running = true;
@@ -49,7 +49,7 @@
      private int playerIdleTimeout;
      private final long[] tickTimesNanos = new long[100];
      private long aggregatedTickTimesNanos = 0L;
-@@ -272,7 +_,7 @@
+@@ -271,7 +_,7 @@
      private @Nullable CommandStorage commandStorage;
      private final CustomBossEvents customBossEvents;
      private final RandomSequences randomSequences;
@@ -58,7 +58,7 @@
      private final ServerFunctionManager functionManager;
      private boolean enforceWhitelist;
      private boolean usingWhitelist;
-@@ -292,13 +_,14 @@
+@@ -291,13 +_,14 @@
      private final SuppressedExceptionCollector suppressedExceptions = new SuppressedExceptionCollector();
      private final DiscontinuousFrame tickFrame;
      private final PacketProcessor packetProcessor;
@@ -75,7 +75,7 @@
          if (Runtime.getRuntime().availableProcessors() > 4) {
              thread.setPriority(8);
          }
-@@ -309,7 +_,124 @@
+@@ -308,7 +_,124 @@
          return server;
      }
  
@@ -102,15 +102,15 @@
 +    private final Set<String> pluginsBlockingSleep = new java.util.HashSet<>(); // Paper - API to allow/disallow tick sleeping
 +    public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
 +    // Paper start - improve tick loop
-+    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes1s  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(1L));
-+    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes5s  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(5L));
-+    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes10s = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(10L));
-+    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes15s = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(15L));
-+    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes1m  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.MINUTES.toNanos(1L));
-+    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes5m  = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.MINUTES.toNanos(5L));
-+    public final ca.spottedleaf.moonrise.common.time.TickData tickTimes15m = new ca.spottedleaf.moonrise.common.time.TickData(java.util.concurrent.TimeUnit.MINUTES.toNanos(15L));
++    public final ca.spottedleaf.common.time.TickData tickTimes1s  = new ca.spottedleaf.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(1L));
++    public final ca.spottedleaf.common.time.TickData tickTimes5s  = new ca.spottedleaf.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(5L));
++    public final ca.spottedleaf.common.time.TickData tickTimes10s = new ca.spottedleaf.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(10L));
++    public final ca.spottedleaf.common.time.TickData tickTimes15s = new ca.spottedleaf.common.time.TickData(java.util.concurrent.TimeUnit.SECONDS.toNanos(15L));
++    public final ca.spottedleaf.common.time.TickData tickTimes1m  = new ca.spottedleaf.common.time.TickData(java.util.concurrent.TimeUnit.MINUTES.toNanos(1L));
++    public final ca.spottedleaf.common.time.TickData tickTimes5m  = new ca.spottedleaf.common.time.TickData(java.util.concurrent.TimeUnit.MINUTES.toNanos(5L));
++    public final ca.spottedleaf.common.time.TickData tickTimes15m = new ca.spottedleaf.common.time.TickData(java.util.concurrent.TimeUnit.MINUTES.toNanos(15L));
 +
-+    private final ca.spottedleaf.moonrise.common.time.Schedule tickSchedule = new ca.spottedleaf.moonrise.common.time.Schedule(0L);
++    private final ca.spottedleaf.common.time.Schedule tickSchedule = new ca.spottedleaf.common.time.Schedule(0L);
 +
 +    private long lastTickStart;
 +    private long currentTickStart;
@@ -132,10 +132,10 @@
 +     */
 +    private final java.util.concurrent.atomic.AtomicInteger tickTaskTickCount = new java.util.concurrent.atomic.AtomicInteger();
 +    private final Object statsLock = new Object();
-+    private @Nullable double[] tps;
-+    private ca.spottedleaf.moonrise.common.time.TickData.@Nullable MSPTData msptData5s;
++    private double @Nullable [] tps;
++    private ca.spottedleaf.common.time.TickData.@Nullable MSPTData msptData5s;
 +
-+    private void addTickTime(final ca.spottedleaf.moonrise.common.time.TickTime time) {
++    private void addTickTime(final ca.spottedleaf.common.time.TickTime time) {
 +        synchronized (this.statsLock) {
 +            this.tickTimes1s.addDataFrom(time);
 +            this.tickTimes5s.addDataFrom(time);
@@ -153,7 +153,7 @@
 +        this.tps = null;
 +    }
 +
-+    private static double getTPS(final ca.spottedleaf.moonrise.common.time.TickData tickData, final long tickInterval) {
++    private static double getTPS(final ca.spottedleaf.common.time.TickData tickData, final long tickInterval) {
 +        final Double avg = tickData.getTPSAverage(null, tickInterval);
 +        if (avg == null) {
 +            return 1.0E9 / (double)tickInterval;
@@ -164,7 +164,7 @@
 +
 +    public double[] getTPS() {
 +        synchronized (this.statsLock) {
-+            double[] tps = this.tps;
++            double @Nullable [] tps = this.tps;
 +            if (tps == null) {
 +                tps = this.computeTPS();
 +                this.tps = tps;
@@ -173,7 +173,7 @@
 +        }
 +    }
 +
-+    public ca.spottedleaf.moonrise.common.time.TickData.@Nullable MSPTData getMSPTData5s() {
++    public ca.spottedleaf.common.time.TickData.@Nullable MSPTData getMSPTData5s() {
 +        synchronized (this.statsLock) {
 +            if (this.msptData5s == null) {
 +                this.msptData5s = this.tickTimes5s.getMSPTData(null, this.tickRateManager().nanosecondsPerTick());
@@ -200,8 +200,8 @@
          final Thread serverThread,
          final LevelStorageSource.LevelStorageAccess storageSource,
          final PackRepository packRepository,
-@@ -322,27 +_,27 @@
-         final boolean propagatesCrashes
+@@ -322,28 +_,28 @@
+         final NotificationManager notificationManager
      ) {
          super("Server", propagatesCrashes);
 +        SERVER = this; // Paper - better singleton
@@ -209,69 +209,43 @@
 -        if (!this.registries.compositeAccess().lookupOrThrow(Registries.LEVEL_STEM).containsKey(LevelStem.OVERWORLD)) {
 +        if (false && !this.registries.compositeAccess().lookupOrThrow(Registries.LEVEL_STEM).containsKey(LevelStem.OVERWORLD)) { // CraftBukkit - initialised later
              throw new IllegalStateException("Missing Overworld dimension data");
-         } else {
--            this.savedDataStorage = new SavedDataStorage(storageSource.getLevelPath(LevelResource.DATA), fixerUpper, this.registries.compositeAccess());
-+            this.savedDataStorage = new SavedDataStorage(storageSource.getLevelPath(LevelResource.ROOT).resolve(LevelResource.DATA.id()), fixerUpper, this.registries.compositeAccess());
-             this.worldData = worldStem.worldDataAndGenSettings().data();
-             this.worldGenSettings = worldStem.worldDataAndGenSettings().genSettings();
--            this.savedDataStorage.set(WorldGenSettings.TYPE, this.worldGenSettings);
-+            // this.savedDataStorage.set(WorldGenSettings.TYPE, this.worldGenSettings); // Paper - save in level storage
-             this.proxy = proxy;
-             this.packRepository = packRepository;
-             this.resources = new MinecraftServer.ReloadableResources(worldStem.resourceManager(), worldStem.dataPackResources());
-             this.services = services;
--            this.connection = new ServerConnectionListener(this);
-+            // this.connection = new ServerConnectionListener(this); // Spigot
-             this.tickRateManager = new ServerTickRateManager(this);
--            this.levelLoadListener = levelLoadListener;
-+            // Paper - per-level load listener - move LevelLoadListener to ServerLevel
-             this.storageSource = storageSource;
-             this.playerDataStorage = storageSource.createPlayerStorage();
-             this.randomSequences = this.savedDataStorage.computeIfAbsent(RandomSequences.TYPE);
--            this.weatherData = this.getDataStorage().computeIfAbsent(WeatherData.TYPE);
--            this.gameRules = new GameRules(this.worldData.enabledFeatures(), this.savedDataStorage.computeIfAbsent(GameRuleMap.TYPE));
--            gameRules.ifPresent(g -> this.gameRules.setAll(g, null));
-+            // Paper - per-level WeatherData
-+            // Paper - per-level GameRules
-             this.fixerUpper = fixerUpper;
-             this.functionManager = new ServerFunctionManager(this, this.resources.managers.getFunctionLibrary());
-             HolderGetter<Block> blockLookup = this.registries
-@@ -362,8 +_,40 @@
-             this.clockManager = this.getDataStorage().computeIfAbsent(ServerClockManager.TYPE);
-             this.clockManager.init(this);
-             this.customBossEvents = this.savedDataStorage.computeIfAbsent(CustomBossEvents.TYPE);
--            this.scheduledEvents = this.savedDataStorage.computeIfAbsent(TimerQueue.TYPE);
--        }
-+            // Paper - per-level scheduledEvents
-+        }
+         }
+ 
+-        this.savedDataStorage = new SavedDataStorage(storageSource.getLevelPath(LevelResource.DATA), fixerUpper, this.registries.compositeAccess());
++        this.savedDataStorage = new SavedDataStorage(storageSource.getLevelPath(LevelResource.ROOT).resolve(LevelResource.DATA.id()), fixerUpper, this.registries.compositeAccess()); // Paper - save in level storage
+         this.worldData = worldStem.worldDataAndGenSettings().data();
+         this.worldGenSettings = worldStem.worldDataAndGenSettings().genSettings();
+-        this.savedDataStorage.set(WorldGenSettings.TYPE, this.worldGenSettings);
++        // this.savedDataStorage.set(WorldGenSettings.TYPE, this.worldGenSettings); // Paper - save in level storage
+         this.proxy = proxy;
+         this.packRepository = packRepository;
+         this.resources = new MinecraftServer.ReloadableResources(worldStem.resourceManager(), worldStem.dataPackResources());
+         this.services = services;
+-        this.connection = new ServerConnectionListener(this);
++        // this.connection = new ServerConnectionListener(this); // Spigot
+         this.tickRateManager = new ServerTickRateManager(this);
+-        this.levelLoadListener = levelLoadListener;
++        // Paper - per-level load listener - move LevelLoadListener to ServerLevel
+         this.storageSource = storageSource;
+         this.playerDataStorage = storageSource.createPlayerStorage();
+         this.randomSequences = this.savedDataStorage.computeIfAbsent(RandomSequences.TYPE);
+-        this.weatherData = this.getDataStorage().computeIfAbsent(WeatherData.TYPE);
+-        this.gameRules = new GameRules(this.worldData.enabledFeatures(), this.savedDataStorage.computeIfAbsent(GameRuleMap.TYPE));
+-        gameRules.ifPresent(g -> this.gameRules.setAll(g, null));
++        // Paper - per-level WeatherData
++        // Paper - per-level GameRules
+         this.fixerUpper = fixerUpper;
+         this.functionManager = new ServerFunctionManager(this, this.resources.managers.getFunctionLibrary());
+         HolderGetter<Block> blockLookup = this.registries.compositeAccess().lookupOrThrow(Registries.BLOCK).filterFeatures(this.worldData.enabledFeatures());
+@@ -360,7 +_,14 @@
+         this.clockManager = this.getDataStorage().computeIfAbsent(ServerClockManager.TYPE);
+         this.clockManager.init(this);
+         this.customBossEvents = this.savedDataStorage.computeIfAbsent(CustomBossEvents.TYPE);
+-        this.scheduledEvents = this.savedDataStorage.computeIfAbsent(TimerQueue.TYPE);
++        // Paper - per-level scheduledEvents
 +        // CraftBukkit start
 +        this.options = options;
 +        this.worldLoaderContext = worldLoaderContext;
-+        // Paper start - Handled by TerminalConsoleAppender
-+        // Try to see if we're actually running in a terminal, disable jline if not
-+        /*
-+        if (System.console() == null && System.getProperty("jline.terminal") == null) {
-+            System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
-+            Main.useJline = false;
-+        }
-+
-+        try {
-+            this.reader = new ConsoleReader(System.in, System.out);
-+            this.reader.setExpandEvents(false); // Avoid parsing exceptions for uncommonly used event designators
-+        } catch (Throwable e) {
-+            try {
-+                // Try again with jline disabled for Windows users without C++ 2008 Redistributable
-+                System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
-+                System.setProperty("user.language", "en");
-+                Main.useJline = false;
-+                this.reader = new ConsoleReader(System.in, System.out);
-+                this.reader.setExpandEvents(false);
-+            } catch (IOException ex) {
-+                MinecraftServer.LOGGER.warn((String) null, ex);
-+            }
-+        }
-+        */
-+        // Paper end
 +        io.papermc.paper.log.LogManagerShutdownThread.unhook(); // Paper - Improved watchdog support
 +        Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
 +        // CraftBukkit end
@@ -279,7 +253,7 @@
      }
  
      protected abstract boolean initServer() throws IOException;
-@@ -400,15 +_,15 @@
+@@ -393,15 +_,15 @@
          };
      }
  
@@ -300,7 +274,7 @@
          if (profiledDuration != null) {
              profiledDuration.finish(true);
          }
-@@ -422,33 +_,150 @@
+@@ -415,33 +_,150 @@
          }
      }
  
@@ -463,9 +437,9 @@
 -                    this.setupDebugLevel(this.worldData);
 +                    this.setupDebugLevel(this.worldData, overworld); // Paper - per-level GameRules
                  }
-             } catch (Throwable var20) {
-                 CrashReport report = CrashReport.forThrowable(var20, "Exception initializing level");
-@@ -465,25 +_,7 @@
+             } catch (Throwable t) {
+                 CrashReport report = CrashReport.forThrowable(t, "Exception initializing level");
+@@ -458,25 +_,7 @@
          }
  
          GlobalPos focusPos = this.selectLevelLoadFocusPos();
@@ -492,7 +466,7 @@
      }
  
      private static void setInitialSpawn(
-@@ -499,6 +_,28 @@
+@@ -492,6 +_,28 @@
              levelData.setSpawn(LevelData.RespawnData.of(level.dimension(), BlockPos.ZERO.above(80), 0.0F, 0.0F));
          } else {
              ServerChunkCache chunkSource = level.getChunkSource();
@@ -506,7 +480,7 @@
 +                        throw new IllegalStateException("Cannot set spawn point for " + levelData.getLevelName() + " to be in another world (" + spawn.getWorld().key().asString() + ")");
 +                    } else {
 +                        levelData.setSpawn(
-+                            net.minecraft.world.level.storage.LevelData.RespawnData.of(
++                            LevelData.RespawnData.of(
 +                                level.dimension(),
 +                                org.bukkit.craftbukkit.util.CraftLocation.toBlockPos(spawn),
 +                                spawn.getYaw(),
@@ -521,7 +495,7 @@
              ChunkPos spawnChunk = ChunkPos.containing(chunkSource.randomState().sampler().findSpawnPosition());
              levelLoadListener.start(LevelLoadListener.Stage.PREPARE_GLOBAL_SPAWN, 0);
              levelLoadListener.updateFocus(level.dimension(), spawnChunk);
-@@ -544,19 +_,22 @@
+@@ -537,19 +_,22 @@
          }
      }
  
@@ -548,7 +522,7 @@
              chunkLoadCounter.track(level, () -> {
                  TicketStorage savedTickets = level.getDataStorage().get(TicketStorage.TYPE);
                  if (savedTickets != null) {
-@@ -565,17 +_,19 @@
+@@ -558,17 +_,19 @@
              });
          }
  
@@ -574,7 +548,7 @@
      }
  
      protected GlobalPos selectLevelLoadFocusPos() {
-@@ -649,19 +_,49 @@
+@@ -639,19 +_,50 @@
          this.stopServer();
      }
  
@@ -621,19 +595,20 @@
              this.playerList.saveAll();
 -            this.playerList.removeAll();
 +            this.playerList.removeAll(this.isRestarting); // Paper
++            this.getConnection().handleAllDisconnections(); // Paper
 +            try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
          }
  
          LOGGER.info("Saving worlds");
-@@ -704,6 +_,20 @@
-         } catch (IOException var4) {
-             LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), var4);
+@@ -694,6 +_,20 @@
+         } catch (IOException e) {
+             LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), e);
          }
 +        // Spigot start
 +        io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR.shutdown(); // Paper
 +        try {
 +            io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // Paper
-+        } catch (java.lang.InterruptedException ignored) {} // Paper
++        } catch (InterruptedException _) {} // Paper
 +        if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
 +            LOGGER.info("Saving usercache.json");
 +            this.services().nameToIdCache().save(false); // Paper - Perf: Async GameProfileCache saving
@@ -646,14 +621,14 @@
      }
  
      public String getLocalIp() {
-@@ -719,6 +_,14 @@
+@@ -709,6 +_,14 @@
      }
  
      public void halt(final boolean wait) {
 +        // Paper start - allow passing of the intent to restart
-+        this.safeShutdown(wait, false);
++        this.halt(wait, false);
 +    }
-+    public void safeShutdown(final boolean wait, final boolean isRestarting) {
++    public void halt(final boolean wait, final boolean isRestarting) {
 +        this.isRestarting = isRestarting;
 +        this.hasLoggedStop = true; // Paper - Debugging
 +        if (this.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
@@ -661,7 +636,7 @@
          this.running = false;
          if (wait) {
              try {
-@@ -729,6 +_,122 @@
+@@ -719,6 +_,122 @@
          }
      }
  
@@ -674,7 +649,7 @@
 +            interval = 0L;
 +        }
 +        this.tickSchedule.setNextPeriod(this.nextTickTimeNanos, interval);
-+        this.lastTickStart = ca.spottedleaf.concurrentutil.util.TimeUtil.DEADLINE_NOT_SET;
++        this.lastTickStart = ca.spottedleaf.common.util.TimeUtil.DEADLINE_NOT_SET;
 +        this.scheduledTickStart = this.tickSchedule.getDeadline(interval);
 +    }
 +
@@ -687,7 +662,7 @@
 +
 +        final long now = Util.getNanos();
 +
-+        final ca.spottedleaf.moonrise.common.time.TickTime time = new ca.spottedleaf.moonrise.common.time.TickTime(
++        final ca.spottedleaf.common.time.TickTime time = new ca.spottedleaf.common.time.TickTime(
 +            prevStart,
 +            scheduledStart,
 +            currStart,
@@ -784,7 +759,7 @@
      protected void runServer() {
          try {
              if (!this.initServer()) {
-@@ -736,30 +_,73 @@
+@@ -726,30 +_,73 @@
              }
  
              this.nextTickTimeNanos = Util.getNanos();
@@ -872,7 +847,7 @@
  
                  boolean sprinting = thisTickNanos == 0L;
                  if (this.debugCommandProfilerDelayStart) {
-@@ -767,7 +_,7 @@
+@@ -757,7 +_,7 @@
                      this.debugCommandProfiler = new MinecraftServer.TimeProfiler(Util.getNanos(), this.tickCount);
                  }
  
@@ -881,7 +856,7 @@
  
                  try (Profiler.Scope ignored = Profiler.use(this.createProfiler())) {
                      this.processPacketsAndTick(sprinting);
-@@ -776,7 +_,7 @@
+@@ -766,7 +_,7 @@
                      this.mayHaveDelayedTasks = true;
                      this.delayedTasksMaxNextTickTimeNanos = Math.max(Util.getNanos() + thisTickNanos, this.nextTickTimeNanos);
                      this.startMeasuringTaskExecutionTime();
@@ -890,16 +865,16 @@
                      this.finishMeasuringTaskExecutionTime();
                      if (sprinting) {
                          this.tickRateManager.endTickWork();
-@@ -810,7 +_,7 @@
-             } catch (Throwable var64) {
-                 LOGGER.error("Exception stopping the server", var64);
+@@ -800,7 +_,7 @@
+             } catch (Throwable t) {
+                 LOGGER.error("Exception stopping the server", t);
              } finally {
 -                this.onServerExit();
 +                //this.onServerExit(); // Paper - Improved watchdog support; moved into stop
              }
          }
      }
-@@ -862,7 +_,14 @@
+@@ -852,7 +_,14 @@
      }
  
      private boolean haveTime() {
@@ -915,7 +890,7 @@
      }
  
      public NotificationManager notificationManager() {
-@@ -870,11 +_,11 @@
+@@ -860,11 +_,11 @@
      }
  
      protected void waitUntilNextTick() {
@@ -929,7 +904,7 @@
          } finally {
              this.waitingForNextTick = false;
          }
-@@ -892,18 +_,38 @@
+@@ -882,18 +_,38 @@
      }
  
      @Override
@@ -972,26 +947,26 @@
          this.mayHaveDelayedTasks = mayHaveMoreTasks;
          return mayHaveMoreTasks;
      }
-@@ -912,15 +_,16 @@
-         if (super.pollTask()) {
+@@ -903,15 +_,16 @@
              return true;
-         } else {
-+            boolean ret = false; // Paper - force execution of all worlds, do not just bias the first
-             if (this.tickRateManager.isSprinting() || this.shouldRunAllTasks() || this.haveTime()) {
-                 for (ServerLevel level : this.getAllLevels()) {
-                     if (level.getChunkSource().pollTask()) {
--                        return true;
-+                        ret = true; // Paper - force execution of all worlds, do not just bias the first
-                     }
+         }
+ 
++        boolean ret = false; // Paper - force execution of all worlds, do not just bias the first
+         if (this.tickRateManager.isSprinting() || this.shouldRunAllTasks() || this.haveTime()) {
+             for (ServerLevel level : this.getAllLevels()) {
+                 if (level.getChunkSource().pollTask()) {
+-                    return true;
++                    ret = true; // Paper - force execution of all worlds, do not just bias the first
                  }
              }
- 
--            return false;
-+            return ret; // Paper - force execution of all worlds, do not just bias the first
          }
+ 
+-        return false;
++        return ret; // Paper - force execution of all worlds, do not just bias the first
      }
  
-@@ -973,26 +_,44 @@
+     @Override
+@@ -963,26 +_,44 @@
      }
  
      protected void tickServer(final BooleanSupplier haveTime) {
@@ -1037,7 +1012,7 @@
          this.tickCount++;
          this.tickRateManager.tick();
          this.tickChildren(haveTime);
-@@ -1002,11 +_,18 @@
+@@ -992,11 +_,18 @@
          }
  
          this.ticksUntilAutosave--;
@@ -1057,7 +1032,7 @@
          profiler.push("tallying");
          long tickTime = Util.getNanos() - nano;
          int tickIndex = this.tickCount % 100;
-@@ -1022,16 +_,16 @@
+@@ -1012,16 +_,16 @@
          ProfilerFiller profiler = Profiler.get();
          profiler.push("tick");
          this.tickFrame.start();
@@ -1078,7 +1053,7 @@
          LOGGER.debug("Autosave started");
          ProfilerFiller profiler = Profiler.get();
          profiler.push("save");
-@@ -1073,7 +_,7 @@
+@@ -1063,7 +_,7 @@
      private ServerStatus buildServerStatus() {
          ServerStatus.Players players = this.buildPlayerStatus();
          return new ServerStatus(
@@ -1087,24 +1062,24 @@
              Optional.of(players),
              Optional.of(ServerStatus.Version.current()),
              Optional.ofNullable(this.statusIcon),
-@@ -1087,7 +_,7 @@
-         if (this.hidesOnlinePlayers()) {
+@@ -1078,7 +_,7 @@
              return new ServerStatus.Players(maxPlayers, players.size(), List.of());
-         } else {
--            int sampleSize = Math.min(players.size(), 12);
-+            int sampleSize = Math.min(players.size(), org.spigotmc.SpigotConfig.playerSample); // Paper - PaperServerListPingEvent
-             ObjectArrayList<NameAndId> sample = new ObjectArrayList<>(sampleSize);
-             int offset = Mth.nextInt(this.random, 0, players.size() - sampleSize);
+         }
  
-@@ -1104,12 +_,46 @@
+-        int sampleSize = Math.min(players.size(), 12);
++        int sampleSize = Math.min(players.size(), org.spigotmc.SpigotConfig.playerSample); // Paper - PaperServerListPingEvent
+         ObjectArrayList<NameAndId> sample = new ObjectArrayList<>(sampleSize);
+         int offset = Mth.nextInt(this.random, 0, players.size() - sampleSize);
+ 
+@@ -1094,12 +_,46 @@
      protected void tickChildren(final BooleanSupplier haveTime) {
          ProfilerFiller profiler = Profiler.get();
          this.getPlayerList().getPlayers().forEach(playerx -> playerx.connection.suspendFlushing());
 +        this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
 +        // Paper start - Folia scheduler API
 +        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) org.bukkit.Bukkit.getGlobalRegionScheduler()).tick();
-+        for (ServerPlayer player : this.playerList.players) {
-+            if (!this.playerList.players.contains(player)) {
++        for (ServerPlayer player : this.playerList.getPlayers()) {
++            if (!this.playerList.getPlayers().contains(player)) {
 +                continue;
 +            }
 +            final org.bukkit.craftbukkit.entity.CraftEntity bukkit = player.getBukkitEntityRaw();
@@ -1144,7 +1119,7 @@
              profiler.pop();
          }
  
-@@ -1119,10 +_,20 @@
+@@ -1109,10 +_,20 @@
              profiler.pop();
          }
  
@@ -1165,7 +1140,7 @@
              profiler.push(() -> level + " " + level.dimension().identifier());
              profiler.push("tick");
  
-@@ -1136,7 +_,9 @@
+@@ -1126,7 +_,9 @@
  
              profiler.pop();
              profiler.pop();
@@ -1175,7 +1150,7 @@
  
          profiler.popPush("connection");
          this.tickConnection();
-@@ -1166,9 +_,12 @@
+@@ -1156,9 +_,12 @@
          this.serverActivityMonitor.tick();
      }
  
@@ -1190,7 +1165,7 @@
          this.effectiveRespawnData = respawnLevel.getWorldBorderAdjustedRespawnData(respawnData);
      }
  
-@@ -1179,7 +_,11 @@
+@@ -1169,7 +_,11 @@
      public void forceGameTimeSynchronization() {
          ProfilerFiller profiler = Profiler.get();
          profiler.push("timeSync");
@@ -1203,7 +1178,7 @@
          profiler.pop();
      }
  
-@@ -1207,6 +_,22 @@
+@@ -1197,6 +_,22 @@
          return this.levels.get(dimension);
      }
  
@@ -1226,7 +1201,7 @@
      public Set<ResourceKey<Level>> levelKeys() {
          return this.levels.keySet();
      }
-@@ -1230,7 +_,7 @@
+@@ -1220,7 +_,7 @@
      }
  
      public String getServerModName() {
@@ -1235,7 +1210,7 @@
      }
  
      public ServerClockManager clockManager() {
-@@ -1269,7 +_,7 @@
+@@ -1259,7 +_,7 @@
  
      @Override
      public void sendSystemMessage(final Component message) {
@@ -1244,7 +1219,7 @@
      }
  
      public KeyPair getKeyPair() {
-@@ -1306,11 +_,17 @@
+@@ -1296,11 +_,17 @@
          }
      }
  
@@ -1267,7 +1242,7 @@
          }
      }
  
-@@ -1326,6 +_,11 @@
+@@ -1316,6 +_,11 @@
  
      public void setDifficultyLocked(final boolean locked) {
          this.worldData.setDifficultyLocked(locked);
@@ -1279,7 +1254,7 @@
          this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
      }
  
-@@ -1382,10 +_,20 @@
+@@ -1376,10 +_,20 @@
  
      @Override
      public String getMotd() {
@@ -1301,23 +1276,22 @@
          this.motd = motd;
      }
  
-@@ -1414,17 +_,20 @@
-             int count = 0;
+@@ -1409,16 +_,20 @@
+         int count = 0;
  
-             for (ServerPlayer player : this.getPlayerList().getPlayers()) {
--                if (player.setGameMode(gameType)) {
--                    count++;
-+                // Paper start - Expand PlayerGameModeChangeEvent
-+                org.bukkit.event.player.PlayerGameModeChangeEvent event = player.setGameMode(gameType, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, null);
-+                if (event == null || event.isCancelled()) {
-+                    continue;
-                 }
-+                count++;
-+                // Paper end - Expand PlayerGameModeChangeEvent
+         for (ServerPlayer player : this.getPlayerList().getPlayers()) {
+-            if (player.setGameMode(gameType)) {
+-                count++;
++            // Paper start - Expand PlayerGameModeChangeEvent
++            org.bukkit.event.player.PlayerGameModeChangeEvent event = player.setGameMode(gameType, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, null);
++            if (event == null || event.isCancelled()) {
++                continue;
              }
--
-             return count;
++            count++;
++            // Paper end - Expand PlayerGameModeChangeEvent
          }
+ 
+         return count;
      }
  
      public ServerConnectionListener getConnection() {
@@ -1326,16 +1300,16 @@
      }
  
      public boolean isReady() {
-@@ -1487,7 +_,7 @@
+@@ -1485,7 +_,7 @@
      @Override
      public void executeIfPossible(final Runnable command) {
          if (this.isStopped()) {
 -            throw new RejectedExecutionException("Server already shutting down");
 +            throw new io.papermc.paper.util.ServerStopRejectedExecutionException("Server already shutting down"); // Paper - do not prematurely disconnect players on stop
-         } else {
-             super.executeIfPossible(command);
          }
-@@ -1522,7 +_,16 @@
+ 
+         super.executeIfPossible(command);
+@@ -1520,7 +_,16 @@
          return this.functionManager;
      }
  
@@ -1352,7 +1326,7 @@
          CompletableFuture<Void> result = CompletableFuture.<ImmutableList>supplyAsync(
                  () -> packsToEnable.stream()
                      .map(this.packRepository::getPack)
-@@ -1534,7 +_,7 @@
+@@ -1532,7 +_,7 @@
              .thenCompose(
                  packsToLoad -> {
                      CloseableResourceManager resources = new MultiPackResourceManager(PackType.SERVER_DATA, packsToLoad);
@@ -1361,11 +1335,11 @@
                      return ReloadableServerResources.loadResources(
                              resources,
                              this.registries,
-@@ -1554,18 +_,37 @@
+@@ -1552,18 +_,37 @@
                  }
              )
              .thenAcceptAsync(newResources -> {
-+                io.papermc.paper.command.brigadier.PaperBrigadier.moveBukkitCommands(this.resources.managers().getCommands(), newResources.managers().commands); // Paper
++                io.papermc.paper.command.brigadier.PaperBrigadier.moveBukkitCommands(this.resources.managers().getCommands(), newResources.managers().getCommands()); // Paper
                  this.resources.close();
                  this.resources = newResources;
 -                this.packRepository.setSelected(packsToEnable);
@@ -1401,7 +1375,7 @@
              }, this);
          if (this.isSameThread()) {
              this.managedBlock(result::isDone);
-@@ -1580,7 +_,7 @@
+@@ -1578,7 +_,7 @@
          DataPackConfig dataPackConfig = initialDataConfig.dataPacks();
          FeatureFlagSet forcedFeatures = initMode ? FeatureFlagSet.of() : initialDataConfig.enabledFeatures();
          FeatureFlagSet allowedFeatures = initMode ? FeatureFlags.REGISTRY.allFlags() : initialDataConfig.enabledFeatures();
@@ -1409,8 +1383,8 @@
 +        packRepository.reload(true); // Paper - will load resource packs
          if (safeMode) {
              return configureRepositoryWithSelection(packRepository, List.of("vanilla"), forcedFeatures, false);
-         } else {
-@@ -1635,7 +_,7 @@
+         }
+@@ -1633,7 +_,7 @@
      private static WorldDataConfiguration configureRepositoryWithSelection(
          final PackRepository packRepository, final Collection<String> selected, final FeatureFlagSet forcedFeatures, final boolean disableInactive
      ) {
@@ -1419,7 +1393,7 @@
          enableForcedFeaturePacks(packRepository, forcedFeatures);
          DataPackConfig packConfig = getSelectedPacks(packRepository, disableInactive);
          FeatureFlagSet packRequestedFeatures = packRepository.getRequestedFeatureFlags().join(forcedFeatures);
-@@ -1667,7 +_,7 @@
+@@ -1665,7 +_,7 @@
                  }
              }
  
@@ -1428,7 +1402,7 @@
          }
      }
  
-@@ -1684,8 +_,8 @@
+@@ -1682,8 +_,8 @@
              UserWhiteList whiteList = playerList.getWhiteList();
  
              for (ServerPlayer player : Lists.newArrayList(playerList.getPlayers())) {
@@ -1439,7 +1413,7 @@
                  }
              }
          }
-@@ -1715,12 +_,12 @@
+@@ -1713,12 +_,12 @@
      }
  
      public ServerLevel findRespawnDimension() {
@@ -1454,7 +1428,7 @@
      public void setRespawnData(final LevelData.RespawnData respawnData) {
          ServerLevelData levelData = this.worldData.overworldData();
          LevelData.RespawnData oldRespawnData = levelData.getRespawnData();
-@@ -1788,17 +_,20 @@
+@@ -1786,17 +_,20 @@
          return this.randomSequences;
      }
  
@@ -1480,16 +1454,16 @@
      }
  
      public boolean isEnforceWhitelist() {
-@@ -1889,7 +_,7 @@
+@@ -1887,7 +_,7 @@
      private void dumpGameRules(final Path path) throws IOException {
          try (Writer output = Files.newBufferedWriter(path)) {
              final List<String> entries = Lists.newArrayList();
 -            final GameRules gameRules = this.getGameRules();
 +            final GameRules gameRules = this.overworld().getGameRules(); // Paper - per-level GameRules
              gameRules.visitGameRuleTypes(new GameRuleTypeVisitor() {
-                 {
-                     Objects.requireNonNull(MinecraftServer.this);
-@@ -1951,6 +_,17 @@
+                 @Override
+                 public <T> void visit(final GameRule<T> gameRule) {
+@@ -1944,6 +_,17 @@
          }
      }
  
@@ -1507,7 +1481,7 @@
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(
-@@ -2071,16 +_,22 @@
+@@ -2064,16 +_,22 @@
      }
  
      public void logChatMessage(final Component message, final ChatType.Bound chatType, final @Nullable String tag) {
@@ -1534,7 +1508,7 @@
      }
  
      public boolean logIPs() {
-@@ -2091,8 +_,9 @@
+@@ -2084,8 +_,9 @@
          LOGGER.debug("Received custom click action {} with payload {}", id, payload.orElse(null));
      }
  
@@ -1545,7 +1519,7 @@
      }
  
      public boolean setAutoSave(final boolean enable) {
-@@ -2118,12 +_,14 @@
+@@ -2111,12 +_,14 @@
          return false;
      }
  
@@ -1563,7 +1537,7 @@
                  player.connection.send(new ClientboundEntityEventPacket(player, event));
              }
          } else if (rule == GameRules.LIMITED_CRAFTING || rule == GameRules.IMMEDIATE_RESPAWN) {
-@@ -2131,20 +_,21 @@
+@@ -2124,20 +_,21 @@
                  ? ClientboundGameEventPacket.LIMITED_CRAFTING
                  : ClientboundGameEventPacket.IMMEDIATE_RESPAWN;
              ClientboundGameEventPacket packet = new ClientboundGameEventPacket(eventType, (Boolean)value ? 1.0F : 0.0F);
@@ -1590,7 +1564,7 @@
          }
      }
  
-@@ -2157,12 +_,14 @@
+@@ -2150,12 +_,14 @@
          return this.savedDataStorage;
      }
  
@@ -1607,7 +1581,7 @@
      }
  
      public boolean acceptsTransfers() {
-@@ -2312,4 +_,53 @@
+@@ -2322,4 +_,53 @@
              };
          }
      }

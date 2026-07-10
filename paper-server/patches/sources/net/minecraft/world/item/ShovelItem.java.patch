@@ -1,33 +1,33 @@
 --- a/net/minecraft/world/item/ShovelItem.java
 +++ b/net/minecraft/world/item/ShovelItem.java
-@@ -45,20 +_,29 @@
-             Player player = context.getPlayer();
-             BlockState newState = FLATTENABLES.get(blockState.getBlock());
-             BlockState updatedState = null;
-+            Runnable afterAction = null; // Paper
-             if (newState != null && level.getBlockState(pos.above()).isAir()) {
--                level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
-+                afterAction = () -> level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F); // Paper
-                 updatedState = newState;
-             } else if (blockState.getBlock() instanceof CampfireBlock && blockState.getValue(CampfireBlock.LIT)) {
-+                afterAction = () -> { // Paper
-                 if (!level.isClientSide()) {
-                     level.levelEvent(null, LevelEvent.SOUND_EXTINGUISH_FIRE, pos, 0);
-                 }
- 
-                 CampfireBlock.dowse(context.getPlayer(), level, pos, blockState);
-+                }; // Paper
-                 updatedState = blockState.setValue(CampfireBlock.LIT, false);
+@@ -46,20 +_,29 @@
+         Player player = context.getPlayer();
+         BlockState newState = FLATTENABLES.get(blockState.getBlock());
+         BlockState updatedState = null;
++        Runnable afterAction = null; // Paper
+         if (newState != null && level.getBlockState(pos.above()).isAir()) {
+-            level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
++            afterAction = () -> level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F); // Paper
+             updatedState = newState;
+         } else if (blockState.getBlock() instanceof CampfireBlock && blockState.getValue(CampfireBlock.LIT)) {
++            afterAction = () -> { // Paper
+             if (!level.isClientSide()) {
+                 level.levelEvent(null, LevelEvent.SOUND_EXTINGUISH_FIRE, pos, 0);
              }
  
-             if (updatedState != null) {
-                 if (!level.isClientSide()) {
-+                    // Paper start
-+                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(context.getPlayer(), pos, updatedState)) {
-+                        return InteractionResult.PASS;
-+                    }
-+                    afterAction.run();
-+                    // Paper end
-                     level.setBlock(pos, updatedState, Block.UPDATE_ALL_IMMEDIATE);
-                     level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, updatedState));
-                     if (player != null) {
+             CampfireBlock.dowse(context.getPlayer(), level, pos, blockState);
++            }; // Paper
+             updatedState = blockState.setValue(CampfireBlock.LIT, false);
+         }
+ 
+         if (updatedState != null) {
+             if (!level.isClientSide()) {
++                // Paper start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(context.getPlayer(), pos, updatedState)) {
++                    return InteractionResult.PASS;
++                }
++                afterAction.run();
++                // Paper end
+                 level.setBlock(pos, updatedState, Block.UPDATE_ALL_IMMEDIATE);
+                 level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, updatedState));
+                 if (player != null) {

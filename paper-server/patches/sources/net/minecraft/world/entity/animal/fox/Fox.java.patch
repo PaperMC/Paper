@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/fox/Fox.java
 +++ b/net/minecraft/world/entity/animal/fox/Fox.java
-@@ -447,7 +_,7 @@
+@@ -453,7 +_,7 @@
          input.read("Trusted", TRUSTED_LIST_CODEC).orElse(List.of()).forEach(this::addTrustedEntity);
          this.setSleeping(input.getBooleanOr("Sleeping", false));
          this.setVariant(input.read("Type", Fox.Variant.CODEC).orElse(Fox.Variant.DEFAULT));
@@ -9,7 +9,7 @@
          this.setIsCrouching(input.getBooleanOr("Crouching", false));
          if (this.level() instanceof ServerLevel) {
              this.setTargetGoals();
-@@ -464,6 +_,12 @@
+@@ -470,6 +_,12 @@
      }
  
      public void setSitting(final boolean value) {
@@ -22,19 +22,19 @@
          this.setFlag(FLAG_SITTING, value);
      }
  
-@@ -523,19 +_,20 @@
+@@ -529,19 +_,20 @@
              thrownItem.setPickUpDelay(40);
              thrownItem.setThrower(this);
              this.playSound(SoundEvents.FOX_SPIT, 1.0F, 1.0F);
 -            this.level().addFreshEntity(thrownItem);
-+            this.spawnAtLocation((net.minecraft.server.level.ServerLevel) this.level(), thrownItem); // Paper - Call EntityDropItemEvent
++            this.spawnAtLocation((ServerLevel) this.level(), thrownItem); // Paper - Call EntityDropItemEvent
          }
      }
  
      private void dropItemStack(final ItemStack itemStack) {
          ItemEntity itemEntity = new ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), itemStack);
 -        this.level().addFreshEntity(itemEntity);
-+        this.spawnAtLocation((net.minecraft.server.level.ServerLevel) this.level(), itemEntity); // Paper - Call EntityDropItemEvent
++        this.spawnAtLocation((ServerLevel) this.level(), itemEntity); // Paper - Call EntityDropItemEvent
      }
  
      @Override
@@ -46,7 +46,7 @@
              int count = itemStack.getCount();
              if (count > 1) {
                  this.dropItemStack(itemStack.split(count - 1));
-@@ -546,7 +_,7 @@
+@@ -552,7 +_,7 @@
              this.setItemSlot(EquipmentSlot.MAINHAND, itemStack.split(1));
              this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
              this.take(entity, itemStack.getCount());
@@ -55,7 +55,7 @@
              this.ticksSinceEaten = 0;
          }
      }
-@@ -637,12 +_,12 @@
+@@ -643,12 +_,12 @@
      }
  
      @Override
@@ -70,45 +70,22 @@
      }
  
      private void wakeUp() {
-@@ -703,15 +_,33 @@
-         return this.getTrustedEntities().anyMatch(trusted -> trusted.matches(entity));
+@@ -710,7 +_,13 @@
      }
  
--    @Override
+     @Override
 -    protected void dropAllDeathLoot(final ServerLevel level, final DamageSource source) {
-+    // Paper start - handle the bitten item separately like vanilla
-+    @Override
-+    protected boolean shouldSkipLoot(EquipmentSlot slot) {
++    // Paper start - Fix MC-153010 (dropCustomDeathLoot is only called when shouldDropLoot = true)
++    protected boolean guaranteedToDropUndamaged(final net.minecraft.world.entity.EquipmentSlot slot) {
 +        return slot == EquipmentSlot.MAINHAND;
 +    }
-+    // Paper end
 +
-+    @Override
-+    // Paper start - Cancellable death event
-+    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(final ServerLevel level, final DamageSource source) {
++    protected void dropAllDeathLootDisabled(final ServerLevel level, final DamageSource source) {
++        // Paper end
          ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
--        if (!itemStack.isEmpty()) {
-+        boolean releaseMouth = false;
-+        if (!itemStack.isEmpty() && level.getGameRules().get(GameRules.MOB_DROPS)) { // Fix MC-153010
+         if (!itemStack.isEmpty()) {
              this.spawnAtLocation(level, itemStack);
-+            releaseMouth = true;
-+        }
-+
-+        org.bukkit.event.entity.EntityDeathEvent deathEvent = super.dropAllDeathLoot(level, source);
-+        // Below is code to drop
-+        if (deathEvent == null || deathEvent.isCancelled()) return deathEvent;
-+
-+        if (releaseMouth) {
-+            // Paper end
-             this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-         }
- 
--        super.dropAllDeathLoot(level, source);
-+        return deathEvent; // Paper - Cancellable death event
-     }
- 
-     public static boolean isPathClear(final Fox fox, final LivingEntity target) {
-@@ -896,6 +_,19 @@
+@@ -890,6 +_,19 @@
                      offspring.addTrustedEntity(partnerLoveCause);
                  }
  
@@ -128,7 +105,7 @@
                  if (loveCause != null) {
                      loveCause.awardStat(Stats.ANIMALS_BRED);
                      CriteriaTriggers.BRED_ANIMALS.trigger(loveCause, this.animal, this.partner, offspring);
-@@ -905,14 +_,12 @@
+@@ -899,14 +_,12 @@
                  this.partner.setAge(6000);
                  this.animal.resetLove();
                  this.partner.resetLove();
@@ -146,7 +123,7 @@
                          );
                  }
              }
-@@ -977,6 +_,7 @@
+@@ -970,6 +_,7 @@
          private void pickSweetBerries(final BlockState state) {
              int age = state.getValue(SweetBerryBushBlock.AGE);
              state.setValue(SweetBerryBushBlock.AGE, 1);
