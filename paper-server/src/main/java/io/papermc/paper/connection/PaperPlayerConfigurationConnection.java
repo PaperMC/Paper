@@ -31,6 +31,7 @@ import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.network.protocol.configuration.ClientboundResetChatPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import org.bukkit.plugin.Plugin;
@@ -40,9 +41,20 @@ import org.jspecify.annotations.Nullable;
 public class PaperPlayerConfigurationConnection extends PaperCommonConnection<ServerConfigurationPacketListenerImpl> implements PlayerConfigurationConnection, Audience, PluginMessageBridgeImpl {
 
     private @Nullable Pointers adventurePointers;
+    private @Nullable Integer pendingEntityId;
 
     public PaperPlayerConfigurationConnection(final ServerConfigurationPacketListenerImpl packetListener) {
         super(packetListener);
+    }
+
+    public void setPendingEntityId(final int entityId) {
+        this.pendingEntityId = entityId;
+    }
+
+    public void applyPendingEntityId(final ServerPlayer player) {
+        if (this.pendingEntityId != null) {
+            player.setId(this.pendingEntityId);
+        }
     }
 
     @Override
