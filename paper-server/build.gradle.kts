@@ -195,6 +195,15 @@ tasks.compileTestJava {
     options.compilerArgs.add("-parameters")
 }
 
+tasks.named<JavaCompile>(log4jPlugins.compileJavaTaskName) {
+    options.compilerArgs.addAll(
+        listOf(
+            "-Alog4j.graalvm.groupId=${project.group}",
+            "-Alog4j.graalvm.artifactId=${project.name}"
+        )
+    )
+}
+
 // Bump compile tasks to 1GB memory to avoid OOMs
 tasks.withType<JavaCompile>().configureEach {
     options.forkOptions.memoryMaximumSize = "1G"
