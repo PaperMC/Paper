@@ -7,7 +7,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -19,7 +18,9 @@ import org.jspecify.annotations.NullMarked;
  * <b>WARNING</b>: While this event is prefixed with 'Async' it is executed as part of the chunk loading process.
  * It may hence either execute on the chunk loading worker threads or the servers main thread, if a chunk load
  * is executed there. In either case, heavy or blocking work is <b>strongly</b> discouraged to ensure the
- * server runs smoothly. Schedule large amount of work into separate thread pools.
+ * server runs smoothly. This is also applicable for the chunk loading worker threads, which the server main thread
+ * might be blocking on.
+ * Schedule large amount of work into separate thread pools.
  */
 @NullMarked
 public class AsyncServerDataFixerRemoveBlockEntityEvent extends Event {
