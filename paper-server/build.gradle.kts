@@ -111,8 +111,8 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 dependencies {
     implementation(project(":paper-api"))
     implementation("ca.spottedleaf:leafpile:1.0.0")
-    implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
-    implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
+    implementation("org.jline:jline-terminal-ffm:4.3.1")
+    implementation("org.jline:jline-terminal-jni:4.3.1") // This can probably be dropped
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
     implementation("net.kyori:adventure-text-serializer-ansi")
 
