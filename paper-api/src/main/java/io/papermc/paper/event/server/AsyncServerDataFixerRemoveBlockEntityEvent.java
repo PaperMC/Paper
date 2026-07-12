@@ -46,14 +46,14 @@ public class AsyncServerDataFixerRemoveBlockEntityEvent extends Event {
     }
 
     /**
-     * {@return the key representing the no longer existing block entity type.}
+     * {@return the key representing the no longer existing block entity type}
      */
     public Key getBlockEntityType() {
         return blockEntityType;
     }
 
     /**
-     * {@return the key of the world this block entity was removed from.}
+     * {@return the key of the world this block entity was removed from}
      *
      * @see org.bukkit.Server#getWorld(Key)
      */
@@ -62,14 +62,14 @@ public class AsyncServerDataFixerRemoveBlockEntityEvent extends Event {
     }
 
     /**
-     * {@return the position of the block entity that was removed.}
+     * {@return the position of the block entity that was removed}
      */
     public BlockPosition getBlockPosition() {
         return blockPosition;
     }
 
     /**
-     * {@return an immutable view of the persistent data container that was attached to the removed block entity.}
+     * {@return an immutable view of the persistent data container that was attached to the removed block entity}
      */
     public PersistentDataContainerView getPersistentDataContainerView() {
         return persistentDataContainerView;
