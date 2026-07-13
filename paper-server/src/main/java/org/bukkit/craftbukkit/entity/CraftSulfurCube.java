@@ -10,7 +10,9 @@ import net.minecraft.world.entity.SulfurCubeArchetype;
 import net.minecraft.world.entity.item.PrimedTnt;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.SulfurCube;
+import org.bukkit.inventory.ItemStack;
 
 public class CraftSulfurCube extends CraftAbstractCubeMob implements SulfurCube, PaperShearable, PaperBucketable {
     public CraftSulfurCube(final CraftServer server, final net.minecraft.world.entity.monster.cubemob.SulfurCube entity) {
@@ -42,6 +44,11 @@ public class CraftSulfurCube extends CraftAbstractCubeMob implements SulfurCube,
     @Override
     public boolean ignite(final boolean imminent) {
         return this.getHandle().primeTime(imminent);
+    }
+
+    @Override
+    public boolean equipItem(final ItemStack itemStack) {
+        return this.getHandle().equipItem(CraftItemStack.asNMSCopy(itemStack));
     }
 
     @Override
