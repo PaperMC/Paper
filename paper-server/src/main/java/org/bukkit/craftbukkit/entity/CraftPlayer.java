@@ -2466,7 +2466,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     @Override
     public void resetFlyingTicks() {
         if (getHandle().connection == null) {
-            throw new IllegalStateException("Cannot reset flying ticks before player connection is initialized.");
+            return;
         }
 
         getHandle().connection.resetFlyingTicks();
