@@ -10,13 +10,13 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Called when a SulfurCube swallows an item
- * <br>
- * If the ItemStack is modified the SulfurCube will swallow the new item
+ * Called when a SulfurCube swallows an item.
+ * <p>
+ * If the ItemStack is modified, the SulfurCube will swallow the new item
  * and not remove the original one from the player's inventory.
- * <br>
- * If the event is cancelled the SulfurCube will not swallow the item and
- * it will not be removed from the player's inventory
+ * <p>
+ * If the event is cancelled, the SulfurCube will not swallow the item, and
+ * it will not be removed from the player's inventory.
  */
 @NullMarked
 public class SulfurCubeSwallowItemEvent extends EntityEvent implements Cancellable {
