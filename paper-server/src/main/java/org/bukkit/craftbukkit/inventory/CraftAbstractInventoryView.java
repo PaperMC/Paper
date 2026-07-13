@@ -56,16 +56,23 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
     }
 
     public Inventory mapValidSlotToInventory(final int rawSlot) {
-        if (rawSlot < this.getTopInventory().getSize()) {
+        if (rawSlot < this.getTopSlots()) {
             return this.getTopInventory();
         } else {
             return this.getBottomInventory();
         }
     }
 
+    // The number of raw slots the top inventory occupies in the open menu. This is
+    // usually just its size, but a view can override it when the menu renders fewer
+    // slots than the inventory reports (e.g. a player inventory shown as a chest).
+    public int getTopSlots() {
+        return this.getTopInventory().getSize();
+    }
+
     @Override
     public int convertSlot(final int rawSlot) {
-        int numInTop = this.getTopInventory().getSize();
+        int numInTop = this.getTopSlots();
         // Index from the top inventory as having slots from [0,size]
         if (rawSlot < numInTop) {
             return rawSlot;
@@ -132,7 +139,7 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
     @Override
     public InventoryType.SlotType getSlotType(final int slot) {
         InventoryType.SlotType type = InventoryType.SlotType.CONTAINER;
-        if (slot >= 0 && slot < this.getTopInventory().getSize()) {
+        if (slot >= 0 && slot < this.getTopSlots()) {
             switch (this.getType()) {
                 case BLAST_FURNACE:
                 case FURNACE:
@@ -229,7 +236,7 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
 
     @Override
     public int countSlots() {
-        return this.getTopInventory().getSize() + this.getBottomInventory().getSize();
+        return this.getTopSlots() + this.getBottomInventory().getSize();
     }
 
     @Override
