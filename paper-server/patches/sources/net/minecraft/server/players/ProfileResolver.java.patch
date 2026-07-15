@@ -1,26 +1,68 @@
 --- a/net/minecraft/server/players/ProfileResolver.java
 +++ b/net/minecraft/server/players/ProfileResolver.java
-@@ -25,7 +_,7 @@
+@@ -24,16 +_,21 @@
+     class Cached implements ProfileResolver {
          private final LoadingCache<String, Optional<GameProfile>> profileCacheByName;
          private final LoadingCache<UUID, Optional<GameProfile>> profileCacheById;
++        private final MinecraftSessionService sessionService; // Paper - fill profile events
++        private final io.papermc.paper.profile.PaperFilledProfileCache paperCache; // Paper - add paperCache
  
 -        public Cached(final MinecraftSessionService sessionService, final UserNameToIdResolver nameToIdCache) {
 +        public Cached(final MinecraftSessionService sessionService, final UserNameToIdResolver nameToIdCache, final io.papermc.paper.profile.PaperFilledProfileCache paperCache) { // Paper - add paperCache
++            // Paper start - fill profile events
++            this.sessionService = sessionService;
++            this.paperCache = paperCache;
++            // Paper end - fill profile events
              this.profileCacheById = CacheBuilder.newBuilder()
                  .expireAfterAccess(Duration.ofMinutes(10L))
                  .maximumSize(256L)
-@@ -33,7 +_,13 @@
+                 .build(new CacheLoader<UUID, Optional<GameProfile>>() {
                      @Override
                      public Optional<GameProfile> load(final UUID profileId) {
-                         ProfileResult result = sessionService.fetchProfile(profileId, true);
+-                        ProfileResult result = sessionService.fetchProfile(profileId, true);
 -                        return Optional.ofNullable(result).map(ProfileResult::profile);
-+                        // Paper start - update paper cache
-+                        return Optional.ofNullable(result).map(ProfileResult::profile)
-+                            .map(profile -> {
-+                                paperCache.add(profile);
-+                                return profile;
-+                            });
-+                        // Paper end - update paper cache
++                        return Cached.this.fetchProfile(profileId, null); // Paper - fill profile events
                      }
                  });
              this.profileCacheByName = CacheBuilder.newBuilder()
+@@ -42,9 +_,37 @@
+                 .build(new CacheLoader<String, Optional<GameProfile>>() {
+                     @Override
+                     public Optional<GameProfile> load(final String name) {
+-                        return nameToIdCache.get(name).flatMap(nameAndId -> Cached.this.profileCacheById.getUnchecked(nameAndId.id()));
+-                    }
+-                });
++                        return nameToIdCache.get(name).flatMap(nameAndId -> Cached.this.fetchById(nameAndId.id(), nameAndId.name())); // Paper - fill profile events - pass the known name along
++                    }
++                });
++        }
++
++        // Paper start - fill profile events
++        private Optional<GameProfile> fetchById(final UUID profileId, final @org.jetbrains.annotations.Nullable String name) {
++            try {
++                return this.profileCacheById.get(profileId, () -> this.fetchProfile(profileId, name));
++            } catch (final java.util.concurrent.ExecutionException e) {
++                throw new com.google.common.util.concurrent.UncheckedExecutionException(e.getCause());
++            }
++        }
++
++        private Optional<GameProfile> fetchProfile(final UUID profileId, final @org.jetbrains.annotations.Nullable String name) {
++            final ProfileResult result;
++            if (this.sessionService instanceof com.destroystokyo.paper.profile.PaperMinecraftSessionService paperSessionService) {
++                result = paperSessionService.fetchProfile(new GameProfile(profileId, name != null ? name : ""), true);
++            } else {
++                result = this.sessionService.fetchProfile(profileId, true);
++            }
++            // Paper end - fill profile events
++            // Paper start - update paper cache
++            return Optional.ofNullable(result).map(ProfileResult::profile)
++                .map(profile -> {
++                    if (!profile.name().isEmpty()) { // Paper - fill profile events - a plugin filled profile may not have a name
++                        this.paperCache.add(profile);
++                    }
++                    return profile;
++                });
++            // Paper end - update paper cache
+         }
+ 
+         @Override
