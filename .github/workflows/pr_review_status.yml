@@ -1,18 +1,25 @@
 name: Update PR Project Status
 
 on:
-  pull_request_review:
+  workflow_run:
+    workflows:
+      - PR Review Signal
     types:
-      - submitted
+      - completed
+
   schedule:
     - cron: "07 6 * * *"
   workflow_dispatch:
 
 jobs:
   review-submitted:
-    if: github.event_name == 'pull_request_review' && github.event.review.state == 'approved'
+    if: >
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'pull_request_review' &&
+      github.event.workflow_run.conclusion == 'success'
+
     concurrency:
-      group: pr-review-status-${{ github.event.pull_request.number }}
+      group: pr-review-status-${{ github.event.workflow_run.head_sha }}
       cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
@@ -25,7 +32,7 @@ jobs:
           owner: "${{ github.repository_owner }}"
 
       - name: Set status from approval
-        uses: PaperMC/update-projects-action/review-status@v0.3.0
+        uses: PaperMC/update-projects-action/review-status@v0.4.0
         with:
           github-token: "${{ steps.authenticate.outputs.token }}"
           mode: review
@@ -49,7 +56,7 @@ jobs:
           owner: "${{ github.repository_owner }}"
 
       - name: Promote delayed approvals
-        uses: PaperMC/update-projects-action/review-status@v0.3.0
+        uses: PaperMC/update-projects-action/review-status@v0.4.0
         with:
           github-token: "${{ steps.authenticate.outputs.token }}"
           mode: promote
