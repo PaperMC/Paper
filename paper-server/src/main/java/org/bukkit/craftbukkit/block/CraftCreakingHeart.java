@@ -68,8 +68,6 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
         }
 
         this.getBlockEntity().setCreakingInfo(creaking);
-        creaking.makeSound(SoundEvents.CREAKING_SPAWN);
-        serverLevel.playSound(null, this.getBlockEntity().getBlockPos(), SoundEvents.CREAKING_HEART_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
 
         return (Creaking) creaking.getBukkitEntity();
     }
