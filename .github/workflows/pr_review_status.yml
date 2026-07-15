@@ -1,0 +1,59 @@
+name: Update PR Project Status
+
+on:
+  pull_request_review:
+    types:
+      - submitted
+  schedule:
+    - cron: "07 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  review-submitted:
+    if: github.event_name == 'pull_request_review' && github.event.review.state == 'approved'
+    concurrency:
+      group: pr-review-status-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: "authenticate"
+        id: "authenticate"
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          client-id: "${{ secrets.PROJECTS_APP_ID }}"
+          private-key: "${{ secrets.PROJECTS_PRIVATE_KEY }}"
+          owner: "${{ github.repository_owner }}"
+
+      - name: Set status from approval
+        uses: PaperMC/update-projects-action/review-status@v0.3.0
+        with:
+          github-token: "${{ steps.authenticate.outputs.token }}"
+          mode: review
+          project-url: https://github.com/orgs/PaperMC/projects/2
+          maintainer-teams: paper-maintainers
+          developer-teams: paper-developers
+
+  promote-delayed-approvals:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    concurrency:
+      group: pr-review-status-promote
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: "authenticate"
+        id: "authenticate"
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          client-id: "${{ secrets.PROJECTS_APP_ID }}"
+          private-key: "${{ secrets.PROJECTS_PRIVATE_KEY }}"
+          owner: "${{ github.repository_owner }}"
+
+      - name: Promote delayed approvals
+        uses: PaperMC/update-projects-action/review-status@v0.3.0
+        with:
+          github-token: "${{ steps.authenticate.outputs.token }}"
+          mode: promote
+          project-url: https://github.com/orgs/PaperMC/projects/2
+          maintainer-teams: paper-maintainers
+          developer-teams: paper-developers
+          promote-after-days: "14"

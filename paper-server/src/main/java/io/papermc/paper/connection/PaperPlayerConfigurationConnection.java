@@ -47,7 +47,7 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
 
     @Override
     public ClientInformation getClientInformation() {
-        return this.handle.clientInformation;
+        return this.packetListener.clientInformation;
     }
 
     @Override
@@ -61,39 +61,39 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
             final ResourcePackInfo pack = iter.next();
             packs.add(new ClientboundResourcePackPushPacket(pack.id(), pack.uri().toASCIIString(), pack.hash(), request.required(), iter.hasNext() ? Optional.empty() : Optional.ofNullable(prompt)));
             if (request.callback() != ResourcePackCallback.noOp()) {
-                this.handle.packCallbacks.put(pack.id(), request.callback()); // just override if there is a previously existing callback
+                this.packetListener.packCallbacks.put(pack.id(), request.callback()); // just override if there is a previously existing callback
             }
         }
-        packs.forEach(this.handle::send);
+        packs.forEach(this.packetListener::send);
     }
 
     @Override
     public void removeResourcePacks(final UUID id, final UUID... others) {
-        net.kyori.adventure.util.MonkeyBars.nonEmptyArrayToList(pack -> new ClientboundResourcePackPopPacket(Optional.of(pack)), id, others).forEach(this.handle::send);
+        net.kyori.adventure.util.MonkeyBars.nonEmptyArrayToList(pack -> new ClientboundResourcePackPopPacket(Optional.of(pack)), id, others).forEach(this.packetListener::send);
     }
 
     @Override
     public void clearResourcePacks() {
-        this.handle.send(new ClientboundResourcePackPopPacket(Optional.empty()));
+        this.packetListener.send(new ClientboundResourcePackPopPacket(Optional.empty()));
     }
 
     @Override
     public void showDialog(final DialogLike dialog) {
-        this.handle.send(new ClientboundShowDialogPacket(PaperDialog.bukkitToMinecraftHolder((Dialog) dialog)));
+        this.packetListener.send(new ClientboundShowDialogPacket(PaperDialog.bukkitToMinecraftHolder((Dialog) dialog)));
     }
 
     @Override
     public void closeDialog() {
-        this.handle.send(ClientboundClearDialogPacket.INSTANCE);
+        this.packetListener.send(ClientboundClearDialogPacket.INSTANCE);
     }
 
     @Override
     public Pointers pointers() {
         if (this.adventurePointers == null) {
             this.adventurePointers = Pointers.builder()
-                .withDynamic(Identity.NAME, () -> this.handle.getOwner().name())
-                .withDynamic(Identity.UUID, () -> this.handle.getOwner().id())
-                .withDynamic(Identity.LOCALE, () -> Objects.requireNonNullElse(Translator.parseLocale(this.handle.clientInformation.language()), Locale.US))
+                .withDynamic(Identity.NAME, () -> this.packetListener.getOwner().name())
+                .withDynamic(Identity.UUID, () -> this.packetListener.getOwner().id())
+                .withDynamic(Identity.LOCALE, () -> Objects.requireNonNullElse(Translator.parseLocale(this.packetListener.clientInformation.language()), Locale.US))
                 .build();
         }
 
@@ -107,40 +107,40 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
 
     @Override
     public PlayerProfile getProfile() {
-        return CraftPlayerProfile.asBukkitCopy(this.handle.getOwner());
+        return CraftPlayerProfile.asBukkitCopy(this.packetListener.getOwner());
     }
 
     @Override
     public void clearChat() {
-        this.handle.send(ClientboundResetChatPacket.INSTANCE);
+        this.packetListener.send(ClientboundResetChatPacket.INSTANCE);
     }
 
     @Override
     public void completeReconfiguration() {
-        final ConfigurationTask task = this.handle.currentTask;
+        final ConfigurationTask task = this.packetListener.currentTask;
         if (task != null) {
             // This means that the player is going through the normal configuration process, or is already returning to the game phase.
             // Be safe and just ignore, as many plugins may call this.
             return;
         }
 
-        this.handle.returnToWorld();
+        this.packetListener.returnToWorld();
     }
 
     @Override
     public Set<String> channels() {
-        return this.handle.pluginMessagerChannels;
+        return this.packetListener.pluginMessagerChannels;
     }
 
     @Override
     public void sendPluginMessage(final Plugin source, final String channel, final byte[] message) {
-        StandardMessenger.validatePluginMessage(this.handle.cserver.getMessenger(), source, channel, message);
+        StandardMessenger.validatePluginMessage(this.packetListener.cserver.getMessenger(), source, channel, message);
 
         if (this.channels().contains(channel)) {
             @SuppressWarnings("deprecation") // "not an API method" does not apply to us
             Identifier id = Identifier.parse(StandardMessenger.validateAndCorrectChannel(channel));
             ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(id, message));
-            this.handle.send(packet);
+            this.packetListener.send(packet);
         }
     }
 
@@ -151,6 +151,6 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
 
     @Override
     public boolean isConnected() {
-        return this.handle.connection.isConnected();
+        return this.packetListener.connection.isConnected();
     }
 }

@@ -16,33 +16,33 @@ public class BoundingBoxTest {
         BoundingBox expected = new BoundingBox(-1, -1, -1, 1, 2, 3);
         assertThat(expected.getMin(), is(new Vector(-1, -1, -1)));
         assertThat(expected.getMax(), is(new Vector(1, 2, 3)));
-        assertThat(expected.getCenter(), is(new Vector(0.0D, 0.5D, 1.0D)));
-        assertThat(expected.getWidthX(), is(2.0D));
-        assertThat(expected.getHeight(), is(3.0D));
-        assertThat(expected.getWidthZ(), is(4.0D));
-        assertThat(expected.getVolume(), is(24.0D));
+        assertThat(expected.getCenter(), is(new Vector(0.0, 0.5, 1.0)));
+        assertThat(expected.getWidthX(), is(2.0));
+        assertThat(expected.getHeight(), is(3.0));
+        assertThat(expected.getWidthZ(), is(4.0));
+        assertThat(expected.getVolume(), is(24.0));
 
         assertThat(BoundingBox.of(new Vector(-1, -1, -1), new Vector(1, 2, 3)), is(expected));
         assertThat(BoundingBox.of(new Vector(1, 2, 3), new Vector(-1, -1, -1)), is(expected));
         assertThat(BoundingBox.of(new Location(null, -1, -1, -1), new Location(null, 1, 2, 3)), is(expected));
-        assertThat(BoundingBox.of(new Vector(0.0D, 0.5D, 1.0D), 1.0D, 1.5D, 2.0D), is(expected));
-        assertThat(BoundingBox.of(new Location(null, 0.0D, 0.5D, 1.0D), 1.0D, 1.5D, 2.0D), is(expected));
+        assertThat(BoundingBox.of(new Vector(0.0, 0.5, 1.0), 1.0, 1.5, 2.0), is(expected));
+        assertThat(BoundingBox.of(new Location(null, 0.0, 0.5, 1.0), 1.0, 1.5, 2.0), is(expected));
     }
 
     @Test
     public void testContains() {
         BoundingBox aabb = new BoundingBox(-1, -1, -1, 1, 2, 3);
-        assertThat(aabb.contains(-0.5D, 0.0D, 0.5D), is(true));
-        assertThat(aabb.contains(-1.0D, -1.0D, -1.0D), is(true));
-        assertThat(aabb.contains(1.0D, 2.0D, 3.0D), is(false));
-        assertThat(aabb.contains(-1.0D, 1.0D, 4.0D), is(false));
-        assertThat(aabb.contains(new Vector(-0.5D, 0.0D, 0.5D)), is(true));
+        assertThat(aabb.contains(-0.5, 0.0, 0.5), is(true));
+        assertThat(aabb.contains(-1.0, -1.0, -1.0), is(true));
+        assertThat(aabb.contains(1.0, 2.0, 3.0), is(false));
+        assertThat(aabb.contains(-1.0, 1.0, 4.0), is(false));
+        assertThat(aabb.contains(new Vector(-0.5, 0.0, 0.5)), is(true));
 
-        assertThat(aabb.contains(new BoundingBox(-0.5D, -0.5D, -0.5D, 0.5D, 1.0D, 2.0D)), is(true));
+        assertThat(aabb.contains(new BoundingBox(-0.5, -0.5, -0.5, 0.5, 1.0, 2.0)), is(true));
         assertThat(aabb.contains(aabb), is(true));
         assertThat(aabb.contains(new BoundingBox(-1, -1, -1, 1, 1, 3)), is(true));
         assertThat(aabb.contains(new BoundingBox(-2, -1, -1, 1, 2, 3)), is(false));
-        assertThat(aabb.contains(new Vector(-0.5D, -0.5D, -0.5D), new Vector(0.5D, 1.0D, 2.0D)), is(true));
+        assertThat(aabb.contains(new Vector(-0.5, -0.5, -0.5), new Vector(0.5, 1.0, 2.0)), is(true));
     }
 
     @Test
@@ -50,20 +50,20 @@ public class BoundingBoxTest {
         BoundingBox aabb = new BoundingBox(-1, -1, -1, 1, 2, 3);
         assertThat(aabb.contains(aabb), is(true));
         assertThat(aabb.overlaps(new BoundingBox(-2, -2, -2, 0, 0, 0)), is(true));
-        assertThat(aabb.overlaps(new BoundingBox(0.5D, 1.5D, 2.5D, 1, 2, 3)), is(true));
-        assertThat(aabb.overlaps(new BoundingBox(0.5D, 1.5D, 2.5D, 2, 3, 4)), is(true));
+        assertThat(aabb.overlaps(new BoundingBox(0.5, 1.5, 2.5, 1, 2, 3)), is(true));
+        assertThat(aabb.overlaps(new BoundingBox(0.5, 1.5, 2.5, 2, 3, 4)), is(true));
         assertThat(aabb.overlaps(new BoundingBox(-2, -2, -2, -1, -1, -1)), is(false));
         assertThat(aabb.overlaps(new BoundingBox(1, 2, 3, 2, 3, 4)), is(false));
-        assertThat(aabb.overlaps(new Vector(0.5D, 1.5D, 2.5D), new Vector(1, 2, 3)), is(true));
+        assertThat(aabb.overlaps(new Vector(0.5, 1.5, 2.5), new Vector(1, 2, 3)), is(true));
     }
 
     @Test
     public void testDegenerate() {
         BoundingBox aabb = new BoundingBox(0, 0, 0, 0, 0, 0);
-        assertThat(aabb.getWidthX(), is(0.0D));
-        assertThat(aabb.getHeight(), is(0.0D));
-        assertThat(aabb.getWidthZ(), is(0.0D));
-        assertThat(aabb.getVolume(), is(0.0D));
+        assertThat(aabb.getWidthX(), is(0.0));
+        assertThat(aabb.getHeight(), is(0.0));
+        assertThat(aabb.getWidthZ(), is(0.0));
+        assertThat(aabb.getVolume(), is(0.0));
     }
 
     @Test
@@ -100,35 +100,35 @@ public class BoundingBoxTest {
         assertThat(aabb.clone().expand(-1, -2, -3, -0.5D, -0.5, -3), is(new BoundingBox(1, 1.5D, 1, 1.5D, 1.5D, 1)));
 
         assertThat(aabb.clone().expand(1, 2, 3), is(new BoundingBox(-1, -2, -3, 3, 4, 5)));
-        assertThat(aabb.clone().expand(-0.1, -0.5, -2), is(new BoundingBox(0.1D, 0.5D, 1, 1.9D, 1.5D, 1)));
+        assertThat(aabb.clone().expand(-0.1, -0.5, -2), is(new BoundingBox(0.1, 0.5, 1, 1.9, 1.5, 1)));
         assertThat(aabb.clone().expand(new Vector(1, 2, 3)), is(new BoundingBox(-1, -2, -3, 3, 4, 5)));
 
         assertThat(aabb.clone().expand(1), is(new BoundingBox(-1, -1, -1, 3, 3, 3)));
-        assertThat(aabb.clone().expand(-0.5D), is(new BoundingBox(0.5D, 0.5D, 0.5D, 1.5D, 1.5D, 1.5D)));
+        assertThat(aabb.clone().expand(-0.5D), is(new BoundingBox(0.5, 0.5, 0.5, 1.5, 1.5, 1.5)));
 
-        assertThat(aabb.clone().expand(1, 0, 0, 0.5D), is(new BoundingBox(0, 0, 0, 2.5D, 2, 2)));
-        assertThat(aabb.clone().expand(1, 0, 0, -0.5D), is(new BoundingBox(0, 0, 0, 1.5D, 2, 2)));
-        assertThat(aabb.clone().expand(-1, 0, 0, 0.5D), is(new BoundingBox(-0.5D, 0, 0, 2, 2, 2)));
-        assertThat(aabb.clone().expand(-1, 0, 0, -0.5D), is(new BoundingBox(0.5D, 0, 0, 2, 2, 2)));
+        assertThat(aabb.clone().expand(1, 0, 0, 0.5), is(new BoundingBox(0, 0, 0, 2.5, 2, 2)));
+        assertThat(aabb.clone().expand(1, 0, 0, -0.5), is(new BoundingBox(0, 0, 0, 1.5, 2, 2)));
+        assertThat(aabb.clone().expand(-1, 0, 0, 0.5), is(new BoundingBox(-0.5, 0, 0, 2, 2, 2)));
+        assertThat(aabb.clone().expand(-1, 0, 0, -0.5), is(new BoundingBox(0.5, 0, 0, 2, 2, 2)));
 
-        assertThat(aabb.clone().expand(0, 1, 0, 0.5D), is(new BoundingBox(0, 0, 0, 2, 2.5D, 2)));
-        assertThat(aabb.clone().expand(0, 1, 0, -0.5D), is(new BoundingBox(0, 0, 0, 2, 1.5D, 2)));
-        assertThat(aabb.clone().expand(0, -1, 0, 0.5D), is(new BoundingBox(0, -0.5D, 0, 2, 2, 2)));
-        assertThat(aabb.clone().expand(0, -1, 0, -0.5D), is(new BoundingBox(0, 0.5D, 0, 2, 2, 2)));
+        assertThat(aabb.clone().expand(0, 1, 0, 0.5), is(new BoundingBox(0, 0, 0, 2, 2.5, 2)));
+        assertThat(aabb.clone().expand(0, 1, 0, -0.5), is(new BoundingBox(0, 0, 0, 2, 1.5, 2)));
+        assertThat(aabb.clone().expand(0, -1, 0, 0.5), is(new BoundingBox(0, -0.5, 0, 2, 2, 2)));
+        assertThat(aabb.clone().expand(0, -1, 0, -0.5), is(new BoundingBox(0, 0.5, 0, 2, 2, 2)));
 
-        assertThat(aabb.clone().expand(0, 0, 1, 0.5D), is(new BoundingBox(0, 0, 0, 2, 2, 2.5D)));
-        assertThat(aabb.clone().expand(0, 0, 1, -0.5D), is(new BoundingBox(0, 0, 0, 2, 2, 1.5D)));
-        assertThat(aabb.clone().expand(0, 0, -1, 0.5D), is(new BoundingBox(0, 0, -0.5D, 2, 2, 2)));
-        assertThat(aabb.clone().expand(0, 0, -1, -0.5D), is(new BoundingBox(0, 0, 0.5D, 2, 2, 2)));
+        assertThat(aabb.clone().expand(0, 0, 1, 0.5), is(new BoundingBox(0, 0, 0, 2, 2, 2.5)));
+        assertThat(aabb.clone().expand(0, 0, 1, -0.5), is(new BoundingBox(0, 0, 0, 2, 2, 1.5)));
+        assertThat(aabb.clone().expand(0, 0, -1, 0.5), is(new BoundingBox(0, 0, -0.5, 2, 2, 2)));
+        assertThat(aabb.clone().expand(0, 0, -1, -0.5), is(new BoundingBox(0, 0, 0.5, 2, 2, 2)));
 
-        assertThat(aabb.clone().expand(new Vector(1, 0, 0), 0.5D), is(new BoundingBox(0, 0, 0, 2.5D, 2, 2)));
-        assertThat(aabb.clone().expand(BlockFace.EAST, 0.5D), is(new BoundingBox(0, 0, 0, 2.5D, 2, 2)));
-        assertThat(aabb.clone().expand(BlockFace.NORTH_NORTH_WEST, 1.0D), is(aabb.clone().expand(BlockFace.NORTH_NORTH_WEST.getDirection(), 1.0D)));
-        assertThat(aabb.clone().expand(BlockFace.SELF, 1.0D), is(aabb));
+        assertThat(aabb.clone().expand(new Vector(1, 0, 0), 0.5), is(new BoundingBox(0, 0, 0, 2.5, 2, 2)));
+        assertThat(aabb.clone().expand(BlockFace.EAST, 0.5), is(new BoundingBox(0, 0, 0, 2.5, 2, 2)));
+        assertThat(aabb.clone().expand(BlockFace.NORTH_NORTH_WEST, 1.0), is(aabb.clone().expand(BlockFace.NORTH_NORTH_WEST.getDirection(), 1.0)));
+        assertThat(aabb.clone().expand(BlockFace.SELF, 1.0), is(aabb));
 
-        BoundingBox expanded = aabb.clone().expand(BlockFace.NORTH_WEST, 1.0D);
-        assertThat(expanded.getWidthX(), is(closeTo(aabb.getWidthX() + Math.sqrt(0.5D), delta)));
-        assertThat(expanded.getWidthZ(), is(closeTo(aabb.getWidthZ() + Math.sqrt(0.5D), delta)));
+        BoundingBox expanded = aabb.clone().expand(BlockFace.NORTH_WEST, 1.0);
+        assertThat(expanded.getWidthX(), is(closeTo(aabb.getWidthX() + Math.sqrt(0.5), delta)));
+        assertThat(expanded.getWidthZ(), is(closeTo(aabb.getWidthZ() + Math.sqrt(0.5), delta)));
         assertThat(expanded.getHeight(), is(aabb.getHeight()));
 
         assertThat(aabb.clone().expandDirectional(1, 2, 3), is(new BoundingBox(0, 0, 0, 3, 4, 5)));
@@ -176,7 +176,7 @@ public class BoundingBoxTest {
 
         assertThat(aabb.rayTrace(new Vector(0, 0, -3), new Vector(1, 0, 1), 10), is(nullValue()));
         assertThat(aabb.rayTrace(new Vector(0, 0, -2), new Vector(1, 0, 2), 10),
-                is(new RayTraceResult(new Vector(0.5D, 0, -1), BlockFace.NORTH)));
+                is(new RayTraceResult(new Vector(0.5, 0, -1), BlockFace.NORTH)));
 
         // corner/edge hits yield unspecified block face:
         assertThat(aabb.rayTrace(new Vector(2, 2, 2), new Vector(-1, -1, -1), 10),

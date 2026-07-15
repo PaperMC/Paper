@@ -273,11 +273,11 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     public void removePossibleReward(LootTable table) {
         Preconditions.checkArgument(table != null, "Key cannot be null");
 
-        ResourceKey<net.minecraft.world.level.storage.loot.LootTable> minecraftKey = CraftLootTable.bukkitToMinecraft(table);
+        ResourceKey<net.minecraft.world.level.storage.loot.LootTable> key = CraftLootTable.bukkitToMinecraft(table);
         WeightedList.Builder<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> builder = WeightedList.builder();
 
         for (Weighted<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> entry : this.lootTablesToEject.unwrap()) {
-            if (!entry.value().equals(minecraftKey)) {
+            if (!entry.value().equals(key)) {
                 builder.add(entry.value(), entry.weight());
             }
         }
@@ -304,12 +304,12 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
     @Override
     public int getRequiredPlayerRange() {
-        return this.snapshot.trialSpawner.getRequiredPlayerRange();
+        return this.snapshot.getTrialSpawner().getRequiredPlayerRange();
     }
 
     @Override
     public void setRequiredPlayerRange(int requiredPlayerRange) {
-        this.snapshot.trialSpawner.config = this.snapshot.trialSpawner.config.overrideRequiredPlayerRange(requiredPlayerRange);
+        this.snapshot.getTrialSpawner().config = this.snapshot.getTrialSpawner().config.overrideRequiredPlayerRange(requiredPlayerRange);
     }
 
     private TrialSpawnerStateData getTrialData() {

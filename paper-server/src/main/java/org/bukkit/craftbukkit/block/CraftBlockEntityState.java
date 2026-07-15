@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
-import java.util.Set;
 import com.mojang.logging.LogUtils;
+import java.util.Set;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
@@ -10,6 +10,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -54,13 +55,10 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
         // Paper end
         // Paper start - Show blockstate location if we failed to read it
         } catch (Throwable thr) {
-            if (thr instanceof ThreadDeath) {
-                throw (ThreadDeath)thr;
-            }
             throw new RuntimeException(
                 world == null
                     ? "Failed to read non-placed BlockState"
-                    : "Failed to read BlockState at: world: " + world.getName() + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")",
+                    : "Failed to read BlockState at: world: " + world.key().asString() + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")",
                 thr
             );
         }
@@ -194,6 +192,9 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
             this.getWorldHandle().getBlockEntity(this.getPosition(), this.blockEntity.getType()).ifPresent(blockEntity -> {
                 this.applyTo((T) blockEntity);
                 blockEntity.setChanged();
+                if (this.getWorldHandle() instanceof ServerLevel level) {
+                    level.getChunkSource().blockChanged(this.getPosition());
+                }
             });
         }
 
@@ -207,6 +208,9 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
         this.getWorldHandle().getBlockEntity(this.getPosition(), this.blockEntity.getType()).ifPresent(blockEntity -> {
             this.applyTo((T) blockEntity);
             blockEntity.setChanged();
+            if (this.getWorldHandle() instanceof ServerLevel level) {
+                level.getChunkSource().blockChanged(this.getPosition());
+            }
         });
 
         return result;
@@ -219,7 +223,7 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
 
     @Nullable
     public Packet<ClientGamePacketListener> getUpdatePacket(@NotNull Location location) {
-        return new ClientboundBlockEntityDataPacket(CraftLocation.toBlockPosition(location), this.snapshot.getType(), this.getUpdateNBT());
+        return new ClientboundBlockEntityDataPacket(CraftLocation.toBlockPos(location), this.snapshot.getType(), this.getUpdateNBT());
     }
 
     @Override

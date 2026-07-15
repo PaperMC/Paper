@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/PacketProcessor.java
 +++ b/net/minecraft/network/PacketProcessor.java
-@@ -19,15 +_,42 @@
+@@ -19,16 +_,42 @@
          this.runningThread = runningThread;
      }
  
@@ -24,28 +24,30 @@
          return Thread.currentThread() == this.runningThread;
      }
  
-     public <T extends PacketListener> void scheduleIfPossible(T listener, Packet<T> packet) {
+     public <T extends PacketListener> void scheduleIfPossible(final T listener, final Packet<T> packet) {
          if (this.closed) {
 -            throw new RejectedExecutionException("Server already shutting down");
+-        }
+-
+-        this.packetsToBeHandled.add(new PacketProcessor.ListenerAndPacket<>(listener, packet));
 +            throw new io.papermc.paper.util.ServerStopRejectedExecutionException("Server already shutting down"); // Paper - do not prematurely disconnect players on stop
-         } else {
--            this.packetsToBeHandled.add(new PacketProcessor.ListenerAndPacket<>(listener, packet));
-+            // Paper start - improve tick loop
-+            // wake up main thread inbetween ticks to process packets
-+            final boolean isEmpty = this.packetsToBeHandled.isEmpty();
-+            final ListenerAndPacket<T> toAdd = new PacketProcessor.ListenerAndPacket<>(listener, packet);
-+            this.packetsToBeHandled.add(toAdd);
-+            if (isEmpty || this.packetsToBeHandled.peek() == toAdd) {
-+                // only unpark if we are the first packet OR are at the head of the queue
-+                // we unpark if we are at the head in case the main thread emptied the queue
-+                // immediately before we added but after checking isEmpty
-+                java.util.concurrent.locks.LockSupport.unpark(this.runningThread);
-+            }
-+            // Paper end - improve tick loop
-         }
++        }
++        // Paper start - improve tick loop
++        // wake up main thread inbetween ticks to process packets
++        final boolean isEmpty = this.packetsToBeHandled.isEmpty();
++        final ListenerAndPacket<T> toAdd = new PacketProcessor.ListenerAndPacket<>(listener, packet);
++        this.packetsToBeHandled.add(toAdd);
++        if (isEmpty || this.packetsToBeHandled.peek() == toAdd) {
++            // only unpark if we are the first packet OR are at the head of the queue
++            // we unpark if we are at the head in case the main thread emptied the queue
++            // immediately before we added but after checking isEmpty
++            java.util.concurrent.locks.LockSupport.unpark(this.runningThread);
++        }
++        // Paper end - improve tick loop
      }
  
-@@ -44,8 +_,29 @@
+     public void processQueuedPackets() {
+@@ -44,8 +_,28 @@
          this.closed = true;
      }
  
@@ -67,11 +69,10 @@
 +    }
 +    // Paper end - detailed watchdog information
 +
-     record ListenerAndPacket<T extends PacketListener>(T listener, Packet<T> packet) {
+     private record ListenerAndPacket<T extends PacketListener>(T listener, Packet<T> packet) {
          public void handle() {
 +            packetProcessing.push(this.listener); // Paper - detailed watchdog information
 +            try { // Paper - detailed watchdog information
-+            if (this.listener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl serverCommonPacketListener && serverCommonPacketListener.processedDisconnect) return; // Paper - Don't handle sync packets for kicked players
              if (this.listener.shouldHandleMessage(this.packet)) {
                  try {
                      this.packet.handle(this.listener);

@@ -42,7 +42,7 @@ public abstract class CraftAbstractLocationInventoryViewBuilder<V extends Invent
         Preconditions.checkArgument(location != null, "The provided location must not be null");
         Preconditions.checkArgument(location.getWorld() != null, "The provided location must be associated with a world");
         this.world = ((CraftWorld) location.getWorld()).getHandle();
-        this.position = CraftLocation.toBlockPosition(location);
+        this.position = CraftLocation.toBlockPos(location);
         return this;
     }
 }

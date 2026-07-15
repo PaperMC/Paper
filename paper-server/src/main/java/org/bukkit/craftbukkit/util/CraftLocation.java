@@ -2,11 +2,14 @@ package org.bukkit.craftbukkit.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.jspecify.annotations.Nullable;
 
 public final class CraftLocation {
 
@@ -57,16 +60,17 @@ public final class CraftLocation {
         return new Location(level.getWorld(), point.x, point.y, point.z);
     }
 
-    public static BlockPos toBlockPosition(Location loc) {
+    public static BlockPos toBlockPos(Location loc) {
         return new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
     public static net.minecraft.core.GlobalPos toGlobalPos(Location loc) {
-        return net.minecraft.core.GlobalPos.of(((org.bukkit.craftbukkit.CraftWorld) loc.getWorld()).getHandle().dimension(), toBlockPosition(loc));
+        return net.minecraft.core.GlobalPos.of(((org.bukkit.craftbukkit.CraftWorld) loc.getWorld()).getHandle().dimension(), toBlockPos(loc));
     }
 
-    public static Location fromGlobalPos(net.minecraft.core.GlobalPos globalPos) {
-        return CraftLocation.toBukkit(globalPos.pos(), net.minecraft.server.MinecraftServer.getServer().getLevel(globalPos.dimension()));
+    public static @Nullable Location fromGlobalPos(net.minecraft.core.GlobalPos globalPos) {
+        ServerLevel level = MinecraftServer.getServer().getLevel(globalPos.dimension());
+        return level != null ? CraftLocation.toBukkit(globalPos.pos(), level) : null;
     }
 
     public static Vec3 toVec3(Location loc) {

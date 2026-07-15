@@ -12,21 +12,22 @@ java {
 }
 
 val annotationsVersion = "26.0.2"
-val adventureVersion = "4.26.1"
+val adventureVersion = "5.2.0"
 val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
-val slf4jVersion = "2.0.16"
-val log4jVersion = "2.24.1"
+val slf4jVersion = "2.0.17"
+val log4jVersion = "2.26.0"
 
-val apiAndDocs: Configuration by configurations.creating {
+val apiAndDocs: Configuration by configurations.creating
+configurations.api {
+    extendsFrom(apiAndDocs)
+}
+val javadocSourcepath: Configuration by configurations.creating {
     attributes {
         attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
         attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
         attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.SOURCES))
         attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
     }
-}
-configurations.api {
-    extendsFrom(apiAndDocs)
 }
 
 // Configure mockito agent that is needed in newer Java versions
@@ -42,13 +43,13 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     // api dependencies are listed transitively to API consumers
-    api("com.google.guava:guava:33.3.1-jre")
-    api("com.google.code.gson:gson:2.11.0")
+    api("com.google.guava:guava:33.6.0-jre")
+    api("com.google.code.gson:gson:2.14.0")
     api("org.yaml:snakeyaml:2.2")
     api("org.joml:joml:1.10.8") {
         isTransitive = false // https://github.com/JOML-CI/JOML/issues/352
     }
-    api("it.unimi.dsi:fastutil:8.5.15")
+    api("it.unimi.dsi:fastutil:8.5.18")
     api("org.apache.logging.log4j:log4j-api:$log4jVersion")
     api("org.slf4j:slf4j-api:$slf4jVersion")
     api("com.mojang:brigadier:1.3.10")
@@ -60,6 +61,7 @@ dependencies {
 
     apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
     apiAndDocs("net.kyori:adventure-api")
+    apiAndDocs("net.kyori:adventure-key")
     apiAndDocs("net.kyori:adventure-text-minimessage")
     apiAndDocs("net.kyori:adventure-text-serializer-gson")
     apiAndDocs("net.kyori:adventure-text-serializer-legacy")
@@ -74,21 +76,22 @@ dependencies {
     val annotations = "org.jetbrains:annotations:$annotationsVersion"
     compileOnly(annotations)
     testCompileOnly(annotations)
+    javadocSourcepath(annotations) // For adventure-api module requirements
 
     val checkerQual = "org.checkerframework:checker-qual:3.49.2"
     compileOnlyApi(checkerQual)
     testCompileOnly(checkerQual)
 
-    api("org.jspecify:jspecify:1.0.0")
+    apiAndDocs("org.jspecify:jspecify:1.0.0")
 
     // Test dependencies
-    testImplementation("org.apache.commons:commons-lang3:3.17.0")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
+    testImplementation("org.apache.commons:commons-lang3:3.20.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.0.3")
     testImplementation("org.hamcrest:hamcrest:2.2")
-    testImplementation("org.mockito:mockito-core:5.14.1")
-    testImplementation("org.ow2.asm:asm-tree:9.8")
-    mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // configure mockito agent that is needed in newer java versions
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.mockito:mockito-core:5.22.0")
+    testImplementation("org.ow2.asm:asm-tree:9.9.1")
+    mockitoAgent("org.mockito:mockito-core:5.22.0") { isTransitive = false } // configure mockito agent that is needed in newer java versions
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
 }
 
 val generatedDir: java.nio.file.Path = layout.projectDirectory.dir("src/generated/java").asFile.toPath()
@@ -187,32 +190,25 @@ tasks.withType<Javadoc>().configureEach {
     options.use()
     options.isDocFilesSubDirs = true
     options.links(
-        "https://guava.dev/releases/33.3.1-jre/api/docs/",
+        "https://guava.dev/releases/33.6.0-jre/api/docs/",
         "https://www.javadocs.dev/org.yaml/snakeyaml/2.2/",
         "https://www.javadocs.dev/org.jetbrains/annotations/$annotationsVersion/",
         "https://www.javadocs.dev/org.joml/joml/1.10.8/",
-        "https://www.javadocs.dev/com.google.code.gson/gson/2.11.0",
+        "https://www.javadocs.dev/com.google.code.gson/gson/2.14.0",
         "https://jspecify.dev/docs/api/",
-        "https://jd.advntr.dev/api/$adventureVersion/",
-        "https://jd.advntr.dev/key/$adventureVersion/",
-        "https://jd.advntr.dev/text-minimessage/$adventureVersion/",
-        "https://jd.advntr.dev/text-serializer-gson/$adventureVersion/",
-        "https://jd.advntr.dev/text-serializer-legacy/$adventureVersion/",
-        "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
-        "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
+        "https://jd.papermc.io/adventure/$adventureVersion/",
         "https://www.javadocs.dev/org.slf4j/slf4j-api/$slf4jVersion/",
         "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/",
         "https://www.javadocs.dev/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
     options.tags("apiNote:a:API Note:")
-    options.tags("implNote:a:Implementation Note:")
 
-    inputs.files(apiAndDocs).ignoreEmptyDirectories().withPropertyName(apiAndDocs.name + "-configuration")
-    val apiAndDocsElements = apiAndDocs.elements
+    inputs.files(javadocSourcepath).ignoreEmptyDirectories().withPropertyName(javadocSourcepath.name + "-configuration")
+    val javadocSourcepathElements = javadocSourcepath.elements
     doFirst {
         options.addStringOption(
             "sourcepath",
-            apiAndDocsElements.get().map { it.asFile }.joinToString(separator = File.pathSeparator, transform = File::getPath)
+            javadocSourcepathElements.get().map { it.asFile }.joinToString(separator = File.pathSeparator, transform = File::getPath)
         )
     }
 

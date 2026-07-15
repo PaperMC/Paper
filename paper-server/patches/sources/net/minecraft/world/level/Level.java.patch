@@ -1,7 +1,10 @@
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -86,6 +_,16 @@
+@@ -89,8 +_,19 @@
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.scores.Scoreboard;
  import org.apache.commons.lang3.mutable.MutableBoolean;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
  import org.jspecify.annotations.Nullable;
  
 +// CraftBukkit start
@@ -17,7 +20,7 @@
  public abstract class Level implements LevelAccessor, AutoCloseable {
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"));
-@@ -127,6 +_,56 @@
+@@ -133,6 +_,55 @@
      private final PalettedContainerFactory palettedContainerFactory;
      private long subTickCount;
  
@@ -28,7 +31,7 @@
 +    public boolean captureBlockStates = false;
 +    public boolean captureTreeGeneration = false;
 +    public Map<BlockPos, org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates = new java.util.LinkedHashMap<>(); // Paper
-+    public Map<BlockPos, BlockEntity> capturedTileEntities = new java.util.LinkedHashMap<>(); // Paper - Retain block place order when capturing blockstates
++    public Map<BlockPos, BlockEntity> capturedBlockEntities = new java.util.LinkedHashMap<>(); // Paper - Retain block place order when capturing blockstates
 +    @Nullable
 +    public List<net.minecraft.world.entity.item.ItemEntity> captureDrops;
 +    public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
@@ -42,7 +45,6 @@
 +    // Paper end - add paper world config
 +
 +    public static @Nullable BlockPos lastPhysicsProblem; // Spigot
-+    private int tileTickPosition;
 +    public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new java.util.HashMap<>(); // Paper - Optimize explosions
 +    public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
 +
@@ -72,24 +74,24 @@
 +    public abstract ResourceKey<net.minecraft.world.level.dimension.LevelStem> getTypeKey();
 +
      protected Level(
-         WritableLevelData levelData,
-         ResourceKey<Level> dimension,
-@@ -135,8 +_,24 @@
-         boolean isClientSide,
-         boolean isDebug,
-         long biomeZoomSeed,
--        int maxChainedNeighborUpdates
-+        int maxChainedNeighborUpdates,
+         final WritableLevelData levelData,
+         final ResourceKey<Level> dimension,
+@@ -142,7 +_,25 @@
+         final boolean isDebug,
+         final long biomeZoomSeed,
+         final int maxChainedNeighborUpdates
++        , String bukkitName, // Paper
 +        org.bukkit.generator.@Nullable ChunkGenerator generator, // Paper
 +        org.bukkit.generator.@Nullable BiomeProvider biomeProvider, // Paper
 +        org.bukkit.World.Environment environment, // Paper
 +        java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
 +        io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator // Paper - create paper world config
      ) {
-+        this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) levelData).getLevelName()); // Spigot
++        final org.bukkit.NamespacedKey worldKey = CraftNamespacedKey.fromMinecraft(dimension.identifier()); // Paper
++        this.spigotConfig = new org.spigotmc.SpigotWorldConfig(bukkitName, worldKey); // Spigot
 +        this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
 +        this.generator = generator;
-+        this.world = new CraftWorld((ServerLevel) this, generator, biomeProvider, environment);
++        this.world = new CraftWorld((ServerLevel) this, worldKey, biomeProvider, environment);
 +
 +        for (SpawnCategory spawnCategory : SpawnCategory.values()) {
 +            if (org.bukkit.craftbukkit.util.CraftSpawnCategory.isValidForLimits(spawnCategory)) {
@@ -100,26 +102,26 @@
          this.levelData = levelData;
          this.dimensionTypeRegistration = dimensionTypeRegistration;
          this.dimension = dimension;
-@@ -150,6 +_,46 @@
-         this.damageSources = new DamageSources(registryAccess);
+@@ -160,6 +_,46 @@
+         return 0;
      }
  
 +    // Paper start - Cancel hit for vanished players
 +    // ret true if no collision
-+    public final boolean checkEntityCollision(BlockState state, Entity source, net.minecraft.world.phys.shapes.CollisionContext collisionContext,
-+                                              BlockPos position, boolean checkCanSee) {
++    public final boolean checkEntityCollision(BlockState state, Entity source, net.minecraft.world.phys.shapes.CollisionContext context,
++                                              BlockPos pos, boolean checkCanSee) {
 +        // Copied from CollisionGetter#isUnobstructed(BlockState, BlockPos, CollisionContext) & EntityGetter#isUnobstructed(Entity, VoxelShape)
-+        net.minecraft.world.phys.shapes.VoxelShape collisionShape = state.getCollisionShape(this, position, collisionContext);
-+        if (collisionShape.isEmpty()) {
++        net.minecraft.world.phys.shapes.VoxelShape shape = state.getCollisionShape(this, pos, context);
++        if (shape.isEmpty()) {
 +            return true;
 +        }
 +
-+        collisionShape = collisionShape.move((double) position.getX(), (double) position.getY(), (double) position.getZ());
-+        if (collisionShape.isEmpty()) {
++        shape = shape.move((double) pos.getX(), (double) pos.getY(), (double) pos.getZ());
++        if (shape.isEmpty()) {
 +            return true;
 +        }
 +
-+        List<Entity> entities = this.getEntities(null, collisionShape.bounds());
++        List<Entity> entities = this.getEntities(null, shape.bounds());
 +        for (int i = 0, len = entities.size(); i < len; ++i) {
 +            Entity entity = entities.get(i);
 +
@@ -128,14 +130,14 @@
 +                continue;
 +            }
 +
-+            // !entity1.isRemoved() && entity1.blocksBuilding && (entity == null || !entity1.isPassengerOfSameVehicle(entity))
-+            // elide the last check since vanilla calls with entity = null
++            // !entity.isRemoved() && entity.blocksBuilding && (source == null || !entity.isPassengerOfSameVehicle(source))
++            // elide the last check since vanilla calls with source = null
 +            // only we care about the source for the canSee check
 +            if (entity.isRemoved() || !entity.blocksBuilding) {
 +                continue;
 +            }
 +
-+            if (net.minecraft.world.phys.shapes.Shapes.joinIsNotEmpty(collisionShape, net.minecraft.world.phys.shapes.Shapes.create(entity.getBoundingBox()), net.minecraft.world.phys.shapes.BooleanOp.AND)) {
++            if (net.minecraft.world.phys.shapes.Shapes.joinIsNotEmpty(shape, net.minecraft.world.phys.shapes.Shapes.create(entity.getBoundingBox()), net.minecraft.world.phys.shapes.BooleanOp.AND)) {
 +                return false;
 +            }
 +        }
@@ -147,7 +149,7 @@
      @Override
      public boolean isClientSide() {
          return this.isClientSide;
-@@ -160,8 +_,15 @@
+@@ -170,8 +_,15 @@
          return null;
      }
  
@@ -158,35 +160,35 @@
 +    }
 +    // Paper end
 +
-     public boolean isInWorldBounds(BlockPos pos) {
--        return !this.isOutsideBuildHeight(pos) && isInWorldBoundsHorizontal(pos);
+     public boolean isInWorldBounds(final BlockPos pos) {
+-        return this.isInsideBuildHeight(pos) && isInWorldBoundsHorizontal(pos);
 +        return pos.isInsideBuildHeightAndWorldBoundsHorizontal(this); // Paper - Perf: Optimize isInWorldBounds
      }
  
-     public boolean isInValidBounds(BlockPos blockPos) {
-@@ -173,7 +_,7 @@
+     public boolean isInValidBounds(final BlockPos pos) {
+@@ -183,7 +_,7 @@
      }
  
-     private static boolean isInWorldBoundsHorizontal(BlockPos pos) {
+     private static boolean isInWorldBoundsHorizontal(final BlockPos pos) {
 -        return pos.getX() >= -30000000 && pos.getZ() >= -30000000 && pos.getX() < 30000000 && pos.getZ() < 30000000;
 +        return pos.getX() >= -30000000 && pos.getZ() >= -30000000 && pos.getX() < 30000000 && pos.getZ() < 30000000; // Paper - Diff on change warnUnsafeChunk() and isInsideBuildHeightAndWorldBoundsHorizontal
      }
  
-     private static boolean isInValidBoundsHorizontal(BlockPos blockPos) {
-@@ -186,14 +_,79 @@
+     private static boolean isInValidBoundsHorizontal(final BlockPos pos) {
+@@ -196,14 +_,78 @@
          return y < -20000000 || y >= 20000000;
      }
  
--    public LevelChunk getChunkAt(BlockPos pos) {
-+    public final LevelChunk getChunkAt(BlockPos pos) { // Paper - help inline
+-    public LevelChunk getChunkAt(final BlockPos pos) {
++    public final LevelChunk getChunkAt(final BlockPos pos) { // Paper - help inline
          return this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
      }
  
      @Override
--    public LevelChunk getChunk(int chunkX, int chunkZ) {
+-    public LevelChunk getChunk(final int chunkX, final int chunkZ) {
 -        return (LevelChunk)this.getChunk(chunkX, chunkZ, ChunkStatus.FULL);
 -    }
-+    public final LevelChunk getChunk(int chunkX, int chunkZ) { // Paper - final to help inline
++    public final LevelChunk getChunk(final int chunkX, final int chunkZ) { // Paper - final to help inline
 +        // Paper start - Perf: make sure loaded chunks get the inlined variant of this function
 +        net.minecraft.server.level.ServerChunkCache cps = ((ServerLevel)this).getChunkSource();
 +        LevelChunk ifLoaded = cps.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
@@ -201,7 +203,7 @@
 +    @Nullable
 +    @Override
 +    public final ChunkAccess getChunkIfLoadedImmediately(int x, int z) {
-+        return ((ServerLevel)this).chunkSource.getChunkAtIfLoadedImmediately(x, z);
++        return ((ServerLevel)this).getChunkSource().getChunkAtIfLoadedImmediately(x, z);
 +    }
 +
 +    @Override
@@ -234,11 +236,11 @@
 +
 +    @Override
 +    public final boolean hasChunkAt(BlockPos pos) {
-+        return getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4) != null; // Paper - Perf: Optimize Level.hasChunkAt(BlockPosition)Z
++        return this.getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4) != null; // Paper - Perf: Optimize LevelReader.hasChunkAt(BlockPos)Z
 +    }
 +
 +    public final boolean isLoadedAndInBounds(BlockPos pos) { // Paper - final for inline
-+        return getWorldBorder().isWithinBounds(pos) && getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4) != null;
++        return this.getWorldBorder().isWithinBounds(pos) && this.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4) != null;
 +    }
 +
 +    public @Nullable LevelChunk getChunkIfLoaded(int x, int z) { // Overridden in ServerLevel for ABI compat which has final
@@ -249,18 +251,17 @@
 +        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4);
 +    }
 +
-+    //  reduces need to do isLoaded before getType
 +    public final @Nullable BlockState getBlockStateIfLoadedAndInBounds(BlockPos pos) {
-+        return getWorldBorder().isWithinBounds(pos) ? getBlockStateIfLoaded(pos) : null;
++        return this.getWorldBorder().isWithinBounds(pos) ? this.getBlockStateIfLoaded(pos) : null;
 +    }
 +    // Paper end
  
      @Override
-     public @Nullable ChunkAccess getChunk(int x, int z, ChunkStatus chunkStatus, boolean requireChunk) {
-@@ -212,6 +_,22 @@
+     public @Nullable ChunkAccess getChunk(final int chunkX, final int chunkZ, final ChunkStatus status, final boolean loadOrGenerate) {
+@@ -222,6 +_,22 @@
  
      @Override
-     public boolean setBlock(BlockPos pos, BlockState state, @Block.UpdateFlags int flags, int recursionLeft) {
+     public boolean setBlock(final BlockPos pos, final BlockState blockState, final @Block.UpdateFlags int updateFlags, final int updateLimit) {
 +        // CraftBukkit start - tree generation
 +        if (this.captureTreeGeneration) {
 +            // Paper start - Protect Bedrock and End Portal/Frames from being destroyed
@@ -269,157 +270,162 @@
 +            // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
 +            CraftBlockState blockstate = this.capturedBlockStates.get(pos);
 +            if (blockstate == null) {
-+                blockstate = org.bukkit.craftbukkit.block.CapturedBlockState.getTreeBlockState(this, pos, flags);
++                blockstate = org.bukkit.craftbukkit.block.CapturedBlockState.getTreeBlockState(this, pos, updateFlags);
 +                this.capturedBlockStates.put(pos.immutable(), blockstate);
 +            }
-+            blockstate.setData(state);
-+            blockstate.setFlags(flags);
++            blockstate.setBlock(blockState);
++            blockstate.setFlags(updateFlags);
 +            return true;
 +        }
 +        // CraftBukkit end
          if (!this.isInValidBounds(pos)) {
              return false;
-         } else if (!this.isClientSide() && this.isDebug()) {
-@@ -219,11 +_,31 @@
-         } else {
-             LevelChunk chunkAt = this.getChunkAt(pos);
-             Block block = state.getBlock();
-+            // CraftBukkit start - capture blockstates
-+            boolean captured = false;
-+            if (this.captureBlockStates) {
-+                final CraftBlockState snapshot;
-+                if (!this.capturedBlockStates.containsKey(pos)) {
-+                    snapshot = (CraftBlockState) org.bukkit.craftbukkit.block.CraftBlock.at(this, pos).getState(); // Paper - use CB getState to get a suitable snapshot
-+                    this.capturedBlockStates.put(pos.immutable(), snapshot);
-+                    captured = true;
-+                } else {
-+                    snapshot = this.capturedBlockStates.get(pos);
-+                }
-+                snapshot.setFlags(flags); // Paper - always set the flag of the most recent call to mitigate issues with multiple update at the same pos with different flags
-+            }
-             BlockState blockState = chunkAt.setBlockState(pos, state, flags);
-+            // CraftBukkit end
-             if (blockState == null) {
-+                // CraftBukkit start - remove blockstate if failed (or the same)
-+                if (this.captureBlockStates && captured) {
-+                    this.capturedBlockStates.remove(pos);
-+                }
-+                // CraftBukkit end
-                 return false;
-             } else {
-                 BlockState blockState1 = this.getBlockState(pos);
-+                /*
-                 if (blockState1 == state) {
-                     if (blockState != blockState1) {
-                         this.setBlocksDirty(pos, blockState, blockState1);
-@@ -251,12 +_,68 @@
- 
-                     this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
-                 }
-+                */
-+
-+                // CraftBukkit start
-+                if (!this.captureBlockStates) { // Don't notify clients or update physics while capturing blockstates
-+                    // Modularize client and physic updates
-+                    // Spigot start
-+                    try {
-+                        this.notifyAndUpdatePhysics(pos, chunkAt, blockState, state, blockState1, flags, recursionLeft);
-+                    } catch (StackOverflowError ex) {
-+                        Level.lastPhysicsProblem = pos.immutable();
-+                    }
-+                    // Spigot end
-+                }
-+                // CraftBukkit end
- 
-                 return true;
-             }
          }
-     }
+@@ -232,12 +_,32 @@
  
+         LevelChunk chunk = this.getChunkAt(pos);
+         Block block = blockState.getBlock();
++        // CraftBukkit start - capture blockstates
++        boolean captured = false;
++        if (this.captureBlockStates) {
++            final CraftBlockState snapshot;
++            if (!this.capturedBlockStates.containsKey(pos)) {
++                snapshot = (CraftBlockState) org.bukkit.craftbukkit.block.CraftBlock.at(this, pos).getState(); // Paper - use CB getState to get a suitable snapshot
++                this.capturedBlockStates.put(pos.immutable(), snapshot);
++                captured = true;
++            } else {
++                snapshot = this.capturedBlockStates.get(pos);
++            }
++            snapshot.setFlags(updateFlags); // Paper - always set the flag of the most recent call to mitigate issues with multiple update at the same pos with different flags
++        }
++        // CraftBukkit end - capture blockstates
+         BlockState oldState = chunk.setBlockState(pos, blockState, updateFlags);
+         if (oldState == null) {
++            // CraftBukkit start - remove blockstate if failed (or the same)
++            if (this.captureBlockStates && captured) {
++                this.capturedBlockStates.remove(pos);
++            }
++            // CraftBukkit end
+             return false;
+         }
+ 
+         BlockState newState = this.getBlockState(pos);
++        /* // CraftBukkit
+         if (newState == blockState) {
+             if (oldState != newState) {
+                 this.setBlocksDirty(pos, oldState, newState);
+@@ -265,9 +_,64 @@
+ 
+             this.updatePOIOnBlockStateChange(pos, oldState, newState);
+         }
++        */ // CraftBukkit
++
++        // CraftBukkit start
++        if (!this.captureBlockStates) { // Don't notify clients or update physics while capturing blockstates
++            // Modularize client and physic updates
++            // Spigot start
++            try {
++                this.notifyAndUpdatePhysics(pos, chunk, oldState, blockState, newState, updateFlags, updateLimit);
++            } catch (StackOverflowError ex) {
++                Level.lastPhysicsProblem = pos.immutable();
++            }
++            // Spigot end
++        }
++        // CraftBukkit end
+ 
+         return true;
+     }
++
 +    // CraftBukkit start - Split off from above in order to directly send client and physic updates
-+    public void notifyAndUpdatePhysics(BlockPos pos, LevelChunk chunkAt, BlockState oldState, BlockState newState, BlockState currentState, @Block.UpdateFlags int flags, int recursionLeft) {
-+        BlockState state = newState;
-+        BlockState blockState = oldState;
-+        BlockState blockState1 = currentState;
-+        if (blockState1 == state) {
-+            if (blockState != blockState1) {
-+                this.setBlocksDirty(pos, blockState, blockState1);
++    public void notifyAndUpdatePhysics(BlockPos pos, LevelChunk chunk, BlockState oldState, BlockState blockState, BlockState newState, @Block.UpdateFlags int updateFlags, int updateLimit) {
++        if (newState == blockState) {
++            if (oldState != newState) {
++                this.setBlocksDirty(pos, oldState, newState);
 +            }
 +
-+            if ((flags & Block.UPDATE_CLIENTS) != 0 && (!this.isClientSide() || (flags & Block.UPDATE_INVISIBLE) == 0) && (this.isClientSide() || chunkAt == null || (chunkAt.getFullStatus() != null && chunkAt.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
-+                this.sendBlockUpdated(pos, blockState, state, flags);
++            if ((updateFlags & Block.UPDATE_CLIENTS) != 0 && (!this.isClientSide() || (updateFlags & Block.UPDATE_INVISIBLE) == 0) && (this.isClientSide() || chunk == null || (chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
++                this.sendBlockUpdated(pos, oldState, blockState, updateFlags);
 +            }
 +
-+            if ((flags & Block.UPDATE_NEIGHBORS) != 0) {
-+                this.updateNeighborsAt(pos, blockState.getBlock());
-+                if (!this.isClientSide() && state.hasAnalogOutputSignal()) {
-+                    this.updateNeighbourForOutputSignal(pos, newState.getBlock());
++            if ((updateFlags & Block.UPDATE_NEIGHBORS) != 0) {
++                this.updateNeighborsAt(pos, oldState.getBlock());
++                if (!this.isClientSide() && blockState.hasAnalogOutputSignal()) {
++                    this.updateNeighbourForOutputSignal(pos, blockState.getBlock());
 +                }
 +            }
 +
-+            if ((flags & Block.UPDATE_KNOWN_SHAPE) == 0 && recursionLeft > 0) {
-+                int i = flags & ~(Block.UPDATE_SUPPRESS_DROPS | Block.UPDATE_NEIGHBORS);
++            if ((updateFlags & Block.UPDATE_KNOWN_SHAPE) == 0 && updateLimit > 0) {
++                int neighbourUpdateFlags = updateFlags & ~(Block.UPDATE_SUPPRESS_DROPS | Block.UPDATE_NEIGHBORS);
 +
 +                // CraftBukkit start
-+                blockState.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1); // Don't call an event for the old block to limit event spam
++                oldState.updateIndirectNeighbourShapes(this, pos, neighbourUpdateFlags, updateLimit - 1); // Don't call an event for the old block to limit event spam
 +                boolean cancelledUpdates = false; // Paper - Fix block place logic
 +                if (((ServerLevel)this).hasPhysicsEvent) { // Paper - BlockPhysicsEvent
-+                    org.bukkit.event.block.BlockPhysicsEvent event = new org.bukkit.event.block.BlockPhysicsEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), CraftBlockData.fromData(state));
++                    org.bukkit.event.block.BlockPhysicsEvent event = new org.bukkit.event.block.BlockPhysicsEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), blockState.asBlockData());
 +                    cancelledUpdates = !event.callEvent(); // Paper - Fix block place logic
 +                }
 +                // CraftBukkit end
 +                if (!cancelledUpdates) { // Paper - Fix block place logic
-+                    state.updateNeighbourShapes(this, pos, i, recursionLeft - 1);
-+                    state.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1);
++                    blockState.updateNeighbourShapes(this, pos, neighbourUpdateFlags, updateLimit - 1);
++                    blockState.updateIndirectNeighbourShapes(this, pos, neighbourUpdateFlags, updateLimit - 1);
 +                } // Paper - Fix block place logic
 +            }
 +
-+            this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
++            if ((updateFlags & Block.UPDATE_SKIP_POI) == 0) // Paper - temporary flag
++            this.updatePOIOnBlockStateChange(pos, oldState, newState);
 +        }
 +    }
 +    // CraftBukkit end
-     public void updatePOIOnBlockStateChange(BlockPos pos, BlockState oldState, BlockState newState) {
+ 
+     public void updatePOIOnBlockStateChange(final BlockPos pos, final BlockState oldState, final BlockState newState) {
+     }
+@@ -279,20 +_,38 @@
      }
  
-@@ -273,13 +_,31 @@
+     @Override
+-    public boolean destroyBlock(final BlockPos pos, final boolean dropResources, final @Nullable Entity breaker, final int updateLimit) {
++    public boolean destroyBlock(final BlockPos pos, boolean dropResources, final @Nullable Entity breaker, final int updateLimit) { // Paper - make dropResources non-final
+         BlockState blockState = this.getBlockState(pos);
+         if (blockState.isAir()) {
              return false;
-         } else {
-             FluidState fluidState = this.getFluidState(pos);
--            if (!(blockState.getBlock() instanceof BaseFireBlock)) {
--                this.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(blockState));
-+            // Paper start - BlockDestroyEvent; while the above removeBlock method looks very similar
-+            // they are NOT used with same intent and the above should not fire this event. The above method is more of a BlockSetToAirEvent,
-+            // it doesn't imply destruction of a block that plays a sound effect / drops an item.
-+            boolean playEffect = true;
-+            BlockState effectType = blockState;
-+            int xp = blockState.getBlock().getExpDrop(blockState, (ServerLevel) this, pos, ItemStack.EMPTY, true);
-+            if (com.destroystokyo.paper.event.block.BlockDestroyEvent.getHandlerList().getRegisteredListeners().length > 0) {
-+                com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), fluidState.createLegacyBlock().createCraftBlockData(), effectType.createCraftBlockData(), xp, dropBlock);
-+                if (!event.callEvent()) {
-+                    return false;
-+                }
-+                effectType = ((CraftBlockData) event.getEffectBlock()).getState();
-+                playEffect = event.playEffect();
-+                dropBlock = event.willDrop();
-+                xp = event.getExpToDrop();
+         }
+ 
+         FluidState fluidState = this.getFluidState(pos);
+-        if (!(blockState.getBlock() instanceof BaseFireBlock)) {
+-            this.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(blockState));
++        // Paper start - BlockDestroyEvent; while the above removeBlock method looks very similar
++        // they are NOT used with same intent and the above should not fire this event. The above method is more of a BlockSetToAirEvent,
++        // it doesn't imply destruction of a block that plays a sound effect / drops an item.
++        boolean playEffect = true;
++        BlockState effectType = blockState;
++        int xp = blockState.getBlock().getExpDrop(blockState, (ServerLevel) this, pos, ItemStack.EMPTY, true);
++        if (com.destroystokyo.paper.event.block.BlockDestroyEvent.getHandlerList().getRegisteredListeners().length > 0) {
++            com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), fluidState.createLegacyBlock().asBlockData(), effectType.asBlockData(), xp, dropResources);
++            if (!event.callEvent()) {
++                return false;
 +            }
-+            // Paper end - BlockDestroyEvent
-+            if (playEffect && !(blockState.getBlock() instanceof BaseFireBlock)) { // Paper - BlockDestroyEvent
-+                this.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(effectType)); // Paper - BlockDestroyEvent
-             }
++            effectType = ((CraftBlockData) event.getEffectBlock()).getState();
++            playEffect = event.playEffect();
++            dropResources = event.willDrop();
++            xp = event.getExpToDrop();
++        }
++        // Paper end - BlockDestroyEvent
++        if (playEffect && !(blockState.getBlock() instanceof BaseFireBlock)) { // Paper - BlockDestroyEvent
++            this.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(effectType)); // Paper - BlockDestroyEvent
+         }
  
-             if (dropBlock) {
-                 BlockEntity blockEntity = blockState.hasBlockEntity() ? this.getBlockEntity(pos) : null;
--                Block.dropResources(blockState, this, pos, blockEntity, entity, ItemStack.EMPTY);
-+                Block.dropResources(blockState, this, pos, blockEntity, entity, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
-+                blockState.getBlock().popExperience((ServerLevel) this, pos, xp, entity); // Paper - Properly handle xp dropping; custom amount
-             }
+         if (dropResources) {
+             BlockEntity blockEntity = blockState.hasBlockEntity() ? this.getBlockEntity(pos) : null;
+-            Block.dropResources(blockState, this, pos, blockEntity, breaker, ItemStack.EMPTY);
++            Block.dropResources(blockState, this, pos, blockEntity, breaker, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
++            blockState.getBlock().popExperience((ServerLevel) this, pos, xp, breaker); // Paper - Properly handle xp dropping; custom amount
+         }
  
-             boolean flag = this.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL, recursionLeft);
-@@ -345,10 +_,18 @@
+         boolean destroyed = this.setBlock(pos, fluidState.createLegacyBlock(), Block.UPDATE_ALL, updateLimit);
+@@ -366,11 +_,19 @@
  
      @Override
-     public BlockState getBlockState(BlockPos pos) {
+     public BlockState getBlockState(final BlockPos pos) {
 +        // CraftBukkit start - tree generation
 +        if (this.captureTreeGeneration) {
 +            CraftBlockState previous = this.capturedBlockStates.get(pos); // Paper
@@ -430,52 +436,61 @@
 +        // CraftBukkit end
          if (!this.isInValidBounds(pos)) {
              return Blocks.VOID_AIR.defaultBlockState();
-         } else {
--            LevelChunk chunk = this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
-+            ChunkAccess chunk = this.getChunk(pos.getX() >> 4, pos.getZ() >> 4, ChunkStatus.FULL, true); // Paper - manually inline to reduce hops and avoid unnecessary null check to reduce total byte code size, this should never return null and if it does we will see it the next line but the real stack trace will matter in the chunk engine
-             return chunk.getBlockState(pos);
          }
+ 
+-        LevelChunk chunk = this.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
++        ChunkAccess chunk = this.getChunk(pos.getX() >> 4, pos.getZ() >> 4, ChunkStatus.FULL, true); // Paper - manually inline to reduce hops and avoid unnecessary null check to reduce total byte code size, this should never return null and if it does we will see it the next line but the real stack trace will matter in the chunk engine
+         return chunk.getBlockState(pos);
      }
-@@ -447,31 +_,47 @@
+ 
+@@ -530,6 +_,7 @@
+     }
+ 
+     public void addBlockEntityTicker(final TickingBlockEntity ticker) {
++        if (!this.paperConfig().unsupportedSettings.ticking.blockEntities) return; // Paper - option to disable ticking
+         (this.tickingBlockEntities ? this.pendingBlockEntityTickers : this.blockEntityTickers).add(ticker);
+     }
+ 
+@@ -540,18 +_,23 @@
              this.pendingBlockEntityTickers.clear();
          }
  
 -        Iterator<TickingBlockEntity> iterator = this.blockEntityTickers.iterator();
-+        // Spigot start
-         boolean runsNormally = this.tickRateManager().runsNormally();
++        // Paper - Fix MC-117075 use removeAll - remove iterator in favour of indexed for loop, ensuring compile error if something uses iter incorrectly
+         boolean tickBlockEntities = this.tickRateManager().runsNormally();
  
 -        while (iterator.hasNext()) {
--            TickingBlockEntity tickingBlockEntity = iterator.next();
-+        var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
-+        toRemove.add(null); // Paper - Fix MC-117075
-+        for (this.tileTickPosition = 0; this.tileTickPosition < this.blockEntityTickers.size(); this.tileTickPosition++) { // Paper - Disable tick limiters
-+            TickingBlockEntity tickingBlockEntity = this.blockEntityTickers.get(this.tileTickPosition);
-+            // Spigot end
-             if (tickingBlockEntity.isRemoved()) {
+-            TickingBlockEntity ticker = iterator.next();
++        // Paper start - Fix MC-117075 use removeAll
++        final it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<@Nullable TickingBlockEntity> toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>();
++        toRemove.add(null);
++        for (int tickerIndex = 0; tickerIndex < this.blockEntityTickers.size(); tickerIndex++) {
++            final TickingBlockEntity ticker = this.blockEntityTickers.get(tickerIndex);
++        // Paper end - Fix MC-117075 use removeAll
+             if (ticker.isRemoved()) {
 -                iterator.remove();
-+                toRemove.add(tickingBlockEntity); // Paper - Fix MC-117075; use removeAll
-             } else if (runsNormally && this.shouldTickBlocksAt(tickingBlockEntity.getPos())) {
-                 tickingBlockEntity.tick();
++                toRemove.add(ticker); // Paper - Fix MC-117075 use removeAll
+             } else if (tickBlockEntities && this.shouldTickBlocksAt(ticker.getPos())) {
+                 ticker.tick();
              }
          }
-+        this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
  
++        this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075 use removeAll
          this.tickingBlockEntities = false;
-+        this.spigotConfig.currentPrimedTnt = 0; // Spigot
      }
  
-     public <T extends Entity> void guardEntityTick(Consumer<T> action, T entity) {
+@@ -559,12 +_,23 @@
          try {
-             action.accept(entity);
-         } catch (Throwable var6) {
--            CrashReport crashReport = CrashReport.forThrowable(var6, "Ticking entity");
--            CrashReportCategory crashReportCategory = crashReport.addCategory("Entity being ticked");
--            entity.fillCrashReportCategory(crashReportCategory);
--            throw new ReportedException(crashReport);
+             tick.accept(entity);
+         } catch (Throwable t) {
+-            CrashReport report = CrashReport.forThrowable(t, "Ticking entity");
+-            CrashReportCategory category = report.addCategory("Entity being ticked");
+-            entity.fillCrashReportCategory(category);
+-            throw new ReportedException(report);
 +            // Paper start - Prevent block entity and entity crashes
-+            final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
-+            MinecraftServer.LOGGER.error(msg, var6);
-+            getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, var6))); // Paper - ServerExceptionEvent
++            final String msg = String.format("Entity threw exception at %s:%s,%s,%s", io.papermc.paper.util.MCUtil.getLevelName(entity.level()), entity.getX(), entity.getY(), entity.getZ());
++            MinecraftServer.LOGGER.error(msg, t);
++            getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, t))); // Paper - ServerExceptionEvent
 +            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
 +            // Paper end - Prevent block entity and entity crashes
          }
@@ -490,35 +505,35 @@
 +    }
 +    // Paper end - Option to prevent armor stands from doing entity lookups
  
-     public boolean shouldTickDeath(Entity entity) {
+     public boolean shouldTickDeath(final Entity entity) {
          return true;
-@@ -595,6 +_,12 @@
+@@ -698,6 +_,12 @@
  
      @Override
-     public @Nullable BlockEntity getBlockEntity(BlockPos pos) {
+     public @Nullable BlockEntity getBlockEntity(final BlockPos pos) {
 +        // Paper start - Perf: Optimize capturedTileEntities lookup
 +        net.minecraft.world.level.block.entity.BlockEntity blockEntity;
-+        if (!this.capturedTileEntities.isEmpty() && (blockEntity = this.capturedTileEntities.get(pos)) != null) {
++        if (!this.capturedBlockEntities.isEmpty() && (blockEntity = this.capturedBlockEntities.get(pos)) != null) {
 +            return blockEntity;
 +        }
 +        // Paper end - Perf: Optimize capturedTileEntities lookup
          if (!this.isInValidBounds(pos)) {
              return null;
          } else {
-@@ -607,6 +_,12 @@
-     public void setBlockEntity(BlockEntity blockEntity) {
-         BlockPos blockPos = blockEntity.getBlockPos();
-         if (this.isInValidBounds(blockPos)) {
+@@ -710,6 +_,12 @@
+     public void setBlockEntity(final BlockEntity blockEntity) {
+         BlockPos pos = blockEntity.getBlockPos();
+         if (this.isInValidBounds(pos)) {
 +            // CraftBukkit start
 +            if (this.captureBlockStates) {
-+                this.capturedTileEntities.put(blockPos.immutable(), blockEntity);
++                this.capturedBlockEntities.put(pos.immutable(), blockEntity);
 +                return;
 +            }
 +            // CraftBukkit end
-             this.getChunkAt(blockPos).addAndRegisterBlockEntity(blockEntity);
+             this.getChunkAt(pos).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -1011,7 +_,8 @@
+@@ -1121,7 +_,8 @@
          BLOCK("block"),
          MOB("mob"),
          TNT("tnt"),
@@ -528,7 +543,7 @@
  
          public static final Codec<Level.ExplosionInteraction> CODEC = StringRepresentable.fromEnum(Level.ExplosionInteraction::values);
          private final String id;
-@@ -1025,4 +_,16 @@
+@@ -1135,4 +_,16 @@
              return this.id;
          }
      }

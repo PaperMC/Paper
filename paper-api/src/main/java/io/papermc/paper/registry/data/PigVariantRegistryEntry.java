@@ -31,14 +31,21 @@ public interface PigVariantRegistryEntry {
     /**
      * Provides the client texture asset of the pig variant, which represents the texture to use.
      *
-     * @return the client texture asset.
+     * @return the client texture asset
      */
     ClientTextureAsset clientTextureAsset();
 
     /**
+     * Provides the client texture asset of the baby pig variant, which represents the texture to use.
+     *
+     * @return the baby client texture asset
+     */
+    ClientTextureAsset babyClientTextureAsset();
+
+    /**
      * Provides the model of the pig variant.
      *
-     * @return the model.
+     * @return the model
      */
     Model model();
 
@@ -48,6 +55,7 @@ public interface PigVariantRegistryEntry {
      * The following values are required for each builder:
      * <ul>
      *     <li>{@link #clientTextureAsset(ClientTextureAsset)}</li>
+     *     <li>{@link #babyClientTextureAsset(ClientTextureAsset)}</li>
      *     <li>{@link #model(Model)}</li>
      * </ul>
      */
@@ -58,18 +66,28 @@ public interface PigVariantRegistryEntry {
         /**
          * Sets the client texture asset of the pig variant, which is the location of the texture to use.
          *
-         * @param clientTextureAsset the client texture asset.
-         * @return this builder instance.
+         * @param clientTextureAsset the client texture asset
+         * @return this builder instance
          * @see PigVariantRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder clientTextureAsset(ClientTextureAsset clientTextureAsset);
 
         /**
+         * Sets the client texture asset of the baby pig variant, which is the location of the texture to use.
+         *
+         * @param babyClientTextureAsset the baby client texture asset
+         * @return this builder instance
+         * @see PigVariantRegistryEntry#babyClientTextureAsset()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder babyClientTextureAsset(ClientTextureAsset babyClientTextureAsset);
+
+        /**
          * Sets the model to use for this pig variant.
          *
-         * @param model the model.
-         * @return this builder instance.
+         * @param model the model
+         * @return this builder instance
          * @see PigVariantRegistryEntry#model()
          */
         @Contract(value = "_ -> this", mutates = "this")

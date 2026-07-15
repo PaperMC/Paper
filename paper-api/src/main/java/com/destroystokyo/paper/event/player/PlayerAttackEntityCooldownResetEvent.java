@@ -9,9 +9,16 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Called when processing a player's attack on an entity when the player's attack strength cooldown is reset
+ * Called when processing a player's attack on an entity when the player's attack strength cooldown is reset.
+ *
+ * @deprecated In modern Minecraft, this does not properly represent spear attacks and additionally does not
+ * cover the wide range of ways that the cooldown may be reset.
+ * <p>
+ * Additionally, the cancellation of event is misleading as the client will reset the cooldown manually.
+ * So there is no way for the server to control this.
  */
 @NullMarked
+@Deprecated(since = "26.1", forRemoval = true)
 public class PlayerAttackEntityCooldownResetEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

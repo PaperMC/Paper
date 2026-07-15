@@ -133,26 +133,74 @@ public class PotionEffect implements ConfigurationSerializable {
     }
 
     // Paper start
+    /**
+     * Returns a new potion effect with the provided type and this effect's
+     * duration, amplifier, ambient, particles, and icon.
+     *
+     * @param type effect type
+     * @return a new potion effect with the provided type
+     */
     @NotNull
     public PotionEffect withType(@NotNull PotionEffectType type) {
         return new PotionEffect(type, duration, amplifier, ambient, particles, icon);
     }
+
+    /**
+     * Returns a new potion effect with the provided duration and this effect's
+     * type, amplifier, ambient, particles, and icon.
+     *
+     * @param duration measured in ticks, see {@link
+     *     PotionEffect#getDuration()}
+     * @return a new potion effect with the provided duration
+     */
     @NotNull
     public PotionEffect withDuration(int duration) {
         return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
     }
+
+    /**
+     * Returns a new potion effect with the provided amplifier and this effect's
+     * type, duration, ambient, particles, and icon.
+     *
+     * @param amplifier the amplifier, see {@link PotionEffect#getAmplifier()}
+     * @return a new potion effect with the provided amplifier
+     */
     @NotNull
     public PotionEffect withAmplifier(int amplifier) {
         return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
     }
+
+    /**
+     * Returns a new potion effect with the provided ambient and this effect's
+     * type, duration, amplifier, particles, and icon.
+     *
+     * @param ambient the ambient status, see {@link PotionEffect#isAmbient()}
+     * @return a new potion effect with the provided ambient
+     */
     @NotNull
     public PotionEffect withAmbient(boolean ambient) {
         return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
     }
+
+    /**
+     * Returns a new potion effect with the provided particles and this effect's
+     * type, duration, amplifier, ambient, and icon.
+     *
+     * @param particles the particle status, see {@link PotionEffect#hasParticles()}
+     * @return a new potion effect with the provided particles
+     */
     @NotNull
     public PotionEffect withParticles(boolean particles) {
         return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
     }
+
+    /**
+     * Returns a new potion effect with the provided icon and this effect's
+     * type, duration, amplifier, ambient, and particles.
+     *
+     * @param icon the icon status, see {@link PotionEffect#hasIcon()}
+     * @return a new potion effect with the provided icon
+     */
     @NotNull
     public PotionEffect withIcon(boolean icon) {
         return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);

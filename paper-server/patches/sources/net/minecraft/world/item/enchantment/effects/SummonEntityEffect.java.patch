@@ -2,21 +2,21 @@
 +++ b/net/minecraft/world/item/enchantment/effects/SummonEntityEffect.java
 @@ -34,11 +_,18 @@
          if (Level.isInSpawnableBounds(blockPos)) {
-             Optional<Holder<EntityType<?>>> randomElement = this.entityTypes().getRandomElement(level.getRandom());
-             if (!randomElement.isEmpty()) {
--                Entity entity1 = randomElement.get().value().spawn(level, blockPos, EntitySpawnReason.TRIGGERED);
-+                Entity entity1 = randomElement.get().value().create(level, null, blockPos, EntitySpawnReason.TRIGGERED, false, false); // CraftBukkit
-                 if (entity1 != null) {
-                     if (entity1 instanceof LightningBolt lightningBolt && item.owner() instanceof ServerPlayer serverPlayer) {
-                         lightningBolt.setCause(serverPlayer);
+             Optional<Holder<EntityType<?>>> entityType = this.entityTypes().getRandomElement(serverLevel.getRandom());
+             if (!entityType.isEmpty()) {
+-                Entity spawned = entityType.get().value().spawn(serverLevel, blockPos, EntitySpawnReason.TRIGGERED);
++                Entity spawned = entityType.get().value().create(serverLevel, null, blockPos, EntitySpawnReason.TRIGGERED, false, false); // CraftBukkit
+                 if (spawned != null) {
+                     if (spawned instanceof LightningBolt lightningBolt && item.owner() instanceof ServerPlayer player) {
+                         lightningBolt.setCause(player);
                      }
 +                    // CraftBukkit start
-+                    if (entity1 instanceof LightningBolt) {
-+                        level.strikeLightning(entity1, (item.itemStack().is(net.minecraft.world.item.Items.TRIDENT)) ? org.bukkit.event.weather.LightningStrikeEvent.Cause.TRIDENT : org.bukkit.event.weather.LightningStrikeEvent.Cause.ENCHANTMENT);
++                    if (spawned instanceof LightningBolt) {
++                        serverLevel.strikeLightning(spawned, (item.itemStack().is(net.minecraft.world.item.Items.TRIDENT)) ? org.bukkit.event.weather.LightningStrikeEvent.Cause.TRIDENT : org.bukkit.event.weather.LightningStrikeEvent.Cause.ENCHANTMENT);
 +                    } else {
-+                        level.addFreshEntityWithPassengers(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.ENCHANTMENT);
++                        serverLevel.addFreshEntityWithPassengers(spawned, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.ENCHANTMENT);
 +                    }
 +                    // CraftBukkit end
  
                      if (this.joinTeam && entity.getTeam() != null) {
-                         level.getScoreboard().addPlayerToTeam(entity1.getScoreboardName(), entity.getTeam());
+                         serverLevel.getScoreboard().addPlayerToTeam(spawned.getScoreboardName(), entity.getTeam());

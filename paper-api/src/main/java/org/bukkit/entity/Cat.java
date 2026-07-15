@@ -34,6 +34,21 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
     public void setCatType(@NotNull Type type);
 
     /**
+     * Get the sound variant of this cat.
+     *
+     * @return cat sound variant
+     */
+    @NotNull
+    SoundVariant getSoundVariant();
+
+    /**
+     * Set the sound variant of this cat.
+     *
+     * @param variant cat sound variant
+     */
+    void setSoundVariant(@NotNull SoundVariant variant);
+
+    /**
      * Get the collar color of this cat
      *
      * @return the color of the collar
@@ -80,7 +95,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
         // End generate - CatType
 
         @NotNull
-        private static Type getType(@NotNull @KeyPattern.Value String key) {
+        private static Type getType(@NotNull @KeyPattern.Value final String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.CAT_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
 
@@ -106,6 +121,23 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type[] values() {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.CAT_VARIANT).stream().toArray(Type[]::new);
+        }
+    }
+
+    /**
+     * Represents the sound variant of a cat.
+     */
+    interface SoundVariant extends Keyed {
+
+        // Start generate - CatSoundVariant
+        SoundVariant CLASSIC = getSoundVariant("classic");
+
+        SoundVariant ROYAL = getSoundVariant("royal");
+        // End generate - CatSoundVariant
+
+        @NotNull
+        private static SoundVariant getSoundVariant(@KeyPattern.Value final @NotNull String key) {
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.CAT_SOUND_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }
 

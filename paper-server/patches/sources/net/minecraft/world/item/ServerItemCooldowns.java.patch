@@ -1,18 +1,10 @@
 --- a/net/minecraft/world/item/ServerItemCooldowns.java
 +++ b/net/minecraft/world/item/ServerItemCooldowns.java
-@@ -11,6 +_,50 @@
+@@ -11,6 +_,42 @@
          this.player = player;
      }
  
 +    // Paper start - Add PlayerItemCooldownEvent
-+    private int getCurrentCooldown(final Identifier groupId) {
-+        final net.minecraft.world.item.ItemCooldowns.CooldownInstance cooldownInstance = this.cooldowns.get(groupId);
-+        if (cooldownInstance == null) {
-+            return 0;
-+        }
-+        return Math.max(0, cooldownInstance.endTime() - this.tickCount);
-+    }
-+
 +    @Override
 +    public void addCooldown(ItemStack item, int duration) {
 +        final Identifier cooldownGroup = this.getCooldownGroup(item);
@@ -25,29 +17,29 @@
 +        if (event.callEvent()) {
 +            this.addCooldown(cooldownGroup, event.getCooldown(), false);
 +        } else {
-+            this.player.connection.send(new ClientboundCooldownPacket(cooldownGroup, this.getCurrentCooldown(cooldownGroup)));
++            this.player.connection.send(new ClientboundCooldownPacket(cooldownGroup, this.getRemainingCooldown(cooldownGroup)));
 +        }
 +    }
 +
 +    @Override
-+    public void addCooldown(Identifier groupId, int duration, boolean callEvent) {
++    public void addCooldown(Identifier cooldownGroup, int time, boolean callEvent) {
 +        if (callEvent) {
 +            final io.papermc.paper.event.player.PlayerItemGroupCooldownEvent event = new io.papermc.paper.event.player.PlayerItemGroupCooldownEvent(
 +                this.player.getBukkitEntity(),
-+                org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(groupId),
-+                duration
++                org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(cooldownGroup),
++                time
 +            );
 +            if (!event.callEvent()) {
-+                this.player.connection.send(new ClientboundCooldownPacket(groupId, this.getCurrentCooldown(groupId)));
++                this.player.connection.send(new ClientboundCooldownPacket(cooldownGroup, this.getRemainingCooldown(cooldownGroup)));
 +                return;
 +            }
 +
-+            duration = event.getCooldown();
++            time = event.getCooldown();
 +        }
-+        super.addCooldown(groupId, duration, false);
++        super.addCooldown(cooldownGroup, time, false);
 +    }
 +    // Paper end - Add PlayerItemCooldownEvent
 +
      @Override
-     protected void onCooldownStarted(Identifier group, int cooldown) {
-         super.onCooldownStarted(group, cooldown);
+     protected void onCooldownStarted(final Identifier cooldownGroup, final int duration) {
+         super.onCooldownStarted(cooldownGroup, duration);

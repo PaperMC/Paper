@@ -1,12 +1,12 @@
 package io.papermc.paper.text;
 
+import io.papermc.paper.InternalAPIBridge;
 import java.io.IOException;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -80,9 +80,8 @@ public final class PaperComponents {
      * @return the resolved component
      * @throws IOException if a syntax error tripped during resolving
      */
-    @SuppressWarnings("deprecation") // using unsafe as a bridge
     public static Component resolveWithContext(final Component input, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
-        return Bukkit.getUnsafe().resolveWithContext(input, context, scoreboardSubject, bypassPermissions);
+        return InternalAPIBridge.get().resolveWithContext(input, context, scoreboardSubject, bypassPermissions);
     }
 
     /**
@@ -90,24 +89,8 @@ public final class PaperComponents {
      *
      * @return a component flattener
      */
-    @SuppressWarnings("deprecation") // using unsafe as a bridge
     public static ComponentFlattener flattener() {
-        return Bukkit.getUnsafe().componentFlattener();
-    }
-
-    /**
-     * Get a serializer for {@link Component}s that will convert components to
-     * a plain-text string.
-     *
-     * <p>Implementations may provide a serializer capable of processing any
-     * information that requires access to implementation details.</p>
-     *
-     * @return a serializer to plain text
-     * @deprecated will be removed in adventure 5.0.0, use {@link PlainTextComponentSerializer#plainText()}
-     */
-    @Deprecated(forRemoval = true, since = "1.18.1")
-    public static PlainComponentSerializer plainSerializer() {
-        return Bukkit.getUnsafe().plainComponentSerializer();
+        return InternalAPIBridge.get().componentFlattener();
     }
 
     /**
@@ -122,7 +105,7 @@ public final class PaperComponents {
      */
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static PlainTextComponentSerializer plainTextSerializer() {
-        return Bukkit.getUnsafe().plainTextSerializer();
+        return PlainTextComponentSerializer.plainText();
     }
 
     /**
@@ -138,7 +121,7 @@ public final class PaperComponents {
      */
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static GsonComponentSerializer gsonSerializer() {
-        return Bukkit.getUnsafe().gsonComponentSerializer();
+        return GsonComponentSerializer.gson();
     }
 
     /**
@@ -155,7 +138,7 @@ public final class PaperComponents {
      */
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static GsonComponentSerializer colorDownsamplingGsonSerializer() {
-        return Bukkit.getUnsafe().colorDownsamplingGsonComponentSerializer();
+        return GsonComponentSerializer.colorDownsamplingGson();
     }
 
     /**
@@ -175,6 +158,6 @@ public final class PaperComponents {
      */
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static LegacyComponentSerializer legacySectionSerializer() {
-        return Bukkit.getUnsafe().legacyComponentSerializer();
+        return LegacyComponentSerializer.legacySection();
     }
 }

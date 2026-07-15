@@ -5,7 +5,7 @@
      private boolean showProgressBar;
      private boolean canRestock;
 +    // CraftBukkit start
-+    private @javax.annotation.Nullable org.bukkit.craftbukkit.inventory.view.CraftMerchantView view = null;
++    private org.bukkit.craftbukkit.inventory.view.@org.jspecify.annotations.Nullable CraftMerchantView view = null;
 +    private final Inventory inventory;
 +
 +    @Override
@@ -17,70 +17,70 @@
 +    }
 +    // CraftBukkit end
  
-     public MerchantMenu(int containerId, Inventory playerInventory) {
-         this(containerId, playerInventory, new ClientSideMerchant(playerInventory.player));
+     public MerchantMenu(final int containerId, final Inventory inventory) {
+         this(containerId, inventory, new ClientSideMerchant(inventory.player));
 @@ -42,6 +_,7 @@
          this.addSlot(new Slot(this.tradeContainer, 0, 136, 37));
          this.addSlot(new Slot(this.tradeContainer, 1, 162, 37));
-         this.addSlot(new MerchantResultSlot(playerInventory.player, trader, this.tradeContainer, 2, 220, 37));
-+        this.inventory = playerInventory; // CraftBukkit
-         this.addStandardInventorySlots(playerInventory, 108, 84);
+         this.addSlot(new MerchantResultSlot(inventory.player, merchant, this.tradeContainer, 2, 220, 37));
++        this.inventory = inventory; // CraftBukkit
+         this.addStandardInventorySlots(inventory, 108, 84);
      }
  
 @@ -61,6 +_,7 @@
  
      @Override
-     public boolean stillValid(Player player) {
+     public boolean stillValid(final Player player) {
 +        if (!checkReachable) return true; // Paper - checkReachable
          return this.trader.stillValid(player);
      }
  
 @@ -105,12 +_,12 @@
-             ItemStack item = slot.getItem();
-             itemStack = item.copy();
+             ItemStack stack = slot.getItem();
+             clicked = stack.copy();
              if (slotIndex == 2) {
--                if (!this.moveItemStackTo(item, 3, 39, true)) {
-+                if (!this.moveItemStackTo(item, 3, 39, true, true)) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
+-                if (!this.moveItemStackTo(stack, 3, 39, true)) {
++                if (!this.moveItemStackTo(stack, 3, 39, true, true)) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
                      return ItemStack.EMPTY;
                  }
  
--                slot.onQuickCraft(item, itemStack);
+-                slot.onQuickCraft(stack, clicked);
 -                this.playTradeSound();
-+                // slot.onQuickCraft(item, itemStack); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent; moved to after the non-check moveItemStackTo call
++                // slot.onQuickCraft(stack, clicked); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent; moved to after the non-check moveItemStackTo call
 +                // this.playTradeSound();
              } else if (slotIndex != 0 && slotIndex != 1) {
                  if (slotIndex >= 3 && slotIndex < 30) {
-                     if (!this.moveItemStackTo(item, 30, 39, false)) {
+                     if (!this.moveItemStackTo(stack, 30, 39, false)) {
 @@ -123,6 +_,7 @@
                  return ItemStack.EMPTY;
              }
  
 +            if (slotIndex != 2) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent; moved down for slot 2
-             if (item.isEmpty()) {
+             if (stack.isEmpty()) {
                  slot.setByPlayer(ItemStack.EMPTY);
              } else {
 @@ -134,13 +_,28 @@
              }
  
-             slot.onTake(player, item);
+             slot.onTake(player, stack);
 +            } // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent; handle slot 2
 +            if (slotIndex == 2) { // is merchant result slot
-+                slot.onTake(player, item);
-+                if (item.isEmpty()) {
++                slot.onTake(player, stack);
++                if (stack.isEmpty()) {
 +                    slot.set(ItemStack.EMPTY);
 +                    return ItemStack.EMPTY;
 +                }
 +
-+                this.moveItemStackTo(item, 3, 39, true, false); // This should always succeed because it's checked above
++                this.moveItemStackTo(stack, 3, 39, true, false); // This should always succeed because it's checked above
 +
-+                slot.onQuickCraft(item, itemStack);
++                slot.onQuickCraft(stack, clicked);
 +                this.playTradeSound();
 +                slot.set(ItemStack.EMPTY); // item should ALWAYS be empty
 +            }
 +            // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
          }
  
-         return itemStack;
+         return clicked;
      }
  
      private void playTradeSound() {

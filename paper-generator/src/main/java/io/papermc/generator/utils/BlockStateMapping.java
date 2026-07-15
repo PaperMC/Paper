@@ -47,16 +47,17 @@ import net.minecraft.world.level.block.state.properties.ComparatorMode;
 import net.minecraft.world.level.block.state.properties.CreakingHeartState;
 import net.minecraft.world.level.block.state.properties.DoorHingeSide;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
-import net.minecraft.world.level.block.state.properties.DripstoneThickness;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.block.state.properties.PistonType;
+import net.minecraft.world.level.block.state.properties.PotentSulfurState;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.state.properties.RailShape;
 import net.minecraft.world.level.block.state.properties.RedstoneSide;
 import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
 import net.minecraft.world.level.block.state.properties.SideChainPart;
 import net.minecraft.world.level.block.state.properties.SlabType;
+import net.minecraft.world.level.block.state.properties.SpeleothemThickness;
 import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.level.block.state.properties.StructureMode;
 import net.minecraft.world.level.block.state.properties.TestBlockMode;
@@ -98,12 +99,13 @@ import org.bukkit.block.data.type.Door;
 import org.bukkit.block.data.type.Dripleaf;
 import org.bukkit.block.data.type.Fence;
 import org.bukkit.block.data.type.Furnace;
-import org.bukkit.block.data.type.PointedDripstone;
+import org.bukkit.block.data.type.PotentSulfur;
 import org.bukkit.block.data.type.RedstoneRail;
 import org.bukkit.block.data.type.RedstoneWire;
 import org.bukkit.block.data.type.ResinClump;
 import org.bukkit.block.data.type.SculkSensor;
 import org.bukkit.block.data.type.Slab;
+import org.bukkit.block.data.type.Speleothem;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.block.data.type.Switch;
 import org.bukkit.block.data.type.TechnicalPiston;
@@ -130,7 +132,6 @@ public final class BlockStateMapping {
         .put("TripWireHook", "TripwireHook")
         .put("Tnt", "TNT")
         .put("BambooStalk", "Bamboo")
-        .put("Farm", "Farmland")
         .put("ChiseledBookShelf", "ChiseledBookshelf")
         .put("UntintedParticleLeaves", "Leaves")
         .put("TintedParticleLeaves", "Leaves")
@@ -234,6 +235,10 @@ public final class BlockStateMapping {
                 }
             }
 
+            if (api != null && api.isAnnotationPresent(Deprecated.class)) {
+                api = null; // if deprecated ignore
+            }
+
             map.put(specialBlock, new BlockData(implName, api, properties, propertyFields, complexPropertyFields));
         }
         MAPPING = Collections.unmodifiableMap(map);
@@ -268,6 +273,7 @@ public final class BlockStateMapping {
         .put(BlockStateProperties.WATERLOGGED, Waterlogged.class)
         .put(BlockStateProperties.SEGMENT_AMOUNT, Segmentable.class)
         .put(BlockStateProperties.SIDE_CHAIN_PART, SideChaining.class)
+        .put(BlockStateProperties.SPELEOTHEM_THICKNESS, Speleothem.class)
         .buildOrThrow();
 
     private static final Map<Property<?>, Class<? extends org.bukkit.block.data.BlockData>> MAIN_PROPERTY_TO_DATA = Map.of(
@@ -279,7 +285,7 @@ public final class BlockStateMapping {
         .put(DoorHingeSide.class, Door.Hinge.class)
         .put(SlabType.class, Slab.Type.class)
         .put(StructureMode.class, org.bukkit.block.data.type.StructureBlock.Mode.class)
-        .put(DripstoneThickness.class, PointedDripstone.Thickness.class)
+        .put(SpeleothemThickness.class, Speleothem.Thickness.class)
         .put(WallSide.class, Wall.Height.class)
         .put(BellAttachType.class, Bell.Attachment.class)
         .put(NoteBlockInstrument.class, Instrument.class)
@@ -305,6 +311,7 @@ public final class BlockStateMapping {
         .put(TestBlockMode.class, org.bukkit.block.data.type.TestBlock.Mode.class)
         .put(CopperGolemStatueBlock.Pose.class, CopperGolemStatue.Pose.class)
         .put(SideChainPart.class, SideChaining.ChainPart.class)
+        .put(PotentSulfurState.class, PotentSulfur.State.class)
         .buildOrThrow();
 
     public static @Nullable Class<? extends org.bukkit.block.data.BlockData> getBestSuitedApiClass(Class<?> block) {

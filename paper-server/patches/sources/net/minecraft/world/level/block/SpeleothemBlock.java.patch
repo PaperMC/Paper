@@ -1,0 +1,45 @@
+--- a/net/minecraft/world/level/block/SpeleothemBlock.java
++++ b/net/minecraft/world/level/block/SpeleothemBlock.java
+@@ -192,6 +_,11 @@
+                 && projectile.mayBreak(serverLevel)
+                 && projectile instanceof ThrownTrident
+                 && projectile.getDeltaMovement().length() > 0.6) {
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, blockPos, state.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
++                    return;
++                }
++                // CraftBukkit end
+                 level.destroyBlock(blockPos, true);
+             }
+         }
+@@ -381,16 +_,16 @@
+         if (this.isUnmergedTipWithDirection(existingStateAtTargetPos, growToDirection.getOpposite())) {
+             this.createMergedTips(existingStateAtTargetPos, level, targetPos);
+         } else if (existingStateAtTargetPos.isAir() || existingStateAtTargetPos.is(Blocks.WATER)) {
+-            this.createSpeleothem(level, targetPos, growToDirection, SpeleothemThickness.TIP);
++            this.createSpeleothem(level, targetPos, growToDirection, SpeleothemThickness.TIP, growFromPos); // CraftBukkit
+         }
+     }
+ 
+-    private void createSpeleothem(final LevelAccessor level, final BlockPos pos, final Direction direction, final SpeleothemThickness thickness) {
++    private void createSpeleothem(final LevelAccessor level, final BlockPos pos, final Direction direction, final SpeleothemThickness thickness, final BlockPos source) { // CraftBukkit
+         BlockState state = this.defaultBlockState()
+             .setValue(TIP_DIRECTION, direction)
+             .setValue(THICKNESS, thickness)
+             .setValue(WATERLOGGED, level.getFluidState(pos).is(Fluids.WATER));
+-        level.setBlock(pos, state, Block.UPDATE_ALL);
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, pos, state, Block.UPDATE_ALL); // CraftBukkit
+     }
+ 
+     private void createMergedTips(final BlockState tipState, final LevelAccessor level, final BlockPos tipPos) {
+@@ -404,8 +_,8 @@
+             stalagmitePos = tipPos.below();
+         }
+ 
+-        this.createSpeleothem(level, stalactitePos, Direction.DOWN, SpeleothemThickness.TIP_MERGE);
+-        this.createSpeleothem(level, stalagmitePos, Direction.UP, SpeleothemThickness.TIP_MERGE);
++        this.createSpeleothem(level, stalactitePos, Direction.DOWN, SpeleothemThickness.TIP_MERGE, tipPos); // CraftBukkit
++        this.createSpeleothem(level, stalagmitePos, Direction.UP, SpeleothemThickness.TIP_MERGE, tipPos); // CraftBukkit
+     }
+ 
+     private void growStalagmiteBelow(final ServerLevel level, final BlockPos posAboveStalagmite) {

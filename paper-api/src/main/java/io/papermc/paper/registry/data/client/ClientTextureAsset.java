@@ -60,7 +60,7 @@ public interface ClientTextureAsset {
      * @return a new {@code ClientAsset} instance.
      */
     @Contract("_ -> new")
-    static ClientTextureAsset clientTextureAsset(final @KeyPattern String identifier) {
+    static ClientTextureAsset clientTextureAsset(@KeyPattern final String identifier) {
         return clientTextureAsset(Key.key(identifier));
     }
 }

@@ -3,7 +3,6 @@ package io.papermc.paper.adventure;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.JavaOps;
 import io.netty.util.AttributeKey;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,17 +25,14 @@ import net.kyori.adventure.text.TranslationArgument;
 import net.kyori.adventure.text.event.DataComponentValue;
 import net.kyori.adventure.text.event.DataComponentValueConverterRegistry;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.serializer.ComponentSerializer;
 import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-import net.kyori.adventure.text.serializer.plain.PlainComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.translation.GlobalTranslator;
 import net.kyori.adventure.util.Codec;
-import net.minecraft.ChatFormatting;
-import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
@@ -46,21 +42,18 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
-import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.Entity;
-import org.bukkit.command.CommandSender;
+import net.minecraft.world.scores.TeamColor;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
-import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.intellij.lang.annotations.Subst;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -119,8 +112,6 @@ public final class PaperAdventure {
         })
         .build();
     public static final AttributeKey<Locale> LOCALE_ATTRIBUTE = AttributeKey.valueOf("adventure:locale"); // init after FLATTENER because classloading triggered here might create a logger
-    @Deprecated
-    public static final PlainComponentSerializer PLAIN = PlainComponentSerializer.builder().flattener(FLATTENER).build();
     public static final ANSIComponentSerializer ANSI_SERIALIZER = ANSIComponentSerializer.builder().flattener(FLATTENER).build();
     private static final TagParser<Tag> NBT_PARSER = TagParser.create(NbtOps.INSTANCE);
     public static final Codec<Tag, String, CommandSyntaxException, RuntimeException> NBT_CODEC = new Codec<>() {
@@ -246,7 +237,6 @@ public final class PaperAdventure {
     }
 
     private static Component translated(final Component component, final Locale locale) {
-        //noinspection ConstantValue
         return GlobalTranslator.render(
             component,
             // play it safe
@@ -254,24 +244,6 @@ public final class PaperAdventure {
                 ? locale
                 : Locale.US
         );
-    }
-
-    public static Component resolveWithContext(final @NotNull Component component, final @Nullable CommandSender context, final org.bukkit.entity.@Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
-        final CommandSourceStack css = context != null ? VanillaCommandWrapper.getListener(context) : null;
-        Boolean previous = null;
-        if (css != null && bypassPermissions) {
-            previous = css.bypassSelectorPermissions;
-            css.bypassSelectorPermissions = true;
-        }
-        try {
-            return asAdventure(ComponentUtils.updateForEntity(css, asVanilla(component), scoreboardSubject == null ? null : ((CraftEntity) scoreboardSubject).getHandle(), 0));
-        } catch (final CommandSyntaxException e) {
-            throw new IOException(e);
-        } finally {
-            if (css != null && previous != null) {
-                css.bypassSelectorPermissions = previous;
-            }
-        }
     }
 
     // BossBar
@@ -435,17 +407,12 @@ public final class PaperAdventure {
     }
 
     // Colors
-
-    public static @NotNull TextColor asAdventure(final ChatFormatting formatting) {
-        final Integer color = formatting.getColor();
-        if (color == null) {
-            throw new IllegalArgumentException("Not a valid color");
-        }
-        return TextColor.color(color);
+    public static @Nullable NamedTextColor asAdventure(final TeamColor teamColor) {
+        return NamedTextColor.NAMES.value(teamColor.getSerializedName());
     }
 
-    public static @Nullable ChatFormatting asVanilla(final TextColor color) {
-        return ChatFormatting.getByHexValue(color.value());
+    public static @Nullable TeamColor asVanilla(final NamedTextColor color) {
+        return TeamColor.byName(color.toString());
     }
 
     // Style

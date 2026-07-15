@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/level/block/ShulkerBoxBlock.java
 +++ b/net/minecraft/world/level/block/ShulkerBoxBlock.java
-@@ -76,8 +_,8 @@
-     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+@@ -78,8 +_,8 @@
+     ) {
          if (level instanceof ServerLevel serverLevel
              && level.getBlockEntity(pos) instanceof ShulkerBoxBlockEntity shulkerBoxBlockEntity
 -            && canOpen(state, level, pos, shulkerBoxBlockEntity)) {
@@ -11,18 +11,18 @@
              player.awardStat(Stats.OPEN_SHULKER_BOX);
              PiglinAi.angerNearbyPiglins(serverLevel, player, true);
          }
-@@ -115,7 +_,7 @@
-                 itemEntity.setDefaultPickUpDelay();
-                 level.addFreshEntity(itemEntity);
+@@ -117,7 +_,7 @@
+                 entity.setDefaultPickUpDelay();
+                 level.addFreshEntity(entity);
              } else {
 -                shulkerBoxBlockEntity.unpackLootTable(player);
 +                shulkerBoxBlockEntity.unpackLootTable(player, true); // Paper - force clear loot table so replenish data isn't persisted in the stack
              }
          }
  
-@@ -125,7 +_,15 @@
+@@ -127,7 +_,15 @@
      @Override
-     protected List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
+     protected List<ItemStack> getDrops(final BlockState state, LootParams.Builder params) {
          BlockEntity blockEntity = params.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
 +        Runnable reAdd = null; // Paper
          if (blockEntity instanceof ShulkerBoxBlockEntity shulkerBoxBlockEntity) {
@@ -36,7 +36,7 @@
              params = params.withDynamicDrop(CONTENTS, output -> {
                  for (int i = 0; i < shulkerBoxBlockEntity.getContainerSize(); i++) {
                      output.accept(shulkerBoxBlockEntity.getItem(i));
-@@ -133,7 +_,13 @@
+@@ -135,7 +_,13 @@
              });
          }
  
