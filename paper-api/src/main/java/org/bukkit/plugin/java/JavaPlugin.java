@@ -270,21 +270,23 @@ public abstract class JavaPlugin extends PluginBase {
      */
     @org.jetbrains.annotations.ApiStatus.Internal
     public final void setEnabled(final boolean enabled) {
-        if (isEnabled != enabled) {
-            isEnabled = enabled;
-
-            if (isEnabled) {
-                this.isBeingEnabled = true;
-                try {
-                    onEnable();
-                } finally {
-                    this.allowsLifecycleRegistration = false;
-                    this.isBeingEnabled = false;
-                }
-            } else {
-                onDisable();
-            }
+        if (isEnabled == enabled) {
+            return;
         }
+
+        if (enabled) {
+            this.isBeingEnabled = true;
+            try {
+                onEnable();
+            } finally {
+                this.allowsLifecycleRegistration = false;
+                this.isBeingEnabled = false;
+            }
+        } else {
+            onDisable();
+        }
+
+        isEnabled = enabled;
     }
 
     private static class DummyPluginLoaderImplHolder {
