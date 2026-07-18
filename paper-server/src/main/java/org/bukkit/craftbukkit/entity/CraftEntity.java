@@ -10,10 +10,14 @@ import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.TeleportFlag;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -98,6 +102,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     protected Entity entity;
     private final EntityType entityType;
     private EntityDamageEvent lastDamageEvent;
+    private final Map<Key, Predicate<org.bukkit.entity.Entity>> additionalAlliedRules = new HashMap<>();
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftEntity.DATA_TYPE_REGISTRY);
     // Paper start - Folia shedulers
     public final io.papermc.paper.threadedregions.EntityScheduler taskScheduler = new io.papermc.paper.threadedregions.EntityScheduler(this);
@@ -1337,6 +1342,31 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public boolean hasData(final @NotNull DataComponentType type) {
         return this.entity.get(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type)) != null;
+    }
+
+    public boolean considersEntityAsAlly0(org.bukkit.entity.Entity entity) {
+        return this.additionalAlliedRules.values().stream().anyMatch(entityPredicate -> entityPredicate.test(entity));
+    }
+
+    @Override
+    public boolean isAlliedTo(@NotNull org.bukkit.entity.Entity other) {
+        Preconditions.checkArgument(other != null, "other cannot be null");
+        return this.getHandle().isAlliedTo(((CraftEntity)other).getHandle());
+    }
+
+    @Override
+    public Predicate<org.bukkit.entity.Entity> getAdditionalAlliedRule(@NotNull Key key) {
+        return this.additionalAlliedRules.get(key);
+    }
+
+    @Override
+    public void addAdditionalAlliedRule(@NotNull Key key, @NotNull Predicate<org.bukkit.entity.Entity> predicate) {
+        this.additionalAlliedRules.put(key, predicate);
+    }
+
+    @Override
+    public void removeAdditionalAlliedRule(@NotNull Key key) {
+        this.additionalAlliedRules.remove(key);
     }
 
 }
