@@ -79,6 +79,11 @@ public record PaperCombatTrackerWrapper(
         return Optionull.map(fallLocation, PaperCombatTrackerWrapper::minecraftToPaper);
     }
 
+    @Override
+    public int getLastDamageTime() {
+        return this.handle.mob.tickCount - this.handle.lastDamageTime;
+    }
+
     private static final BiMap<FallLocation, FallLocationType> FALL_LOCATION_MAPPING = Util.make(() -> {
         final BiMap<FallLocation, FallLocationType> map = HashBiMap.create(8);
         map.put(FallLocation.GENERIC, FallLocationType.GENERIC);

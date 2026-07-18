@@ -107,4 +107,11 @@ public interface CombatTracker {
      * @return the fall location type
      */
     @Nullable FallLocationType calculateFallLocationType();
+
+    /**
+     * Returns time since last damage in ticks
+     *
+     * @return ticks since last damage
+     */
+    int getLastDamageTime();
 }
