@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.math.Angle;
 import io.papermc.paper.math.Position;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -3792,24 +3793,24 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Sets the player's rotation.
      *
+     * @deprecated in favor of {@link #setRotation(Angle, Angle)}
      * @param yaw the yaw
      * @param pitch the pitch
      */
+    @Deprecated
     void setRotation(float yaw, float pitch);
 
     /**
      * Set the player's rotation.
      * <p>
-     * Note: When relative parameters are set, client will do interpolations to
-     * make the rotation smooth, it's different from just send a new rotation with
-     * yaw or pitch addition.
+     * Note: When using relative angles, client will do interpolations to
+     * make the rotation smooth, it's different from just send a new absolute
+     * angle with yaw or pitch addition.
      *
      * @param yaw the yaw
-     * @param relativeYaw whether the yaw is relative to the current yaw
      * @param pitch the pitch
-     * @param relativePitch whether the pitch is relative to the current pitch
      */
-    void setRotation(float yaw, boolean relativeYaw, float pitch, boolean relativePitch);
+    void setRotation(Angle yaw, Angle pitch);
 
     /**
      * Causes the player to look towards the given entity.
