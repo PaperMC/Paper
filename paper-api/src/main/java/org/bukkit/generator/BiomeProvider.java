@@ -1,6 +1,7 @@
 package org.bukkit.generator;
 
 import java.util.List;
+import java.util.Optional;
 import org.bukkit.block.Biome;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,6 +60,29 @@ public abstract class BiomeProvider {
     @NotNull
     public Biome getBiome(@NotNull WorldInfo worldInfo, int x, int y, int z, @NotNull BiomeParameterPoint biomeParameterPoint) {
         return getBiome(worldInfo, x, y, z);
+    }
+
+    /**
+     * Return a biome for structure placement searching (e.g. stronghold ring
+     * position computation), bypassing expensive biome pipeline evaluation.
+     * <p>
+     * Implementations may return a coarse approximation sufficient to determine
+     * whether a position is eligible for a structure (e.g. land vs ocean).
+     * Return {@link Optional#empty()} to fall back to the full
+     * {@link #getBiome(WorldInfo, int, int, int)} path.
+     * <p>
+     * This is called from {@code findBiomeHorizontal} which runs on background
+     * executor threads. Implementations must be thread-safe.
+     *
+     * @param worldInfo The world info of the world being searched
+     * @param x The X block coordinate
+     * @param z The Z block coordinate
+     * @return An optional biome for fast structure placement eligibility
+     *         checking, or empty to use the full pipeline
+     */
+    @NotNull
+    public Optional<Biome> getStructurePlacementBiome(@NotNull WorldInfo worldInfo, int x, int z) {
+        return Optional.empty();
     }
 
     /**
