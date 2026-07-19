@@ -53,7 +53,8 @@ public interface Pathfinder {
      * as the current target. Useful for calculating what would happen before setting it.
      *
      * @param loc Location to navigate to
-     * @param reachRange The reach range of the pathfinding
+     * @param reachRange The <a href="https://cp-algorithms.com/geometry/manhattan-distance.html">Manhattan-distance</a> threshold
+     *                   from the target position at which the path is considered reached, where {@code 0} requires the exact target position
      * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
      */
     @Nullable PathResult findPath(final Location loc, final @NonNegative int reachRange);
@@ -104,7 +105,8 @@ public interface Pathfinder {
      * However, this behavior is not guaranteed, and is subject to the games behavior.
      *
      * @param target the Entity to navigate to
-     * @param reachRange The reach range of the pathfinding
+     * @param reachRange The <a href="https://cp-algorithms.com/geometry/manhattan-distance.html">Manhattan-distance</a> threshold
+     *                   from the target position at which the path is considered reached, where {@code 0} requires the exact target position
      * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
      */
     @Nullable PathResult findPath(final Entity target, final @NonNegative int reachRange);
