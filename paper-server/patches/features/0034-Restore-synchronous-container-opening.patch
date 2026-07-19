@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PaperMC <developers@papermc.io>
+Date: Sat, 18 Jul 2026 00:00:00 +0300
+Subject: [PATCH] Restore synchronous container opening
+
+Container state changes are observable from the advancement callback that
+follows a block use. Delaying an opening therefore makes the opened block
+appear closed until the next tick, breaking datapacks that use containers as
+GUIs.
+
+Only defer the close path, which can run while handling player logout or
+server shutdown. Keep opening synchronous so the block state matches vanilla
+at the time its use callback runs.
+
+diff --git a/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java b/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
+index 52737172ccfa0c7c977e4f2fe1db242e0bb92d25..25b530d8880ff4fbe29a722079d1c3538f1511de 100644
+--- a/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
++++ b/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
+@@ -48,12 +48,6 @@ public abstract class ContainerOpenersCounter {
+     public void incrementOpeners(
+         final LivingEntity entity, final Level level, final BlockPos pos, final BlockState blockState, final double maxInteractionRange
+     ) {
+-        // Paper start - delay open/close callbacks
+-        if (this.delayCallbacks()) {
+-            scheduleRecheck(level, pos, blockState, 1);
+-            return;
+-        }
+-        // Paper end - delay open/close callbacks
+         int previous = this.openCount++;
+
+         // Paper start - Call BlockRedstoneEvent
