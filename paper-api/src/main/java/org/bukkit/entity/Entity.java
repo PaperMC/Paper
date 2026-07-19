@@ -149,7 +149,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param yaw the yaw
      * @param pitch the pitch
      */
-    void setRotation(Angle yaw, Angle pitch);
+    void setRotation(@NotNull Angle yaw, @NotNull Angle pitch);
 
     // Paper start - Teleport API
     /**
