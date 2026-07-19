@@ -22,14 +22,14 @@ public abstract class SimpleGenerator implements SourceGenerator {
 
     protected abstract TypeSpec getTypeSpec();
 
-    protected JavaFile.Builder file(JavaFile.Builder builder) {
-        return builder;
+    protected void file(JavaFile.Builder builder) {
     }
 
     @Override
     public void writeToFile(Path parent) throws IOException {
         JavaFile.Builder builder = JavaFile.builder(this.packageName, this.getTypeSpec());
-        this.file(builder)
+        this.file(builder);
+        builder
             .indent(INDENT_UNIT)
             .skipJavaLangImports(true);
 
