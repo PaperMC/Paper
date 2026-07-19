@@ -17,4 +17,12 @@ public class EntityTypesTest {
             }
         }
     }
+
+    @Test
+    void testGetSpawnCategory() {
+        for (EntityType type : EntityType.values()) {
+            if (type == EntityType.UNKNOWN) continue;
+            assertNotNull(type.getSpawnCategory(), "SpawnCategory should not be null for " + type);
+        }
+    }
 }

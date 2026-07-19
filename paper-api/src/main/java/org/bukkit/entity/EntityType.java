@@ -344,6 +344,17 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     }
 
     /**
+     * Gets the spawn category of this entity type.
+     *
+     * @return the spawn category
+     * @throws IllegalArgumentException if the entity does not have a spawn category (is probably a custom entity)
+     */
+    public @NotNull SpawnCategory getSpawnCategory() {
+        Preconditions.checkArgument(this != UNKNOWN, "UNKNOWN entities do not have a spawn category");
+        return InternalAPIBridge.get().getSpawnCategory(this);
+    }
+
+    /**
      * Checks if the entity has default attributes.
      *
      * @return true if it has default attributes
