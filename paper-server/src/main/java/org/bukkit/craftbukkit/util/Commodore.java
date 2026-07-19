@@ -495,6 +495,14 @@ public class Commodore {
                                 }
                             }
 
+                            if (pluginVersion.isOlderThan(ApiVersion.ABSTRACT_CUBE_MOB) && owner.equals("org/bukkit/inventory/meta/BookMeta") && name.equals("pages")) {
+                                if (desc.contains("Lnet/kyori/adventure/inventory/Book;")) {
+                                    desc = desc.replace("Lnet/kyori/adventure/inventory/Book;", "Lorg/bukkit/inventory/meta/BookMeta;");
+                                    visitor.visit(opcode, owner, name, desc, itf, samMethodType, instantiatedMethodType);
+                                    return;
+                                }
+                            }
+
                             visitor.visit(opcode, owner, name, desc, itf, samMethodType, instantiatedMethodType);
                             return;
                         }
