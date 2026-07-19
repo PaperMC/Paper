@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -55,7 +56,7 @@ public interface Pathfinder {
      * @param reachRange The reach range of the pathfinding
      * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
      */
-    @Nullable PathResult findPath(Location loc, int reachRange);
+    @Nullable PathResult findPath(final Location loc, final @NonNegative int reachRange);
 
     /**
      * Calculates a destination for the Entity to navigate to reach the target entity,
@@ -106,7 +107,7 @@ public interface Pathfinder {
      * @param reachRange The reach range of the pathfinding
      * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
      */
-    @Nullable PathResult findPath(Entity target, int reachRange);
+    @Nullable PathResult findPath(final Entity target, final @NonNegative int reachRange);
 
     /**
      * Calculates a destination for the Entity to navigate to, and sets it with default speed
