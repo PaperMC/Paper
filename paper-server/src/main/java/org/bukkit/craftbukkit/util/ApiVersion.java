@@ -12,6 +12,7 @@ public final class ApiVersion implements Comparable<ApiVersion>, Serializable {
     public static final ApiVersion FIELD_NAME_PARITY;
     public static final ApiVersion ABSTRACT_COW;
     public static final ApiVersion ABSTRACT_CUBE_MOB;
+    public static final ApiVersion CLASS_TO_INTERFACE;
     public static final ApiVersion NONE;
 
     private static final Map<String, ApiVersion> versions;
@@ -23,6 +24,7 @@ public final class ApiVersion implements Comparable<ApiVersion>, Serializable {
         FIELD_NAME_PARITY = getOrCreateVersion("1.20.5");
         ABSTRACT_COW = getOrCreateVersion("1.21.5");
         ABSTRACT_CUBE_MOB = getOrCreateVersion("26.2");
+        CLASS_TO_INTERFACE = ABSTRACT_CUBE_MOB;
         NONE = getOrCreateVersion("none");
     }
 

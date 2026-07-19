@@ -26,8 +26,7 @@ public class RegistryBootstrapper {
             }
         });
 
-        // todo remove once entity type and potion are both a registry
-        generators.add(new GeneratedTagKeyType(RegistryEntries.byRegistryKey(Registries.ENTITY_TYPE), PAPER_REGISTRY_PACKAGE + ".keys.tags"));
+        // todo remove once potion is a registry
         generators.add(new GeneratedTagKeyType(RegistryEntries.byRegistryKey(Registries.POTION), PAPER_REGISTRY_PACKAGE + ".keys.tags"));
     }
 

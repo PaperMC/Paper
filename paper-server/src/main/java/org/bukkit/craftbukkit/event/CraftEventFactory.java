@@ -47,15 +47,19 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Leashable;
+import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.fish.AbstractFish;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.monster.illager.SpellcasterIllager;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.entity.projectile.hurtingprojectile.Fireball;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
@@ -1564,11 +1568,11 @@ public class CraftEventFactory {
 
     public static BlockIgniteEvent callBlockIgniteEvent(Level level, BlockPos pos, Entity igniter) {
         org.bukkit.entity.Entity bukkitIgniter = igniter.getBukkitEntity();
-        IgniteCause cause = switch (bukkitIgniter.getType()) {
-            case END_CRYSTAL -> IgniteCause.ENDER_CRYSTAL;
-            case LIGHTNING_BOLT -> IgniteCause.LIGHTNING;
-            case SMALL_FIREBALL, FIREBALL -> IgniteCause.FIREBALL;
-            case ARROW -> IgniteCause.ARROW;
+        IgniteCause cause = switch (bukkitIgniter) {
+            case EndCrystal $ -> IgniteCause.ENDER_CRYSTAL;
+            case LightningBolt $ -> IgniteCause.LIGHTNING;
+            case Fireball $ -> IgniteCause.FIREBALL;
+            case Arrow $ -> IgniteCause.ARROW;
             default -> IgniteCause.FLINT_AND_STEEL;
         };
 

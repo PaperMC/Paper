@@ -1,14 +1,16 @@
-package org.bukkit.scoreboard;
+package org.bukkit;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-import org.bukkit.Material;
-import org.bukkit.Statistic;
 import org.bukkit.entity.EntityType;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.scoreboard.Criteria;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class CriteriaTest extends AbstractTestingBase {
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+@AllFeatures
+public class CriteriaTest {
 
     @Test
     public void testStatistic() {

@@ -20,11 +20,13 @@ import org.bukkit.boss.DragonBattle;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.generator.BiomeProvider;
@@ -724,33 +726,49 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public Item dropItemNaturally(@NotNull Location location, @NotNull ItemStack item, @Nullable Consumer<? super Item> function);
 
     /**
-     * Creates an {@link Arrow} entity at the given {@link Location}
-     *
-     * @param location Location to spawn the arrow
-     * @param direction Direction to shoot the arrow in
-     * @param speed Speed of the arrow. A recommend speed is 0.6
-     * @param spread Spread of the arrow. A recommend spread is 12
-     * @return Arrow entity spawned as a result of this method
-     */
-    @NotNull
-    default Arrow spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread) {
-        return this.spawnArrow(location, direction, speed, spread, Arrow.class);
-    }
-
-    /**
      * Creates an arrow entity of the given class at the given {@link Location}
      *
-     * @param <T> type of arrow to spawn
+     * @param <A> type of arrow to spawn
      * @param location Location to spawn the arrow
      * @param direction Direction to shoot the arrow in
      * @param speed Speed of the arrow. A recommend speed is 0.6
      * @param spread Spread of the arrow. A recommend spread is 12
      * @param clazz the Entity class for the arrow
-     * {@link org.bukkit.entity.SpectralArrow},{@link org.bukkit.entity.Arrow},{@link org.bukkit.entity.TippedArrow}
+     * {@link org.bukkit.entity.SpectralArrow}, {@link org.bukkit.entity.Arrow}, {@link org.bukkit.entity.Trident}
      * @return Arrow entity spawned as a result of this method
+     * @deprecated use {@link #spawnProjectile(Location, EntityType, Vector, float, float)}
      */
     @NotNull
-    public <T extends AbstractArrow> T spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread, @NotNull Class<T> clazz);
+    @Deprecated(since = "26.2")
+    public <A extends AbstractArrow> A spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread, @NotNull Class<A> clazz);
+
+    /**
+     * Creates an {@link Arrow} entity at the given {@link Location}
+     *
+     * @param location location to spawn the arrow
+     * @param direction direction to shoot the arrow in
+     * @param speed speed of the arrow (recommend speed: 0.6)
+     * @param spread spread of the arrow (recommend spread: 12)
+     * @return arrow entity spawned as a result of this method
+     */
+    @NotNull
+    default Arrow spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread) {
+        return this.spawnProjectile(location, EntityType.ARROW, direction, speed, spread);
+    }
+
+    /**
+     * Creates a projectile entity of the given type at the given {@link Location}
+     *
+     * @param <P> type of projectile to spawn
+     * @param location location to spawn the projectile
+     * @param type the entity type for the projectile
+     * @param direction direction to shoot the projectile in
+     * @param speed speed of the projectile (recommend speed: 0.6)
+     * @param spread spread of the projectile (recommend spread: 12)
+     * @return projectile entity spawned as a result of this method
+     */
+    @NotNull
+    <P extends Projectile> P spawnProjectile(@NotNull Location location, @NotNull EntityType<P> type, @NotNull Vector direction, float speed, float spread); // todo in region accessor?
 
     /**
      * Creates a tree at the given {@link Location}
@@ -2500,7 +2518,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param location      the location at which the entity will be spawned.
      * @param clazz         the class of the {@link LivingEntity} that is to be spawned.
-     * @param <T>           the generic type of the entity that is being created.
+     * @param <E>           the generic type of the entity that is being created.
      * @param spawnReason   the reason provided during the {@link CreatureSpawnEvent} call.
      * @param randomizeData whether or not the entity's data should be randomised
      *                      before spawning. By default entities are randomised
@@ -2521,9 +2539,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param function      the function to be run before the entity is spawned.
      * @return the spawned entity instance.
      * @throws IllegalArgumentException if either the world or clazz parameter are null.
+     * @deprecated use {@link #spawnEntity(Location, EntityType, boolean, CreatureSpawnEvent.SpawnReason, Consumer)}
      */
+    @Deprecated(since = "26.2")
     @NotNull
-    public <T extends LivingEntity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull CreatureSpawnEvent.SpawnReason spawnReason, boolean randomizeData, @Nullable Consumer<? super T> function) throws IllegalArgumentException;
+    public <E extends LivingEntity> E spawn(@NotNull Location location, @NotNull Class<E> clazz, @NotNull CreatureSpawnEvent.SpawnReason spawnReason, boolean randomizeData, @Nullable Consumer<? super E> function) throws IllegalArgumentException;
 
     /**
      * Spawn a {@link FallingBlock} entity at the given {@link Location} of
@@ -2554,7 +2574,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return The spawned {@link FallingBlock} instance
      * @throws IllegalArgumentException if {@link Location} or {@link
      *     BlockData} are null
-     * @deprecated Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
+     * @apiNote use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
     @NotNull
     @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.2") // Paper
