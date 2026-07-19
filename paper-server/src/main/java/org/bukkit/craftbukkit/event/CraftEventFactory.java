@@ -1117,8 +1117,6 @@ public class CraftEventFactory {
         DamageCause cause;
         if (source.knownCause() != null) {
             cause = source.knownCause();
-        } else if (source.is(DamageTypes.IN_FIRE)) { // todo could be called above
-            cause = DamageCause.FIRE;
         } else if (source.is(DamageTypes.STARVE)) {
             cause = DamageCause.STARVATION;
         } else if (source.is(DamageTypes.WITHER)) {
