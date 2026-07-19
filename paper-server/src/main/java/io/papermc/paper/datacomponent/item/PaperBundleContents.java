@@ -26,16 +26,16 @@ public record PaperBundleContents(
         private final List<net.minecraft.world.item.ItemStackTemplate> items = new ObjectArrayList<>();
 
         @Override
-        public BundleContents.Builder add(final ItemStack stack) {
-            Preconditions.checkArgument(stack != null, "stack cannot be null");
-            Preconditions.checkArgument(!stack.isEmpty(), "stack cannot be empty");
-            this.items.add(CraftItemStack.asTemplate(stack));
+        public BundleContents.Builder add(final ItemStack item) {
+            Preconditions.checkArgument(item != null, "item cannot be null");
+            Preconditions.checkArgument(!item.isEmpty(), "item cannot be empty");
+            this.items.add(CraftItemStack.asTemplate(item));
             return this;
         }
 
         @Override
-        public BundleContents.Builder addAll(final List<ItemStack> stacks) {
-            stacks.forEach(this::add);
+        public BundleContents.Builder addAll(final List<ItemStack> items) {
+            items.forEach(this::add);
             return this;
         }
 

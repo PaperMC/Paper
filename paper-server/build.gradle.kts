@@ -8,13 +8,13 @@ plugins {
     `maven-publish`
     idea
     id("io.papermc.paperweight.core")
-    id("io.papermc.fill.gradle") version "1.0.11"
+    id("io.papermc.fill.gradle") version "1.0.12"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:26.1.2+build.2")
+    mache("io.papermc:mache:26.2+build.1")
     paperclip("io.papermc:paperclip:3.0.4")
 }
 
@@ -23,7 +23,7 @@ paperweight {
     gitFilePatches = false
 
     updatingMinecraft {
-        // oldPaperCommit = "711c5de2b05df39b72c44ff54e9f9381f8d153cb"
+        // oldPaperCommit = "d4fe85375af18bfa88f44d7c1e6a61904ae550cc"
     }
 }
 
@@ -110,7 +110,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:concurrentutil:0.0.10")
+    implementation("ca.spottedleaf:leafpile:1.0.0")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -122,16 +122,16 @@ dependencies {
       all its classes to check if they are plugins.
       Scanning takes about 1-2 seconds so adding this speeds up the server start.
      */
-    implementation("org.apache.logging.log4j:log4j-core:2.25.2")
-    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.25.2") // Needed to generate meta for our Log4j plugins
+    implementation("org.apache.logging.log4j:log4j-core:2.26.0")
+    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.26.0") // Needed to generate meta for our Log4j plugins
     runtimeOnly(log4jPlugins.output)
     alsoShade(log4jPlugins.output)
 
     implementation("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT") {
         isTransitive = false
     }
-    implementation("io.netty:netty-codec-haproxy:4.2.7.Final") // Add support for proxy protocol
-    implementation("org.apache.logging.log4j:log4j-iostreams:2.25.2")
+    implementation("io.netty:netty-codec-haproxy:4.2.15.Final") // Add support for proxy protocol
+    implementation("org.apache.logging.log4j:log4j-iostreams:2.26.0")
     implementation("org.ow2.asm:asm-commons:9.9.1")
     implementation("org.spongepowered:configurate-yaml:4.2.0")
 
@@ -193,6 +193,15 @@ tasks.jar {
 // Compile tests with -parameters for better junit parameterized test names
 tasks.compileTestJava {
     options.compilerArgs.add("-parameters")
+}
+
+tasks.named<JavaCompile>(log4jPlugins.compileJavaTaskName) {
+    options.compilerArgs.addAll(
+        listOf(
+            "-Alog4j.graalvm.groupId=${project.group}",
+            "-Alog4j.graalvm.artifactId=${project.name}"
+        )
+    )
 }
 
 // Bump compile tasks to 1GB memory to avoid OOMs
@@ -281,6 +290,7 @@ fun TaskContainer.registerRunTask(
     }
     systemProperty("io.papermc.paper.suppress.sout.nags", true)
     systemProperty("paper.maxChatCommandInputSize", 32767)
+    systemProperty("paper.disableMigrationDelay", true)
 
     val memoryGb = providers.gradleProperty("paper.runMemoryGb").getOrElse("2")
     minHeapSize = "${memoryGb}G"

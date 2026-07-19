@@ -38,14 +38,14 @@ public final class CraftRaid implements Raid {
 
     @Override
     public int getBadOmenLevel() {
-        return this.handle.raidOmenLevel;
+        return this.handle.getRaidOmenLevel();
     }
 
     @Override
     public void setBadOmenLevel(int badOmenLevel) {
         int max = this.handle.getMaxRaidOmenLevel();
         Preconditions.checkArgument(0 <= badOmenLevel && badOmenLevel <= max, "Bad Omen level must be between 0 and %s", max);
-        this.handle.raidOmenLevel = badOmenLevel;
+        this.handle.setRaidOmenLevel(badOmenLevel);
     }
 
     @Override
@@ -74,7 +74,7 @@ public final class CraftRaid implements Raid {
 
     @Override
     public int getTotalGroups() {
-        return this.handle.numGroups + (this.handle.raidOmenLevel > 1 ? 1 : 0);
+        return this.handle.numGroups + (this.handle.getRaidOmenLevel() > 1 ? 1 : 0);
     }
 
     @Override

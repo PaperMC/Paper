@@ -15,6 +15,10 @@ public final class PaperBootstrap {
 
     public static void boot(final OptionSet options) {
         SharedConstants.tryDetectVersion();
+        // Paper start - Perf: Skip data fixer schema sanity check
+        // This is a startup sanity check for entity and block entity types and forces Vanilla datafixer building
+        SharedConstants.CHECK_DATA_FIXER_SCHEMA = Boolean.getBoolean("paper.updatingMinecraft");
+        // Paper end - Perf: Skip data fixer schema sanity check
 
         getStartupVersionMessages().forEach(LOGGER::info);
 

@@ -18,11 +18,8 @@ public class CraftEntityType {
     public static EntityType minecraftToBukkit(net.minecraft.world.entity.EntityType<?> minecraft) {
         Preconditions.checkArgument(minecraft != null);
 
-        net.minecraft.core.Registry<net.minecraft.world.entity.EntityType<?>> registry = CraftRegistry.getMinecraftRegistry(Registries.ENTITY_TYPE);
-        EntityType bukkit = Registry.ENTITY_TYPE.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().identifier()));
-
+        EntityType bukkit = Registry.ENTITY_TYPE.get(CraftNamespacedKey.fromMinecraft(net.minecraft.world.entity.EntityType.getKey(minecraft)));
         Preconditions.checkArgument(bukkit != null);
-
         return bukkit;
     }
 
@@ -30,7 +27,7 @@ public class CraftEntityType {
     public static net.minecraft.world.entity.EntityType<?> bukkitToMinecraft(EntityType bukkit) {
         Preconditions.checkArgument(bukkit != null);
         return CraftRegistry.getMinecraftRegistry(Registries.ENTITY_TYPE)
-                .getOptional(KEY_CACHE.computeIfAbsent(bukkit, type -> net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, CraftNamespacedKey.toMinecraft(type.getKey())))).orElseThrow();
+                .getOptional(KEY_CACHE.computeIfAbsent(bukkit, type -> CraftNamespacedKey.toResourceKey(Registries.ENTITY_TYPE, type.getKey()))).orElseThrow();
     }
 
     @Deprecated // for now until this is a proper registry type

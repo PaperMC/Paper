@@ -164,22 +164,23 @@
 +            ChunkHolder holder = entry; // Paper - Moonrise
              Optional<ChunkAccess> chunk = Optional.ofNullable(holder.getLatestChunk());
              Optional<LevelChunk> fullChunk = chunk.flatMap(
-                 chunkAccess -> chunkAccess instanceof LevelChunk ? Optional.of((LevelChunk)chunkAccess) : Optional.empty()
-@@ -922,14 +_,14 @@
+                 chunkAccess -> chunkAccess instanceof LevelChunk levelChunk ? Optional.of(levelChunk) : Optional.empty()
+@@ -922,14 +_,15 @@
          return this.upgradeChunkTag(
              tag,
              -1,
 -            getChunkDataFixContextTag(this.level.dimension(), this.generator().getTypeNameForDataFixer()),
-+            getChunkDataFixContextTag(this.level.getTypeKey(), this.generator().getTypeNameForDataFixer()), // CraftBukkit
++            getChunkDataFixContextTag(this.level.dimension(), this.generator().getTypeNameForDataFixer(), this.level.getTypeKey()), // Paper - pass level stem
              SharedConstants.getCurrentVersion().dataVersion().version()
          );
      }
  
 -    public static CompoundTag getChunkDataFixContextTag(final ResourceKey<Level> dimension, final Optional<Identifier> generatorIdentifier) {
-+    public static CompoundTag getChunkDataFixContextTag(final ResourceKey<net.minecraft.world.level.dimension.LevelStem> stemKey, final Optional<Identifier> generatorIdentifier) { // CraftBukkit
++    public static CompoundTag getChunkDataFixContextTag(final ResourceKey<Level> dimension, final Optional<Identifier> generatorIdentifier, final ResourceKey<net.minecraft.world.level.dimension.LevelStem> stemKey) { // Paper - pass level stem
          CompoundTag contextTag = new CompoundTag();
 -        contextTag.putString("dimension", dimension.identifier().toString());
-+        contextTag.putString("dimension", stemKey.identifier().toString()); // CraftBukkit
++        contextTag.putString("dimension", stemKey.identifier().toString()); // Paper - pass level stem as dimension instead of passed dimension to run datafixers for non minecraft worlds.
++        contextTag.putString("level_identifier", dimension.identifier().toString()); // Paper - store dimension key for later lookup if needed.
          generatorIdentifier.ifPresent(identifier -> contextTag.putString("generator", identifier.toString()));
          return contextTag;
      }
@@ -207,7 +208,7 @@
 +        // Spigot end
      }
  
-     boolean anyPlayerCloseEnoughTo(final BlockPos pos, final int maxDistance) {
+     public boolean anyPlayerCloseEnoughTo(final BlockPos pos, final int maxDistance) {
 @@ -978,8 +_,24 @@
      }
  
@@ -259,10 +260,10 @@
      }
  
      private boolean playerIsCloseEnoughTo(final ServerPlayer player, final Vec3 pos, final int maxDistance) {
-@@ -1138,9 +_,19 @@
+@@ -1142,9 +_,19 @@
      }
  
-     public void addEntity(final Entity entity) {
+     protected void addEntity(final Entity entity) {
 +        org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
 +        // Paper start - ignore and warn about illegal addEntity calls instead of crashing server
 +        if (!entity.valid || entity.level() != this.level || this.entityMap.containsKey(entity.getId())) {
@@ -279,7 +280,7 @@
              if (range != 0) {
                  int updateInterval = type.updateInterval();
                  if (this.entityMap.containsKey(entity.getId())) {
-@@ -1164,6 +_,7 @@
+@@ -1168,6 +_,7 @@
      }
  
      protected void removeEntity(final Entity entity) {
@@ -287,7 +288,7 @@
          if (entity instanceof ServerPlayer player) {
              this.updatePlayerStatus(player, false);
  
-@@ -1325,10 +_,10 @@
+@@ -1328,10 +_,10 @@
          private final Entity entity;
          private final int range;
          private SectionPos lastSectionPos;
@@ -300,7 +301,7 @@
              this.entity = entity;
              this.range = range;
              this.lastSectionPos = SectionPos.of(entity);
-@@ -1375,6 +_,7 @@
+@@ -1378,6 +_,7 @@
          }
  
          public void removePlayer(final ServerPlayer player) {
@@ -308,7 +309,7 @@
              if (this.seenBy.remove(player.connection)) {
                  this.serverEntity.removePairing(player);
                  if (this.seenBy.isEmpty()) {
-@@ -1384,23 +_,47 @@
+@@ -1387,23 +_,47 @@
          }
  
          public void updatePlayer(final ServerPlayer player) {
@@ -359,11 +360,11 @@
                      }
                  } else {
                      this.removePlayer(player);
-@@ -1417,6 +_,7 @@
+@@ -1420,6 +_,7 @@
  
              for (Entity passenger : this.entity.getIndirectPassengers()) {
                  int passengerRange = passenger.getType().clientTrackingRange() * 16;
-+                passengerRange = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, passengerRange); // Paper
++                passengerRange = org.spigotmc.TrackingRange.getEntityTrackingRange(passenger, passengerRange); // Paper
                  if (passengerRange > effectiveRange) {
                      effectiveRange = passengerRange;
                  }

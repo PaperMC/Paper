@@ -62,8 +62,7 @@ public class CraftZombie extends CraftMonster implements Zombie {
     @Override
     public void setConversionTime(int time) {
         if (time < 0) {
-            this.getHandle().conversionTime = -1;
-            this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.zombie.Zombie.DATA_DROWNED_CONVERSION_ID, false);
+            this.getHandle().stopDrowning();
         } else {
             this.getHandle().startUnderWaterConversion(time);
         }
@@ -89,8 +88,8 @@ public class CraftZombie extends CraftMonster implements Zombie {
     }
 
     @Override
-    public void startDrowning(int drownedConversionTime) {
-        this.getHandle().startUnderWaterConversion(drownedConversionTime);
+    public void startDrowning(int time) {
+        this.getHandle().startUnderWaterConversion(time);
     }
 
     @Override
@@ -144,7 +143,7 @@ public class CraftZombie extends CraftMonster implements Zombie {
     }
 
     @Override
-    public void setBreed(boolean b) {
+    public void setBreed(boolean breed) {
     }
 
     @Override

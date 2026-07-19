@@ -1,0 +1,19 @@
+--- a/net/minecraft/advancements/triggers/SimpleCriterionTrigger.java
++++ b/net/minecraft/advancements/triggers/SimpleCriterionTrigger.java
+@@ -20,14 +_,14 @@
+         PlayerAdvancements advancements = player.getAdvancements();
+         Map<PlayerAdvancements.TriggerInstanceKey, T> listenersForType = advancements.getTriggerMapForType(this);
+         if (listenersForType != null && !listenersForType.isEmpty()) {
+-            LootContext playerContext = EntityPredicate.createContext(player, player);
++            LootContext playerContext = null; // EntityPredicate.createContext(player, player); // Paper - Perf: lazily create LootContext for criterions
+             List<PlayerAdvancements.TriggerInstanceKey> matchedConditions = null;
+ 
+             for (Entry<PlayerAdvancements.TriggerInstanceKey, T> entry : listenersForType.entrySet()) {
+                 T value = entry.getValue();
+                 if (matcher.test(value)) {
+                     Optional<ContextAwarePredicate> predicate = value.player();
+-                    if (!predicate.isPresent() || predicate.get().matches(playerContext)) {
++                    if (!predicate.isPresent() || predicate.get().matches(playerContext = (playerContext == null ? EntityPredicate.createContext(player, player) : playerContext))) { // Paper - Perf: lazily create LootContext for criterions
+                         if (matchedConditions == null) {
+                             matchedConditions = new ArrayList<>();
+                         }

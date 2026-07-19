@@ -168,9 +168,14 @@ public final class CraftPlayerProfile implements PlayerProfile, com.destroystoky
     @Override
     public ResolvableProfile buildResolvableProfile() {
         this.rebuildDirtyProperties();
-        return this.properties.isEmpty() && (name == null) != (uniqueId == null) // Heuristic copied from net.minecraft.world.item.component.ResolvableProfile.create
-            ? new ResolvableProfile.Dynamic(name == null ? Either.right(uniqueId) : Either.left(name), PlayerSkin.Patch.EMPTY)
-            : ResolvableProfile.createResolved(this.buildGameProfile());
+        if (this.properties.isEmpty() && (this.name == null) != (this.uniqueId == null)) { // Heuristic copied from ResolvableProfile.create
+            if (this.name == null) {
+                return ResolvableProfile.createUnresolved(this.uniqueId);
+            } else {
+                return ResolvableProfile.createUnresolved(this.name);
+            }
+        }
+        return ResolvableProfile.createResolved(this.buildGameProfile());
     }
 
     // This always returns a new GameProfile instance to ensure that property changes to the original or previously

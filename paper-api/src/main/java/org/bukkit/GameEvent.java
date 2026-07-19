@@ -30,6 +30,8 @@ public abstract class GameEvent implements Keyed {
 
     public static final GameEvent BLOCK_PLACE = getEvent("block_place");
 
+    public static final GameEvent BOUNCE = getEvent("bounce");
+
     public static final GameEvent CONTAINER_CLOSE = getEvent("container_close");
 
     public static final GameEvent CONTAINER_OPEN = getEvent("container_open");

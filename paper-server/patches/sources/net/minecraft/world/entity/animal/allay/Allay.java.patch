@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/allay/Allay.java
 +++ b/net/minecraft/world/entity/animal/allay/Allay.java
-@@ -99,6 +_,7 @@
+@@ -100,6 +_,7 @@
      private float dancingAnimationTicks;
      private float spinningAnimationTicks;
      private float spinningAnimationTicks0;
@@ -8,7 +8,7 @@
  
      public Allay(final EntityType<? extends Allay> type, final Level level) {
          super(type, level);
-@@ -112,6 +_,12 @@
+@@ -113,6 +_,12 @@
          );
      }
  
@@ -21,7 +21,7 @@
      @Override
      protected Brain<Allay> makeBrain(final Brain.Packed packedBrain) {
          return BRAIN_PROVIDER.makeBrain(this, packedBrain);
-@@ -214,7 +_,7 @@
+@@ -215,7 +_,7 @@
      public void aiStep() {
          super.aiStep();
          if (!this.level().isClientSide() && this.isAlive() && this.tickCount % 10 == 0) {
@@ -30,7 +30,7 @@
          }
  
          if (this.isDancing() && this.shouldStopDancing() && this.tickCount % 20 == 0) {
-@@ -282,7 +_,12 @@
+@@ -283,7 +_,12 @@
          ItemStack interactionItem = player.getItemInHand(hand);
          ItemStack itemInHand = this.getItemInHand(InteractionHand.MAIN_HAND);
          if (this.isDancing() && interactionItem.is(ItemTags.DUPLICATES_ALLAYS) && this.canDuplicate()) {
@@ -44,7 +44,7 @@
              this.level().broadcastEntityEvent(this, EntityEvent.IN_LOVE_HEARTS);
              this.level().playSound(player, this, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 2.0F, 1.0F);
              this.removeInteractionItem(player, interactionItem);
-@@ -385,6 +_,7 @@
+@@ -386,6 +_,7 @@
      }
  
      private boolean shouldStopDancing() {
@@ -52,7 +52,22 @@
          return this.jukeboxPos == null
              || !this.jukeboxPos.closerToCenterThan(this.position(), GameEvent.JUKEBOX_PLAY.value().notificationRadius())
              || !this.level().getBlockState(this.jukeboxPos).is(Blocks.JUKEBOX);
-@@ -437,7 +_,7 @@
+@@ -412,11 +_,12 @@
+     @Override
+     protected void dropEquipment(final ServerLevel level) {
+         super.dropEquipment(level);
+-        this.inventory.removeAllItems().forEach(stack -> this.spawnAtLocation(level, stack));
++        this.inventory.getItems().stream().filter(item -> !item.isEmpty()).forEach(stack -> this.spawnAtLocation(level, stack)); // Paper - delay removal post event - taken from removeAllItems
++        this.postDeathEventTasks.add(this.inventory::clearContent); // Paper - only clear after death event
+         ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
+         if (!itemStack.isEmpty() && !EnchantmentHelper.has(itemStack, EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP)) {
+             this.spawnAtLocation(level, itemStack);
+-            this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
++            this.postDeathEventTasks.add(() -> this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY)); // Paper
+         }
+     }
+ 
+@@ -438,7 +_,7 @@
          super.readAdditionalSaveData(input);
          this.readInventoryFromTag(input);
          this.vibrationData = input.read("listener", VibrationSystem.Data.CODEC).orElseGet(VibrationSystem.Data::new);
@@ -61,13 +76,13 @@
      }
  
      @Override
-@@ -456,15 +_,17 @@
+@@ -457,15 +_,17 @@
          this.entityData.set(DATA_CAN_DUPLICATE, duplicationCooldown == 0L);
      }
  
 -    public void duplicateAllay() {
-+    @Nullable public Allay duplicateAllay() { // CraftBukkit - return allay
-         Allay allay = EntityType.ALLAY.create(this.level(), EntitySpawnReason.BREEDING);
++    public @Nullable Allay duplicateAllay() { // CraftBukkit - return allay
+         Allay allay = EntityTypes.ALLAY.create(this.level(), EntitySpawnReason.BREEDING);
          if (allay != null) {
              allay.snapTo(this.position());
              allay.setPersistenceRequired();

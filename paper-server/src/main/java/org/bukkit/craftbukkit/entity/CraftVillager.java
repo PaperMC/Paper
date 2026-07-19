@@ -176,7 +176,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
             return CraftRegistry.bukkitToMinecraftHolder(bukkit);
         }
 
-        public CraftType(final Holder<VillagerType> holder){
+        public CraftType(final Holder<VillagerType> holder) {
             super(holder, count++);
         }
     }
@@ -231,7 +231,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public void clearReputations() {
-        this.getHandle().getGossips().gossips.clear();
+        this.getHandle().getGossips().clear();
     }
 
     @Override

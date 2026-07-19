@@ -70,7 +70,7 @@ public interface DamageTypeRegistryEntry {
         /**
          * Sets part of the death message translation key.
          *
-         * @return this builder instance.
+         * @return this builder instance
          * @see DamageTypeRegistryEntry#messageId()
          * @see DamageType#getTranslationKey()
          */
@@ -80,7 +80,7 @@ public interface DamageTypeRegistryEntry {
         /**
          * Sets the amount of hunger exhaustion caused by this damage type.
          *
-         * @return this builder instance.
+         * @return this builder instance
          * @see DamageTypeRegistryEntry#exhaustion()
          * @see DamageType#getExhaustion()
          */
@@ -90,7 +90,7 @@ public interface DamageTypeRegistryEntry {
         /**
          * Sets the {@link DamageScaling} for this damage type.
          *
-         * @return this builder instance.
+         * @return this builder instance
          * @see DamageTypeRegistryEntry#damageScaling()
          * @see DamageType#getDamageScaling()
          */
@@ -100,7 +100,7 @@ public interface DamageTypeRegistryEntry {
         /**
          * Sets the {@link DamageEffect} for this damage type.
          *
-         * @return this builder instance.
+         * @return this builder instance
          * @see DamageTypeRegistryEntry#damageEffect()
          * @see DamageType#getDamageEffect()
          */
@@ -110,7 +110,7 @@ public interface DamageTypeRegistryEntry {
         /**
          * Sets the {@link DeathMessageType} for this damage type.
          *
-         * @return this builder instance.
+         * @return this builder instance
          * @see DamageTypeRegistryEntry#deathMessageType()
          * @see DamageType#getDeathMessageType()
          */
