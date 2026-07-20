@@ -459,6 +459,7 @@ public class Commodore {
                                 if (desc.contains("Lnet/kyori/adventure/inventory/Book;")) {
                                     desc = desc.replace("Lnet/kyori/adventure/inventory/Book;", "Lorg/bukkit/inventory/meta/BookMeta;");
                                     visitor.visit(opcode, owner, name, desc, itf, samMethodType, instantiatedMethodType);
+                                    visitor.visit(opcode, owner, "asBook", "()Lnet/kyori/adventure/inventory/Book;", itf, samMethodType, instantiatedMethodType);
                                     return;
                                 }
                             }
