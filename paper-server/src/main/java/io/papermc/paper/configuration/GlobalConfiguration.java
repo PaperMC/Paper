@@ -13,6 +13,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 import net.minecraft.resources.Identifier;
+import org.apache.commons.io.FileUtils;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -164,6 +165,13 @@ public class GlobalConfiguration extends ConfigurationPart {
         public int recipeSpamIncrement = 1;
         public int recipeSpamLimit = 20;
         public IntOr.Disabled incomingPacketThreshold = new IntOr.Disabled(OptionalInt.of(300));
+    }
+
+    public ChunkUpdates chunkUpdates;
+
+    public class ChunkUpdates extends ConfigurationPart {
+        public boolean ignoreLargeBlockEntities = true;
+        public long largeBlockEntityByteThreshold = FileUtils.ONE_MB * 2;
     }
 
     public UnsupportedSettings unsupportedSettings;

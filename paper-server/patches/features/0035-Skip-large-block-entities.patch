@@ -60,10 +60,22 @@ index 2122ff56412a2ad412eb8b2f0e4538aab4257bf2..167cd14d6d4b3e313a94a7213aeb2c29
  
      @Override
 diff --git a/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
-index a52f93d0563f713b1d2b707cdb6ab74e4793a54d..1d6cb89c15da57542c45eb996151e9769a3ed45e 100644
+index a52f93d0563f713b1d2b707cdb6ab74e4793a54d..7b2c326897de9ef5622b52bf3a43e67787236a3d 100644
 --- a/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
 +++ b/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
-@@ -61,18 +61,28 @@ public class ClientboundLevelChunkPacketData {
+@@ -35,7 +35,10 @@ public class ClientboundLevelChunkPacketData {
+     // Paper start - Handle oversized block entities in chunks
+     private final java.util.List<net.minecraft.network.protocol.Packet<?>> extraPackets = new java.util.ArrayList<>();
+     private static final int BLOCK_ENTITY_LIMIT = Integer.getInteger("Paper.excessiveTELimit", 750);
+-
++    // Paper start - Skip large block entities
++    private static final boolean SKIP_LARGE_BLOCK_ENTITIES = io.papermc.paper.configuration.GlobalConfiguration.get().chunkUpdates.ignoreLargeBlockEntities;
++    private static final long LARGE_BLOCK_ENTITY_BYTES = io.papermc.paper.configuration.GlobalConfiguration.get().chunkUpdates.largeBlockEntityByteThreshold;
++    // Paper end - Skip large block entities
+     public List<net.minecraft.network.protocol.Packet<?>> getExtraPackets() {
+         return this.extraPackets;
+     }
+@@ -61,18 +64,28 @@ public class ClientboundLevelChunkPacketData {
          this.blockEntitiesData = Lists.newArrayList();
          int totalTileEntities = 0; // Paper - Handle oversized block entities in chunks
  
@@ -82,7 +94,7 @@ index a52f93d0563f713b1d2b707cdb6ab74e4793a54d..1d6cb89c15da57542c45eb996151e976
 +            for (Entry<BlockPos, BlockEntity> entry : levelChunk.getBlockEntities().entrySet()) {
 +                BlockEntityInfo blockEntityInfo = BlockEntityInfo.create(entry.getValue(), levelChunk.getLevel().registryAccess(), blockEntityFriendlyBuffer); // Paper - Cache serialized block entity data
 +                // Paper start - Handle oversized block entities in chunks
-+                if (++totalTileEntities > BLOCK_ENTITY_LIMIT || blockEntityInfo.isLarge()) { // Paper - Skip large block entities
++                if (++totalTileEntities > BLOCK_ENTITY_LIMIT || (SKIP_LARGE_BLOCK_ENTITIES && blockEntityInfo.isLarge())) { // Paper - Skip large block entities
 +                    net.minecraft.network.protocol.Packet<ClientGamePacketListener> packet = entry.getValue().getUpdatePacket();
 +                    if (packet != null) {
 +                        this.extraPackets.add(packet);
@@ -101,7 +113,7 @@ index a52f93d0563f713b1d2b707cdb6ab74e4793a54d..1d6cb89c15da57542c45eb996151e976
      }
  
      public ClientboundLevelChunkPacketData(final RegistryFriendlyByteBuf input, final int x, final int z) {
-@@ -164,12 +174,24 @@ public class ClientboundLevelChunkPacketData {
+@@ -164,12 +177,24 @@ public class ClientboundLevelChunkPacketData {
          private final int y;
          private final BlockEntityType<?> type;
          private final @Nullable CompoundTag tag;
@@ -126,7 +138,7 @@ index a52f93d0563f713b1d2b707cdb6ab74e4793a54d..1d6cb89c15da57542c45eb996151e976
          }
  
          private BlockEntityInfo(final RegistryFriendlyByteBuf input) {
-@@ -177,21 +199,39 @@ public class ClientboundLevelChunkPacketData {
+@@ -177,21 +202,39 @@ public class ClientboundLevelChunkPacketData {
              this.y = input.readShort();
              this.type = ByteBufCodecs.registry(Registries.BLOCK_ENTITY_TYPE).decode(input);
              this.tag = input.readNbt();
@@ -164,7 +176,7 @@ index a52f93d0563f713b1d2b707cdb6ab74e4793a54d..1d6cb89c15da57542c45eb996151e976
 +        // Paper start - Skip large block entities
 +
 +        private boolean isLarge() {
-+            return this.serializedData != null && this.serializedData.length >= TWO_MEGABYTES - 3;
++            return this.serializedData != null && this.serializedData.length >= LARGE_BLOCK_ENTITY_BYTES;
 +            // Paper end
          }
      }
