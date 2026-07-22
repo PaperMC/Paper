@@ -1,0 +1,171 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RedVortexDev <58099979+RedVortexDev@users.noreply.github.com>
+Date: Wed, 22 Jul 2026 15:20:47 +0300
+Subject: [PATCH] Skip large block entities
+
+
+diff --git a/net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket.java b/net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket.java
+index 2122ff56412a2ad412eb8b2f0e4538aab4257bf2..167cd14d6d4b3e313a94a7213aeb2c29ec04c07b 100644
+--- a/net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket.java
+@@ -26,12 +26,13 @@ public class ClientboundBlockEntityDataPacket implements Packet<ClientGamePacket
+     private final BlockPos pos;
+     private final BlockEntityType<?> type;
+     private final CompoundTag tag;
++    private final org.bukkit.block.@org.jspecify.annotations.Nullable Block block; // Paper - Provide API block
+ 
+     public static ClientboundBlockEntityDataPacket create(
+         final BlockEntity blockEntity, final BiFunction<BlockEntity, RegistryAccess, CompoundTag> updateTagSaver
+     ) {
+         RegistryAccess registryAccess = blockEntity.getLevel().registryAccess();
+-        return new ClientboundBlockEntityDataPacket(blockEntity.getBlockPos(), blockEntity.getType(), blockEntity.sanitizeSentNbt(updateTagSaver.apply(blockEntity, registryAccess))); // Paper - Sanitize sent data
++        return new ClientboundBlockEntityDataPacket(blockEntity.getBlockPos(), blockEntity.getType(), blockEntity.sanitizeSentNbt(updateTagSaver.apply(blockEntity, registryAccess)), org.bukkit.craftbukkit.block.CraftBlock.at(blockEntity.getLevel(), blockEntity.getBlockPos())); // Paper - Sanitize sent data // Paper - Provide API block
+     }
+ 
+     public static ClientboundBlockEntityDataPacket create(final BlockEntity blockEntity) {
+@@ -39,9 +40,35 @@ public class ClientboundBlockEntityDataPacket implements Packet<ClientGamePacket
+     }
+ 
+     public ClientboundBlockEntityDataPacket(final BlockPos pos, final BlockEntityType<?> type, final CompoundTag tag) {
++        // Paper start - Provide API block
++        this(pos, type, tag, null);
++    }
++
++    // Paper end
++    private ClientboundBlockEntityDataPacket(final BlockPos pos, final BlockEntityType<?> type, final CompoundTag tag, final org.bukkit.block.@org.jspecify.annotations.Nullable Block block) { // Paper - Provide API block
+         this.pos = pos;
+         this.type = type;
+         this.tag = tag;
++        // Paper start - Provide API block
++        this.block = block;
++    }
++
++    // Paper end
++    // Paper start - Skip large block entities
++    @Override
++    public boolean hasLargePacketFallback() {
++        return true;
++    }
++
++    @Override
++    public boolean packetTooLarge(final net.minecraft.network.Connection manager) {
++        net.minecraft.server.level.ServerPlayer player = manager.getPlayer();
++        if (this.block != null && player != null) {
++            org.bukkit.Bukkit.getPluginManager().callEvent(new io.papermc.paper.event.player.AsyncBlockEntityUpdateTooLargeEvent(this.block, player.getBukkitEntity()));
++        }
++
++        return true;
++       // Paper end
+     }
+ 
+     @Override
+diff --git a/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+index a52f93d0563f713b1d2b707cdb6ab74e4793a54d..1d6cb89c15da57542c45eb996151e9769a3ed45e 100644
+--- a/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
++++ b/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+@@ -61,18 +61,28 @@ public class ClientboundLevelChunkPacketData {
+         this.blockEntitiesData = Lists.newArrayList();
+         int totalTileEntities = 0; // Paper - Handle oversized block entities in chunks
+ 
+-        for (Entry<BlockPos, BlockEntity> entry : levelChunk.getBlockEntities().entrySet()) {
+-            // Paper start - Handle oversized block entities in chunks
+-            if (++totalTileEntities > BLOCK_ENTITY_LIMIT) {
+-                net.minecraft.network.protocol.Packet<ClientGamePacketListener> packet = entry.getValue().getUpdatePacket();
+-                if (packet != null) {
+-                    this.extraPackets.add(packet);
+-                    continue;
++        // Paper start - Cache serialized block entity data
++        final ByteBuf blockEntityBuffer = Unpooled.buffer();
++        try {
++            final RegistryFriendlyByteBuf blockEntityFriendlyBuffer = new RegistryFriendlyByteBuf(blockEntityBuffer, levelChunk.getLevel().registryAccess());
++
++            for (Entry<BlockPos, BlockEntity> entry : levelChunk.getBlockEntities().entrySet()) {
++                BlockEntityInfo blockEntityInfo = BlockEntityInfo.create(entry.getValue(), levelChunk.getLevel().registryAccess(), blockEntityFriendlyBuffer); // Paper - Cache serialized block entity data
++                // Paper start - Handle oversized block entities in chunks
++                if (++totalTileEntities > BLOCK_ENTITY_LIMIT || blockEntityInfo.isLarge()) { // Paper - Skip large block entities
++                    net.minecraft.network.protocol.Packet<ClientGamePacketListener> packet = entry.getValue().getUpdatePacket();
++                    if (packet != null) {
++                        this.extraPackets.add(packet);
++                        continue;
++                    }
+                 }
++                // Paper end - Handle oversized block entities in chunks
++                this.blockEntitiesData.add(blockEntityInfo); // Paper - Cache serialized block entity data
+             }
+-            // Paper end - Handle oversized block entities in chunks
+-            this.blockEntitiesData.add(ClientboundLevelChunkPacketData.BlockEntityInfo.create(entry.getValue()));
++        } finally {
++            blockEntityBuffer.release();
+         }
++        // Paper end - Cache serialized block entity data
+     }
+ 
+     public ClientboundLevelChunkPacketData(final RegistryFriendlyByteBuf input, final int x, final int z) {
+@@ -164,12 +174,24 @@ public class ClientboundLevelChunkPacketData {
+         private final int y;
+         private final BlockEntityType<?> type;
+         private final @Nullable CompoundTag tag;
++        private final byte @Nullable [] serializedData; // Paper - Cache serialized block entity data
+ 
+         private BlockEntityInfo(final int packedXZ, final int y, final BlockEntityType<?> type, final @Nullable CompoundTag tag) {
+             this.packedXZ = packedXZ;
+             this.y = y;
+             this.type = type;
+             this.tag = tag;
++            // Paper start - Cache serialized block entity data
++            this.serializedData = null;
++        }
++
++        private BlockEntityInfo(final int packedXZ, final int y, final BlockEntityType<?> type, final @Nullable CompoundTag tag, final byte[] serializedData) {
++            this.packedXZ = packedXZ;
++            this.y = y;
++            this.type = type;
++            this.tag = tag;
++            this.serializedData = serializedData;
++            // Paper end
+         }
+ 
+         private BlockEntityInfo(final RegistryFriendlyByteBuf input) {
+@@ -177,21 +199,39 @@ public class ClientboundLevelChunkPacketData {
+             this.y = input.readShort();
+             this.type = ByteBufCodecs.registry(Registries.BLOCK_ENTITY_TYPE).decode(input);
+             this.tag = input.readNbt();
++            this.serializedData = null; // Paper - Cache serialized block entity data
+         }
+ 
+         private void write(final RegistryFriendlyByteBuf output) {
++            // Paper start - Cache serialized block entity data
++            if (this.serializedData != null) {
++                output.writeBytes(this.serializedData);
++                return;
++            }
++            // Paper end
+             output.writeByte(this.packedXZ);
+             output.writeShort(this.y);
+             ByteBufCodecs.registry(Registries.BLOCK_ENTITY_TYPE).encode(output, this.type);
+             output.writeNbt(this.tag);
+         }
+ 
+-        private static ClientboundLevelChunkPacketData.BlockEntityInfo create(final BlockEntity blockEntity) {
+-            CompoundTag tag = blockEntity.getUpdateTag(blockEntity.getLevel().registryAccess());
++        private static ClientboundLevelChunkPacketData.BlockEntityInfo create(final BlockEntity blockEntity, final net.minecraft.core.RegistryAccess registryAccess, RegistryFriendlyByteBuf buffer) { // Paper - Cache serialized block entity data
++            CompoundTag tag = blockEntity.getUpdateTag(registryAccess); // Paper - Cache serialized block entity data
+             BlockPos pos = blockEntity.getBlockPos();
+             int xz = SectionPos.sectionRelative(pos.getX()) << 4 | SectionPos.sectionRelative(pos.getZ());
+             blockEntity.sanitizeSentNbt(tag); // Paper - Sanitize sent data
+-            return new ClientboundLevelChunkPacketData.BlockEntityInfo(xz, pos.getY(), blockEntity.getType(), tag.isEmpty() ? null : tag);
++            // Paper start - Cache serialized block entity data
++            BlockEntityInfo info = new BlockEntityInfo(xz, pos.getY(), blockEntity.getType(), tag.isEmpty() ? null : tag);
++            buffer.clear();
++            info.write(buffer);
++            return new BlockEntityInfo(xz, pos.getY(), blockEntity.getType(), info.tag, io.netty.buffer.ByteBufUtil.getBytes(buffer));
++        }
++        // Paper end
++        // Paper start - Skip large block entities
++
++        private boolean isLarge() {
++            return this.serializedData != null && this.serializedData.length >= TWO_MEGABYTES - 3;
++            // Paper end
+         }
+     }
+ 
