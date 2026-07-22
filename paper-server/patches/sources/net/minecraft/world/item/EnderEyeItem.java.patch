@@ -12,6 +12,30 @@
          Block.pushEntitiesUp(targetState, newState, level, pos);
          level.setBlock(pos, newState, Block.UPDATE_CLIENTS);
          level.updateNeighbourForOutputSignal(pos, Blocks.END_PORTAL_FRAME);
+@@ -56,6 +_,23 @@
+         if (match != null) {
+             BlockPos blockPos = match.getFrontTopLeft().offset(-3, 0, -3);
+ 
++            // Paper start - Trigger PortalCreateEvent on end portal creation
++            org.bukkit.craftbukkit.util.BlockStateListPopulator populator = new org.bukkit.craftbukkit.util.BlockStateListPopulator(level.getMinecraftWorld());
++            // Copy below for loop
++            for (int x = 0; x < 3; x++) {
++                for (int z = 0; z < 3; z++) {
++                    BlockPos portalBlockPos = blockPos.offset(x, 0, z);
++                    populator.setBlock(portalBlockPos, Blocks.END_PORTAL.defaultBlockState(), Block.UPDATE_CLIENTS);
++                }
++            }
++            Player portalCreator = context.getPlayer();
++            org.bukkit.World bworld = level.getMinecraftWorld().getWorld();
++            org.bukkit.event.world.PortalCreateEvent event = new org.bukkit.event.world.PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) populator.getSnapshotBlocks(), bworld, (portalCreator == null) ? null : portalCreator.getBukkitEntity(), org.bukkit.event.world.PortalCreateEvent.CreateReason.ENDER_EYE);
++            level.getMinecraftWorld().getServer().server.getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return InteractionResult.PASS;
++            }
++            // Paper end - Trigger PortalCreateEvent on end portal creation
+             for (int x = 0; x < 3; x++) {
+                 for (int z = 0; z < 3; z++) {
+                     BlockPos portalBlockPos = blockPos.offset(x, 0, z);
 @@ -64,7 +_,27 @@
                  }
              }
