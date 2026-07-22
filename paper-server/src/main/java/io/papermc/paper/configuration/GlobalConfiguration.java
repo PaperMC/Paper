@@ -2,6 +2,7 @@ package io.papermc.paper.configuration;
 
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.constraint.Constraints;
+import io.papermc.paper.configuration.serializer.collection.map.ThrowExceptions;
 import io.papermc.paper.configuration.serializer.collection.map.WriteKeyBack;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
@@ -12,7 +13,10 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.EntityType;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -29,7 +33,7 @@ import java.util.Set;
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class GlobalConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getLogger();
-    static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): allow-nether property to config
+    static final int CURRENT_VERSION = 32; // (when you change the version, change the comment, so it conflicts on rebases): configurable projectile uncertainty
     private static GlobalConfiguration instance;
     public static boolean isFirstStart = false;
     public static GlobalConfiguration get() {
@@ -393,5 +397,12 @@ public class GlobalConfiguration extends ConfigurationPart {
 
     public class UpdateChecker extends ConfigurationPart {
         public boolean enabled = true;
+    }
+
+    public Projectiles projectiles;
+
+    public class Projectiles extends ConfigurationPart {
+        @Comment("Per-projectile uncertainty overrides for Projectile#shoot. Set to 0 for no spread. Use 'default' per entry to keep vanilla behavior. Keys are minecraft entity type ids (e.g. minecraft:arrow).")
+        public @ThrowExceptions Reference2ObjectMap<EntityType<?>, DoubleOr.Default> uncertainty = new Reference2ObjectOpenHashMap<>();
     }
 }
