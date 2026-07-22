@@ -514,67 +514,120 @@
              this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
          } else {
              BaseCommandBlock commandBlock = packet.getCommandBlock(this.player.level());
-@@ -706,11 +_,11 @@
+@@ -704,14 +_,7 @@
+             if (level.isLoaded(pos)) {
+                 BlockState blockState = level.getBlockState(pos);
                  boolean includeData = this.player.hasInfiniteMaterials() && packet.includeData();
-                 ItemStack itemStack = blockState.getCloneItemStack(level, pos, includeData);
-                 if (!itemStack.isEmpty()) {
+-                ItemStack itemStack = blockState.getCloneItemStack(level, pos, includeData);
+-                if (!itemStack.isEmpty()) {
 -                    if (includeData) {
-+                    if (includeData && this.player.getBukkitEntity().hasPermission("minecraft.nbt.copy")) { // Spigot
-                         addBlockDataToItem(blockState, level, pos, itemStack);
-                     }
- 
+-                        addBlockDataToItem(blockState, level, pos, itemStack);
+-                    }
+-
 -                    this.tryPickItem(itemStack);
-+                    this.tryPickItem(itemStack, pos, null, packet.includeData()); // Paper - Extend PlayerPickItemEvent API
-                 }
+-                }
++                tryPickItemFromBlock(level, pos, blockState, includeData); // Paper - Make includeData mutable for PlayerPickItemEvent
              }
          }
+     }
 @@ -737,7 +_,7 @@
          if (entity != null && this.player.isWithinEntityInteractionRange(entity, 3.0)) {
              ItemStack itemStack = entity.getPickResult();
              if (itemStack != null && !itemStack.isEmpty()) {
 -                this.tryPickItem(itemStack);
-+                this.tryPickItem(itemStack, null, entity, packet.includeData()); // Paper - Extend PlayerPickItemEvent API
++                this.tryPickItemFromEntity(entity, packet.includeData(), itemStack); // Paper - Make includeData mutable for PlayerPickItemEvent
              }
  
              if (packet.includeData() && this.player.canUseGameMasterBlocks() && entity instanceof Avatar avatar) {
-@@ -746,22 +_,35 @@
+@@ -746,22 +_,84 @@
          }
      }
  
 -    private void tryPickItem(final ItemStack itemStack) {
-+    private void tryPickItem(ItemStack itemStack, @Nullable BlockPos blockPos, @Nullable Entity entity, boolean includeData) { // Paper - Extend PlayerPickItemEvent API
-         if (itemStack.isItemEnabled(this.player.level().enabledFeatures())) {
-             Inventory inventory = this.player.getInventory();
-             int slotWithExistingItem = inventory.findSlotMatchingItem(itemStack);
-+            // Paper start - Add PlayerPickItemEvent
-+            final int sourceSlot = slotWithExistingItem;
++    // Paper start - Make includeData mutable for PlayerPickItemEvent
++    private void tryPickItemFromBlock(
++        ServerLevel level, BlockPos pos, BlockState blockState, boolean initialIncludeData
++    ) {
++        ItemStack previewStack = blockState.getCloneItemStack(level, pos, initialIncludeData);
++        if (!previewStack.isEmpty()) {
++            if (initialIncludeData && this.player.getBukkitEntity().hasPermission("minecraft.nbt.copy")) {
++                addBlockDataToItem(blockState, level, pos, previewStack);
++            }
++
++            Inventory inventory = this.player.getInventory();
++            final int sourceSlot = inventory.findSlotMatchingItem(previewStack);
 +            final int targetSlot = Inventory.isHotbarSlot(sourceSlot) ? sourceSlot : inventory.getSuitableHotbarSlot();
 +            final org.bukkit.entity.Player bukkitPlayer = this.player.getBukkitEntity();
-+            final io.papermc.paper.event.player.PlayerPickItemEvent event = entity != null
-+                ? new io.papermc.paper.event.player.PlayerPickEntityEvent(bukkitPlayer, entity.getBukkitEntity(), includeData, targetSlot, sourceSlot)
-+                : new io.papermc.paper.event.player.PlayerPickBlockEvent(bukkitPlayer, org.bukkit.craftbukkit.block.CraftBlock.at(this.player.level(), blockPos), includeData, targetSlot, sourceSlot);
++
++            io.papermc.paper.event.player.PlayerPickBlockEvent event = new io.papermc.paper.event.player.PlayerPickBlockEvent(
++                this.player.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), initialIncludeData, targetSlot, sourceSlot
++            );
++
 +            if (!event.callEvent()) {
 +                return;
 +            }
-+            slotWithExistingItem = event.getSourceSlot();
-+            // Paper end - Add PlayerPickItemEvent
-             if (slotWithExistingItem != Inventory.NOT_FOUND_INDEX) {
++
++            ItemStack stack;
++            if (initialIncludeData != event.isIncludeData()) {
++                stack = blockState.getCloneItemStack(level, pos, initialIncludeData);
++                if (event.isIncludeData() && this.player.getBukkitEntity().hasPermission("minecraft.nbt.copy")) {
++                    addBlockDataToItem(blockState, level, pos, previewStack);
++                }
++            } else {
++                stack = previewStack;
++            }
++
++            this.tryPickItem(stack, event.getSourceSlot(), event.getTargetSlot());
++        }
++    }
++
++    private void tryPickItemFromEntity(
++        Entity entity, boolean initialIncludeData, ItemStack itemStack
++    ) {
++        Inventory inventory = this.player.getInventory();
++        final int sourceSlot = inventory.findSlotMatchingItem(itemStack);
++        final int targetSlot = Inventory.isHotbarSlot(sourceSlot) ? sourceSlot : inventory.getSuitableHotbarSlot();
++
++        io.papermc.paper.event.player.PlayerPickEntityEvent event = new io.papermc.paper.event.player.PlayerPickEntityEvent(
++            this.player.getBukkitEntity(), entity.getBukkitEntity(), initialIncludeData, targetSlot, sourceSlot
++        );
++
++        if (!event.callEvent()) {
++            return;
++        }
++
++        if (initialIncludeData != event.isIncludeData()) {
++            // This currently has no effect
++        }
++
++        this.tryPickItem(itemStack, event.getSourceSlot(), event.getTargetSlot());
++    }
++    // Paper end - Make includeData mutable for PlayerPickItemEvent
++
++    private void tryPickItem(ItemStack itemStack, int sourceSlot, int targetSlot) { // Paper - Make includeData mutable for PlayerPickItemEvent
+         if (itemStack.isItemEnabled(this.player.level().enabledFeatures())) {
+             Inventory inventory = this.player.getInventory();
+-            int slotWithExistingItem = inventory.findSlotMatchingItem(itemStack);
+-            if (slotWithExistingItem != Inventory.NOT_FOUND_INDEX) {
 -                if (Inventory.isHotbarSlot(slotWithExistingItem)) {
 -                    inventory.setSelectedSlot(slotWithExistingItem);
-+                if (Inventory.isHotbarSlot(slotWithExistingItem) && Inventory.isHotbarSlot(event.getTargetSlot())) { // Paper - Add PlayerPickItemEvent
-+                    inventory.setSelectedSlot(event.getTargetSlot()); // Paper - Add PlayerPickItemEvent
++
++            if (sourceSlot != Inventory.NOT_FOUND_INDEX) { // Paper - Make includeData mutable for PlayerPickItemEvent
++                if (Inventory.isHotbarSlot(sourceSlot) && Inventory.isHotbarSlot(targetSlot)) { // Paper - Make includeData mutable for PlayerPickItemEvent
++                    inventory.setSelectedSlot(targetSlot); // Paper - Make includeData mutable for PlayerPickItemEvent
                  } else {
 -                    inventory.pickSlot(slotWithExistingItem);
-+                    inventory.pickSlot(slotWithExistingItem, event.getTargetSlot()); // Paper - Add PlayerPickItemEvent
++                    inventory.pickSlot(sourceSlot, targetSlot); // Paper - Make includeData mutable for PlayerPickItemEvent
                  }
              } else if (this.player.hasInfiniteMaterials()) {
 -                inventory.addAndPickItem(itemStack);
-+                inventory.addAndPickItem(itemStack, event.getTargetSlot()); // Paper - Add PlayerPickItemEvent
++                inventory.addAndPickItem(itemStack, targetSlot); // Paper - Make includeData mutable for PlayerPickItemEvent
              }
  
              this.send(new ClientboundSetHeldSlotPacket(inventory.getSelectedSlot()));
              this.player.inventoryMenu.broadcastChanges();
-+            if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions)
++                this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
          }
      }
  
