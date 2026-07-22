@@ -22,6 +22,8 @@ import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.RedStoneWireBlock;
 import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.pattern.BlockInWorld;
+import net.minecraft.world.level.block.state.pattern.BlockPattern;
 import net.minecraft.world.level.redstone.Redstone;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -275,6 +277,17 @@ public class CraftBlock implements Block {
             case EAST -> Direction.EAST;
             case null, default -> null;
         };
+    }
+
+    public static List<Block> getMatchingBlocks(LevelAccessor level, BlockPattern.BlockPatternMatch match) {
+        List<Block> blocks = new ArrayList<>();
+        for (int x = 0; x < match.getWidth(); x++) {
+            for (int y = 0; y < match.getHeight(); y++) {
+                BlockInWorld block = match.getBlock(x, y, 0);
+                blocks.add(at(level, block.getPos()));
+            }
+        }
+        return blocks;
     }
 
     @Override
