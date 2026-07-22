@@ -319,6 +319,7 @@ public class GlobalConfiguration extends ConfigurationPart {
             }
         }
         public int maxJoinsPerTick = 5;
+        public int catchupTicks = 5;
         public boolean sendFullPosForItemEntities = false;
         public boolean loadPermissionsYmlBeforePlugins = true;
         @Constraints.Min(4)
