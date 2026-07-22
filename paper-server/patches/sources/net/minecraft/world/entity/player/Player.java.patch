@@ -290,7 +290,7 @@
              return true;
          } else {
              return false;
-@@ -1127,20 +_,41 @@
+@@ -1127,20 +_,39 @@
          if (knockbackAmount > 0.0F) {
              if (entity instanceof LivingEntity livingTarget) {
                  livingTarget.knockback(
@@ -311,26 +311,26 @@
          }
  
          if (entity instanceof ServerPlayer serverPlayer && entity.hurtMarked) {
-+            // CraftBukkit start - Add Velocity Event
-+            boolean cancelled = false;
-+            org.bukkit.entity.Player player = (org.bukkit.entity.Player) entity.getBukkitEntity();
-+            org.bukkit.util.Vector velocity = org.bukkit.craftbukkit.util.CraftVector.toBukkit(oldMovement);
+-            serverPlayer.connection.send(new ClientboundSetEntityMotionPacket(entity));
++            // Paper start - Add Velocity Event
++            final org.bukkit.entity.Player player = serverPlayer.getBukkitEntity();
++            final org.bukkit.util.Vector velocity = org.bukkit.craftbukkit.util.CraftVector.toBukkit(oldMovement);
++            Vec3 oldMovementVec = oldMovement;
 +
-+            org.bukkit.event.player.PlayerVelocityEvent event = new org.bukkit.event.player.PlayerVelocityEvent(player, velocity.clone());
-+            this.level().getCraftServer().getPluginManager().callEvent(event);
++            final org.bukkit.event.player.PlayerVelocityEvent event = new org.bukkit.event.player.PlayerVelocityEvent(player, velocity.clone());
 +
-+            if (event.isCancelled()) {
-+                cancelled = true;
-+            } else if (!velocity.equals(event.getVelocity())) {
-+                player.setVelocity(event.getVelocity());
-+            }
-+
-+            if (!cancelled) {
-             serverPlayer.connection.send(new ClientboundSetEntityMotionPacket(entity));
              entity.hurtMarked = false;
-             entity.setDeltaMovement(oldMovement);
+-            entity.setDeltaMovement(oldMovement);
++            if (!event.callEvent()) {
++                return;
++            } else if (!velocity.equals(event.getVelocity())) {
++                oldMovementVec = org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getVelocity());
 +            }
-+            // CraftBukkit end
++
++            // Paper end
++            serverPlayer.connection.send(new ClientboundSetEntityMotionPacket(entity));
++            // entity.hurtMarked = false; // Paper - move before PlayerVelocityEvent call
++            entity.setDeltaMovement(oldMovementVec); // Paper - set DeltaMovement based on the method or the velocity event override
          }
      }
  
