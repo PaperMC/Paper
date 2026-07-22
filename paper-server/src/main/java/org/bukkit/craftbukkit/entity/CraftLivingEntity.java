@@ -14,7 +14,6 @@ import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
 import net.minecraft.Optionull;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.resources.ResourceKey;
@@ -42,8 +41,6 @@ import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnder
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownExperienceBottle;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Consumable;
-import net.minecraft.world.level.block.BedBlock;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.waypoints.WaypointStyleAsset;
 import net.minecraft.world.waypoints.WaypointStyleAssets;
@@ -785,13 +782,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         Preconditions.checkArgument(location.getWorld().equals(this.getWorld()), "Cannot sleep across worlds");
         Preconditions.checkState(!this.getHandle().generation, "Cannot sleep during world generation");
 
-        BlockPos position = CraftLocation.toBlockPosition(location);
-        BlockState state = this.getHandle().level().getBlockState(position);
-        if (!(state.getBlock() instanceof BedBlock)) {
-            return false;
-        }
-
-        this.getHandle().startSleeping(position);
+        this.getHandle().startSleeping(CraftLocation.toBlockPos(location));
         return true;
     }
 
