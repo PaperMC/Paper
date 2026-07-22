@@ -370,7 +370,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
 
     @Override
     public @NotNull Book asBook() {
-        return Book.book(net.kyori.adventure.text.Component.empty(), net.kyori.adventure.text.Component.empty(), this.getPages().stream().map(net.kyori.adventure.text.Component::text).collect(Collectors.toList()));
+        return Book.book(pages());
     }
 
     // Spigot start
