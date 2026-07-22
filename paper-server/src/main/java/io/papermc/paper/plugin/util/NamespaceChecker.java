@@ -10,7 +10,7 @@ public class NamespaceChecker {
         "net.minecraft.",
         "org.bukkit.",
         "io.papermc.paper.",
-        "com.destroystokoyo.paper."
+        "com.destroystokyo.paper."
     };
 
     /**

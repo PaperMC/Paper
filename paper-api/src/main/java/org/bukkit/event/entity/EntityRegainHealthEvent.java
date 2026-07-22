@@ -127,7 +127,7 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
          */
         WITHER_SPAWN,
         /**
-         * When an entity is damaged by the Wither potion effect
+         * When a wither regains health after killing an entity with a wither skull
          */
         WITHER,
         /**

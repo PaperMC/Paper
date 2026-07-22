@@ -60,9 +60,4 @@ public abstract class OldEnumHolderable<A extends OldEnum<A>, M> extends Holdera
     private void checkIsReference() {
         Preconditions.checkState(this.holder.kind() == Holder.Kind.REFERENCE, "Cannot call method for this registry item, because it is not registered.");
     }
-
-    @Override
-    public String toString() {
-        return this.implToString();
-    }
 }
