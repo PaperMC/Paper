@@ -134,14 +134,14 @@
                          return super.execute(source, dispensed);
                      }
  
-                     level.gameEvent(null, GameEvent.FLUID_PICKUP, target);
-                     Item targetType = pickup.getItem();
 +                    // Paper start - Call BlockDispenseEvent
 +                    ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, target, dispensed, this);
 +                    if (result != null) {
 +                        return result;
 +                    }
 +                    // Paper end - Call BlockDispenseEvent
+                     level.gameEvent(null, GameEvent.FLUID_PICKUP, target);
+                     Item targetType = pickup.getItem();
 +                    pickup = bucket.pickupBlock(null, level, target, blockState); // CraftBukkit - from above
                      return this.consumeWithRemainder(source, dispensed, new ItemStack(targetType));
                  } else {
@@ -250,20 +250,20 @@
                  this.setSuccess(true);
                  return dispensed;
              }
-@@ -229,6 +_,13 @@
-                     Level level = source.level();
+@@ -230,6 +_,13 @@
                      Direction direction = source.state().getValue(DispenserBlock.FACING);
                      BlockPos target = source.pos().relative(direction);
-+                    // Paper start - Call BlockDispenseEvent
-+                    ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, target, dispensed, this);
-+                    if (result != null) {
-+                        this.setSuccess(false);
-+                        return result;
-+                    }
-+                    // Paper end - Call BlockDispenseEvent
                      if (level.isEmptyBlock(target) && WitherSkullBlock.canSpawnMob(level, target, dispensed)) {
++                        // Paper start - Call BlockDispenseEvent
++                        ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, target, dispensed, this);
++                        if (result != null) {
++                            this.setSuccess(false);
++                            return result;
++                        }
++                        // Paper end - Call BlockDispenseEvent
                          level.setBlock(
                              target,
+                             Blocks.WITHER_SKELETON_SKULL.defaultBlockState().setValue(SkullBlock.ROTATION, RotationSegment.convertToSegment(direction)),
 @@ -243,7 +_,7 @@
                          dispensed.shrink(1);
                          this.setSuccess(true);
@@ -273,20 +273,20 @@
                      }
  
                      return dispensed;
-@@ -256,6 +_,13 @@
-                 Level level = source.level();
+@@ -257,6 +_,13 @@
                  BlockPos target = source.pos().relative(source.state().getValue(DispenserBlock.FACING));
                  CarvedPumpkinBlock pumpkinBlock = (CarvedPumpkinBlock)Blocks.CARVED_PUMPKIN;
-+                // Paper start - Call BlockDispenseEvent
-+                ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, target, dispensed, this);
-+                if (result != null) {
-+                    this.setSuccess(false);
-+                    return result;
-+                }
-+                // Paper end - Call BlockDispenseEvent
                  if (level.isEmptyBlock(target) && pumpkinBlock.canSpawnGolem(level, target)) {
++                    // Paper start - Call BlockDispenseEvent
++                    ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, target, dispensed, this);
++                    if (result != null) {
++                        this.setSuccess(false);
++                        return result;
++                    }
++                    // Paper end - Call BlockDispenseEvent
                      if (!level.isClientSide()) {
                          level.setBlock(target, pumpkinBlock.defaultBlockState(), Block.UPDATE_ALL);
+                         level.gameEvent(null, GameEvent.BLOCK_PLACE, target);
 @@ -265,7 +_,7 @@
                      dispensed.shrink(1);
                      this.setSuccess(true);
@@ -296,19 +296,30 @@
                  }
  
                  return dispensed;
-@@ -288,6 +_,12 @@
-                     ServerLevel level = source.level();
-                     BlockPos target = source.pos().relative(source.state().getValue(DispenserBlock.FACING));
+@@ -290,11 +_,23 @@
                      BlockState state = level.getBlockState(target);
-+                    // Paper start - Call BlockDispenseEvent
-+                    ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, target, dispensed, this);
-+                    if (result != null) {
-+                        return result;
-+                    }
-+                    // Paper end - Call BlockDispenseEvent
                      if (state.is(BlockTags.BEEHIVES, s -> s.hasProperty(BeehiveBlock.HONEY_LEVEL) && s.getBlock() instanceof BeehiveBlock)
                          && state.getValue(BeehiveBlock.HONEY_LEVEL) >= 5) {
++                        // Paper start - Call BlockDispenseEvent
++                        ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, target, dispensed, this);
++                        if (result != null) {
++                            return result;
++                        }
++                        // Paper end - Call BlockDispenseEvent
                          ((BeehiveBlock)state.getBlock())
+                             .releaseBeesAndResetHoneyLevel(level, state, target, null, BeehiveBlockEntity.BeeReleaseStatus.BEE_RELEASED);
+                         this.setSuccess(true);
+                         return this.takeLiquid(source, dispensed, new ItemStack(Items.HONEY_BOTTLE));
+                     } else if (level.getFluidState(target).is(FluidTags.WATER)) {
++                        // Paper start - Call BlockDispenseEvent
++                        ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, target, dispensed, this);
++                        if (result != null) {
++                            return result;
++                        }
++                        // Paper end - Call BlockDispenseEvent
+                         this.setSuccess(true);
+                         return this.takeLiquid(source, dispensed, PotionContents.createItemStack(Items.POTION, Potions.WATER));
+                     } else {
 @@ -313,6 +_,13 @@
                  this.setSuccess(true);
                  if (blockState.is(Blocks.RESPAWN_ANCHOR)) {
