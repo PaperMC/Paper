@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.math.Angle;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEventSource;
 import net.kyori.adventure.util.TriState;
@@ -133,10 +134,22 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <p>
      * Note that if the entity is affected by AI, it may override this rotation.
      *
+     * @deprecated in favor of {@link #setRotation(Angle, Angle)}
      * @param yaw the yaw
      * @param pitch the pitch
      */
+    @Deprecated
     public void setRotation(float yaw, float pitch);
+
+    /**
+     * Sets the entity's rotation.
+     * <p>
+     * Note that if the entity is affected by AI, it may override this rotation.
+     *
+     * @param yaw the yaw
+     * @param pitch the pitch
+     */
+    void setRotation(@NotNull Angle yaw, @NotNull Angle pitch);
 
     // Paper start - Teleport API
     /**

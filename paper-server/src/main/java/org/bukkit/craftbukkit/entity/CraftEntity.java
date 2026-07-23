@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import io.papermc.paper.math.Angle;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -273,6 +274,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         pitch = Location.normalizePitch(pitch);
 
         this.getHandle().forceSetRotation(yaw, false, pitch, false);
+    }
+
+    @Override
+    public void setRotation(Angle yaw, Angle pitch) {
+        NumberConversions.checkFinite(pitch.degrees(), "pitch not finite");
+        NumberConversions.checkFinite(yaw.degrees(), "yaw not finite");
+
+        float yawValue = Location.normalizeYaw(yaw.degrees());
+        float pitchValue = Location.normalizePitch(pitch.degrees());
+
+        this.getHandle().forceSetRotation(yawValue, yaw.relative(), pitchValue, pitch.relative());
     }
 
     @Override
