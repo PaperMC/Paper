@@ -291,6 +291,7 @@ fun TaskContainer.registerRunTask(
     systemProperty("io.papermc.paper.suppress.sout.nags", true)
     systemProperty("paper.maxChatCommandInputSize", 32767)
     systemProperty("paper.disableMigrationDelay", true)
+    systemProperty("paper.updatingMinecraft", providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean())
 
     val memoryGb = providers.gradleProperty("paper.runMemoryGb").getOrElse("2")
     minHeapSize = "${memoryGb}G"
