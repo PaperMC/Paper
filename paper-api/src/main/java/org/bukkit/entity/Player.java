@@ -3803,9 +3803,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * Set the player's rotation.
      * <p>
-     * Note: When using relative angles, client will do interpolations to
-     * make the rotation smooth, it's different from just send a new absolute
-     * angle with yaw or pitch addition.
+     * Note: When using relative angles, client will add corresponding value
+     * to its yaw/pitch client side, avoiding jitter while the player
+     * is actively moving their view, it's different from just send
+     * new absolute angle with only yaw or pitch addition.
      *
      * @param yaw the yaw
      * @param pitch the pitch

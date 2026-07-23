@@ -281,8 +281,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         NumberConversions.checkFinite(pitch.degrees(), "pitch not finite");
         NumberConversions.checkFinite(yaw.degrees(), "yaw not finite");
 
-        float yawValue = yaw.relative() ? yaw.degrees() : Location.normalizeYaw(yaw.degrees());
-        float pitchValue = pitch.relative() ? pitch.degrees() : Location.normalizePitch(pitch.degrees());
+        float yawValue = Location.normalizeYaw(yaw.degrees());
+        float pitchValue = Location.normalizePitch(pitch.degrees());
 
         this.getHandle().forceSetRotation(yawValue, yaw.relative(), pitchValue, pitch.relative());
     }
