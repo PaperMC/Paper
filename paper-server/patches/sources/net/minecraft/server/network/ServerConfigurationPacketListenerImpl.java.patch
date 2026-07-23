@@ -71,6 +71,35 @@
          this.configurationTasks.add(this.prepareSpawnTask);
          this.configurationTasks.add(new JoinWorldTask());
          this.startNextTask();
+@@ -109,7 +_,7 @@
+ 
+     private void addOptionalTasks() {
+         Map<String, String> codeOfConducts = this.server.getCodeOfConducts();
+-        if (!codeOfConducts.isEmpty()) {
++        if (io.papermc.paper.event.player.PlayerCodeOfConductSendEvent.getHandlerList().getRegisteredListeners().length > 0 || !codeOfConducts.isEmpty()) { // Paper Code of Conduct event - Fire even if empty, if there are event listeners to potentially send one
+             this.configurationTasks.add(new ServerCodeOfConductConfigurationTask(() -> {
+                 String codeOfConduct = codeOfConducts.get(this.clientInformation.language().toLowerCase(Locale.ROOT));
+                 if (codeOfConduct == null) {
+@@ -117,9 +_,19 @@
+                 }
+ 
+                 if (codeOfConduct == null) {
++                    if (!codeOfConducts.isEmpty()) // Paper Code of Conduct event - Only if there are any - needed because we make this lambda run even if it's empty
+                     codeOfConduct = codeOfConducts.values().iterator().next();
+                 }
+ 
++                // Paper start - Code of Conduct event
++                io.papermc.paper.event.player.PlayerCodeOfConductSendEvent event = new io.papermc.paper.event.player.PlayerCodeOfConductSendEvent(this.paperConnection, codeOfConduct);
++                event.callEvent();
++                codeOfConduct = event.getCodeOfConduct();
++                if (codeOfConduct == null) {
++                    // Immediately bail out of this task. On MC updates, double check it's still okay to finish task within startNextTask.
++                    this.finishCurrentTask(ServerCodeOfConductConfigurationTask.TYPE);
++                }
++                // Paper end - Code of Conduct event
+                 return codeOfConduct;
+             }));
+         }
 @@ -130,12 +_,14 @@
      @Override
      public void handleClientInformation(final ServerboundClientInformationPacket packet) {
