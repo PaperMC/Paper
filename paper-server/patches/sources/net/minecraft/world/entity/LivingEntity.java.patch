@@ -1670,21 +1670,16 @@
              }
          }
      }
-@@ -3573,9 +_,41 @@
+@@ -3573,7 +_,30 @@
                  this.releaseUsingItem();
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
 -                    ItemStack result = this.useItem.finishUsingItem(this.level(), this);
-+                    this.startUsingItem(this.getUsedItemHand(), true); // Paper - Prevent consuming the wrong itemstack
-+                    // CraftBukkit start - fire PlayerItemConsumeEvent
++                    this.startUsingItem(this.getUsedItemHand(), true); // Paper - Prevent consuming the wrong ItemStack
++                    // Paper start - PlayerItemConsumeEvent event
 +                    ItemStack result;
-+                    org.bukkit.event.player.PlayerItemConsumeEvent event = null; // Paper
 +                    if (this instanceof ServerPlayer serverPlayer) {
-+                        org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
-+                        org.bukkit.inventory.EquipmentSlot handSlot = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand);
-+                        event = new org.bukkit.event.player.PlayerItemConsumeEvent((org.bukkit.entity.Player)this.getBukkitEntity(), craftItem, handSlot); // Paper
-+                        this.level().getCraftServer().getPluginManager().callEvent(event);
-+
++                        final org.bukkit.event.player.PlayerItemConsumeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemConsumeEvent(serverPlayer, hand, this.useItem);
 +                        if (event.isCancelled()) {
 +                            net.minecraft.world.item.component.Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
 +                            if (consumable != null) {
@@ -1695,24 +1690,18 @@
 +                            this.stopUsingItem(); // Paper - event is using an item, clear active item to reset its use
 +                            return;
 +                        }
-+
-+                        result = (craftItem.equals(event.getItem())) ? this.useItem.finishUsingItem(this.level(), this) : CraftItemStack.asNMSCopy(event.getItem()).finishUsingItem(this.level(), this);
++                        final net.minecraft.world.item.ItemStack eventItemNmsCopy = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
++                        result = (this.useItem.equals(eventItemNmsCopy)) ? this.useItem.finishUsingItem(this.level(), this) : eventItemNmsCopy.finishUsingItem(this.level(), this);
++                        if (event.getReplacement() != null) {
++                            result = CraftItemStack.asNMSCopy(event.getReplacement());
++                        }
 +                    } else {
 +                        result = this.useItem.finishUsingItem(this.level(), this);
 +                    }
-+                    // Paper start - save the default replacement item and change it if necessary
-+                    final ItemStack defaultReplacement = result;
-+                    if (event != null && event.getReplacement() != null) {
-+                        result = CraftItemStack.asNMSCopy(event.getReplacement());
-+                    }
 +                    // Paper end
-+                    // CraftBukkit end
                      if (result != this.useItem) {
                          this.setItemInHand(hand, result);
-+                        if (event != null && event.getReplacement() != null && this instanceof final ServerPlayer player) player.containerMenu.forceHeldSlot(hand); // Paper - Fix inventory desync; Paper#13253
                      }
- 
-                     this.stopUsingItem();
 @@ -3607,6 +_,7 @@
          ItemStack itemInUsedHand = this.getItemInHand(this.getUsedItemHand());
          if (!this.useItem.isEmpty() && ItemStack.isSameItem(itemInUsedHand, this.useItem)) {

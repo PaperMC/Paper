@@ -1,14 +1,14 @@
 package org.bukkit.event.player;
 
-import org.bukkit.Material;
+import java.util.Objects;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This event will fire when a player is finishing consuming an item (food,
@@ -20,27 +20,27 @@ import org.jetbrains.annotations.Nullable;
  * If the event is cancelled the effect will not be applied and the item will
  * not be removed from the player's inventory.
  */
+@NullMarked
 public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final EquipmentSlot hand;
     private ItemStack item;
-    @Nullable private ItemStack replacement;
+    private @Nullable ItemStack replacement;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerItemConsumeEvent(@NotNull final Player player, @NotNull final ItemStack item, @NotNull final EquipmentSlot hand) {
+    public PlayerItemConsumeEvent(final Player player, final ItemStack item, final EquipmentSlot hand) {
         super(player);
-
         this.item = item;
         this.hand = hand;
     }
 
     @ApiStatus.Internal
     @Deprecated(since = "1.19.2", forRemoval = true)
-    public PlayerItemConsumeEvent(@NotNull final Player player, @NotNull final ItemStack item) {
+    public PlayerItemConsumeEvent(final Player player, final ItemStack item) {
         this(player, item, EquipmentSlot.HAND);
     }
 
@@ -51,7 +51,6 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      *
      * @return an ItemStack for the item being consumed
      */
-    @NotNull
     public ItemStack getItem() {
         return this.item.clone();
     }
@@ -62,11 +61,7 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      * @param item the item being consumed
      */
     public void setItem(@Nullable ItemStack item) {
-        if (item == null) {
-            this.item = new ItemStack(Material.AIR);
-        } else {
-            this.item = item;
-        }
+        this.item = Objects.requireNonNullElseGet(item, ItemStack::empty);
     }
 
     /**
@@ -74,7 +69,6 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      *
      * @return the hand
      */
-    @NotNull
     public EquipmentSlot getHand() {
         return this.hand;
     }
@@ -85,8 +79,7 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      *
      * @return The custom item stack that will replace the consumed item or {@code null}
      */
-    @Nullable
-    public ItemStack getReplacement() {
+    public @Nullable ItemStack getReplacement() {
         return this.replacement;
     }
 
@@ -110,13 +103,11 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
