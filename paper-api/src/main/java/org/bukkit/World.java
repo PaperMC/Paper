@@ -3773,6 +3773,16 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
 
     /**
+     * Plays a sound at a location.
+     *
+     * @param sound a sound
+     * @param location location
+     */
+    default void playSound(net.kyori.adventure.sound.Sound sound, Location location) {
+        playSound(sound, location.getX(), location.getY(), location.getZ());
+    }
+
+    /**
      * Get an array containing the names of all the {@link GameRule}s.
      *
      * @return An array of {@link GameRule} names.
