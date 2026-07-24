@@ -32,9 +32,9 @@ public abstract class PaperDataComponentType<T, NMS> extends HolderableBase<net.
         return Collections.unmodifiableSet(types);
     }
 
-    public static <B, M> @Nullable B convertDataComponentValue(final DataComponentMap map, final PaperDataComponentType.ValuedImpl<B, M> type) {
+    public static <B, M> @Nullable B convertDataComponentValue(final net.minecraft.core.component.DataComponentGetter getter, final PaperDataComponentType.ValuedImpl<B, M> type) {
         final net.minecraft.core.component.DataComponentType<M> nms = bukkitToMinecraft(type);
-        final M nmsValue = map.get(nms);
+        final M nmsValue = getter.get(nms);
         if (nmsValue == null) {
             return null;
         }
