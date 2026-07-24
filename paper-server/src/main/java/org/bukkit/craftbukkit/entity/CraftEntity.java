@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.TeleportFlag;
 import java.util.EnumSet;
@@ -1327,7 +1328,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public <T> @Nullable T getData(@NotNull final DataComponentType.Valued<T> type) {
-        return io.papermc.paper.datacomponent.PaperDataComponentType.convertDataComponentValue(this.getHandle(), (io.papermc.paper.datacomponent.PaperDataComponentType.ValuedImpl<T, ?>) type);
+        return PaperDataComponentType.convertDataComponentValue(this.getHandle(), (PaperDataComponentType.ValuedImpl<T, ?>) type);
     }
 
     @Override

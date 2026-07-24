@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.craftbukkit.CraftRegistry;
@@ -32,7 +33,7 @@ public abstract class PaperDataComponentType<T, NMS> extends HolderableBase<net.
         return Collections.unmodifiableSet(types);
     }
 
-    public static <B, M> @Nullable B convertDataComponentValue(final net.minecraft.core.component.DataComponentGetter getter, final PaperDataComponentType.ValuedImpl<B, M> type) {
+    public static <B, M> @Nullable B convertDataComponentValue(final DataComponentGetter getter, final PaperDataComponentType.ValuedImpl<B, M> type) {
         final net.minecraft.core.component.DataComponentType<M> nms = bukkitToMinecraft(type);
         final M nmsValue = getter.get(nms);
         if (nmsValue == null) {
