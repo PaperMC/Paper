@@ -12,6 +12,7 @@ import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.TeleportFlag;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -1328,18 +1329,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public <T> @Nullable T getData(@NotNull final DataComponentType.Valued<T> type) {
-        return PaperDataComponentType.convertDataComponentValue(this.getHandle(), (PaperDataComponentType.ValuedImpl<T, ?>) type);
+        return PaperDataComponentType.convertDataComponentValue(this.getHandleRaw(), (PaperDataComponentType.ValuedImpl<T, ?>) type);
     }
 
     @Override
     public <T> @Nullable T getDataOrDefault(@NotNull final DataComponentType.Valued<? extends T> type, @Nullable final T fallback) {
-        final T value = this.getData((DataComponentType.Valued<T>) type);
-        return (value != null) ? value : fallback;
+        return Objects.requireNonNullElse(this.getData(type), fallback);
     }
 
     @Override
     public boolean hasData(final @NotNull DataComponentType type) {
-        return this.getHandle().get(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type)) != null;
+        return this.getHandleRaw().get(PaperDataComponentType.bukkitToMinecraft(type)) != null;
     }
 
 }
