@@ -1,5 +1,6 @@
 package io.papermc.paper.command;
 
+import ca.spottedleaf.common.time.TickData;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.LiteralCommandNode;
@@ -42,9 +43,9 @@ public class PaperMSPTCommand {
         MinecraftServer server = MinecraftServer.getServer();
 
         List<Component> times = new ArrayList<>();
-        times.addAll(eval(server.tickTimes5s.getTimes()));
-        times.addAll(eval(server.tickTimes10s.getTimes()));
-        times.addAll(eval(server.tickTimes60s.getTimes()));
+        times.addAll(eval(server.tickTimes5s));
+        times.addAll(eval(server.tickTimes10s));
+        times.addAll(eval(server.tickTimes1m));
 
         sender.sendMessage(text().content("Server tick times ").color(GOLD)
             .append(text().color(YELLOW)
@@ -78,18 +79,11 @@ public class PaperMSPTCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static List<Component> eval(long[] times) {
-        long min = Integer.MAX_VALUE;
-        long max = 0L;
-        long total = 0L;
-        for (long value : times) {
-            if (value > 0L && value < min) min = value;
-            if (value > max) max = value;
-            total += value;
-        }
-        double avgD = ((double) total / (double) times.length) * 1.0E-6D;
-        double minD = ((double) min) * 1.0E-6D;
-        double maxD = ((double) max) * 1.0E-6D;
+    private static List<Component> eval(TickData tickData) {
+        TickData.TickReportData reportData = tickData.generateTickReport(null, System.nanoTime(), MinecraftServer.getServer().tickRateManager().nanosecondsPerTick());
+        double avgD = reportData == null ? 0.0 : reportData.timePerTickData().segmentAll().average() * 1.0E-6D;
+        double minD = reportData == null ? 0.0 : reportData.timePerTickData().segmentAll().least() * 1.0E-6D;
+        double maxD = reportData == null ? 0.0 : reportData.timePerTickData().segmentAll().greatest() * 1.0E-6D;
         return Arrays.asList(getColor(avgD), getColor(minD), getColor(maxD));
     }
 
