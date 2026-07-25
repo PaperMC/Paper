@@ -38,7 +38,7 @@ public class LootGenerateEvent extends WorldEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public LootGenerateEvent(@NotNull World world, @Nullable Entity entity, @Nullable InventoryHolder inventoryHolder, @NotNull LootTable lootTable, @NotNull LootContext lootContext, @NotNull List<ItemStack> items, boolean plugin) {
+    public LootGenerateEvent(@NotNull World world, @Nullable Entity entity, @Nullable InventoryHolder inventoryHolder, @Nullable LootTable lootTable, @NotNull LootContext lootContext, @NotNull List<ItemStack> items, boolean plugin) {
         super(world);
         this.entity = entity;
         this.inventoryHolder = inventoryHolder;
@@ -80,9 +80,10 @@ public class LootGenerateEvent extends WorldEvent implements Cancellable {
     /**
      * Get the loot table used to generate loot.
      *
-     * @return the loot table
+     * @return the loot table, or {@code null} if the loot table is unknown or
+     * unregistered
      */
-    @NotNull
+    @Nullable
     public LootTable getLootTable() {
         return this.lootTable;
     }
