@@ -3774,7 +3774,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
 
     /**
-     * Plays a sound at a location.
+     * Plays a sound at a position.
      *
      * @param sound a sound
      * @param pos position

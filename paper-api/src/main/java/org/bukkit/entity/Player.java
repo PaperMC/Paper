@@ -845,7 +845,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void playSound(Entity entity, String sound, SoundCategory category, float volume, float pitch, long seed);
 
     /**
-     * Plays a sound at a location.
+     * Plays a sound at a position.
      *
      * @param sound a sound
      * @param pos position
