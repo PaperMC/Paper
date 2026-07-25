@@ -62,6 +62,8 @@ import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Unit;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.AdventureModePredicate;
@@ -163,7 +165,7 @@ import static java.util.Objects.requireNonNull;
  */
 @DelegateDeserialization(SerializableMeta.class)
 // Important: ItemMeta needs to be the first interface see #applicableTo(Material)
-class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     static final Logger LOGGER = LogUtils.getLogger();
 
@@ -309,8 +311,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     private CraftJukeboxComponent jukebox;
     private Integer damage;
     private Integer maxDamage;
-    private List<net.minecraft.advancements.criterion.BlockPredicate> canPlaceOnPredicates;
-    private List<net.minecraft.advancements.criterion.BlockPredicate> canBreakPredicates;
+    private List<net.minecraft.advancements.predicates.BlockPredicate> canPlaceOnPredicates;
+    private List<net.minecraft.advancements.predicates.BlockPredicate> canBreakPredicates;
 
     // hide_additional_tooltip backward compatibility based on TooltipDisplayComponentFix#CONVERTED_ADDITIONAL_TOOLTIP_TYPES
     private static final Set<DataComponentType<?>> HIDDEN_COMPONENTS_PREVIOUSLY = Set.of(
@@ -820,6 +822,19 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         if (tag.getList(CraftMetaItem.ATTRIBUTES.NBT).isPresent()) {
             this.attributeModifiers = CraftMetaItem.buildModifiersLegacy(tag, CraftMetaItem.ATTRIBUTES);
         }
+    }
+
+    protected boolean isEmptyEntityTag(CompoundTag tag, EntityType<?> type) {
+        if (tag.isEmpty()) {
+            return true;
+        }
+
+        if (tag.size() > 1) {
+            return false;
+        }
+
+        String expectedId = EntityType.getKey(type).toString();
+        return tag.getString(Entity.TAG_ID).filter(id -> id.equals(expectedId)).isPresent();
     }
 
     private static Multimap<Attribute, AttributeModifier> buildModifiersLegacy(CompoundTag tag, ItemMetaKey key) {
@@ -2456,7 +2471,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> map = new HashMap<>();
                 map.put(CraftMetaArmor.class, Set.of(CraftMetaArmor.TRIM.TYPE));
                 map.put(CraftMetaArmorStand.class, Set.of(CraftMetaArmorStand.ENTITY_TAG.TYPE));
-                map.put(CraftMetaAxolotlBucket.class, Set.of(CraftMetaAxolotlBucket.ENTITY_TAG.TYPE, CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.TYPE));
+                map.put(CraftMetaAxolotlBucket.class, Set.of(CraftMetaAxolotlBucket.ENTITY_TAG.TYPE, CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.TYPE, CraftMetaAxolotlBucket.AXOLOTL_VARIANT.TYPE));
                 map.put(CraftMetaBanner.class, Set.of(CraftMetaBanner.PATTERNS.TYPE)); // banner uses same tag as block state
                 map.put(CraftMetaShield.class, Set.of(CraftMetaShield.BASE_COLOR.TYPE, CraftMetaBanner.PATTERNS.TYPE));
                 map.put(CraftMetaBlockState.class, Set.of(CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE));
@@ -2479,7 +2494,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 map.put(CraftMetaSkull.class, Set.of(CraftMetaSkull.SKULL_PROFILE.TYPE, CraftMetaSkull.NOTE_BLOCK_SOUND.TYPE));
                 map.put(CraftMetaSpawnEgg.class, Set.of(CraftMetaSpawnEgg.ENTITY_TAG.TYPE));
                 map.put(CraftMetaSuspiciousStew.class, Set.of(CraftMetaSuspiciousStew.EFFECTS.TYPE));
-                map.put(CraftMetaTropicalFishBucket.class, Set.of(CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE, CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.TYPE));
+                map.put(CraftMetaTropicalFishBucket.class, Set.of(CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE, CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.TYPE, CraftMetaTropicalFishBucket.PATTERN.TYPE, CraftMetaTropicalFishBucket.PATTERN_COLOR.TYPE, CraftMetaTropicalFishBucket.BASE_COLOR.TYPE));
 
                 for (final Map.Entry<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> entry : map.entrySet()) {
                     final ArrayList<DataComponentType<?>> topLevelTags = new ArrayList<>(entry.getValue());
@@ -2537,14 +2552,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.canPlaceOnPredicates = convertFromLegacyMaterial(canPlaceOn);
     }
 
-    private static List<net.minecraft.advancements.criterion.BlockPredicate> convertFromLegacyMaterial(final Collection<Material> materials) {
+    private static List<net.minecraft.advancements.predicates.BlockPredicate> convertFromLegacyMaterial(final Collection<Material> materials) {
         final net.minecraft.core.Registry<net.minecraft.world.level.block.Block> blockRegistry = CraftRegistry.getMinecraftRegistry().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
         return materials.stream().map(m -> {
-            return net.minecraft.advancements.criterion.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(m)).build();
+            return net.minecraft.advancements.predicates.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(m)).build();
         }).toList();
     }
 
-    private static Set<Material> convertToLegacyMaterial(final List<net.minecraft.advancements.criterion.BlockPredicate> predicates) {
+    private static Set<Material> convertToLegacyMaterial(final List<net.minecraft.advancements.predicates.BlockPredicate> predicates) {
         return predicates.stream()
             .flatMap(p -> p.blocks().map(net.minecraft.core.HolderSet::stream).orElse(java.util.stream.Stream.empty()))
             .map(holder -> CraftBlockType.minecraftToBukkit(holder.value()))
@@ -2575,22 +2590,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.canPlaceOnPredicates = convertFromLegacyNamespaced(canPlaceOn);
     }
 
-    private static List<net.minecraft.advancements.criterion.BlockPredicate> convertFromLegacyNamespaced(final Collection<com.destroystokyo.paper.Namespaced> namespaceds) {
-        final List<net.minecraft.advancements.criterion.BlockPredicate> predicates = new ArrayList<>();
+    private static List<net.minecraft.advancements.predicates.BlockPredicate> convertFromLegacyNamespaced(final Collection<com.destroystokyo.paper.Namespaced> namespaceds) {
+        final List<net.minecraft.advancements.predicates.BlockPredicate> predicates = new ArrayList<>();
         final net.minecraft.core.Registry<net.minecraft.world.level.block.Block> blockRegistry = CraftRegistry.getMinecraftRegistry().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
         for (final com.destroystokyo.paper.Namespaced namespaced : namespaceds) {
             if (namespaced instanceof final org.bukkit.NamespacedKey key) {
-                predicates.add(net.minecraft.advancements.criterion.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(requireNonNull(org.bukkit.Registry.MATERIAL.get(key)))).build());
+                predicates.add(net.minecraft.advancements.predicates.BlockPredicate.Builder.block().of(blockRegistry, CraftBlockType.bukkitToMinecraft(requireNonNull(org.bukkit.Registry.MATERIAL.get(key)))).build());
             } else if (namespaced instanceof final com.destroystokyo.paper.NamespacedTag tag) {
-                predicates.add(net.minecraft.advancements.criterion.BlockPredicate.Builder.block().of(blockRegistry, net.minecraft.tags.TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(tag.getNamespace(), tag.getKey()))).build());
+                predicates.add(net.minecraft.advancements.predicates.BlockPredicate.Builder.block().of(blockRegistry, net.minecraft.tags.TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(tag.getNamespace(), tag.getKey()))).build());
             }
         }
         return predicates;
     }
 
-    private static Set<com.destroystokyo.paper.Namespaced> convertToLegacyNamespaced(final Collection<net.minecraft.advancements.criterion.BlockPredicate> predicates) {
+    private static Set<com.destroystokyo.paper.Namespaced> convertToLegacyNamespaced(final Collection<net.minecraft.advancements.predicates.BlockPredicate> predicates) {
         final Set<com.destroystokyo.paper.Namespaced> namespaceds = Sets.newHashSet();
-        for (final net.minecraft.advancements.criterion.BlockPredicate predicate : predicates) {
+        for (final net.minecraft.advancements.predicates.BlockPredicate predicate : predicates) {
             if (predicate.blocks().isEmpty()) {
                 continue;
             }

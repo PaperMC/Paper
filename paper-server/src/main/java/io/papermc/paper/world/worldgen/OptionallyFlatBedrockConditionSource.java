@@ -8,7 +8,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.KeyDispatchDataCodec;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.levelgen.PositionalRandomFactory;
@@ -26,39 +25,37 @@ public record OptionallyFlatBedrockConditionSource(Identifier randomName, Vertic
         Registries.MATERIAL_CONDITION,
         Identifier.fromNamespaceAndPath(Identifier.PAPER_NAMESPACE, "optionally_flat_bedrock_condition_source")
     );
-    private static final KeyDispatchDataCodec<OptionallyFlatBedrockConditionSource> CODEC = KeyDispatchDataCodec.of(RecordCodecBuilder.mapCodec((instance) -> {
-        return instance.group(
-            Identifier.CODEC.fieldOf("random_name").forGetter(OptionallyFlatBedrockConditionSource::randomName),
-            VerticalAnchor.CODEC.fieldOf("true_at_and_below").forGetter(OptionallyFlatBedrockConditionSource::trueAtAndBelow),
-            VerticalAnchor.CODEC.fieldOf("false_at_and_above").forGetter(OptionallyFlatBedrockConditionSource::falseAtAndAbove),
-            Codec.BOOL.fieldOf("is_roof").forGetter(OptionallyFlatBedrockConditionSource::isRoof)
-        ).apply(instance, OptionallyFlatBedrockConditionSource::new);
-    }));
+    private static final MapCodec<OptionallyFlatBedrockConditionSource> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
+        Identifier.CODEC.fieldOf("random_name").forGetter(OptionallyFlatBedrockConditionSource::randomName),
+        VerticalAnchor.CODEC.fieldOf("true_at_and_below").forGetter(OptionallyFlatBedrockConditionSource::trueAtAndBelow),
+        VerticalAnchor.CODEC.fieldOf("false_at_and_above").forGetter(OptionallyFlatBedrockConditionSource::falseAtAndAbove),
+        Codec.BOOL.fieldOf("is_roof").forGetter(OptionallyFlatBedrockConditionSource::isRoof)
+    ).apply(i, OptionallyFlatBedrockConditionSource::new));
 
     public static void bootstrap() {
-        Registry.register(BuiltInRegistries.MATERIAL_CONDITION, CODEC_RESOURCE_KEY, CODEC.codec());
+        Registry.register(BuiltInRegistries.MATERIAL_CONDITION, CODEC_RESOURCE_KEY, CODEC);
     }
 
     @Override
-    public KeyDispatchDataCodec<? extends SurfaceRules.ConditionSource> codec() {
+    public MapCodec<OptionallyFlatBedrockConditionSource> codec() {
         return CODEC;
     }
 
     @Override
-    public SurfaceRules.Condition apply(final SurfaceRules.Context context) {
-        boolean hasFlatBedrock = context.context.level().paperConfig().environment.generateFlatBedrock;
-        int tempTrueAtAndBelowY = this.trueAtAndBelow().resolveY(context.context);
-        int tempFalseAtAndAboveY = this.falseAtAndAbove().resolveY(context.context);
+    public SurfaceRules.Condition apply(final SurfaceRules.Context ruleContext) {
+        boolean hasFlatBedrock = ruleContext.context.level().paperConfig().environment.generateFlatBedrock;
+        int tempTrueAtAndBelowY = this.trueAtAndBelow().resolveY(ruleContext.context);
+        int tempFalseAtAndAboveY = this.falseAtAndAbove().resolveY(ruleContext.context);
 
         int flatYLevel = this.isRoof ? Math.max(tempFalseAtAndAboveY, tempTrueAtAndBelowY) - 1 : Math.min(tempFalseAtAndAboveY, tempTrueAtAndBelowY);
         final int trueAtAndBelowY = hasFlatBedrock ? flatYLevel : tempTrueAtAndBelowY;
         final int falseAtAndAboveY = hasFlatBedrock ? flatYLevel : tempFalseAtAndAboveY;
 
-        final PositionalRandomFactory positionalRandomFactory = context.randomState.getOrCreateRandomFactory(this.randomName());
+        final PositionalRandomFactory randomFactory = ruleContext.randomState.getOrCreateRandomFactory(this.randomName());
 
         class VerticalGradientCondition extends SurfaceRules.LazyYCondition {
-            VerticalGradientCondition(SurfaceRules.Context context) {
-                super(context);
+            private VerticalGradientCondition() {
+                super(ruleContext);
             }
 
             @Override
@@ -66,16 +63,18 @@ public record OptionallyFlatBedrockConditionSource(Identifier randomName, Vertic
                 int blockY = this.context.blockY;
                 if (blockY <= trueAtAndBelowY) {
                     return true;
-                } else if (blockY >= falseAtAndAboveY) {
-                    return false;
-                } else {
-                    double d = Mth.map(blockY, trueAtAndBelowY, falseAtAndAboveY, 1.0, 0.0);
-                    RandomSource randomSource = positionalRandomFactory.at(this.context.blockX, blockY, this.context.blockZ);
-                    return (double)randomSource.nextFloat() < d;
                 }
+
+                if (blockY >= falseAtAndAboveY) {
+                    return false;
+                }
+
+                double probability = Mth.map(blockY, trueAtAndBelowY, falseAtAndAboveY, 1.0, 0.0);
+                RandomSource random = randomFactory.at(this.context.blockX, blockY, this.context.blockZ);
+                return random.nextFloat() < probability;
             }
         }
 
-        return new VerticalGradientCondition(context);
+        return new VerticalGradientCondition();
     }
 }

@@ -4,6 +4,7 @@ import com.destroystokyo.paper.entity.RangedEntity;
 import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.entity.SchoolableFish;
 import org.bukkit.NamespacedKey;
+import org.bukkit.entity.AbstractCubeMob;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.AbstractVillager;
@@ -39,11 +40,11 @@ import org.bukkit.entity.Raider;
 import org.bukkit.entity.Shulker;
 import org.bukkit.entity.Silverfish;
 import org.bukkit.entity.SkeletonHorse;
-import org.bukkit.entity.Slime;
 import org.bukkit.entity.Spellcaster;
 import org.bukkit.entity.Spider;
 import org.bukkit.entity.Squid;
 import org.bukkit.entity.Strider;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Turtle;
 import org.bukkit.entity.Vex;
@@ -70,6 +71,14 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @GeneratedClass
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
+    GoalKey<AbstractCubeMob> CUBE_MOB_ATTACK = create("cube_mob_attack", AbstractCubeMob.class);
+
+    GoalKey<AbstractCubeMob> CUBE_MOB_FLOAT = create("cube_mob_float", AbstractCubeMob.class);
+
+    GoalKey<AbstractCubeMob> CUBE_MOB_KEEP_ON_JUMPING = create("cube_mob_keep_on_jumping", AbstractCubeMob.class);
+
+    GoalKey<AbstractCubeMob> CUBE_MOB_RANDOM_DIRECTION = create("cube_mob_random_direction", AbstractCubeMob.class);
+
     GoalKey<AbstractHorse> HORSE_MOUNT_PANIC = create("horse_mount_panic", AbstractHorse.class);
 
     GoalKey<AbstractHorse> HORSE_RANDOM_STAND = create("horse_random_stand", AbstractHorse.class);
@@ -290,6 +299,8 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Mob> RESET_UNIVERSAL_ANGER = create("reset_universal_anger", Mob.class);
 
+    GoalKey<Mob> SULFUR_CUBE_TEMPT = create("sulfur_cube_tempt", Mob.class);
+
     GoalKey<Mob> TEMPT_FOR_NON_PATHFINDERS = create("tempt_for_non_pathfinders", Mob.class);
 
     GoalKey<Mob> USE_ITEM = create("use_item", Mob.class);
@@ -384,14 +395,6 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<SkeletonHorse> SKELETON_HORSE_SKELETON_TRAP = create("skeleton_horse_skeleton_trap", SkeletonHorse.class);
 
-    GoalKey<Slime> SLIME_ATTACK = create("slime_attack", Slime.class);
-
-    GoalKey<Slime> SLIME_FLOAT = create("slime_float", Slime.class);
-
-    GoalKey<Slime> SLIME_KEEP_ON_JUMPING = create("slime_keep_on_jumping", Slime.class);
-
-    GoalKey<Slime> SLIME_RANDOM_DIRECTION = create("slime_random_direction", Slime.class);
-
     GoalKey<Spellcaster> SPELLCASTER_CASTING_SPELL = create("spellcaster_casting_spell", Spellcaster.class);
 
     GoalKey<Spider> SPIDER = create("spider", Spider.class);
@@ -403,6 +406,8 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Squid> SQUID_RANDOM_MOVEMENT = create("squid_random_movement", Squid.class);
 
     GoalKey<Strider> STRIDER_GO_TO_LAVA = create("strider_go_to_lava", Strider.class);
+
+    GoalKey<SulfurCube> SULFUR_CUBE_SEARCH_FOR_ITEMS = create("sulfur_cube_search_for_items", SulfurCube.class);
 
     GoalKey<Tameable> FOLLOW_OWNER = create("follow_owner", Tameable.class);
 

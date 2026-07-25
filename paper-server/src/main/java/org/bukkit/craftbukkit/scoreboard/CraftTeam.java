@@ -5,10 +5,14 @@ import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.audience.Audience;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team.Visibility;
+import net.minecraft.world.scores.TeamColor;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -73,25 +77,19 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     @Override
     public boolean hasColor() {
         this.checkState();
-        return this.team.getColor().getColor() != null;
+        return this.team.getColor().isPresent();
     }
 
     @Override
     public net.kyori.adventure.text.format.TextColor color() throws IllegalStateException {
-        Preconditions.checkState(this.team.getColor().getColor() != null, "Team colors must have hex values");
         this.checkState();
-
-        net.kyori.adventure.text.format.TextColor color = net.kyori.adventure.text.format.TextColor.color(this.team.getColor().getColor());
-        if (!(color instanceof net.kyori.adventure.text.format.NamedTextColor)) {
-            throw new IllegalStateException("Team doesn't have a NamedTextColor");
-        }
-        return color;
+        return this.team.getColor().map(PaperAdventure::asAdventure).orElseThrow(() -> new IllegalStateException("Team does not have a color!"));
     }
 
     @Override
     public void color(net.kyori.adventure.text.format.NamedTextColor color) {
         this.checkState();
-        this.team.setColor(color == null ? net.minecraft.ChatFormatting.RESET : io.papermc.paper.adventure.PaperAdventure.asVanilla(color));
+        this.team.setColor(Optional.ofNullable(color).map(PaperAdventure::asVanilla));
     }
 
     @Override
@@ -143,7 +141,7 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     public ChatColor getColor() {
         this.checkState();
 
-        return CraftChatMessage.getColor(this.team.getColor());
+        return this.team.getColor().map(t -> CraftChatMessage.toLegacyFormat(t.textColor())).map(CraftChatMessage::getColor).orElse(ChatColor.RESET);
     }
 
     @Override
@@ -152,7 +150,14 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         Preconditions.checkArgument(!color.isFormat(), "Color must be a color not a format");
         this.checkState();
 
-        this.team.setColor(CraftChatMessage.getColor(color));
+        this.team.setColor(
+            Optional.of(color)
+                .filter(c -> c != ChatColor.RESET)
+                .map(CraftChatMessage::getColor)
+                .map(TextColor::fromLegacyFormat)
+                .map(TextColor::serialize)
+                .map(TeamColor::byName)
+        );
     }
 
     @Override

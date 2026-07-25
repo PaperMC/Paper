@@ -14,7 +14,7 @@ public class StackWalkerUtil {
         Optional<JavaPlugin> foundFrame = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
             .walk(stream -> stream
                 .map((frame) -> {
-                    ClassLoader classLoader =  frame.getDeclaringClass().getClassLoader();
+                    ClassLoader classLoader = frame.getDeclaringClass().getClassLoader();
                     JavaPlugin plugin;
                     if (classLoader instanceof ConfiguredPluginClassLoader configuredPluginClassLoader) {
                         plugin = configuredPluginClassLoader.getPlugin();

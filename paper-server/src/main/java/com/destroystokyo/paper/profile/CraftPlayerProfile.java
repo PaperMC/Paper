@@ -188,8 +188,12 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
 
     @Override
     public @NotNull ResolvableProfile buildResolvableProfile() {
-        if (emptyName != emptyUUID && this.properties.isEmpty()) {
-            return new ResolvableProfile.Dynamic(emptyName ? Either.right(this.profile.id()) : Either.left(this.profile.name()), PlayerSkin.Patch.EMPTY);
+        if (this.emptyName != this.emptyUUID && this.properties.isEmpty()) {
+            if (this.emptyName) {
+                return ResolvableProfile.createUnresolved(this.profile.id());
+            } else {
+                return ResolvableProfile.createUnresolved(this.profile.name());
+            }
         }
         return ResolvableProfile.createResolved(this.buildGameProfile());
     }

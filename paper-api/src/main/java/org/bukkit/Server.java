@@ -213,7 +213,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     /**
      * Get world type (level-type setting) for default world.
      *
-     * @return the value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)
+     * @return the value of level-type (e.g. minecraft:normal, minecraft:flat, minecraft:large_biomes, minecraft:amplified)
      */
     @NotNull
     public String getWorldType();
@@ -1380,7 +1380,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return an offline player
      * @see #getOfflinePlayer(java.util.UUID)
      */
-    // @Deprecated(since = "1.7.5") // Paper
     @NotNull
     public OfflinePlayer getOfflinePlayer(@NotNull String name);
 
@@ -2410,9 +2409,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
         // Paper start
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
-        {
-            throw new UnsupportedOperationException( "Not supported yet." );
+        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         /**
@@ -2424,8 +2422,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          */
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
-        {
+        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -2438,8 +2435,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          */
         @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig()
-        {
+        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
         // Paper end

@@ -77,6 +77,7 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
         if (levelData == null) {
             return new PaperLevelOverrides();
         }
+
         return new PaperLevelOverrides(
             RespawnData.fromVanilla(levelData.get("spawn").read(LevelData.RespawnData.CODEC).result().orElse(LevelData.RespawnData.DEFAULT)),
             levelData.get("Time").asLong(0L),
@@ -173,6 +174,13 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
     }
 
     @Override
+    public void setAllowCommands(final boolean allowCommands) {
+        if (this.isAllowCommands() != allowCommands) {
+            this.syncRootData(rootData -> rootData.setAllowCommands(allowCommands));
+        }
+    }
+
+    @Override
     public boolean isInitialized() {
         return this.initialized;
     }
@@ -235,7 +243,7 @@ public final class PaperLevelOverrides extends SavedData implements ServerLevelD
 
         public LevelData.RespawnData toVanilla(final ResourceKey<Level> dimension) {
             final RespawnData normalized = this.normalized();
-            return LevelData.RespawnData.of(dimension, normalized.pos, normalized.yaw, normalized.pitch);
+            return LevelData.RespawnData.of(dimension, normalized.pos(), normalized.yaw(), normalized.pitch());
         }
 
         public static RespawnData fromVanilla(final LevelData.RespawnData respawnData) {

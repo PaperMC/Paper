@@ -215,7 +215,7 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
 
     @Override
     public float getHardness() {
-        return this.getHandle().defaultBlockState().destroySpeed;
+        return this.getHandle().defaultBlockState().getDestroySpeed(null,  null);
     }
 
     @Override

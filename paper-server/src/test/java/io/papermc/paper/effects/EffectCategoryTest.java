@@ -1,6 +1,6 @@
 package io.papermc.paper.effects;
 
-import io.papermc.paper.adventure.PaperAdventure;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.world.effect.MobEffectCategory;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.potion.PotionEffectType;
@@ -24,7 +24,7 @@ public class EffectCategoryTest {
     public void testCategoryHasEquivalentColors() {
         for (MobEffectCategory mobEffectInfo : MobEffectCategory.values()) {
             PotionEffectType.Category bukkitEffectCategory = CraftPotionEffectType.fromNMS(mobEffectInfo);
-            assertEquals(bukkitEffectCategory.getColor(), PaperAdventure.asAdventure(mobEffectInfo.getTooltipFormatting()), mobEffectInfo.getTooltipFormatting().name() + " doesn't equal " + bukkitEffectCategory.getColor());
+            assertEquals(bukkitEffectCategory.getColor(), NamedTextColor.NAMES.value(net.minecraft.network.chat.TextColor.fromLegacyFormat(mobEffectInfo.getTooltipFormatting()).toString()), mobEffectInfo.getTooltipFormatting().name() + " doesn't equal " + bukkitEffectCategory.getColor());
         }
     }
 }

@@ -1349,6 +1349,13 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> CHISELED_BOOKSHELF = create(key("chiseled_bookshelf"));
 
     /**
+     * {@code minecraft:chiseled_cinnabar}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CHISELED_CINNABAR = create(key("chiseled_cinnabar"));
+
+    /**
      * {@code minecraft:chiseled_copper}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1412,6 +1419,13 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> CHISELED_STONE_BRICKS = create(key("chiseled_stone_bricks"));
 
     /**
+     * {@code minecraft:chiseled_sulfur}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CHISELED_SULFUR = create(key("chiseled_sulfur"));
+
+    /**
      * {@code minecraft:chiseled_tuff}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1438,6 +1452,62 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> CHORUS_PLANT = create(key("chorus_plant"));
+
+    /**
+     * {@code minecraft:cinnabar}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR = create(key("cinnabar"));
+
+    /**
+     * {@code minecraft:cinnabar_brick_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_BRICK_SLAB = create(key("cinnabar_brick_slab"));
+
+    /**
+     * {@code minecraft:cinnabar_brick_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_BRICK_STAIRS = create(key("cinnabar_brick_stairs"));
+
+    /**
+     * {@code minecraft:cinnabar_brick_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_BRICK_WALL = create(key("cinnabar_brick_wall"));
+
+    /**
+     * {@code minecraft:cinnabar_bricks}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_BRICKS = create(key("cinnabar_bricks"));
+
+    /**
+     * {@code minecraft:cinnabar_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_SLAB = create(key("cinnabar_slab"));
+
+    /**
+     * {@code minecraft:cinnabar_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_STAIRS = create(key("cinnabar_stairs"));
+
+    /**
+     * {@code minecraft:cinnabar_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CINNABAR_WALL = create(key("cinnabar_wall"));
 
     /**
      * {@code minecraft:clay}
@@ -5276,6 +5346,34 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> POLISHED_BLACKSTONE_WALL = create(key("polished_blackstone_wall"));
 
     /**
+     * {@code minecraft:polished_cinnabar}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_CINNABAR = create(key("polished_cinnabar"));
+
+    /**
+     * {@code minecraft:polished_cinnabar_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_CINNABAR_SLAB = create(key("polished_cinnabar_slab"));
+
+    /**
+     * {@code minecraft:polished_cinnabar_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_CINNABAR_STAIRS = create(key("polished_cinnabar_stairs"));
+
+    /**
+     * {@code minecraft:polished_cinnabar_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_CINNABAR_WALL = create(key("polished_cinnabar_wall"));
+
+    /**
      * {@code minecraft:polished_deepslate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5346,6 +5444,34 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> POLISHED_GRANITE_STAIRS = create(key("polished_granite_stairs"));
 
     /**
+     * {@code minecraft:polished_sulfur}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_SULFUR = create(key("polished_sulfur"));
+
+    /**
+     * {@code minecraft:polished_sulfur_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_SULFUR_SLAB = create(key("polished_sulfur_slab"));
+
+    /**
+     * {@code minecraft:polished_sulfur_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_SULFUR_STAIRS = create(key("polished_sulfur_stairs"));
+
+    /**
+     * {@code minecraft:polished_sulfur_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POLISHED_SULFUR_WALL = create(key("polished_sulfur_wall"));
+
+    /**
      * {@code minecraft:polished_tuff}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5386,6 +5512,13 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> POTATOES = create(key("potatoes"));
+
+    /**
+     * {@code minecraft:potent_sulfur}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POTENT_SULFUR = create(key("potent_sulfur"));
 
     /**
      * {@code minecraft:potted_acacia_sapling}
@@ -6968,6 +7101,69 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> SUGAR_CANE = create(key("sugar_cane"));
+
+    /**
+     * {@code minecraft:sulfur}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR = create(key("sulfur"));
+
+    /**
+     * {@code minecraft:sulfur_brick_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_BRICK_SLAB = create(key("sulfur_brick_slab"));
+
+    /**
+     * {@code minecraft:sulfur_brick_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_BRICK_STAIRS = create(key("sulfur_brick_stairs"));
+
+    /**
+     * {@code minecraft:sulfur_brick_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_BRICK_WALL = create(key("sulfur_brick_wall"));
+
+    /**
+     * {@code minecraft:sulfur_bricks}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_BRICKS = create(key("sulfur_bricks"));
+
+    /**
+     * {@code minecraft:sulfur_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_SLAB = create(key("sulfur_slab"));
+
+    /**
+     * {@code minecraft:sulfur_spike}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_SPIKE = create(key("sulfur_spike"));
+
+    /**
+     * {@code minecraft:sulfur_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_STAIRS = create(key("sulfur_stairs"));
+
+    /**
+     * {@code minecraft:sulfur_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> SULFUR_WALL = create(key("sulfur_wall"));
 
     /**
      * {@code minecraft:sunflower}

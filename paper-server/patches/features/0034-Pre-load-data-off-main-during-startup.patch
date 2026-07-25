@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Fri, 17 Jul 2026 16:15:46 +0200
+Subject: [PATCH] Pre-load data off-main during startup
+
+
+diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
+index a4d608d64b7d3477c9144d93547fd3b4f39a1b02..e2939cc39a8c103e4c4d7b01d39b5546486e4fbc 100644
+--- a/net/minecraft/server/Main.java
++++ b/net/minecraft/server/Main.java
+@@ -102,7 +102,10 @@ public class Main {
+                 writePidFile(pidFilePath);
+             }
+ 
+-            CrashReport.preload();
++            // Paper start - Perf: Run CrashReport preload asynchronously
++            // The actual result is discarded/irrelevant, but hardware and software info is memoized
++            Thread.ofPlatform().daemon().name("CrashReport preload thread").start(CrashReport::preload);
++            // Paper end - Perf: Run CrashReport preload asynchronously
+             if (options.has("jfrProfile")) { // CraftBukkit
+                 JvmProfiler.INSTANCE.start(Environment.SERVER);
+             }
+@@ -110,6 +113,12 @@ public class Main {
+             io.papermc.paper.plugin.PluginInitializerManager.load(options); // Paper
+             Bootstrap.bootStrap();
+             Bootstrap.validate();
++            // Paper start - Perf: Init DataConverter asynchronously
++            // Init for both of these are fairly expensive class-loading wise. Both are called again below/in MinecraftServer.spin,
++            // so failure during class init will become visible there.
++            Thread.ofPlatform().daemon().name("DataConverter MCTypeRegistry init thread").start(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry::init);
++            Thread.ofPlatform().daemon().name("DataFixers init thread").start(DataFixers::getDataFixer);
++            // Paper end - Perf: Init DataConverter asynchronously
+             Util.startTimerHackThread();
+             Path settingsFile = Paths.get("server.properties");
+             DedicatedServerSettings settings = new DedicatedServerSettings(options); // CraftBukkit - CLI argument support
+diff --git a/net/minecraft/world/level/block/Blocks.java b/net/minecraft/world/level/block/Blocks.java
+index 3ee7f5c578e4721fd95390d76105d6f8976747a1..f94f8049572c860652c97c10ecd888ef2c338262 100644
+--- a/net/minecraft/world/level/block/Blocks.java
++++ b/net/minecraft/world/level/block/Blocks.java
+@@ -5996,11 +5996,23 @@ public class Blocks {
+     }
+ 
+     static {
++        // Paper start - Perf: Optimize block state cache initialization
++        // initCache of the first state of every block runs directly (to make sure Blocks is always called here) before the rest are put off-thread
++        final java.util.List<BlockState> statesToInit = new java.util.ArrayList<>();
+         for (Block block : BuiltInRegistries.BLOCK) {
++            boolean first = true;
+             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+                 Block.BLOCK_STATE_REGISTRY.add(state);
+-                state.initCache();
++                if (first) {
++                    first = false;
++                    state.initCache();
++                } else {
++                    statesToInit.add(state);
++                }
+             }
+         }
++        // Make sure this stays as a method reference, else the synthetic lambda method makes this blow up
++        statesToInit.parallelStream().forEach(BlockBehaviour.BlockStateBase::initCache);
++        // Paper end - Perf: Optimize block state cache initialization
+     }
+ }
