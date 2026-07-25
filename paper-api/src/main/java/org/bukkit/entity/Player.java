@@ -848,10 +848,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Plays a sound at a location.
      *
      * @param sound a sound
-     * @param location location
+     * @param pos position
      */
-    default void playSound(net.kyori.adventure.sound.Sound sound, Location location) {
-        playSound(sound, location.getX(), location.getY(), location.getZ());
+    default void playSound(net.kyori.adventure.sound.Sound sound, Position pos) {
+        playSound(sound, pos.x(), pos.y(), pos.z());
     }
 
     /**
