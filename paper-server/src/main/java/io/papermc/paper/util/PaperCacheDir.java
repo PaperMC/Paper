@@ -25,4 +25,18 @@ public final class PaperCacheDir {
     public static Path get(final String child) {
         return get().resolve(child);
     }
+
+    public static Path moveFromServerRootAndGet(final String child, final String newName) {
+        // Keep this for individual use until a more unified migration place is made for larger config migrations
+        final Path path = Path.of(child);
+        final Path target = get(newName);
+        if (Files.isRegularFile(path)) {
+            try {
+                Files.move(path, target);
+            } catch (final IOException e) {
+                throw new RuntimeException("Error moving file: " + child, e);
+            }
+        }
+        return target;
+    }
 }
