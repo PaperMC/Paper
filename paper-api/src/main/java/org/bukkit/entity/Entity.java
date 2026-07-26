@@ -856,12 +856,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     boolean isMarkedInvulnerable();
 
     /**
-     * Determines if the entity is invulnerable to the specified damage type.
+     * Determines if the entity is invulnerable to the specified damage source.
      * <p>
      * {@code #isInvulnerableTo(DamageSource.builder(DamageType.GENERIC).build())} is equivalent to {@code #isInvulnerable()}
      *
      * @param source the damage source to check against
-     * @return {@code true} if the entity is invulnerable to the given damage type, {@code false} otherwise
+     * @return {@code true} if the entity is invulnerable to the given damage source, {@code false} otherwise
      */
     boolean isInvulnerableTo(@NotNull DamageSource source);
 
