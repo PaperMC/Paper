@@ -1,30 +1,31 @@
 --- a/net/minecraft/world/item/BoneMealItem.java
 +++ b/net/minecraft/world/item/BoneMealItem.java
-@@ -33,12 +_,17 @@
+@@ -35,13 +_,18 @@
  
      @Override
-     public InteractionResult useOn(UseOnContext context) {
+     public InteractionResult useOn(final UseOnContext context) {
 +        // CraftBukkit start - extract bonemeal application logic to separate, static method
 +        return BoneMealItem.applyBonemeal(context);
 +    }
-+    public static InteractionResult applyBonemeal(UseOnContext context) {
++    public static InteractionResult applyBonemeal(final UseOnContext context) {
 +        // CraftBukkit end
          Level level = context.getLevel();
-         BlockPos clickedPos = context.getClickedPos();
-         BlockPos blockPos = clickedPos.relative(context.getClickedFace());
-         if (growCrop(context.getItemInHand(), level, clickedPos)) {
-             if (!level.isClientSide) {
--                context.getPlayer().gameEvent(GameEvent.ITEM_INTERACT_FINISH);
-+                if (context.getPlayer() != null) context.getPlayer().gameEvent(GameEvent.ITEM_INTERACT_FINISH); // CraftBukkit - SPIGOT-7518
-                 level.levelEvent(1505, clickedPos, 15);
-             }
- 
-@@ -48,7 +_,7 @@
-             boolean isFaceSturdy = blockState.isFaceSturdy(level, clickedPos, context.getClickedFace());
-             if (isFaceSturdy && growWaterPlant(context.getItemInHand(), level, blockPos, context.getClickedFace())) {
-                 if (!level.isClientSide) {
--                    context.getPlayer().gameEvent(GameEvent.ITEM_INTERACT_FINISH);
-+                    if (context.getPlayer() != null) context.getPlayer().gameEvent(GameEvent.ITEM_INTERACT_FINISH); // CraftBukkit - SPIGOT-7518
-                     level.levelEvent(1505, blockPos, 15);
+         BlockPos pos = context.getClickedPos();
+         BlockPos relative = pos.relative(context.getClickedFace());
+         ItemStack boneMealStack = context.getItemInHand();
+         if (growCrop(boneMealStack, level, pos)) {
+             if (!level.isClientSide()) {
+-                boneMealStack.causeUseVibration(context.getPlayer(), GameEvent.ITEM_INTERACT_FINISH);
++                if (context.getPlayer() != null) boneMealStack.causeUseVibration(context.getPlayer(), GameEvent.ITEM_INTERACT_FINISH); // CraftBukkit - SPIGOT-7518
+                 level.levelEvent(LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, pos, 15);
+                 return InteractionResult.SUCCESS_SERVER;
+             } else {
+@@ -52,7 +_,7 @@
+             boolean solidBlockFace = clickedState.isFaceSturdy(level, pos, context.getClickedFace());
+             if (solidBlockFace && growWaterPlant(boneMealStack, level, relative, context.getClickedFace())) {
+                 if (!level.isClientSide()) {
+-                    boneMealStack.causeUseVibration(context.getPlayer(), GameEvent.ITEM_INTERACT_FINISH);
++                    if (context.getPlayer() != null) boneMealStack.causeUseVibration(context.getPlayer(), GameEvent.ITEM_INTERACT_FINISH); // CraftBukkit - SPIGOT-7518
+                     level.levelEvent(LevelEvent.PARTICLES_AND_SOUND_PLANT_GROWTH, relative, 15);
                  }
  

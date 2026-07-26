@@ -39,7 +39,7 @@ public interface PersistentDataContainerView {
      * using your namespace.
      *
      * @param key the key the value is stored under
-     * @param type the type the primative stored value has to match
+     * @param type the type the primitive stored value has to match
      * @param <P> the generic type of the stored primitive
      * @param <C> the generic type of the eventually created complex object
      * @return if a value with the provided key and type exists
@@ -71,7 +71,7 @@ public interface PersistentDataContainerView {
      * {@link PersistentDataHolder} instance.
      *
      * @param key the key to look up in the custom tag map
-     * @param type the type the value must have and will be casted to
+     * @param type the type the value must have and will be cast to
      * @param <P> the generic type of the stored primitive
      * @param <C> the generic type of the eventually created complex object
      * @return the value or {@code null} if no value was mapped under the given
@@ -93,7 +93,7 @@ public interface PersistentDataContainerView {
      * container, the default value provided is returned.
      *
      * @param key the key to look up in the custom tag map
-     * @param type the type the value must have and will be casted to
+     * @param type the type the value must have and will be cast to
      * @param defaultValue the default value to return if no value was found for
      * the provided key
      * @param <P> the generic type of the stored primitive
@@ -157,4 +157,9 @@ public interface PersistentDataContainerView {
      * @throws java.io.IOException if we fail to write this container to a byte array
      */
     byte[] serializeToBytes() throws java.io.IOException;
+
+    /**
+     * {@return the size of the data container}
+     */
+    int getSize();
 }

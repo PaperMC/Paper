@@ -1,6 +1,7 @@
 package org.bukkit.plugin.java;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import java.io.File;
@@ -30,7 +31,6 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginBase;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -53,8 +53,7 @@ public abstract class JavaPlugin extends PluginBase {
     private FileConfiguration newConfig = null;
     private File configFile = null;
     private Logger logger = null;
-    @SuppressWarnings("deprecation")
-    private final io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> lifecycleEventManager = org.bukkit.Bukkit.getUnsafe().createPluginLifecycleEventManager(this, () -> this.allowsLifecycleRegistration);
+    private final io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> lifecycleEventManager = InternalAPIBridge.get().createPluginLifecycleEventManager(this, () -> this.allowsLifecycleRegistration);
     private boolean allowsLifecycleRegistration = true;
     private boolean isBeingEnabled = false;
 
@@ -289,7 +288,7 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     private static class DummyPluginLoaderImplHolder {
-        private static final PluginLoader INSTANCE =  net.kyori.adventure.util.Services.service(PluginLoader.class)
+        private static final PluginLoader INSTANCE = net.kyori.adventure.util.Services.service(PluginLoader.class)
             .orElseThrow();
     }
     public final void init(PluginLoader loader, Server server, PluginDescriptionFile description, File dataFolder, File file, ClassLoader classLoader) {

@@ -3,6 +3,8 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.util.MCUtil;
+import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.animal.frog.FrogVariant;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
 import org.bukkit.entity.Frog;
@@ -13,16 +15,13 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperFrogVariantRegistryEntry implements FrogVariantRegistryEntry {
 
-    protected net.minecraft.core.@Nullable ClientAsset clientTextureAsset;
+    protected ClientAsset.@Nullable ResourceTexture clientTextureAsset;
     protected SpawnPrioritySelectors spawnConditions;
 
-    protected final Conversions conversions;
-
     public PaperFrogVariantRegistryEntry(
-        final Conversions conversions,
+        final Conversions ignoredConversions,
         final @Nullable FrogVariant internal
     ) {
-        this.conversions = conversions;
         if (internal == null) {
             spawnConditions = SpawnPrioritySelectors.EMPTY;
             return;
@@ -34,7 +33,7 @@ public class PaperFrogVariantRegistryEntry implements FrogVariantRegistryEntry {
 
     @Override
     public ClientTextureAsset clientTextureAsset() {
-        return this.conversions.asBukkit(asConfigured(this.clientTextureAsset, "clientTextureAsset"));
+        return MCUtil.toTextureAsset(asConfigured(this.clientTextureAsset, "clientTextureAsset"));
     }
 
     public static final class PaperBuilder extends PaperFrogVariantRegistryEntry implements Builder, PaperRegistryBuilder<FrogVariant, Frog.Variant> {
@@ -45,7 +44,7 @@ public class PaperFrogVariantRegistryEntry implements FrogVariantRegistryEntry {
 
         @Override
         public Builder clientTextureAsset(final ClientTextureAsset clientTextureAsset) {
-            this.clientTextureAsset = this.conversions.asVanilla(asArgument(clientTextureAsset, "clientTextureAsset"));
+            this.clientTextureAsset = MCUtil.toResourceTexture(asArgument(clientTextureAsset, "clientTextureAsset"));
             return this;
         }
 

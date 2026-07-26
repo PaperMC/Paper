@@ -14,7 +14,6 @@ import org.jetbrains.annotations.Nullable;
 public final class DamageTypeTags {
 
     // Start generate - DamageTypeTags
-    // @GeneratedFrom 1.21.7
     public static final Tag<DamageType> ALWAYS_HURTS_ENDER_DRAGONS = getTag("always_hurts_ender_dragons");
 
     public static final Tag<DamageType> ALWAYS_KILLS_ARMOR_STANDS = getTag("always_kills_armor_stands");
@@ -76,6 +75,8 @@ public final class DamageTypeTags {
     public static final Tag<DamageType> PANIC_CAUSES = getTag("panic_causes");
 
     public static final Tag<DamageType> PANIC_ENVIRONMENTAL_CAUSES = getTag("panic_environmental_causes");
+
+    public static final Tag<DamageType> SULFUR_CUBE_WITH_BLOCK_IMMUNE_TO = getTag("sulfur_cube_with_block_immune_to");
 
     public static final Tag<DamageType> WITCH_RESISTANT_TO = getTag("witch_resistant_to");
 

@@ -43,7 +43,7 @@ public interface AttributeInstance {
     /**
      * Gets the modifier with the corresponding key.
      *
-     * @param key the jey of the modifier
+     * @param key the key of the modifier
      * @return the modifier, if it exists
      */
     @org.jetbrains.annotations.Nullable AttributeModifier getModifier(@NotNull net.kyori.adventure.key.Key key);
@@ -111,6 +111,11 @@ public interface AttributeInstance {
      * Gets the default value of the Attribute attached to this instance.
      *
      * @return server default value
+     * @deprecated this method is placed misleadingly as it does not return the default value in the current entity's context, but in the server's context.
+     *  Use {@link Attribute#getDefaultValue()} as a replacement and see the note there about default values for specific entity types
+     * @see Attribute#getDefaultValue()
+     * @see org.bukkit.entity.EntityType#getDefaultAttributes()
      */
+    @Deprecated(since = "26.1")
     double getDefaultValue();
 }

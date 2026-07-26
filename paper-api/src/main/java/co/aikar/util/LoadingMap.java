@@ -82,9 +82,9 @@ public class LoadingMap <K, V> extends AbstractMap<K, V> {
     /**
      * Creates a LoadingMap with an auto instantiating loader.
      *
-     * Will auto construct class of of Value when not found
+     * Will auto construct class of Value when not found
      *
-     * Since this uses Reflection, It is more effecient to define your own static loader
+     * Since this uses Reflection, It is more efficient to define your own static loader
      * than using this helper, but if performance is not critical, this is easier.
      *
      * @param backingMap Actual map being used.
@@ -102,9 +102,9 @@ public class LoadingMap <K, V> extends AbstractMap<K, V> {
     /**
      * Creates a LoadingMap with an auto instantiating loader.
      *
-     * Will auto construct class of of Value when not found
+     * Will auto construct class of Value when not found
      *
-     * Since this uses Reflection, It is more effecient to define your own static loader
+     * Since this uses Reflection, It is more efficient to define your own static loader
      * than using this helper, but if performance is not critical, this is easier.
      *
      * @param backingMap Actual map being used.
@@ -178,7 +178,7 @@ public class LoadingMap <K, V> extends AbstractMap<K, V> {
      * @param loadFactor Load factor to use
      * @param <K> Key Type of the Map
      * @param <V> Value Type of the Map
-     * @return  Map that auto instantiates on .get()
+     * @return Map that auto instantiates on .get()
      */
     @NotNull
     public static <K, V> Map<K, V> newHashAutoMap(@NotNull final Class<? extends V> valueClass, int initialCapacity, float loadFactor) {

@@ -10,8 +10,8 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.component.LodestoneTracker;
@@ -43,10 +43,10 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
         this.tracker = compassMeta.tracker;
     }
 
-    CraftMetaCompass(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
-        getOrEmpty(tag, CraftMetaCompass.LODESTONE_TARGET).ifPresent((lodestoneTarget) -> {
-            this.tracker = lodestoneTarget;
+    CraftMetaCompass(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
+        getOrEmpty(patch, CraftMetaCompass.LODESTONE_TARGET).ifPresent((tracker) -> {
+            this.tracker = tracker;
         });
     }
 
@@ -54,11 +54,14 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
         super(map);
         String lodestoneWorldKey = SerializableMeta.getString(map, CraftMetaCompass.LODESTONE_POS_WORLD.BUKKIT, true);
         if (lodestoneWorldKey != null) {
-            ResourceKey<net.minecraft.world.level.Level> lodestoneWorld = ResourceKey.create(Registries.DIMENSION, ResourceLocation.tryParse(lodestoneWorldKey));
-            int lodestoneX = (Integer) map.get(CraftMetaCompass.LODESTONE_POS_X.BUKKIT);
-            int lodestoneY = (Integer) map.get(CraftMetaCompass.LODESTONE_POS_Y.BUKKIT);
-            int lodestoneZ = (Integer) map.get(CraftMetaCompass.LODESTONE_POS_Z.BUKKIT);
-            this.tracker = new LodestoneTracker(Optional.of(new GlobalPos(lodestoneWorld, new BlockPos(lodestoneX, lodestoneY, lodestoneZ))), true);
+            Identifier dimensionKey = Identifier.tryParse(lodestoneWorldKey);
+            if (dimensionKey != null) {
+                ResourceKey<net.minecraft.world.level.Level> lodestoneDimension = ResourceKey.create(Registries.DIMENSION, dimensionKey);
+                int lodestoneX = (Integer) map.get(CraftMetaCompass.LODESTONE_POS_X.BUKKIT);
+                int lodestoneY = (Integer) map.get(CraftMetaCompass.LODESTONE_POS_Y.BUKKIT);
+                int lodestoneZ = (Integer) map.get(CraftMetaCompass.LODESTONE_POS_Z.BUKKIT);
+                this.tracker = new LodestoneTracker(Optional.of(new GlobalPos(lodestoneDimension, new BlockPos(lodestoneX, lodestoneY, lodestoneZ))), true);
+            }
         } else {
             // legacy
             Location lodestone = SerializableMeta.getObject(Location.class, map, CraftMetaCompass.LODESTONE_POS.BUKKIT, true);
@@ -121,7 +124,7 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
         } else {
             GlobalPos pos = GlobalPos.of(
                 ((CraftWorld) lodestone.getWorld()).getHandle().dimension(),
-                CraftLocation.toBlockPosition(lodestone)
+                CraftLocation.toBlockPos(lodestone)
             );
             boolean tracked = this.tracker == null || this.tracker.tracked();
             this.tracker = new LodestoneTracker(Optional.of(pos), tracked);
@@ -182,7 +185,7 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
 
         if (this.isLodestoneCompass()) {
             if (this.tracker.target().isPresent()) {
-                builder.put(CraftMetaCompass.LODESTONE_POS_WORLD.BUKKIT, this.tracker.target().get().dimension().location().toString());
+                builder.put(CraftMetaCompass.LODESTONE_POS_WORLD.BUKKIT, this.tracker.target().get().dimension().identifier().toString());
                 builder.put(CraftMetaCompass.LODESTONE_POS_X.BUKKIT, this.tracker.target().get().pos().getX());
                 builder.put(CraftMetaCompass.LODESTONE_POS_Y.BUKKIT, this.tracker.target().get().pos().getY());
                 builder.put(CraftMetaCompass.LODESTONE_POS_Z.BUKKIT, this.tracker.target().get().pos().getZ());

@@ -50,8 +50,8 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
      * This is only the title sent to the client in the open packet, this doesn't change
      * the title returned by {@link InventoryView#title()}, hence "override".
      * <p>
-     * <b>NOTE:</b> Horse inventories are a special case where setting this will
-     * have no effect. Horse inventory titles are set by the horse display name.
+     * <b>NOTE:</b> Horse and nautilus inventories are a special case where setting this will
+     * have no effect. These inventory titles are set by the entity's display name.
      *
      * @param titleOverride the title override or {@code null}
      */

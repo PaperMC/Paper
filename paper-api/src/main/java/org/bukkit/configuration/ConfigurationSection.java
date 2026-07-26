@@ -174,7 +174,7 @@ public interface ConfigurationSection {
      * found.
      * <p>
      * If the Object does not exist then the specified default value will
-     * returned regardless of if a default has been identified in the root
+     * return regardless of if a default has been identified in the root
      * {@link Configuration}.
      *
      * @param path Path of the Object to get.
@@ -248,7 +248,7 @@ public interface ConfigurationSection {
      * found.
      * <p>
      * If the String does not exist then the specified default value will
-     * returned regardless of if a default has been identified in the root
+     * return regardless of if a default has been identified in the root
      * {@link Configuration}.
      *
      * @param path Path of the String to get.
@@ -302,10 +302,10 @@ public interface ConfigurationSection {
     /**
      * Checks if the specified path is an int.
      * <p>
-     * If the path exists but is not a int, this will return false. If the
+     * If the path exists but is not an int, this will return false. If the
      * path does not exist, this will return false. If the path does not exist
      * but a default value has been specified, this will check if that default
-     * value is a int and return appropriately.
+     * value is an int and return appropriately.
      *
      * @param path Path of the int to check.
      * @return Whether or not the specified path is an int.
@@ -329,7 +329,7 @@ public interface ConfigurationSection {
      * found.
      * <p>
      * If the boolean does not exist then the specified default value will
-     * returned regardless of if a default has been identified in the root
+     * return regardless of if a default has been identified in the root
      * {@link Configuration}.
      *
      * @param path Path of the boolean to get.
@@ -369,7 +369,7 @@ public interface ConfigurationSection {
      * found.
      * <p>
      * If the double does not exist then the specified default value will
-     * returned regardless of if a default has been identified in the root
+     * return regardless of if a default has been identified in the root
      * {@link Configuration}.
      *
      * @param path Path of the double to get.
@@ -409,7 +409,7 @@ public interface ConfigurationSection {
      * found.
      * <p>
      * If the long does not exist then the specified default value will
-     * returned regardless of if a default has been identified in the root
+     * return regardless of if a default has been identified in the root
      * {@link Configuration}.
      *
      * @param path Path of the long to get.
@@ -451,7 +451,7 @@ public interface ConfigurationSection {
      * found.
      * <p>
      * If the List does not exist then the specified default value will
-     * returned regardless of if a default has been identified in the root
+     * return regardless of if a default has been identified in the root
      * {@link Configuration}.
      *
      * @param path Path of the List to get.
@@ -499,7 +499,7 @@ public interface ConfigurationSection {
      * will return the default value. If the List does not exist and no
      * default value was specified, this will return an empty List.
      * <p>
-     * This method will attempt to cast any values into a Integer if possible,
+     * This method will attempt to cast any values into an Integer if possible,
      * but may miss any values out if they are not compatible.
      *
      * @param path Path of the List to get.
@@ -662,7 +662,7 @@ public interface ConfigurationSection {
      * Gets the requested object at the given path, returning a default value if
      * not found
      *
-     * If the Object does not exist then the specified default value will
+     * If the Object does not exist then the specified default value will be
      * returned regardless of if a default has been identified in the root
      * {@link Configuration}.
      *
@@ -706,7 +706,7 @@ public interface ConfigurationSection {
      * path, returning a default value if not found
      *
      * If the Object does not exist then the specified default value will
-     * returned regardless of if a default has been identified in the root
+     * return regardless of if a default has been identified in the root
      * {@link Configuration}.
      *
      * @param <T> the type of {@link ConfigurationSerializable}
@@ -738,7 +738,7 @@ public interface ConfigurationSection {
      * not found.
      * <p>
      * If the Vector does not exist then the specified default value will
-     * returned regardless of if a default has been identified in the root
+     * return regardless of if a default has been identified in the root
      * {@link Configuration}.
      *
      * @param path Path of the Vector to get.
@@ -782,7 +782,7 @@ public interface ConfigurationSection {
      * value if not found.
      * <p>
      * If the OfflinePlayer does not exist then the specified default value
-     * will returned regardless of if a default has been identified in the
+     * will return regardless of if a default has been identified in the
      * root {@link Configuration}.
      *
      * @param path Path of the OfflinePlayer to get.
@@ -825,7 +825,7 @@ public interface ConfigurationSection {
      * if not found.
      * <p>
      * If the ItemStack does not exist then the specified default value will
-     * returned regardless of if a default has been identified in the root
+     * return regardless of if a default has been identified in the root
      * {@link Configuration}.
      *
      * @param path Path of the ItemStack to get.
@@ -868,7 +868,7 @@ public interface ConfigurationSection {
      * not found.
      * <p>
      * If the Color does not exist then the specified default value will
-     * returned regardless of if a default has been identified in the root
+     * return regardless of if a default has been identified in the root
      * {@link Configuration}.
      *
      * @param path Path of the Color to get.
@@ -911,7 +911,7 @@ public interface ConfigurationSection {
      * not found.
      * <p>
      * If the Location does not exist then the specified default value will
-     * returned regardless of if a default has been identified in the root
+     * return regardless of if a default has been identified in the root
      * {@link Configuration}.
      *
      * @param path Path of the Location to get.
@@ -1005,7 +1005,7 @@ public interface ConfigurationSection {
      * line.
      *
      * @param path Path of the comments to get.
-     * @return A unmodifiable list of the requested comments, every entry
+     * @return An unmodifiable list of the requested comments, every entry
      * represents one line.
      */
     @NotNull
@@ -1019,7 +1019,7 @@ public interface ConfigurationSection {
      * line.
      *
      * @param path Path of the comments to get.
-     * @return A unmodifiable list of the requested comments, every entry
+     * @return An unmodifiable list of the requested comments, every entry
      * represents one line.
      */
     @NotNull

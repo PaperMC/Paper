@@ -37,10 +37,6 @@ public class RegistryEntryBuilder<M, A extends Keyed> { // TODO remove Keyed
         return new RegistryEntryImpl<>(new RegistryEntryMeta.ApiOnly<>(this.mcKey, this.apiKey, apiRegistrySupplier));
     }
 
-    public CraftStage<M, A> craft(final Class<?> classToPreload, final BiFunction<? super NamespacedKey, M, ? extends A> minecraftToBukkit) {
-        return new CraftStage<>(this.mcKey, this.apiKey, classToPreload, new RegistryTypeMapper<>(minecraftToBukkit));
-    }
-
     public CraftStage<M, A> craft(final Class<?> classToPreload, final Function<Holder<M>, ? extends A> minecraftToBukkit) {
         return this.craft(classToPreload, minecraftToBukkit, false);
     }

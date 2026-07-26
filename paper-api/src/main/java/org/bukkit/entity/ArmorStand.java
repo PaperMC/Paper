@@ -231,7 +231,7 @@ public interface ArmorStand extends LivingEntity {
     /**
      * Sets whether the armor stand has a base plate.
      *
-     * @param basePlate whether is has a base plate
+     * @param basePlate whether it has a base plate
      */
     void setBasePlate(boolean basePlate);
 
@@ -382,7 +382,7 @@ public interface ArmorStand extends LivingEntity {
 
     /**
      * Returns the item the armor stand has
-     * equip in the given equipment slot
+     * equipped in the given equipment slot
      *
      * @param slot the equipment slot to get
      * @return the ItemStack in the equipment slot
@@ -393,7 +393,7 @@ public interface ArmorStand extends LivingEntity {
 
     /**
      * Sets the item the armor stand has
-     * equip in the given equipment slot
+     * equipped in the given equipment slot
      *
      * @param slot the equipment slot to set
      * @param item the item to hold

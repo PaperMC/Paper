@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys.tags;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.7")
+@GeneratedClass
 public final class DamageTypeTagKeys {
     /**
      * {@code #minecraft:always_hurts_ender_dragons}
@@ -241,6 +241,13 @@ public final class DamageTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<DamageType> PANIC_ENVIRONMENTAL_CAUSES = create(key("panic_environmental_causes"));
+
+    /**
+     * {@code #minecraft:sulfur_cube_with_block_immune_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<DamageType> SULFUR_CUBE_WITH_BLOCK_IMMUNE_TO = create(key("sulfur_cube_with_block_immune_to"));
 
     /**
      * {@code #minecraft:witch_resistant_to}

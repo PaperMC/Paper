@@ -19,7 +19,7 @@ public record PaperChargedProjectiles(
 
     @Override
     public List<ItemStack> projectiles() {
-        return MCUtil.transformUnmodifiable(this.impl.getItems() /*makes copies internally*/, CraftItemStack::asCraftMirror);
+        return MCUtil.transformUnmodifiable(this.impl.itemCopies(), CraftItemStack::asCraftMirror);
     }
 
     static final class BuilderImpl implements ChargedProjectiles.Builder {
@@ -27,16 +27,16 @@ public record PaperChargedProjectiles(
         private final List<net.minecraft.world.item.ItemStack> items = new ArrayList<>();
 
         @Override
-        public ChargedProjectiles.Builder add(final ItemStack stack) {
-            Preconditions.checkArgument(stack != null, "stack cannot be null");
-            Preconditions.checkArgument(!stack.isEmpty(), "stack cannot be empty");
-            this.items.add(CraftItemStack.asNMSCopy(stack));
+        public ChargedProjectiles.Builder add(final ItemStack item) {
+            Preconditions.checkArgument(item != null, "item cannot be null");
+            Preconditions.checkArgument(!item.isEmpty(), "item cannot be empty");
+            this.items.add(CraftItemStack.asNMSCopy(item));
             return this;
         }
 
         @Override
-        public ChargedProjectiles.Builder addAll(final List<ItemStack> stacks) {
-            stacks.forEach(this::add);
+        public ChargedProjectiles.Builder addAll(final List<ItemStack> items) {
+            items.forEach(this::add);
             return this;
         }
 
@@ -45,7 +45,7 @@ public record PaperChargedProjectiles(
             if (this.items.isEmpty()) {
                 return new PaperChargedProjectiles(net.minecraft.world.item.component.ChargedProjectiles.EMPTY);
             }
-            return new PaperChargedProjectiles(net.minecraft.world.item.component.ChargedProjectiles.of(this.items));
+            return new PaperChargedProjectiles(net.minecraft.world.item.component.ChargedProjectiles.ofNonEmpty(this.items));
         }
     }
 }

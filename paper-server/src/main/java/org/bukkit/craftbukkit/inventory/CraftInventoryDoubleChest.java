@@ -1,25 +1,29 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.CompoundContainer;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.bukkit.Location;
 import org.bukkit.block.DoubleChest;
 import org.bukkit.inventory.DoubleChestInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.jspecify.annotations.Nullable;
 
 public class CraftInventoryDoubleChest extends CraftInventory implements DoubleChestInventory {
+
     public MenuProvider provider;
     private final CraftInventory left;
     private final CraftInventory right;
 
-    public CraftInventoryDoubleChest(ChestBlock.DoubleInventory inventory) {
-        super(inventory.container);
-        this.provider = inventory;
-        this.left = new CraftInventory(inventory.container.container1);
-        this.right = new CraftInventory(inventory.container.container2);
+    public CraftInventoryDoubleChest(Provider provider) {
+        super(provider.container);
+        this.provider = provider;
+        this.left = new CraftInventory(provider.container.container1);
+        this.right = new CraftInventory(provider.container.container2);
     }
 
     public CraftInventoryDoubleChest(CompoundContainer largeChest) {
@@ -73,5 +77,31 @@ public class CraftInventoryDoubleChest extends CraftInventory implements DoubleC
     @Override
     public Location getLocation() {
         return this.getLeftSide().getLocation().add(this.getRightSide().getLocation()).multiply(0.5);
+    }
+
+    public static class Provider implements MenuProvider {
+
+        private final MenuProvider delegate;
+        public final CompoundContainer container; // expose to api
+
+        private Provider(MenuProvider delegate, CompoundContainer container) {
+            this.delegate = delegate;
+            this.container = container;
+        }
+
+        public static Provider wrap(MenuProvider delegate, CompoundContainer container) {
+            return new Provider(delegate, container);
+        }
+
+        @Nullable
+        @Override
+        public AbstractContainerMenu createMenu(int containerId, net.minecraft.world.entity.player.Inventory inventory, Player player) {
+            return this.delegate.createMenu(containerId, inventory, player);
+        }
+
+        @Override
+        public Component getDisplayName() {
+            return this.delegate.getDisplayName();
+        }
     }
 }

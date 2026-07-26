@@ -2,6 +2,7 @@ package io.papermc.paper.configuration.type.number;
 
 import com.google.common.base.Preconditions;
 import com.mojang.logging.LogUtils;
+import java.lang.reflect.AnnotatedType;
 import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
@@ -28,17 +29,17 @@ public interface IntOr {
     }
 
     record Default(OptionalInt value) implements IntOr {
-        private static final String DEFAULT_VALUE = "default";
         public static final Default USE_DEFAULT = new Default(OptionalInt.empty());
+        private static final String DEFAULT_VALUE = "default";
         public static final ScalarSerializer<Default> SERIALIZER = new Serializer<>(Default.class, Default::new, DEFAULT_VALUE, USE_DEFAULT);
     }
 
     record Disabled(OptionalInt value) implements IntOr {
-        private static final String DISABLED_VALUE = "disabled";
         public static final Disabled DISABLED = new Disabled(OptionalInt.empty());
+        private static final String DISABLED_VALUE = "disabled";
         public static final ScalarSerializer<Disabled> SERIALIZER = new Serializer<>(Disabled.class, Disabled::new, DISABLED_VALUE, DISABLED);
 
-        public boolean test(IntPredicate predicate) {
+        public boolean test(final IntPredicate predicate) {
             return this.value.isPresent() && predicate.test(this.value.getAsInt());
         }
 
@@ -49,7 +50,7 @@ public interface IntOr {
 
     final class Serializer<T extends IntOr> extends OptionalNumSerializer<T, OptionalInt> {
 
-        private Serializer(Class<T> classOfT, Function<OptionalInt, T> factory, String emptySerializedValue, T emptyValue) {
+        private Serializer(final Class<T> classOfT, final Function<OptionalInt, T> factory, final String emptySerializedValue, final T emptyValue) {
             super(classOfT, emptySerializedValue, emptyValue, OptionalInt::empty, OptionalInt::isEmpty, factory, int.class);
         }
 
@@ -73,7 +74,7 @@ public interface IntOr {
         }
 
         @Override
-        protected Object serialize(final T item, final Predicate<Class<?>> typeSupported) {
+        protected Object serialize(final AnnotatedType type, final T item, final Predicate<Class<?>> typeSupported) {
             final OptionalInt value = item.value();
             if (value.isPresent()) {
                 return value.getAsInt();

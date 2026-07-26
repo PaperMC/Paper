@@ -72,7 +72,7 @@ public class RAMGraph extends JComponent {
         DATA.add(new GraphData(jvm.totalMemory(), jvm.freeMemory(), jvm.maxMemory()));
 
         PointerInfo pointerInfo = null;
-        // I think I recall spotting a bug report where this throwed an exception once
+        // I think I recall spotting a bug report where this throw an exception once
         // not sure it's of concern here
         try {
             pointerInfo = MouseInfo.getPointerInfo();

@@ -34,6 +34,7 @@ import org.jspecify.annotations.NullMarked;
 public class AsyncPlayerSendCommandsEvent<S extends CommandSourceStack> extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final RootCommandNode<S> node;
     private final boolean hasFiredAsync;
 

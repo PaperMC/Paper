@@ -7,7 +7,7 @@ import io.papermc.typewriter.replace.SearchMetadata;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
 import java.util.Iterator;
 import java.util.Map;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.flag.FeatureFlag;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
@@ -37,10 +37,10 @@ public class FeatureFlagRewriter extends SearchReplaceRewriter {
 
     @Override
     protected void insert(SearchMetadata metadata, StringBuilder builder) {
-        Iterator<Map.Entry<ResourceLocation, FeatureFlag>> flagIterator = FeatureFlags.REGISTRY.names.entrySet().stream().sorted(Formatting.alphabeticKeyOrder(entry -> entry.getKey().getPath())).iterator();
+        Iterator<Map.Entry<Identifier, FeatureFlag>> flagIterator = FeatureFlags.REGISTRY.names.entrySet().stream().sorted(Formatting.alphabeticKeyOrder(entry -> entry.getKey().getPath())).iterator();
         while (flagIterator.hasNext()) {
-            Map.Entry<ResourceLocation, FeatureFlag> entry = flagIterator.next();
-            ResourceLocation name = entry.getKey();
+            Map.Entry<Identifier, FeatureFlag> entry = flagIterator.next();
+            Identifier name = entry.getKey();
             if (FeatureFlags.isExperimental(FeatureFlagSet.of(entry.getValue()))) {
                 builder.append(metadata.indent()).append(annotation(ApiStatus.Experimental.class, this.importCollector)).append('\n');
             }

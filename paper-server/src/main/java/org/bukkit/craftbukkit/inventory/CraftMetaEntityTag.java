@@ -9,7 +9,8 @@ import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.component.TypedEntityData;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 
@@ -19,14 +20,15 @@ public class CraftMetaEntityTag extends CraftMetaItem {
     private static final Set<Material> ENTITY_TAGGABLE_MATERIALS = Sets.newHashSet(
             Material.COD_BUCKET,
             Material.PUFFERFISH_BUCKET,
-            Material.SALMON_BUCKET,
             Material.TADPOLE_BUCKET,
+            Material.SALMON_BUCKET,
+            Material.SULFUR_CUBE_BUCKET,
             Material.ITEM_FRAME,
             Material.GLOW_ITEM_FRAME,
             Material.PAINTING
     );
 
-    static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "EntityTag", "entity-tag");
+    static final ItemMetaKeyType<TypedEntityData<EntityType<?>>> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "EntityTag", "entity-tag");
     CompoundTag entityTag;
 
     CraftMetaEntityTag(CraftMetaItem meta) {
@@ -39,11 +41,11 @@ public class CraftMetaEntityTag extends CraftMetaItem {
         this.entityTag = entity.entityTag;
     }
 
-    CraftMetaEntityTag(DataComponentPatch tag, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaEntityTag(DataComponentPatch patch, final java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaEntityTag.ENTITY_TAG).ifPresent((nbt) -> {
-            this.entityTag = nbt.copyTag();
+        getOrEmpty(patch, CraftMetaEntityTag.ENTITY_TAG).ifPresent((entityData) -> {
+            this.entityTag = entityData.copyTagWithEntityId();
         });
     }
 
@@ -70,7 +72,7 @@ public class CraftMetaEntityTag extends CraftMetaItem {
         super.applyToItem(tag);
 
         if (this.entityTag != null) {
-            tag.put(CraftMetaEntityTag.ENTITY_TAG, CustomData.of(this.entityTag));
+            tag.put(CraftMetaEntityTag.ENTITY_TAG, TypedEntityData.decodeEntity(this.entityTag));
         }
     }
 

@@ -6,7 +6,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -16,7 +16,7 @@ import java.util.Map;
  */
 public final class ChannelInitializeListenerHolder {
 
-    private static final Map<Key, ChannelInitializeListener> LISTENERS = new HashMap<>();
+    private static final Map<Key, ChannelInitializeListener> LISTENERS = new LinkedHashMap<>();
     private static final Map<Key, ChannelInitializeListener> IMMUTABLE_VIEW = Collections.unmodifiableMap(LISTENERS);
 
     private ChannelInitializeListenerHolder() {

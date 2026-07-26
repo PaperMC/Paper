@@ -32,7 +32,7 @@ public enum VersionHistoryManager {
         final Path path = Paths.get("version_history.json");
 
         if (Files.exists(path)) {
-            // Basic file santiy checks
+            // Basic file sanity checks
             if (!Files.isRegularFile(path)) {
                 if (Files.isDirectory(path)) {
                     logger.severe(path + " is a directory, cannot be used for version history");

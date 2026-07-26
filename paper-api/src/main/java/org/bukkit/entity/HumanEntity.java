@@ -1,14 +1,18 @@
 package org.bukkit.entity;
 
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.Fireworks;
+import io.papermc.paper.datacomponent.item.UseCooldown;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.function.Consumer;
-import io.papermc.paper.datacomponent.item.UseCooldown;
 import net.kyori.adventure.key.Key;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -18,7 +22,6 @@ import org.bukkit.inventory.MainHand;
 import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.inventory.meta.FireworkMeta;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -31,7 +34,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
 
     // Paper start
     @Override
-    org.bukkit.inventory.EntityEquipment getEquipment();
+    EntityEquipment getEquipment();
     // Paper end
 
     /**
@@ -176,7 +179,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     @Deprecated(since = "1.21.4")
     @Nullable
-    public InventoryView openMerchant(Villager trader, boolean force);
+    default InventoryView openMerchant(Villager trader, boolean force) {
+        return this.openMerchant((Merchant) trader, force);
+    }
 
     /**
      * Starts a trade between the player and the merchant.
@@ -382,7 +387,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param ticks the amount of ticks to set or 0 to remove
      * @throws IllegalArgumentException if the material is not an item
      */
-    public void setCooldown(Material material, int ticks);
+    default void setCooldown(Material material, int ticks) {
+        this.setCooldown(ItemStack.of(material), ticks);
+    }
 
     /**
      * Sets player hurt direction
@@ -433,11 +440,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     /**
      * Get the cooldown time in ticks remaining for the specified cooldown group.
      *
-     * @param key the cooldown group to check
+     * @param cooldownGroup the cooldown group to check
      * @return the remaining cooldown time in ticks
      * @see UseCooldown#cooldownGroup()
      */
-    public int getCooldown(Key key);
+    public int getCooldown(Key cooldownGroup);
 
     /**
      * Set a cooldown on items with the specified cooldown group for a certain amount of ticks.
@@ -449,11 +456,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * Note that cooldowns will not by themselves stop an item from being used
      * for attacking.
      *
-     * @param key cooldown group to set the cooldown for
+     * @param cooldownGroup cooldown group to set the cooldown for
      * @param ticks the amount of ticks to set or 0 to remove
      * @see UseCooldown#cooldownGroup()
      */
-    public void setCooldown(Key key, int ticks);
+    public void setCooldown(Key cooldownGroup, int ticks);
 
     /**
      * Get the sleep ticks of the player. This value may be capped.
@@ -469,9 +476,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * is still valid.
      *
      * @return Bed Location if has slept in one, otherwise null.
-     * @see #getPotentialRespawnLocation()
      * @deprecated Misleading name. This method also returns the location of
-     * respawn anchors.
+     * respawn anchors, use {@link Player#getRespawnLocation(boolean)} with
+     * loadLocationAndValidate = false instead
      */
     @Nullable
     @Deprecated(since = "1.21.4")
@@ -614,7 +621,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @return whether or not the recipe was newly discovered
      */
-    public boolean discoverRecipe(NamespacedKey recipe);
+    default boolean discoverRecipe(NamespacedKey recipe) {
+        return this.discoverRecipes(Arrays.asList(recipe)) != 0;
+    }
 
     /**
      * Discover a collection of recipes for this player such that they have not
@@ -640,7 +649,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return whether or not the recipe was successfully undiscovered (i.e. it
      * was previously discovered)
      */
-    public boolean undiscoverRecipe(NamespacedKey recipe);
+    default boolean undiscoverRecipe(NamespacedKey recipe) {
+        return this.undiscoverRecipes(Arrays.asList(recipe)) != 0;
+    }
 
     /**
      * Undiscover a collection of recipes for this player such that they have
@@ -999,16 +1010,35 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * Perform a firework boost.
      * <p>
      * This method will only work such that {@link #isGliding()} is true and
-     * the entity is actively gliding with an elytra. Additionally, the supplied
-     * {@code fireworkItemStack} must be a firework rocket. The power of the boost
-     * will directly correlate to {@link FireworkMeta#getPower()}.
+     * the entity is actively gliding with an item with {@link DataComponentTypes#GLIDER} component.
+     * <p>
+     * The power of the boost will directly correlate to {@link Fireworks#flightDuration()} from {@link DataComponentTypes#FIREWORKS} component.
+     * <p>
+     * This method does not fire {@link com.destroystokyo.paper.event.player.PlayerElytraBoostEvent}.
      *
-     * @param fireworkItemStack the firework item stack to use to glide
+     * @param boosterItem the item to use to boost
      * @return the attached {@link Firework}, or null if the entity could not
      * be boosted
-     * @throws IllegalArgumentException if the fireworkItemStack is not a firework
      */
     @Nullable
-    public Firework fireworkBoost(ItemStack fireworkItemStack);
+    Firework fireworkBoost(ItemStack boosterItem);
+
+    /**
+     * Perform a firework boost.
+     * <p>
+     * This method will only work such that {@link #isGliding()} is true and
+     * the entity is actively gliding with an item with {@link DataComponentTypes#GLIDER} component.
+     * <p>
+     * The power of the boost will directly correlate to {@link Fireworks#flightDuration()} from {@link DataComponentTypes#FIREWORKS} component.
+     * <p>
+     * This method does not fire {@link com.destroystokyo.paper.event.player.PlayerElytraBoostEvent}.
+     *
+     * @return the attached {@link Firework}, or null if the entity could not
+     * be boosted
+     */
+    @Nullable
+    default Firework fireworkBoost() {
+        return this.fireworkBoost(ItemStack.empty());
+    }
 
 }

@@ -12,20 +12,12 @@ import org.jetbrains.annotations.NotNull;
 
 public class CraftTrimMaterial extends HolderableBase<net.minecraft.world.item.equipment.trim.TrimMaterial> implements TrimMaterial {
 
-    public static TrimMaterial minecraftToBukkit(net.minecraft.world.item.equipment.trim.TrimMaterial minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.TRIM_MATERIAL);
-    }
-
     public static TrimMaterial minecraftHolderToBukkit(Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.TRIM_MATERIAL);
     }
 
-    public static net.minecraft.world.item.equipment.trim.TrimMaterial bukkitToMinecraft(TrimMaterial bukkit) {
-        return CraftRegistry.bukkitToMinecraft(bukkit);
-    }
-
     public static Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> bukkitToMinecraftHolder(TrimMaterial bukkit) {
-        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.TRIM_MATERIAL);
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit);
     }
 
     public static Object bukkitToObject(TrimMaterial bukkit) {

@@ -31,7 +31,7 @@ final class SectionPathData {
      * list represents an empty line and an empty String represents an empty
      * comment line.
      *
-     * @return A unmodifiable list of the requested comments, every entry
+     * @return An unmodifiable list of the requested comments, every entry
      * represents one line.
      */
     @NotNull
@@ -57,7 +57,7 @@ final class SectionPathData {
      * list represents an empty line and an empty String represents an empty
      * comment line.
      *
-     * @return A unmodifiable list of the requested comments, every entry
+     * @return An unmodifiable list of the requested comments, every entry
      * represents one line.
      */
     @NotNull

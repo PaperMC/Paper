@@ -143,7 +143,7 @@ public class InventoryDragEvent extends InventoryInteractEvent {
      */
     @NotNull
     public Set<Integer> getRawSlots() {
-        return this.addedItems.keySet();
+        return Collections.unmodifiableSet(this.addedItems.keySet());
     }
 
     /**

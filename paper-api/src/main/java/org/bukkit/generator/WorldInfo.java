@@ -1,19 +1,26 @@
 package org.bukkit.generator;
 
 import java.util.UUID;
+import io.papermc.paper.world.flag.FeatureFlagSetHolder;
+import org.bukkit.Keyed;
 import org.bukkit.World;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Holds various information of a World
  */
-public interface WorldInfo extends io.papermc.paper.world.flag.FeatureFlagSetHolder { // Paper - feature flag API
+public interface WorldInfo extends FeatureFlagSetHolder, Keyed {
 
     /**
-     * Gets the unique name of this world
+     * Gets the legacy Bukkit name of this world.
      *
-     * @return Name of this world
+     * <p>This method is considered obsolete and is a candidate for future deprecation.
+     * Prefer using {@link #getKey()} as the world identity.</p>
+     *
+     * @return Bukkit name of this world
      */
+    @ApiStatus.Obsolete
     @NotNull
     String getName();
 

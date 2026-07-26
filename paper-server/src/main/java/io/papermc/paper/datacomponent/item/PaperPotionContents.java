@@ -52,7 +52,7 @@ public record PaperPotionContents(
 
     @Override
     public @Unmodifiable List<PotionEffect> allEffects() {
-        //noinspection SimplifyStreamApiCallChains - explicity want it unmodifiable, as toList() api doesnt guarantee this.
+        //noinspection SimplifyStreamApiCallChains - explicitly want it unmodifiable, as toList() api doesnt guarantee this.
         return StreamSupport.stream(this.impl.getAllEffects().spliterator(), false)
             .map(CraftPotionUtil::toBukkit)
             .collect(Collectors.toUnmodifiableList());

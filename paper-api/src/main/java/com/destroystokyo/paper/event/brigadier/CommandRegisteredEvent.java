@@ -24,7 +24,8 @@ import org.jetbrains.annotations.NotNull;
 @Warning(reason = "This event has been superseded by the Commands API and will be removed in a future release. Listen to LifecycleEvents.COMMANDS instead.", value = true)
 public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource> extends ServerEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final String commandLabel;
     private final Command command;
     private final com.destroystokyo.paper.brigadier.BukkitBrigadierCommand<S> brigadierCommand;
@@ -32,7 +33,8 @@ public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.
     private final ArgumentCommandNode<S, String> defaultArgs;
     private LiteralCommandNode<S> literal;
     private boolean rawCommand = false;
-    private boolean cancelled = false;
+
+    private boolean cancelled;
 
     public CommandRegisteredEvent(String commandLabel, com.destroystokyo.paper.brigadier.BukkitBrigadierCommand<S> brigadierCommand, Command command, RootCommandNode<S> root, LiteralCommandNode<S> literal, ArgumentCommandNode<S, String> defaultArgs) {
         this.commandLabel = commandLabel;
@@ -137,9 +139,6 @@ public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.
         this.rawCommand = rawCommand;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isCancelled() {
         return this.cancelled;
@@ -148,7 +147,7 @@ public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.
     /**
      * Cancels registering this command to Brigadier, but will remain in Bukkit Command Map. Can be used to hide a
      * command from all players.
-     *
+     * <p>
      * {@inheritDoc}
      */
     @Override
@@ -158,11 +157,11 @@ public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.
 
     @NotNull
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

@@ -1,7 +1,6 @@
 package org.bukkit;
 
-import com.google.common.collect.Maps;
-import java.util.Map;
+import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.Nullable;
 
 public enum Instrument {
@@ -9,109 +8,120 @@ public enum Instrument {
     /**
      * Piano (Harp) is the standard instrument for a note block.
      */
-    PIANO(0x0, Sound.BLOCK_NOTE_BLOCK_HARP),
+    PIANO(Sound.BLOCK_NOTE_BLOCK_HARP),
     /**
      * Bass drum is normally played when a note block is on top of a
      * stone-like block.
      */
-    BASS_DRUM(0x1, Sound.BLOCK_NOTE_BLOCK_BASEDRUM),
+    BASS_DRUM(Sound.BLOCK_NOTE_BLOCK_BASEDRUM),
     /**
      * Snare drum is normally played when a note block is on top of a sandy
      * block.
      */
-    SNARE_DRUM(0x2, Sound.BLOCK_NOTE_BLOCK_SNARE),
+    SNARE_DRUM(Sound.BLOCK_NOTE_BLOCK_SNARE),
     /**
      * Sticks (Hat) are normally played when a note block is on top of a glass
      * block.
      */
-    STICKS(0x3, Sound.BLOCK_NOTE_BLOCK_HAT),
+    STICKS(Sound.BLOCK_NOTE_BLOCK_HAT),
     /**
      * Bass guitar is normally played when a note block is on top of a wooden
      * block.
      */
-    BASS_GUITAR(0x4, Sound.BLOCK_NOTE_BLOCK_BASS),
+    BASS_GUITAR(Sound.BLOCK_NOTE_BLOCK_BASS),
     /**
      * Flute is normally played when a note block is on top of a clay block.
      */
-    FLUTE(0x5, Sound.BLOCK_NOTE_BLOCK_FLUTE),
+    FLUTE(Sound.BLOCK_NOTE_BLOCK_FLUTE),
     /**
      * Bell is normally played when a note block is on top of a gold block.
      */
-    BELL(0x6, Sound.BLOCK_NOTE_BLOCK_BELL),
+    BELL(Sound.BLOCK_NOTE_BLOCK_BELL),
     /**
      * Guitar is normally played when a note block is on top of a woolen block.
      */
-    GUITAR(0x7, Sound.BLOCK_NOTE_BLOCK_GUITAR),
+    GUITAR(Sound.BLOCK_NOTE_BLOCK_GUITAR),
     /**
      * Chime is normally played when a note block is on top of a packed ice
      * block.
      */
-    CHIME(0x8, Sound.BLOCK_NOTE_BLOCK_CHIME),
+    CHIME(Sound.BLOCK_NOTE_BLOCK_CHIME),
     /**
      * Xylophone is normally played when a note block is on top of a bone block.
      */
-    XYLOPHONE(0x9, Sound.BLOCK_NOTE_BLOCK_XYLOPHONE),
+    XYLOPHONE(Sound.BLOCK_NOTE_BLOCK_XYLOPHONE),
     /**
-     * Iron Xylophone is normally played when a note block is on top of a iron block.
+     * Iron Xylophone is normally played when a note block is on top of an iron block.
      */
-    IRON_XYLOPHONE(0xA, Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE),
+    IRON_XYLOPHONE(Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE),
     /**
      * Cow Bell is normally played when a note block is on top of a soul sand block.
      */
-    COW_BELL(0xB, Sound.BLOCK_NOTE_BLOCK_COW_BELL),
+    COW_BELL(Sound.BLOCK_NOTE_BLOCK_COW_BELL),
     /**
      * Didgeridoo is normally played when a note block is on top of a pumpkin block.
      */
-    DIDGERIDOO(0xC, Sound.BLOCK_NOTE_BLOCK_DIDGERIDOO),
+    DIDGERIDOO(Sound.BLOCK_NOTE_BLOCK_DIDGERIDOO),
     /**
-     * Bit is normally played when a note block is on top of a emerald block.
+     * Bit is normally played when a note block is on top of an emerald block.
      */
-    BIT(0xD, Sound.BLOCK_NOTE_BLOCK_BIT),
+    BIT(Sound.BLOCK_NOTE_BLOCK_BIT),
     /**
      * Banjo is normally played when a note block is on top of a hay block.
      */
-    BANJO(0xE, Sound.BLOCK_NOTE_BLOCK_BANJO),
+    BANJO(Sound.BLOCK_NOTE_BLOCK_BANJO),
     /**
      * Pling is normally played when a note block is on top of a glowstone block.
      */
-    PLING(0xF, Sound.BLOCK_NOTE_BLOCK_PLING),
+    PLING(Sound.BLOCK_NOTE_BLOCK_PLING),
+    /**
+     * Trumpet is normally played when a note block is on top of a copper block.
+     */
+    TRUMPET(Sound.BLOCK_NOTE_BLOCK_TRUMPET),
+    /**
+     * Trumpet exposed is normally played when a note block is on top of an exposed copper block.
+     */
+    TRUMPET_EXPOSED(Sound.BLOCK_NOTE_BLOCK_TRUMPET_EXPOSED),
+    /**
+     * Trumpet oxidized is normally played when a note block is on top of an oxidized copper block.
+     */
+    TRUMPET_OXIDIZED(Sound.BLOCK_NOTE_BLOCK_TRUMPET_OXIDIZED),
+    /**
+     * Trumpet weathered is normally played when a note block is on top of a weathered copper block.
+     */
+    TRUMPET_WEATHERED(Sound.BLOCK_NOTE_BLOCK_TRUMPET_WEATHERED),
     /**
      * Zombie is normally played when a Zombie Head is on top of the note block.
      */
-    ZOMBIE(0x10, Sound.BLOCK_NOTE_BLOCK_IMITATE_ZOMBIE), // Paper
+    ZOMBIE(Sound.BLOCK_NOTE_BLOCK_IMITATE_ZOMBIE),
     /**
      * Skeleton is normally played when a Skeleton Head is on top of the note block.
      */
-    SKELETON(0x11, Sound.BLOCK_NOTE_BLOCK_IMITATE_SKELETON), // Paper
+    SKELETON(Sound.BLOCK_NOTE_BLOCK_IMITATE_SKELETON),
     /**
      * Creeper is normally played when a Creeper Head is on top of the note block.
      */
-    CREEPER(0x12, Sound.BLOCK_NOTE_BLOCK_IMITATE_CREEPER), // Paper
+    CREEPER(Sound.BLOCK_NOTE_BLOCK_IMITATE_CREEPER),
     /**
      * Dragon is normally played when a Dragon Head is on top of the note block.
      */
-    DRAGON(0x13, Sound.BLOCK_NOTE_BLOCK_IMITATE_ENDER_DRAGON), // Paper
+    DRAGON(Sound.BLOCK_NOTE_BLOCK_IMITATE_ENDER_DRAGON),
     /**
      * Wither Skeleton is normally played when a Wither Skeleton Head is on top of the note block.
      */
-    WITHER_SKELETON(0x14, Sound.BLOCK_NOTE_BLOCK_IMITATE_WITHER_SKELETON), // Paper
+    WITHER_SKELETON(Sound.BLOCK_NOTE_BLOCK_IMITATE_WITHER_SKELETON),
     /**
      * Piglin is normally played when a Piglin Head is on top of the note block.
      */
-    PIGLIN(0x15, Sound.BLOCK_NOTE_BLOCK_IMITATE_PIGLIN), // Paper
+    PIGLIN(Sound.BLOCK_NOTE_BLOCK_IMITATE_PIGLIN),
     /**
      * Custom Sound is normally played when a Player Head with the required data is on top of the note block.
      */
-    CUSTOM_HEAD(0x16, null); // Paper
+    CUSTOM_HEAD(null);
 
-    private final byte type;
     private final Sound sound;
-    private static final Map<Byte, Instrument> BY_DATA = Maps.newHashMap();
 
-    // Paper - remove ctor (the server still uses the byte magic value)
-
-    private Instrument(final int type, final Sound sound) {
-        this.type = (byte) type;
+    Instrument(final Sound sound) {
         this.sound = sound;
     }
 
@@ -128,10 +138,11 @@ public enum Instrument {
 
     /**
      * @return The type ID of this instrument.
+     * @deprecated use {@link #ordinal()}, there's no meaning to this id
      */
-    @org.jetbrains.annotations.ApiStatus.Internal // Paper
+    @Deprecated(since = "26.1")
     public byte getType() {
-        return this.type;
+        return (byte) this.ordinal();
     }
 
     /**
@@ -139,16 +150,11 @@ public enum Instrument {
      *
      * @param type The type ID
      * @return The instrument
+     * @deprecated type is just the ordinal of the enum, no meaning in the game
      */
-    @org.jetbrains.annotations.ApiStatus.Internal // Paper
     @Nullable
+    @Deprecated(since = "26.1")
     public static Instrument getByType(final byte type) {
-        return BY_DATA.get(type);
-    }
-
-    static {
-        for (Instrument instrument : Instrument.values()) {
-            BY_DATA.put(instrument.getType(), instrument);
-        }
+        return ArrayUtils.get(values(), type);
     }
 }

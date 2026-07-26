@@ -4,7 +4,7 @@ import net.minecraft.world.Container;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.LlamaInventory;
 
-public class CraftInventoryLlama extends CraftInventoryAbstractHorse implements LlamaInventory {
+public class CraftInventoryLlama extends CraftInventorySaddledMount implements LlamaInventory {
 
     public CraftInventoryLlama(Container inventory, Container bodyArmorInventory, Container saddleInventory) {
         super(inventory, bodyArmorInventory, saddleInventory);

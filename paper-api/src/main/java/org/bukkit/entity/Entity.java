@@ -5,6 +5,8 @@ import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.event.HoverEventSource;
 import net.kyori.adventure.util.TriState;
 import org.bukkit.Chunk; // Paper
 import org.bukkit.EntityEffect;
@@ -13,6 +15,7 @@ import org.bukkit.Material;
 import org.bukkit.Nameable;
 import org.bukkit.Server;
 import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.PistonMoveReaction;
@@ -38,7 +41,7 @@ import org.jetbrains.annotations.Nullable;
  * Not all methods are guaranteed to work/may have side effects when
  * {@link #isInWorld()} is false.
  */
-public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter, DataComponentView { // Paper
+public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, HoverEventSource<HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter, net.kyori.adventure.sound.Sound.Source.Provider, DataComponentView {
 
     /**
      * Gets the entity's current position
@@ -139,6 +142,11 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     // Paper start - Teleport API
     /**
      * Teleports this entity to the given location.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause this to return false. This behavior may
+     * change in future versions.
      *
      * @param location New location to teleport this entity to
      * @param teleportFlags Flags to be used in this teleportation
@@ -150,6 +158,11 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
 
     /**
      * Teleports this entity to the given location.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause this to return false. This behavior may
+     * change in future versions.
      *
      * @param location New location to teleport this entity to
      * @param cause The cause of this teleportation
@@ -180,8 +193,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     // Paper end - Teleport API
 
     /**
-     * Teleports this entity to the given location. If this entity is riding a
-     * vehicle, it will be dismounted prior to teleportation.
+     * Teleports this entity to the given location.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause this to return false. This behavior may
+     * change in future versions.
      *
      * @param location New location to teleport this entity to
      * @return <code>true</code> if the teleport was successful
@@ -189,8 +206,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public boolean teleport(@NotNull Location location);
 
     /**
-     * Teleports this entity to the given location. If this entity is riding a
-     * vehicle, it will be dismounted prior to teleportation.
+     * Teleports this entity to the given location.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause this to return false. This behavior may
+     * change in future versions.
      *
      * @param location New location to teleport this entity to
      * @param cause The cause of this teleportation
@@ -199,8 +220,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public boolean teleport(@NotNull Location location, @NotNull TeleportCause cause);
 
     /**
-     * Teleports this entity to the target Entity. If this entity is riding a
-     * vehicle, it will be dismounted prior to teleportation.
+     * Teleports this entity to the target Entity.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause this to return false. This behavior may
+     * change in future versions.
      *
      * @param destination Entity to teleport this entity to
      * @return <code>true</code> if the teleport was successful
@@ -208,8 +233,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public boolean teleport(@NotNull Entity destination);
 
     /**
-     * Teleports this entity to the target Entity. If this entity is riding a
-     * vehicle, it will be dismounted prior to teleportation.
+     * Teleports this entity to the target Entity.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause this to return false. This behavior may
+     * change in future versions.
      *
      * @param destination Entity to teleport this entity to
      * @param cause The cause of this teleportation
@@ -220,6 +249,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     // Paper start
     /**
      * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * change in future versions.
+     *
      * @param loc Location to teleport to
      * @return A future that will be completed with the result of the teleport
      */
@@ -229,6 +264,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
 
     /**
      * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * change in future versions.
+     *
      * @param loc Location to teleport to
      * @param cause Reason for teleport
      * @return A future that will be completed with the result of the teleport
@@ -242,9 +283,32 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
 
     /**
      * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * change in future versions.
+     *
+     * @param loc Location to teleport to
+     * @param teleportFlags Flags to be used in this teleportation
+     * @return A future that will be completed with the result of the teleport
+     */
+    default java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(@NotNull Location loc, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags) {
+        return this.teleportAsync(loc, TeleportCause.PLUGIN, teleportFlags);
+    }
+
+    /**
+     * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
+     * <p>
+     * Note: This uses default in game behavior for teleportation, especially in regard to handling
+     * passengers and vehicles across dimensions. It should be noted at this moment, teleporting a {@link Player}
+     * with passengers across dimensions is not supported and will cause the future to return false. This behavior may
+     * change in future versions.
+     *
      * @param loc Location to teleport to
      * @param cause Reason for teleport
      * @param teleportFlags Flags to be used in this teleportation
+     *
      * @return A future that will be completed with the result of the teleport
      */
     java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(@NotNull Location loc, @NotNull TeleportCause cause, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags);
@@ -387,7 +451,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     boolean isInvisible();
 
     /**
-     * Sets this entities no physics status.
+     * Sets this entity no physics status.
      *
      * @param noPhysics boolean indicating if the entity should not have physics.
      */
@@ -628,6 +692,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @NotNull
     public EntityType getType();
+
+    /**
+     * Get the {@link SoundCategory} this entity will use when playing its sounds.
+     *
+     * @return the sound category for this entity
+     */
+    @NotNull
+    SoundCategory getSoundCategory();
 
     /**
      * Get the {@link Sound} this entity makes while swimming.
@@ -1048,7 +1120,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     @NotNull
     @Override
     default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
-        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.of(this.getType().getKey(), this.getUniqueId(), this.customName())));
+        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.showEntity(this.getType().getKey(), this.getUniqueId(), this.customName())));
     }
 
     /**
@@ -1080,10 +1152,9 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     }
 
     /**
-     * @return The {@link org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason} that initially spawned this entity. <!-- Paper - added "initially" to clarify that the SpawnReason doesn't change after the Entity was initially spawned" -->
+     * {@return the {@link org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason} that initially spawned this entity or null if not yet spawned}
      */
-    @NotNull
-    org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason getEntitySpawnReason();
+    org.bukkit.event.entity.CreatureSpawnEvent.@Nullable SpawnReason getEntitySpawnReason();
 
     /**
      * Check if entity is underwater

@@ -1,21 +1,23 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import java.util.Set;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.PointedDripstoneBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DripstoneThickness;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.SpeleothemThickness;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.type.PointedDripstone;
+import org.bukkit.block.data.type.Speleothem;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.jspecify.annotations.NullMarked;
 
-@GeneratedFrom("1.21.7")
-public class CraftPointedDripstone extends CraftBlockData implements PointedDripstone {
-    private static final EnumProperty<DripstoneThickness> THICKNESS = PointedDripstoneBlock.THICKNESS;
+@NullMarked
+@GeneratedClass
+public class CraftPointedDripstone extends CraftBlockData implements Speleothem {
+    private static final EnumProperty<SpeleothemThickness> THICKNESS = PointedDripstoneBlock.THICKNESS;
 
     private static final EnumProperty<Direction> TIP_DIRECTION = PointedDripstoneBlock.TIP_DIRECTION;
 
@@ -26,12 +28,12 @@ public class CraftPointedDripstone extends CraftBlockData implements PointedDrip
     }
 
     @Override
-    public PointedDripstone.Thickness getThickness() {
-        return this.get(THICKNESS, PointedDripstone.Thickness.class);
+    public Speleothem.Thickness getThickness() {
+        return this.get(THICKNESS, Speleothem.Thickness.class);
     }
 
     @Override
-    public void setThickness(final PointedDripstone.Thickness thickness) {
+    public void setThickness(final Speleothem.Thickness thickness) {
         Preconditions.checkArgument(thickness != null, "thickness cannot be null!");
         this.set(THICKNESS, thickness);
     }

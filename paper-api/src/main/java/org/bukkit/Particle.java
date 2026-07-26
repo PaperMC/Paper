@@ -3,7 +3,11 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.NotNull;
+
+import static io.papermc.paper.util.BoundChecker.requirePositive;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public enum Particle implements Keyed {
     POOF("poof"),
@@ -18,8 +22,14 @@ public enum Particle implements Keyed {
     ENCHANTED_HIT("enchanted_hit"),
     SMOKE("smoke"),
     LARGE_SMOKE("large_smoke"),
-    EFFECT("effect"),
-    INSTANT_EFFECT("instant_effect"),
+    /**
+     * Uses {@link Spell} as DataType
+     */
+    EFFECT("effect", Spell.class),
+    /**
+     * Uses {@link Spell} as DataType
+     */
+    INSTANT_EFFECT("instant_effect", Spell.class),
     /**
      * Uses {@link Color} as DataType (with alpha support)
      */
@@ -37,7 +47,7 @@ public enum Particle implements Keyed {
     LAVA("lava"),
     CLOUD("cloud"),
     /**
-     * Uses {@link Particle.DustOptions} as DataType
+     * Uses {@link DustOptions} as DataType
      */
     DUST("dust", DustOptions.class),
     ITEM_SNOWBALL("item_snowball"),
@@ -53,7 +63,10 @@ public enum Particle implements Keyed {
     BLOCK("block", BlockData.class),
     RAIN("rain"),
     ELDER_GUARDIAN("elder_guardian"),
-    DRAGON_BREATH("dragon_breath"),
+    /**
+     * Uses {@link Float} as DataType, for the power of the breath
+     */
+    DRAGON_BREATH("dragon_breath", Float.class),
     END_ROD("end_rod"),
     DAMAGE_INDICATOR("damage_indicator"),
     SWEEP_ATTACK("sweep_attack"),
@@ -73,7 +86,10 @@ public enum Particle implements Keyed {
     CAMPFIRE_COSY_SMOKE("campfire_cosy_smoke"),
     CAMPFIRE_SIGNAL_SMOKE("campfire_signal_smoke"),
     COMPOSTER("composter"),
-    FLASH("flash"),
+    /**
+     * Uses {@link Color} as DataType
+     */
+    FLASH("flash", Color.class),
     FALLING_LAVA("falling_lava"),
     LANDING_LAVA("landing_lava"),
     FALLING_WATER("falling_water"),
@@ -116,7 +132,7 @@ public enum Particle implements Keyed {
     SONIC_BOOM("sonic_boom"),
     SCULK_SOUL("sculk_soul"),
     /**
-     * Uses {@link Float} as DataType
+     * Uses {@link Float} as DataType, the angle in radians
      */
     SCULK_CHARGE("sculk_charge", Float.class),
     SCULK_CHARGE_POP("sculk_charge_pop"),
@@ -127,7 +143,7 @@ public enum Particle implements Keyed {
     CHERRY_LEAVES("cherry_leaves"),
     PALE_OAK_LEAVES("pale_oak_leaves"),
     /**
-     * Uses {@link Color} as DataType (with alpha support)
+     * Uses {@link Color} as DataType
      */
     TINTED_LEAVES("tinted_leaves", Color.class),
     EGG_CRACK("egg_crack"),
@@ -161,7 +177,31 @@ public enum Particle implements Keyed {
     /**
      * Uses {@link BlockData} as DataType
      */
-    BLOCK_MARKER("block_marker", BlockData.class);
+    BLOCK_MARKER("block_marker", BlockData.class),
+    COPPER_FIRE_FLAME("copper_fire_flame"),
+    PAUSE_MOB_GROWTH("pause_mob_growth"),
+    RESET_MOB_GROWTH("reset_mob_growth"),
+    NOXIOUS_GAS("noxious_gas"),
+    NOXIOUS_GAS_CLOUD("noxious_gas_cloud"),
+    SULFUR_CUBE_GOO("sulfur_cube_goo"),
+    SULFUR_BUBBLES("sulfur_bubbles"),
+    /**
+     * Uses {@link Geyser} as DataType
+     */
+    GEYSER("geyser", Geyser.class),
+    /**
+     * Uses {@link GeyserBase} as DataType
+     */
+    GEYSER_BASE("geyser_base", GeyserBase.class),
+    /**
+     * Uses {@link Geyser} as DataType
+     */
+    GEYSER_PLUME("geyser_plume", Geyser.class),
+    /**
+     * Uses {@link GeyserBase} as DataType
+     */
+    GEYSER_POOF("geyser_poof", GeyserBase.class),
+    ;
 
     private final NamespacedKey key;
     private final Class<?> dataType;
@@ -227,7 +267,7 @@ public enum Particle implements Keyed {
         public DustOptions(@NotNull Color color, float size) {
             Preconditions.checkArgument(color != null, "color");
             this.color = color;
-            this.size = size;
+            this.size = requireRange(size, "size", 0.01F, 4.0F);
         }
 
         /**
@@ -284,10 +324,10 @@ public enum Particle implements Keyed {
         private final Color color;
         private final int duration;
 
-        public Trail(@NotNull Location target, @NotNull Color color, int duration) {
+        public Trail(@NotNull Location target, @NotNull Color color, @Positive int duration) {
             this.target = target;
             this.color = color;
-            this.duration = duration;
+            this.duration = requirePositive(duration, "duration");
         }
 
         /**
@@ -315,8 +355,89 @@ public enum Particle implements Keyed {
          *
          * @return trail duration
          */
-        public int getDuration() {
+        public @Positive int getDuration() {
             return duration;
+        }
+    }
+
+    /**
+     * Options which can be applied to effect particles.
+     */
+    public static class Spell {
+
+        private final Color color;
+        private final float power;
+
+        public Spell(@NotNull Color color, float power) {
+            this.color = color;
+            this.power = power;
+        }
+
+        /**
+         * The color of the particles to be displayed.
+         *
+         * @return particle color
+         */
+        public @NotNull Color getColor() {
+            return color;
+        }
+
+        /**
+         * The power of the particles to be displayed.
+         *
+         * @return particle power
+         */
+        public float getPower() {
+            return power;
+        }
+    }
+
+    /**
+     * Options which can be applied to geyser base particles.
+     */
+    public static class GeyserBase extends AbstractGeyser {
+
+        private final float burstImpulse;
+
+        public GeyserBase(final int waterBlocks, final float burstImpulse) {
+            super(waterBlocks);
+            this.burstImpulse = burstImpulse;
+        }
+
+        /**
+         * {@return the burst impulse}
+         */
+        public float getBurstImpulse() {
+            return this.burstImpulse;
+        }
+    }
+
+    /**
+     * Options which can be applied to geyser particles.
+     */
+    public static class Geyser extends AbstractGeyser {
+
+        public Geyser(final int waterBlocks) {
+            super(waterBlocks);
+        }
+    }
+
+    private abstract static class AbstractGeyser {
+
+        private final int waterBlocks;
+
+        protected AbstractGeyser(final @Positive int waterBlocks) {
+            this.waterBlocks = requirePositive(waterBlocks, "waterBlocks");
+        }
+
+        /**
+         * The number of water blocks below the geyser
+         * which scale the particle size and its burst impulse.
+         *
+         * @return the number of water blocks
+         */
+        public @Positive int getWaterBlocks() {
+            return waterBlocks;
         }
     }
 }

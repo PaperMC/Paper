@@ -3,13 +3,13 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.holder.PaperRegistryHolders;
 import io.papermc.paper.registry.holder.RegistryHolder;
 import java.util.function.Consumer;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.Instrument;
@@ -19,8 +19,8 @@ import org.checkerframework.checker.index.qual.Positive;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
-import static io.papermc.paper.registry.data.util.Checks.asArgumentMinExclusive;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
+import static io.papermc.paper.util.BoundChecker.requirePositive;
 
 public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
 
@@ -77,7 +77,7 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
 
         @Override
         public Builder soundEvent(final Consumer<RegistryBuilderFactory<Sound, ? extends SoundEventRegistryEntry.Builder>> soundEvent) {
-            this.soundEvent = this.conversions.createHolderFromBuilder(Registries.SOUND_EVENT, asArgument(soundEvent, "soundEvent"));
+            this.soundEvent = this.conversions.createHolderFromBuilder(RegistryKey.SOUND_EVENT, asArgument(soundEvent, "soundEvent"));
             return this;
         }
 
@@ -89,13 +89,13 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
 
         @Override
         public Builder duration(final @Positive float duration) {
-            this.useDuration = asArgumentMinExclusive(duration, "useDuration", 0);
+            this.useDuration = requirePositive(duration, "useDuration");
             return this;
         }
 
         @Override
         public Builder range(final @Positive float range) {
-            this.range = asArgumentMinExclusive(range, "range", 0);
+            this.range = requirePositive(range, "range");
             return this;
         }
 

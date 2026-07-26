@@ -1,10 +1,14 @@
 package io.papermc.paper.command.brigadier.argument;
 
 import com.mojang.brigadier.arguments.ArgumentType;
+import io.papermc.paper.command.brigadier.argument.predicate.BlockInWorldPredicate;
 import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
+import io.papermc.paper.command.brigadier.argument.resolvers.AngleResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ColumnBlockPositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.ColumnFinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
@@ -20,6 +24,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.GameMode;
 import org.bukkit.HeightMap;
 import org.bukkit.NamespacedKey;
@@ -35,8 +40,7 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 interface VanillaArgumentProvider {
 
-    Optional<VanillaArgumentProvider> PROVIDER = ServiceLoader.load(VanillaArgumentProvider.class)
-        .findFirst();
+    Optional<VanillaArgumentProvider> PROVIDER = ServiceLoader.load(VanillaArgumentProvider.class, VanillaArgumentProvider.class.getClassLoader()).findFirst();
 
     static VanillaArgumentProvider provider() {
         return PROVIDER.orElseThrow();
@@ -54,17 +58,29 @@ interface VanillaArgumentProvider {
 
     ArgumentType<BlockPositionResolver> blockPosition();
 
+    ArgumentType<ColumnBlockPositionResolver> columnBlockPosition();
+
     ArgumentType<FinePositionResolver> finePosition(boolean centerIntegers);
+
+    ArgumentType<ColumnFinePositionResolver> columnFinePosition(boolean centerIntegers);
 
     ArgumentType<RotationResolver> rotation();
 
+    ArgumentType<AngleResolver> angle();
+
+    ArgumentType<AxisSet> axes();
+
     ArgumentType<BlockState> blockState();
+
+    ArgumentType<BlockInWorldPredicate> blockInWorldPredicate();
 
     ArgumentType<ItemStack> itemStack();
 
     ArgumentType<ItemStackPredicate> itemStackPredicate();
 
     ArgumentType<NamedTextColor> namedColor();
+
+    ArgumentType<TextColor> hexColor();
 
     ArgumentType<Component> component();
 
@@ -84,7 +100,7 @@ interface VanillaArgumentProvider {
     ArgumentType<DoubleRangeProvider> doubleRange();
 
     ArgumentType<World> world();
-    
+
     ArgumentType<GameMode> gameMode();
 
     ArgumentType<HeightMap> heightMap();

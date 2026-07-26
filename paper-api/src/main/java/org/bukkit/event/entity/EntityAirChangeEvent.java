@@ -32,7 +32,7 @@ public class EntityAirChangeEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Sets the amount of air remaining for the entity (measured in ticks.
+     * Sets the amount of air remaining for the entity (measured in ticks).
      *
      * @param amount amount of air remaining
      */
@@ -46,8 +46,8 @@ public class EntityAirChangeEvent extends EntityEvent implements Cancellable {
     }
 
     @Override
-    public void setCancelled(boolean cancelled) {
-        this.cancelled = cancelled;
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @NotNull
