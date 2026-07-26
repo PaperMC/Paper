@@ -2,6 +2,7 @@ package org.bukkit;
 
 import io.papermc.paper.entity.poi.PoiSearchResult;
 import io.papermc.paper.entity.poi.PoiType;
+import io.papermc.paper.math.Position;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import java.io.File;
 import java.nio.file.Path;
@@ -3771,6 +3772,16 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param seed The seed for the sound
      */
     void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
+
+    /**
+     * Plays a sound at a position.
+     *
+     * @param sound a sound
+     * @param pos position
+     */
+    default void playSound(net.kyori.adventure.sound.@NotNull Sound sound, @NotNull Position pos) {
+        playSound(sound, pos.x(), pos.y(), pos.z());
+    }
 
     /**
      * Get an array containing the names of all the {@link GameRule}s.
