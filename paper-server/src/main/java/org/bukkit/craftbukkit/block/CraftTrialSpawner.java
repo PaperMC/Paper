@@ -7,7 +7,7 @@ import java.util.UUID;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.block.TrialSpawnerBlock;
 import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
-import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerData;
+import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerStateData;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -21,10 +21,10 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
     private final CraftTrialSpawnerConfiguration normalConfig;
     private final CraftTrialSpawnerConfiguration ominousConfig;
 
-    public CraftTrialSpawner(World world, TrialSpawnerBlockEntity tileEntity) {
-        super(world, tileEntity);
-        this.normalConfig = new CraftTrialSpawnerConfiguration(tileEntity.getTrialSpawner().getNormalConfig(), this.getSnapshot());
-        this.ominousConfig = new CraftTrialSpawnerConfiguration(tileEntity.getTrialSpawner().getOminousConfig(), this.getSnapshot());
+    public CraftTrialSpawner(World world, TrialSpawnerBlockEntity blockEntity) {
+        super(world, blockEntity);
+        this.normalConfig = new CraftTrialSpawnerConfiguration(blockEntity.getTrialSpawner().normalConfig(), this.getSnapshot());
+        this.ominousConfig = new CraftTrialSpawnerConfiguration(blockEntity.getTrialSpawner().ominousConfig(), this.getSnapshot());
     }
 
     protected CraftTrialSpawner(CraftTrialSpawner state, Location location) {
@@ -35,42 +35,42 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
 
     @Override
     public long getCooldownEnd() {
-        return this.getSnapshot().trialSpawner.getData().cooldownEndsAt;
+        return this.getSnapshot().getTrialSpawner().getStateData().cooldownEndsAt;
     }
 
     @Override
     public void setCooldownEnd(long ticks) {
-        this.getSnapshot().trialSpawner.getData().cooldownEndsAt = ticks;
+        this.getSnapshot().getTrialSpawner().getStateData().cooldownEndsAt = ticks;
     }
 
     @Override
     public long getNextSpawnAttempt() {
-        return this.getSnapshot().trialSpawner.getData().nextMobSpawnsAt;
+        return this.getSnapshot().getTrialSpawner().getStateData().nextMobSpawnsAt;
     }
 
     @Override
     public void setNextSpawnAttempt(long ticks) {
-        this.getSnapshot().trialSpawner.getData().nextMobSpawnsAt = ticks;
+        this.getSnapshot().getTrialSpawner().getStateData().nextMobSpawnsAt = ticks;
     }
 
     @Override
     public int getCooldownLength() {
-        return this.getSnapshot().trialSpawner.getTargetCooldownLength();
+        return this.getSnapshot().getTrialSpawner().getTargetCooldownLength();
     }
 
     @Override
     public void setCooldownLength(int ticks) {
-        this.getSnapshot().trialSpawner.targetCooldownLength = ticks;
+        this.getSnapshot().getTrialSpawner().config = this.getSnapshot().getTrialSpawner().config.overrideTargetCooldownLength(ticks);
     }
 
     @Override
     public int getRequiredPlayerRange() {
-      return this.getSnapshot().trialSpawner.getRequiredPlayerRange();
+        return this.getSnapshot().getTrialSpawner().getRequiredPlayerRange();
     }
 
     @Override
     public void setRequiredPlayerRange(int requiredPlayerRange) {
-        this.getSnapshot().trialSpawner.requiredPlayerRange = requiredPlayerRange;
+        this.getSnapshot().getTrialSpawner().config = this.getSnapshot().getTrialSpawner().config.overrideRequiredPlayerRange(requiredPlayerRange);
     }
 
     @Override
@@ -143,41 +143,47 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
 
     @Override
     public boolean isOminous() {
-        return this.getHandle().getValue(TrialSpawnerBlock.OMINOUS);
+        return this.block.getValueOrElse(TrialSpawnerBlock.OMINOUS, false);
     }
 
     @Override
     public void setOminous(boolean ominous) {
-        this.getSnapshot().trialSpawner.isOminous = ominous;
+        if (!this.block.hasProperty(TrialSpawnerBlock.OMINOUS)) {
+            return; // block data changed
+        }
+
+        this.getSnapshot().getTrialSpawner().isOminous = ominous;
         if (ominous) {
-            this.setData(this.getHandle().setValue(TrialSpawnerBlock.OMINOUS, true));
+            this.block = this.block.setValue(TrialSpawnerBlock.OMINOUS, true);
             // TODO: Consider calling TrialSpawnerData#resetAfterBecomingOminous in update(...), but note that method also removes entities
             return;
         }
 
-        this.setData(this.getHandle().setValue(TrialSpawnerBlock.OMINOUS, false));
+        this.block = this.block.setValue(TrialSpawnerBlock.OMINOUS, false);
     }
 
     @Override
     public TrialSpawnerConfiguration getNormalConfiguration() {
-       return this.normalConfig;
+        return this.normalConfig;
     }
 
     @Override
     public TrialSpawnerConfiguration getOminousConfiguration() {
-       return this.ominousConfig;
+        return this.ominousConfig;
     }
 
     @Override
-    protected void applyTo(TrialSpawnerBlockEntity tileEntity) {
-        super.applyTo(tileEntity);
+    protected void applyTo(TrialSpawnerBlockEntity blockEntity) {
+        super.applyTo(blockEntity);
 
-        tileEntity.trialSpawner.normalConfig = Holder.direct(this.normalConfig.toMinecraft());
-        tileEntity.trialSpawner.ominousConfig = Holder.direct(this.ominousConfig.toMinecraft());
+        blockEntity.getTrialSpawner().config = blockEntity.getTrialSpawner().config.overrideConfigs(
+            Holder.direct(this.normalConfig.toMinecraft()),
+            Holder.direct(this.ominousConfig.toMinecraft())
+        );
     }
 
-    private TrialSpawnerData getTrialData() {
-        return this.getSnapshot().getTrialSpawner().getData();
+    private TrialSpawnerStateData getTrialData() {
+        return this.getSnapshot().getTrialSpawner().getStateData();
     }
 
     @Override

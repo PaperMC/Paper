@@ -15,17 +15,13 @@ public class CraftGuardian extends CraftMonster implements Guardian {
 
     @Override
     public net.minecraft.world.entity.monster.Guardian getHandle() {
-        return (net.minecraft.world.entity.monster.Guardian) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftGuardian";
+        return (net.minecraft.world.entity.monster.Guardian) this.entity;
     }
 
     @Override
     public void setTarget(LivingEntity target) {
         super.setTarget(target);
+        target = super.getTarget(); // target might fail so update the reference
 
         // clean up laser target, when target is removed
         if (target == null) {

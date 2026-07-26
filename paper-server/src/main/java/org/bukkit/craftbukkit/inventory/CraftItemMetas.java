@@ -2,16 +2,14 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.destroystokyo.paper.inventory.meta.ArmorStandMeta;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.BundleItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.SignItem;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.ShulkerBoxBlock;
+import net.minecraft.world.level.block.EntityBlock;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.AxolotlBucketMeta;
@@ -165,10 +163,10 @@ public final class CraftItemMetas {
         if (itemType == ItemType.AIR) {
             return CraftItemMetas.asType(CraftItemMetas.EMPTY_META_DATA);
         }
-        if (itemType == ItemType.WRITTEN_BOOK) {
+        if (itemType == ItemType.WRITTEN_BOOK) { // sync with CraftMetaBookSigned#applicableTo
             return CraftItemMetas.asType(CraftItemMetas.SIGNED_BOOK_META_DATA);
         }
-        if (itemType == ItemType.WRITABLE_BOOK) {
+        if (itemType == ItemType.WRITABLE_BOOK) { // sync with CraftMetaBook#applicableTo
             return CraftItemMetas.asType(CraftItemMetas.WRITABLE_BOOK_META_DATA);
         }
         if (itemType == ItemType.CREEPER_HEAD || itemType == ItemType.DRAGON_HEAD
@@ -187,6 +185,8 @@ public final class CraftItemMetas {
                 || itemType == ItemType.IRON_LEGGINGS || itemType == ItemType.IRON_BOOTS
                 || itemType == ItemType.NETHERITE_HELMET || itemType == ItemType.NETHERITE_CHESTPLATE
                 || itemType == ItemType.NETHERITE_LEGGINGS || itemType == ItemType.NETHERITE_BOOTS
+                || itemType == ItemType.COPPER_HELMET || itemType == ItemType.COPPER_CHESTPLATE
+                || itemType == ItemType.COPPER_LEGGINGS || itemType == ItemType.COPPER_BOOTS
                 || itemType == ItemType.TURTLE_HELMET) {
             return CraftItemMetas.asType(CraftItemMetas.ARMOR_META_DATA);
         }
@@ -226,28 +226,7 @@ public final class CraftItemMetas {
         if (itemType == ItemType.KNOWLEDGE_BOOK) {
             return CraftItemMetas.asType(CraftItemMetas.KNOWLEDGE_BOOK_META_DATA);
         }
-        if (itemType == ItemType.FURNACE || itemType == ItemType.CHEST
-                || itemType == ItemType.TRAPPED_CHEST || itemType == ItemType.JUKEBOX
-                || itemType == ItemType.DISPENSER || itemType == ItemType.DROPPER
-                || itemHandle instanceof SignItem || itemType == ItemType.SPAWNER
-                || itemType == ItemType.BREWING_STAND || itemType == ItemType.ENCHANTING_TABLE
-                || itemType == ItemType.COMMAND_BLOCK || itemType == ItemType.REPEATING_COMMAND_BLOCK
-                || itemType == ItemType.CHAIN_COMMAND_BLOCK || itemType == ItemType.BEACON
-                || itemType == ItemType.DAYLIGHT_DETECTOR || itemType == ItemType.HOPPER
-                || itemType == ItemType.COMPARATOR || itemType == ItemType.STRUCTURE_BLOCK
-                || blockHandle instanceof ShulkerBoxBlock
-                || itemType == ItemType.ENDER_CHEST || itemType == ItemType.BARREL
-                || itemType == ItemType.BELL || itemType == ItemType.BLAST_FURNACE
-                || itemType == ItemType.CAMPFIRE || itemType == ItemType.SOUL_CAMPFIRE
-                || itemType == ItemType.JIGSAW || itemType == ItemType.LECTERN
-                || itemType == ItemType.SMOKER || itemType == ItemType.BEEHIVE
-                || itemType == ItemType.BEE_NEST || itemType == ItemType.SCULK_CATALYST
-                || itemType == ItemType.SCULK_SHRIEKER || itemType == ItemType.SCULK_SENSOR
-                || itemType == ItemType.CALIBRATED_SCULK_SENSOR || itemType == ItemType.CHISELED_BOOKSHELF
-                || itemType == ItemType.DECORATED_POT || itemType == ItemType.SUSPICIOUS_SAND
-                || itemType == ItemType.SUSPICIOUS_GRAVEL || itemType == ItemType.CRAFTER
-                || itemType == ItemType.TRIAL_SPAWNER || itemType == ItemType.VAULT
-                || itemType == ItemType.CREAKING_HEART) {
+        if (blockHandle instanceof EntityBlock) {
             return CraftItemMetas.asType(CraftItemMetas.BLOCK_STATE_META_DATA);
         }
         if (itemType == ItemType.SHIELD) {
@@ -265,9 +244,9 @@ public final class CraftItemMetas {
         if (itemType == ItemType.SUSPICIOUS_STEW) {
             return CraftItemMetas.asType(CraftItemMetas.SUSPICIOUS_STEW_META_DATA);
         }
-        if (itemType == ItemType.COD_BUCKET || itemType == ItemType.PUFFERFISH_BUCKET || itemType == ItemType.TADPOLE_BUCKET // Paper
-                || itemType == ItemType.SALMON_BUCKET || itemType == ItemType.ITEM_FRAME
-                || itemType == ItemType.GLOW_ITEM_FRAME || itemType == ItemType.PAINTING) {
+        if (itemType == ItemType.COD_BUCKET || itemType == ItemType.PUFFERFISH_BUCKET || itemType == ItemType.TADPOLE_BUCKET
+                || itemType == ItemType.SALMON_BUCKET || itemType == ItemType.SULFUR_CUBE_BUCKET || itemType == ItemType.ITEM_FRAME
+                || itemType == ItemType.GLOW_ITEM_FRAME || itemType == ItemType.PAINTING) { // sync with CraftMetaEntityTag#applicableTo
             return CraftItemMetas.asType(CraftItemMetas.ENTITY_TAG_META_DATA);
         }
         if (itemType == ItemType.COMPASS) {

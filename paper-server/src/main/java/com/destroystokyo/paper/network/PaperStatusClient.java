@@ -4,8 +4,8 @@ import net.minecraft.network.Connection;
 
 class PaperStatusClient extends PaperNetworkClient implements StatusClient {
 
-    PaperStatusClient(Connection networkManager) {
-        super(networkManager);
+    PaperStatusClient(Connection connection) {
+        super(connection);
     }
 
 }

@@ -1,7 +1,5 @@
 package org.bukkit.support.extension;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.world.flag.FeatureFlags;
@@ -17,7 +15,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 public class AllFeaturesExtension extends BaseExtension {
 
     private static final Map<Class<? extends Keyed>, Registry<?>> realRegistries = new HashMap<>();
-    private static final Map<Class<? extends Keyed>, Registry<?>> spyRegistries = new HashMap<>();
 
     public AllFeaturesExtension() {
         super("AllFeatures");
@@ -36,12 +33,11 @@ public class AllFeaturesExtension extends BaseExtension {
         RegistryHelper.setup(FeatureFlags.REGISTRY.allFlags());
 
         Server server = DummyServerHelper.setup();
-
         Bukkit.setServer(server);
 
         // Paper - Add RegistryAccess for managing registries - replaced with registry access
 
-        CraftRegistry.setMinecraftRegistry(RegistryHelper.getRegistry());
+        CraftRegistry.setMinecraftRegistry(RegistryHelper.registryAccess());
     }
 
     @Override

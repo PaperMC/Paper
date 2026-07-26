@@ -11,8 +11,8 @@ import org.bukkit.inventory.Inventory;
 
 public class CraftLectern extends CraftBlockEntityState<LecternBlockEntity> implements Lectern {
 
-    public CraftLectern(World world, LecternBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftLectern(World world, LecternBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftLectern(CraftLectern state, Location location) {
@@ -40,7 +40,7 @@ public class CraftLectern extends CraftBlockEntityState<LecternBlockEntity> impl
             return this.getSnapshotInventory();
         }
 
-        return new CraftInventoryLectern(this.getTileEntity().bookAccess);
+        return new CraftInventoryLectern(this.getBlockEntity().bookAccess);
     }
 
     @Override

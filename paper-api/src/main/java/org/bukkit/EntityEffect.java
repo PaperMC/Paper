@@ -61,6 +61,10 @@ public enum EntityEffect {
      */
     RESET_SPAWNER_MINECART_DELAY(1, SpawnerMinecart.class),
     /**
+     * When a kinetic weapon hits an entity.
+     */
+    HIT(2, LivingEntity.class),
+    /**
      * When mobs get hurt.
      *
      * @deprecated use {@link LivingEntity#playHurtAnimation(float)}
@@ -197,7 +201,7 @@ public enum EntityEffect {
      * <p>
      * <b>This will cause client-glitches!</b>
      */
-    TNT_MINECART_IGNITE(10, ExplosiveMinecart.class),
+    TNT_MINECART_IGNITE(70, ExplosiveMinecart.class),
     /**
      * When an Iron Golem gives a rose.
      */
@@ -247,11 +251,17 @@ public enum EntityEffect {
     // 22-28 player internal flags
     /**
      * Shield blocks attack.
+     *
+     * @deprecated replaced by the {@code blocks_attacks} item data component
      */
+    @Deprecated(since = "1.21.5", forRemoval = true)
     SHIELD_BLOCK(29, LivingEntity.class),
     /**
      * Shield breaks.
+     *
+     * @deprecated replaced by the {@code blocks_attacks} item data component
      */
+    @Deprecated(since = "1.21.5", forRemoval = true)
     SHIELD_BREAK(30, LivingEntity.class),
     // 31 - unused
     /**
@@ -359,7 +369,7 @@ public enum EntityEffect {
      */
     BREAK_EQUIPMENT_MAIN_HAND(47, LivingEntity.class),
     /**
-     * Entity breaks item in off hand.
+     * Entity breaks item in off-hand.
      *
      * @see org.bukkit.inventory.EquipmentSlot#OFF_HAND
      */
@@ -458,11 +468,24 @@ public enum EntityEffect {
      */
     BREAK_EQUIPMENT_BODY(65, LivingEntity.class),
     /**
-     * A creaking transient shaking when being hit.
-     * Does not apply to plain creaking entities as they are not invulnerable like the transient ones spawned by the
-     * creaking heart.
+     * A creaking shaking when being hit.
      */
-    SHAKE(66, Creaking.class);
+    SHAKE(66, Creaking.class),
+    /**
+     * Drown particles for entities.
+     */
+    DROWN_PARTICLES(67, LivingEntity.class),
+    /**
+     * Entity breaks item in saddle slot.
+     *
+     * @see org.bukkit.inventory.EquipmentSlot#SADDLE
+     */
+    BREAK_EQUIPMENT_SADDLE(68, LivingEntity.class),
+    /**
+     * Ravager roars.
+     */
+    RAVAGER_ROARED(69, Ravager.class),
+    ;
 
     private final byte data;
     private final Set<Class<? extends Entity>> applicableClasses;

@@ -9,6 +9,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Helper methods to bridge the gaps between Brigadier and Paper-MojangAPI.
+ *
  * @deprecated for removal. See {@link MessageComponentSerializer} for a direct replacement of functionality found in
  * this class.
  * As a general entrypoint to brigadier on paper, see {@link io.papermc.paper.command.brigadier.Commands}.

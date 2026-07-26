@@ -14,7 +14,7 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.Internal
 interface ConsumableTypesBridge {
 
-    Optional<ConsumableTypesBridge> BRIDGE = ServiceLoader.load(ConsumableTypesBridge.class).findFirst();
+    Optional<ConsumableTypesBridge> BRIDGE = ServiceLoader.load(ConsumableTypesBridge.class, ConsumableTypesBridge.class.getClassLoader()).findFirst();
 
     static ConsumableTypesBridge bridge() {
         return BRIDGE.orElseThrow();

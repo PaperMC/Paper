@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagLoader;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -33,8 +33,8 @@ public class PaperTagListenerManager {
     private PaperTagListenerManager() {
     }
 
-    public <A> Map<ResourceLocation, List<TagLoader.EntryWithSource>> firePreFlattenEvent(
-        final Map<ResourceLocation, List<TagLoader.EntryWithSource>> initial,
+    public <A> Map<Identifier, List<TagLoader.EntryWithSource>> firePreFlattenEvent(
+        final Map<Identifier, List<TagLoader.EntryWithSource>> initial,
         final @Nullable TagEventConfig<?, A> config
     ) {
         if (config == null || config.preFlatten() == null || !config.preFlatten().hasHandlers()) {
@@ -50,8 +50,8 @@ public class PaperTagListenerManager {
         return Map.copyOf(registrar.tags);
     }
 
-    public <M, A> Map<ResourceLocation, List<M>> firePostFlattenEvent(
-        final Map<ResourceLocation, List<M>> initial,
+    public <M, A> Map<Identifier, List<M>> firePostFlattenEvent(
+        final Map<Identifier, List<M>> initial,
         final @Nullable TagEventConfig<M, A> config
     ) {
         if (config == null || config.postFlatten() == null || !config.postFlatten().hasHandlers()) {
@@ -86,7 +86,7 @@ public class PaperTagListenerManager {
             postFlatten,
             cause,
             registry::get,
-            h -> ((Holder.Reference<M>) h).key().location(),
+            h -> ((Holder.Reference<M>) h).key().identifier(),
             PaperRegistries.registryFromNms(registry.key())
         );
     }

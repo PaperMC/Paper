@@ -17,23 +17,27 @@ import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerSignOpenEvent;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<T> implements Sign {
 
-    private final CraftSignSide front;
-    private final CraftSignSide back;
+    private @MonotonicNonNull CraftSignSide front;
+    private @MonotonicNonNull CraftSignSide back;
 
-    public CraftSign(World world, T tileEntity) {
-        super(world, tileEntity);
-        this.front = new CraftSignSide(this.getSnapshot().getFrontText());
-        this.back = new CraftSignSide(this.getSnapshot().getBackText());
+    public CraftSign(World world, T blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftSign(CraftSign<T> state, Location location) {
         super(state, location);
-        this.front = new CraftSignSide(this.getSnapshot().getFrontText());
-        this.back = new CraftSignSide(this.getSnapshot().getBackText());
+    }
+
+    @Override
+    protected void load(T blockEntity) {
+        super.load(blockEntity);
+        this.front = new CraftSignSide(blockEntity.getFrontText());
+        this.back = new CraftSignSide(blockEntity.getBackText());
     }
 
     // Paper start
@@ -129,8 +133,8 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     public Player getAllowedEditor() {
         this.ensureNoWorldGeneration();
 
-        // getPlayerWhoMayEdit is always null for the snapshot, so we use the wrapped TileEntity
-        UUID id = this.getTileEntity().getPlayerWhoMayEdit();
+        // getPlayerWhoMayEdit is always null for the snapshot, so we use the wrapped BlockEntity
+        UUID id = this.getBlockEntity().getPlayerWhoMayEdit();
         return (id == null) ? null : Bukkit.getPlayer(id);
     }
 
@@ -145,11 +149,11 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     }
 
     @Override
-    public void applyTo(T sign) {
+    public void applyTo(T blockEntity) {
         this.getSnapshot().setText(this.front.applyLegacyStringToSignSide(), true);
         this.getSnapshot().setText(this.back.applyLegacyStringToSignSide(), false);
 
-        super.applyTo(sign);
+        super.applyTo(blockEntity);
     }
 
     @Override
@@ -178,10 +182,10 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         }
         } // Paper - Add PlayerOpenSignEvent
 
-        SignBlockEntity handle = ((CraftSign<?>) sign).getTileEntity();
-        handle.setAllowedPlayerEditor(player.getUniqueId());
+        SignBlockEntity blockEntity = ((CraftSign<?>) sign).getBlockEntity();
+        blockEntity.setAllowedPlayerEditor(player.getUniqueId());
 
-        ((CraftPlayer) player).getHandle().openTextEdit(handle, Side.FRONT == side);
+        ((CraftPlayer) player).getHandle().openTextEdit(blockEntity, Side.FRONT == side);
     }
 
     // Paper start
@@ -202,13 +206,13 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     @Override
     public java.util.UUID getAllowedEditorUniqueId() {
         this.ensureNoWorldGeneration();
-        return this.getTileEntity().getPlayerWhoMayEdit();
+        return this.getBlockEntity().getPlayerWhoMayEdit();
     }
 
     @Override
     public void setAllowedEditorUniqueId(java.util.UUID uuid) {
         this.ensureNoWorldGeneration();
-        this.getTileEntity().setAllowedPlayerEditor(uuid);
+        this.getBlockEntity().setAllowedPlayerEditor(uuid);
     }
 
     @Override

@@ -3,7 +3,6 @@ package io.papermc.paper.plugin.lifecycle.event.handler.configuration;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Handler configuration that allows both "monitor" and prioritized handlers.
@@ -11,8 +10,6 @@ import org.jspecify.annotations.NullMarked;
  *
  * @param <O> the required owner type
  */
-@ApiStatus.Experimental
-@NullMarked
 @ApiStatus.NonExtendable
 public interface PrioritizedLifecycleEventHandlerConfiguration<O extends LifecycleEventOwner> extends LifecycleEventHandlerConfiguration<O> {
 

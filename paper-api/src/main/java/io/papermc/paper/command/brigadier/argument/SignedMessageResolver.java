@@ -6,15 +6,12 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.chat.SignedMessage;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A resolver for a {@link SignedMessage}
  *
  * @see ArgumentTypes#signedMessage()
  */
-@ApiStatus.Experimental
-@NullMarked
 @ApiStatus.NonExtendable
 public interface SignedMessageResolver {
 
@@ -38,5 +35,4 @@ public interface SignedMessageResolver {
      * @throws CommandSyntaxException syntax exception
      */
     CompletableFuture<SignedMessage> resolveSignedMessage(String argumentName, CommandContext<CommandSourceStack> context) throws CommandSyntaxException;
-
 }

@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
@@ -22,8 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedClass
 public final class PaintingVariantKeys {
     /**
      * {@code minecraft:alban}
@@ -122,6 +122,13 @@ public final class PaintingVariantKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Art> CREEBET = create(key("creebet"));
+
+    /**
+     * {@code minecraft:dennis}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Art> DENNIS = create(key("dennis"));
 
     /**
      * {@code minecraft:donkey_kong}
@@ -379,7 +386,7 @@ public final class PaintingVariantKeys {
     }
 
     /**
-     * Creates a key for {@link Art} in the registry {@code minecraft:painting_variant}.
+     * Creates a typed key for {@link Art} in the registry {@code minecraft:painting_variant}.
      *
      * @param key the value's key in the registry
      * @return a new typed key

@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ItemSpawnEvent extends EntitySpawnEvent {
 
+    @ApiStatus.Internal
     @Deprecated(since = "1.13.2", forRemoval = true)
     public ItemSpawnEvent(@NotNull final Item spawnee, final Location loc) {
         this(spawnee);
@@ -23,6 +24,6 @@ public class ItemSpawnEvent extends EntitySpawnEvent {
     @NotNull
     @Override
     public Item getEntity() {
-        return (Item) entity;
+        return (Item) this.entity;
     }
 }

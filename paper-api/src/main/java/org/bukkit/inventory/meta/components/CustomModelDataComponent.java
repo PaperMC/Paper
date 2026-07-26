@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 public interface CustomModelDataComponent extends ConfigurationSerializable {
 
     /**
-     * Gets a list of the custom floats.
+     * Gets a list of the floats for the range_dispatch model type.
      *
      * @return unmodifiable list
      */
@@ -21,14 +21,14 @@ public interface CustomModelDataComponent extends ConfigurationSerializable {
     List<Float> getFloats();
 
     /**
-     * Sets a list of the custom floats.
+     * Sets a list of the floats for the range_dispatch model type.
      *
      * @param floats new list
      */
     void setFloats(@NotNull List<Float> floats);
 
     /**
-     * Gets a list of the custom flags.
+     * Gets a list of the booleans for the condition model type.
      *
      * @return unmodifiable list
      */
@@ -36,14 +36,14 @@ public interface CustomModelDataComponent extends ConfigurationSerializable {
     List<Boolean> getFlags();
 
     /**
-     * Sets a list of the custom flags.
+     * Sets a list of the booleans for the condition model type.
      *
      * @param flags new list
      */
     void setFlags(@NotNull List<Boolean> flags);
 
     /**
-     * Gets a list of the custom strings.
+     * Gets a list of strings for the select model type.
      *
      * @return unmodifiable list
      */
@@ -51,14 +51,14 @@ public interface CustomModelDataComponent extends ConfigurationSerializable {
     List<String> getStrings();
 
     /**
-     * Sets a list of the custom strings.
+     * Sets a list of strings for the select model type.
      *
      * @param strings new list
      */
     void setStrings(@NotNull List<String> strings);
 
     /**
-     * Gets a list of the custom colors.
+     * Gets a list of colors for the model type's tints.
      *
      * @return unmodifiable list
      */
@@ -66,7 +66,7 @@ public interface CustomModelDataComponent extends ConfigurationSerializable {
     List<Color> getColors();
 
     /**
-     * Sets a list of the custom colors.
+     * Sets a list of colors for the model type's tints.
      *
      * @param colors new list
      */

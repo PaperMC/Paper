@@ -20,9 +20,11 @@ import org.jspecify.annotations.NullMarked;
 public class PlayerInsertLecternBookEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
-    private boolean cancelled = false;
+
     private final Block block;
     private ItemStack book;
+
+    private boolean cancelled;
 
     @ApiStatus.Internal
     public PlayerInsertLecternBookEvent(final Player player, final Block block, final ItemStack book) {

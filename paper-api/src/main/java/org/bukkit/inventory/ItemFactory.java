@@ -210,12 +210,12 @@ public interface ItemFactory {
     @Deprecated(since = "1.19.3") // Paper
     ItemStack enchantItem(@NotNull final ItemStack item, final int level, final boolean allowTreasures);
 
-    // Paper start - Adventure
     /**
      * Creates a hover event for the given item.
      *
      * @param item The item
      * @return A hover event
+     * @throws IllegalArgumentException if the {@link ItemStack#getAmount()} is not between 1 and 99
      */
     @NotNull
     net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull ItemStack item, final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op);
@@ -223,12 +223,13 @@ public interface ItemFactory {
     /**
      * Get the formatted display name of the {@link ItemStack}.
      *
+     * @apiNote this component include a {@link net.kyori.adventure.text.event.HoverEvent item hover event}.
+     * When used in chat, make sure to follow the ItemStack rules regarding amount, type, and other properties.
      * @param itemStack the {@link ItemStack}
      * @return display name of the {@link ItemStack}
      */
     @NotNull
     net.kyori.adventure.text.Component displayName(@NotNull ItemStack itemStack);
-    // Paper end - Adventure
 
     // Paper start - add getI18NDisplayName
     /**

@@ -7,8 +7,8 @@ import org.bukkit.block.Comparator;
 
 public class CraftComparator extends CraftBlockEntityState<ComparatorBlockEntity> implements Comparator {
 
-    public CraftComparator(World world, ComparatorBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftComparator(World world, ComparatorBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftComparator(CraftComparator state, Location location) {

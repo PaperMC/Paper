@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 public class CraftAsyncScheduler extends CraftScheduler {
 
     private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
-            4, Integer.MAX_VALUE,30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+            4, Integer.MAX_VALUE, 30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
             new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").build());
     private final Executor management = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
             .setNameFormat("Craft Async Scheduler Management Thread").build());
@@ -113,8 +113,6 @@ public class CraftAsyncScheduler extends CraftScheduler {
 
     /**
      * Task is not cancelled
-     * @param runningTask
-     * @return
      */
     static boolean isValid(CraftTask runningTask) {
         return runningTask.getPeriod() >= CraftTask.NO_REPEATING;

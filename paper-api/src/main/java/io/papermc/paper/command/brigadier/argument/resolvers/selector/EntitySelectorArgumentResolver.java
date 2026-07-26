@@ -13,7 +13,6 @@ import org.jetbrains.annotations.ApiStatus;
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#entity()
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#entities()
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface EntitySelectorArgumentResolver extends SelectorArgumentResolver<List<Entity>> {
 }

@@ -5,13 +5,13 @@
      private final Container container;
      private final int containerRows;
 +    // CraftBukkit start
-+    private org.bukkit.craftbukkit.inventory.CraftInventoryView bukkitEntity = null;
-+    private Inventory player;
++    private org.bukkit.craftbukkit.inventory.@org.jspecify.annotations.Nullable CraftInventoryView view = null;
++    private final Inventory inventory;
 +
 +    @Override
 +    public org.bukkit.craftbukkit.inventory.CraftInventoryView getBukkitView() {
-+        if (this.bukkitEntity != null) {
-+            return this.bukkitEntity;
++        if (this.view != null) {
++            return this.view;
 +        }
 +
 +        org.bukkit.craftbukkit.inventory.CraftInventory inventory;
@@ -23,34 +23,34 @@
 +            inventory = new org.bukkit.craftbukkit.inventory.CraftInventory(this.container);
 +        }
 +
-+        this.bukkitEntity = new org.bukkit.craftbukkit.inventory.CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
-+        return this.bukkitEntity;
++        this.view = new org.bukkit.craftbukkit.inventory.CraftInventoryView(this.inventory.player.getBukkitEntity(), inventory, this);
++        return this.view;
 +    }
 +
 +    @Override
 +    public void startOpen() {
-+        this.container.startOpen(this.player.player);
++        this.container.startOpen(this.inventory.player);
 +    }
 +    // CraftBukkit end
  
-     private ChestMenu(MenuType<?> type, int containerId, Inventory playerInventory, int rows) {
-         this(type, containerId, playerInventory, new SimpleContainer(9 * rows), rows);
+     private ChestMenu(final MenuType<?> menuType, final int containerId, final Inventory inventory, final int rows) {
+         this(menuType, containerId, inventory, new SimpleContainer(9 * rows), rows);
 @@ -51,7 +_,10 @@
          checkContainerSize(container, rows * 9);
          this.container = container;
          this.containerRows = rows;
--        container.startOpen(playerInventory.player);
+-        container.startOpen(inventory.player);
 +        // container.startOpen(playerInventory.player); // Paper - don't startOpen until menu actually opens
 +        // CraftBukkit start - Save player
-+        this.player = playerInventory;
++        this.inventory = inventory;
 +        // CraftBukkit end
-         int i = 18;
+         int chestGridTop = 18;
          this.addChestGrid(container, 8, 18);
-         int i1 = 18 + this.containerRows * 18 + 13;
+         int inventoryTop = 18 + this.containerRows * 18 + 13;
 @@ -68,6 +_,7 @@
  
      @Override
-     public boolean stillValid(Player player) {
+     public boolean stillValid(final Player player) {
 +        if (!this.checkReachable) return true; // CraftBukkit
          return this.container.stillValid(player);
      }

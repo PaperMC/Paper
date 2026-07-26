@@ -8,11 +8,9 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.math.BlockPosition;
-import io.papermc.testplugin.TestPlugin;
 import net.kyori.adventure.chat.ChatType;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -109,9 +107,8 @@ public class ExampleAdminCommand {
                                 BlockState state = context.getArgument("block", BlockState.class);
 
                                 // TODO: better block state api here? :thinking:
-                                Block block = context.getSource().getLocation().getWorld().getBlockAt(position.blockX(), position.blockY(), position.blockZ());
-                                block.setType(state.getType());
-                                block.setBlockData(state.getBlockData());
+                                state.copy(position.toLocation(context.getSource().getLocation().getWorld()))
+                                    .update(true);
 
                                 return 1;
                             })

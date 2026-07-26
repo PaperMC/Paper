@@ -6,18 +6,13 @@ import org.bukkit.entity.GlowSquid;
 
 public class CraftGlowSquid extends CraftSquid implements GlowSquid {
 
-    public CraftGlowSquid(CraftServer server, net.minecraft.world.entity.GlowSquid entity) {
+    public CraftGlowSquid(CraftServer server, net.minecraft.world.entity.animal.squid.GlowSquid entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.GlowSquid getHandle() {
-        return (net.minecraft.world.entity.GlowSquid) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftGlowSquid";
+    public net.minecraft.world.entity.animal.squid.GlowSquid getHandle() {
+        return (net.minecraft.world.entity.animal.squid.GlowSquid) this.entity;
     }
 
     @Override

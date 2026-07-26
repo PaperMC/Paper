@@ -3,11 +3,14 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap.Builder;
 import java.util.Map;
+import java.util.Objects;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.OminousBottleAmplifier;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.meta.OminousBottleMeta;
+
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBottleMeta {
@@ -17,16 +20,15 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
 
     CraftMetaOminousBottle(CraftMetaItem meta) {
         super(meta);
-        if (!(meta instanceof CraftMetaOminousBottle)) {
+        if (!(meta instanceof final CraftMetaOminousBottle ominousBottleMeta)) {
             return;
         }
-        CraftMetaOminousBottle bottleMeta = (CraftMetaOminousBottle) meta;
-        this.ominousBottleAmplifier = bottleMeta.ominousBottleAmplifier;
+        this.ominousBottleAmplifier = ominousBottleMeta.ominousBottleAmplifier;
     }
 
-    CraftMetaOminousBottle(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
-        super(tag, extraHandledDcts); // Paper
-        getOrEmpty(tag, CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER).ifPresent((amplifier) -> {
+    CraftMetaOminousBottle(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
+        getOrEmpty(patch, CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER).ifPresent((amplifier) -> {
             this.ominousBottleAmplifier = amplifier.value();
         });
     }
@@ -70,14 +72,13 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
 
     @Override
     public int getAmplifier() {
-        Preconditions.checkState(this.hasAmplifier(), "'ominous_bottle_amplifier' data component is absent. Check hasAmplifier first!"); // Paper - fix NPE
+        Preconditions.checkState(this.hasAmplifier(), "'ominous_bottle_amplifier' data component is absent. Check hasAmplifier first!");
         return this.ominousBottleAmplifier;
     }
 
     @Override
     public void setAmplifier(int amplifier) {
-        Preconditions.checkArgument(0 <= amplifier && amplifier <= 4, "Amplifier must be in range [0, 4]");
-        this.ominousBottleAmplifier = amplifier;
+        this.ominousBottleAmplifier = requireRange(amplifier, "amplifier", OminousBottleAmplifier.MIN_AMPLIFIER, OminousBottleAmplifier.MAX_AMPLIFIER);
     }
 
     @Override
@@ -96,10 +97,9 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
         if (!super.equalsCommon(meta)) {
             return false;
         }
-        if (meta instanceof CraftMetaOminousBottle) {
-            CraftMetaOminousBottle that = (CraftMetaOminousBottle) meta;
 
-            return (this.hasAmplifier() ? that.hasAmplifier() && this.ominousBottleAmplifier.equals(that.ominousBottleAmplifier) : !that.hasAmplifier());
+        if (meta instanceof final CraftMetaOminousBottle other) {
+            return Objects.equals(this.ominousBottleAmplifier, other.ominousBottleAmplifier);
         }
         return true;
     }

@@ -28,7 +28,6 @@ public interface TextDisplay extends Display {
     @Deprecated // Paper
     void setText(@Nullable String text);
 
-    // Paper start
     /**
      * Gets the displayed text.
      *
@@ -42,7 +41,6 @@ public interface TextDisplay extends Display {
      * @param text the new text
      */
     void text(net.kyori.adventure.text.@Nullable Component text);
-    // Paper end
 
     /**
      * Gets the maximum line width before wrapping.
@@ -102,14 +100,14 @@ public interface TextDisplay extends Display {
     void setShadowed(boolean shadow);
 
     /**
-     * Gets if the text is see through.
+     * Gets if the text is seen through.
      *
      * @return see through status
      */
     boolean isSeeThrough();
 
     /**
-     * Sets if the text is see through.
+     * Sets if the text is seen through.
      *
      * @param seeThrough if see through
      */

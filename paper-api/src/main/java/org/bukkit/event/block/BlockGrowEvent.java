@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -19,13 +20,16 @@ import org.jetbrains.annotations.NotNull;
  * <li>Turtle Egg
  * </ul>
  * <p>
- * If a Block Grow event is cancelled, the block will not grow.
+ * If this event is cancelled, the block will not grow.
  */
 public class BlockGrowEvent extends BlockEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private final BlockState newState;
-    private boolean cancelled = false;
 
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final BlockState newState;
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public BlockGrowEvent(@NotNull final Block block, @NotNull final BlockState newState) {
         super(block);
         this.newState = newState;
@@ -38,12 +42,12 @@ public class BlockGrowEvent extends BlockEvent implements Cancellable {
      */
     @NotNull
     public BlockState getNewState() {
-        return newState;
+        return this.newState;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
@@ -54,11 +58,11 @@ public class BlockGrowEvent extends BlockEvent implements Cancellable {
     @Override
     @NotNull
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

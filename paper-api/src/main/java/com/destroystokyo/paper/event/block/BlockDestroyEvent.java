@@ -11,7 +11,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Fired anytime the server intends to 'destroy' a block through some triggering reason.
  * This does not fire anytime a block is set to air, but only with more direct triggers such
- * as physics updates, pistons, Entities changing blocks, commands set to "Destroy".
+ * as physics updates, pistons, entities changing blocks, commands set to "Destroy".
  * <p>
  * This event is associated with the game playing a sound effect at the block in question, when
  * something can be described as "intend to destroy what is there",
@@ -39,7 +39,7 @@ public class BlockDestroyEvent extends BlockExpEvent implements Cancellable {
     }
 
     /**
-     * Get the effect that will be played when the block is broken.
+     * Gets the effect that will be played when the block is broken.
      *
      * @return block break effect
      */

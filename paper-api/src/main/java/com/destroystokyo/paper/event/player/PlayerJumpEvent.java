@@ -37,11 +37,9 @@ public class PlayerJumpEvent extends PlayerEvent implements Cancellable {
     /**
      * {@inheritDoc}
      * <p>
-     * If a jump event is cancelled, the player will be moved or
+     * If this event is cancelled, the player will be moved or
      * teleported back to the Location as defined by {@link #getFrom()}. This will not
      * fire an event
-     *
-     * @return {@code true} if this event is cancelled
      */
     @Override
     public boolean isCancelled() {
@@ -51,11 +49,9 @@ public class PlayerJumpEvent extends PlayerEvent implements Cancellable {
     /**
      * {@inheritDoc}
      * <p>
-     * If a jump event is cancelled, the player will be moved or
+     * If this event is cancelled, the player will be moved or
      * teleported back to the Location as defined by {@link #getFrom()}. This will not
      * fire an event
-     *
-     * @param cancel {@code true} if you wish to cancel this event
      */
     @Override
     public void setCancelled(final boolean cancel) {

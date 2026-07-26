@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap.Builder;
 import java.util.Map;
+import java.util.Objects;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.FireworkExplosion;
@@ -10,7 +11,7 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
-class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
+public class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
     static final ItemMetaKeyType<FireworkExplosion> EXPLOSION = new ItemMetaKeyType<>(DataComponents.FIREWORK_EXPLOSION, "firework-effect");
 
     private FireworkEffect effect;
@@ -18,8 +19,8 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
     CraftMetaCharge(CraftMetaItem meta) {
         super(meta);
 
-        if (meta instanceof CraftMetaCharge) {
-            this.effect = ((CraftMetaCharge) meta).effect;
+        if (meta instanceof final CraftMetaCharge chargeMeta) {
+            this.effect = chargeMeta.effect;
         }
     }
 
@@ -29,12 +30,12 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
         this.setEffect(SerializableMeta.getObject(FireworkEffect.class, map, CraftMetaCharge.EXPLOSION.BUKKIT, true));
     }
 
-    CraftMetaCharge(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
-        super(tag, extraHandledDcts); // Paper
+    CraftMetaCharge(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaCharge.EXPLOSION).ifPresent((f) -> {
+        getOrEmpty(patch, CraftMetaCharge.EXPLOSION).ifPresent((explosion) -> {
             try {
-                this.effect = CraftMetaFirework.getEffect(f);
+                this.effect = CraftMetaFirework.getEffect(explosion);
             } catch (IllegalArgumentException ex) {
                 // Ignore invalid effects
             }
@@ -57,11 +58,11 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
     }
 
     @Override
-    void applyToItem(CraftMetaItem.Applicator itemTag) {
-        super.applyToItem(itemTag);
+    void applyToItem(CraftMetaItem.Applicator tag) {
+        super.applyToItem(tag);
 
         if (this.hasEffect()) {
-            itemTag.put(CraftMetaCharge.EXPLOSION, CraftMetaFirework.getExplosion(this.effect));
+            tag.put(CraftMetaCharge.EXPLOSION, CraftMetaFirework.getExplosion(this.effect));
         }
     }
 
@@ -79,10 +80,8 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
         if (!super.equalsCommon(meta)) {
             return false;
         }
-        if (meta instanceof CraftMetaCharge) {
-            CraftMetaCharge that = (CraftMetaCharge) meta;
-
-            return (this.hasEffect() ? that.hasEffect() && this.effect.equals(that.effect) : !that.hasEffect());
+        if (meta instanceof final CraftMetaCharge other) {
+            return Objects.equals(this.effect, other.effect);
         }
         return true;
     }

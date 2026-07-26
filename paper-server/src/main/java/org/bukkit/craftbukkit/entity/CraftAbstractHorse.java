@@ -2,10 +2,12 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import java.util.UUID;
+import net.minecraft.Optionull;
+import net.minecraft.world.entity.EntityReference;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.inventory.CraftInventoryAbstractHorse;
-import org.bukkit.craftbukkit.inventory.CraftSaddledInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventorySaddledHorse;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Horse;
@@ -13,13 +15,13 @@ import org.bukkit.inventory.AbstractHorseInventory;
 
 public abstract class CraftAbstractHorse extends CraftAnimals implements AbstractHorse {
 
-    public CraftAbstractHorse(CraftServer server, net.minecraft.world.entity.animal.horse.AbstractHorse entity) {
+    public CraftAbstractHorse(CraftServer server, net.minecraft.world.entity.animal.equine.AbstractHorse entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.animal.horse.AbstractHorse getHandle() {
-        return (net.minecraft.world.entity.animal.horse.AbstractHorse) this.entity;
+    public net.minecraft.world.entity.animal.equine.AbstractHorse getHandle() {
+        return (net.minecraft.world.entity.animal.equine.AbstractHorse) this.entity;
     }
 
     @Override
@@ -80,7 +82,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
     public void setOwner(AnimalTamer owner) {
         if (owner != null) {
             this.setTamed(true);
-            this.getHandle().setTarget(null, null, false);
+            this.getHandle().setTarget(null, null);
             this.setOwnerUUID(owner.getUniqueId());
         } else {
             this.setTamed(false);
@@ -90,14 +92,15 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
 
     @Override
     public UUID getOwnerUniqueId() {
-        return getOwnerUUID();
+        return this.getOwnerUUID();
     }
+
     public UUID getOwnerUUID() {
-        return this.getHandle().getOwnerUUID();
+        return Optionull.map(this.getHandle().getOwnerReference(), EntityReference::getUUID);
     }
 
     public void setOwnerUUID(UUID uuid) {
-        this.getHandle().setOwnerUUID(uuid);
+        this.getHandle().owner = uuid == null ? null : EntityReference.of(uuid);
     }
 
     @Override
@@ -112,10 +115,13 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
 
     @Override
     public AbstractHorseInventory getInventory() {
-        return new CraftSaddledInventory(getHandle().inventory, this.getHandle().getBodyArmorAccess()); // Paper - use both inventories
+        return new CraftInventorySaddledHorse(
+            this.getHandle().inventory,
+            this.getHandle().createEquipmentSlotContainer(EquipmentSlot.BODY),
+            this.getHandle().createEquipmentSlotContainer(EquipmentSlot.SADDLE)
+        );
     }
 
-    // Paper start - Horse API
     @Override
     public boolean isEatingGrass() {
         return this.getHandle().isEating();
@@ -133,7 +139,11 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
 
     @Override
     public void setRearing(boolean rearing) {
-        this.getHandle().setForceStanding(rearing);
+        if (rearing) {
+            this.getHandle().setStanding(Integer.MAX_VALUE);
+        } else {
+            this.getHandle().clearStanding();
+        }
     }
 
     @Override
@@ -145,5 +155,4 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
     public void setEating(boolean eating) {
        this.getHandle().setMouthOpen(eating);
     }
-    // Paper end - Horse API
 }

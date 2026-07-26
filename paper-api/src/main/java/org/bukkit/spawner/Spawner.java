@@ -3,11 +3,14 @@ package org.bukkit.spawner;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.minecart.SpawnerMinecart;
+import org.bukkit.inventory.ItemStack;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents an entity spawner. <br>
  * May be a {@link SpawnerMinecart} or a {@link CreatureSpawner}.
  */
+@NullMarked
 public interface Spawner extends BaseSpawner {
 
     /**
@@ -19,7 +22,7 @@ public interface Spawner extends BaseSpawner {
      * @param delay The delay.
      */
     @Override
-    public void setDelay(int delay);
+    void setDelay(int delay);
 
     /**
      * The minimum spawn delay amount (in ticks).
@@ -32,7 +35,7 @@ public interface Spawner extends BaseSpawner {
      *
      * @return the minimum spawn delay amount
      */
-    public int getMinSpawnDelay();
+    int getMinSpawnDelay();
 
     /**
      * Set the minimum spawn delay amount (in ticks).
@@ -40,7 +43,7 @@ public interface Spawner extends BaseSpawner {
      * @param delay the minimum spawn delay amount
      * @see #getMinSpawnDelay()
      */
-    public void setMinSpawnDelay(int delay);
+    void setMinSpawnDelay(int delay);
 
     /**
      * The maximum spawn delay amount (in ticks).
@@ -56,7 +59,7 @@ public interface Spawner extends BaseSpawner {
      *
      * @return the maximum spawn delay amount
      */
-    public int getMaxSpawnDelay();
+    int getMaxSpawnDelay();
 
     /**
      * Set the maximum spawn delay amount (in ticks).
@@ -67,7 +70,7 @@ public interface Spawner extends BaseSpawner {
      * @param delay the new maximum spawn delay amount
      * @see #getMaxSpawnDelay()
      */
-    public void setMaxSpawnDelay(int delay);
+    void setMaxSpawnDelay(int delay);
 
     /**
      * Get how many mobs attempt to spawn.
@@ -76,27 +79,27 @@ public interface Spawner extends BaseSpawner {
      *
      * @return the current spawn count
      */
-    public int getSpawnCount();
+    int getSpawnCount();
 
     /**
      * Set how many mobs attempt to spawn.
      *
      * @param spawnCount the new spawn count
      */
-    public void setSpawnCount(int spawnCount);
+    void setSpawnCount(int spawnCount);
 
     /**
-     * Set the new maximum amount of similar entities that are allowed to be
-     * within spawning range of this spawner.
+     * Get the maximum number of similar entities that are allowed to be
+     * within the spawning range of this spawner.
      * <br>
      * If more than the maximum number of entities are within range, the spawner
      * will not spawn and try again with a new {@link #getDelay()}.
      * <br>
-     * Default value is 16.
+     * Default value is 6.
      *
      * @return the maximum number of nearby, similar, entities
      */
-    public int getMaxNearbyEntities();
+    int getMaxNearbyEntities();
 
     /**
      * Set the maximum number of similar entities that are allowed to be within
@@ -106,20 +109,19 @@ public interface Spawner extends BaseSpawner {
      *
      * @param maxNearbyEntities the maximum number of nearby, similar, entities
      */
-    public void setMaxNearbyEntities(int maxNearbyEntities);
+    void setMaxNearbyEntities(int maxNearbyEntities);
 
-    // Paper start
     /**
      * Check if spawner is activated (a player is close enough)
      *
      * @return True if a player is close enough to activate it
      */
-    public boolean isActivated();
+    boolean isActivated();
 
     /**
      * Resets the spawn delay timer within the min/max range
      */
-    public void resetTimer();
+    void resetTimer();
 
     /**
      * Sets the {@link EntityType} to {@link EntityType#ITEM} and sets the data to the given
@@ -128,9 +130,8 @@ public interface Spawner extends BaseSpawner {
      * {@link #setSpawnCount(int)} does not dictate the amount of items in the stack spawned, but rather how many
      * stacks should be spawned.
      *
-     * @param itemStack The item to spawn. Must not {@link org.bukkit.Material#isAir be air}.
+     * @param itemStack The item to spawn. Must not {@link ItemStack#isEmpty() be empty}.
      * @see #setSpawnedType(EntityType)
      */
-    void setSpawnedItem(org.bukkit.inventory.@org.jetbrains.annotations.NotNull ItemStack itemStack);
-    // Paper end
+    void setSpawnedItem(ItemStack itemStack);
 }

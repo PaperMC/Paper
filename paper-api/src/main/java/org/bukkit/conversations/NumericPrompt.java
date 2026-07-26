@@ -7,7 +7,13 @@ import org.jetbrains.annotations.Nullable;
 /**
  * NumericPrompt is the base class for any prompt that requires a {@link
  * Number} response from the user.
+ *
+ * @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
+ * and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
+ * It is recommended you instead manually listen to the {@link io.papermc.paper.event.player.AsyncChatEvent}
+ * or alternatively using {@link io.papermc.paper.dialog.Dialog} to get user input.
  */
+@Deprecated(forRemoval = true)
 public abstract class NumericPrompt extends ValidatingPrompt {
     public NumericPrompt() {
         super();

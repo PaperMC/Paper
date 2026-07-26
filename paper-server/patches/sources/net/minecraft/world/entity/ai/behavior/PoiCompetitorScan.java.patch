@@ -2,35 +2,35 @@
 +++ b/net/minecraft/world/entity/ai/behavior/PoiCompetitorScan.java
 @@ -22,13 +_,32 @@
                          level.getPoiManager()
-                             .getType(globalPos.pos())
+                             .getType(pos.pos())
                              .ifPresent(
--                                poi -> instance.<List<LivingEntity>>get(nearestLivingEntities)
+-                                poiType -> i.<List<LivingEntity>>get(nearestEntities)
 -                                    .stream()
--                                    .filter(entity -> entity instanceof Villager && entity != villager)
--                                    .map(entity -> (Villager)entity)
+-                                    .filter(v -> v instanceof Villager && v != body)
+-                                    .map(v -> (Villager)v)
 -                                    .filter(LivingEntity::isAlive)
--                                    .filter(v -> competesForSameJobsite(globalPos, poi, v))
--                                    .reduce(villager, PoiCompetitorScan::selectWinner)
+-                                    .filter(nearbyVillager -> competesForSameJobsite(pos, poiType, nearbyVillager))
+-                                    .reduce(body, PoiCompetitorScan::selectWinner)
 +                                // Paper start - Improve performance of PoiCompetitorScan by unrolling stream
 +                                // The previous logic used Stream#reduce to simulate a form of single-iteration bubble sort
 +                                // in which the "winning" villager would maintain MemoryModuleType.JOB_SITE while all others
 +                                // would lose said memory module type by passing each "current winner" and incoming next
 +                                // villager to #selectWinner.
-+                                poi -> {
-+                                    final List<LivingEntity> livingEntities = instance.get(nearestLivingEntities);
++                                poiType -> {
++                                    final List<LivingEntity> livingEntities = i.get(nearestEntities);
 +
-+                                    Villager winner = villager;
++                                    Villager winner = body;
 +                                    for (final LivingEntity other : livingEntities) {
-+                                        if (other == villager) {
++                                        if (other == body) {
 +                                            continue;
 +                                        }
-+                                        if (!(other instanceof final net.minecraft.world.entity.npc.Villager otherVillager)) {
++                                        if (!(other instanceof final Villager otherVillager)) {
 +                                            continue;
 +                                        }
 +                                        if (!other.isAlive()) {
 +                                            continue;
 +                                        }
-+                                        if (!competesForSameJobsite(globalPos, poi, otherVillager)) {
++                                        if (!competesForSameJobsite(pos, poiType, otherVillager)) {
 +                                            continue;
 +                                        }
 +                                        winner = selectWinner(winner, otherVillager);

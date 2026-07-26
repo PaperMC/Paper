@@ -1,12 +1,10 @@
 package org.bukkit.damage;
 
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.ApiStatus;
 
 /**
  * A means of damage scaling with respect to the server's difficulty.
  */
-@ApiStatus.Experimental
 public enum DamageScaling {
 
     /**

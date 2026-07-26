@@ -3,6 +3,7 @@ package org.bukkit.event.block;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -23,16 +24,19 @@ import org.jetbrains.annotations.NotNull;
  * to air and utilize their own methods for determining what the default drop
  * for the block being broken is and what to do about it, if anything.
  * <p>
- * If a Block Break event is cancelled, the block will not break and
+ * If this event is cancelled, the block will not break and
  * experience will not drop.
  */
 public class BlockBreakEvent extends BlockExpEvent implements Cancellable {
+
     private final Player player;
     private boolean dropItems;
-    private boolean cancel;
 
-    public BlockBreakEvent(@NotNull final Block theBlock, @NotNull final Player player) {
-        super(theBlock, 0);
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public BlockBreakEvent(@NotNull final Block block, @NotNull final Player player) {
+        super(block, 0);
 
         this.player = player;
         this.dropItems = true; // Defaults to dropping items as it normally would
@@ -45,29 +49,29 @@ public class BlockBreakEvent extends BlockExpEvent implements Cancellable {
      */
     @NotNull
     public Player getPlayer() {
-        return player;
+        return this.player;
     }
 
     /**
-     * Sets whether or not the block will attempt to drop items as it normally
+     * Sets whether the block will attempt to drop items as it normally
      * would.
-     *
-     * If and only if this is false then {@link BlockDropItemEvent} will not be
+     * <p>
+     * If and only if this is {@code false} then {@link BlockDropItemEvent} will not be
      * called after this event.
      *
-     * @param dropItems Whether or not the block will attempt to drop items
+     * @param dropItems Whether the block will attempt to drop items
      */
     public void setDropItems(boolean dropItems) {
         this.dropItems = dropItems;
     }
 
     /**
-     * Gets whether or not the block will attempt to drop items.
-     *
-     * If and only if this is false then {@link BlockDropItemEvent} will not be
+     * Gets whether the block will attempt to drop items.
+     * <p>
+     * If and only if this is {@code false} then {@link BlockDropItemEvent} will not be
      * called after this event.
      *
-     * @return Whether or not the block will attempt to drop items
+     * @return Whether the block will attempt to drop items
      */
     public boolean isDropItems() {
         return this.dropItems;
@@ -75,11 +79,11 @@ public class BlockBreakEvent extends BlockExpEvent implements Cancellable {
 
     @Override
     public boolean isCancelled() {
-        return cancel;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        this.cancelled = cancel;
     }
 }

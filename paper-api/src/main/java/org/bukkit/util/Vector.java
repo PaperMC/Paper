@@ -388,9 +388,9 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      */
     @NotNull
     Vector normalizeZeros() {
-        if (x == -0.0D) x = 0.0D;
-        if (y == -0.0D) y = 0.0D;
-        if (z == -0.0D) z = 0.0D;
+        if (x == -0.0) x = 0.0;
+        if (y == -0.0) y = 0.0;
+        if (z == -0.0) z = 0.0;
         return this;
     }
 

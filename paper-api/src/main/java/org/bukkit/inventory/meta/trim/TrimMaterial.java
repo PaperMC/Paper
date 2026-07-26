@@ -1,76 +1,72 @@
 package org.bukkit.inventory.meta.trim;
 
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
+import io.papermc.paper.registry.data.TrimMaterialRegistryEntry;
+import java.util.function.Consumer;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Keyed;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a material that may be used in an {@link ArmorTrim}.
  */
+@NullMarked
 public interface TrimMaterial extends Keyed, Translatable {
 
     /**
-     * {@link Material#QUARTZ}.
+     * Creates an inlined trim material.
+     *
+     * @param value a consumer for the builder factory
+     * @return the created trim material
      */
-    public static final TrimMaterial QUARTZ = getTrimMaterial("quartz");
-    /**
-     * {@link Material#IRON_INGOT}.
-     */
-    public static final TrimMaterial IRON = getTrimMaterial("iron");
-    /**
-     * {@link Material#NETHERITE_INGOT}.
-     */
-    public static final TrimMaterial NETHERITE = getTrimMaterial("netherite");
-    /**
-     * {@link Material#REDSTONE}.
-     */
-    public static final TrimMaterial REDSTONE = getTrimMaterial("redstone");
-    /**
-     * {@link Material#COPPER_INGOT}.
-     */
-    public static final TrimMaterial COPPER = getTrimMaterial("copper");
-    /**
-     * {@link Material#GOLD_INGOT}.
-     */
-    public static final TrimMaterial GOLD = getTrimMaterial("gold");
-    /**
-     * {@link Material#EMERALD}.
-     */
-    public static final TrimMaterial EMERALD = getTrimMaterial("emerald");
-    /**
-     * {@link Material#DIAMOND}.
-     */
-    public static final TrimMaterial DIAMOND = getTrimMaterial("diamond");
-    /**
-     * {@link Material#LAPIS_LAZULI}.
-     */
-    public static final TrimMaterial LAPIS = getTrimMaterial("lapis");
-    /**
-     * {@link Material#AMETHYST_SHARD}.
-     */
-    public static final TrimMaterial AMETHYST = getTrimMaterial("amethyst");
-    /**
-     * {@link Material#RESIN_BRICK}.
-     */
-    public static final TrimMaterial RESIN = getTrimMaterial("resin");
-
-    @NotNull
-    private static TrimMaterial getTrimMaterial(@NotNull String key) {
-        return RegistryAccess.registryAccess().getRegistry(RegistryKey.TRIM_MATERIAL).getOrThrow(NamespacedKey.minecraft(key));
+    @ApiStatus.Experimental
+    static TrimMaterial create(final Consumer<RegistryBuilderFactory<TrimMaterial, ? extends TrimMaterialRegistryEntry.Builder>> value) {
+        return InlinedRegistryBuilderProvider.instance().createTrimMaterial(value);
     }
 
-    // Paper start - adventure
+    // Start generate - TrimMaterial
+    TrimMaterial AMETHYST = getTrimMaterial("amethyst");
+
+    TrimMaterial COPPER = getTrimMaterial("copper");
+
+    TrimMaterial DIAMOND = getTrimMaterial("diamond");
+
+    TrimMaterial EMERALD = getTrimMaterial("emerald");
+
+    TrimMaterial GOLD = getTrimMaterial("gold");
+
+    TrimMaterial IRON = getTrimMaterial("iron");
+
+    TrimMaterial LAPIS = getTrimMaterial("lapis");
+
+    TrimMaterial NETHERITE = getTrimMaterial("netherite");
+
+    TrimMaterial QUARTZ = getTrimMaterial("quartz");
+
+    TrimMaterial REDSTONE = getTrimMaterial("redstone");
+
+    TrimMaterial RESIN = getTrimMaterial("resin");
+    // End generate - TrimMaterial
+
+    private static TrimMaterial getTrimMaterial(final @KeyPattern.Value String key) {
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.TRIM_MATERIAL).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
+    }
+
     /**
      * Get the description of this {@link TrimMaterial}.
      *
      * @return the description
      */
-    net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component description();
+    Component description();
 
     /**
      * @deprecated this method assumes that {@link #description()} will
@@ -78,17 +74,7 @@ public interface TrimMaterial extends Keyed, Translatable {
      */
     @Override
     @Deprecated(forRemoval = true)
-    @org.jetbrains.annotations.NotNull String getTranslationKey();
-    // Paper end - adventure
-
-    // Paper start - Registry#getKey
-    /**
-     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
-     * and {@link io.papermc.paper.registry.RegistryKey#TRIM_MATERIAL}. TrimMaterials can exist without a key.
-     */
-    @Deprecated(forRemoval = true, since = "1.20.4")
-    @Override
-    org.bukkit.@org.jetbrains.annotations.NotNull NamespacedKey getKey();
+    String getTranslationKey();
 
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
@@ -96,9 +82,15 @@ public interface TrimMaterial extends Keyed, Translatable {
      */
     @Deprecated(forRemoval = true, since = "1.20.4")
     @Override
-    default net.kyori.adventure.key.@org.jetbrains.annotations.NotNull Key key() {
-        return org.bukkit.Keyed.super.key();
+    NamespacedKey getKey();
+
+    /**
+     * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
+     * and {@link io.papermc.paper.registry.RegistryKey#TRIM_MATERIAL}. TrimMaterials can exist without a key.
+     */
+    @Deprecated(forRemoval = true, since = "1.20.4")
+    @Override
+    default Key key() {
+        return Keyed.super.key();
     }
-
-    // Paper end - Registry#getKey
 }

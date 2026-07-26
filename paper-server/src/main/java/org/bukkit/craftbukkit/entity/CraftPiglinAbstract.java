@@ -12,6 +12,11 @@ public class CraftPiglinAbstract extends CraftMonster implements PiglinAbstract 
     }
 
     @Override
+    public AbstractPiglin getHandle() {
+        return (AbstractPiglin) this.entity;
+    }
+
+    @Override
     public boolean isImmuneToZombification() {
         return this.getHandle().isImmuneToZombification();
     }
@@ -30,10 +35,10 @@ public class CraftPiglinAbstract extends CraftMonster implements PiglinAbstract 
     @Override
     public void setConversionTime(int time) {
         if (time < 0) {
-            this.getHandle().timeInOverworld = -1;
+            this.getHandle().setTimeInOverworld(-1);
             this.getHandle().setImmuneToZombification(false);
         } else {
-            this.getHandle().timeInOverworld = time;
+            this.getHandle().setTimeInOverworld(time);
         }
     }
 
@@ -48,8 +53,8 @@ public class CraftPiglinAbstract extends CraftMonster implements PiglinAbstract 
     }
 
     @Override
-    public void setBaby(boolean flag) {
-        this.getHandle().setBaby(flag);
+    public void setBaby(boolean baby) {
+        CraftAgeable.setBaby(this.getHandle(), baby);
     }
 
     @Override
@@ -58,12 +63,12 @@ public class CraftPiglinAbstract extends CraftMonster implements PiglinAbstract 
     }
 
     @Override
-    public void setAge(int i) {
-        this.getHandle().setBaby(i < 0);
+    public void setAge(int age) {
+        this.getHandle().setBaby(age < 0);
     }
 
     @Override
-    public void setAgeLock(boolean b) {
+    public void setAgeLock(boolean lock) {
     }
 
     @Override
@@ -73,12 +78,12 @@ public class CraftPiglinAbstract extends CraftMonster implements PiglinAbstract 
 
     @Override
     public void setBaby() {
-        this.getHandle().setBaby(true);
+        CraftAgeable.setBaby(this.getHandle(), true);
     }
 
     @Override
     public void setAdult() {
-        this.getHandle().setBaby(false);
+        CraftAgeable.setBaby(this.getHandle(), false);
     }
 
     @Override
@@ -92,11 +97,6 @@ public class CraftPiglinAbstract extends CraftMonster implements PiglinAbstract 
     }
 
     @Override
-    public void setBreed(boolean b) {
-    }
-
-    @Override
-    public AbstractPiglin getHandle() {
-        return (AbstractPiglin) super.getHandle();
+    public void setBreed(boolean breed) {
     }
 }

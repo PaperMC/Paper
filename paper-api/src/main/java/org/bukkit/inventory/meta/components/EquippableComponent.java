@@ -150,4 +150,46 @@ public interface EquippableComponent extends ConfigurationSerializable {
      * @param damage whether the item will be damaged
      */
     void setDamageOnHurt(boolean damage);
+
+    /**
+     * Gets if the item should be equipped when interacting with an entity.
+     *
+     * @return whether the item equips on interact
+     */
+    boolean isEquipOnInteract();
+
+    /**
+     * Sets if the item should be equipped when interacting with an entity.
+     *
+     * @param equip whether the item equips on interact
+     */
+    void setEquipOnInteract(boolean equip);
+
+    /**
+     * Checks if the item can be unequipped when interacting with an entity using shears.
+     *
+     * @return whether the item can be unequipped using shears
+     */
+    boolean canBeSheared();
+
+    /**
+     * Sets if the item can be unequipped when interacting with an entity using shears.
+     *
+     * @param sheared whether the item can be unequipped using shears
+     */
+    void setCanBeSheared(boolean sheared);
+
+    /**
+     * Gets the sound to play when the item is sheared.
+     *
+     * @return the sound
+     */
+    @Nullable Sound getShearingSound();
+
+    /**
+     * Sets the sound to play when the item is sheared.
+     *
+     * @param sound sound or null for current default
+     */
+    void setShearingSound(@Nullable Sound sound);
 }

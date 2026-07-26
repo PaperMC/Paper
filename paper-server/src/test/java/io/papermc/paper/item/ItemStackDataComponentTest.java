@@ -16,11 +16,10 @@ import io.papermc.paper.datacomponent.item.MapId;
 import io.papermc.paper.datacomponent.item.MapItemColor;
 import io.papermc.paper.datacomponent.item.PotDecorations;
 import io.papermc.paper.datacomponent.item.Tool;
-import io.papermc.paper.datacomponent.item.Unbreakable;
-import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.keys.tags.BlockTypeTagKeys;
 import io.papermc.paper.registry.set.RegistrySet;
-import io.papermc.paper.registry.tag.TagKey;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -30,7 +29,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.item.EitherHolder;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.JukeboxSongs;
 import org.bukkit.Color;
@@ -93,38 +91,39 @@ class ItemStackDataComponentTest {
     @Test
     void testUnbreakable() {
         final ItemStack stack = new ItemStack(Material.STONE);
-        stack.setData(DataComponentTypes.UNBREAKABLE, Unbreakable.unbreakable().showInTooltip(false).build());
+        stack.setData(DataComponentTypes.UNBREAKABLE);
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.UNBREAKABLE).build());
 
         Assertions.assertTrue(stack.getItemMeta().isUnbreakable());
-        Assertions.assertTrue(stack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_UNBREAKABLE));
+        Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_UNBREAKABLE));
         stack.unsetData(DataComponentTypes.UNBREAKABLE);
         Assertions.assertFalse(stack.getItemMeta().isUnbreakable());
     }
 
-    @Test
-    void testHideAdditionalTooltip() {
-        final ItemStack stack = new ItemStack(Material.STONE);
-        stack.setData(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP);
-
-        Assertions.assertTrue(stack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
-        stack.unsetData(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP);
-        Assertions.assertFalse(stack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
-    }
+    // @Test
+    // void testHideAdditionalTooltip() {
+    //     final ItemStack stack = new ItemStack(Material.STONE);
+    //     stack.setData(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP);
+    //
+    //     Assertions.assertTrue(stack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
+    //     stack.unsetData(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP);
+    //     Assertions.assertFalse(stack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
+    // }
 
     @Test
     void testHideTooltip() {
         ItemStack stack = new ItemStack(Material.STONE);
-        stack.setData(DataComponentTypes.HIDE_TOOLTIP);
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().hideTooltip(true).build());
 
-        Assertions.assertEquals(stack.getItemMeta().isHideTooltip(), stack.hasData(DataComponentTypes.HIDE_TOOLTIP));
+        Assertions.assertEquals(stack.getItemMeta().isHideTooltip(), stack.hasData(DataComponentTypes.TOOLTIP_DISPLAY) && stack.getData(DataComponentTypes.TOOLTIP_DISPLAY).hideTooltip());
         Assertions.assertTrue(stack.getItemMeta().isHideTooltip());
-        stack.unsetData(DataComponentTypes.HIDE_TOOLTIP);
+        stack.unsetData(DataComponentTypes.TOOLTIP_DISPLAY);
         Assertions.assertFalse(stack.getItemMeta().isHideTooltip());
         stack = new ItemStack(Material.STONE);
 
-        stack.unsetData(DataComponentTypes.HIDE_TOOLTIP);
+        stack.unsetData(DataComponentTypes.TOOLTIP_DISPLAY);
         Assertions.assertFalse(stack.getItemMeta().isHideTooltip());
-        Assertions.assertEquals(stack.getItemMeta().isHideTooltip(), stack.hasData(DataComponentTypes.HIDE_TOOLTIP));
+        Assertions.assertEquals(stack.getItemMeta().isHideTooltip(), stack.hasData(DataComponentTypes.TOOLTIP_DISPLAY));
     }
 
     @Test
@@ -158,7 +157,8 @@ class ItemStackDataComponentTest {
     void testItemEnchantments() {
         final ItemStack stack = new ItemStack(Material.STONE);
         Map<Enchantment, Integer> enchantmentIntegerMap = Map.of(Enchantment.SOUL_SPEED, 1);
-        stack.setData(DataComponentTypes.ENCHANTMENTS, ItemEnchantments.itemEnchantments(enchantmentIntegerMap, false));
+        stack.setData(DataComponentTypes.ENCHANTMENTS, ItemEnchantments.itemEnchantments(enchantmentIntegerMap));
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.ENCHANTMENTS).build());
 
         Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ENCHANTS));
         Assertions.assertEquals(1, stack.getItemMeta().getEnchantLevel(Enchantment.SOUL_SPEED));
@@ -171,7 +171,8 @@ class ItemStackDataComponentTest {
     void testItemAttributes() {
         final ItemStack stack = new ItemStack(Material.STONE);
         AttributeModifier modifier = new AttributeModifier(NamespacedKey.minecraft("test"), 5, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY);
-        stack.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.itemAttributes().showInTooltip(false).addModifier(Attribute.ATTACK_DAMAGE, modifier).build());
+        stack.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.itemAttributes().addModifier(Attribute.ATTACK_DAMAGE, modifier).build());
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.ATTRIBUTE_MODIFIERS).build());
 
         Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ATTRIBUTES));
         Assertions.assertEquals(modifier, ((List<AttributeModifier>) stack.getItemMeta().getAttributeModifiers(Attribute.ATTACK_DAMAGE)).getFirst());
@@ -223,7 +224,7 @@ class ItemStackDataComponentTest {
                     TriState.TRUE
                 ),
                 Tool.rule(
-                    RegistryAccess.registryAccess().getRegistry(RegistryKey.BLOCK).getTag(TagKey.create(RegistryKey.BLOCK, NamespacedKey.minecraft("bamboo_blocks"))),
+                    Registry.BLOCK.getTag(BlockTypeTagKeys.BAMBOO_BLOCKS),
                     2F,
                     TriState.TRUE
                 )
@@ -271,7 +272,8 @@ class ItemStackDataComponentTest {
     void testDyedColor() {
         final ItemStack stack = new ItemStack(Material.LEATHER_CHESTPLATE);
         Color color = Color.BLUE;
-        stack.setData(DataComponentTypes.DYED_COLOR, DyedItemColor.dyedItemColor(color, false));
+        stack.setData(DataComponentTypes.DYED_COLOR, DyedItemColor.dyedItemColor(color));
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.DYED_COLOR).build());
 
         Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_DYE));
         Assertions.assertEquals(color, ((LeatherArmorMeta) stack.getItemMeta()).getColor());
@@ -302,13 +304,13 @@ class ItemStackDataComponentTest {
     @Test
     void testTrim() {
         final ItemStack stack = new ItemStack(Material.LEATHER_CHESTPLATE);
-        ItemArmorTrim armorTrim = ItemArmorTrim.itemArmorTrim(new ArmorTrim(TrimMaterial.AMETHYST, TrimPattern.BOLT), false);
+        ItemArmorTrim armorTrim = ItemArmorTrim.itemArmorTrim(new ArmorTrim(TrimMaterial.AMETHYST, TrimPattern.BOLT)).build();
         stack.setData(DataComponentTypes.TRIM, armorTrim);
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.TRIM).build());
 
         Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ARMOR_TRIM));
         Assertions.assertEquals(armorTrim.armorTrim(), ((ArmorMeta) stack.getItemMeta()).getTrim());
         stack.unsetData(DataComponentTypes.TRIM);
-        Assertions.assertFalse(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ARMOR_TRIM));
         Assertions.assertFalse(((ArmorMeta) stack.getItemMeta()).hasTrim());
     }
 
@@ -365,8 +367,7 @@ class ItemStackDataComponentTest {
     void testJukeboxWithEitherHolder() {
         final net.minecraft.world.item.ItemStack internalStack = new net.minecraft.world.item.ItemStack(Items.STONE);
         internalStack.set(DataComponents.JUKEBOX_PLAYABLE, new net.minecraft.world.item.JukeboxPlayable(
-            new EitherHolder<>(RegistryHelper.getRegistry().lookupOrThrow(Registries.JUKEBOX_SONG).getOrThrow(JukeboxSongs.FIVE)),
-            true
+            RegistryHelper.registryAccess().lookupOrThrow(Registries.JUKEBOX_SONG).getOrThrow(JukeboxSongs.FIVE)
         ));
 
         final ItemStack apiStack = CraftItemStack.asBukkitCopy(internalStack);

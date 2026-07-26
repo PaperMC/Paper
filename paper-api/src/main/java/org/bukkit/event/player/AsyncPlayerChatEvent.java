@@ -2,9 +2,12 @@ package org.bukkit.event.player;
 
 import java.util.IllegalFormatException;
 import java.util.Set;
+import com.google.common.base.Preconditions;
+import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -25,26 +28,23 @@ import org.jetbrains.annotations.NotNull;
  *
  * @deprecated use {@link io.papermc.paper.event.player.AsyncChatEvent} instead
  */
-@Deprecated // Paper
-@org.bukkit.Warning(value = false, reason = "Don't nag on old event yet") // Paper
+@Deprecated
+@Warning(reason = "Don't nag on old event yet") // Paper
 public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancel = false;
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private String message;
     private String format = "<%1$s> %2$s";
     private final Set<Player> recipients;
 
-    /**
-     * @param async This changes the event to a synchronous state.
-     * @param who the chat sender
-     * @param message the message sent
-     * @param players the players to receive the message. This may be a lazy
-     *     or unmodifiable collection.
-     */
-    public AsyncPlayerChatEvent(final boolean async, @NotNull final Player who, @NotNull final String message, @NotNull final Set<Player> players) {
-        super(who, async);
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public AsyncPlayerChatEvent(final boolean async, @NotNull final Player player, @NotNull final String message, @NotNull final Set<Player> players) {
+        super(player, async);
         this.message = message;
-        recipients = players;
+        this.recipients = players;
     }
 
     /**
@@ -55,7 +55,7 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
      */
     @NotNull
     public String getMessage() {
-        return message;
+        return this.message;
     }
 
     /**
@@ -80,7 +80,7 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
      */
     @NotNull
     public String getFormat() {
-        return format;
+        return this.format;
     }
 
     /**
@@ -94,13 +94,13 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
      *     format string
      * @throws IllegalFormatException if the underlying API throws the
      *     exception
-     * @throws NullPointerException if format is null
      * @see String#format(String, Object...)
      */
     public void setFormat(@NotNull final String format) throws IllegalFormatException, NullPointerException {
+        Preconditions.checkArgument(format != null, "format cannot be null");
         // Oh for a better way to do this!
         try {
-            String.format(format, player, message);
+            String.format(format, this.player, this.message);
         } catch (RuntimeException ex) {
             ex.fillInStackTrace();
             throw ex;
@@ -124,27 +124,27 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
      */
     @NotNull
     public Set<Player> getRecipients() {
-        return recipients;
+        return this.recipients;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancel;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

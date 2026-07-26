@@ -1,22 +1,18 @@
 package org.bukkit.craftbukkit.entity;
 
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.WanderingTrader;
 
 public class CraftWanderingTrader extends CraftAbstractVillager implements WanderingTrader {
 
-    public CraftWanderingTrader(CraftServer server, net.minecraft.world.entity.npc.WanderingTrader entity) {
+    public CraftWanderingTrader(CraftServer server, net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.npc.WanderingTrader getHandle() {
-        return (net.minecraft.world.entity.npc.WanderingTrader) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftWanderingTrader";
+    public net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader getHandle() {
+        return (net.minecraft.world.entity.npc.wanderingtrader.WanderingTrader) this.entity;
     }
 
     @Override
@@ -29,7 +25,6 @@ public class CraftWanderingTrader extends CraftAbstractVillager implements Wande
         this.getHandle().setDespawnDelay(despawnDelay);
     }
 
-    // Paper start - Add more WanderingTrader API
     @Override
     public void setCanDrinkPotion(boolean bool) {
         getHandle().canDrinkPotion = bool;
@@ -57,17 +52,16 @@ public class CraftWanderingTrader extends CraftAbstractVillager implements Wande
             return null;
         }
 
-        return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), pos);
+        return CraftLocation.toBukkit(pos, this.getHandle().level());
     }
 
     @Override
     public void setWanderingTowards(org.bukkit.Location location) {
         net.minecraft.core.BlockPos pos = null;
         if (location != null) {
-            pos = io.papermc.paper.util.MCUtil.toBlockPosition(location);
+            pos = CraftLocation.toBlockPos(location);
         }
 
         this.getHandle().setWanderTarget(pos);
     }
-    // Paper end
 }

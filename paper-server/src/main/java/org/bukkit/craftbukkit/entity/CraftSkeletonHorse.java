@@ -6,23 +6,18 @@ import org.bukkit.entity.SkeletonHorse;
 
 public class CraftSkeletonHorse extends CraftAbstractHorse implements SkeletonHorse {
 
-    public CraftSkeletonHorse(CraftServer server, net.minecraft.world.entity.animal.horse.SkeletonHorse entity) {
+    public CraftSkeletonHorse(CraftServer server, net.minecraft.world.entity.animal.equine.SkeletonHorse entity) {
         super(server, entity);
     }
 
     @Override
-    public String toString() {
-        return "CraftSkeletonHorse";
+    public net.minecraft.world.entity.animal.equine.SkeletonHorse getHandle() {
+        return (net.minecraft.world.entity.animal.equine.SkeletonHorse) this.entity;
     }
 
     @Override
     public Variant getVariant() {
         return Variant.SKELETON_HORSE;
-    }
-
-    @Override
-    public net.minecraft.world.entity.animal.horse.SkeletonHorse getHandle() {
-        return (net.minecraft.world.entity.animal.horse.SkeletonHorse) this.entity;
     }
 
     @Override
@@ -44,16 +39,4 @@ public class CraftSkeletonHorse extends CraftAbstractHorse implements SkeletonHo
     public void setTrapTime(int trapTime) {
         this.getHandle().trapTime = trapTime;
     }
-
-    // Paper start - replaced by above methods
-    @Override
-    public boolean isTrap() {
-        return getHandle().isTrap();
-    }
-
-    @Override
-    public void setTrap(boolean trap) {
-        getHandle().setTrap(trap);
-    }
-    // Paper end
 }

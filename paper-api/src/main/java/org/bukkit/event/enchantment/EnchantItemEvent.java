@@ -11,6 +11,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -18,28 +19,31 @@ import org.jetbrains.annotations.NotNull;
  * enchantment table)
  */
 public class EnchantItemEvent extends InventoryEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final Player enchanter;
     private final Block table;
-    private ItemStack item; // Paper
+    private ItemStack item;
     private int level;
-    private boolean cancelled;
     private final Map<Enchantment, Integer> enchants;
     private final Enchantment enchantmentHint;
     private final int levelHint;
-    private final Player enchanter;
     private final int button;
 
-    public EnchantItemEvent(@NotNull final Player enchanter, @NotNull final InventoryView view, @NotNull final Block table, @NotNull final ItemStack item, final int level, @NotNull final Map<Enchantment, Integer> enchants, @NotNull final Enchantment enchantmentHint, final int levelHint, final int i) {
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public EnchantItemEvent(@NotNull final Player enchanter, @NotNull final InventoryView view, @NotNull final Block table, @NotNull final ItemStack item, final int level, @NotNull final Map<Enchantment, Integer> enchants, @NotNull final Enchantment enchantmentHint, final int levelHint, final int button) {
         super(view);
         this.enchanter = enchanter;
         this.table = table;
         this.item = item;
         this.level = level;
-        this.enchants = new HashMap<Enchantment, Integer>(enchants);
+        this.enchants = new HashMap<>(enchants);
         this.enchantmentHint = enchantmentHint;
         this.levelHint = levelHint;
-        this.cancelled = false;
-        this.button = i;
+        this.button = button;
     }
 
     /**
@@ -49,7 +53,7 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      */
     @NotNull
     public Player getEnchanter() {
-        return enchanter;
+        return this.enchanter;
     }
 
     /**
@@ -59,7 +63,7 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      */
     @NotNull
     public Block getEnchantBlock() {
-        return table;
+        return this.table;
     }
 
     /**
@@ -69,19 +73,15 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      */
     @NotNull
     public ItemStack getItem() {
-        return item;
+        return this.item;
     }
 
-    // Paper start
     /**
      * Sets the item to be enchanted
-     *
-     * @param item item
      */
     public void setItem(@NotNull final ItemStack item) {
         this.item = item;
     }
-    // Paper end
 
     /**
      * Gets the cost (minimum level) which is displayed as a number on the right
@@ -90,14 +90,14 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      * @return experience level cost
      */
     public int getExpLevelCost() {
-        return level;
+        return this.level;
     }
 
     /**
      * Sets the cost (minimum level) which is displayed as a number on the right
      * hand side of the enchantment offer.
      *
-     * @param level - cost in levels
+     * @param level cost in levels
      */
     public void setExpLevelCost(int level) {
         Preconditions.checkArgument(level > 0, "The cost must be greater than 0!");
@@ -114,7 +114,7 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      */
     @NotNull
     public Map<Enchantment, Integer> getEnchantsToAdd() {
-        return enchants;
+        return this.enchants;
     }
 
     /**
@@ -125,7 +125,7 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      */
     @NotNull
     public Enchantment getEnchantmentHint() {
-        return enchantmentHint;
+        return this.enchantmentHint;
     }
 
     /**
@@ -135,7 +135,7 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      * @return the level of the hinted enchantment
      */
     public int getLevelHint() {
-        return levelHint;
+        return this.levelHint;
     }
 
     /**
@@ -144,12 +144,12 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      * @return The button index (0, 1, or 2).
      */
     public int whichButton() {
-        return button;
+        return this.button;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
@@ -160,11 +160,11 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

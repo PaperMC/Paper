@@ -12,9 +12,4 @@ public class CraftBlockAttachedEntity extends CraftEntity {
     public BlockAttachedEntity getHandle() {
         return (BlockAttachedEntity) this.entity;
     }
-
-    @Override
-    public String toString() {
-        return "CraftBlockAttachedEntity";
-    }
 }

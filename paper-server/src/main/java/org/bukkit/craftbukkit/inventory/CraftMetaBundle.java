@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.component.BundleContents;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.ItemStack;
@@ -17,31 +18,29 @@ import org.bukkit.inventory.meta.BundleMeta;
 public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
 
     static final ItemMetaKeyType<BundleContents> ITEMS = new ItemMetaKeyType<>(DataComponents.BUNDLE_CONTENTS, "items");
-    //
+
     private List<ItemStack> items;
 
     CraftMetaBundle(CraftMetaItem meta) {
         super(meta);
 
-        if (!(meta instanceof CraftMetaBundle)) {
+        if (!(meta instanceof final CraftMetaBundle bundleMeta)) {
             return;
         }
 
-        CraftMetaBundle bundle = (CraftMetaBundle) meta;
-
-        if (bundle.hasItems()) {
-            this.items = new ArrayList<>(bundle.items);
+        if (bundleMeta.hasItems()) {
+            this.items = new ArrayList<>(bundleMeta.items);
         }
     }
 
-    CraftMetaBundle(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
-        super(tag, extraHandledDcts); // Paper
+    CraftMetaBundle(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaBundle.ITEMS).ifPresent((bundle) -> {
-            bundle.items().forEach((item) -> {
-                ItemStack itemStack = CraftItemStack.asCraftMirror(item);
+        getOrEmpty(patch, CraftMetaBundle.ITEMS).ifPresent((bundleContents) -> {
+            bundleContents.items().forEach((item) -> {
+                ItemStack itemStack = CraftItemStack.asCraftMirror(item.create());
 
-                if (!itemStack.isEmpty()) { // SPIGOT-7174 - Avoid adding air // Paper
+                if (!itemStack.isEmpty()) { // SPIGOT-7174 - Avoid adding air
                     this.addItem(itemStack);
                 }
             });
@@ -54,7 +53,7 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
         Iterable<?> items = SerializableMeta.getObject(Iterable.class, map, CraftMetaBundle.ITEMS.BUKKIT, true);
         if (items != null) {
             for (Object stack : items) {
-                if (stack instanceof ItemStack itemStack && !itemStack.isEmpty()) { // SPIGOT-7174 - Avoid adding air // Paper
+                if (stack instanceof ItemStack itemStack && !itemStack.isEmpty()) { // SPIGOT-7174 - Avoid adding air
                     this.addItem(itemStack);
                 }
             }
@@ -66,10 +65,10 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
         super.applyToItem(tag);
 
         if (this.hasItems()) {
-            List<net.minecraft.world.item.ItemStack> list = new ArrayList<>();
+            List<ItemStackTemplate> list = new ArrayList<>();
 
             for (ItemStack item : this.items) {
-                list.add(CraftItemStack.asNMSCopy(item));
+                list.add(CraftItemStack.asTemplate(item));
             }
 
             tag.put(CraftMetaBundle.ITEMS, new BundleContents(list));
@@ -110,7 +109,7 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
 
     @Override
     public void addItem(ItemStack item) {
-        Preconditions.checkArgument(item != null && !item.isEmpty(), "item is null or empty"); // Paper
+        Preconditions.checkArgument(item != null && !item.isEmpty(), "item is null or empty");
 
         if (this.items == null) {
             this.items = new ArrayList<>();
@@ -124,10 +123,8 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
         if (!super.equalsCommon(meta)) {
             return false;
         }
-        if (meta instanceof CraftMetaBundle) {
-            CraftMetaBundle that = (CraftMetaBundle) meta;
-
-            return (this.hasItems() ? that.hasItems() && this.items.equals(that.items) : !that.hasItems());
+        if (meta instanceof final CraftMetaBundle other) {
+            return (this.hasItems() ? other.hasItems() && this.items.equals(other.items) : !other.hasItems());
         }
         return true;
     }

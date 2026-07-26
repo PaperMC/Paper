@@ -1,24 +1,28 @@
 package org.bukkit.event.vehicle;
 
 import org.bukkit.entity.Vehicle;
+import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Raised when a vehicle collides.
  */
 public abstract class VehicleCollisionEvent extends VehicleEvent {
-    private static final org.bukkit.event.HandlerList HANDLER_LIST = new org.bukkit.event.HandlerList(); // Paper
-    public VehicleCollisionEvent(@NotNull final Vehicle vehicle) {
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    protected VehicleCollisionEvent(@NotNull final Vehicle vehicle) {
         super(vehicle);
     }
-    // Paper start
+
+    @NotNull
     @Override
-    public org.bukkit.event.@org.jetbrains.annotations.NotNull HandlerList getHandlers() {
+    public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    public static org.bukkit.event.@NotNull HandlerList getHandlerList() {
+    @NotNull
+    public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
-    // Paper end
 }

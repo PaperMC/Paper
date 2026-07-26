@@ -18,7 +18,7 @@ public class RegistryEventTypeProviderImpl implements RegistryEventTypeProvider 
     }
 
     @Override
-    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> registryFreeze(final RegistryEventProvider<T, B> type) {
-        return PaperRegistryListenerManager.INSTANCE.getRegistryFreezeEventType(type);
+    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<T, B>> registryCompose(final RegistryEventProvider<T, B> type) {
+        return PaperRegistryListenerManager.INSTANCE.getRegistryComposeEventType(type);
     }
 }

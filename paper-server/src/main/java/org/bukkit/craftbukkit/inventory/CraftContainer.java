@@ -95,6 +95,11 @@ public class CraftContainer extends AbstractContainerMenu {
                 this.title = title;
             }
 
+            @Override
+            public MenuType getMenuType() {
+                return CraftMenuType.minecraftToBukkit(getNotchInventoryType(inventory));
+            }
+
         }, player, id);
     }
 
@@ -106,7 +111,6 @@ public class CraftContainer extends AbstractContainerMenu {
     public static net.minecraft.world.inventory.MenuType getNotchInventoryType(Inventory inventory) {
         final InventoryType type = inventory.getType();
         switch (type) {
-            case PLAYER:
             case CHEST:
             case ENDER_CHEST:
             case BARREL:
@@ -118,7 +122,6 @@ public class CraftContainer extends AbstractContainerMenu {
                     case 27:
                         return net.minecraft.world.inventory.MenuType.GENERIC_9x3;
                     case 36:
-                    case 41: // PLAYER
                         return net.minecraft.world.inventory.MenuType.GENERIC_9x4;
                     case 45:
                         return net.minecraft.world.inventory.MenuType.GENERIC_9x5;

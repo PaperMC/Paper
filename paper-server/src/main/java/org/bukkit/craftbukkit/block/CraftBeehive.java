@@ -16,8 +16,8 @@ import org.bukkit.entity.Bee;
 
 public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> implements Beehive {
 
-    public CraftBeehive(World world, BeehiveBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftBeehive(World world, BeehiveBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftBeehive(CraftBeehive state, Location location) {
@@ -33,7 +33,7 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
     @Override
     public void setFlower(Location location) {
         Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Flower must be in same world");
-        this.getSnapshot().savedFlowerPos = (location == null) ? null : CraftLocation.toBlockPosition(location);
+        this.getSnapshot().savedFlowerPos = (location == null) ? null : CraftLocation.toBlockPos(location);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
 
     @Override
     public boolean isSedated() {
-        return this.isPlaced() && this.getTileEntity().isSedated();
+        return this.isPlaced() && this.getBlockEntity().isSedated();
     }
 
     @Override
@@ -70,7 +70,7 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
         List<Bee> bees = new ArrayList<>();
 
         if (this.isPlaced()) {
-            BeehiveBlockEntity beehive = ((BeehiveBlockEntity) this.getTileEntityFromWorld());
+            BeehiveBlockEntity beehive = ((BeehiveBlockEntity) this.getBlockEntityFromWorld());
             for (Entity bee : beehive.releaseBees(this.getHandle(), BeeReleaseStatus.BEE_RELEASED, true)) {
                 bees.add((Bee) bee.getBukkitEntity());
             }

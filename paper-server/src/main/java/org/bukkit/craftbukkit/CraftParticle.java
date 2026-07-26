@@ -8,11 +8,15 @@ import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.GeyserBaseParticleOptions;
+import net.minecraft.core.particles.GeyserParticleOptions;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.PowerParticleOption;
 import net.minecraft.core.particles.SculkChargeParticleOptions;
 import net.minecraft.core.particles.ShriekParticleOption;
 import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.core.particles.SpellParticleOption;
 import net.minecraft.core.particles.TrailParticleOption;
 import net.minecraft.core.particles.VibrationParticleOption;
 import net.minecraft.core.registries.Registries;
@@ -46,7 +50,7 @@ public abstract class CraftParticle<D> implements Keyed {
         Preconditions.checkArgument(minecraft != null);
 
         net.minecraft.core.Registry<net.minecraft.core.particles.ParticleType<?>> registry = CraftRegistry.getMinecraftRegistry(Registries.PARTICLE_TYPE);
-        Particle bukkit = Registry.PARTICLE_TYPE.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
+        Particle bukkit = Registry.PARTICLE_TYPE.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().identifier()));
 
         Preconditions.checkArgument(bukkit != null);
 
@@ -80,7 +84,7 @@ public abstract class CraftParticle<D> implements Keyed {
 
     public static <T> T convertLegacy(T object) {
         if (object instanceof MaterialData mat) {
-            return (T) CraftBlockData.fromData(CraftMagicNumbers.getBlock(mat));
+            return (T) CraftMagicNumbers.getBlock(mat).asBlockData();
         }
 
         return object;
@@ -130,7 +134,7 @@ public abstract class CraftParticle<D> implements Keyed {
             BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> itemStackFunction = (name, particle) -> new CraftParticle<>(name, particle, ItemStack.class) {
                 @Override
                 public ParticleOptions createParticleParam(ItemStack data) {
-                    return new ItemParticleOption((net.minecraft.core.particles.ParticleType<ItemParticleOption>) this.getHandle(), CraftItemStack.asNMSCopy(data));
+                    return new ItemParticleOption((net.minecraft.core.particles.ParticleType<ItemParticleOption>) this.getHandle(), CraftItemStack.asTemplate(data));
                 }
             };
 
@@ -156,7 +160,7 @@ public abstract class CraftParticle<D> implements Keyed {
                     PositionSource source;
                     if (data.getDestination() instanceof Vibration.Destination.BlockDestination) {
                         Location destination = ((Vibration.Destination.BlockDestination) data.getDestination()).getLocation();
-                        source = new BlockPositionSource(CraftLocation.toBlockPosition(destination));
+                        source = new BlockPositionSource(CraftLocation.toBlockPos(destination));
                     } else if (data.getDestination() instanceof Vibration.Destination.EntityDestination) {
                         Entity destination = ((CraftEntity) ((Vibration.Destination.EntityDestination) data.getDestination()).getEntity()).getHandle();
                         source = new EntityPositionSource(destination, destination.getEyeHeight());
@@ -168,10 +172,17 @@ public abstract class CraftParticle<D> implements Keyed {
                 }
             };
 
-            BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> floatFunction = (name, particle) -> new CraftParticle<>(name, particle, Float.class) {
+            BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> sculkFunction = (name, particle) -> new CraftParticle<>(name, particle, Float.class) {
                 @Override
                 public ParticleOptions createParticleParam(Float data) {
                     return new SculkChargeParticleOptions(data);
+                }
+            };
+
+            BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> powerFunction = (name, particle) -> new CraftParticle<>(name, particle, Float.class) {
+                @Override
+                public ParticleOptions createParticleParam(Float data) {
+                    return PowerParticleOption.create((net.minecraft.core.particles.ParticleType<PowerParticleOption>) particle, data);
                 }
             };
 
@@ -192,7 +203,33 @@ public abstract class CraftParticle<D> implements Keyed {
             BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> trailFunction = (name, particle) -> new CraftParticle<>(name, particle, Particle.Trail.class) {
                 @Override
                 public ParticleOptions createParticleParam(Particle.Trail data) {
-                    return new TrailParticleOption(CraftLocation.toVec3D(data.getTarget()), data.getColor().asRGB(), data.getDuration());
+                    return new TrailParticleOption(CraftLocation.toVec3(data.getTarget()), data.getColor().asRGB(), data.getDuration());
+                }
+            };
+
+            BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> spellFunction = (name, particle) -> new CraftParticle<>(name, particle, Particle.Spell.class) {
+                @Override
+                public ParticleOptions createParticleParam(Particle.Spell data) {
+                    Color color = data.getColor();
+                    float power = data.getPower();
+                    return SpellParticleOption.create((net.minecraft.core.particles.ParticleType<SpellParticleOption>) particle, color.asARGB(), power);
+                }
+            };
+
+            BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> geyser = (name, particle) -> new CraftParticle<>(name, particle, Particle.Geyser.class) {
+                @Override
+                public ParticleOptions createParticleParam(Particle.Geyser data) {
+                    int waterBlocks = data.getWaterBlocks();
+                    return new GeyserParticleOptions((net.minecraft.core.particles.ParticleType<GeyserParticleOptions>) particle, waterBlocks);
+                }
+            };
+
+            BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> geyserBase = (name, particle) -> new CraftParticle<>(name, particle, Particle.GeyserBase.class) {
+                @Override
+                public ParticleOptions createParticleParam(Particle.GeyserBase data) {
+                    int waterBlocks = data.getWaterBlocks();
+                    float burstImpulse = data.getBurstImpulse();
+                    return new GeyserBaseParticleOptions((net.minecraft.core.particles.ParticleType<GeyserBaseParticleOptions>) particle, waterBlocks, burstImpulse);
                 }
             };
 
@@ -202,13 +239,23 @@ public abstract class CraftParticle<D> implements Keyed {
             add("falling_dust", blockDataFunction);
             add("dust_color_transition", dustTransitionFunction);
             add("vibration", vibrationFunction);
-            add("sculk_charge", floatFunction);
+            add("sculk_charge", sculkFunction);
+            add("dragon_breath", powerFunction);
             add("shriek", integerFunction);
             add("block_marker", blockDataFunction);
             add("entity_effect", colorFunction);
+            add("tinted_leaves", colorFunction);
+            add("flash", colorFunction);
             add("dust_pillar", blockDataFunction);
             add("block_crumble", blockDataFunction);
             add("trail", trailFunction);
+            add("effect", spellFunction);
+            add("instant_effect", spellFunction);
+            add("geyser", geyser);
+            add("geyser_plume", geyser);
+            add("geyser", geyser);
+            add("geyser_base", geyserBase);
+            add("geyser_poof", geyserBase);
         }
 
         private static void add(String name, BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> function) {

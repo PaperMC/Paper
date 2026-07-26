@@ -14,11 +14,6 @@ public class CraftShulker extends CraftGolem implements Shulker, CraftEnemy {
     }
 
     @Override
-    public String toString() {
-        return "CraftShulker";
-    }
-
-    @Override
     public net.minecraft.world.entity.monster.Shulker getHandle() {
         return (net.minecraft.world.entity.monster.Shulker) this.entity;
     }

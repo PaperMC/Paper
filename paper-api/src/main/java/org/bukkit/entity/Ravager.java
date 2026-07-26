@@ -3,7 +3,6 @@ package org.bukkit.entity;
 /**
  * Illager beast.
  */
-// Paper start - Missing Entity Behavior
 public interface Ravager extends Raider {
 
     /**
@@ -60,4 +59,3 @@ public interface Ravager extends Raider {
     void setRoarTicks(int ticks);
 
 }
-// Paper end

@@ -8,13 +8,14 @@ import org.jetbrains.annotations.NotNull;
  * Represents events within a world
  */
 public abstract class WorldEvent extends Event {
-    private final World world;
 
-    public WorldEvent(@NotNull final World world) {
+    protected final World world;
+
+    protected WorldEvent(@NotNull final World world) {
         this(world, false);
     }
 
-    public WorldEvent(@NotNull World world, boolean isAsync) {
+    protected WorldEvent(@NotNull World world, boolean isAsync) {
         super(isAsync);
         this.world = world;
     }
@@ -26,6 +27,6 @@ public abstract class WorldEvent extends Event {
      */
     @NotNull
     public World getWorld() {
-        return world;
+        return this.world;
     }
 }

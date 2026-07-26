@@ -1,28 +1,24 @@
 package org.bukkit.craftbukkit.block.sign;
 
-import net.minecraft.network.chat.Component;
+import java.util.List;
+import net.kyori.adventure.text.Component;
 import net.minecraft.world.level.block.entity.SignText;
 import org.bukkit.DyeColor;
 import org.bukkit.block.sign.SignSide;
-import org.bukkit.craftbukkit.block.CraftSign;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class CraftSignSide implements SignSide {
 
     // Lazily initialized only if requested:
-    // Paper start
-    private java.util.ArrayList<net.kyori.adventure.text.Component> originalLines = null; // ArrayList for RandomAccess
-    private java.util.ArrayList<net.kyori.adventure.text.Component> lines = null; // ArrayList for RandomAccess
-    // Paper end
+    private List<Component> originalLines = null; // ArrayList for RandomAccess
+    private List<net.kyori.adventure.text.Component> lines = null; // ArrayList for RandomAccess
     private SignText signText;
 
     public CraftSignSide(SignText signText) {
         this.signText = signText;
     }
 
-    // Paper start
     @Override
     public java.util.@NotNull List<net.kyori.adventure.text.Component> lines() {
         this.loadLines();
@@ -47,35 +43,28 @@ public class CraftSignSide implements SignSide {
             return;
         }
         // Lazy initialization:
-        this.lines = io.papermc.paper.adventure.PaperAdventure.asAdventure(com.google.common.collect.Lists.newArrayList(this.signText.getMessages(false)));
+        this.lines = io.papermc.paper.adventure.PaperAdventure.asAdventure(this.signText.getMessages(false));
         this.originalLines = new java.util.ArrayList<>(this.lines);
     }
-    // Paper end
 
     @NotNull
     @Override
     public String[] getLines() {
-        // Paper start
         this.loadLines();
         return this.lines.stream().map(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection()::serialize).toArray(String[]::new); // Paper
-        // Paper end
     }
 
     @NotNull
     @Override
     public String getLine(int index) throws IndexOutOfBoundsException {
-        // Paper start
         this.loadLines();
         return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.lines.get(index));
-        // Paper end
     }
 
     @Override
     public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException {
-        // Paper start
         this.loadLines();
-        this.lines.set(index, line != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(line) : net.kyori.adventure.text.Component.empty());
-        // Paper end
+        this.lines.set(index, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(line));
     }
 
     @Override
@@ -101,7 +90,6 @@ public class CraftSignSide implements SignSide {
 
     public SignText applyLegacyStringToSignSide() {
         if (this.lines != null) {
-            // Paper start
             for (int i = 0; i < this.lines.size(); ++i) {
                 net.kyori.adventure.text.Component component = this.lines.get(i);
                 net.kyori.adventure.text.Component origComp = this.originalLines.get(i);
@@ -110,7 +98,6 @@ public class CraftSignSide implements SignSide {
                 }
                 this.signText = this.signText.setMessage(i, io.papermc.paper.adventure.PaperAdventure.asVanilla(component));
             }
-            // Paper end
         }
 
         return this.signText;

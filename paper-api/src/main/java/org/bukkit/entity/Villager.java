@@ -1,10 +1,11 @@
 package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import java.util.Locale;
 import java.util.Map; // Paper
 import java.util.UUID; // Paper
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -87,7 +88,6 @@ public interface Villager extends AbstractVillager {
      */
     public void setVillagerExperience(int experience);
 
-    // Paper start
     /**
      * Increases the level of this villager.
      * The villager will also unlock new recipes unlike the raw
@@ -96,13 +96,11 @@ public interface Villager extends AbstractVillager {
      * A villager with a level of 1 and no experience is liable to lose its
      * profession.
      * <p>
-     * A master villager has a level of 5 in its profession and
-     * will unlock 10 trades (2 per level).
+     * A master villager has a level of 5 in its profession.
      *
      * @param amount The amount of level
-     * @return Whether trades are unlocked
-     * @throws IllegalArgumentException if current level plus the amount
-     * isn't between [1, 5] or the amount isn't positive
+     * @return Whether level got increased
+     * @throws IllegalArgumentException if the amount is not positive
      * @see #setVillagerLevel(int)
      */
     boolean increaseLevel(int amount);
@@ -127,7 +125,6 @@ public interface Villager extends AbstractVillager {
      * @param restocksToday new restock count
      */
     public void setRestocksToday(int restocksToday);
-    // Paper end
 
     /**
      * Attempts to make this villager sleep at the given location.
@@ -171,17 +168,25 @@ public interface Villager extends AbstractVillager {
      */
     interface Type extends OldEnum<Type>, Keyed {
 
+        // Start generate - VillagerType
         Type DESERT = getType("desert");
+
         Type JUNGLE = getType("jungle");
+
         Type PLAINS = getType("plains");
+
         Type SAVANNA = getType("savanna");
+
         Type SNOW = getType("snow");
+
         Type SWAMP = getType("swamp");
+
         Type TAIGA = getType("taiga");
+        // End generate - VillagerType
 
         @NotNull
-        private static Type getType(@NotNull String key) {
-            return Registry.VILLAGER_TYPE.getOrThrow(NamespacedKey.minecraft(key));
+        private static Type getType(@NotNull @KeyPattern.Value String key) {
+            return Registry.VILLAGER_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
 
         /**
@@ -192,19 +197,20 @@ public interface Villager extends AbstractVillager {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type valueOf(@NotNull String name) {
-            Type type = Registry.VILLAGER_TYPE.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+            Type type = key == null ? null : Registry.VILLAGER_TYPE.get(key);
             Preconditions.checkArgument(type != null, "No villager type found with the name %s", name);
             return type;
         }
 
         /**
          * @return an array of all known villager types.
-         * @deprecated use {@link Registry#iterator()}.
+         * @deprecated use {@link Registry#stream()}.
          */
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type[] values() {
-            return Lists.newArrayList(Registry.VILLAGER_TYPE).toArray(new Type[0]);
+            return Registry.VILLAGER_TYPE.stream().toArray(Type[]::new);
         }
     }
 
@@ -214,81 +220,97 @@ public interface Villager extends AbstractVillager {
      */
     interface Profession extends OldEnum<Profession>, Keyed, net.kyori.adventure.translation.Translatable {
 
-        Profession NONE = getProfession("none");
+        // Start generate - VillagerProfession
         /**
          * Armorer profession. Wears a black apron. Armorers primarily trade for
          * iron armor, chainmail armor, and sometimes diamond armor.
          */
         Profession ARMORER = getProfession("armorer");
+
         /**
          * Butcher profession. Wears a white apron. Butchers primarily trade for
          * raw and cooked food.
          */
         Profession BUTCHER = getProfession("butcher");
+
         /**
          * Cartographer profession. Wears a white robe. Cartographers primarily
          * trade for explorer maps and some paper.
          */
         Profession CARTOGRAPHER = getProfession("cartographer");
+
         /**
          * Cleric profession. Wears a purple robe. Clerics primarily trade for
          * rotten flesh, gold ingot, redstone, lapis, ender pearl, glowstone,
          * and bottle o' enchanting.
          */
         Profession CLERIC = getProfession("cleric");
+
         /**
          * Farmer profession. Wears a brown robe. Farmers primarily trade for
          * food-related items.
          */
         Profession FARMER = getProfession("farmer");
+
         /**
          * Fisherman profession. Wears a brown robe. Fisherman primarily trade
          * for fish, as well as possibly selling string and/or coal.
          */
         Profession FISHERMAN = getProfession("fisherman");
+
         /**
          * Fletcher profession. Wears a brown robe. Fletchers primarily trade
          * for string, bows, and arrows.
          */
         Profession FLETCHER = getProfession("fletcher");
+
         /**
          * Leatherworker profession. Wears a white apron. Leatherworkers
          * primarily trade for leather, and leather armor, as well as saddles.
          */
         Profession LEATHERWORKER = getProfession("leatherworker");
+
         /**
          * Librarian profession. Wears a white robe. Librarians primarily trade
          * for paper, books, and enchanted books.
          */
         Profession LIBRARIAN = getProfession("librarian");
+
         /**
          * Mason profession.
          */
         Profession MASON = getProfession("mason");
+
         /**
          * Nitwit profession. Wears a green apron, cannot trade. Nitwit
          * villagers do not do anything. They do not have any trades by default.
          */
         Profession NITWIT = getProfession("nitwit");
+
+        Profession NONE = getProfession("none");
+
         /**
          * Shepherd profession. Wears a brown robe. Shepherds primarily trade for
          * wool items, and shears.
          */
         Profession SHEPHERD = getProfession("shepherd");
+
         /**
          * Toolsmith profession. Wears a black apron. Tool smiths primarily
          * trade for iron and diamond tools.
          */
         Profession TOOLSMITH = getProfession("toolsmith");
+
         /**
          * Weaponsmith profession. Wears a black apron. Weapon smiths primarily
          * trade for iron and diamond weapons, sometimes enchanted.
          */
         Profession WEAPONSMITH = getProfession("weaponsmith");
+        // End generate - VillagerProfession
 
         @NotNull
-        private static Profession getProfession(@NotNull String key) {
-            return Registry.VILLAGER_PROFESSION.getOrThrow(NamespacedKey.minecraft(key));
+        private static Profession getProfession(@NotNull @KeyPattern.Value String key) {
+            return Registry.VILLAGER_PROFESSION.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
 
         /**
@@ -299,19 +321,20 @@ public interface Villager extends AbstractVillager {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Profession valueOf(@NotNull String name) {
-            Profession profession = Registry.VILLAGER_PROFESSION.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+            Profession profession = key == null ? null : Registry.VILLAGER_PROFESSION.get(key);
             Preconditions.checkArgument(profession != null, "No villager profession found with the name %s", name);
             return profession;
         }
 
         /**
          * @return an array of all known villager professions.
-         * @deprecated use {@link Registry#iterator()}.
+         * @deprecated use {@link Registry#stream()}.
          */
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Profession[] values() {
-            return Lists.newArrayList(Registry.VILLAGER_PROFESSION).toArray(new Profession[0]);
+            return Registry.VILLAGER_PROFESSION.stream().toArray(Profession[]::new);
         }
 
         // Paper start
@@ -322,7 +345,6 @@ public interface Villager extends AbstractVillager {
         // Paper end
     }
 
-    // Paper start - Add villager reputation API
     /**
      * Get the {@link com.destroystokyo.paper.entity.villager.Reputation reputation}
      * for a specific player by {@link UUID}.
@@ -366,5 +388,21 @@ public interface Villager extends AbstractVillager {
      * reputation regardless of its impact and the player associated.
      */
     public void clearReputations();
-    // Paper end
+
+    /**
+     * Updates the demand for Villager offers.
+     * Demand can rise and fall based on how often offers are traded.
+     * They can fall when an item is not traded for a while, or rise when the item is resupplied next.
+     * Demand is used to calculate the price of items in the Villager's offers.
+     * <br>
+     * <b>Note: Demand is stored per item and not per Villager.</b>
+     */
+    public void updateDemand();
+
+    /**
+     * Resets uses of all offers for the Villager. This also internally calls {@link #updateDemand()}.
+     * Calling this will trigger a {@link org.bukkit.event.entity.VillagerReplenishTradeEvent} for each offer that is restocked.
+     * Demand is still updated even if all events are canceled.
+     */
+    public void restock();
 }

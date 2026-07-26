@@ -1,18 +1,15 @@
 package org.bukkit.craftbukkit.legacy;
 
 import java.util.function.BiFunction;
-import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
-import org.bukkit.Registry;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.banner.PatternType;
-import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.legacy.fieldrename.FieldRenameData;
 import org.bukkit.craftbukkit.legacy.reroute.DoNotReroute;
 import org.bukkit.craftbukkit.legacy.reroute.InjectPluginVersion;
-import org.bukkit.craftbukkit.legacy.reroute.RequireCompatibility;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodName;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteStatic;
 import org.bukkit.craftbukkit.util.ApiVersion;
@@ -48,6 +45,9 @@ public class FieldRename {
             case "org/bukkit/attribute/Attribute" -> FieldRename.convertAttributeName(apiVersion, from).replace('.', '_');
             case "org/bukkit/map/MapCursor$Type" -> FieldRename.convertMapCursorTypeName(apiVersion, from);
             case "org/bukkit/inventory/ItemFlag" -> FieldRename.convertItemFlagName(apiVersion, from);
+            case "org/bukkit/Sound" -> FieldRename.convertSoundName(apiVersion, from);
+            case "org/bukkit/inventory/ItemType" -> FieldRename.convertItemTypeName(apiVersion, from);
+            case "org/bukkit/block/BlockType" -> FieldRename.convertBlockTypeName(apiVersion, from);
             default -> from;
         };
     }
@@ -61,7 +61,6 @@ public class FieldRename {
     //}
     // Paper end
 
-    // Paper start - DisplaySlot
     @DoNotReroute
     public static String convertDisplaySlot(final String from) {
         if (from.startsWith("SIDEBAR_") && !from.startsWith("SIDEBAR_TEAM_")) {
@@ -69,7 +68,6 @@ public class FieldRename {
         }
         return from;
     }
-    // Paper end - DisplaySlot
 
     // PatternType
     private static final FieldRenameData PATTERN_TYPE_DATA = FieldRenameData.Builder.newBuilder()
@@ -175,7 +173,7 @@ public class FieldRename {
             .change("DROPPED_ITEM", "ITEM")
             .change("LEASH_HITCH", "LEASH_KNOT")
             .change("ENDER_SIGNAL", "EYE_OF_ENDER")
-            .change("SPLASH_POTION", "POTION")
+            .change("POTION", "SPLASH_POTION")
             .change("THROWN_EXP_BOTTLE", "EXPERIENCE_BOTTLE")
             .change("PRIMED_TNT", "TNT")
             .change("FIREWORK", "FIREWORK_ROCKET")
@@ -453,6 +451,7 @@ public class FieldRename {
     private static final FieldRenameData ITEM_FLAG_DATA = FieldRenameData.Builder.newBuilder()
             .forAllVersions()
             .change("HIDE_POTION_EFFECTS", "HIDE_ADDITIONAL_TOOLTIP")
+            .change("HIDE_ITEM_SPECIFICS", "HIDE_ADDITIONAL_TOOLTIP")
             .build();
 
     @DoNotReroute
@@ -465,5 +464,42 @@ public class FieldRename {
     public static ItemFlag valueOf_ItemFlag(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
         return ItemFlag.valueOf(FieldRename.convertItemFlagName(ApiVersion.CURRENT, name));
+    }
+
+    // Sound
+    private static final FieldRenameData SOUND_DATA = FieldRenameData.Builder.newBuilder()
+        .forAllVersions()
+        .change("ENTITY_LEASH_KNOT_PLACE", "ITEM_LEAD_TIED")
+        .change("ENTITY_LEASH_KNOT_BREAK", "ITEM_LEAD_BREAK")
+        .build();
+
+    @DoNotReroute
+    public static String convertSoundName(ApiVersion version, String from) {
+        return FieldRename.SOUND_DATA.getReplacement(version, from);
+    }
+
+    @RerouteMethodName("valueOf")
+    @RerouteStatic("org/bukkit/Sound")
+    public static Sound valueOf_Sound(String name) {
+        return Sound.valueOf(FieldRename.convertSoundName(ApiVersion.CURRENT, name));
+    }
+
+    // ItemType
+    private static final FieldRenameData ITEM_TYPE_DATA = FieldRenameData.Builder.newBuilder()
+        .forAllVersions()
+        .change("CHAIN", "IRON_CHAIN")
+        .build();
+
+    @DoNotReroute
+    public static String convertItemTypeName(ApiVersion version, String from) {
+        return FieldRename.ITEM_TYPE_DATA.getReplacement(version, from);
+    }
+
+    // BlockType
+    private static final FieldRenameData BLOCK_TYPE_DATA = ITEM_TYPE_DATA;
+
+    @DoNotReroute
+    public static String convertBlockTypeName(ApiVersion version, String from) {
+        return FieldRename.BLOCK_TYPE_DATA.getReplacement(version, from);
     }
 }

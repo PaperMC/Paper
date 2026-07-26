@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Ghast;
 
-public class CraftGhast extends CraftFlying implements Ghast, CraftEnemy {
+public class CraftGhast extends CraftMob implements Ghast, CraftEnemy {
 
     public CraftGhast(CraftServer server, net.minecraft.world.entity.monster.Ghast entity) {
         super(server, entity);
@@ -12,11 +12,6 @@ public class CraftGhast extends CraftFlying implements Ghast, CraftEnemy {
     @Override
     public net.minecraft.world.entity.monster.Ghast getHandle() {
         return (net.minecraft.world.entity.monster.Ghast) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftGhast";
     }
 
     @Override
@@ -29,7 +24,6 @@ public class CraftGhast extends CraftFlying implements Ghast, CraftEnemy {
         this.getHandle().setCharging(flag);
     }
 
-    // Paper start
     @Override
     public int getExplosionPower() {
         return this.getHandle().getExplosionPower();
@@ -40,5 +34,4 @@ public class CraftGhast extends CraftFlying implements Ghast, CraftEnemy {
         com.google.common.base.Preconditions.checkArgument(explosionPower >= 0 && explosionPower <= 127, "The explosion power has to be between 0 and 127");
         this.getHandle().setExplosionPower(explosionPower);
     }
-    // Paper end
 }

@@ -3,6 +3,7 @@ package org.bukkit.event.block;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -17,14 +18,17 @@ import org.jetbrains.annotations.NotNull;
  * <li>Fire spreading.
  * </ul>
  * <p>
- * If a Block Spread event is cancelled, the block will not spread.
+ * If this event is cancelled, the block will not spread.
  *
  * @see BlockFormEvent
  */
 public class BlockSpreadEvent extends BlockFormEvent {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Block source;
 
+    @ApiStatus.Internal
     public BlockSpreadEvent(@NotNull final Block block, @NotNull final Block source, @NotNull final BlockState newState) {
         super(block, newState);
         this.source = source;
@@ -37,17 +41,17 @@ public class BlockSpreadEvent extends BlockFormEvent {
      */
     @NotNull
     public Block getSource() {
-        return source;
+        return this.source;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

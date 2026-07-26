@@ -1,10 +1,12 @@
 package org.bukkit.event.block;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.Instrument;
 import org.bukkit.Note;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -13,25 +15,18 @@ import org.jetbrains.annotations.NotNull;
  */
 public class NotePlayEvent extends BlockEvent implements Cancellable {
 
-    private static HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private Instrument instrument;
     private Note note;
-    private boolean cancelled = false;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public NotePlayEvent(@NotNull Block block, @NotNull Instrument instrument, @NotNull Note note) {
         super(block);
         this.instrument = instrument;
         this.note = note;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
     }
 
     /**
@@ -41,7 +36,7 @@ public class NotePlayEvent extends BlockEvent implements Cancellable {
      */
     @NotNull
     public Instrument getInstrument() {
-        return instrument;
+        return this.instrument;
     }
 
     /**
@@ -51,7 +46,7 @@ public class NotePlayEvent extends BlockEvent implements Cancellable {
      */
     @NotNull
     public Note getNote() {
-        return note;
+        return this.note;
     }
 
     /**
@@ -61,33 +56,41 @@ public class NotePlayEvent extends BlockEvent implements Cancellable {
      * For this specific case the 'note_block_sound' property of the
      * player head state takes the priority.
      *
-     * @param instrument the Instrument. Has no effect if null.
+     * @param instrument the Instrument.
      */
     public void setInstrument(@NotNull Instrument instrument) {
-        if (instrument != null) {
-            this.instrument = instrument;
-        }
+        Preconditions.checkArgument(instrument != null, "instrument cannot be null");
+        this.instrument = instrument;
     }
 
     /**
      * Overrides the {@link Note} to be played.
      *
-     * @param note the Note. Has no effect if null.
+     * @param note the Note.
      */
     public void setNote(@NotNull Note note) {
-        if (note != null) {
-            this.note = note;
-        }
+        Preconditions.checkArgument(note != null, "note cannot be null");
+        this.note = note;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

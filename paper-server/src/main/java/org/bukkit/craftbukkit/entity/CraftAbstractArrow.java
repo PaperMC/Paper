@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import net.minecraft.core.BlockPos;
+import java.util.List;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.BlockCollisions;
@@ -14,12 +14,17 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.inventory.ItemStack;
-import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
-public class CraftAbstractArrow extends AbstractProjectile implements AbstractArrow {
+public abstract class CraftAbstractArrow extends AbstractProjectile implements AbstractArrow {
 
-    public CraftAbstractArrow(CraftServer server, net.minecraft.world.entity.projectile.AbstractArrow entity) {
+    public CraftAbstractArrow(CraftServer server, net.minecraft.world.entity.projectile.arrow.AbstractArrow entity) {
         super(server, entity);
+    }
+
+    @Override
+    public net.minecraft.world.entity.projectile.arrow.AbstractArrow getHandle() {
+        return (net.minecraft.world.entity.projectile.arrow.AbstractArrow) this.entity;
     }
 
     @Override
@@ -32,8 +37,18 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
     }
 
     @Override
+    public ItemStack getItem() {
+        return this.getItemStack();
+    }
+
+    @Override
+    public void setItem(@NotNull ItemStack item) {
+        this.setItemStack(item);
+    }
+
+    @Override
     public double getDamage() {
-        return this.getHandle().getBaseDamage();
+        return this.getHandle().baseDamage;
     }
 
     @Override
@@ -64,7 +79,10 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
         this.getHandle().setCritArrow(critical);
     }
 
-    // Paper - moved to AbstractProjectile
+    @Override
+    public boolean isOnGround() {
+        return this.getHandle().isInGround();
+    }
 
     @Override
     public boolean isInBlock() {
@@ -93,7 +111,7 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
     @Override
     public void setPickupStatus(PickupStatus status) {
         Preconditions.checkArgument(status != null, "PickupStatus cannot be null");
-        this.getHandle().pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.byOrdinal(status.ordinal());
+        this.getHandle().pickup = net.minecraft.world.entity.projectile.arrow.AbstractArrow.Pickup.byOrdinal(status.ordinal());
     }
 
     @Override
@@ -116,18 +134,6 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
     }
 
     @Override
-    public ItemStack getItem() {
-        return CraftItemStack.asBukkitCopy(this.getHandle().pickupItemStack);
-    }
-
-    @Override
-    public void setItem(ItemStack item) {
-        Preconditions.checkArgument(item != null, "ItemStack cannot be null");
-
-        this.getHandle().pickupItemStack = CraftItemStack.asNMSCopy(item);
-    }
-
-    @Override
     public ItemStack getWeapon() {
         if (this.getHandle().getWeaponItem() == null) return null; // Paper - fix NPE
         return CraftItemStack.asBukkitCopy(this.getHandle().getWeaponItem());
@@ -140,16 +146,6 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
         this.getHandle().firedFromWeapon = CraftItemStack.asNMSCopy(item);
     }
 
-    @Override
-    public net.minecraft.world.entity.projectile.AbstractArrow getHandle() {
-        return (net.minecraft.world.entity.projectile.AbstractArrow) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftAbstractArrow";
-    }
-
     // Paper start
     @Override
     public CraftItemStack getItemStack() {
@@ -159,7 +155,7 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
     @Override
     public void setItemStack(final ItemStack stack) {
         Preconditions.checkArgument(stack != null, "ItemStack cannot be null");
-        this.getHandle().setPickupItemStackPublic(CraftItemStack.asNMSCopy(stack));
+        this.getHandle().setPickupItemStack(CraftItemStack.asNMSCopy(stack));
     }
 
     @Override
@@ -174,12 +170,18 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
 
     @Override
     public org.bukkit.Sound getHitSound() {
-        return org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(this.getHandle().soundEvent);
+        return org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(this.getHandle().getHitGroundSoundEvent());
     }
 
     @Override
     public void setHitSound(org.bukkit.Sound sound) {
         this.getHandle().setSoundEvent(org.bukkit.craftbukkit.CraftSound.bukkitToMinecraft(sound));
+    }
+
+    // Override to ensure the entity data flag is set; otherwise, the isNoPhysics() method always returns false
+    @Override
+    public void setNoPhysics(final boolean noPhysics) {
+        this.getHandle().setNoPhysics(noPhysics);
     }
     // Paper end
 

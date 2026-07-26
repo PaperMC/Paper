@@ -64,9 +64,9 @@ public interface PiglinAbstract extends Monster, Ageable {
     /**
      * Sets whether the piglin is a baby
      *
-     * @param flag Whether the piglin is a baby
+     * @param baby Whether the piglin is a baby
      * @deprecated see {@link Ageable#setBaby()} and {@link Ageable#setAdult()}
      */
     @Deprecated(since = "1.16.2")
-    public void setBaby(boolean flag);
+    public void setBaby(boolean baby);
 }

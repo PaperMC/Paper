@@ -45,7 +45,7 @@ public interface TNTPrimed extends Explosive {
      *
      * The source is the entity responsible for the creation of this primed TNT.
      * <p>
-     * Must be instance of {@link org.bukkit.entity.LivingEntity} otherwise will
+     * Must be an instance of {@link org.bukkit.entity.LivingEntity} otherwise will
      * be set to null. The parameter is typed {@link
      * org.bukkit.entity.Entity} to be consistent with {@link
      * org.bukkit.entity.TNTPrimed#getSource()} method.
@@ -65,7 +65,6 @@ public interface TNTPrimed extends Explosive {
         return this.getOrigin();
     }
 
-    // Paper start
     /**
      * Sets the visual block data of this
      * primed tnt.
@@ -85,5 +84,4 @@ public interface TNTPrimed extends Explosive {
      */
     @org.jetbrains.annotations.NotNull
     org.bukkit.block.data.BlockData getBlockData();
-    // Paper end
 }

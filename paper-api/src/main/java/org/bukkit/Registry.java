@@ -5,6 +5,7 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
@@ -122,7 +123,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see BlockType
      */
-    @ApiStatus.Experimental
     Registry<BlockType> BLOCK = registryFor(RegistryKey.BLOCK);
     /**
      * Custom boss bars.
@@ -148,8 +148,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Server cat types.
      *
      * @see Cat.Type
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#CAT_VARIANT}
      */
-    Registry<Cat.Type> CAT_VARIANT = registryFor(RegistryKey.CAT_VARIANT);
+    @Deprecated(since = "1.21.5")
+    Registry<Cat.Type> CAT_VARIANT = legacyRegistryFor(Cat.Type.class);
     /**
      * Server enchantments.
      *
@@ -177,7 +179,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see ItemType
      */
-    @ApiStatus.Experimental
     Registry<ItemType> ITEM = registryFor(RegistryKey.ITEM);
     /**
      * Default server loot tables.
@@ -281,6 +282,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     Registry<Villager.Profession> VILLAGER_PROFESSION = registryFor(RegistryKey.VILLAGER_PROFESSION);
     /**
+     * Point of interest types.
+     *
+     * @see PoiType
+     */
+    Registry<PoiType> POINT_OF_INTEREST_TYPE = registryFor(RegistryKey.POINT_OF_INTEREST_TYPE);
+    /**
      * Villager type.
      *
      * @see Villager.Type
@@ -291,10 +298,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see MemoryKey
      */
-    Registry<MemoryKey> MEMORY_MODULE_TYPE = new NotARegistry<>() {
+    Registry<MemoryKey<?>> MEMORY_MODULE_TYPE = new NotARegistry<>() {
 
         @Override
-        public Iterator iterator() {
+        public Iterator<MemoryKey<?>> iterator() {
             return MemoryKey.values().iterator();
         }
 
@@ -304,7 +311,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
 
         @Override
-        public @Nullable MemoryKey get(final NamespacedKey key) {
+        public @Nullable MemoryKey<?> get(final NamespacedKey key) {
             return MemoryKey.getByKey(key);
         }
     };
@@ -318,8 +325,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Frog variants.
      *
      * @see Frog.Variant
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#FROG_VARIANT}
      */
-    Registry<Frog.Variant> FROG_VARIANT = registryFor(RegistryKey.FROG_VARIANT);
+    @Deprecated(since = "1.21.5")
+    Registry<Frog.Variant> FROG_VARIANT = legacyRegistryFor(Frog.Variant.class);
     /**
      * Wolf variants.
      *
@@ -346,7 +355,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see DataComponentType
      */
-    Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE); // Paper
+    Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE);
+    /**
+     * Game rules.
+     *
+     * @see GameRule
+     */
+    Registry<GameRule<?>> GAME_RULE = registryFor(RegistryKey.GAME_RULE);
 
     //<editor-fold desc="renames" defaultstate="collapsed">
     /**
@@ -476,7 +491,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws UnsupportedOperationException if this registry doesn't have or support tags
      * @see #getTag(TagKey)
      */
-    @ApiStatus.Experimental
     boolean hasTag(TagKey<T> key);
 
     /**
@@ -487,9 +501,26 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws NoSuchElementException if no tag with the given key is found
      * @throws UnsupportedOperationException    if this registry doesn't have or support tags
      * @see #hasTag(TagKey)
+     * @see #getTagValues(TagKey)
      */
     @ApiStatus.Experimental
     Tag<T> getTag(TagKey<T> key);
+
+    /**
+     * Gets the named registry set (tag) for the given key and resolves it with this registry.
+     *
+     * @param key the key to get the tag for
+     * @return the resolved values
+     * @throws NoSuchElementException        if no tag with the given key is found
+     * @throws UnsupportedOperationException if this registry doesn't have or support tags
+     * @see #getTag(TagKey)
+     * @see Tag#resolve(Registry)
+     */
+    @ApiStatus.Experimental
+    default Collection<T> getTagValues(final TagKey<T> key) {
+        Tag<T> tag = this.getTag(key);
+        return tag.resolve(this);
+    }
 
     /**
      * Gets all the tags in this registry.
@@ -522,6 +553,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     Stream<T> stream();
 
     /**
+     * Returns a new stream, which contains all registry keys, which are registered to the registry.
+     *
+     * @return a stream of all registry keys
+     */
+    Stream<NamespacedKey> keyStream();
+
+    /**
      * Attempts to match the registered object with the given key.
      * <p>
      * This will attempt to find a reasonable match based on the provided input
@@ -532,7 +570,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @deprecated this method's behavior is broken and not useful. If you want to get an object
      * based on its vanilla name, or a key, wrap it in a {@link NamespacedKey} object and use {@link #get(NamespacedKey)}
      */
-    // Paper
     @Deprecated(forRemoval = true)
     default @Nullable T match(final String input) {
         Preconditions.checkArgument(input != null, "input must not be null");
@@ -549,6 +586,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     int size();
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     class SimpleRegistry<T extends Enum<T> & Keyed> extends NotARegistry<T> { // Paper - remove final
 
@@ -587,6 +627,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
             return this.map.values().iterator();
         }
 
+        @Override
+        public Stream<NamespacedKey> keyStream() {
+            return this.map.keySet().stream();
+        }
+
         @ApiStatus.Internal
         @Deprecated(since = "1.20.6", forRemoval = true)
         public Class<T> getType() {
@@ -594,12 +639,20 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     abstract class NotARegistry<A extends Keyed> implements Registry<A> {
 
         @Override
         public Stream<A> stream() {
             return StreamSupport.stream(this.spliterator(), false);
+        }
+
+        @Override
+        public Stream<NamespacedKey> keyStream() {
+            return stream().map(this::getKey);
         }
 
         @Override

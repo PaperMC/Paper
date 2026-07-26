@@ -7,8 +7,14 @@ import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Player;
 
 public class CraftLightningStrike extends CraftEntity implements LightningStrike {
+
     public CraftLightningStrike(final CraftServer server, final LightningBolt entity) {
         super(server, entity);
+    }
+
+    @Override
+    public LightningBolt getHandle() {
+        return (LightningBolt) this.entity;
     }
 
     @Override
@@ -41,22 +47,11 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
         this.getHandle().setCause((player != null) ? ((CraftPlayer) player).getHandle() : null);
     }
 
-    @Override
-    public LightningBolt getHandle() {
-        return (LightningBolt) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftLightningStrike";
-    }
-
     // Spigot start
     private final LightningStrike.Spigot spigot = new LightningStrike.Spigot() {
 
         @Override
-        public boolean isSilent()
-        {
+        public boolean isSilent() {
             return false;
         }
     };
@@ -67,7 +62,6 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
     }
     // Spigot end
 
-    // Paper start
     @Override
     public int getFlashCount() {
         return getHandle().flashes;
@@ -84,5 +78,4 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
         final var cause = this.getHandle().getCause();
         return cause == null ? null : cause.getBukkitEntity();
     }
-    // Paper end
 }

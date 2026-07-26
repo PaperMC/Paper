@@ -1,0 +1,56 @@
+--- a/net/minecraft/world/entity/animal/panda/Panda.java
++++ b/net/minecraft/world/entity/animal/panda/Panda.java
+@@ -134,6 +_,7 @@
+     }
+ 
+     public void sit(final boolean value) {
++        if (!new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), value).callEvent()) return; // Paper - Add EntityToggleSitEvent
+         this.setFlag(FLAG_SIT, value);
+     }
+ 
+@@ -518,7 +_,9 @@
+ 
+         for (Panda panda : level.getEntitiesOfClass(Panda.class, this.getBoundingBox().inflate(10.0))) {
+             if (!panda.isBaby() && panda.onGround() && !panda.isInWater() && panda.canPerformAction()) {
++                if (new com.destroystokyo.paper.event.entity.EntityJumpEvent(getBukkitLivingEntity()).callEvent()) { // Paper - Entity Jump API
+                 panda.jumpFromGround();
++                } else { this.setJumping(false); } // Paper - Entity Jump API; setJumping(false) stops a potential loop
+             }
+         }
+ 
+@@ -529,13 +_,13 @@
+ 
+     @Override
+     protected void pickUpItem(final ServerLevel level, final ItemEntity entity) {
+-        if (this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() && canPickUpAndEat(entity)) {
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entity, 0, !(this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() && Panda.canPickUpAndEat(entity))).isCancelled()) { // CraftBukkit
+             this.onItemPickup(entity);
+             ItemStack itemStack = entity.getItem();
+             this.setItemSlot(EquipmentSlot.MAINHAND, itemStack);
+             this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+             this.take(entity, itemStack.getCount());
+-            entity.discard();
++            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+         }
+     }
+ 
+@@ -634,8 +_,9 @@
+                 }
+ 
+                 if (!this.level().isClientSide() && this.getAge() == 0 && this.canFallInLove()) {
++                    final ItemStack breedCopy = interactionItemStack.copy(); // Paper - Fix EntityBreedEvent copying
+                     this.usePlayerItem(player, hand, interactionItemStack);
+-                    this.setInLove(player);
++                    this.setInLove(player, breedCopy); // Paper - Fix EntityBreedEvent copying
+                 } else {
+                     if (!(this.level() instanceof ServerLevel level) || this.isSitting() || this.isInWater()) {
+                         return InteractionResult.PASS;
+@@ -869,7 +_,7 @@
+         @Override
+         protected void alertOther(final Mob other, final LivingEntity hurtByMob) {
+             if (other instanceof Panda && other.isAggressive()) {
+-                other.setTarget(hurtByMob);
++                other.setTarget(hurtByMob, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY); // CraftBukkit
+             }
+         }
+     }

@@ -19,7 +19,7 @@ public record PaperSeededContainerLoot(
 
     @Override
     public Key lootTable() {
-        return CraftNamespacedKey.fromMinecraft(this.impl.lootTable().location());
+        return CraftNamespacedKey.fromMinecraft(this.impl.lootTable().identifier());
     }
 
     @Override

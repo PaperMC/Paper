@@ -2,11 +2,10 @@ package org.bukkit.craftbukkit.block;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
-import net.minecraft.advancements.critereon.ItemPredicate;
-import net.minecraft.advancements.critereon.MinMaxBounds;
-import net.minecraft.core.component.DataComponentPredicate;
+import net.minecraft.advancements.predicates.DataComponentMatchers;
+import net.minecraft.advancements.predicates.ItemPredicate;
+import net.minecraft.core.component.DataComponentExactPredicate;
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.LockCode;
@@ -26,8 +25,8 @@ import org.bukkit.potion.PotionEffectType;
 
 public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implements Beacon {
 
-    public CraftBeacon(World world, BeaconBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftBeacon(World world, BeaconBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftBeacon(CraftBeacon state, Location location) {
@@ -38,12 +37,12 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
     public Collection<LivingEntity> getEntitiesInRange() {
         this.ensureNoWorldGeneration();
 
-        BlockEntity tileEntity = this.getTileEntityFromWorld();
-        if (tileEntity instanceof BeaconBlockEntity) {
-            BeaconBlockEntity beacon = (BeaconBlockEntity) tileEntity;
+        BlockEntity blockEntity = this.getBlockEntityFromWorld();
+        if (blockEntity instanceof BeaconBlockEntity) {
+            BeaconBlockEntity beacon = (BeaconBlockEntity) blockEntity;
 
             Collection<Player> nms = BeaconBlockEntity.getHumansInRange(beacon.getLevel(), beacon.getBlockPos(), beacon.levels, beacon); // Paper - Custom beacon ranges
-            Collection<LivingEntity> bukkit = new ArrayList<LivingEntity>(nms.size());
+            Collection<LivingEntity> bukkit = new ArrayList<>(nms.size());
 
             for (Player human : nms) {
                 bukkit.add(human.getBukkitEntity());
@@ -53,7 +52,7 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
         }
 
         // block is no longer a beacon
-        return new ArrayList<LivingEntity>();
+        return new ArrayList<>();
     }
 
     @Override
@@ -81,23 +80,21 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
         this.getSnapshot().secondaryPower = (effect != null) ? CraftPotionEffectType.bukkitToMinecraftHolder(effect) : null;
     }
 
-    // Paper start
     @Override
     public net.kyori.adventure.text.Component customName() {
-        final BeaconBlockEntity be = this.getSnapshot();
-        return be.name != null ? io.papermc.paper.adventure.PaperAdventure.asAdventure(be.name) : null;
+        final BeaconBlockEntity beacon = this.getSnapshot();
+        return beacon.getCustomName() != null ? io.papermc.paper.adventure.PaperAdventure.asAdventure(beacon.getCustomName()) : null;
     }
 
     @Override
     public void customName(final net.kyori.adventure.text.Component customName) {
         this.getSnapshot().setCustomName(customName != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(customName) : null);
     }
-    // Paper end
 
     @Override
     public String getCustomName() {
         BeaconBlockEntity beacon = this.getSnapshot();
-        return beacon.name != null ? CraftChatMessage.fromComponent(beacon.name) : null;
+        return beacon.getCustomName() != null ? CraftChatMessage.fromComponent(beacon.getCustomName()) : null;
     }
 
     @Override
@@ -112,18 +109,22 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
 
     @Override
     public String getLock() {
-        Optional<? extends Component> customName = this.getSnapshot().lockKey.predicate().components().asPatch().get(DataComponents.CUSTOM_NAME);
-
-        return (customName != null) ? customName.map(CraftChatMessage::fromComponent).orElse("") : "";
+        Component customName = this.getSnapshot().lockKey.predicate().components().exact().asPatch().get(DataComponentMap.EMPTY, DataComponents.CUSTOM_NAME);
+        return (customName != null) ? CraftChatMessage.fromComponent(customName) : "";
     }
 
     @Override
     public void setLock(String key) {
-        if (key == null) {
+        if (key == null || key.isEmpty()) {
             this.getSnapshot().lockKey = LockCode.NO_LOCK;
         } else {
-            DataComponentPredicate predicate = DataComponentPredicate.builder().expect(DataComponents.CUSTOM_NAME, CraftChatMessage.fromStringOrNull(key)).build();
-            this.getSnapshot().lockKey = new LockCode(new ItemPredicate(Optional.empty(), MinMaxBounds.Ints.ANY, predicate, Collections.emptyMap()));
+            this.getSnapshot().lockKey = new LockCode(ItemPredicate.Builder.item().withComponents(
+                DataComponentMatchers.Builder.components().exact(
+                    DataComponentExactPredicate.builder().expect(
+                        DataComponents.CUSTOM_NAME, CraftChatMessage.fromString(key)[0]
+                    ).build()
+                ).build()
+            ).build());
         }
     }
 

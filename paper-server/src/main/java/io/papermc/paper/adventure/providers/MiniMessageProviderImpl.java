@@ -10,7 +10,7 @@ public class MiniMessageProviderImpl implements MiniMessage.Provider {
 
     @Override
     public @NotNull MiniMessage miniMessage() {
-        return MiniMessage.builder().build();
+        return MiniMessage.builder().emitVirtuals(false).build();
     }
 
     @Override

@@ -1,6 +1,9 @@
 package io.papermc.paper.plugin.configuration;
 
 import java.util.List;
+import java.util.Locale;
+import net.kyori.adventure.key.KeyPattern;
+import net.kyori.adventure.key.Namespaced;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginLoadOrder;
@@ -12,10 +15,9 @@ import org.jspecify.annotations.Nullable;
 /**
  * This class acts as an abstraction for a plugin configuration.
  */
-@ApiStatus.Experimental // Subject to change!
 @NullMarked
 @ApiStatus.NonExtendable
-public interface PluginMeta {
+public interface PluginMeta extends Namespaced {
 
     /**
      * Provides the name of the plugin. This name uniquely identifies the plugin amongst all loaded plugins on the
@@ -161,7 +163,6 @@ public interface PluginMeta {
      *
      * @return an immutable list of permissions
      */
-    // TODO: Do we even want this? Why not just use the bootstrapper
     List<Permission> getPermissions();
 
     /**
@@ -170,7 +171,6 @@ public interface PluginMeta {
      * @return the bukkit permission default container.
      * @see #getPermissions()
      */
-    // TODO: Do we even want this? Why not just use the bootstrapper
     PermissionDefault getPermissionDefault();
 
     /**
@@ -183,4 +183,10 @@ public interface PluginMeta {
      */
     @Nullable String getAPIVersion();
 
+    @KeyPattern.Namespace
+    @SuppressWarnings("PatternValidation")
+    @Override
+    default String namespace() {
+        return this.getName().toLowerCase(Locale.ROOT);
+    }
 }

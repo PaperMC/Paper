@@ -51,7 +51,7 @@ public record PaperAdvancementDisplay(DisplayInfo handle) implements Advancement
 
     @Override
     public @Nullable NamespacedKey backgroundPath() {
-        return this.handle.getBackground().map(CraftNamespacedKey::fromMinecraft).orElse(null);
+        return this.handle.getBackground().map(asset -> CraftNamespacedKey.fromMinecraft(asset.id())).orElse(null);
     }
 
     @Override

@@ -58,7 +58,7 @@ public interface AnvilInventory extends Inventory {
     /**
      * Get the maximum experience cost (in levels) to be allowed by the current
      * repair. If the result of {@link #getRepairCost()} exceeds the returned
-     * value, the repair result will be air to due being "too expensive".
+     * value, the repair result will be air due to being "too expensive".
      * <p>
      * By default, this level is set to 40. Players in creative mode ignore the
      * maximum repair cost.

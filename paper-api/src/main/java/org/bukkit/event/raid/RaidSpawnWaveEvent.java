@@ -6,33 +6,25 @@ import org.bukkit.Raid;
 import org.bukkit.World;
 import org.bukkit.entity.Raider;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Called when a raid wave spawns.
  */
 public class RaidSpawnWaveEvent extends RaidEvent {
 
-    private static final HandlerList handlers = new HandlerList();
-    //
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final List<Raider> raiders;
     private final Raider leader;
 
-    public RaidSpawnWaveEvent(@NotNull Raid raid, @NotNull World world, @NotNull Raider leader, @NotNull List<Raider> raiders) { // Paper
+    @ApiStatus.Internal
+    public RaidSpawnWaveEvent(@NotNull Raid raid, @NotNull World world, @NotNull Raider leader, @NotNull List<Raider> raiders) {
         super(raid, world);
         this.raiders = raiders;
         this.leader = leader;
-    }
-
-    /**
-     * Returns the patrol leader.
-     *
-     * @return {@link Raider}
-     */
-    @NotNull // Paper
-    public Raider getPatrolLeader() {
-        return leader;
     }
 
     /**
@@ -41,18 +33,28 @@ public class RaidSpawnWaveEvent extends RaidEvent {
      * @return an immutable list of raiders
      */
     @NotNull
-    public List<Raider> getRaiders() {
-        return Collections.unmodifiableList(raiders);
+    public @Unmodifiable List<Raider> getRaiders() {
+        return Collections.unmodifiableList(this.raiders);
+    }
+
+    /**
+     * Returns the patrol leader.
+     *
+     * @return {@link Raider}
+     */
+    @NotNull
+    public Raider getPatrolLeader() {
+        return this.leader;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

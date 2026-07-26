@@ -60,6 +60,27 @@ public interface PotionContents {
     @Contract(pure = true)
     @Nullable String customName();
 
+    /**
+     * All effects that this component applies.
+     * <p>
+     * This is a combination of the base potion type and any custom effects.
+     *
+     * @return an unmodifiable list of all effects.
+     */
+    @Contract(pure = true)
+    @Unmodifiable List<PotionEffect> allEffects();
+
+    /**
+     * Computes the effective colour of this potion contents component.
+     * <p>
+     * This blends all custom effects, or uses a default fallback colour.
+     * It may or may not have an alpha channel, used for tipped arrows.
+     *
+     * @return the effective colour this component would display with.
+     */
+    @Contract(pure = true)
+    Color computeEffectiveColor();
+
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<PotionContents> {

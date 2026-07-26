@@ -1,8 +1,6 @@
 package io.papermc.paper.command.brigadier.argument.range;
 
 import com.google.common.collect.Range;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A provider for a range of numbers
@@ -10,8 +8,6 @@ import org.jspecify.annotations.NullMarked;
  * @param <T>
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes
  */
-@ApiStatus.Experimental
-@NullMarked
 public sealed interface RangeProvider<T extends Comparable<?>> permits DoubleRangeProvider, IntegerRangeProvider {
 
     /**

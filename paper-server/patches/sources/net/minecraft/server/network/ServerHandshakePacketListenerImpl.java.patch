@@ -1,14 +1,7 @@
 --- a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
-@@ -12,11 +_,27 @@
- import net.minecraft.network.protocol.status.StatusProtocols;
- import net.minecraft.server.MinecraftServer;
+@@ -14,9 +_,20 @@
  
-+// CraftBukkit start
-+import java.net.InetAddress;
-+import java.util.HashMap;
-+// CraftBukkit end
-+
  public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketListener {
      private static final Component IGNORE_STATUS_REASON = Component.translatable("disconnect.ignoring_status_request");
 +    // Spigot start
@@ -16,27 +9,27 @@
 +    static final java.util.regex.Pattern HOST_PATTERN = java.util.regex.Pattern.compile("[0-9a-f\\.:]{0,45}");
 +    static final java.util.regex.Pattern PROP_PATTERN = java.util.regex.Pattern.compile("\\w{0,16}");
 +    // Spigot end
-+    // CraftBukkit start - add fields
-+    private static final HashMap<InetAddress, Long> throttleTracker = new HashMap<>();
++    // Paper start - Connection throttle
++    private static final java.util.Map<java.net.InetAddress, Long> throttleTracker = new java.util.HashMap<>();
 +    private static int throttleCounter = 0;
-+    // CraftBukkit end
++    // Paper end - Connection throttle
 +    private static final boolean BYPASS_HOSTCHECK = Boolean.getBoolean("Paper.bypassHostCheck"); // Paper
      private final MinecraftServer server;
      private final Connection connection;
  
 +
-     public ServerHandshakePacketListenerImpl(MinecraftServer server, Connection connection) {
+     public ServerHandshakePacketListenerImpl(final MinecraftServer server, final Connection connection) {
          this.server = server;
          this.connection = connection;
 @@ -24,6 +_,7 @@
  
      @Override
-     public void handleIntention(ClientIntentionPacket packet) {
+     public void handleIntention(final ClientIntentionPacket packet) {
 +        this.connection.hostname = packet.hostName() + ":" + packet.port(); // CraftBukkit  - set hostname
          switch (packet.intention()) {
              case LOGIN:
                  this.beginLogin(packet, false);
-@@ -50,22 +_,117 @@
+@@ -50,22 +_,119 @@
              default:
                  throw new UnsupportedOperationException("Invalid intention " + packet.intention());
          }
@@ -47,19 +40,21 @@
 +        // Paper end
      }
  
-     private void beginLogin(ClientIntentionPacket packet, boolean transferred) {
+-    private void beginLogin(final ClientIntentionPacket packet, final boolean transfer) {
++    private void beginLogin(ClientIntentionPacket packet, final boolean transfer) { // Paper - remove packet final
          this.connection.setupOutboundProtocol(LoginProtocols.CLIENTBOUND);
-+        // CraftBukkit start - Connection throttle
++        // Paper start - Connection throttle
 +        try {
-+            if (!(this.connection.channel.localAddress() instanceof io.netty.channel.unix.DomainSocketAddress)) { // Paper - Unix domain socket support; the connection throttle is useless when you have a Unix domain socket
++            final long connectionThrottle = this.server.server.getConnectionThrottle();
++            final boolean isUnixDomainSocket = this.connection.channel.localAddress() instanceof io.netty.channel.unix.DomainSocketAddress; // Paper - Unix domain socket support; the connection throttle is useless when you have a Unix domain socket
++            if (connectionThrottle > 0 && !isUnixDomainSocket && this.connection.getRemoteAddress() instanceof java.net.InetSocketAddress socketAddress && !socketAddress.isUnresolved() && !socketAddress.getAddress().isLoopbackAddress()) {
 +                long currentTime = System.currentTimeMillis();
-+                long connectionThrottle = this.server.server.getConnectionThrottle();
-+                InetAddress address = ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getAddress();
++                java.net.InetAddress address = socketAddress.getAddress();
 +
 +                synchronized (ServerHandshakePacketListenerImpl.throttleTracker) {
-+                    if (ServerHandshakePacketListenerImpl.throttleTracker.containsKey(address) && !"127.0.0.1".equals(address.getHostAddress()) && currentTime - ServerHandshakePacketListenerImpl.throttleTracker.get(address) < connectionThrottle) {
++                    if (ServerHandshakePacketListenerImpl.throttleTracker.containsKey(address) && currentTime - ServerHandshakePacketListenerImpl.throttleTracker.get(address) < connectionThrottle) {
 +                        ServerHandshakePacketListenerImpl.throttleTracker.put(address, currentTime);
-+                        Component chatmessage = io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.connectionThrottle); // Paper - Configurable connection throttle kick message
++                        Component chatmessage = io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.connectionThrottle);
 +                        this.connection.send(new ClientboundLoginDisconnectPacket(chatmessage));
 +                        this.connection.disconnect(chatmessage);
 +                        return;
@@ -71,38 +66,38 @@
 +                        ServerHandshakePacketListenerImpl.throttleCounter = 0;
 +
 +                        // Cleanup stale entries
-+                        ServerHandshakePacketListenerImpl.throttleTracker.values().removeIf(time -> time > connectionThrottle);
++                        ServerHandshakePacketListenerImpl.throttleTracker.values().removeIf(time -> currentTime - time > connectionThrottle);
 +                    }
 +                }
-+            } // Paper - Unix domain socket support
++            }
 +        } catch (Throwable t) {
 +            org.apache.logging.log4j.LogManager.getLogger().debug("Failed to check connection throttle", t);
 +        }
-+        // CraftBukkit end
-         if (packet.protocolVersion() != SharedConstants.getCurrentVersion().getProtocolVersion()) {
--            Component component;
++        // Paper end - Connection throttle
+         if (packet.protocolVersion() != SharedConstants.getCurrentVersion().protocolVersion()) {
+-            Component reason;
 -            if (packet.protocolVersion() < 754) {
--                component = Component.translatable("multiplayer.disconnect.outdated_client", SharedConstants.getCurrentVersion().getName());
-+            net.kyori.adventure.text.Component adventureComponent; // Paper - Fix hex colors not working in some kick messages
-+            if (packet.protocolVersion() < SharedConstants.getCurrentVersion().getProtocolVersion()) { // Spigot - SPIGOT-7546: Handle version check correctly for outdated client message
-+                adventureComponent = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName())); // Spigot // Paper - Fix hex colors not working in some kick messages
+-                reason = Component.translatable("multiplayer.disconnect.outdated_client", SharedConstants.getCurrentVersion().name());
++            net.kyori.adventure.text.Component adventureReason; // Paper - Fix hex colors not working in some kick messages
++            if (packet.protocolVersion() < SharedConstants.getCurrentVersion().protocolVersion()) { // Spigot - SPIGOT-7546: Handle version check correctly for outdated client message
++                adventureReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().name())); // Spigot // Paper - Fix hex colors not working in some kick messages
              } else {
--                component = Component.translatable("multiplayer.disconnect.incompatible", SharedConstants.getCurrentVersion().getName());
-+                adventureComponent = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName())); // Spigot // Paper - Fix hex colors not working in some kick messages
+-                reason = Component.translatable("multiplayer.disconnect.incompatible", SharedConstants.getCurrentVersion().name());
++                adventureReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().name())); // Spigot // Paper - Fix hex colors not working in some kick messages
              }
-+            Component component = io.papermc.paper.adventure.PaperAdventure.asVanilla(adventureComponent); // Paper - Fix hex colors not working in some kick messages
++            Component reason = io.papermc.paper.adventure.PaperAdventure.asVanilla(adventureReason); // Paper - Fix hex colors not working in some kick messages
  
-             this.connection.send(new ClientboundLoginDisconnectPacket(component));
-             this.connection.disconnect(component);
+             this.connection.send(new ClientboundLoginDisconnectPacket(reason));
+             this.connection.disconnect(reason);
          } else {
-             this.connection.setupInboundProtocol(LoginProtocols.SERVERBOUND, new ServerLoginPacketListenerImpl(this.server, this.connection, transferred));
+             this.connection.setupInboundProtocol(LoginProtocols.SERVERBOUND, new ServerLoginPacketListenerImpl(this.server, this.connection, transfer));
 +            // Paper start - PlayerHandshakeEvent
 +            boolean proxyLogicEnabled = org.spigotmc.SpigotConfig.bungee;
 +            boolean handledByEvent = false;
 +            // Try and handle the handshake through the event
 +            if (com.destroystokyo.paper.event.player.PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
-+                java.net.SocketAddress socketAddress = this.connection.address;
-+                String hostnameOfRemote = socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getHostString() : InetAddress.getLoopbackAddress().getHostAddress();
++                java.net.SocketAddress socketAddress = this.connection.getRemoteAddress();
++                String hostnameOfRemote = socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getHostString() : java.net.InetAddress.getLoopbackAddress().getHostAddress();
 +                com.destroystokyo.paper.event.player.PlayerHandshakeEvent event = new com.destroystokyo.paper.event.player.PlayerHandshakeEvent(packet.hostName(), hostnameOfRemote, !proxyLogicEnabled);
 +                if (event.callEvent()) {
 +                    // If we've failed somehow, let the client know so and go no further.
@@ -121,6 +116,7 @@
 +                            packet.port(),
 +                            packet.intention()
 +                        );
++                        this.connection.hostname = event.getServerHostname();
 +                    }
 +                    if (event.getSocketAddressHostname() != null) this.connection.address = new java.net.InetSocketAddress(event.getSocketAddressHostname(), socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getPort() : 0);
 +                    this.connection.spoofedUUID = event.getUniqueId();
@@ -139,7 +135,7 @@
 +                    this.connection.hostname = split[0];
 +                    this.connection.address = new java.net.InetSocketAddress(split[1], socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getPort() : 0);
 +                    // Paper end - Unix domain socket support
-+                    this.connection.spoofedUUID = com.mojang.util.UndashedUuid.fromStringLenient( split[2] );
++                    this.connection.spoofedUUID = com.mojang.util.UndashedUuid.fromStringLenient(split[2]);
 +                } else {
 +                    Component message = Component.literal("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!");
 +                    this.connection.send(new ClientboundLoginDisconnectPacket(message));

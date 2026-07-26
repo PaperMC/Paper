@@ -13,16 +13,14 @@ public final class CraftBlockSupport {
             case FULL -> BlockSupport.FULL;
             case CENTER -> BlockSupport.CENTER;
             case RIGID -> BlockSupport.RIGID;
-            default -> throw new IllegalArgumentException("Unsupported EnumBlockSupport type: " + support + ". This is a bug.");
         };
     }
 
-    public static SupportType toNMS(BlockSupport support) {
+    public static SupportType toMinecraft(BlockSupport support) {
         return switch (support) {
             case FULL -> SupportType.FULL;
             case CENTER -> SupportType.CENTER;
             case RIGID -> SupportType.RIGID;
-            default -> throw new IllegalArgumentException("Unsupported BlockSupport type: " + support + ". This is a bug.");
         };
     }
 }

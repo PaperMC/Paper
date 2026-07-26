@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.map;
 import net.minecraft.world.level.saveddata.maps.MapDecoration;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapCanvas;
 import org.bukkit.map.MapCursor;
@@ -15,7 +14,7 @@ public class CraftMapRenderer extends MapRenderer {
 
     private final MapItemSavedData worldMap;
 
-    public CraftMapRenderer(CraftMapView mapView, MapItemSavedData worldMap) {
+    public CraftMapRenderer(MapItemSavedData worldMap) {
         super(false);
         this.worldMap = worldMap;
     }
@@ -23,10 +22,8 @@ public class CraftMapRenderer extends MapRenderer {
     @Override
     public void render(MapView map, MapCanvas canvas, Player player) {
         // Map
-        // Paper start - Swap inner and outer loops here to (theoretically) improve cache locality
         for (int y = 0; y < 128; ++y) {
             for (int x = 0; x < 128; ++x) {
-        // Paper end
                 canvas.setPixel(x, y, this.worldMap.colors[y * 128 + x]);
             }
         }
@@ -39,7 +36,7 @@ public class CraftMapRenderer extends MapRenderer {
 
         for (String key : this.worldMap.decorations.keySet()) {
             // If this cursor is for a player check visibility with vanish system
-            Player other = Bukkit.getPlayerExact((String) key);
+            Player other = Bukkit.getPlayerExact(key);
             if (other != null && !player.canSee(other)) {
                 continue;
             }

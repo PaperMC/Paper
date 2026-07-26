@@ -1,6 +1,7 @@
 package io.papermc.paper.util;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.HolderableBase;
 import java.util.Locale;
 import net.minecraft.core.Holder;
 import org.bukkit.Keyed;
@@ -12,33 +13,27 @@ import org.jspecify.annotations.Nullable;
 @SuppressWarnings({"removal", "DeprecatedIsStillUsed"})
 @Deprecated
 @NullMarked
-public abstract class OldEnumHolderable<A extends OldEnum<A>, M> implements Holderable<M>, OldEnum<A>, Keyed {
+public abstract class OldEnumHolderable<A extends OldEnum<A>, M> extends HolderableBase<M> implements Holderable<M>, OldEnum<A>, Keyed {
 
-    private final Holder<M> holder;
     private final int ordinal;
     private final @Nullable String name;
 
     protected OldEnumHolderable(final Holder<M> holder, final int ordinal) {
-        this.holder = holder;
+        super(holder);
         this.ordinal = ordinal;
         if (holder instanceof final Holder.Reference<M> reference) {
             // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
             // in case plugins use for example the name as key in a config file to receive registry item specific values.
             // Custom registry items will return the key with namespace. For a plugin this should look than like a new registry item
             // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
-            if (NamespacedKey.MINECRAFT.equals(reference.key().location().getNamespace())) {
-                this.name = reference.key().location().getPath().toUpperCase(Locale.ROOT);
+            if (NamespacedKey.MINECRAFT.equals(reference.key().identifier().getNamespace())) {
+                this.name = reference.key().identifier().getPath().toUpperCase(Locale.ROOT);
             } else {
-                this.name = reference.key().location().toString();
+                this.name = reference.key().identifier().toString();
             }
         } else {
             this.name = null;
         }
-    }
-
-    @Override
-    public Holder<M> getHolder() {
-        return this.holder;
     }
 
     @Override
@@ -67,26 +62,7 @@ public abstract class OldEnumHolderable<A extends OldEnum<A>, M> implements Hold
     }
 
     @Override
-    public NamespacedKey getKey() {
-        return MCUtil.fromResourceKey(this.holder.unwrapKey().orElseThrow(() -> new IllegalStateException("Cannot get key for this registry item, because it is not registered.")));
-    }
-
-    @Override
-    public boolean equals(final Object obj) {
-        return this.implEquals(obj);
-    }
-
-    @Override
-    public int hashCode() {
-        return this.implHashCode();
-    }
-
-    @Override
     public String toString() {
-        if (this.name != null) {
-            // TODO remove in next feature release or 1.22
-            return this.name;
-        }
         return this.implToString();
     }
 }

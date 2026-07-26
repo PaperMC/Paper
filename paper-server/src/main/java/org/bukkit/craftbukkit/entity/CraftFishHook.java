@@ -2,12 +2,19 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FishingHook;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FishHook;
+import org.bukkit.inventory.EquipmentSlot;
 
 public class CraftFishHook extends CraftProjectile implements FishHook {
+
     private double biteChance = -1;
 
     public CraftFishHook(CraftServer server, FishingHook entity) {
@@ -17,11 +24,6 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     @Override
     public FishingHook getHandle() {
         return (FishingHook) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftFishingHook";
     }
 
     @Override
@@ -169,26 +171,23 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
 
     @Override
     public Entity getHookedEntity() {
-        net.minecraft.world.entity.Entity hooked = this.getHandle().hookedIn;
+        net.minecraft.world.entity.Entity hooked = this.getHandle().getHookedIn();
         return (hooked != null) ? hooked.getBukkitEntity() : null;
     }
 
     @Override
     public void setHookedEntity(Entity entity) {
-        FishingHook hook = this.getHandle();
-
-        hook.hookedIn = (entity != null) ? ((CraftEntity) entity).getHandle() : null;
-        hook.getEntityData().set(FishingHook.DATA_HOOKED_ENTITY, hook.hookedIn != null ? hook.hookedIn.getId() + 1 : 0);
+        this.getHandle().setHookedEntity(entity != null ? ((CraftEntity) entity).getHandle() : null);
     }
 
     @Override
     public boolean pullHookedEntity() {
         FishingHook hook = this.getHandle();
-        if (hook.hookedIn == null) {
+        if (hook.getHookedIn() == null) {
             return false;
         }
 
-        hook.pullEntity(hook.hookedIn);
+        hook.pullEntity(hook.getHookedIn());
         return true;
     }
 
@@ -196,7 +195,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     public HookState getState() {
         return HookState.values()[this.getHandle().currentState.ordinal()];
     }
-    // Paper start - More FishHook API
+
     @Override
     public int getWaitTime() {
         return this.getHandle().timeUntilLured;
@@ -220,7 +219,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
         // Reset the fish angle hook only when this call "enters" the fish into the lure stage.
         final boolean alreadyInLuringPhase = hook.timeUntilHooked > 0 && hook.timeUntilLured <= 0;
         if (!alreadyInLuringPhase) {
-            hook.fishAngle = net.minecraft.util.Mth.nextFloat(hook.random, hook.minLureAngle, hook.maxLureAngle);
+            hook.fishAngle = net.minecraft.util.Mth.nextFloat(hook.getRandom(), hook.minLureAngle, hook.maxLureAngle);
             hook.timeUntilLured = 0;
         }
 
@@ -233,5 +232,18 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
         hook.resetTimeUntilLured();
         hook.timeUntilHooked = 0; // Reset time until hooked, will be repopulated once lured time is ticked down.
     }
-    // Paper end
+
+    @Override
+    public int retrieve(EquipmentSlot slot) {
+        Preconditions.checkArgument(slot == EquipmentSlot.HAND || slot == EquipmentSlot.OFF_HAND, "Equipment slot must be HAND or OFF_HAND");
+        final FishingHook fishingHook = getHandle();
+        final Player playerOwner = fishingHook.getPlayerOwner();
+        Preconditions.checkState(playerOwner != null, "Player owner cannot be null");
+
+        final InteractionHand hand = CraftEquipmentSlot.getHand(slot);
+        final ItemStack itemInHand = playerOwner.getItemInHand(hand);
+        Preconditions.checkState(itemInHand.is(Items.FISHING_ROD), "Item in slot is not a FISHING_ROD");
+
+        return fishingHook.retrieve(itemInHand, hand);
+    }
 }

@@ -11,10 +11,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
@@ -32,17 +33,17 @@ public class SpigotConfig {
 
     private static File CONFIG_FILE;
     private static final String HEADER = """
-        This is the main configuration file for Spigot.
+        This is the Spigot configuration file for Paper.
         As you can see, there's tons to configure. Some options may impact gameplay, so use
         with caution, and make sure you know what each option does before configuring.
-        For a reference for any variable inside this file, check out the Spigot wiki at
-        http://www.spigotmc.org/wiki/spigot-configuration/
         
-        If you need help with the configuration or have any questions related to Spigot,
-        join us at the Discord or drop by our forums and leave a post.
+        If you need help with the configuration or have any questions related to Paper,
+        join us in our Discord or check the docs page.
         
-        Discord: https://www.spigotmc.org/go/discord
-        Forums: http://www.spigotmc.org/
+        File Reference: https://docs.papermc.io/paper/reference/spigot-configuration/
+        Docs: https://docs.papermc.io/
+        Discord: https://discord.gg/papermc
+        Website: https://papermc.io/
         """;
     /*========================================================================*/
     public static YamlConfiguration config;
@@ -67,8 +68,8 @@ public class SpigotConfig {
         SpigotConfig.commands = new HashMap<>();
         SpigotConfig.commands.put("spigot", new SpigotCommand("spigot"));
 
-        SpigotConfig.version = SpigotConfig.getInt("config-version", 12);
-        SpigotConfig.set("config-version", 12);
+        SpigotConfig.version = SpigotConfig.getInt("config-version", 13);
+        SpigotConfig.set("config-version", 13);
         SpigotConfig.readConfig(SpigotConfig.class, null);
     }
 
@@ -78,7 +79,7 @@ public class SpigotConfig {
         }
     }
 
-    public static void readConfig(Class<?> clazz, Object instance) { // Paper - package-private -> public
+    public static void readConfig(Class<?> clazz, Object instance) {
         for (Method method : clazz.getDeclaredMethods()) {
             if (Modifier.isPrivate(method.getModifiers())) {
                 if (method.getParameterTypes().length == 0 && method.getReturnType() == Void.TYPE) {
@@ -201,7 +202,7 @@ public class SpigotConfig {
     }
 
     public static boolean disableStatSaving;
-    public static Map<ResourceLocation, Integer> forcedStats = new HashMap<>();
+    public static Map<Identifier, Integer> forcedStats = new HashMap<>();
 
     private static void stats() {
         SpigotConfig.disableStatSaving = SpigotConfig.getBoolean("stats.disable-saving", false);
@@ -214,7 +215,7 @@ public class SpigotConfig {
         for (String name : section.getKeys(true)) {
             if (section.isInt(name)) {
                 try {
-                    ResourceLocation key = ResourceLocation.parse(name);
+                    Identifier key = Identifier.parse(name);
                     if (BuiltInRegistries.CUSTOM_STAT.get(key) == null) {
                         Bukkit.getLogger().log(Level.WARNING, "Ignoring non existent stats.forced-stats " + name);
                         continue;
@@ -250,7 +251,7 @@ public class SpigotConfig {
         if (enabled instanceof Boolean value) {
             SpigotConfig.enableSpamExclusions = value;
         } else {
-            if (spamExclusions.size() == 1 && spamExclusions.getFirst().equals("/skill")) {
+            if (spamExclusions.size() == 1 && Objects.equals(spamExclusions.getFirst(), "/skill")) {
                 SpigotConfig.enableSpamExclusions = false;
                 SpigotConfig.set("commands.enable-spam-exclusions", false);
             } else {
@@ -288,12 +289,12 @@ public class SpigotConfig {
 
     public static double movedWronglyThreshold;
     private static void movedWronglyThreshold() {
-        SpigotConfig.movedWronglyThreshold = SpigotConfig.getDouble("settings.moved-wrongly-threshold", 0.0625D);
+        SpigotConfig.movedWronglyThreshold = SpigotConfig.getDouble("settings.moved-wrongly-threshold", 0.0625);
     }
 
     public static double movedTooQuicklyMultiplier;
     private static void movedTooQuicklyMultiplier() {
-        SpigotConfig.movedTooQuicklyMultiplier = SpigotConfig.getDouble("settings.moved-too-quickly-multiplier", 10.0D);
+        SpigotConfig.movedTooQuicklyMultiplier = SpigotConfig.getDouble("settings.moved-too-quickly-multiplier", 10.0);
     }
 
     public static double maxAbsorption = 2048;

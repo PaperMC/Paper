@@ -27,11 +27,11 @@ public interface SculkCatalyst extends TileState {
 
     // Paper start - SculkCatalyst bloom API
     /**
-     * Bloom at the specified location as if an entity that drops experience just died there.
+     * Bloom at the specified position as if an entity that drops experience just died there.
      *
      * @param position position to bloom at
      * @param charge charge to bloom with, normally the amount of experience dropped from the dead entity
      */
-    void bloom(@org.jetbrains.annotations.NotNull io.papermc.paper.math.Position position, int charge);
+    void bloom(@NotNull io.papermc.paper.math.Position position, int charge);
     // Paper end - SculkCatalyst bloom API
 }

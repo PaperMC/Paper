@@ -1,6 +1,9 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import java.util.UUID;
+import net.minecraft.Optionull;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.item.ItemEntity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -9,10 +12,8 @@ import org.bukkit.inventory.ItemStack;
 
 public class CraftItem extends CraftEntity implements Item {
 
-    // Paper start
-    private final static int NO_AGE_TIME = Short.MIN_VALUE;
-    private final static int NO_PICKUP_TIME = Short.MAX_VALUE;
-    // Paper end
+    private final static int NO_AGE_TIME = Short.MIN_VALUE; // ItemEntity#INFINITE_LIFETIME
+    private final static int NO_PICKUP_TIME = Short.MAX_VALUE; // ItemEntity#INFINITE_PICKUP_DELAY
 
     public CraftItem(CraftServer server, ItemEntity entity) {
         super(server, entity);
@@ -40,14 +41,13 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public void setPickupDelay(int delay) {
-        this.getHandle().pickupDelay = Math.min(delay, Short.MAX_VALUE);
+        this.getHandle().setPickUpDelay(Math.min(delay, NO_PICKUP_TIME));
     }
 
     @Override
     public void setUnlimitedLifetime(boolean unlimited) {
         if (unlimited) {
-            // See EntityItem#INFINITE_LIFETIME
-            this.getHandle().age = Short.MIN_VALUE;
+            this.getHandle().setUnlimitedLifetime();
         } else {
             this.getHandle().age = this.getTicksLived();
         }
@@ -55,20 +55,19 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public boolean isUnlimitedLifetime() {
-        return this.getHandle().age == Short.MIN_VALUE;
+        return this.getHandle().age == NO_AGE_TIME;
     }
 
     @Override
     public void setTicksLived(int value) {
         super.setTicksLived(value);
 
-        // Second field for EntityItem (don't set if lifetime is unlimited)
+        // Second field for ItemEntity (don't set if lifetime is unlimited)
         if (!this.isUnlimitedLifetime()) {
             this.getHandle().age = value;
         }
     }
 
-    // Paper start
     @Override
     public boolean canMobPickup() {
         return this.getHandle().canMobPickup;
@@ -86,12 +85,12 @@ public class CraftItem extends CraftEntity implements Item {
 
      @Override
      public void setCanPlayerPickup(boolean canPlayerPickup) {
-        this.getHandle().pickupDelay = canPlayerPickup ? 0 : NO_PICKUP_TIME;
+        this.getHandle().setPickUpDelay(canPlayerPickup ? 0 : NO_PICKUP_TIME);
      }
 
      @Override
      public boolean willAge() {
-        return this.getHandle().age != NO_AGE_TIME;
+        return this.getHandle().getAge() != NO_AGE_TIME;
      }
 
      @Override
@@ -99,15 +98,14 @@ public class CraftItem extends CraftEntity implements Item {
         this.getHandle().age = willAge ? 0 : NO_AGE_TIME;
      }
 
-     @org.jetbrains.annotations.NotNull
      @Override
      public net.kyori.adventure.util.TriState getFrictionState() {
         return this.getHandle().frictionState;
      }
 
      @Override
-     public void setFrictionState(@org.jetbrains.annotations.NotNull net.kyori.adventure.util.TriState state) {
-         java.util.Objects.requireNonNull(state, "state may not be null");
+     public void setFrictionState(net.kyori.adventure.util.TriState state) {
+         Preconditions.checkArgument(state != null, "state may not be null");
          this.getHandle().frictionState = state;
      }
 
@@ -125,7 +123,6 @@ public class CraftItem extends CraftEntity implements Item {
             this.getHandle().health = health;
         }
     }
-    // Paper end
 
     @Override
     public void setOwner(UUID uuid) {
@@ -139,16 +136,11 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public void setThrower(UUID uuid) {
-        this.getHandle().thrower = uuid;
+        this.getHandle().thrower = uuid == null ? null : EntityReference.of(uuid);
     }
 
     @Override
     public UUID getThrower() {
-        return this.getHandle().thrower;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftItem";
+        return Optionull.map(this.getHandle().thrower, EntityReference::getUUID);
     }
 }

@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
@@ -22,8 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedClass
 public final class EnchantmentKeys {
     /**
      * {@code minecraft:aqua_affinity}
@@ -171,6 +171,13 @@ public final class EnchantmentKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Enchantment> LUCK_OF_THE_SEA = create(key("luck_of_the_sea"));
+
+    /**
+     * {@code minecraft:lunge}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Enchantment> LUNGE = create(key("lunge"));
 
     /**
      * {@code minecraft:lure}
@@ -323,7 +330,7 @@ public final class EnchantmentKeys {
     }
 
     /**
-     * Creates a key for {@link Enchantment} in the registry {@code minecraft:enchantment}.
+     * Creates a typed key for {@link Enchantment} in the registry {@code minecraft:enchantment}.
      *
      * @param key the value's key in the registry
      * @return a new typed key

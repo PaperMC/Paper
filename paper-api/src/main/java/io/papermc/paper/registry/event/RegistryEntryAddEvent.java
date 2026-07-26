@@ -6,7 +6,6 @@ import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.registry.tag.TagKey;
 import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Event object for {@link RegistryEventProvider#entryAdd()}. This
@@ -16,8 +15,6 @@ import org.jspecify.annotations.NullMarked;
  * @param <T> registry entry type
  * @param <B> registry entry builder type
  */
-@ApiStatus.Experimental
-@NullMarked
 @ApiStatus.NonExtendable
 public interface RegistryEntryAddEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
 

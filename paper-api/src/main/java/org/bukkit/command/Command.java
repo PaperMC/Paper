@@ -7,8 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.GameRule;
+import org.bukkit.GameRules;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
@@ -107,7 +106,7 @@ public abstract class Command {
         Preconditions.checkArgument(args != null, "Arguments cannot be null");
         Preconditions.checkArgument(alias != null, "Alias cannot be null");
 
-        if (args.length == 0 || !sender.getServer().suggestPlayerNamesWhenNullTabCompletions()) { // Paper - allow preventing player name suggestions by default) {
+        if (args.length == 0 || !sender.getServer().suggestPlayerNamesWhenNullTabCompletions()) { // Paper - allow preventing player name suggestions by default
             return ImmutableList.of();
         }
 
@@ -478,14 +477,14 @@ public abstract class Command {
         if (source instanceof BlockCommandSender) {
             BlockCommandSender blockCommandSender = (BlockCommandSender) source;
 
-            if (!blockCommandSender.getBlock().getWorld().getGameRuleValue(GameRule.COMMAND_BLOCK_OUTPUT)) {
+            if (!blockCommandSender.getBlock().getWorld().getGameRuleValue(GameRules.COMMAND_BLOCK_OUTPUT)) {
                 Bukkit.getConsoleSender().sendMessage(result);
                 return;
             }
         } else if (source instanceof CommandMinecart) {
             CommandMinecart commandMinecart = (CommandMinecart) source;
 
-            if (!commandMinecart.getWorld().getGameRuleValue(GameRule.COMMAND_BLOCK_OUTPUT)) {
+            if (!commandMinecart.getWorld().getGameRuleValue(GameRules.COMMAND_BLOCK_OUTPUT)) {
                 Bukkit.getConsoleSender().sendMessage(result);
                 return;
             }

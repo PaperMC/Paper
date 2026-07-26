@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface Nameable {
 
-    // Paper start
     /**
      * Gets the custom name.
      *
@@ -29,7 +28,6 @@ public interface Nameable {
      * @param customName the custom name to set
      */
     void customName(final net.kyori.adventure.text.@Nullable Component customName);
-    // Paper end
 
     /**
      * Gets the custom name on a mob or block. If there is no name this method

@@ -27,16 +27,16 @@ public interface Position {
     int blockX();
 
     /**
-     * Gets the block x value for this position
+     * Gets the block y value for this position
      *
-     * @return the block x value
+     * @return the block y value
      */
     int blockY();
 
     /**
-     * Gets the block x value for this position
+     * Gets the block z value for this position
      *
-     * @return the block x value
+     * @return the block z value
      */
     int blockZ();
 

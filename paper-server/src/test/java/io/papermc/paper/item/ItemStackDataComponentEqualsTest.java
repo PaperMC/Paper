@@ -2,6 +2,7 @@ package io.papermc.paper.item;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import java.util.Set;
+import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -82,11 +83,11 @@ class ItemStackDataComponentEqualsTest {
     @Test
     public void testAdvancedExample() {
         ItemStack oakLeaves = ItemStack.of(Material.OAK_LEAVES, 1);
-        oakLeaves.setData(DataComponentTypes.HIDE_TOOLTIP);
+        oakLeaves.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().hideTooltip(true).build());
         oakLeaves.setData(DataComponentTypes.MAX_STACK_SIZE, 1);
 
         ItemStack otherOakLeavesItem = ItemStack.of(Material.OAK_LEAVES, 2);
 
-        Assertions.assertTrue(oakLeaves.matchesWithoutData(otherOakLeavesItem, Set.of(DataComponentTypes.HIDE_TOOLTIP, DataComponentTypes.MAX_STACK_SIZE), true));
+        Assertions.assertTrue(oakLeaves.matchesWithoutData(otherOakLeavesItem, Set.of(DataComponentTypes.TOOLTIP_DISPLAY, DataComponentTypes.MAX_STACK_SIZE), true));
     }
 }

@@ -3,9 +3,7 @@ package org.bukkit.craftbukkit.inventory.view.builder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -50,9 +48,5 @@ public class CraftAccessLocationInventoryViewBuilder<V extends InventoryView> ex
         copy.checkReachable = super.checkReachable;
         copy.title = title;
         return copy;
-    }
-
-    public interface CraftAccessContainerObjectBuilder {
-        AbstractContainerMenu build(final int syncId, final Inventory inventory, ContainerLevelAccess access);
     }
 }

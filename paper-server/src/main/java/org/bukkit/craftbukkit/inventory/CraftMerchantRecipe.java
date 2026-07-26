@@ -3,8 +3,8 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.core.component.DataComponentExactPredicate;
 import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponentPredicate;
 import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.ItemCost;
@@ -16,10 +16,10 @@ public class CraftMerchantRecipe extends MerchantRecipe {
     private final net.minecraft.world.item.trading.MerchantOffer handle;
 
     public CraftMerchantRecipe(net.minecraft.world.item.trading.MerchantOffer merchantRecipe) {
-        super(CraftItemStack.asBukkitCopy(merchantRecipe.result), 0);
+        super(CraftItemStack.asBukkitCopy(merchantRecipe.getResult()), 0);
         this.handle = merchantRecipe;
-        this.addIngredient(CraftItemStack.asBukkitCopy(merchantRecipe.baseCostA.itemStack()));
-        merchantRecipe.costB.ifPresent((costB) -> this.addIngredient(CraftItemStack.asBukkitCopy(costB.itemStack())));
+        this.addIngredient(CraftItemStack.asBukkitCopy(merchantRecipe.getItemCostA().itemStack()));
+        merchantRecipe.getItemCostB().ifPresent((costB) -> this.addIngredient(CraftItemStack.asBukkitCopy(costB.itemStack())));
     }
 
     @Deprecated
@@ -60,12 +60,12 @@ public class CraftMerchantRecipe extends MerchantRecipe {
 
     @Override
     public void setSpecialPrice(int specialPrice) {
-        this.handle.specialPriceDiff = specialPrice;
+        this.handle.setSpecialPriceDiff(specialPrice);
     }
 
     @Override
     public int getDemand() {
-        return this.handle.demand;
+        return this.handle.getDemand();
     }
 
     @Override
@@ -75,7 +75,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
 
     @Override
     public int getUses() {
-        return this.handle.uses;
+        return this.handle.getUses();
     }
 
     @Override
@@ -85,7 +85,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
 
     @Override
     public int getMaxUses() {
-        return this.handle.maxUses;
+        return this.handle.getMaxUses();
     }
 
     @Override
@@ -95,7 +95,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
 
     @Override
     public boolean hasExperienceReward() {
-        return this.handle.rewardExp;
+        return this.handle.shouldRewardExp();
     }
 
     @Override
@@ -105,7 +105,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
 
     @Override
     public int getVillagerExperience() {
-        return this.handle.xp;
+        return this.handle.getXp();
     }
 
     @Override
@@ -115,7 +115,7 @@ public class CraftMerchantRecipe extends MerchantRecipe {
 
     @Override
     public float getPriceMultiplier() {
-        return this.handle.priceMultiplier;
+        return this.handle.getPriceMultiplier();
     }
 
     @Override
@@ -139,12 +139,12 @@ public class CraftMerchantRecipe extends MerchantRecipe {
         List<ItemStack> ingredients = this.getIngredients();
         Preconditions.checkState(!ingredients.isEmpty(), "No offered ingredients");
         net.minecraft.world.item.ItemStack baseCostA = CraftItemStack.asNMSCopy(ingredients.get(0));
-        DataComponentPredicate baseCostAPredicate = DataComponentPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, baseCostA.getComponentsPatch()));
-        this.handle.baseCostA = new ItemCost(baseCostA.getItemHolder(), baseCostA.getCount(), baseCostAPredicate, baseCostA);
+        DataComponentExactPredicate baseCostAPredicate = DataComponentExactPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, baseCostA.getComponentsPatch()));
+        this.handle.baseCostA = new ItemCost(baseCostA.typeHolder(), baseCostA.getCount(), baseCostAPredicate, baseCostA);
         if (ingredients.size() > 1) {
             net.minecraft.world.item.ItemStack costB = CraftItemStack.asNMSCopy(ingredients.get(1));
-            DataComponentPredicate costBPredicate = DataComponentPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, costB.getComponentsPatch()));
-            this.handle.costB = Optional.of(new ItemCost(costB.getItemHolder(), costB.getCount(), costBPredicate, costB));
+            DataComponentExactPredicate costBPredicate = DataComponentExactPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, costB.getComponentsPatch()));
+            this.handle.costB = Optional.of(new ItemCost(costB.typeHolder(), costB.getCount(), costBPredicate, costB));
         } else {
             this.handle.costB = Optional.empty();
         }

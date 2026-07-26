@@ -5,19 +5,23 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is fired when the player is leaving a bed.
  */
 public class PlayerBedLeaveEvent extends PlayerEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Block bed;
     private boolean setBedSpawn;
     private boolean cancelled;
 
-    public PlayerBedLeaveEvent(@NotNull final Player who, @NotNull final Block bed, boolean setBedSpawn) {
-        super(who);
+    @ApiStatus.Internal
+    public PlayerBedLeaveEvent(@NotNull final Player player, @NotNull final Block bed, boolean setBedSpawn) {
+        super(player);
         this.bed = bed;
         this.setBedSpawn = setBedSpawn;
     }
@@ -29,7 +33,7 @@ public class PlayerBedLeaveEvent extends PlayerEvent implements Cancellable {
      */
     @NotNull
     public Block getBed() {
-        return bed;
+        return this.bed;
     }
 
     /**
@@ -42,13 +46,13 @@ public class PlayerBedLeaveEvent extends PlayerEvent implements Cancellable {
      * To change a {@link Player}'s spawn location, use
      * {@link Player#setBedSpawnLocation(Location)}.
      *
-     * @return true if the spawn location will be changed
+     * @return {@code true} if the spawn location will be changed
      * @deprecated the respawn point is now set when the player enter the bed and
      * this option doesn't work since MC 1.15.
      */
-    @Deprecated(forRemoval = true) // Paper - Unused
+    @Deprecated(forRemoval = true)
     public boolean shouldSetSpawnLocation() {
-        return setBedSpawn;
+        return this.setBedSpawn;
     }
 
     /**
@@ -61,11 +65,11 @@ public class PlayerBedLeaveEvent extends PlayerEvent implements Cancellable {
      * To change a {@link Player}'s spawn location, use
      * {@link Player#setBedSpawnLocation(Location)}.
      *
-     * @param setBedSpawn true to change the new spawn location
+     * @param setBedSpawn {@code true} to change the new spawn location
      * @deprecated the respawn point is now set when the player enter the bed and
      * this option doesn't work since MC 1.15.
      */
-    @Deprecated(forRemoval = true) // Paper - Unused
+    @Deprecated(forRemoval = true)
     public void setSpawnLocation(boolean setBedSpawn) {
         this.setBedSpawn = setBedSpawn;
     }
@@ -83,11 +87,11 @@ public class PlayerBedLeaveEvent extends PlayerEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

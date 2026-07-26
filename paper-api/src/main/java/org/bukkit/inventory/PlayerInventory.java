@@ -34,32 +34,28 @@ public interface PlayerInventory extends Inventory {
      *
      * @return The ItemStack in the helmet slot
      */
-    @Nullable
-    public ItemStack getHelmet();
+    public @NotNull ItemStack getHelmet();
 
     /**
      * Return the ItemStack from the chestplate slot
      *
      * @return The ItemStack in the chestplate slot
      */
-    @Nullable
-    public ItemStack getChestplate();
+    public @NotNull ItemStack getChestplate();
 
     /**
      * Return the ItemStack from the leg slot
      *
      * @return The ItemStack in the leg slot
      */
-    @Nullable
-    public ItemStack getLeggings();
+    public @NotNull ItemStack getLeggings();
 
     /**
      * Return the ItemStack from the boots slot
      *
      * @return The ItemStack in the boots slot
      */
-    @Nullable
-    public ItemStack getBoots();
+    public @NotNull ItemStack getBoots();
 
     /**
      * Stores the ItemStack at the given index of the inventory.
@@ -74,12 +70,15 @@ public interface PlayerInventory extends Inventory {
      * Index 40 refers to the off hand (shield) item slot. Though you can set off hand with this method using this index,
      * you are encouraged to use the provided method for this slot.
      * <p>
-     * If you attempt to use this method with an index less than 0 or greater than 40, an ArrayIndexOutOfBounds
+     * Index 41 refers to the body item slot and 42 is the saddle item slot. Note that these are not visible in the player
+     * inventory menu.
+     * <p>
+     * If you attempt to use this method with an index less than 0 or greater than 42, an ArrayIndexOutOfBounds
      * exception will be thrown.
      *
      * @param index The index where to put the ItemStack
      * @param item The ItemStack to set
-     * @throws ArrayIndexOutOfBoundsException when index &lt; 0 || index &gt; 40
+     * @throws ArrayIndexOutOfBoundsException when index &lt; 0 || index &gt; 42
      * @see #setBoots(ItemStack)
      * @see #setChestplate(ItemStack)
      * @see #setHelmet(ItemStack)

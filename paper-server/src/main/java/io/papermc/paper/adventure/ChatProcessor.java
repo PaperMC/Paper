@@ -22,13 +22,13 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Optionull;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.OutgoingChatMessage;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.command.ConsoleCommandSender;
@@ -50,7 +50,7 @@ import static net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializ
 
 @DefaultQualifier(NonNull.class)
 public final class ChatProcessor {
-    static final ResourceKey<ChatType> PAPER_RAW = ResourceKey.create(Registries.CHAT_TYPE, ResourceLocation.fromNamespaceAndPath(ResourceLocation.PAPER_NAMESPACE, "raw"));
+    static final ResourceKey<ChatType> PAPER_RAW = ResourceKey.create(Registries.CHAT_TYPE, Identifier.fromNamespaceAndPath(Identifier.PAPER_NAMESPACE, "raw"));
     static final String DEFAULT_LEGACY_FORMAT = "<%1$s> %2$s"; // copied from PlayerChatEvent/AsyncPlayerChatEvent
     final MinecraftServer server;
     final ServerPlayer player;
@@ -81,34 +81,34 @@ public final class ChatProcessor {
         final boolean listenersOnSyncEvent = canYouHearMe(PlayerChatEvent.getHandlerList());
         if (listenersOnAsyncEvent || listenersOnSyncEvent) {
             final CraftPlayer player = this.player.getBukkitEntity();
-            final AsyncPlayerChatEvent ae = new AsyncPlayerChatEvent(this.async, player, this.craftbukkit$originalMessage, new LazyPlayerSet(this.server));
-            this.post(ae);
+            final AsyncPlayerChatEvent asyncChatEvent = new AsyncPlayerChatEvent(this.async, player, this.craftbukkit$originalMessage, new LazyPlayerSet(this.server));
+            this.post(asyncChatEvent);
             if (listenersOnSyncEvent) {
-                final PlayerChatEvent se = new PlayerChatEvent(player, ae.getMessage(), ae.getFormat(), ae.getRecipients());
-                se.setCancelled(ae.isCancelled()); // propagate cancelled state
-                this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
+                final PlayerChatEvent chatEvent = new PlayerChatEvent(player, asyncChatEvent.getMessage(), asyncChatEvent.getFormat(), asyncChatEvent.getRecipients());
+                chatEvent.setCancelled(asyncChatEvent.isCancelled()); // propagate cancelled state
+                this.queueIfAsyncOrRunImmediately(new Waitable<>() {
                     @Override
                     protected Void evaluate() {
-                        ChatProcessor.this.post(se);
+                        ChatProcessor.this.post(chatEvent);
                         return null;
                     }
                 });
-                this.readLegacyModifications(se.getMessage(), se.getFormat(), se.getPlayer());
+                this.readLegacyModifications(chatEvent.getMessage(), chatEvent.getFormat(), chatEvent.getPlayer());
                 this.processModern(
-                    this.modernRenderer(se.getFormat()),
-                    this.viewersFromLegacy(se.getRecipients()),
-                    this.modernMessage(se.getMessage()),
-                    se.getPlayer(),
-                    se.isCancelled()
+                    this.modernRenderer(chatEvent.getFormat()),
+                    this.viewersFromLegacy(chatEvent.getRecipients()),
+                    this.modernMessage(chatEvent.getMessage()),
+                    chatEvent.getPlayer(),
+                    chatEvent.isCancelled()
                 );
             } else {
-                this.readLegacyModifications(ae.getMessage(), ae.getFormat(), ae.getPlayer());
+                this.readLegacyModifications(asyncChatEvent.getMessage(), asyncChatEvent.getFormat(), asyncChatEvent.getPlayer());
                 this.processModern(
-                    this.modernRenderer(ae.getFormat()),
-                    this.viewersFromLegacy(ae.getRecipients()),
-                    this.modernMessage(ae.getMessage()),
-                    ae.getPlayer(),
-                    ae.isCancelled()
+                    this.modernRenderer(asyncChatEvent.getFormat()),
+                    this.viewersFromLegacy(asyncChatEvent.getRecipients()),
+                    this.modernMessage(asyncChatEvent.getMessage()),
+                    asyncChatEvent.getPlayer(),
+                    asyncChatEvent.isCancelled()
                 );
             }
         } else {
@@ -151,14 +151,14 @@ public final class ChatProcessor {
         this.post(ae);
         final boolean listenersOnSyncEvent = canYouHearMe(ChatEvent.getHandlerList());
         if (listenersOnSyncEvent) {
-            this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
+            this.queueIfAsyncOrRunImmediately(new Waitable<>() {
                 @Override
                 protected Void evaluate() {
-                    final ChatEvent se = new ChatEvent(player, ae.viewers(), ae.renderer(), ae.message(), ChatProcessor.this.paper$originalMessage/*, ae.usePreviewComponent()*/, signedMessage);
-                    se.setCancelled(ae.isCancelled()); // propagate cancelled state
-                    ChatProcessor.this.post(se);
-                    ChatProcessor.this.readModernModifications(se, renderer);
-                    ChatProcessor.this.complete(se);
+                    final ChatEvent chatEvent = new ChatEvent(player, ae.viewers(), ae.renderer(), ae.message(), ChatProcessor.this.paper$originalMessage/*, ae.usePreviewComponent()*/, signedMessage);
+                    chatEvent.setCancelled(ae.isCancelled()); // propagate cancelled state
+                    ChatProcessor.this.post(chatEvent);
+                    ChatProcessor.this.readModernModifications(chatEvent, renderer);
+                    ChatProcessor.this.complete(chatEvent);
                     return null;
                 }
             });
@@ -244,7 +244,7 @@ public final class ChatProcessor {
 
         @Override
         public void sendMessageChanged(CraftPlayer player, net.minecraft.network.chat.Component renderedMessage, Set<Audience> viewers, ChatType.Bound chatType) {
-            this.broadcastToViewers(viewers, chatType, $ -> renderedMessage);
+            this.broadcastToViewers(viewers, chatType, _ -> renderedMessage);
         }
 
         @Override
@@ -280,7 +280,7 @@ public final class ChatProcessor {
 
         private net.kyori.adventure.chat.ChatType.Bound adventure(ChatType.Bound chatType) {
             @Subst("key:value") final String stringKey = Objects.requireNonNull(
-                chatType.chatType().unwrapKey().orElseThrow().location(),
+                chatType.chatType().unwrapKey().orElseThrow().identifier(),
                 () -> "No key for '%s' in CHAT_TYPE registry.".formatted(chatType)
             ).toString();
             net.kyori.adventure.chat.@Nullable ChatType adventure = BUILT_IN_CHAT_TYPES.get(stringKey);

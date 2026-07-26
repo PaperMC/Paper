@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.RegistrationInfo;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -29,20 +29,20 @@ public class RegistryLoadOrderTest {
 
     public static Stream<Arguments> data() {
         return Stream.of(
-                Arguments.of(
-                        (Supplier<Boolean>) () -> RegistryLoadOrderTest.initInterface,
-                        BukkitInterfaceTestType.class,
-                        (BiFunction<NamespacedKey, MinecraftTestType, Keyed>) CraftBukkitInterfaceTestType::new,
-                        (Supplier<Keyed>) () -> BukkitInterfaceTestType.TEST_ONE,
-                        (Supplier<Keyed>) () -> BukkitInterfaceTestType.TEST_TWO
-                ),
-                Arguments.of(
-                        (Supplier<Boolean>) () -> RegistryLoadOrderTest.initAbstract,
-                        BukkitAbstractTestType.class,
-                        (BiFunction<NamespacedKey, MinecraftTestType, Keyed>) CraftBukkitAbstractTestType::new,
-                        (Supplier<Keyed>) () -> BukkitAbstractTestType.TEST_ONE,
-                        (Supplier<Keyed>) () -> BukkitAbstractTestType.TEST_TWO
-                )
+            Arguments.of(
+                (Supplier<Boolean>) () -> RegistryLoadOrderTest.initInterface,
+                BukkitInterfaceTestType.class,
+                (BiFunction<NamespacedKey, MinecraftTestType, Keyed>) CraftBukkitInterfaceTestType::new,
+                (Supplier<Keyed>) () -> BukkitInterfaceTestType.TEST_ONE,
+                (Supplier<Keyed>) () -> BukkitInterfaceTestType.TEST_TWO
+            ),
+            Arguments.of(
+                (Supplier<Boolean>) () -> RegistryLoadOrderTest.initAbstract,
+                BukkitAbstractTestType.class,
+                (BiFunction<NamespacedKey, MinecraftTestType, Keyed>) CraftBukkitAbstractTestType::new,
+                (Supplier<Keyed>) () -> BukkitAbstractTestType.TEST_ONE,
+                (Supplier<Keyed>) () -> BukkitAbstractTestType.TEST_TWO
+            )
         );
     }
 
@@ -51,11 +51,11 @@ public class RegistryLoadOrderTest {
     public void testRegistryLoadOrder(Supplier<Boolean> init, Class<Keyed> keyedClass, BiFunction<NamespacedKey, MinecraftTestType, Keyed> minecraftToBukkit, Supplier<Keyed> first, Supplier<Keyed> second) {
         this.testClassNotLoaded(init.get());
 
-        ResourceKey<net.minecraft.core.Registry<MinecraftTestType>> resourceKey = ResourceKey.createRegistryKey(ResourceLocation.tryBuild("bukkit", "test-registry"));
+        ResourceKey<net.minecraft.core.Registry<MinecraftTestType>> resourceKey = ResourceKey.createRegistryKey(Identifier.fromNamespaceAndPath("bukkit", "test-registry"));
         MappedRegistry<MinecraftTestType> minecraftRegistry = new MappedRegistry<>(resourceKey, Lifecycle.experimental());
 
-        minecraftRegistry.register(ResourceKey.create(resourceKey, ResourceLocation.tryBuild("bukkit", "test-one")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
-        minecraftRegistry.register(ResourceKey.create(resourceKey, ResourceLocation.tryBuild("bukkit", "test-two")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
+        minecraftRegistry.register(ResourceKey.create(resourceKey, Identifier.fromNamespaceAndPath("bukkit", "test-one")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
+        minecraftRegistry.register(ResourceKey.create(resourceKey, Identifier.fromNamespaceAndPath("bukkit", "test-two")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
         minecraftRegistry.freeze();
 
         RegistryLoadOrderTest.registry = new CraftRegistry<>(keyedClass, minecraftRegistry, minecraftToBukkit, (namespacedKey, apiVersion) -> namespacedKey);
@@ -82,10 +82,10 @@ public class RegistryLoadOrderTest {
 
     private void testClassNotLoaded(boolean init) {
         assertFalse(init, """
-                TestType class is already loaded, this test however tests the behavior when the class is not loaded.
-                This should normally not happen with how classes should be loaded.
-                Something has changed how classes are loaded and a more manual deeper look is required.
-                """);
+            TestType class is already loaded, this test however tests the behavior when the class is not loaded.
+            This should normally not happen with how classes should be loaded.
+            Something has changed how classes are loaded and a more manual deeper look is required.
+            """);
     }
 
     public interface BukkitInterfaceTestType extends Keyed {

@@ -1,9 +1,9 @@
 package org.bukkit.event.inventory;
 
-import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.SmithingInventory;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,8 +12,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class PrepareSmithingEvent extends com.destroystokyo.paper.event.inventory.PrepareResultEvent {
 
-    // Paper - move HandlerList ot PrepareInventoryResultEvent
-
+    @ApiStatus.Internal
     public PrepareSmithingEvent(@NotNull InventoryView inventory, @Nullable ItemStack result) {
         super(inventory, result);
     }
@@ -23,6 +22,4 @@ public class PrepareSmithingEvent extends com.destroystokyo.paper.event.inventor
     public SmithingInventory getInventory() {
         return (SmithingInventory) super.getInventory();
     }
-
-    // Paper - move HandlerList to PrepareInventoryResultEvent
 }

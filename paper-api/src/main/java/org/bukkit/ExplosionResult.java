@@ -11,7 +11,7 @@ public enum ExplosionResult {
     /**
      * Represents an explosion where no change took place.
      *
-     * This is the case when {@link org.bukkit.GameRule#MOB_GRIEFING} is
+     * This is the case when {@link org.bukkit.GameRules#MOB_GRIEFING} is
      * disabled.
      */
     KEEP,
@@ -19,8 +19,8 @@ public enum ExplosionResult {
      * Represents an explosion where all destroyed blocks drop their items.
      *
      * This is the case when
-     * {@link org.bukkit.GameRule#TNT_EXPLOSION_DROP_DECAY} or
-     * {@link org.bukkit.GameRule#BLOCK_EXPLOSION_DROP_DECAY} is disabled.
+     * {@link org.bukkit.GameRules#TNT_EXPLOSION_DROP_DECAY} or
+     * {@link org.bukkit.GameRules#BLOCK_EXPLOSION_DROP_DECAY} is disabled.
      */
     DESTROY,
     /**

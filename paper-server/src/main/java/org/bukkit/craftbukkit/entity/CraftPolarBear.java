@@ -5,20 +5,15 @@ import org.bukkit.entity.PolarBear;
 
 public class CraftPolarBear extends CraftAnimals implements PolarBear {
 
-    public CraftPolarBear(CraftServer server, net.minecraft.world.entity.animal.PolarBear entity) {
+    public CraftPolarBear(CraftServer server, net.minecraft.world.entity.animal.polarbear.PolarBear entity) {
         super(server, entity);
     }
-    @Override
-    public net.minecraft.world.entity.animal.PolarBear getHandle() {
-        return (net.minecraft.world.entity.animal.PolarBear) this.entity;
-    }
 
     @Override
-    public String toString() {
-        return "CraftPolarBear";
+    public net.minecraft.world.entity.animal.polarbear.PolarBear getHandle() {
+        return (net.minecraft.world.entity.animal.polarbear.PolarBear) this.entity;
     }
 
-    // Paper start
     @Override
     public boolean isStanding() {
         return this.getHandle().isStanding();
@@ -28,5 +23,4 @@ public class CraftPolarBear extends CraftAnimals implements PolarBear {
     public void setStanding(boolean standing) {
         this.getHandle().setStanding(standing);
     }
-    // Paper end
 }

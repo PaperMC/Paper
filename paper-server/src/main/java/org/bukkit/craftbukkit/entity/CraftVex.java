@@ -1,11 +1,15 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.Optionull;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.EntityReference;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Vex;
+import org.jetbrains.annotations.Nullable;
 
 public class CraftVex extends CraftMonster implements Vex {
 
@@ -15,19 +19,17 @@ public class CraftVex extends CraftMonster implements Vex {
 
     @Override
     public net.minecraft.world.entity.monster.Vex getHandle() {
-        return (net.minecraft.world.entity.monster.Vex) super.getHandle();
-    }
-
-    // Paper start
-    @Override
-    public org.bukkit.entity.Mob getSummoner() {
-        net.minecraft.world.entity.Mob owner = getHandle().getOwner();
-        return owner != null ? (org.bukkit.entity.Mob) owner.getBukkitEntity() : null;
+        return (net.minecraft.world.entity.monster.Vex) this.entity;
     }
 
     @Override
-    public void setSummoner(org.bukkit.entity.Mob summoner) {
-        getHandle().setOwner(summoner == null ? null : ((CraftMob) summoner).getHandle());
+    public @Nullable LivingEntity getOwner() {
+        return Optionull.map(this.getHandle().getOwner(), net.minecraft.world.entity.LivingEntity::getBukkitLivingEntity);
+    }
+
+    @Override
+    public void setOwner(final @Nullable LivingEntity owner) {
+        this.getHandle().owner = owner == null ? null : EntityReference.of(((CraftLivingEntity) owner).getHandle());
     }
 
     @Override
@@ -49,12 +51,6 @@ public class CraftVex extends CraftMonster implements Vex {
     public void setLimitedLifetimeTicks(int ticks) {
         this.getHandle().limitedLifeTicks = ticks;
     }
-    // Paper end
-
-    @Override
-    public String toString() {
-        return "CraftVex";
-    }
 
     @Override
     public boolean isCharging() {
@@ -68,8 +64,8 @@ public class CraftVex extends CraftMonster implements Vex {
 
     @Override
     public Location getBound() {
-        BlockPos blockPosition = this.getHandle().getBoundOrigin();
-        return (blockPosition == null) ? null : CraftLocation.toBukkit(blockPosition, this.getWorld());
+        BlockPos pos = this.getHandle().getBoundOrigin();
+        return (pos == null) ? null : CraftLocation.toBukkit(pos, this.getWorld());
     }
 
     @Override
@@ -78,13 +74,8 @@ public class CraftVex extends CraftMonster implements Vex {
             this.getHandle().setBoundOrigin(null);
         } else {
             Preconditions.checkArgument(this.getWorld().equals(location.getWorld()), "The bound world cannot be different to the entity's world.");
-            this.getHandle().setBoundOrigin(CraftLocation.toBlockPosition(location));
+            this.getHandle().setBoundOrigin(CraftLocation.toBlockPos(location));
         }
-    }
-
-    @Override
-    public int getLifeTicks() {
-        return this.getHandle().limitedLifeTicks;
     }
 
     @Override
@@ -93,10 +84,5 @@ public class CraftVex extends CraftMonster implements Vex {
         if (lifeTicks < 0) {
             this.getHandle().hasLimitedLife = false;
         }
-    }
-
-    @Override
-    public boolean hasLimitedLife() {
-        return this.getHandle().hasLimitedLife;
     }
 }

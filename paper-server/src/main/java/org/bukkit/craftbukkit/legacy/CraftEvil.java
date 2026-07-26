@@ -34,7 +34,6 @@ public final class CraftEvil {
     }
 
     private CraftEvil() {
-        //
     }
 
     public static void setDurability(ItemStack itemStack, short durability) {

@@ -1,64 +1,30 @@
 --- a/net/minecraft/nbt/CompoundTag.java
 +++ b/net/minecraft/nbt/CompoundTag.java
-@@ -49,7 +_,7 @@
+@@ -51,7 +_,7 @@
  
-         private static CompoundTag loadCompound(DataInput input, NbtAccounter nbtAccounter) throws IOException {
-             nbtAccounter.accountBytes(48L);
--            Map<String, Tag> map = Maps.newHashMap();
-+            it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<String, Tag> map = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(8, 0.8f); // Paper - Reduce memory footprint of CompoundTag
+         private static CompoundTag loadCompound(final DataInput input, final NbtAccounter accounter) throws IOException {
+             accounter.accountBytes(48L);
+-            Map<String, Tag> values = Maps.newHashMap();
++            it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<String, Tag> values = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(8, 0.8f); // Paper - Reduce memory footprint of CompoundTag
  
-             byte b;
-             while ((b = input.readByte()) != 0) {
-@@ -166,7 +_,7 @@
+             byte tagType;
+             while ((tagType = input.readByte()) != 0) {
+@@ -165,7 +_,7 @@
      }
  
      public CompoundTag() {
--        this(Maps.newHashMap());
+-        this(new HashMap<>());
 +        this(new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(8, 0.8f)); // Paper - Reduce memory footprint of CompoundTag
      }
  
      @Override
-@@ -232,14 +_,34 @@
-     }
- 
-     public void putUUID(String key, UUID value) {
-+        // Paper start - Support old UUID format
-+        if (this.contains(key + "Most", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC) && this.contains(key + "Least", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
-+            this.tags.remove(key + "Most");
-+            this.tags.remove(key + "Least");
-+        }
-+        // Paper end - Support old UUID format
-         this.tags.put(key, NbtUtils.createUUID(value));
-     }
- 
-+
-+    /**
-+     * You must use {@link #hasUUID(String)} before or else it <b>will</b> throw an NPE.
-+     */
-     public UUID getUUID(String key) {
-+        // Paper start - Support old UUID format
-+        if (!contains(key, 11) && this.contains(key + "Most", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC) && this.contains(key + "Least", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
-+            return new UUID(this.getLong(key + "Most"), this.getLong(key + "Least"));
-+        }
-+        // Paper end - Support old UUID format
-         return NbtUtils.loadUUID(this.get(key));
-     }
- 
-     public boolean hasUUID(String key) {
-+        // Paper start - Support old UUID format
-+        if (this.contains(key + "Most", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC) && this.contains(key + "Least", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
-+            return true;
-+        }
-+        // Paper end - Support old UUID format
-         Tag tag = this.get(key);
-         return tag != null && tag.getType() == IntArrayTag.TYPE && ((IntArrayTag)tag).getAsIntArray().length == 4;
-     }
-@@ -477,8 +_,16 @@
+@@ -394,9 +_,16 @@
  
      @Override
      public CompoundTag copy() {
--        Map<String, Tag> map = Maps.newHashMap(Maps.transformValues(this.tags, Tag::copy));
--        return new CompoundTag(map);
+-        HashMap<String, Tag> newTags = new HashMap<>();
+-        this.tags.forEach((key, tag) -> newTags.put(key, tag.copy()));
+-        return new CompoundTag(newTags);
 +        // Paper start - Reduce memory footprint of CompoundTag
 +        it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<String, Tag> ret = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(this.tags.size(), 0.8f);
 +        java.util.Iterator<java.util.Map.Entry<String, Tag>> iterator = (this.tags instanceof it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap) ? ((it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap)this.tags).object2ObjectEntrySet().fastIterator() : this.tags.entrySet().iterator();
@@ -72,3 +38,55 @@
      }
  
      @Override
+@@ -517,22 +_,47 @@
+         this.merge((CompoundTag)codec.encoder().encodeStart(ops, value).getOrThrow());
+     }
+ 
+-    public <T> Optional<T> read(final String name, final Codec<T> codec) {
++    public <T> Optional<T> read(final String name, final Codec<T> codec) { // Paper - option to read via codec without logging errors - diff on change
+         return this.read(name, codec, NbtOps.INSTANCE);
+     }
+ 
+-    public <T> Optional<T> read(final String name, final Codec<T> codec, final DynamicOps<Tag> ops) {
++    public <T> Optional<T> read(final String name, final Codec<T> codec, final DynamicOps<Tag> ops) { // Paper - option to read via codec without logging errors - diff on change
+         Tag tag = this.get(name);
+         return tag == null
+             ? Optional.empty()
+             : codec.parse(ops, tag).resultOrPartial(error -> LOGGER.error("Failed to read field ({}={}): {}", name, tag, error));
+     }
+ 
+-    public <T> Optional<T> read(final MapCodec<T> codec) {
++    public <T> Optional<T> read(final MapCodec<T> codec) { // Paper - option to read via codec without logging errors - diff on change
+         return this.read(codec, NbtOps.INSTANCE);
+     }
+ 
+-    public <T> Optional<T> read(final MapCodec<T> codec, final DynamicOps<Tag> ops) {
++    public <T> Optional<T> read(final MapCodec<T> codec, final DynamicOps<Tag> ops) { // Paper - option to read via codec without logging errors - diff on change
+         return codec.decode(ops, ops.getMap(this).getOrThrow()).resultOrPartial(error -> LOGGER.error("Failed to read value ({}): {}", this, error));
+     }
++
++    // Paper start - option to read via codec without logging errors
++    // The below methods are 1 to 1 copies of the above-defined read methods without the logging part.
++    // Copying was chosen over overloading the read methods as a boolean parameter to mark a method as quiet
++    // is not intuitive and would require even more overloads.
++    // Not a lot of diff in these methods is expected
++    public <T> Optional<T> readQuiet(String name, Codec<T> codec) {
++        return this.readQuiet(name, codec, NbtOps.INSTANCE);
++    }
++
++    public <T> Optional<T> readQuiet(String name, Codec<T> codec, DynamicOps<Tag> ops) {
++        Tag tag = this.get(name);
++        return tag == null
++            ? Optional.empty()
++            : codec.parse(ops, tag).resultOrPartial();
++    }
++
++    public <T> Optional<T> readQuiet(MapCodec<T> codec) {
++        return this.readQuiet(codec, NbtOps.INSTANCE);
++    }
++
++    public <T> Optional<T> readQuiet(MapCodec<T> codec, DynamicOps<Tag> ops) {
++        return codec.decode(ops, ops.getMap(this).getOrThrow()).resultOrPartial();
++    }
++    // Paper end - option to read via codec without logging errors
+ }

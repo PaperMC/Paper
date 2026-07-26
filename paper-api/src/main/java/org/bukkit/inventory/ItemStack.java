@@ -1,8 +1,9 @@
 package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.InternalAPIBridge;
+import io.papermc.paper.datacomponent.DataComponentHolder;
 import io.papermc.paper.registry.RegistryKey;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -30,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
  * use this class to encapsulate Materials for which {@link Material#isItem()}
  * returns false.</b>
  */
-public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.persistence.PersistentDataViewHolder { // Paper
+public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.persistence.PersistentDataViewHolder, DataComponentHolder { // Paper
     private ItemStack craftDelegate; // Paper - always delegate to server-backed stack
     private MaterialData data = null;
 
@@ -370,21 +371,21 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     /**
      * Checks if this ItemStack contains the given {@link Enchantment}
      *
-     * @param ench Enchantment to test
+     * @param enchant Enchantment to test
      * @return True if this has the given enchantment
      */
-    public boolean containsEnchantment(@NotNull Enchantment ench) {
-        return this.craftDelegate.containsEnchantment(ench); // Paper - delegate
+    public boolean containsEnchantment(@NotNull Enchantment enchant) {
+        return this.craftDelegate.containsEnchantment(enchant); // Paper - delegate
     }
 
     /**
      * Gets the level of the specified enchantment on this item stack
      *
-     * @param ench Enchantment to check
+     * @param enchant Enchantment to check
      * @return Level of the enchantment, or 0
      */
-    public int getEnchantmentLevel(@NotNull Enchantment ench) {
-        return this.craftDelegate.getEnchantmentLevel(ench); // Paper - delegate
+    public int getEnchantmentLevel(@NotNull Enchantment enchant) {
+        return this.craftDelegate.getEnchantmentLevel(enchant); // Paper - delegate
     }
 
     /**
@@ -424,21 +425,21 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * If this item stack already contained the given enchantment (at any
      * level), it will be replaced.
      *
-     * @param ench Enchantment to add
+     * @param enchant Enchantment to add
      * @param level Level of the enchantment
      * @throws IllegalArgumentException if enchantment null, or enchantment is
      *     not applicable
      */
     @Utility
-    public void addEnchantment(@NotNull Enchantment ench, int level) {
-        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
-        if ((level < ench.getStartLevel()) || (level > ench.getMaxLevel())) {
-            throw new IllegalArgumentException("Enchantment level is either too low or too high (given " + level + ", bounds are " + ench.getStartLevel() + " to " + ench.getMaxLevel() + ")");
-        } else if (!ench.canEnchantItem(this)) {
+    public void addEnchantment(@NotNull Enchantment enchant, int level) {
+        Preconditions.checkArgument(enchant != null, "Enchantment cannot be null");
+        if ((level < enchant.getStartLevel()) || (level > enchant.getMaxLevel())) {
+            throw new IllegalArgumentException("Enchantment level is either too low or too high (given " + level + ", bounds are " + enchant.getStartLevel() + " to " + enchant.getMaxLevel() + ")");
+        } else if (!enchant.canEnchantItem(this)) {
             throw new IllegalArgumentException("Specified enchantment cannot be applied to this itemstack");
         }
 
-        addUnsafeEnchantment(ench, level);
+        addUnsafeEnchantment(enchant, level);
     }
 
     /**
@@ -466,22 +467,22 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * This method is unsafe and will ignore level restrictions or item type.
      * Use at your own discretion.
      *
-     * @param ench Enchantment to add
+     * @param enchant Enchantment to add
      * @param level Level of the enchantment
      */
-    public void addUnsafeEnchantment(@NotNull Enchantment ench, int level) {
-        this.craftDelegate.addUnsafeEnchantment(ench, level); // Paper - delegate
+    public void addUnsafeEnchantment(@NotNull Enchantment enchant, int level) {
+        this.craftDelegate.addUnsafeEnchantment(enchant, level); // Paper - delegate
     }
 
     /**
      * Removes the specified {@link Enchantment} if it exists on this
      * ItemStack
      *
-     * @param ench Enchantment to remove
+     * @param enchant Enchantment to remove
      * @return Previous level, or 0
      */
-    public int removeEnchantment(@NotNull Enchantment ench) {
-        return this.craftDelegate.removeEnchantment(ench); // Paper - delegate
+    public int removeEnchantment(@NotNull Enchantment enchant) {
+        return this.craftDelegate.removeEnchantment(enchant); // Paper - delegate
     }
 
     /**
@@ -495,21 +496,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     @NotNull
     @Utility
     public Map<String, Object> serialize() {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
-
-        result.put("v", Bukkit.getUnsafe().getDataVersion()); // Include version to indicate we are using modern material names (or LEGACY prefix)
-        result.put("type", getType().name());
-
-        if (getAmount() != 1) {
-            result.put("amount", getAmount());
-        }
-
-        ItemMeta meta = getItemMeta();
-        if (!Bukkit.getItemFactory().equals(meta, null)) {
-            result.put("meta", meta);
-        }
-
-        return result;
+        return this.craftDelegate.serialize();
     }
 
     /**
@@ -521,6 +508,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @NotNull
     public static ItemStack deserialize(@NotNull Map<String, Object> args) {
+        // Parse internally, if schema_version is not defined, assume legacy and fall through to unsafe legacy deserialization logic
+        if (args.containsKey("schema_version")) {
+            return org.bukkit.Bukkit.getUnsafe().deserializeStack(args);
+        }
+
         int version = (args.containsKey("v")) ? ((Number) args.get("v")).intValue() : -1;
         short damage = 0;
         int amount = 1;
@@ -550,7 +542,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
 
         ItemStack result = new ItemStack(type, amount, damage);
 
-        if (args.containsKey("enchantments")) { // Backward compatiblity, @deprecated
+        if (args.containsKey("enchantments")) { // Backward compatibility, @deprecated
             Object raw = args.get("enchantments");
 
             if (raw instanceof Map) {
@@ -675,7 +667,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     @NotNull
     @Deprecated(forRemoval = true) // Paper
     public String getTranslationKey() {
-        return Bukkit.getUnsafe().getTranslationKey(this);
+        return this.craftDelegate.getTranslationKey();
     }
 
     // Paper start
@@ -714,6 +706,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         return Bukkit.getItemFactory().enchantWithLevels(this, levels, keySet, random);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param op transformation on value
+     * @return a hover event
+     * @throws IllegalArgumentException if the {@link ItemStack#getAmount()} is not between 1 and 99
+     */
     @NotNull
     @Override
     public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
@@ -723,6 +722,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     /**
      * Get the formatted display name of the {@link ItemStack}.
      *
+     * @apiNote this component include a {@link net.kyori.adventure.text.event.HoverEvent item hover event}.
+     * When used in chat, make sure to follow the ItemStack rules regarding amount, type, and other properties.
      * @return display name of the {@link ItemStack}
      */
     public net.kyori.adventure.text.@NotNull Component displayName() {
@@ -755,7 +756,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
 
     /**
      * Deserializes this itemstack from raw NBT bytes. NBT is safer for data migrations as it will
-     * use the built in data converter instead of bukkits dangerous serialization system.
+     * use the built-in data converter instead of bukkits dangerous serialization system.
      *
      * This expects that the DataVersion was stored on the root of the Compound, as saved from
      * the {@link #serializeAsBytes()} API returned.
@@ -763,16 +764,20 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return ItemStack migrated to this version of Minecraft if needed.
      */
     public static @NotNull ItemStack deserializeBytes(final byte @NotNull [] bytes) {
-        return org.bukkit.Bukkit.getUnsafe().deserializeItem(bytes);
+        Preconditions.checkArgument(bytes != null, "null cannot be deserialized");
+        Preconditions.checkArgument(bytes.length > 0, "cannot deserialize nothing");
+
+        return InternalAPIBridge.get().deserializeItem(bytes);
     }
 
     /**
      * Serializes this itemstack to raw bytes in NBT. NBT is safer for data migrations as it will
-     * use the built in data converter instead of bukkits dangerous serialization system.
+     * use the built-in data converter instead of bukkits dangerous serialization system.
+     *
      * @return bytes representing this item in NBT.
      */
     public byte @NotNull [] serializeAsBytes() {
-        return org.bukkit.Bukkit.getUnsafe().serializeItem(this);
+        return this.craftDelegate.serializeAsBytes();
     }
 
     /**
@@ -882,7 +887,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @Deprecated(forRemoval = true)
     public int getMaxItemUseDuration() {
-        return getMaxItemUseDuration(null);
+        return this.getMaxItemUseDuration(null);
     }
 
     public int getMaxItemUseDuration(@NotNull final org.bukkit.entity.LivingEntity entity) {
@@ -1077,7 +1082,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @Override
     public @NotNull String translationKey() {
-        return Bukkit.getUnsafe().getTranslationKey(this);
+        return this.craftDelegate.translationKey();
     }
 
     /**
@@ -1100,7 +1105,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return true if it is repairable by, false if not
      */
     public boolean isRepairableBy(@NotNull ItemStack repairMaterial) {
-        return Bukkit.getUnsafe().isValidRepairItemStack(this, repairMaterial);
+        return this.craftDelegate.isRepairableBy(repairMaterial);
     }
 
     /**
@@ -1111,7 +1116,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return true if it can repair, false if not
      */
     public boolean canRepair(@NotNull ItemStack toBeRepaired) {
-        return Bukkit.getUnsafe().isValidRepairItemStack(toBeRepaired, this);
+        return toBeRepaired.isRepairableBy(this);
     }
 
     /**
@@ -1136,8 +1141,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @NotNull
     public static ItemStack empty() {
-        //noinspection deprecation
-        return Bukkit.getUnsafe().createEmptyStack(); // Paper - proxy ItemStack
+        return InternalAPIBridge.get().createEmptyStack(); // Paper - proxy ItemStack
     }
 
     /**
@@ -1160,9 +1164,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param player a player for player-specific tooltip lines
      * @return an immutable list of components (can be empty)
      */
-    @SuppressWarnings("deprecation") // abusing unsafe as a bridge
-    public java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<net.kyori.adventure.text.Component> computeTooltipLines(final @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final @Nullable org.bukkit.entity.Player player) {
-        return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
+    public java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<net.kyori.adventure.text.Component> computeTooltipLines(final @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final org.bukkit.entity.@Nullable Player player) {
+        return this.craftDelegate.computeTooltipLines(tooltipContext, player);
     }
     // Paper end - expose itemstack tooltip lines
 

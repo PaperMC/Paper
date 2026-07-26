@@ -2,13 +2,15 @@ package org.bukkit.entity;
 
 import org.bukkit.attribute.Attribute;
 import org.bukkit.damage.DamageSource;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.bukkit.damage.DamageType;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents an {@link Entity} that has health and can take damage.
  */
+@NullMarked
 public interface Damageable extends Entity {
     /**
      * Deals the given amount of damage to this entity.
@@ -33,8 +35,24 @@ public interface Damageable extends Entity {
      * @param amount amount of damage to deal
      * @param damageSource source to which the damage should be attributed
      */
-    @ApiStatus.Experimental
-    void damage(double amount, @NotNull DamageSource damageSource);
+    void damage(double amount, DamageSource damageSource);
+
+    /**
+     * Sets the entity's health to 0 and kill the entity with a generic DamageSource.
+     *
+     * @throws IllegalStateException if is used in world generation
+     */
+    default void kill() {
+        this.kill(DamageSource.builder(DamageType.GENERIC_KILL).build());
+    }
+
+    /**
+     * Sets the entity's health to 0 and kill the entity with the specified DamageSource.
+     *
+     * @param damageSource the DamageSource to use for the kill
+     * @throws IllegalStateException if is used in world generation
+     */
+    void kill(DamageSource damageSource);
 
     /**
      * Gets the entity's health from 0 to {@link #getMaxHealth()}, where 0 is dead.
@@ -53,14 +71,13 @@ public interface Damageable extends Entity {
      */
     void setHealth(double health);
 
-    // Paper start - entity heal API
     /**
      * Heal this entity by the given amount. This will call {@link org.bukkit.event.entity.EntityRegainHealthEvent}.
      *
      * @param amount heal amount
      */
     default void heal(final double amount) {
-        this.heal(amount, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.CUSTOM);
+        this.heal(amount, EntityRegainHealthEvent.RegainReason.CUSTOM);
     }
 
     /**
@@ -69,8 +86,7 @@ public interface Damageable extends Entity {
      * @param amount heal amount
      * @param reason heal reason
      */
-    void heal(double amount, @NotNull org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason reason);
-    // Paper end - entity heal API
+    void heal(double amount, EntityRegainHealthEvent.RegainReason reason);
 
     /**
      * Gets the entity's absorption amount.
@@ -108,7 +124,7 @@ public interface Damageable extends Entity {
      * to that value.
      * <p>
      * Note: An entity with a health bar ({@link Player}, {@link EnderDragon},
-     * {@link Wither}, etc...} will have their bar scaled accordingly.
+     * {@link Wither}, etc...) will have their bar scaled accordingly.
      *
      * @param health amount of health to set the maximum to
      * @deprecated use {@link Attribute#MAX_HEALTH}.

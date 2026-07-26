@@ -13,8 +13,8 @@ import org.bukkit.inventory.Inventory;
 
 public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implements ShulkerBox {
 
-    public CraftShulkerBox(World world, ShulkerBoxBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftShulkerBox(World world, ShulkerBoxBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftShulkerBox(CraftShulkerBox state, Location location) {
@@ -32,12 +32,12 @@ public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implem
             return this.getSnapshotInventory();
         }
 
-        return new CraftInventory(this.getTileEntity());
+        return new CraftInventory(this.getBlockEntity());
     }
 
     @Override
     public DyeColor getColor() {
-        net.minecraft.world.item.DyeColor color = ((ShulkerBoxBlock) CraftBlockType.bukkitToMinecraft(this.getType())).color;
+        net.minecraft.world.item.DyeColor color = ((ShulkerBoxBlock) CraftBlockType.bukkitToMinecraft(this.getType())).getColor();
 
         return (color == null) ? null : DyeColor.getByWoolData((byte) color.getId());
     }
@@ -45,23 +45,23 @@ public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implem
     @Override
     public void open() {
         this.requirePlaced();
-        if (!this.getTileEntity().opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
-            net.minecraft.world.level.Level world = this.getTileEntity().getLevel();
-            world.blockEvent(this.getPosition(), this.getTileEntity().getBlockState().getBlock(), 1, 1);
-            world.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
+        if (!this.getBlockEntity().opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
+            net.minecraft.world.level.Level level = this.getBlockEntity().getLevel();
+            level.blockEvent(this.getPosition(), this.getBlockEntity().getBlockState().getBlock(), 1, 1);
+            level.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, level.getRandom().nextFloat() * 0.1F + 0.9F);
         }
-        this.getTileEntity().opened = true;
+        this.getBlockEntity().opened = true;
     }
 
     @Override
     public void close() {
         this.requirePlaced();
-        if (this.getTileEntity().opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
-            net.minecraft.world.level.Level world = this.getTileEntity().getLevel();
-            world.blockEvent(this.getPosition(), this.getTileEntity().getBlockState().getBlock(), 1, 0);
-            world.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F); // Paper - More Lidded Block API (Wrong sound)
+        if (this.getBlockEntity().opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
+            net.minecraft.world.level.Level level = this.getBlockEntity().getLevel();
+            level.blockEvent(this.getPosition(), this.getBlockEntity().getBlockState().getBlock(), 1, 0);
+            level.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.BLOCKS, 0.5F, level.getRandom().nextFloat() * 0.1F + 0.9F); // Paper - More Lidded Block API (Wrong sound)
         }
-        this.getTileEntity().opened = false;
+        this.getBlockEntity().opened = false;
     }
 
     @Override
@@ -77,7 +77,7 @@ public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implem
     // Paper start - More Lidded Block API
     @Override
     public boolean isOpen() {
-        return getTileEntity().opened;
+        return getBlockEntity().opened;
     }
     // Paper end - More Lidded Block API
 }

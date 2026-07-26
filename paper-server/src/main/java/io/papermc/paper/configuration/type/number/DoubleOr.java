@@ -1,6 +1,7 @@
 package io.papermc.paper.configuration.type.number;
 
 import com.google.common.base.Preconditions;
+import java.lang.reflect.AnnotatedType;
 import java.util.OptionalDouble;
 import java.util.function.DoublePredicate;
 import java.util.function.Function;
@@ -20,17 +21,17 @@ public interface DoubleOr {
     }
 
     record Default(OptionalDouble value) implements DoubleOr {
-        private static final String DEFAULT_VALUE = "default";
         public static final Default USE_DEFAULT = new Default(OptionalDouble.empty());
+        private static final String DEFAULT_VALUE = "default";
         public static final ScalarSerializer<Default> SERIALIZER = new Serializer<>(Default.class, Default::new, DEFAULT_VALUE, USE_DEFAULT);
     }
 
     record Disabled(OptionalDouble value) implements DoubleOr {
-        private static final String DISABLED_VALUE = "disabled";
         public static final Disabled DISABLED = new Disabled(OptionalDouble.empty());
+        private static final String DISABLED_VALUE = "disabled";
         public static final ScalarSerializer<Disabled> SERIALIZER = new Serializer<>(Disabled.class, Disabled::new, DISABLED_VALUE, DISABLED);
 
-        public boolean test(DoublePredicate predicate) {
+        public boolean test(final DoublePredicate predicate) {
             return this.value.isPresent() && predicate.test(this.value.getAsDouble());
         }
 
@@ -40,12 +41,12 @@ public interface DoubleOr {
     }
 
     final class Serializer<T extends DoubleOr> extends OptionalNumSerializer<T, OptionalDouble> {
-        Serializer(final Class<T> classOfT, final Function<OptionalDouble, T> factory, String emptySerializedValue, T emptyValue) {
+        Serializer(final Class<T> classOfT, final Function<OptionalDouble, T> factory, final String emptySerializedValue, final T emptyValue) {
             super(classOfT, emptySerializedValue, emptyValue, OptionalDouble::empty, OptionalDouble::isEmpty, factory, double.class);
         }
 
         @Override
-        protected Object serialize(final T item, final Predicate<Class<?>> typeSupported) {
+        protected Object serialize(final AnnotatedType type, final T item, final Predicate<Class<?>> typeSupported) {
             final OptionalDouble value = item.value();
             if (value.isPresent()) {
                 return value.getAsDouble();

@@ -6,7 +6,6 @@ import org.jetbrains.annotations.ApiStatus;
  * To be implemented by types that provide ways to register types
  * either on server start or during a reload
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface Registrar {
 }

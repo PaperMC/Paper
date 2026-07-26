@@ -10,40 +10,35 @@ import org.bukkit.entity.ZombieVillager;
 
 public class CraftVillagerZombie extends CraftZombie implements ZombieVillager {
 
-    public CraftVillagerZombie(CraftServer server, net.minecraft.world.entity.monster.ZombieVillager entity) {
+    public CraftVillagerZombie(CraftServer server, net.minecraft.world.entity.monster.zombie.ZombieVillager entity) {
         super(server, entity);
     }
 
     @Override
-    public net.minecraft.world.entity.monster.ZombieVillager getHandle() {
-        return (net.minecraft.world.entity.monster.ZombieVillager) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftVillagerZombie";
+    public net.minecraft.world.entity.monster.zombie.ZombieVillager getHandle() {
+        return (net.minecraft.world.entity.monster.zombie.ZombieVillager) this.entity;
     }
 
     @Override
     public Villager.Profession getVillagerProfession() {
-        return CraftVillager.CraftProfession.minecraftToBukkit(this.getHandle().getVillagerData().getProfession());
+        return CraftVillager.CraftProfession.minecraftHolderToBukkit(this.getHandle().getVillagerData().profession());
     }
 
     @Override
     public void setVillagerProfession(Villager.Profession profession) {
         Preconditions.checkArgument(profession != null, "Villager.Profession cannot be null");
-        this.getHandle().setVillagerData(this.getHandle().getVillagerData().setProfession(CraftVillager.CraftProfession.bukkitToMinecraft(profession)));
+        this.getHandle().setVillagerData(this.getHandle().getVillagerData().withProfession(CraftVillager.CraftProfession.bukkitToMinecraftHolder(profession)));
     }
 
     @Override
     public Villager.Type getVillagerType() {
-        return CraftVillager.CraftType.minecraftToBukkit(this.getHandle().getVillagerData().getType());
+        return CraftVillager.CraftType.minecraftHolderToBukkit(this.getHandle().getVillagerData().type());
     }
 
     @Override
     public void setVillagerType(Villager.Type type) {
         Preconditions.checkArgument(type != null, "Villager.Type cannot be null");
-        this.getHandle().setVillagerData(this.getHandle().getVillagerData().setType(CraftVillager.CraftType.bukkitToMinecraft(type)));
+        this.getHandle().setVillagerData(this.getHandle().getVillagerData().withType(CraftVillager.CraftType.bukkitToMinecraftHolder(type)));
     }
 
     @Override
@@ -68,10 +63,10 @@ public class CraftVillagerZombie extends CraftZombie implements ZombieVillager {
     public void setConversionTime(int time, boolean broadcastEntityEvent) {
     // Paper end - missing entity behaviour api - converting without entity event
         if (time < 0) {
-            this.getHandle().villagerConversionTime = -1;
-            this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.ZombieVillager.DATA_CONVERTING_ID, false);
+            this.getHandle().setVillagerConversionTime(-1);
+            this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.zombie.ZombieVillager.DATA_CONVERTING_ID, false);
             this.getHandle().conversionStarter = null;
-            this.getHandle().removeEffect(MobEffects.DAMAGE_BOOST, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
+            this.getHandle().removeEffect(MobEffects.STRENGTH, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
         } else {
             this.getHandle().startConverting(null, time, broadcastEntityEvent); // Paper - missing entity behaviour api - converting without entity event
         }

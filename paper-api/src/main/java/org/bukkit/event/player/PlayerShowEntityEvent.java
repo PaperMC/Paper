@@ -3,6 +3,7 @@ package org.bukkit.event.player;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -18,11 +19,13 @@ import org.jetbrains.annotations.NotNull;
  */
 public class PlayerShowEntityEvent extends PlayerEvent {
 
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Entity entity;
 
-    public PlayerShowEntityEvent(@NotNull Player who, @NotNull Entity entity) {
-        super(who);
+    @ApiStatus.Internal
+    public PlayerShowEntityEvent(@NotNull Player player, @NotNull Entity entity) {
+        super(player);
         this.entity = entity;
     }
 
@@ -33,17 +36,17 @@ public class PlayerShowEntityEvent extends PlayerEvent {
      */
     @NotNull
     public Entity getEntity() {
-        return entity;
+        return this.entity;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

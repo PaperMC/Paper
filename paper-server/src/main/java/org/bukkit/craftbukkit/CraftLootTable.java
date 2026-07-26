@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Random;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.context.ContextKey;
 import net.minecraft.util.context.ContextKeySet;
@@ -34,16 +34,16 @@ import org.bukkit.loot.LootContext;
 
 public class CraftLootTable implements org.bukkit.loot.LootTable {
 
-    public static org.bukkit.loot.LootTable minecraftToBukkit(ResourceLocation minecraft) {
+    public static org.bukkit.loot.LootTable minecraftToBukkit(Identifier minecraft) {
         return (minecraft == null) ? null : Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(minecraft));
     }
 
     public static org.bukkit.loot.LootTable minecraftToBukkit(ResourceKey<LootTable> minecraft) {
-        return (minecraft == null || minecraft.location().getPath().isEmpty()) ? null : Bukkit.getLootTable(CraftLootTable.minecraftToBukkitKey(minecraft)); // Paper - fix some NamespacedKey parsing
+        return (minecraft == null) ? null : Bukkit.getLootTable(CraftLootTable.minecraftToBukkitKey(minecraft));
     }
 
     public static NamespacedKey minecraftToBukkitKey(ResourceKey<LootTable> minecraft) {
-        return (minecraft == null) ? null : CraftNamespacedKey.fromMinecraft(minecraft.location());
+        return (minecraft == null) ? null : CraftNamespacedKey.fromMinecraft(minecraft.identifier());
     }
 
     public static ResourceKey<LootTable> bukkitToMinecraft(org.bukkit.loot.LootTable table) {
@@ -107,7 +107,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         ServerLevel handle = ((CraftWorld) loc.getWorld()).getHandle();
 
         LootParams.Builder builder = new LootParams.Builder(handle);
-        this.setMaybe(builder, LootContextParams.ORIGIN, CraftLocation.toVec3D(loc));
+        this.setMaybe(builder, LootContextParams.ORIGIN, CraftLocation.toVec3(loc));
         if (this.getHandle() != LootTable.EMPTY) {
             builder.withLuck(context.getLuck());
 
@@ -128,7 +128,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
             }
         }
 
-        // SPIGOT-5603 - Avoid IllegalArgumentException in LootTableInfo#build()
+        // SPIGOT-5603 - Avoid IllegalArgumentException in ContextKeySet.Builder#create
         ContextKeySet.Builder nmsBuilder = new ContextKeySet.Builder();
         for (ContextKey<?> param : this.getHandle().getParamSet().required()) {
             nmsBuilder.required(param);
@@ -151,9 +151,9 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     public static LootContext convertContext(net.minecraft.world.level.storage.loot.LootContext info) {
         Vec3 position = info.getOptionalParameter(LootContextParams.ORIGIN);
         if (position == null) {
-            position = info.getOptionalParameter(LootContextParams.THIS_ENTITY).position(); // Every vanilla context has origin or this_entity, see LootContextParameterSets
+            position = info.getOptionalParameter(LootContextParams.THIS_ENTITY).position(); // Every vanilla context has origin or this_entity, see LootContextParamSets
         }
-        Location location = CraftLocation.toBukkit(position, info.getLevel().getWorld());
+        Location location = CraftLocation.toBukkit(position, info.getLevel());
         LootContext.Builder contextBuilder = new LootContext.Builder(location);
 
         if (info.hasParameter(LootContextParams.ATTACKING_ENTITY)) {
@@ -173,7 +173,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
 
     @Override
     public String toString() {
-        return this.getKey().toString();
+        return this.key.toString();
     }
 
     @Override
@@ -183,13 +183,11 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         }
 
         org.bukkit.loot.LootTable table = (org.bukkit.loot.LootTable) obj;
-        return table.getKey().equals(this.getKey());
+        return table.getKey().equals(this.key);
     }
 
-    // Paper start - satisfy equals/hashCode contract
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(key);
+        return this.key.hashCode();
     }
-    // Paper end
 }
