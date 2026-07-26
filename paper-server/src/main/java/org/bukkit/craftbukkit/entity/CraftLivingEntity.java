@@ -14,7 +14,6 @@ import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
 import net.minecraft.Optionull;
-import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.resources.ResourceKey;
@@ -58,13 +57,11 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
-import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryKey;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.craftbukkit.inventory.CraftEntityEquipment;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
-import org.bukkit.damage.DamageType;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractWindCharge;
 import org.bukkit.entity.Arrow;
@@ -377,9 +374,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public boolean isInvulnerableTo(final @NotNull DamageType type) {
-        Holder<net.minecraft.world.damagesource.DamageType> holder = CraftDamageType.bukkitToMinecraftHolder(type);
-        return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), new net.minecraft.world.damagesource.DamageSource(holder));
+    public boolean isInvulnerableTo(final @NotNull org.bukkit.damage.DamageSource source) {
+        return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), ((CraftDamageSource) source).getHandle());
     }
 
     @Override

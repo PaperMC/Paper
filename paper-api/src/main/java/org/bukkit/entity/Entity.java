@@ -20,7 +20,7 @@ import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.command.CommandSender;
-import org.bukkit.damage.DamageType;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
@@ -851,29 +851,29 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets the current invulnerability state of the entity set by {@link #setInvulnerable(boolean)}.
      *
      * @return whether the entity is invulnerable.
-     * @see #isInvulnerableTo(DamageType)
+     * @see #isInvulnerableTo(DamageSource)
      */
     boolean isMarkedInvulnerable();
 
     /**
      * Determines if the entity is invulnerable to the specified damage type.
      * <p>
-     * {@code #isInvulnerableTo(DamageType.GENERIC)} is equivalent to {@code #isInvulnerable()}
+     * {@code #isInvulnerableTo(DamageSource.builder(DamageType.GENERIC).build())} is equivalent to {@code #isInvulnerable()}
      *
-     * @param type the damage type to check against
+     * @param source the damage source to check against
      * @return {@code true} if the entity is invulnerable to the given damage type, {@code false} otherwise
      */
-    boolean isInvulnerableTo(@NotNull DamageType type);
+    boolean isInvulnerableTo(@NotNull DamageSource source);
 
     /**
      * Gets whether the entity is invulnerable or not.
      *
      * @return whether the entity is invulnerable.
-     * @see #isInvulnerableTo(DamageType)
+     * @see #isInvulnerableTo(DamageSource)
      * @deprecated this method does not reflect the invulnerability state set by
      * {@link #setInvulnerable(boolean)}, use {@link #isMarkedInvulnerable()} instead
      */
-    @Deprecated(since = "1.21.8")
+    @Deprecated(since = "26.2")
     boolean isInvulnerable();
 
     /**
