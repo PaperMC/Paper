@@ -846,6 +846,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void playSound(Entity entity, String sound, SoundCategory category, float volume, float pitch, long seed);
 
     /**
+     * Plays a sound at a position.
+     *
+     * @param sound a sound
+     * @param pos position
+     */
+    default void playSound(net.kyori.adventure.sound.Sound sound, Position pos) {
+        playSound(sound, pos.x(), pos.y(), pos.z());
+    }
+
+    /**
      * Stop the specified sound from playing.
      *
      * @param sound the sound to stop

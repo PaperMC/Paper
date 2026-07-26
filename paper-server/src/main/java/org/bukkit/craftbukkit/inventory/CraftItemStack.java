@@ -668,7 +668,7 @@ public final class CraftItemStack extends ItemStack {
         if (this.isEmpty()) {
             return null;
         }
-        return PaperDataComponentType.convertDataComponentValue(this.handle.getComponents(), (PaperDataComponentType.ValuedImpl<T, ?>) type);
+        return PaperDataComponentType.convertDataComponentValue(this.handle, (PaperDataComponentType.ValuedImpl<T, ?>) type);
     }
 
     @Override
