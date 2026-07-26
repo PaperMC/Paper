@@ -1,4 +1,4 @@
-package io.papermc.paper.event.player;
+package io.papermc.paper.event.connection.configuration;
 
 import io.papermc.paper.connection.PlayerCommonConnection;
 import io.papermc.paper.connection.PlayerConfigurationConnection;
