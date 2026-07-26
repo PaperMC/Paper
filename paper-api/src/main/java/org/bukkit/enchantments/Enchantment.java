@@ -486,7 +486,6 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
      *
      * @return a registry set of enchantments exclusive to this one.
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public abstract io.papermc.paper.registry.set.@NotNull RegistryKeySet<Enchantment> getExclusiveWith();
     // Paper end - even more Enchantment API
 

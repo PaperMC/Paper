@@ -12,7 +12,6 @@ import org.jspecify.annotations.Nullable;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#LODESTONE_TRACKER
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface LodestoneTracker {
 
@@ -45,7 +44,6 @@ public interface LodestoneTracker {
     /**
      * Builder for {@link LodestoneTracker}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<LodestoneTracker> {
 

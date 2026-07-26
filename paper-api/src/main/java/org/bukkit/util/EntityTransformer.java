@@ -2,14 +2,12 @@ package org.bukkit.util;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.generator.LimitedRegion;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * A EntityTransformer is used to modify entities that are spawned by structure.
  */
 @FunctionalInterface
-@ApiStatus.Experimental
 public interface EntityTransformer {
 
     /**

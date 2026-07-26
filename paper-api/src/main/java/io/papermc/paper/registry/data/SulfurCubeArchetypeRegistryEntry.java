@@ -22,14 +22,12 @@ import static io.papermc.paper.util.BoundChecker.requirePositive;
 /**
  * A data-centric version-specific registry entry for the {@link SulfurCube.Archetype} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface SulfurCubeArchetypeRegistryEntry {
 
     /**
      * An attribute entry to apply to a sulfur cube of this archetype.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface AttributeEntry {
 
@@ -63,7 +61,6 @@ public interface SulfurCubeArchetypeRegistryEntry {
      * The contact damage a sulfur cube of this archetype will deal when pushed
      * by another entity.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface ContactDamage {
 
@@ -105,7 +102,6 @@ public interface SulfurCubeArchetypeRegistryEntry {
     /**
      * The explosion settings of a sulfur cube of this archetype.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface ExplosionSettings {
 
@@ -147,7 +143,6 @@ public interface SulfurCubeArchetypeRegistryEntry {
      * The knockback modifiers a sulfur cube of this archetype will receive
      * when knocked by another entity.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface KnockbackModifiers {
 
@@ -180,7 +175,6 @@ public interface SulfurCubeArchetypeRegistryEntry {
     /**
      * The sound settings of a sulfur cube of this archetype.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface SoundSettings {
 
@@ -284,7 +278,6 @@ public interface SulfurCubeArchetypeRegistryEntry {
      *     <li>{@link #soundSettings(SoundSettings)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends SulfurCubeArchetypeRegistryEntry, RegistryBuilder<SulfurCube.Archetype> {
 

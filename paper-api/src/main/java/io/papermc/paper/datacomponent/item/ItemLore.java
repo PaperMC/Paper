@@ -14,7 +14,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#LORE
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ItemLore {
 
@@ -47,7 +46,6 @@ public interface ItemLore {
     /**
      * Builder for {@link ItemLore}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemLore> {
 

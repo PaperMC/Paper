@@ -4,7 +4,6 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Server;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Merchant;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -12,7 +11,6 @@ import org.jspecify.annotations.Nullable;
  *
  * @param <V> the type of InventoryView created by this builder
  */
-@ApiStatus.Experimental
 public interface MerchantInventoryViewBuilder<V extends InventoryView> extends InventoryViewBuilder<V> {
 
     @Override

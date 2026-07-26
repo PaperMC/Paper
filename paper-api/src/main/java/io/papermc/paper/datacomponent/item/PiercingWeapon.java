@@ -9,7 +9,6 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface PiercingWeapon {
 
@@ -33,7 +32,6 @@ public interface PiercingWeapon {
     /**
      * Builder for {@link PiercingWeapon}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<PiercingWeapon> {
 

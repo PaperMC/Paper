@@ -13,7 +13,6 @@ import org.jspecify.annotations.Nullable;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#USE_COOLDOWN
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface UseCooldown {
 
@@ -46,7 +45,6 @@ public interface UseCooldown {
     @Contract(pure = true)
     @Nullable Key cooldownGroup();
 
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<UseCooldown> {
 

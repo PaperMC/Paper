@@ -4,7 +4,6 @@ import java.util.Collection;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.spawner.TrialSpawnerConfiguration;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -186,7 +185,6 @@ public interface TrialSpawner extends TileState {
      *
      * @return the TrialSpawnerConfiguration
      */
-    @ApiStatus.Experimental
     TrialSpawnerConfiguration getNormalConfiguration();
 
     /**
@@ -195,6 +193,5 @@ public interface TrialSpawner extends TileState {
      *
      * @return the TrialSpawnerConfiguration
      */
-    @ApiStatus.Experimental
     TrialSpawnerConfiguration getOminousConfiguration();
 }

@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link Cat.Type} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface CatTypeRegistryEntry {
 
@@ -36,7 +35,6 @@ public interface CatTypeRegistryEntry {
      *     <li>{@link #babyClientTextureAsset(ClientTextureAsset)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends CatTypeRegistryEntry, RegistryBuilder<Cat.Type> {
 

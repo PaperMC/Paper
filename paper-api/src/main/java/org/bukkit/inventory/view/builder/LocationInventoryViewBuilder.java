@@ -3,7 +3,6 @@ package org.bukkit.inventory.view.builder;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.inventory.InventoryView;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -11,7 +10,6 @@ import org.jspecify.annotations.Nullable;
  *
  * @param <V> the type of InventoryView created from this builder
  */
-@ApiStatus.Experimental
 public interface LocationInventoryViewBuilder<V extends InventoryView> extends InventoryViewBuilder<V> {
 
     @Override

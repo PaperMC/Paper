@@ -2,14 +2,12 @@ package org.bukkit;
 
 import java.net.URI;
 import java.util.List;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a collections of links which may be sent to a client.
  */
-@ApiStatus.Experimental
 public interface ServerLinks {
 
     /**

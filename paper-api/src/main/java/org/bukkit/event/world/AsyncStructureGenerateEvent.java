@@ -35,7 +35,6 @@ import org.jetbrains.annotations.Unmodifiable;
  * appropriately.
  * <p>
  */
-@ApiStatus.Experimental
 public class AsyncStructureGenerateEvent extends WorldEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

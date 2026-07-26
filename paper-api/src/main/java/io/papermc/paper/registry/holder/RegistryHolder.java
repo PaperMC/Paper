@@ -11,7 +11,6 @@ import org.jetbrains.annotations.ApiStatus;
  * @param <API> the registry's type
  * @param <ENTRY> the type of the registry entry (for inlined values)
  */
-@ApiStatus.Experimental
 public sealed interface RegistryHolder<API, ENTRY> permits RegistryHolder.Reference, RegistryHolder.Inlined {
 
     /**
