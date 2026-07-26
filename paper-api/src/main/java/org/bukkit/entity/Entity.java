@@ -138,7 +138,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param yaw the yaw
      * @param pitch the pitch
      */
-    @Deprecated
+    @ApiStatus.Obsolete(since = "26.2")
     public void setRotation(float yaw, float pitch);
 
     /**
