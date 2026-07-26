@@ -99,7 +99,6 @@ import org.bukkit.potion.PotionType;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
@@ -374,7 +373,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public boolean isInvulnerableTo(final @NotNull org.bukkit.damage.DamageSource source) {
+    public boolean isInvulnerableTo(final org.bukkit.damage.@NonNull DamageSource source) {
         return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), ((CraftDamageSource) source).getHandle());
     }
 
