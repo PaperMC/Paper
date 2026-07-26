@@ -134,9 +134,9 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <p>
      * Note that if the entity is affected by AI, it may override this rotation.
      *
-     * @deprecated in favor of {@link #setRotation(Angle, Angle)}
      * @param yaw the yaw
      * @param pitch the pitch
+     * @see #setRotation(Angle, Angle)
      */
     @ApiStatus.Obsolete(since = "26.2")
     public void setRotation(float yaw, float pitch);
