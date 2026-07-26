@@ -1111,19 +1111,18 @@ public final class CraftServer implements Server {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "finally" })
     private void loadCustomPermissions() {
         File file = new File(this.configuration.getString("settings.permissions-file"));
+        if (!file.isFile()) {
+            return;
+        }
+
         FileInputStream stream;
 
         try {
             stream = new FileInputStream(file);
         } catch (FileNotFoundException ex) {
-            try {
-                file.createNewFile();
-            } finally {
-                return;
-            }
+            return;
         }
 
         Map<String, Map<String, Object>> perms;
