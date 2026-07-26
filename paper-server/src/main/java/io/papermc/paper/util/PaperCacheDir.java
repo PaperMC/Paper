@@ -30,7 +30,7 @@ public final class PaperCacheDir {
         // Keep this for individual use until a more unified migration place is made for larger config migrations
         final Path path = Path.of(child);
         final Path target = get(newName);
-        if (Files.isRegularFile(path)) {
+        if (Files.isRegularFile(path) && !Files.exists(target)) {
             try {
                 Files.move(path, target);
             } catch (final IOException e) {
