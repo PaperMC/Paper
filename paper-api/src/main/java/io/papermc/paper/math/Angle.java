@@ -6,7 +6,7 @@ import org.jspecify.annotations.NullMarked;
  * Represents an angle that can be relative or absolute.
  */
 @NullMarked
-public interface Angle {
+public sealed interface Angle permits AngleImpl {
 
     /**
      * Creates a new absolute angle with the specified value. Absolute
