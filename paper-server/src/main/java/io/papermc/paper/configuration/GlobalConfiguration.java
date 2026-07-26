@@ -319,6 +319,8 @@ public class GlobalConfiguration extends ConfigurationPart {
             }
         }
         public int maxJoinsPerTick = 5;
+        @Constraints.Min(0)
+        public IntOr.Default catchupTicks = IntOr.Default.USE_DEFAULT;
         public boolean sendFullPosForItemEntities = false;
         public boolean loadPermissionsYmlBeforePlugins = true;
         @Constraints.Min(4)
