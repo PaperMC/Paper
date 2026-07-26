@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.map;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.util.PaperCacheDir;
 import java.awt.Color;
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,7 +22,7 @@ import org.bukkit.map.MapPalette;
 public class CraftMapColorCache implements MapPalette.MapColorCache {
 
     private static final String MD5_CACHE_HASH = "E88EDD068D12D39934B40E8B6B124C83"; // 248 colors
-    private static final File CACHE_FILE = new File("map-color-cache.dat");
+    private static final File CACHE_FILE = PaperCacheDir.get("map-color-cache.dat").toFile();
     private byte[] cache;
     private final Logger logger;
     private boolean cached = false;
