@@ -11,7 +11,6 @@ import org.jspecify.annotations.Nullable;
 /**
  * This event is called when the code of conduct is potentially sent to the player.
  */
-@ApiStatus.Experimental
 @NullMarked
 public class PlayerCodeOfConductSendEvent extends Event {
 
