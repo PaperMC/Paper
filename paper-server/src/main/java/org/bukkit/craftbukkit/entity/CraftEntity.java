@@ -7,10 +7,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.TeleportFlag;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -314,9 +316,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             Vec3.ZERO,
             location.getYaw(),
             location.getPitch(),
+            false,
+            false,
             relativeFlags,
             TeleportTransition.DO_NOTHING,
-            cause
+            cause,
+            TeleportTransition.PassengerTeleportationMode.POSITION_RIDER
         )) != null;
     }
 
@@ -1324,19 +1329,20 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             ((CraftPlayer) player).sendHurtAnimation(0, this);
         }
     }
+
     @Override
     public <T> @Nullable T getData(@NotNull final DataComponentType.Valued<T> type) {
-        return this.entity.get(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type));
+        return PaperDataComponentType.convertDataComponentValue(this.getHandleRaw(), (PaperDataComponentType.ValuedImpl<T, ?>) type);
     }
 
     @Override
     public <T> @Nullable T getDataOrDefault(@NotNull final DataComponentType.Valued<? extends T> type, @Nullable final T fallback) {
-        return this.entity.getOrDefault(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type), fallback);
+        return Objects.requireNonNullElse(this.getData(type), fallback);
     }
 
     @Override
     public boolean hasData(final @NotNull DataComponentType type) {
-        return this.entity.get(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type)) != null;
+        return this.getHandleRaw().get(PaperDataComponentType.bukkitToMinecraft(type)) != null;
     }
 
 }

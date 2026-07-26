@@ -195,6 +195,15 @@ tasks.compileTestJava {
     options.compilerArgs.add("-parameters")
 }
 
+tasks.named<JavaCompile>(log4jPlugins.compileJavaTaskName) {
+    options.compilerArgs.addAll(
+        listOf(
+            "-Alog4j.graalvm.groupId=${project.group}",
+            "-Alog4j.graalvm.artifactId=${project.name}"
+        )
+    )
+}
+
 // Bump compile tasks to 1GB memory to avoid OOMs
 tasks.withType<JavaCompile>().configureEach {
     options.forkOptions.memoryMaximumSize = "1G"
@@ -281,6 +290,8 @@ fun TaskContainer.registerRunTask(
     }
     systemProperty("io.papermc.paper.suppress.sout.nags", true)
     systemProperty("paper.maxChatCommandInputSize", 32767)
+    systemProperty("paper.disableMigrationDelay", true)
+    systemProperty("paper.updatingMinecraft", providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean())
 
     val memoryGb = providers.gradleProperty("paper.runMemoryGb").getOrElse("2")
     minHeapSize = "${memoryGb}G"

@@ -161,15 +161,19 @@ public final class CraftItemStack extends ItemStack {
     /**
      * Copies the NMS stack to return as a strictly-Bukkit stack
      */
-    private static ItemStack asBukkitCopy(net.minecraft.world.item.ItemStack original) {
+    public static ItemStack asBukkitCopy(net.minecraft.world.item.ItemStack original) {
         // no such thing as a "strictly-Bukkit stack" anymore
         // we copy the stack since it should be a complete copy not a mirror
         return asCraftMirror(original.copy());
     }
 
+    public static ItemStack asBukkitCopy(ItemStackTemplate template) {
+        return asCraftMirror(template.create()); // No need to copy the result again
+    }
+
     public static ItemStack asBukkitCopy(ItemInstance original) {
         return switch (original) {
-            case ItemStackTemplate template -> asBukkitCopy(template.create());
+            case ItemStackTemplate template -> asBukkitCopy(template);
             case net.minecraft.world.item.ItemStack item -> asBukkitCopy(item);
             default -> throw new AssertionError();
         };
@@ -664,7 +668,7 @@ public final class CraftItemStack extends ItemStack {
         if (this.isEmpty()) {
             return null;
         }
-        return PaperDataComponentType.convertDataComponentValue(this.handle.getComponents(), (PaperDataComponentType.ValuedImpl<T, ?>) type);
+        return PaperDataComponentType.convertDataComponentValue(this.handle, (PaperDataComponentType.ValuedImpl<T, ?>) type);
     }
 
     @Override
