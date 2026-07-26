@@ -3779,7 +3779,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param sound a sound
      * @param pos position
      */
-    default void playSound(net.kyori.adventure.sound.Sound sound, Position pos) {
+    default void playSound(net.kyori.adventure.sound.@NotNull Sound sound, @NotNull Position pos) {
         playSound(sound, pos.x(), pos.y(), pos.z());
     }
 
