@@ -10,6 +10,7 @@ import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
 
@@ -94,8 +95,39 @@ public interface SulfurCube extends AbstractCubeMob, Shearable, Bucketable, Agea
      *                  Items not in the {@link ItemTypeTagKeys#SULFUR_CUBE_SWALLOWABLE} tag
      *                  will not be properly rendered inside the sulfur cube
      * @return whether the sulfur cube's absorbed item was updated
+     * @see #setEquipped(ItemStack) set the swallowed item, skipping any Vanilla swallow logic
      */
     boolean swallow(ItemStack itemStack);
+
+    /**
+     * Sets the swallowed item stack for this sulfur cube.
+     * <p>
+     * This method acts as a simple utility method to set the {@link EquipmentSlot#BODY}
+     * equipment slot of this sulfur cube, which holds the sulfur cube's swallowed item.
+     * <p>
+     * Different to {@link #swallow(ItemStack)}, this method does not play a sound or
+     * drop the previously equipped item on the ground.
+     * <p>
+     * This method will call a {@link EntityEquipmentChangedEvent}.
+     *
+     * @param itemStack the item stack to be equipped
+     * @see #swallow(ItemStack) set the swallowed item, following any Vanilla swallow logic
+     */
+    default void setEquipped(ItemStack itemStack) {
+        this.getEquipment().setItem(EquipmentSlot.BODY, itemStack);
+    }
+
+    /**
+     * Retrieves the item stack currently swallowed by this sulfur cube.
+     * <p>
+     * This method acts as a simple utility method to get the {@link EquipmentSlot#BODY}
+     * equipment slot of this sulfur cube, which holds the sulfur cube's swallowed item.
+     *
+     * @return the item stack in the {@link EquipmentSlot#BODY} equipment slot
+     */
+    default ItemStack getEquipped() {
+        return this.getEquipment().getItem(EquipmentSlot.BODY);
+    }
 
     /**
      * Represents the archetype of a sulfur cube
