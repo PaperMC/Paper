@@ -1,9 +1,12 @@
 package org.bukkit.entity;
 
+import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import io.papermc.paper.entity.Bucketable;
 import io.papermc.paper.entity.Shearable;
+import io.papermc.paper.event.entity.EntityEquipmentChangedEvent;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
@@ -75,28 +78,24 @@ public interface SulfurCube extends AbstractCubeMob, Shearable, Bucketable, Agea
     }
 
     /**
-     * Equips the provided item to this sulfur cube, following any Vanilla logic.
+     * Makes this sulfur cube swallow the provided item, following any Vanilla logic.
      * <p>
      * This method will:
      * <ul>
      *     <li>not equip the item to a baby sulfur cube,</li>
-     *     <li>drop an existing body item before, and</li>
-     *     <li>play the absorb-sound.</li>
+     *     <li>if present, drop a previously swallowed item, and</li>
+     *     <li>play the swallow sound.</li>
      * </ul>
      * <p>
-     * If you want to circumvent the above-mentioned Vanilla logic, you can instead directly edit
-     * the body equipment slot of the sulfur cube, like this:
-     * <pre>{@code
-     * sulfurCube.getEquipment().setItem(
-     *   EquipmentSlot.BODY,
-     *   itemStack
-     * );
-     * }</pre>
+     * If the currently swallowed item is changed, a {@link EntityEquipmentChangedEvent} is called.
+     * May also call a {@link EntityAddToWorldEvent} for the newly dropped {@link Item} entity.
      *
-     * @param itemStack the item to equip. Use {@link ItemStack#empty()} to unset the item
+     * @param itemStack the item to swallow. Use {@link ItemStack#empty()} to unset the item.
+     *                  Items not in the {@link ItemTypeTagKeys#SULFUR_CUBE_SWALLOWABLE} tag
+     *                  will not be properly rendered inside the sulfur cube
      * @return whether the sulfur cube's absorbed item was updated
      */
-    boolean equipItem(ItemStack itemStack);
+    boolean swallow(ItemStack itemStack);
 
     /**
      * Represents the archetype of a sulfur cube

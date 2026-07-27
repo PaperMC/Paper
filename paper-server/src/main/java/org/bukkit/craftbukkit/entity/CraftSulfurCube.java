@@ -47,7 +47,7 @@ public class CraftSulfurCube extends CraftAbstractCubeMob implements SulfurCube,
     }
 
     @Override
-    public boolean equipItem(final ItemStack itemStack) {
+    public boolean swallow(final ItemStack itemStack) {
         return this.getHandle().equipItem(CraftItemStack.asNMSCopy(itemStack));
     }
 
