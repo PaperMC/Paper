@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -334,15 +335,20 @@ public final class CraftMagicNumbers implements UnsafeValues {
             shouldSave = false;
         }
 
-        final List<Advancement> outAdvancements = new ArrayList<>(advancements.size());
+        final Set<AdvancementNode> roots = new HashSet<>();
         for (final AdvancementEntry entry : advancementEntries) {
-            // recalculate advancement position
             final AdvancementNode node = Objects.requireNonNull(tree.get(entry.id()));
-            final AdvancementNode root = node.root();
+            roots.add(node.root());
+        }
+
+        for (final AdvancementNode root : roots) {
             if (root.holder().value().display().isPresent()) {
                 TreeNodePosition.run(root);
             }
+        }
 
+        final List<Advancement> outAdvancements = new ArrayList<>(advancements.size());
+        for (final AdvancementEntry entry : advancementEntries) {
             if (shouldSave) {
                 final Path file = getAddedAdvancements().json(entry.id());
 
@@ -355,12 +361,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
                 outAdvancements.add(entry.advancement().toBukkit());
             }
-
-            if (!outAdvancements.isEmpty()) {
-                server.getPlayerList().reloadAdvancementData();
-            }
         }
 
+        if (!outAdvancements.isEmpty()) {
+            server.getPlayerList().reloadAdvancementData();
+        }
         return outAdvancements;
     }
 
