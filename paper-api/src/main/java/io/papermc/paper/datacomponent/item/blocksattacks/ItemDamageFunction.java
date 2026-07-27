@@ -27,8 +27,7 @@ public interface ItemDamageFunction {
      *
      * @return the threshold
      */
-    @NonNegative
-    float threshold();
+    @NonNegative float threshold();
 
     /**
      * Get the constant amount of damage applied to the item, if threshold is passed.
@@ -60,7 +59,7 @@ public interface ItemDamageFunction {
     interface Builder extends DataComponentBuilder<ItemDamageFunction> {
 
         @Contract(value = "_ -> this", mutates = "this")
-        ItemDamageFunction.Builder threshold(@NonNegative final float threshold);
+        ItemDamageFunction.Builder threshold(final @NonNegative float threshold);
 
         @Contract(value = "_ -> this", mutates = "this")
         ItemDamageFunction.Builder base(final float base);

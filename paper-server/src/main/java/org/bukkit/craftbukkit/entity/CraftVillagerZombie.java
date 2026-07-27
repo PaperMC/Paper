@@ -63,7 +63,7 @@ public class CraftVillagerZombie extends CraftZombie implements ZombieVillager {
     public void setConversionTime(int time, boolean broadcastEntityEvent) {
     // Paper end - missing entity behaviour api - converting without entity event
         if (time < 0) {
-            this.getHandle().villagerConversionTime = -1;
+            this.getHandle().setVillagerConversionTime(-1);
             this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.zombie.ZombieVillager.DATA_CONVERTING_ID, false);
             this.getHandle().conversionStarter = null;
             this.getHandle().removeEffect(MobEffects.STRENGTH, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);

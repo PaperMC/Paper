@@ -53,7 +53,7 @@ public final class WorldUtil {
         if (world == null) {
             return "null world";
         }
-        return world.getWorld().getName(); // Paper
+        return io.papermc.paper.util.MCUtil.getLevelName(world); // Paper
     }
 
     private WorldUtil() {

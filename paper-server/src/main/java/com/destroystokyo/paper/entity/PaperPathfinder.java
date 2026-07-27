@@ -140,7 +140,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
             if (this.path.isDone()) {
                 return null;
             }
-            return CraftLocation.toBukkit(this.path.nodes.get(this.path.getNextNodeIndex()), PaperPathfinder.this.entity.level());
+            return CraftLocation.toBukkit(this.path.getNode(this.path.getNextNodeIndex()), PaperPathfinder.this.entity.level());
         }
     }
 }

@@ -7,7 +7,7 @@ import org.bukkit.inventory.ItemStack;
 
 public interface PaperBucketable extends Bucketable {
 
-    net.minecraft.world.entity.animal.Bucketable getHandle();
+    net.minecraft.world.entity.Bucketable getHandle();
 
     @Override
     default boolean isFromBucket() {

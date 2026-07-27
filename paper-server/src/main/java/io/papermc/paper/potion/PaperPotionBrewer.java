@@ -46,7 +46,7 @@ public class PaperPotionBrewer implements PotionBrewer {
 
     @Override
     public void removePotionMix(final NamespacedKey key) {
-        this.minecraftServer.potionBrewing.removePotionMix(key);
+        this.minecraftServer.potionBrewing().removePotionMix(key);
     }
 
     @Override

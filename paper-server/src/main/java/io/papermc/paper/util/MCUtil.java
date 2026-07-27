@@ -1,11 +1,17 @@
 package io.papermc.paper.util;
 
+import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.math.Position;
+import io.papermc.paper.registry.data.client.ClientTextureAsset;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -18,13 +24,20 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.ClientAsset;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.util.datafix.DataFixers;
+import net.minecraft.util.datafix.fixes.References;
+import net.minecraft.world.entity.Bucketable;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.animal.Bucketable;
 import net.minecraft.world.entity.animal.cow.AbstractCow;
 import net.minecraft.world.entity.animal.cow.MushroomCow;
 import net.minecraft.world.entity.player.Player;
@@ -41,10 +54,12 @@ import net.minecraft.world.level.block.FlowerPotBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.CraftRegistry;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.Waitable;
+import org.jspecify.annotations.Nullable;
 
 public final class MCUtil {
     public static final java.util.concurrent.Executor MAIN_EXECUTOR = (run) -> {
@@ -249,5 +264,55 @@ public final class MCUtil {
         return (entity instanceof AbstractCow && stack.is(Items.BUCKET))
             || (entity instanceof MushroomCow && stack.is(Items.BOWL))
             || (entity instanceof Bucketable && stack.is(Items.WATER_BUCKET));
+    }
+
+    public static String getLevelName(Level level) {
+        return level.dimension().identifier().toString();
+    }
+
+    public static @Nullable ClientTextureAsset toTextureAsset(final ClientAsset.@Nullable Texture clientTextureAsset) {
+        return clientTextureAsset == null ? null : ClientTextureAsset.clientTextureAsset(
+            PaperAdventure.asAdventure(clientTextureAsset.id()),
+            PaperAdventure.asAdventure(clientTextureAsset.texturePath())
+        );
+    }
+
+    public static ClientAsset.@Nullable ResourceTexture toResourceTexture(final @Nullable ClientTextureAsset clientTextureAsset) {
+        return clientTextureAsset == null ? null : new ClientAsset.ResourceTexture(
+            PaperAdventure.asVanilla(clientTextureAsset.identifier()),
+            PaperAdventure.asVanilla(clientTextureAsset.texturePath())
+        );
+    }
+
+    public static org.bukkit.inventory.ItemStack deserializeItem(CompoundTag tag) {
+        final int dataVersion = NbtUtils.getDataVersion(tag, 0);
+        tag = PlatformHooks.get().convertNBT(References.ITEM_STACK, DataFixers.getDataFixer(), tag, dataVersion, CraftMagicNumbers.INSTANCE.getDataVersion());
+        if (tag.getStringOr("id", "minecraft:air").equals("minecraft:air")) {
+            return CraftItemStack.asCraftMirror(ItemStack.EMPTY);
+        }
+        return CraftItemStack.asCraftMirror(ItemStack.CODEC.parse(
+            CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), tag
+        ).getOrThrow());
+    }
+
+    public static byte[] serializeTagToBytes(final CompoundTag tag) {
+        NbtUtils.addCurrentDataVersion(tag);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            NbtIo.writeCompressed(tag, outputStream);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        return outputStream.toByteArray();
+    }
+
+    public static CompoundTag deserializeTagFromBytes(final byte[] data) {
+        CompoundTag tag;
+        try {
+            tag = NbtIo.readCompressed(new ByteArrayInputStream(data), NbtAccounter.unlimitedHeap());
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        return tag;
     }
 }

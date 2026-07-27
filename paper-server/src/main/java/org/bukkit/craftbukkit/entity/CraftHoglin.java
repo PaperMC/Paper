@@ -44,10 +44,10 @@ public class CraftHoglin extends CraftAnimals implements Hoglin, CraftEnemy {
     @Override
     public void setConversionTime(int time) {
         if (time < 0) {
-            this.getHandle().timeInOverworld = -1;
+            this.getHandle().setTimeInOverworld(-1);
             this.getHandle().setImmuneToZombification(false);
         } else {
-            this.getHandle().timeInOverworld = time;
+            this.getHandle().setTimeInOverworld(time);
         }
     }
 

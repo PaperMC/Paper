@@ -62,7 +62,7 @@ public class TransformerLevelAccessor extends DelegatedLevelAccessor {
             this.scheduleTick(pos, fluidState.getType(), 0);
         }
         if (StructurePiece.SHAPE_CHECK_BLOCKS.contains(snapshot.getBlock())) {
-            this.getChunk(pos).markPosForPostprocessing(pos);
+            this.getChunk(pos).markPosForPostProcessing(pos);
         }
         BlockEntity blockEntity = this.getBlockEntity(pos);
         if (blockEntity != null && craftBlockState instanceof CraftBlockEntityState<?> craftEntityState) {

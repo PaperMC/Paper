@@ -12,6 +12,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemType;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
@@ -29,14 +30,14 @@ public interface EnchantmentRegistryEntry {
      * Provides the description of this enchantment entry as displayed to the client, e.g. "Sharpness" for the sharpness
      * enchantment.
      *
-     * @return the description component.
+     * @return the description component
      */
     Component description();
 
     /**
      * Provides the registry key set referencing the items this enchantment is supported on.
      *
-     * @return the registry key set.
+     * @return the registry key set
      */
     RegistryKeySet<ItemType> supportedItems();
 
@@ -48,22 +49,22 @@ public interface EnchantmentRegistryEntry {
      * Additionally, the tag {@link io.papermc.paper.registry.keys.tags.EnchantmentTagKeys#IN_ENCHANTING_TABLE} defines
      * which enchantments can even show up in an enchantment table.
      *
-     * @return the registry key set.
+     * @return the registry key set
      */
     @Nullable RegistryKeySet<ItemType> primaryItems();
 
     /**
      * Provides the weight of this enchantment used by the weighted random when selecting enchantments.
      *
-     * @return the weight value.
-     * @see <a href="https://minecraft.wiki/w/Enchanting">https://minecraft.wiki/w/Enchanting</a> for examplary weights.
+     * @return the weight value
+     * @see <a href="https://minecraft.wiki/w/Enchanting">https://minecraft.wiki/w/Enchanting</a> for exemplary weights
      */
     @Range(from = 1, to = 1024) int weight();
 
     /**
      * Provides the maximum level this enchantment can have when applied.
      *
-     * @return the maximum level.
+     * @return the maximum level
      */
     @Range(from = 1, to = 255) int maxLevel();
 
@@ -72,9 +73,9 @@ public interface EnchantmentRegistryEntry {
      * <p>
      * Note that a cost is not directly related to the consumed xp.
      *
-     * @return the enchantment cost.
+     * @return the enchantment cost
      * @see <a href="https://minecraft.wiki/w/Enchanting/Levels">https://minecraft.wiki/w/Enchanting/Levels</a> for
-     * examplary costs.
+     * exemplary costs
      */
     EnchantmentCost minimumCost();
 
@@ -85,7 +86,7 @@ public interface EnchantmentRegistryEntry {
      *
      * @return the enchantment cost.
      * @see <a href="https://minecraft.wiki/w/Enchanting/Levels">https://minecraft.wiki/w/Enchanting/Levels</a> for
-     * examplary costs.
+     * exemplary costs
      */
     EnchantmentCost maximumCost();
 
@@ -99,7 +100,7 @@ public interface EnchantmentRegistryEntry {
      *
      * @return the anvil cost of this enchantment
      */
-    @Range(from = 0, to = Integer.MAX_VALUE) int anvilCost();
+    @NonNegative int anvilCost();
 
     /**
      * Provides a list of slot groups this enchantment may be active in.
@@ -107,7 +108,7 @@ public interface EnchantmentRegistryEntry {
      * If the item enchanted with this enchantment is equipped in a slot not covered by the returned list and its
      * groups, the enchantment's effects, like attribute modifiers, will not activate.
      *
-     * @return a list of equipment slot groups.
+     * @return a list of equipment slot groups
      * @see Enchantment#getActiveSlotGroups()
      */
     @Unmodifiable List<EquipmentSlotGroup> activeSlots();
@@ -118,7 +119,7 @@ public interface EnchantmentRegistryEntry {
      * Exclusive enchantments prohibit the application of this enchantment to an item if they are already present on
      * said item.
      *
-     * @return a registry set of enchantments exclusive to this one.
+     * @return a registry set of enchantments exclusive to this one
      */
     RegistryKeySet<Enchantment> exclusiveWith();
 
@@ -145,8 +146,8 @@ public interface EnchantmentRegistryEntry {
          * Configures the description of this enchantment entry as displayed to the client, e.g. "Sharpness" for the
          * sharpness enchantment.
          *
-         * @param description the description component.
-         * @return this builder instance.
+         * @param description the description component
+         * @return this builder instance
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder description(Component description);
@@ -159,8 +160,8 @@ public interface EnchantmentRegistryEntry {
          * {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys#ENCHANTABLE_ARMOR} and
          * {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys#ENCHANTABLE_MELEE_WEAPON}.
          *
-         * @param supportedItems the registry key set representing the supported items.
-         * @return this builder instance.
+         * @param supportedItems the registry key set representing the supported items
+         * @return this builder instance
          * @see RegistrySet#keySet(RegistryKey, TypedKey[])
          * @see RegistryComposeEvent#getOrCreateTag(TagKey)
          */
@@ -191,9 +192,9 @@ public interface EnchantmentRegistryEntry {
         /**
          * Configures the weight of this enchantment used by the weighted random when selecting enchantments.
          *
-         * @param weight the weight value.
-         * @return this builder instance.
-         * @see <a href="https://minecraft.wiki/w/Enchanting">https://minecraft.wiki/w/Enchanting</a> for examplary weights.
+         * @param weight the weight value
+         * @return this builder instance
+         * @see <a href="https://minecraft.wiki/w/Enchanting">https://minecraft.wiki/w/Enchanting</a> for exemplary weights
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder weight(@Range(from = 1, to = 1024) int weight);
@@ -212,10 +213,10 @@ public interface EnchantmentRegistryEntry {
          * <p>
          * Note that a cost is not directly related to the consumed xp.
          *
-         * @param minimumCost the enchantment cost.
-         * @return this builder instance.
+         * @param minimumCost the enchantment cost
+         * @return this builder instance
          * @see <a href="https://minecraft.wiki/w/Enchanting/Levels">https://minecraft.wiki/w/Enchanting/Levels</a> for
-         * examplary costs.
+         * exemplary costs
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder minimumCost(EnchantmentCost minimumCost);
@@ -225,10 +226,10 @@ public interface EnchantmentRegistryEntry {
          * <p>
          * Note that a cost is not directly related to the consumed xp.
          *
-         * @param maximumCost the enchantment cost.
-         * @return this builder instance.
+         * @param maximumCost the enchantment cost
+         * @return this builder instance
          * @see <a href="https://minecraft.wiki/w/Enchanting/Levels">https://minecraft.wiki/w/Enchanting/Levels</a> for
-         * examplary costs.
+         * exemplary costs
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder maximumCost(EnchantmentCost maximumCost);
@@ -241,11 +242,11 @@ public interface EnchantmentRegistryEntry {
          * </p>
          *
          * @param anvilCost the anvil cost of this enchantment
-         * @return this builder instance.
+         * @return this builder instance
          * @see Enchantment#getAnvilCost()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder anvilCost(@Range(from = 0, to = Integer.MAX_VALUE) int anvilCost);
+        Builder anvilCost(@NonNegative int anvilCost);
 
         /**
          * Configures the list of slot groups this enchantment may be active in.
@@ -253,8 +254,8 @@ public interface EnchantmentRegistryEntry {
          * If the item enchanted with this enchantment is equipped in a slot not covered by the returned list and its
          * groups, the enchantment's effects, like attribute modifiers, will not activate.
          *
-         * @param activeSlots a list of equipment slot groups.
-         * @return this builder instance.
+         * @param activeSlots a list of equipment slot groups
+         * @return this builder instance
          * @see Enchantment#getActiveSlotGroups()
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -268,8 +269,8 @@ public interface EnchantmentRegistryEntry {
          * If the item enchanted with this enchantment is equipped in a slot not covered by the returned list and its
          * groups, the enchantment's effects, like attribute modifiers, will not activate.
          *
-         * @param activeSlots a list of equipment slot groups.
-         * @return this builder instance.
+         * @param activeSlots a list of equipment slot groups
+         * @return this builder instance
          * @see Enchantment#getActiveSlotGroups()
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -283,8 +284,8 @@ public interface EnchantmentRegistryEntry {
          * <p>
          * Defaults to an empty set allowing this enchantment to be applied regardless of other enchantments.
          *
-         * @param exclusiveWith a registry set of enchantments exclusive to this one.
-         * @return this builder instance.
+         * @param exclusiveWith a registry set of enchantments exclusive to this one
+         * @return this builder instance
          * @see RegistrySet#keySet(RegistryKey, TypedKey[])
          * @see RegistryComposeEvent#getOrCreateTag(TagKey)
          */
@@ -295,12 +296,14 @@ public interface EnchantmentRegistryEntry {
     /**
      * The enchantment cost interface represents the cost of applying an enchantment, split up into its different components.
      */
+    @ApiStatus.Experimental
+    @ApiStatus.NonExtendable
     interface EnchantmentCost {
 
         /**
          * Returns the base cost of this enchantment cost, no matter what level the enchantment has.
          *
-         * @return the cost in levels.
+         * @return the cost in levels
          */
         int baseCost();
 
@@ -308,18 +311,18 @@ public interface EnchantmentRegistryEntry {
          * Returns the additional cost added per level of the enchantment to be applied.
          * This cost is applied per level above the first.
          *
-         * @return the cost added to the {@link #baseCost()} for each level above the first.
+         * @return the cost added to the {@link #baseCost()} for each level above the first
          */
         int additionalPerLevelCost();
 
         /**
          * Creates a new enchantment cost instance based on the passed values.
          *
-         * @param baseCost the base cost of the enchantment cost as returned by {@link #baseCost()}
+         * @param baseCost the base cost of the enchantment cost, as returned by {@link #baseCost()}
          * @param additionalPerLevelCost the additional cost per level, as returned by {@link #additionalPerLevelCost()}
-         * @return the created instance.
+         * @return the created instance
          */
-        @Contract(value = "_,_ -> new", pure = true)
+        @Contract(value = "_, _ -> new", pure = true)
         static EnchantmentCost of(final int baseCost, final int additionalPerLevelCost) {
             record Impl(int baseCost, int additionalPerLevelCost) implements EnchantmentCost {
             }

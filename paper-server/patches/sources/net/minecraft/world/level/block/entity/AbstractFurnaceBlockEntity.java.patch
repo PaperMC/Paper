@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-@@ -109,13 +_,51 @@
+@@ -104,13 +_,51 @@
      };
      public final Reference2IntOpenHashMap<ResourceKey<Recipe<?>>> recipesUsed = new Reference2IntOpenHashMap<>();
      private final RecipeManager.CachedCheck<SingleRecipeInput, ? extends AbstractCookingRecipe> quickCheck;
@@ -53,7 +53,7 @@
  
      @Override
      protected void loadAdditional(final ValueInput input) {
-@@ -128,6 +_,7 @@
+@@ -123,6 +_,7 @@
          this.litTotalTime = input.getShortOr("lit_total_time", (short)0);
          this.recipesUsed.clear();
          this.recipesUsed.putAll(input.read("RecipesUsed", RECIPES_USED_CODEC).orElse(Map.of()));
@@ -61,7 +61,7 @@
      }
  
      @Override
-@@ -137,6 +_,7 @@
+@@ -132,6 +_,7 @@
          output.putShort("cooking_total_time", (short)this.cookingTotalTime);
          output.putShort("lit_time_remaining", (short)this.litTimeRemaining);
          output.putShort("lit_total_time", (short)this.litTotalTime);
@@ -69,26 +69,24 @@
          ContainerHelper.saveAllItems(output, this.items);
          output.store("RecipesUsed", RECIPES_USED_CODEC, this.recipesUsed);
      }
-@@ -166,24 +_,48 @@
-                     int maxStackSize = entity.getMaxStackSize();
-                     ItemStack burnResult = recipe.value().assemble(input);
+@@ -163,22 +_,47 @@
                      if (!burnResult.isEmpty() && canBurn(entity.items, maxStackSize, burnResult)) {
-+                        // CraftBukkit start
-+                        org.bukkit.event.inventory.FurnaceBurnEvent furnaceBurnEvent = new org.bukkit.event.inventory.FurnaceBurnEvent(
-+                            org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
-+                            org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(fuel),
-+                            entity.getBurnDuration(level.fuelValues(), fuel)
-+                        );
-+                        if (!furnaceBurnEvent.callEvent()) return;
-+                        // CraftBukkit end
                          if (!isLit) {
--                            int newLitTime = entity.getBurnDuration(level.fuelValues(), fuel);
-+                            int newLitTime = furnaceBurnEvent.getBurnTime(); // CraftBukkit - respect event output
+                             int newLitTime = entity.getBurnDuration(level.fuelValues(), fuel);
++                            // CraftBukkit start
++                            org.bukkit.event.inventory.FurnaceBurnEvent burnEvent = new org.bukkit.event.inventory.FurnaceBurnEvent(
++                                org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
++                                org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(fuel),
++                                newLitTime
++                            );
++                            if (!burnEvent.callEvent()) return;
++                            newLitTime = burnEvent.getBurnTime();
++                            // CraftBukkit end
                              entity.litTimeRemaining = newLitTime;
                              entity.litTotalTime = newLitTime;
 -                            if (newLitTime > 0) {
-+                            if (newLitTime > 0 && furnaceBurnEvent.isBurning()) { // CraftBukkit - respect event output // TODO - snapshot - double check surrounding diff post squash
-+                                if (furnaceBurnEvent.willConsumeFuel()) { // Paper - add consumeFuel to FurnaceBurnEvent
++                            if (newLitTime > 0 && burnEvent.isBurning()) { // CraftBukkit - respect event output
++                                if (burnEvent.willConsumeFuel()) { // Paper - add consumeFuel to FurnaceBurnEvent
                                  consumeFuel(entity.items, fuel);
 +                                } // Paper - add consumeFuel to FurnaceBurnEvent
                                  isLit = true;
@@ -99,15 +97,15 @@
                          if (isLit) {
 +                            // CraftBukkit start
 +                            if (entity.cookingTimer == 0) {
-+                                org.bukkit.event.inventory.FurnaceStartSmeltEvent event = new org.bukkit.event.inventory.FurnaceStartSmeltEvent(
++                                org.bukkit.event.inventory.FurnaceStartSmeltEvent smeltEvent = new org.bukkit.event.inventory.FurnaceStartSmeltEvent(
 +                                    org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
 +                                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(ingredient),
 +                                    (org.bukkit.inventory.CookingRecipe<?>) recipe.toBukkitRecipe(),
 +                                    getTotalCookTime(level, entity, entity.recipeType, entity.cookSpeedMultiplier) // Paper - cook speed multiplier API
 +                                );
-+                                event.callEvent();
++                                smeltEvent.callEvent();
 +
-+                                entity.cookingTotalTime = event.getTotalCookTime();
++                                entity.cookingTotalTime = smeltEvent.getTotalCookTime();
 +                            }
 +                            // CraftBukkit end
                              entity.cookingTimer++;
@@ -123,8 +121,8 @@
                                  changed = true;
                              }
                          } else {
-@@ -233,28 +_,63 @@
-         }
+@@ -230,28 +_,63 @@
+         return resultCount <= maxResultCount;
      }
  
 -    private static void burn(final NonNullList<ItemStack> items, final ItemStack inputItemStack, final ItemStack result) {
@@ -190,7 +188,7 @@
      }
  
      @Override
-@@ -298,7 +_,7 @@
+@@ -295,7 +_,7 @@
          this.items.set(slot, itemStack);
          itemStack.limitSize(this.getMaxStackSize(itemStack));
          if (slot == 0 && !same && this.level instanceof ServerLevel serverLevel) {
@@ -199,7 +197,7 @@
              this.cookingTimer = 0;
              this.setChanged();
          }
-@@ -333,8 +_,8 @@
+@@ -332,8 +_,8 @@
      public void awardUsedRecipes(final Player player, final List<ItemStack> itemStacks) {
      }
  
@@ -210,7 +208,7 @@
          player.awardRecipes(recipesToAward);
  
          for (RecipeHolder<?> recipe : recipesToAward) {
-@@ -345,30 +_,60 @@
+@@ -344,30 +_,60 @@
      }
  
      public List<RecipeHolder<?>> getRecipesToAwardAndPopExperience(final ServerLevel level, final Vec3 position) {

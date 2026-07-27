@@ -2,10 +2,12 @@ package org.bukkit;
 
 import com.google.common.base.Preconditions;
 import java.util.Random;
+import io.papermc.paper.math.Position;
 import org.bukkit.command.CommandSender;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,13 +27,20 @@ public class WorldCreator {
     private boolean hardcore = false;
     private boolean bonusChest = false;
 
+    private @Nullable Position spawnPositionOverride;
+    private @Nullable Float spawnYawOverride;
+    private @Nullable Float spawnPitchOverride;
+
     /**
-     * Creates an empty WorldCreationOptions for the given world name
+     * Creates an empty WorldCreationOptions for the given world name.
+     *
+     * <p>Prefer {@link #ofKey(NamespacedKey)} for new or already-migrated worlds.</p>
      *
      * @param name Name of the world that will be created
      */
+    @ApiStatus.Obsolete
     public WorldCreator(@NotNull String name) {
-        this(name, defaultWorldKey(name));
+        this(name, null);
     }
 
     private static NamespacedKey defaultWorldKey(String name) {
@@ -47,32 +56,46 @@ public class WorldCreator {
         }
     }
 
+    private static String nameFromKey(NamespacedKey key) {
+        if (key.getNamespace().equals("minecraft")) {
+            // This way, plugins can load legacy worlds by the 'minecraft:<name>' key.
+            return key.getKey();
+        }
+        return key.getNamespace() + "_" + key.getKey();
+    }
+
     /**
-     * Creates an empty WorldCreator for the given world name and key
+     * Creates an empty WorldCreator for the given world name or key.
      *
      * @param levelName LevelName of the world that will be created
      * @param worldKey NamespacedKey of the world that will be created
+     * @deprecated To load unconverted pre-26.1 worlds identified by their name (custom key was never persisted), use
+     * {@link #WorldCreator(String)}. For new worlds and already-converted worlds, prefer {@link #ofKey(NamespacedKey)}.
      */
-    public WorldCreator(@NotNull String levelName, @NotNull NamespacedKey worldKey) {
-        if (levelName == null || worldKey == null) {
-            throw new IllegalArgumentException("World name and key cannot be null");
+    @Deprecated(since = "26.1")
+    public WorldCreator(@Nullable String levelName, @Nullable NamespacedKey worldKey) {
+        if (levelName == null && worldKey == null) {
+            throw new IllegalArgumentException("World name and key cannot both be null");
         }
-        if (!worldKey.equals(defaultWorldKey(levelName))) {
-            throw new UnsupportedOperationException("Custom world keys not yet implemented");
+        if (levelName != null && worldKey != null) {
+            throw new IllegalArgumentException("World name and key cannot both be specified");
         }
-        this.name = levelName;
+        this.name = levelName == null ? nameFromKey(worldKey) : levelName;
         this.seed = (new Random()).nextLong();
-        this.key = worldKey;
+        this.key = worldKey == null ? defaultWorldKey(levelName) : worldKey;
     }
 
     /**
      * Creates an empty WorldCreator for the given key.
-     * LevelName will be the Key part of the NamespacedKey.
+     *
+     * <p>Note: Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
+     * with this method, use {@link #WorldCreator(String)} with {@link NamespacedKey#getKey()}, or use this method
+     * with {@link NamespacedKey#minecraft(String)} and {@link NamespacedKey#getKey()}.</p>
      *
      * @param worldKey NamespacedKey of the world that will be created
      */
     public WorldCreator(@NotNull NamespacedKey worldKey) {
-        this(worldKey.getKey(), worldKey);
+        this(null, worldKey);
     }
 
     /**
@@ -90,15 +113,24 @@ public class WorldCreator {
      *
      * @param levelName LevelName of the world that will be created
      * @param worldKey NamespacedKey of the world that will be created
+     * @deprecated Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
+     * with this method, use {@link #WorldCreator(String)} with the name.
      */
+    @Deprecated(since = "26.1")
     @NotNull
     public static WorldCreator ofNameAndKey(@NotNull String levelName, @NotNull NamespacedKey worldKey) {
-        return new WorldCreator(levelName, worldKey);
+        if (!defaultWorldKey(levelName).equals(worldKey)) {
+            throw new IllegalArgumentException("Cannot create world with mismatched name and key identities.");
+        }
+        return new WorldCreator(levelName, null);
     }
 
     /**
      * Creates an empty WorldCreator for the given key.
-     * LevelName will be the Key part of the NamespacedKey.
+     *
+     * <p>Note: Prior to 26.1, custom world keys were never persisted. To load unconverted pre-26.1 worlds created
+     * with this method, use {@link #WorldCreator(String)} with {@link NamespacedKey#getKey()}, or use this method
+     * with {@link NamespacedKey#minecraft(String)} and {@link NamespacedKey#getKey()}.</p>
      *
      * @param worldKey NamespacedKey of the world that will be created
      */
@@ -153,10 +185,14 @@ public class WorldCreator {
     }
 
     /**
-     * Gets the name of the world that is to be loaded or created.
+     * Gets the legacy Bukkit name of the world that is to be loaded or created.
      *
-     * @return World name
+     * <p>This method is considered obsolete and is a candidate for future deprecation.
+     * Prefer using {@link #key()}.</p>
+     *
+     * @return legacy Bukkit world name
      */
+    @ApiStatus.Obsolete
     @NotNull
     public String name() {
         return name;
@@ -228,6 +264,80 @@ public class WorldCreator {
         this.type = type;
 
         return this;
+    }
+
+    /**
+     * Sets the forced spawn position for the world created by this {@link WorldCreator}.
+     * <p>
+     * This overrides vanilla and custom generator behavior without loading any chunks.
+     * When a forced spawn is specified, the bonus chest will not be generated.
+     *
+     * @param position the spawn position
+     * @param yaw      the yaw rotation at spawn
+     * @param pitch    the pitch rotation at spawn
+     * @return this object, for chaining
+     */
+    @NotNull
+    public WorldCreator forcedSpawnPosition(@NotNull Position position, float yaw, float pitch) {
+        this.spawnPositionOverride = position; // If you set this to null, it wont do anything!
+        this.spawnYawOverride = yaw;
+        this.spawnPitchOverride = pitch;
+        return this;
+    }
+
+    /**
+     * Clears any previously forced spawn position.
+     * <p>
+     * After calling this, vanilla spawn selection behavior is used.
+     *
+     * @return this object, for chaining
+     */
+    @NotNull
+    public WorldCreator clearForcedSpawnPosition() {
+        this.spawnPositionOverride = null;
+        this.spawnYawOverride = null;
+        this.spawnPitchOverride = null;
+        return this;
+    }
+
+    /**
+     * Gets the forced spawn position that will be applied when this world is created.
+     * <p>
+     * If this returns {@code null}, vanilla or custom generator behavior will be used
+     * to determine the spawn position.
+     *
+     * @return the forced spawn position, or {@code null} for the vanilla behavior
+     */
+    public @Nullable Position forcedSpawnPosition() {
+        return this.spawnPositionOverride;
+    }
+
+    /**
+     * Gets the forced spawn yaw that will be applied when this world is created.
+     * <p>
+     * If this returns {@code null}, the spawn yaw will be determined by vanilla behavior
+     * or the world generator.
+     * <p>
+     * This value is only meaningful if a forced spawn position is present.
+     *
+     * @return the forced spawn yaw, or {@code null} for the vanilla behavior
+     */
+    public @Nullable Float forcedSpawnYaw() {
+        return this.spawnYawOverride;
+    }
+
+    /**
+     * Gets the forced spawn pitch that will be applied when this world is created.
+     * <p>
+     * If this returns {@code null}, the spawn pitch will be determined by vanilla behavior
+     * or the world generator.
+     * <p>
+     * This value is only meaningful if a forced spawn position is present.
+     *
+     * @return the forced spawn pitch, or {@code null} for the vanilla behavior
+     */
+    public @Nullable Float forcedSpawnPitch() {
+        return this.spawnPitchOverride;
     }
 
     /**
