@@ -358,7 +358,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 } catch (final IOException ex) {
                     Bukkit.getLogger().log(Level.SEVERE, "Error saving advancement " + entry.id(), ex);
                 }
-
             }
             outAdvancements.add(entry.advancement().toBukkit());
         }
