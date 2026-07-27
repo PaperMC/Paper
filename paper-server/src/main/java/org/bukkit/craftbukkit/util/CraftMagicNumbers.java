@@ -270,6 +270,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return Holder.PROVIDER;
     }
 
+    @Override
     public @Nullable Advancement loadAdvancement(final Key key, final String advancement, final boolean persist) {
         final List<Advancement> advancements = this.loadAdvancements(Map.of(key, advancement), persist, true);
         return advancements.isEmpty() ? null : advancements.getFirst();
