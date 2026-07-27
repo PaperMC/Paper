@@ -113,7 +113,7 @@ public interface SulfurCube extends AbstractCubeMob, Shearable, Bucketable, Agea
      * @param itemStack the item stack to be equipped
      * @see #swallow(ItemStack) set the swallowed item, following any Vanilla swallow logic
      */
-    default void setEquipped(ItemStack itemStack) {
+    default void setEquipped(final ItemStack itemStack) {
         this.getEquipment().setItem(EquipmentSlot.BODY, itemStack);
     }
 
