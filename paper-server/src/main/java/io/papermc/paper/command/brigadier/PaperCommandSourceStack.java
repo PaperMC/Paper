@@ -2,6 +2,7 @@ package io.papermc.paper.command.brigadier;
 
 import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.google.common.base.Preconditions;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -9,6 +10,7 @@ import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -46,6 +48,18 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
     default CommandSourceStack withExecutor(@NonNull Entity executor) {
         Preconditions.checkNotNull(executor, "Executor cannot be null.");
         return this.getHandle().withEntity(((CraftEntity) executor).getHandle());
+    }
+
+    @Override
+    @NonNull
+    default Player getPlayerOrThrow() throws CommandSyntaxException {
+        return this.getHandle().getPlayerOrException().getBukkitEntity();
+    }
+
+    @Override
+    @NonNull
+    default Entity getEntityOrThrow() throws CommandSyntaxException {
+        return this.getHandle().getEntityOrException().getBukkitEntity();
     }
 
     // OLD METHODS
