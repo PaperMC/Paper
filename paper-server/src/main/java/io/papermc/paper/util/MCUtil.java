@@ -46,6 +46,7 @@ import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Bucketable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.world.entity.Interaction;
 import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -306,8 +307,11 @@ public final class MCUtil {
             return;
         }
 
-        // Conservative entity metadata refresh
-        target.refreshEntityData(player);
+        /* Interaction entities do not predict anything, and resending their
+        default width and height causes Paper#11496 .*/
+        if (!(target instanceof Interaction)) {
+            target.refreshEntityData(player);
+        }
 
         final boolean shearing = usedItemStack.is(Items.SHEARS);
 
