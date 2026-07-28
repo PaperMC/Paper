@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -67,6 +_,11 @@
+@@ -68,6 +_,11 @@
      private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
      public Channel channel;
      public SocketAddress address;
@@ -12,10 +12,10 @@
      private volatile @Nullable PacketListener disconnectListener;
      private volatile @Nullable PacketListener packetListener;
      private @Nullable DisconnectionDetails disconnectionDetails;
-@@ -80,6 +_,44 @@
-     private boolean handlingFault;
+@@ -81,6 +_,44 @@
      private volatile @Nullable DisconnectionDetails delayedDisconnect;
      private @Nullable BandwidthDebugMonitor bandwidthDebugMonitor;
+     private @Nullable UUID intendedProfileId;
 +    public String hostname = ""; // CraftBukkit - add field
 +    public boolean handleConnectionDisconnectOnNextTick = false; // Paper - Force kill connection ticking
 +    // Paper start - NetworkClient implementation
@@ -57,7 +57,7 @@
  
      public Connection(final PacketFlow receiving) {
          this.receiving = receiving;
-@@ -90,6 +_,7 @@
+@@ -91,6 +_,7 @@
          super.channelActive(ctx);
          this.channel = ctx.channel();
          this.address = this.channel.remoteAddress();
@@ -65,7 +65,7 @@
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -101,15 +_,32 @@
+@@ -102,15 +_,32 @@
      }
  
      @Override
@@ -99,7 +99,7 @@
                      this.disconnect(Component.translatable("disconnect.timeout"));
                  } else {
                      Component reason = Component.translatable("disconnect.genericReason", "Internal Exception: " + cause);
-@@ -121,9 +_,11 @@
+@@ -122,9 +_,11 @@
                          details = new DisconnectionDetails(reason);
                      }
  
@@ -112,7 +112,7 @@
                              Packet<?> packet = this.sendLoginDisconnect
                                  ? new ClientboundLoginDisconnectPacket(reason)
                                  : new ClientboundDisconnectPacket(reason);
-@@ -140,6 +_,7 @@
+@@ -141,6 +_,7 @@
                  }
              }
          }
@@ -120,7 +120,7 @@
      }
  
      @Override
-@@ -149,11 +_,60 @@
+@@ -150,11 +_,60 @@
              if (packetListener == null) {
                  throw new IllegalStateException("Received a packet before the packet listener was initialized");
              }
@@ -182,7 +182,7 @@
                  } catch (RejectedExecutionException ignored) {
                      this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
                  } catch (ClassCastException exception) {
-@@ -343,10 +_,30 @@
+@@ -344,10 +_,30 @@
          }
      }
  
@@ -213,7 +213,7 @@
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -354,7 +_,7 @@
+@@ -355,7 +_,7 @@
          }
  
          if (this.channel != null) {
@@ -222,7 +222,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -390,6 +_,7 @@
+@@ -391,6 +_,7 @@
      }
  
      public void disconnect(final DisconnectionDetails details) {
@@ -230,7 +230,7 @@
          if (this.channel == null) {
              this.delayedDisconnect = details;
          }
-@@ -534,6 +_,14 @@
+@@ -543,6 +_,14 @@
          }
      }
  
@@ -245,7 +245,7 @@
      public void setupCompression(final int threshold, final boolean validateDecompressed) {
          if (threshold >= 0) {
              if (this.channel.pipeline().get(HandlerNames.DECOMPRESS) instanceof CompressionDecoder compressionDecoder) {
-@@ -547,6 +_,7 @@
+@@ -556,6 +_,7 @@
              } else {
                  this.channel.pipeline().addAfter(HandlerNames.PREPENDER, HandlerNames.COMPRESS, new CompressionEncoder(threshold));
              }
@@ -253,7 +253,7 @@
          } else {
              if (this.channel.pipeline().get(HandlerNames.DECOMPRESS) instanceof CompressionDecoder) {
                  this.channel.pipeline().remove(HandlerNames.DECOMPRESS);
-@@ -555,6 +_,7 @@
+@@ -564,6 +_,7 @@
              if (this.channel.pipeline().get(HandlerNames.COMPRESS) instanceof CompressionEncoder) {
                  this.channel.pipeline().remove(HandlerNames.COMPRESS);
              }
@@ -261,7 +261,7 @@
          }
      }
  
-@@ -572,6 +_,26 @@
+@@ -581,6 +_,26 @@
                      );
                      disconnectListener.onDisconnect(details);
                  }

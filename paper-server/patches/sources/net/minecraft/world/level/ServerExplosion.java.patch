@@ -23,19 +23,21 @@
      }
  
      private ExplosionDamageCalculator makeDamageCalculator(final @Nullable Entity source) {
-@@ -142,7 +_,8 @@
+@@ -142,7 +_,7 @@
                          while (remainingPower > 0.0F) {
                              BlockPos pos = BlockPos.containing(xp, yp, zp);
                              BlockState block = this.level.getBlockState(pos);
 -                            FluidState fluid = this.level.getFluidState(pos);
-+                            if (!block.isDestroyable()) continue; // Paper - Protect Bedrock and End Portal/Frames from being destroyed
 +                            FluidState fluid = block.getFluidState(); // Paper - Perf: Optimize call to getFluid for explosions
                              if (!this.level.isInWorldBounds(pos)) {
                                  break;
                              }
-@@ -154,6 +_,15 @@
+@@ -152,8 +_,17 @@
+                                 remainingPower -= (resistance.get() + 0.3F) * 0.3F;
+                             }
  
-                             if (remainingPower > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, pos, block, remainingPower)) {
+-                            if (remainingPower > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, pos, block, remainingPower)) {
++                            if (remainingPower > 0.0F && block.isDestroyable() && this.damageCalculator.shouldBlockExplode(this, this.level, pos, block, remainingPower)) { // Paper - Protect Bedrock and End Portal/Frames from being destroyed
                                  toBlowSet.add(pos);
 +                                // Paper start - prevent headless pistons from forming
 +                                if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowHeadlessPistons && block.is(net.minecraft.world.level.block.Blocks.MOVING_PISTON)) {

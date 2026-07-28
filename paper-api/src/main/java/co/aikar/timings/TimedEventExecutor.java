@@ -80,7 +80,7 @@ public class TimedEventExecutor implements EventExecutor {
             executor.execute(listener, event);
             return;
         }
-        try (Timing ignored = timings.startTiming()){
+        try (Timing ignored = timings.startTiming()) {
             executor.execute(listener, event);
         }
     }

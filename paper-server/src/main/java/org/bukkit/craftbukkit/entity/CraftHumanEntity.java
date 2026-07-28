@@ -163,7 +163,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public int getSleepTicks() {
-        return this.getHandle().sleepCounter;
+        return this.getHandle().getSleepTimer();
     }
 
     @Override
@@ -615,12 +615,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public int getEnchantmentSeed() {
-        return this.getHandle().enchantmentSeed;
+        return this.getHandle().getEnchantmentSeed();
     }
 
     @Override
-    public void setEnchantmentSeed(int i) {
-        this.getHandle().enchantmentSeed = i;
+    public void setEnchantmentSeed(int seed) {
+        this.getHandle().enchantmentSeed = seed;
     }
 
     @Override
@@ -660,13 +660,8 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public int getCooldown(ItemStack item) {
         Preconditions.checkArgument(item != null, "Item cannot be null");
 
-        Identifier group = this.getHandle().getCooldowns().getCooldownGroup(CraftItemStack.asNMSCopy(item));
-        if (group == null) {
-            return 0;
-        }
-
-        ItemCooldowns.CooldownInstance cooldown = this.getHandle().getCooldowns().cooldowns.get(group);
-        return (cooldown == null) ? 0 : Math.max(0, cooldown.endTime() - this.getHandle().getCooldowns().tickCount);
+        Identifier cooldownGroup = this.getHandle().getCooldowns().getCooldownGroup(CraftItemStack.asNMSCopy(item));
+        return this.getHandle().getCooldowns().getRemainingCooldown(cooldownGroup);
     }
 
     @Override
@@ -678,19 +673,18 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
-    public int getCooldown(Key key) {
-        Preconditions.checkArgument(key != null, "Key cannot be null");
+    public int getCooldown(Key cooldownGroup) {
+        Preconditions.checkArgument(cooldownGroup != null, "cooldownGroup cannot be null");
 
-        ItemCooldowns.CooldownInstance cooldown = this.getHandle().getCooldowns().cooldowns.get(PaperAdventure.asVanilla(key));
-        return (cooldown == null) ? 0 : Math.max(0, cooldown.endTime() - this.getHandle().getCooldowns().tickCount);
+        return this.getHandle().getCooldowns().getRemainingCooldown(PaperAdventure.asVanilla(cooldownGroup));
     }
 
     @Override
-    public void setCooldown(Key key, int ticks) {
-        Preconditions.checkArgument(key != null, "Key cannot be null");
+    public void setCooldown(Key cooldownGroup, int ticks) {
+        Preconditions.checkArgument(cooldownGroup != null, "cooldownGroup cannot be null");
         Preconditions.checkArgument(ticks >= 0, "Cannot have negative cooldown");
 
-        this.getHandle().getCooldowns().addCooldown(PaperAdventure.asVanilla(key), ticks);
+        this.getHandle().getCooldowns().addCooldown(PaperAdventure.asVanilla(cooldownGroup), ticks);
     }
 
     @Override
@@ -837,22 +831,22 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public float getSaturation() {
-        return this.getHandle().getFoodData().saturationLevel;
+        return this.getHandle().getFoodData().getSaturationLevel();
     }
 
     @Override
     public void setSaturation(float value) {
-        this.getHandle().getFoodData().saturationLevel = value;
+        this.getHandle().getFoodData().setSaturation(value);
     }
 
     @Override
     public int getFoodLevel() {
-        return this.getHandle().getFoodData().foodLevel;
+        return this.getHandle().getFoodData().getFoodLevel();
     }
 
     @Override
     public void setFoodLevel(int value) {
-        this.getHandle().getFoodData().foodLevel = value;
+        this.getHandle().getFoodData().setFoodLevel(value);
     }
 
     @Override

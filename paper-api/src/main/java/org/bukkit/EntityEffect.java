@@ -201,7 +201,7 @@ public enum EntityEffect {
      * <p>
      * <b>This will cause client-glitches!</b>
      */
-    TNT_MINECART_IGNITE(10, ExplosiveMinecart.class),
+    TNT_MINECART_IGNITE(70, ExplosiveMinecart.class),
     /**
      * When an Iron Golem gives a rose.
      */

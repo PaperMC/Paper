@@ -171,7 +171,7 @@ public final class MobcapsCommand implements PaperSubcommand {
 
         sender.sendMessage(Component.join(JoinConfiguration.noSeparators(), Component.text("Mobcaps for player: "), Component.text(player.getName(), NamedTextColor.GREEN)));
         sender.sendMessage(createMobcapsComponent(
-            category -> level.chunkSource.chunkMap.getMobCountNear(serverPlayer, category),
+            category -> level.getChunkSource().chunkMap.getMobCountNear(serverPlayer, category),
             category -> level.getWorld().getSpawnLimitUnsafe(org.bukkit.craftbukkit.util.CraftSpawnCategory.toBukkit(category))
         ));
     }

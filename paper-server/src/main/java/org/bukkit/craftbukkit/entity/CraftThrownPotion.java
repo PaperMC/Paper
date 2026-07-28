@@ -10,7 +10,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.ThrownPotion;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
 
 public abstract class CraftThrownPotion extends CraftThrowableProjectile implements ThrownPotion {
@@ -34,12 +34,7 @@ public abstract class CraftThrownPotion extends CraftThrowableProjectile impleme
     }
 
     @Override
-    public ItemStack getItem() {
-        return CraftItemStack.asBukkitCopy(this.getHandle().getItem());
-    }
-
-    @Override
-    public void setPotionMeta(org.bukkit.inventory.meta.PotionMeta meta) {
+    public void setPotionMeta(PotionMeta meta) {
         net.minecraft.world.item.ItemStack item = this.getHandle().getItem();
         CraftItemStack.applyMetaToItem(item, meta);
         this.getHandle().setItem(item); // Reset item

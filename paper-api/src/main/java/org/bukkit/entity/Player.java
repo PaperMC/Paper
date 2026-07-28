@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.math.Angle;
 import io.papermc.paper.math.Position;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -17,6 +18,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.object.ObjectContents;
+import net.kyori.adventure.text.object.ObjectContentsLike;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.BanEntry;
@@ -69,7 +72,7 @@ import org.jspecify.annotations.Nullable;
  * Represents a player, connected or not
  */
 @NullMarked
-public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient { // Paper
+public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient, ObjectContentsLike { // Paper
 
     // Paper start
     @Override
@@ -841,6 +844,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param seed The seed for the sound
      */
     public void playSound(Entity entity, String sound, SoundCategory category, float volume, float pitch, long seed);
+
+    /**
+     * Plays a sound at a position.
+     *
+     * @param sound a sound
+     * @param pos position
+     */
+    default void playSound(net.kyori.adventure.sound.Sound sound, Position pos) {
+        playSound(sound, pos.x(), pos.y(), pos.z());
+    }
 
     /**
      * Stop the specified sound from playing.
@@ -3558,7 +3571,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     // Paper start
     @Override
     default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
-        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.of(this.getType().getKey(), this.getUniqueId(), this.displayName())));
+        return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.showEntity(this.getType().getKey(), this.getUniqueId(), this.displayName())));
     }
     // Paper end
 
@@ -3771,20 +3784,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          */
         @Deprecated
         public int getPing() {
-            throw new UnsupportedOperationException( "Not supported yet." );
+            throw new UnsupportedOperationException("Not supported yet.");
         }
         // Paper end
     }
 
-    // Paper start - brand support
     /**
-     * Returns player's client brand name. If the client didn't send this information, the brand name will be null.<br>
-     * For the Notchian client this name defaults to <code>vanilla</code>. Some modified clients report other names such as <code>forge</code>.<br>
+     * Returns player's client brand name. If the client didn't send this information, the brand name will be null.
+     * <p>
+     * For the Notchian client this name defaults to {@code vanilla}. Some modified clients report other names such as {@code neoforge}.
+     *
      * @return client brand name
+     * @see io.papermc.paper.connection.PlayerCommonConnection#getClientBrandName()
      */
-    @Nullable
-    String getClientBrandName();
-    // Paper end
+    @Nullable String getClientBrandName();
 
     // Paper start - Teleport API
     /**
@@ -3792,8 +3805,23 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param yaw the yaw
      * @param pitch the pitch
+     * @see #setRotation(Angle, Angle)
      */
+    @ApiStatus.Obsolete(since = "26.2")
     void setRotation(float yaw, float pitch);
+
+    /**
+     * Set the player's rotation.
+     * <p>
+     * Note: When using relative angles, client will add corresponding value
+     * to its yaw/pitch client side, avoiding jitter while the player
+     * is actively moving their view, it's different from just send
+     * new absolute angle with only yaw or pitch addition.
+     *
+     * @param yaw the yaw
+     * @param pitch the pitch
+     */
+    void setRotation(Angle yaw, Angle pitch);
 
     /**
      * Causes the player to look towards the given entity.
@@ -4013,4 +4041,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @ApiStatus.Experimental
     PlayerGameConnection getConnection();
+
+    @Override
+    default ObjectContents asObjectContents() {
+        return this.getPlayerProfile().asObjectContents();
+    }
 }

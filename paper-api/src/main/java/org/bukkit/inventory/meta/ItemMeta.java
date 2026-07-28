@@ -985,7 +985,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * This will return false if nothing was removed.
      *
      * @param attribute attribute to remove
-     * @return  true if all modifiers were removed from a given
+     * @return true if all modifiers were removed from a given
      *                  Attribute. Returns false if no attributes were
      *                  removed.
      * @throws NullPointerException if Attribute is null

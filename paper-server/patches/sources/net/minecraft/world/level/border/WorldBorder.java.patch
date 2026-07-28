@@ -134,11 +134,18 @@
      private interface BorderExtent {
          double getMinX(final float deltaPartialTick);
  
-@@ -433,6 +_,7 @@
+@@ -433,7 +_,13 @@
              this.previousSize = this.size;
              this.size = this.calculateSize();
-             if (this.lerpProgress <= 0L) {
-+                if (WorldBorder.this.world != null) new io.papermc.paper.event.world.border.WorldBorderBoundsChangeFinishEvent(WorldBorder.this.world.getWorld(), WorldBorder.this.world.getWorld().getWorldBorder(), this.from, this.to, this.lerpDuration).callEvent(); // Paper - Add worldborder events
-                 WorldBorder.this.setDirty();
-                 return WorldBorder.this.new StaticBorderExtent(this.to);
-             } else {
+             WorldBorder.this.setDirty();
+-            return this.lerpProgress <= 0L ? WorldBorder.this.new StaticBorderExtent(this.to) : this;
++            // Paper start
++            boolean finished = this.lerpProgress <= 0L;
++            if (finished && WorldBorder.this.world != null) {
++                new io.papermc.paper.event.world.border.WorldBorderBoundsChangeFinishEvent(WorldBorder.this.world.getWorld(), WorldBorder.this.world.getWorld().getWorldBorder(), this.from, this.to, this.lerpDuration).callEvent(); // Paper - Add worldborder events
++            }
++            return finished ? WorldBorder.this.new StaticBorderExtent(this.to) : this;
++            // Paper end
+         }
+ 
+         @Override

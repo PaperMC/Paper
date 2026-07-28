@@ -82,7 +82,7 @@ public interface Chicken extends Animals {
         Variant WARM = getVariant("warm");
         // End generate - ChickenVariant
 
-        private static Variant getVariant(@KeyPattern.Value String key) {
+        private static Variant getVariant(@KeyPattern.Value final String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.CHICKEN_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }
@@ -98,7 +98,7 @@ public interface Chicken extends Animals {
         SoundVariant PICKY = getSoundVariant("picky");
         // End generate - ChickenSoundVariant
 
-        private static SoundVariant getSoundVariant(final @KeyPattern.Value String key) {
+        private static SoundVariant getSoundVariant(@KeyPattern.Value final String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.CHICKEN_SOUND_VARIANT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
     }

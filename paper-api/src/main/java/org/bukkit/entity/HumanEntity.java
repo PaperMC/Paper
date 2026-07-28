@@ -440,11 +440,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     /**
      * Get the cooldown time in ticks remaining for the specified cooldown group.
      *
-     * @param key the cooldown group to check
+     * @param cooldownGroup the cooldown group to check
      * @return the remaining cooldown time in ticks
      * @see UseCooldown#cooldownGroup()
      */
-    public int getCooldown(Key key);
+    public int getCooldown(Key cooldownGroup);
 
     /**
      * Set a cooldown on items with the specified cooldown group for a certain amount of ticks.
@@ -456,11 +456,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * Note that cooldowns will not by themselves stop an item from being used
      * for attacking.
      *
-     * @param key cooldown group to set the cooldown for
+     * @param cooldownGroup cooldown group to set the cooldown for
      * @param ticks the amount of ticks to set or 0 to remove
      * @see UseCooldown#cooldownGroup()
      */
-    public void setCooldown(Key key, int ticks);
+    public void setCooldown(Key cooldownGroup, int ticks);
 
     /**
      * Get the sleep ticks of the player. This value may be capped.

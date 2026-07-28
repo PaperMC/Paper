@@ -51,7 +51,7 @@ public record ItemDialogBodyImpl(
 
         @Override
         public ItemDialogBody.Builder height(final @Range(from = 1, to = 256) int height) {
-            this.height =  requireRange(height, "height", 1, 256);
+            this.height = requireRange(height, "height", 1, 256);
             return this;
         }
 

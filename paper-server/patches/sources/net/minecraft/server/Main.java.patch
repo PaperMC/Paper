@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
-@@ -63,8 +_,10 @@
+@@ -66,8 +_,10 @@
      private static final Logger LOGGER = LogUtils.getLogger();
  
      @SuppressForbidden(reason = "System.out needed before bootstrap")
@@ -12,7 +12,7 @@
          OptionParser parser = new OptionParser();
          OptionSpec<Void> nogui = parser.accepts("nogui");
          OptionSpec<Void> initSettings = parser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");
-@@ -89,39 +_,95 @@
+@@ -92,41 +_,97 @@
                  parser.printHelpOn(System.err);
                  return;
              }
@@ -86,7 +86,6 @@
  
 -            File universePath = new File(options.valueOf(universe));
 -            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), universePath);
--            String levelName = Optional.ofNullable(options.valueOf(worldName)).orElse(settings.getProperties().levelName);
 +            // Paper start - Detect headless JRE
 +            String awtException = io.papermc.paper.util.ServerEnvironment.awtDependencyCheck();
 +            if (awtException != null) {
@@ -112,11 +111,14 @@
 +            }
 +            // Paper end - fix SPIGOT-5824
 +            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), universePath, userCacheFile, options); // Paper - pass OptionSet to load paper config files; override authentication service; fix world-container
+             NotificationManager notificationManager = new NotificationManager();
+             ManagementServer jsonRpcServer = JsonRpc.create(settings, notificationManager);
+-            String levelName = Optional.ofNullable(options.valueOf(worldName)).orElse(settings.getProperties().levelName);
 +            String levelName = Optional.ofNullable((String) options.valueOf("world")).orElse(settings.getProperties().levelName); // CraftBukkit
              LevelStorageSource levelStorageSource = LevelStorageSource.createDefault(universePath.toPath());
              LevelStorageSource.LevelStorageAccess access = levelStorageSource.validateAndCreateAccess(levelName);
              Dynamic<?> levelDataTag;
-@@ -149,13 +_,38 @@
+@@ -154,13 +_,38 @@
              } else {
                  levelDataTag = null;
              }
@@ -156,7 +158,7 @@
  
              WorldStem worldStem;
              try {
-@@ -164,17 +_,31 @@
+@@ -169,17 +_,31 @@
                          executor -> WorldLoader.load(
                              worldLoadConfig,
                              context -> {
@@ -170,7 +172,7 @@
 +                                            context.datapackWorldgen(),
 +                                            levelName,
 +                                            LevelStem.OVERWORLD,
-+                                            io.papermc.paper.world.PaperWorldLoader.dimensionKey(LevelStem.OVERWORLD)
++                                            Registries.levelStemToLevel(LevelStem.OVERWORLD)
 +                                        );
 +                                    } catch (final IOException ex) {
 +                                        throw new UncheckedIOException("Failed to migrate world storage for " + LevelStem.OVERWORLD.identifier(), ex);
@@ -190,7 +192,7 @@
                                  }
                              },
                              WorldStem::new,
-@@ -190,6 +_,7 @@
+@@ -195,6 +_,7 @@
                  return;
              }
  
@@ -198,7 +200,7 @@
              RegistryAccess.Frozen registryHolder = worldStem.registries().compositeAccess();
              WorldData data = worldStem.worldDataAndGenSettings().data();
              boolean recreateRegionFilesValue = options.has(recreateRegionFiles);
-@@ -198,22 +_,51 @@
+@@ -203,9 +_,12 @@
              }
  
              access.saveDataTag(data);
@@ -206,19 +208,15 @@
              final DedicatedServer dedicatedServer = MinecraftServer.spin(
                  thread -> {
                      DedicatedServer server = new DedicatedServer(
--                        thread, access, packRepository, worldStem, Optional.empty(), settings, DataFixers.getDataFixer(), services
-+                        // CraftBukkit start
-+                        options,
-+                        worldLoader.get(),
-+                        thread,
-+                        access,
-+                        packRepository,
-+                        worldStem,
-+                        Optional.empty(),
-+                        settings,
-+                        DataFixers.getDataFixer(),
-+                        services
++                        options, // CraftBukkit
++                        worldLoader.get(), // CraftBukkit
+                         thread,
+                         access,
+                         packRepository,
+@@ -218,17 +_,35 @@
+                         notificationManager
                      );
+                     notificationManager.setServer(server);
 +                    /*
                      server.setPort(options.valueOf(port));
 -                    server.setDemo(options.has(demo));
@@ -253,7 +251,7 @@
              Thread shutdownThread = new Thread("Server Shutdown Thread") {
                  @Override
                  public void run() {
-@@ -222,12 +_,13 @@
+@@ -237,12 +_,13 @@
              };
              shutdownThread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
              Runtime.getRuntime().addShutdownHook(shutdownThread);
@@ -268,7 +266,7 @@
          final DedicatedServerSettings settings,
          final WorldLoader.DataLoadContext context,
          final Registry<LevelStem> datapackDimensions,
-@@ -298,7 +_,11 @@
+@@ -313,7 +_,11 @@
          final RegistryAccess registryAccess,
          final boolean recreateRegionFiles
      ) {
@@ -281,7 +279,7 @@
  
          try (WorldUpgrader upgrader = new WorldUpgrader(storageSource, fixerUpper, registryAccess, eraseCache, recreateRegionFiles)) {
              Component lastStatus = null;
-@@ -326,5 +_,6 @@
+@@ -341,5 +_,6 @@
                  }
              }
          }

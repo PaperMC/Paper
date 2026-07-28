@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/npc/villager/AbstractVillager.java
 +++ b/net/minecraft/world/entity/npc/villager/AbstractVillager.java
-@@ -56,7 +_,7 @@
+@@ -57,7 +_,7 @@
      private static final EntityDataAccessor<Integer> DATA_UNHAPPY_COUNTER = SynchedEntityData.defineId(AbstractVillager.class, EntityDataSerializers.INT);
      private @Nullable Player tradingPlayer;
      protected @Nullable MerchantOffers offers;
@@ -9,7 +9,7 @@
  
      public AbstractVillager(final EntityType<? extends AbstractVillager> type, final Level level) {
          super(type, level);
-@@ -108,6 +_,20 @@
+@@ -109,6 +_,20 @@
          return this.tradingPlayer != null;
      }
  
@@ -30,7 +30,7 @@
      @Override
      public MerchantOffers getOffers() {
          if (this.level() instanceof ServerLevel serverLevel) {
-@@ -130,11 +_,24 @@
+@@ -131,11 +_,24 @@
      public void overrideXp(final int xp) {
      }
  
@@ -57,7 +57,7 @@
          if (this.tradingPlayer instanceof ServerPlayer) {
              CriteriaTriggers.TRADE.trigger((ServerPlayer)this.tradingPlayer, this, offer.getResult());
          }
-@@ -232,6 +_,11 @@
+@@ -230,6 +_,11 @@
      protected abstract void updateTrades(ServerLevel level);
  
      protected void addOffersFromTradeSet(final ServerLevel level, final MerchantOffers offers, final ResourceKey<TradeSet> resourceKey) {
@@ -69,7 +69,7 @@
          Optional<TradeSet> tradeSetOpt = this.registryAccess().lookupOrThrow(Registries.TRADE_SET).getOptional(resourceKey);
          if (tradeSetOpt.isEmpty()) {
              LOGGER.debug("Missing expected trade set {}", resourceKey);
-@@ -245,17 +_,17 @@
+@@ -243,18 +_,18 @@
                          .create(LootContextParamSets.VILLAGER_TRADE)
                  )
                  .create(tradeSet.randomSequence());
@@ -85,16 +85,17 @@
          }
      }
  
-     private static void addOffersFromItemListings(
+     @VisibleForTesting
+     static void addOffersFromItemListings(
 -        final LootContext lootContext, final MerchantOffers merchantOffers, final HolderSet<VillagerTrade> potentialOffers, final int numberOfOffers
 +        final LootContext lootContext, final MerchantOffers merchantOffers, final HolderSet<VillagerTrade> potentialOffers, final int numberOfOffers, AbstractVillager villager // Paper
      ) {
+         List<Holder<VillagerTrade>> potentialOffersList = Lists.newArrayList(potentialOffers);
          int offersFound = 0;
- 
-@@ -267,14 +_,14 @@
- 
-             MerchantOffer offer = villagerTrade.get().value().getOffer(lootContext);
-             if (offer != null) {
+@@ -266,14 +_,14 @@
+             if (offer == null) {
+                 potentialOffersList.remove(roll);
+             } else {
 -                merchantOffers.add(offer);
 +                tryAcquireTrade(villager, merchantOffers, offer); // Paper
                  offersFound++;
@@ -108,7 +109,7 @@
      ) {
          List<Holder<VillagerTrade>> leftoverOffers = Lists.newArrayList(potentialOffers);
          int offersFound = 0;
-@@ -283,11 +_,30 @@
+@@ -282,11 +_,30 @@
              Holder<VillagerTrade> villagerTrade = leftoverOffers.remove(lootContext.getRandom().nextInt(leftoverOffers.size()));
              MerchantOffer offer = villagerTrade.value().getOffer(lootContext);
              if (offer != null) {
