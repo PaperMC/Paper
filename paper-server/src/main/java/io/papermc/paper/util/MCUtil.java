@@ -4,6 +4,7 @@ import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.FinePosition;
@@ -32,14 +33,31 @@ import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Bucketable;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.world.entity.Leashable;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.animal.allay.Allay;
+import net.minecraft.world.entity.animal.axolotl.Axolotl;
 import net.minecraft.world.entity.animal.cow.AbstractCow;
 import net.minecraft.world.entity.animal.cow.MushroomCow;
+import net.minecraft.world.entity.animal.equine.AbstractHorse;
+import net.minecraft.world.entity.animal.goat.Goat;
+import net.minecraft.world.entity.animal.golem.CopperGolem;
+import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
+import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
@@ -255,15 +273,82 @@ public final class MCUtil {
             || (stack.is(Items.GLASS_BOTTLE)); // taking honey from bee nests/hives
     }
 
-    public static boolean clientPredictsInteraction(final Player player, final Entity entity, final ItemStack stack) {
-        // the remaining cases need either count > 1 or infinite materials
-        if (stack.getCount() <= 1 && !player.hasInfiniteMaterials()) {
-            return false;
+    public static void resyncEntityInteraction(final ServerPlayer player, final Entity target, final InteractionHand hand, final ItemStack usedItemStack) {
+        final boolean baby = target instanceof AgeableMob ageableMob && ageableMob.isBaby();
+
+        final boolean refill = !baby
+            && (target instanceof AbstractCow && usedItemStack.is(Items.BUCKET)
+                || target instanceof Goat && usedItemStack.is(Items.BUCKET)
+                || target instanceof MushroomCow && usedItemStack.is(Items.BOWL))
+            || target instanceof Axolotl && usedItemStack.is(Items.TROPICAL_FISH_BUCKET)
+            || target instanceof AbstractNautilus && usedItemStack.is(ItemTags.NAUTILUS_BUCKET_FOOD);
+
+        final boolean bucketable = target instanceof Bucketable b
+            && target.isAlive()
+            && b.canBePickedUpWithBucket(usedItemStack);
+        // Taking an Allay's item can update any slot
+        final boolean allayTake = target instanceof Allay allay
+            && hand == InteractionHand.MAIN_HAND
+            && usedItemStack.isEmpty()
+            && !allay.getMainHandItem().isEmpty();
+        // A filled result is added to another slot when the input is not replaced. See ItemUtils#createFilledResult
+        final boolean filledResult = (usedItemStack.getCount() > 1 || player.hasInfiniteMaterials())
+            && (refill || bucketable);
+
+        if (allayTake || filledResult) {
+            player.containerMenu.sendAllDataToRemote();
+        } else {
+            player.containerMenu.forceHeldSlot(hand);
         }
 
-        return (entity instanceof AbstractCow && stack.is(Items.BUCKET))
-            || (entity instanceof MushroomCow && stack.is(Items.BOWL))
-            || (entity instanceof Bucketable bucketable && bucketable.canBePickedUpWithBucket(stack));
+        if (bucketable) {
+            target.resendPossiblyDesyncedEntityData(player);
+            return;
+        }
+
+        // Conservative entity metadata refresh
+        target.refreshEntityData(player);
+
+        final boolean shearing = usedItemStack.is(Items.SHEARS);
+
+        final EquipmentSlotGroup group = switch (target) {
+            // Giving or taking an item from an Allay changes main-hand
+            case Allay _ -> EquipmentSlotGroup.MAINHAND;
+            // Equipping horse armor changes the horse's body
+            case AbstractHorse _ -> EquipmentSlotGroup.BODY;
+            // Taking a copper golem's held item changes main-hand
+            case CopperGolem _ -> EquipmentSlotGroup.MAINHAND;
+            // Equipping or repairing wolf armor changes the wolf's body
+            case Wolf _ -> EquipmentSlotGroup.BODY;
+            // Shearing equipment from mobs can change any equipment slot
+            case Mob _ when shearing -> EquipmentSlotGroup.ANY;
+            default -> null;
+        };
+
+        if (group != null) {
+            player.connection.send(new ClientboundSetEquipmentPacket(
+                target.getId(),
+                group.slots()
+                    .stream()
+                    .map(slot -> Pair.of(slot, ((LivingEntity) target).getItemBySlot(slot).copy()))
+                    .toList(),
+                true
+            ));
+        }
+
+        // Shearing predicts removing both the target's leash and any entities leashed to the target
+        if (shearing) {
+            if (target instanceof Leashable leashable) {
+                player.connection.send(new ClientboundSetEntityLinkPacket(target, leashable.getLeashHolder()));
+            }
+
+            for (final Leashable leashable : Leashable.leashableLeashedTo(target)) {
+                final Entity entity = (Entity) leashable;
+                if (player.getBukkitEntity().canSee(entity.getBukkitEntity())) {
+                    player.connection.send(new ClientboundSetEntityLinkPacket(entity, leashable.getLeashHolder()));
+                }
+            }
+        }
     }
 
     public static String getLevelName(Level level) {
