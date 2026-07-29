@@ -4942,14 +4942,14 @@ index 0000000000000000000000000000000000000000..2ff58cf753c60913ee73aae015182e9c
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2bc436cdf5180a7943c45fabb9fbbedae6f7db56
+index 0000000000000000000000000000000000000000..2f3492ff4604a45f9513bf8306a152c1acca429b
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,164 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server;
 +
 +import ca.spottedleaf.moonrise.common.PlatformHooks;
-+import ca.spottedleaf.moonrise.common.list.ReferenceList;
++import ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet;
 +import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
 +import ca.spottedleaf.moonrise.common.util.TickThread;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
@@ -4967,10 +4967,8 @@ index 0000000000000000000000000000000000000000..2bc436cdf5180a7943c45fabb9fbbeda
 +
 +public final class ServerEntityLookup extends EntityLookup {
 +
-+    private static final Entity[] EMPTY_ENTITY_ARRAY = new Entity[0];
-+
 +    private final ServerLevel serverWorld;
-+    public final ReferenceList<Entity> trackerEntities = new ReferenceList<>(EMPTY_ENTITY_ARRAY); // Moonrise - entity tracker
++    public final IteratorSafeOrderedReferenceSet<Entity> trackerEntities = new IteratorSafeOrderedReferenceSet<>(); // Moonrise - entity tracker
 +
 +    // Vanilla does not increment ticket timeouts if the chunk is progressing in generation. They made this change in 1.21.6 so that the ender pearl
 +    // ticket does not expire if the chunk fails to generate before the timeout expires. Rather than blindly adjusting the entire system behavior
@@ -24589,7 +24587,7 @@ index 5e5aad112058b567214c28ccd719271f12240a35..cd5a325d37f617431ceb568a65570160
  
      @FunctionalInterface
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e0fbd90a1 100644
+index 4a9e9707bebe85e26d28260b389e236156ba5637..bffef55ea45feff56947a2d3a09bc1035dc95b27 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
 @@ -124,10 +124,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
@@ -25289,8 +25287,8 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
 +        );
 +
 +        return ret;
-+    }
-+
+     }
+ 
 +    @Override
 +    public CompletableFuture<Void> write(final ChunkPos pos, final Supplier<CompoundTag> tag) {
 +        ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.scheduleSave(
@@ -25298,8 +25296,8 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
 +            ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionFileType.CHUNK_DATA
 +        );
 +        return null;
-     }
- 
++    }
++
 +    @Override
 +    public CompletableFuture<Void> synchronize(final boolean flush) {
 +        try {
@@ -25604,34 +25602,39 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
                  trackedEntity.updatePlayers(this.level.players());
                  if (entity instanceof ServerPlayer player) {
                      this.updatePlayerStatus(player, true);
-@@ -1261,12 +1002,38 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1261,12 +1002,43 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          if (trackedEntity != null) {
              trackedEntity.broadcastRemoved();
          }
 +        ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$setTrackedEntity(null); // Paper - optimise entity tracker
-     }
- 
++    }
++
 +    // Paper start - optimise entity tracker
 +    private void newTrackerTick() {
 +        final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup entityLookup = (ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup)((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getEntityLookup();;
 +
-+        final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.entity.Entity> trackerEntities = entityLookup.trackerEntities;
-+        final Entity[] trackerEntitiesRaw = trackerEntities.getRawDataUnchecked();
-+        for (int i = 0, len = trackerEntities.size(); i < len; ++i) {
-+            final Entity entity = trackerEntitiesRaw[i];
-+            final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity();
-+            if (tracker == null) {
-+                continue;
++        // Tracker updates can fire plugin events that remove entities anywhere in this set. The iterator must not
++        // shift entries under the cursor, and anything added during this pass can wait until the next tick.
++        final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet.Iterator<Entity> iterator = entityLookup.trackerEntities.iterator();
++        try {
++            while (iterator.hasNext()) {
++                final Entity entity = iterator.next();
++                final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity();
++                if (tracker == null) {
++                    continue;
++                }
++                ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity)tracker).moonrise$tick(((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)entity).moonrise$getChunkData().nearbyPlayers);
++                if (((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity)tracker).moonrise$hasPlayers()
++                    || ((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)entity).moonrise$getChunkStatus().isOrAfter(FullChunkStatus.ENTITY_TICKING)) {
++                    tracker.serverEntity.sendChanges();
++                }
 +            }
-+            ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity)tracker).moonrise$tick(((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)entity).moonrise$getChunkData().nearbyPlayers);
-+            if (((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity)tracker).moonrise$hasPlayers()
-+                || ((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)entity).moonrise$getChunkStatus().isOrAfter(FullChunkStatus.ENTITY_TICKING)) {
-+                tracker.serverEntity.sendChanges();
-+            }
++        } finally {
++            iterator.finishedIterating();
 +        }
-+    }
+     }
 +    // Paper end - optimise entity tracker
-+
+ 
      protected void tick() {
 -        for (ServerPlayer player : this.playerMap.getAllPlayers()) {
 -            this.updateChunkTracking(player);
@@ -25645,7 +25648,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
  
          List<ServerPlayer> movedPlayers = Lists.newArrayList();
          List<ServerPlayer> players = this.level.players();
-@@ -1365,17 +1132,11 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1365,17 +1137,11 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
      }
  
      public void waitForLightBeforeSending(final ChunkPos centerChunk, final int chunkRadius) {
@@ -25665,7 +25668,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
              LevelChunk chunk = chunkHolder.getChunkToSend();
              if (chunk != null) {
                  consumer.accept(chunk);
-@@ -1383,14 +1144,21 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1383,14 +1149,21 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          }
      }
  
@@ -25689,7 +25692,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
          }
  
          @Override
-@@ -1404,13 +1172,96 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1404,13 +1177,96 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          }
      }
  
@@ -25787,7 +25790,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
          public TrackedEntity(final Entity entity, final int range, final int updateInterval, final boolean trackDelta) {
              this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, updateInterval, trackDelta, this, this.seenBy); // Paper
              this.entity = entity;
-@@ -1522,17 +1373,24 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1522,17 +1378,24 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          }
  
          private int getEffectiveRange() {
