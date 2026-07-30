@@ -145,7 +145,7 @@ public class MerchantRecipe implements Recipe {
             return null;
         }
 
-        ItemStack firstIngredient = this.ingredients.get(0).clone();
+        ItemStack firstIngredient = this.ingredients.getFirst().clone();
         adjust(firstIngredient);
         return firstIngredient;
     }
