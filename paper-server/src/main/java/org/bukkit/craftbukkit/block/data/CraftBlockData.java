@@ -456,6 +456,7 @@ public class CraftBlockData implements BlockData {
         ENCODER_CACHE.clear();
         Block.BLOCK_STATE_REGISTRY.forEach(state -> {
             CraftBlockData data = state.asBlockData();
+            data.parsedStates = state.getValues().toList();
             ENCODER_CACHE.put(data.getAsString(), data);
         });
     }

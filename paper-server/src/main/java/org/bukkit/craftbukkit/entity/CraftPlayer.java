@@ -18,6 +18,7 @@ import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.math.Angle;
 import io.papermc.paper.math.Position;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
@@ -139,7 +140,6 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
-import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
 import org.bukkit.EntityEffect;
@@ -1294,6 +1294,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public void setRotation(float yaw, float pitch) {
+        if (this.getHandle().connection == null) return;
+
+        super.setRotation(yaw, pitch);
+    }
+
+    @Override
+    public void setRotation(@NonNull Angle yaw, @NonNull Angle pitch) {
         if (this.getHandle().connection == null) return;
 
         super.setRotation(yaw, pitch);
@@ -3094,12 +3101,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         // Paper end
     };
 
-    // Paper start - brand support
     @Override
     public String getClientBrandName() {
-        return getHandle().connection.playerBrand;
+        if (this.getHandle().connection == null) {
+            return null;
+        }
+        return this.getHandle().connection.clientBrand;
     }
-    // Paper end
 
     // Paper start
     @Override

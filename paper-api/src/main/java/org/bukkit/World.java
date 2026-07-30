@@ -2,6 +2,7 @@ package org.bukkit;
 
 import io.papermc.paper.entity.poi.PoiSearchResult;
 import io.papermc.paper.entity.poi.PoiType;
+import io.papermc.paper.math.Position;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import java.io.File;
 import java.nio.file.Path;
@@ -2647,6 +2648,17 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTemp);
 
     /**
+     * Sets if this world can spawn monsters.
+     * <p>Note that setting {@code false} only affects
+     * natural spawning. It doesn't affect spawn eggs, summon command, mobs
+     * spawned from structure generation, spawners, etc.</p>
+     *
+     * @param allowMonsters - if true, monsters are allowed to spawn in this
+     *     world via natural spawning mechanisms.
+     */
+    public void setAllowMonsterSpawning(boolean allowMonsters);
+
+    /**
      * Sets the spawn flags for this.
      * <p>Note that setting {@code false} for either only affects
      * natural spawning. It doesn't affect spawn eggs, summon command, mobs
@@ -2656,14 +2668,20 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     world via natural spawning mechanisms.
      * @param allowAnimals - if true, animals are allowed to spawn in this
      *     world via natural spawning mechanisms.
+     * @deprecated the vanilla server no longer maintains this functionality.
+     * See {@link #setAllowMonsterSpawning(boolean)} if you want to dis/allow monster spawning.
+     * Plugins can control natural spawning of animals via events like {@link org.bukkit.event.entity.EntitySpawnEvent} and the {@link org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason#NATURAL}.
      */
+    @Deprecated(since = "26.2", forRemoval = true)
     public void setSpawnFlags(boolean allowMonsters, boolean allowAnimals);
 
     /**
      * Gets whether animals can spawn in this world.
      *
      * @return whether animals can spawn in this world.
+     * @deprecated the vanilla server no longer maintains this functionality. Plugins can control natural spawning via events like {@link org.bukkit.event.entity.EntitySpawnEvent} and the {@link org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason#NATURAL}.
      */
+    @Deprecated(since = "26.2", forRemoval = true)
     public boolean getAllowAnimals();
 
     /**
@@ -3754,6 +3772,16 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param seed The seed for the sound
      */
     void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
+
+    /**
+     * Plays a sound at a position.
+     *
+     * @param sound a sound
+     * @param pos position
+     */
+    default void playSound(net.kyori.adventure.sound.@NotNull Sound sound, @NotNull Position pos) {
+        playSound(sound, pos.x(), pos.y(), pos.z());
+    }
 
     /**
      * Get an array containing the names of all the {@link GameRule}s.
