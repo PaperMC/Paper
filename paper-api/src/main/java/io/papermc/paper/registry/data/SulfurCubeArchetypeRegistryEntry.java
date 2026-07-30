@@ -74,6 +74,7 @@ public interface SulfurCubeArchetypeRegistryEntry {
          * @apiNote for non-constant damage this will return one possible sample
          * instead of the exact amount
          */
+        @ApiStatus.Experimental
         @NonNegative float amount(); // todo expose FloatProvider/IntProvider in a consistent way (should match Machine's PR for dimension type)
 
         /**
@@ -91,6 +92,7 @@ public interface SulfurCubeArchetypeRegistryEntry {
          * @return the created instance
          */
         @Contract(value = "_, _, _ -> new", pure = true)
+        @ApiStatus.Experimental
         static ContactDamage of(final TypedKey<DamageType> damageType, final @NonNegative float amount, final boolean attributeToSource) {
             record Impl(TypedKey<DamageType> damageType, @NonNegative float amount, boolean attributeToSource) implements ContactDamage {
             }
@@ -181,6 +183,7 @@ public interface SulfurCubeArchetypeRegistryEntry {
         /**
          * {@return the sound played once the sulfur cube is knocked}
          */
+        @ApiStatus.Experimental
         TypedKey<Sound> hitSound(); // todo should take a RegistryHolder but need more thoughts on the create method
 
         /**
@@ -208,6 +211,7 @@ public interface SulfurCubeArchetypeRegistryEntry {
          * @return the created instance
          */
         @Contract(value = "_, _, _, _ -> new", pure = true)
+        @ApiStatus.Experimental
         static SoundSettings of(final TypedKey<Sound> hitSound, final TypedKey<Sound> pushSound, final float pushSoundImpulseThreshold, final float pushSoundCooldown) {
             record Impl(TypedKey<Sound> hitSound, TypedKey<Sound> pushSound, float pushSoundImpulseThreshold, float pushSoundCooldown) implements SoundSettings {
             }
