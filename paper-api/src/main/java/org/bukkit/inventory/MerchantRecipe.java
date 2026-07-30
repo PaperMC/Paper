@@ -7,9 +7,8 @@ import org.bukkit.Material;
 import org.bukkit.entity.Villager;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.NumberConversions;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a merchant's trade.
@@ -47,9 +46,10 @@ import org.jspecify.annotations.NullMarked;
  * constraining the resulting value between <code>1</code> and the item stack's
  * {@link ItemStack#getMaxStackSize() maximum stack size}.
  */
+@NullMarked
 public class MerchantRecipe implements Recipe {
 
-    private ItemStack result;
+    private final ItemStack result;
     private List<ItemStack> ingredients = new ArrayList<ItemStack>();
     private int uses;
     private int maxUses;
@@ -60,26 +60,26 @@ public class MerchantRecipe implements Recipe {
     private float priceMultiplier;
     private boolean ignoreDiscounts; // Paper
 
-    public MerchantRecipe(@NotNull ItemStack result, int maxUses) {
+    public MerchantRecipe(ItemStack result, int maxUses) {
         this(result, 0, maxUses, false);
     }
 
-    public MerchantRecipe(@NotNull ItemStack result, int uses, int maxUses, boolean experienceReward) {
+    public MerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward) {
         this(result, uses, maxUses, experienceReward, 0, 0.0F, 0, 0);
     }
 
-    public MerchantRecipe(@NotNull ItemStack result, int uses, int maxUses, boolean experienceReward, int villagerExperience, float priceMultiplier) {
+    public MerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward, int villagerExperience, float priceMultiplier) {
         this(result, uses, maxUses, experienceReward, villagerExperience, priceMultiplier, 0, 0);
     }
 
-    public MerchantRecipe(@NotNull ItemStack result, int uses, int maxUses, boolean experienceReward, int villagerExperience, float priceMultiplier, int demand, int specialPrice) {
+    public MerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward, int villagerExperience, float priceMultiplier, int demand, int specialPrice) {
         // Paper start - add ignoreDiscounts param
         this(result, uses, maxUses, experienceReward, villagerExperience, priceMultiplier, demand, specialPrice, false);
     }
-    public MerchantRecipe(@NotNull ItemStack result, int uses, int maxUses, boolean experienceReward, int villagerExperience, float priceMultiplier, boolean ignoreDiscounts) {
+    public MerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward, int villagerExperience, float priceMultiplier, boolean ignoreDiscounts) {
         this(result, uses, maxUses, experienceReward, villagerExperience, priceMultiplier, 0, 0, ignoreDiscounts);
     }
-    public MerchantRecipe(@NotNull ItemStack result, int uses, int maxUses, boolean experienceReward, int villagerExperience, float priceMultiplier, int demand, int specialPrice, boolean ignoreDiscounts) {
+    public MerchantRecipe(ItemStack result, int uses, int maxUses, boolean experienceReward, int villagerExperience, float priceMultiplier, int demand, int specialPrice, boolean ignoreDiscounts) {
         Preconditions.checkArgument(!result.isEmpty(), "Recipe cannot have an empty result."); // Paper
         this.ignoreDiscounts = ignoreDiscounts;
         // Paper end
@@ -94,19 +94,18 @@ public class MerchantRecipe implements Recipe {
     }
 
     // Paper start - add copy ctor
-    public MerchantRecipe(@NotNull MerchantRecipe recipe) {
+    public MerchantRecipe(MerchantRecipe recipe) {
         this(recipe.result.clone(), recipe.uses, recipe.maxUses, recipe.experienceReward, recipe.villagerExperience, recipe.priceMultiplier, recipe.demand, recipe.specialPrice, recipe.ignoreDiscounts);
         this.setIngredients(recipe.ingredients);
     }
     // Paper end
-
-    @NotNull
+    
     @Override
     public ItemStack getResult() {
         return result.clone(); // Paper
     }
 
-    public void addIngredient(@NotNull ItemStack item) {
+    public void addIngredient(ItemStack item) {
         Preconditions.checkState(ingredients.size() < 2, "MerchantRecipe can only have maximum 2 ingredients");
         Preconditions.checkArgument(!item.isEmpty(), "Recipe cannot have an empty itemstack ingredient."); // Paper
         ingredients.add(item.clone());
@@ -116,7 +115,7 @@ public class MerchantRecipe implements Recipe {
         ingredients.remove(index);
     }
 
-    public void setIngredients(@NotNull List<ItemStack> ingredients) {
+    public void setIngredients(List<ItemStack> ingredients) {
         Preconditions.checkState(ingredients.size() <= 2, "MerchantRecipe can only have maximum 2 ingredients");
         this.ingredients = new ArrayList<ItemStack>();
         for (ItemStack item : ingredients) {
@@ -124,8 +123,7 @@ public class MerchantRecipe implements Recipe {
             this.ingredients.add(item.clone());
         }
     }
-
-    @NotNull
+    
     public List<ItemStack> getIngredients() {
         List<ItemStack> copy = new ArrayList<ItemStack>();
         for (ItemStack item : ingredients) {
@@ -435,11 +433,12 @@ public class MerchantRecipe implements Recipe {
          */
         public Builder setIngredients(List<ItemStack> ingredients) {
             Preconditions.checkState(ingredients.size() <= 2, "Recipe can only have maximum 2 ingredients");
-            this.ingredients = new ArrayList<>();
+            List<ItemStack> copy = new ArrayList<>();
             for (ItemStack item : ingredients) {
                 Preconditions.checkArgument(!item.isEmpty(), "Recipe cannot have an empty itemstack ingredient.");
-                this.ingredients.add(item.clone());
+                copy.add(item);
             }
+            this.ingredients = copy;
             return this;
         }
         
