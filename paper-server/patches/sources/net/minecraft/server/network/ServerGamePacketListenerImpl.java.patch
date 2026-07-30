@@ -270,7 +270,7 @@
 +                    return;
 +                }
 +                // Paper end - Prevent moving into unloaded chunks
-+                if (movedDist - expectedDist > Math.max(100.0, Mth.square(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed)) && !this.isSingleplayerOwner()) {
++                if (movedDist - expectedDist > Math.max(100.0, Mth.square(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed)) && !this.isSingleplayerOwner() && !this.player.getBukkitEntity().hasPermission("minecraft.movement.bypass.vehicle.quickly")) { // Paper - add bypass permission
 +                    // CraftBukkit end
                      LOGGER.warn(
                          "{} (vehicle of {}) moved too quickly! {},{},{}", vehicle.getPlainTextName(), this.player.getPlainTextName(), xDist, yDist, zDist
@@ -293,7 +293,7 @@
                  movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
                  boolean fail = false;
 -                if (movedDist > 0.0625) {
-+                if (movedDist > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
++                if (movedDist > org.spigotmc.SpigotConfig.movedWronglyThreshold && !this.player.getBukkitEntity().hasPermission("minecraft.movement.bypass.vehicle.wrongly")) { // Spigot
                      fail = true;
                      LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", vehicle.getPlainTextName(), this.player.getPlainTextName(), Math.sqrt(movedDist));
                  }
@@ -355,6 +355,16 @@
                  this.player.level().getChunkSource().move(this.player);
                  Vec3 clientDeltaMovement = new Vec3(vehicle.getX() - oldX, vehicle.getY() - oldY, vehicle.getZ() - oldZ);
                  this.handlePlayerKnownMovement(clientDeltaMovement);
+@@ -513,7 +_,8 @@
+                     && !this.server.allowFlight()
+                     && !vehicle.isFlyingVehicle()
+                     && !vehicle.isNoGravity()
+-                    && this.noBlocksAround(vehicle);
++                    && this.noBlocksAround(vehicle)
++                    && !this.getCraftPlayer().hasPermission("minecraft.flight.bypass.vehicle"); // Paper - add bypass permission
+                 this.vehicleLastGoodX = vehicle.getX();
+                 this.vehicleLastGoodY = vehicle.getY();
+                 this.vehicleLastGoodZ = vehicle.getZ();
 @@ -532,7 +_,7 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          if (packet.getId() == this.awaitingTeleport) {
@@ -388,7 +398,7 @@
          this.player.getRecipeBook().setBookSetting(packet.getBookType(), packet.isOpen(), packet.isFiltering());
      }
  
-@@ -591,25 +_,112 @@
+@@ -591,25 +_,113 @@
          }
      }
  
@@ -402,7 +412,7 @@
 -        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
 +        // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level()); // Paper - AsyncTabCompleteEvent; run this async
 +        // CraftBukkit start
-+        if (!this.tabSpamThrottler.isIncrementAndUnderThreshold() && !this.server.getPlayerList().isOp(this.player.nameAndId()) && !this.server.isSingleplayerOwner(this.player.nameAndId())) { // Paper - configurable tab spam limits
++        if (!this.tabSpamThrottler.isIncrementAndUnderThreshold() && !this.player.getBukkitEntity().hasPermission("minecraft.spam.bypass.command-suggestions.frequency") && !this.server.getPlayerList().isOp(this.player.nameAndId()) && !this.server.isSingleplayerOwner(this.player.nameAndId())) { // Paper - configurable tab spam limits and a bypass permission node
 +            this.disconnectAsync(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - Kick event cause // Paper - add proper async disconnect
 +            return;
 +        }
@@ -414,7 +424,7 @@
 +        // Paper end - Don't suggest if tab-complete is disabled
 +        // Paper start
 +        final int index;
-+        if (packet.getCommand().length() > 64 && ((index = packet.getCommand().indexOf(' ')) == -1 || index >= 64)) {
++        if (!this.player.getBukkitEntity().hasPermission("minecraft.spam.bypass.command-suggestions.length") && packet.getCommand().length() > 64 && ((index = packet.getCommand().indexOf(' ')) == -1 || index >= 64)) { // Paper - add bypass permission node
 +            this.disconnectAsync(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - add proper async disconnect
 +            return;
 +        }
@@ -473,7 +483,8 @@
 +        // Paper end - AsyncTabCompleteEvent
          ParseResults<CommandSourceStack> parse = this.server.getCommands().getDispatcher().parse(command, this.player.createCommandSourceStack());
 +        // Paper start - Handle non-recoverable exceptions
-+        if (!parse.getExceptions().isEmpty()
++        if (!this.player.getBukkitEntity().hasPermission("minecraft.spam.bypass.server-suggestions") // Paper - add a bypass permission node
++            && !parse.getExceptions().isEmpty()
 +            && parse.getExceptions().values().stream().anyMatch(e -> e instanceof io.papermc.paper.brigadier.TagParseCommandSyntaxException)) {
 +            this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM);
 +            return;
@@ -784,7 +795,8 @@
 +                                    }
 +                                    // Paper end - Prevent moving into unloaded chunks
  
-                                     if (this.shouldCheckPlayerMovement(isFallFlying)) {
+-                                    if (this.shouldCheckPlayerMovement(isFallFlying)) {
++                                    if (this.shouldCheckPlayerMovement(isFallFlying) && !this.player.getBukkitEntity().hasPermission("minecraft.movement.bypass.player.quickly")) { // Paper - add bypass permission
                                          float metersPerTick = isFallFlying ? 300.0F : 100.0F;
 -                                        if (movedDist - expectedDist > metersPerTick * deltaPackets) {
 +                                        if (movedDist - expectedDist > Math.max(metersPerTick, Mth.square(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) deltaPackets * speed))) {
@@ -848,7 +860,7 @@
                                  double oyDist = yDist;
                                  xDist = targetX - this.player.getX();
                                  yDist = targetY - this.player.getY();
-@@ -1143,21 +_,88 @@
+@@ -1143,27 +_,96 @@
  
                                  zDist = targetZ - this.player.getZ();
                                  movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
@@ -860,8 +872,10 @@
                                      && !this.player.isSleeping()
                                      && !this.player.isCreative()
                                      && !this.player.isSpectator()
-                                     && !this.player.isInPostImpulseGraceTime()) {
+-                                    && !this.player.isInPostImpulseGraceTime()) {
 -                                    fail = true;
++                                    && !this.player.isInPostImpulseGraceTime()
++                                    && !this.player.getBukkitEntity().hasPermission("minecraft.movement.bypass.player.wrongly")) { // Paper - add bypass permission
 +                                    // Paper start - Add fail move event
 +                                    io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_WRONGLY,
 +                                            targetX, targetY, targetZ, targetYRot, targetXRot, true);
@@ -946,6 +960,13 @@
                                      this.player.absSnapTo(targetX, targetY, targetZ, targetYRot, targetXRot);
                                      boolean isAutoSpinAttack = this.player.isAutoSpinAttack();
                                      this.clientIsFloating = oyDist >= -0.03125
+                                         && !playerStandsOnSomething
+                                         && !this.player.isSpectator()
+                                         && !this.server.allowFlight()
++                                        && !this.player.getBukkitEntity().hasPermission("minecraft.flight.bypass.player") // Paper - add bypass permission
+                                         && !this.player.getAbilities().mayfly
+                                         && !this.player.hasEffect(MobEffects.LEVITATION)
+                                         && !isFallFlying
 @@ -1192,7 +_,7 @@
                                      this.lastGoodY = this.player.getY();
                                      this.lastGoodZ = this.player.getZ();
@@ -955,6 +976,17 @@
                                      this.player
                                          .doCheckFallDamage(
                                              this.player.getX() - startX, this.player.getY() - startY, this.player.getZ() - startZ, packet.isOnGround()
+@@ -1216,6 +_,10 @@
+             return false;
+         }
+ 
++        if (isFallFlying && this.player.getBukkitEntity().hasPermission("minecraft.movement.bypass.elytra")) { // Paper - add bypass permission
++            return false;
++        }
++
+         GameRules gameRules = this.player.level().getGameRules();
+         return gameRules.get(GameRules.PLAYER_MOVEMENT_CHECK) && (!isFallFlying || gameRules.get(GameRules.ELYTRA_MOVEMENT_CHECK));
+     }
 @@ -1232,6 +_,7 @@
                      this.player.getXRot()
                  );
@@ -1235,7 +1267,7 @@
                                      this.player.swing(hand, true);
                                  }
  
-@@ -1394,6 +_,15 @@
+@@ -1394,20 +_,24 @@
                                      && success.swingSource() == InteractionResult.SwingSource.SERVER) {
                                      this.player.swing(hand, true);
                                  }
@@ -1249,9 +1281,10 @@
 +                                }
 +                            // Paper end - Fix inventory desync
                              } else {
-                                 this.player.sendBuildLimitMessage(true, maxY);
+-                                this.player.sendBuildLimitMessage(true, maxY);
++                                // this.player.sendBuildLimitMessage(true, maxY); // Paper - Fix MC-306582: Fix build limit message being sent when it shouldn't be
                              }
-@@ -1401,13 +_,8 @@
+ 
                              this.send(new ClientboundBlockUpdatePacket(level, pos));
                              this.send(new ClientboundBlockUpdatePacket(level, pos.relative(direction)));
                          }
@@ -1561,7 +1594,7 @@
                  return Optional.empty();
              }
  
-@@ -1669,31 +_,91 @@
+@@ -1669,31 +_,92 @@
          return false;
      }
  
@@ -1642,7 +1675,8 @@
 +        // CraftBukkit start - replaced with thread safe throttle
 +        // throttler.increment();
 +        if (!throttler.isIncrementAndUnderThreshold()
-+        // CraftBukkit end - replaced with thread safe throttle
++            // CraftBukkit end - replaced with thread safe throttle
++            && !this.player.getBukkitEntity().hasPermission("minecraft.spam.bypass.rate") // Paper - add bypass permission node
              && !this.server.getPlayerList().isOp(this.player.nameAndId())
              && !this.server.isSingleplayerOwner(this.player.nameAndId())) {
 -            this.disconnect(Component.translatable("disconnect.spam"));
@@ -2294,7 +2328,7 @@
      public void handlePlaceRecipe(final ServerboundPlaceRecipePacket packet) {
 +        // Paper start - auto recipe limit
 +        if (!org.bukkit.Bukkit.isPrimaryThread()) {
-+            if (!this.recipeSpamPackets.isIncrementAndUnderThreshold()) {
++            if (!this.player.getBukkitEntity().hasPermission("minecraft.spam.bypass.place") && !this.recipeSpamPackets.isIncrementAndUnderThreshold()) { // Paper - add bypass permission node
 +                this.disconnectAsync(net.minecraft.network.chat.Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause // Paper - add proper async disconnect
 +                return;
 +            }
