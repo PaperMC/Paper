@@ -9,6 +9,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.NumberConversions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a merchant's trade.
@@ -319,4 +320,280 @@ public class MerchantRecipe implements Recipe {
         this.ignoreDiscounts = ignoreDiscounts;
     }
     // Paper end
+    
+    /**
+     * Creates a {@link Builder} instance to use for modifying values such as the result
+     * item.<br>
+     * This Builder class will contain all the values from this MerchantRecipe instance.
+     *
+     * @return New Builder class with values from this MerchantRecipe applied.
+     */
+    public Builder builder() {
+        return new Builder(this);
+    }
+    
+    /**
+     * Builder class for creating a new {@link MerchantRecipe}.
+     * This class allows the result ItemStack to be modified until the
+     * {@link #build() the MerchantRecipe is build}.
+     *
+     * <p>A Builder copy of an existing MerchantRecipe can be obtained through
+     * its {@link MerchantRecipe#builder() builder method}.
+     */
+    @NullMarked
+    public static class Builder {
+        private ItemStack result;
+        private List<ItemStack> ingredients = new ArrayList<>();
+        private int uses = 0;
+        private int maxUses;
+        private boolean experienceReward = false;
+        private int specialPrice = 0;
+        private int demand = 0;
+        private int villagerExperience = 0;
+        private float priceMultiplier = 0.0F;
+        private boolean ignoreDiscounts = false;
+        
+        /**
+         * Basic constructor to create a new Builder class from a provided result
+         * ItemStack and maxUses integer.<br>
+         * The created Builder will have all its other values be empty, zero or
+         * false, depending on the type.
+         *
+         * @param result The ItemStack to use as the result for the MerchantRecipe.
+         * @param maxUses Number of max uses for this MerchantRecipe
+         */
+        public Builder(ItemStack result, int maxUses) {
+            Preconditions.checkArgument(!result.isEmpty(), "Result cannot be empty");
+            this.result = result;
+            this.maxUses = maxUses;
+        }
+        
+        /**
+         * Constructor for creating a Builder instance from an existing
+         * {@link MerchantRecipe} instance.<br>
+         * This Builder instance will have all its values set to what the provided
+         * MerchantRecipe had set.
+         *
+         * @param merchantRecipe The MerchantRecipe instance to create a Builder instance from.
+         */
+        public Builder(MerchantRecipe merchantRecipe) {
+            this.result = merchantRecipe.getResult();
+            this.ingredients = merchantRecipe.getIngredients();
+            this.uses = merchantRecipe.getUses();
+            this.maxUses = merchantRecipe.getMaxUses();
+            this.experienceReward = merchantRecipe.hasExperienceReward();
+            this.specialPrice = merchantRecipe.getSpecialPrice();
+            this.demand = merchantRecipe.getDemand();
+            this.villagerExperience = merchantRecipe.getVillagerExperience();
+            this.priceMultiplier = merchantRecipe.getPriceMultiplier();
+            this.ignoreDiscounts = merchantRecipe.shouldIgnoreDiscounts();
+        }
+        
+        /**
+         * Sets the {@link ItemStack} to use as the result for this MerchantRecipe.
+         *
+         * @param result Result ItemStack for this MerchantRecipe.
+         * @return This Builder for chaining purposes.
+         */
+        public Builder setResult(ItemStack result) {
+            Preconditions.checkArgument(!result.isEmpty(), "Result cannot be empty.");
+            this.result = result.clone();
+            return this;
+        }
+        
+        /**
+         * Adds an {@link ItemStack} as a new Ingredient for this MerchantRecipe.<br>
+         * The position of the ItemStack in the list determines which ingredient
+         * it is and there can't be more than 2 in total.
+         *
+         * @param item The ItemStack to add.
+         * @return This Builder for chaining purposes.
+         */
+        public Builder addIngredient(ItemStack item) {
+            Preconditions.checkState(ingredients.size() < 2, "Recipe can only have maximum 2 ingredients");
+            Preconditions.checkArgument(!item.isEmpty(), "Recipe cannot have an empty itemstack ingredient.");
+            ingredients.add(item.clone());
+            return this;
+        }
+        
+        /**
+         * Removes an ingredient from the provided index in the ingredients list.
+         *
+         * @param index position in the list to remove the ItemStack from.
+         * @return This Builder for chaining purposes.
+         */
+        public Builder removeIngredient(int index) {
+            ingredients.remove(index);
+            return this;
+        }
+        
+        /**
+         * Sets the {@link ItemStack List of ItemStacks} to use for this MerchantRecipe.
+         *
+         * @param ingredients List of ItemStacks to use as the ingredients.
+         * @return This Builder for chaining purposes.
+         */
+        public Builder setIngredients(List<ItemStack> ingredients) {
+            Preconditions.checkState(ingredients.size() <= 2, "Recipe can only have maximum 2 ingredients");
+            this.ingredients = new ArrayList<>();
+            for (ItemStack item : ingredients) {
+                Preconditions.checkArgument(!item.isEmpty(), "Recipe cannot have an empty itemstack ingredient.");
+                this.ingredients.add(item.clone());
+            }
+            return this;
+        }
+        
+        /**
+         * Resets the demand for this MerchantRecipe to 0.<br>
+         * This is a convenience method for {@code setDemand(0)}.
+         *
+         * @return This Builder for chaining purposes.
+         */
+        public Builder resetDemand() {
+            return setDemand(0);
+        }
+        
+        /**
+         * Sets the demand for this MerchantRecipe.
+         * @param demand Demant for this MerchantRecipe.
+         * @return This Builder for chaining purposes.
+         */
+        public Builder setDemand(int demand) {
+            this.demand = demand;
+            return this;
+        }
+        
+        /**
+         * Resets the special price for this MerchantRecipe to 0.<br>
+         * This is a convenience method for {@code setSpecialPrice(0)}.
+         *
+         * @return This Builder for chaining purposes.
+         */
+        public Builder resetSpecialPrice() {
+            return setSpecialPrice(0);
+        }
+        
+        /**
+         * Sets the special price for this MerchantRecipe.
+         * @param specialPrice Special Price for this MerchantRecipe.
+         * @return This Builder for chaining purposes.
+         */
+        public Builder setSpecialPrice(int specialPrice) {
+            this.specialPrice = specialPrice;
+            return this;
+        }
+        
+        /**
+         * Resets the Use count for this MerchantRecipe to 0.<br>
+         * This is a convenience method for {@code setUses(0)}.
+         *
+         * @return This Builder for chaining purposes.
+         */
+        public Builder resetUses() {
+            return setUses(0);
+        }
+        
+        /**
+         * Sets the uses for this MerchantRecipe.
+         *
+         * @param uses Use count for this MerchantRecipe.
+         * @return This Builder for chaining purposes.
+         */
+        public Builder setUses(int uses) {
+            this.uses = uses;
+            return this;
+        }
+        
+        /**
+         * Sets the max uses for this MerchantRecipe.
+         *
+         * @param maxUses Max use count for this MerchantRecipe.
+         * @return This Builder for chaining purposes.
+         */
+        public Builder setMaxUses(int maxUses) {
+            this.maxUses = maxUses;
+            return this;
+        }
+        
+        /**
+         * Enables the MerchantRecipe to give experience to the player on
+         * completing the trade.<br>
+         * This is a convenience method for {@code setExperienceReward(true)}.
+         *
+         * @return This Builder for chaining purposes.
+         */
+        public Builder experienceReward() {
+            return setExperienceReward(true);
+        }
+        
+        /**
+         * Sets whether this MerchantRecipe should give experience to a player
+         * on completing the trade.
+         *
+         * @param experienceReward Setting whether the MerchantRecipe should give experience.
+         * @return This Builder for chaining purposes.
+         */
+        public Builder setExperienceReward(boolean experienceReward) {
+            this.experienceReward = experienceReward;
+            return this;
+        }
+        
+        /**
+         * Sets amount of experience the Villager gains when completing a trade.
+         *
+         * @param villagerExperience Amount of experience the villager should gain.
+         * @return This Builder for chaining purposes.
+         */
+        public Builder setVillageExperience(int villagerExperience) {
+            this.villagerExperience = villagerExperience;
+            return this;
+        }
+        
+        /**
+         * Sets the multiplier to apply on prices for this MerchantRecipe.
+         *
+         * @param priceMultiplier Multiplier to apply to this MerchantRecipe.
+         * @return This Builder for chaining purposes.
+         */
+        public Builder setPriceMultiplier(float priceMultiplier) {
+            this.priceMultiplier = priceMultiplier;
+            return this;
+        }
+        
+        /**
+         * Enables this MerchantRecipe to ignore any discounts from cases like a
+         * Player having the {@link PotionEffectType#HERO_OF_THE_VILLAGE Hero of the Village}
+         * effect.<br>
+         * This is a convenience method for {@code setIgnoreDiscounts(true)}.
+         *
+         * @return This Builder for chaining purposes.
+         */
+        public Builder ignoreDiscounts() {
+            return setIgnoreDiscounts(true);
+        }
+        
+        /**
+         * Sets whether this MerchantRecipe should ignore discounts applued from
+         * cases like a Player having the {@link PotionEffectType#HERO_OF_THE_VILLAGE Hero of the Village}
+         * effect.
+         *
+         * @param ignoreDiscounts Whether this MerchantRecipe should ignore discounts.
+         * @return This Builder for chaining purposes.
+         */
+        public Builder setIgnoreDiscounts(boolean ignoreDiscounts) {
+            this.ignoreDiscounts = ignoreDiscounts;
+            return this;
+        }
+        
+        /**
+         * Creates a new {@link MerchantRecipe} instance with the values of this class
+         * applies.
+         *
+         * @return New MerchantRecipe class.
+         */
+        public MerchantRecipe build() {
+            return new MerchantRecipe(result, uses, maxUses, experienceReward,
+                villagerExperience, priceMultiplier, demand, specialPrice, ignoreDiscounts);
+        }
+    }
 }
