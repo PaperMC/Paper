@@ -180,15 +180,17 @@ public interface SulfurCubeArchetypeRegistryEntry {
     @ApiStatus.NonExtendable
     interface SoundSettings {
 
+        // todo The sounds should take a RegistryHolder but need more thoughts on the create method
         /**
          * {@return the sound played once the sulfur cube is knocked}
          */
         @ApiStatus.Experimental
-        TypedKey<Sound> hitSound(); // todo should take a RegistryHolder but need more thoughts on the create method
+        TypedKey<Sound> hitSound();
 
         /**
          * {@return the sound played once the sulfur cube is pushed}
          */
+        @ApiStatus.Experimental
         TypedKey<Sound> pushSound();
 
         /**
