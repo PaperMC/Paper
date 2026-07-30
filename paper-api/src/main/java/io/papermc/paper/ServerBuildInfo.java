@@ -46,7 +46,6 @@ public interface ServerBuildInfo {
      * @param brandId the brand to check (e.g. "papermc:folia")
      * @return {@code true} if the server supports the specified brand
      */
-    @ApiStatus.Experimental
     boolean isBrandCompatible(final Key brandId);
 
     /**
