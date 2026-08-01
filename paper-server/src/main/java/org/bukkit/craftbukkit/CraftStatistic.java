@@ -111,21 +111,21 @@ public enum CraftStatistic {
     PICKUP(Identifier.withDefaultNamespace("picked_up")),
     USE_ITEM(Identifier.withDefaultNamespace("used"));
     // End generate - CraftStatisticType
-    private final Identifier minecraftKey;
+    private final Identifier key;
     private final org.bukkit.Statistic bukkit;
     private static final BiMap<Identifier, org.bukkit.Statistic> statistics;
 
     static {
         ImmutableBiMap.Builder<Identifier, org.bukkit.Statistic> statisticBuilder = ImmutableBiMap.builder();
         for (CraftStatistic statistic : CraftStatistic.values()) {
-            statisticBuilder.put(statistic.minecraftKey, statistic.bukkit);
+            statisticBuilder.put(statistic.key, statistic.bukkit);
         }
 
         statistics = statisticBuilder.build();
     }
 
-    private CraftStatistic(Identifier minecraftKey) {
-        this.minecraftKey = minecraftKey;
+    private CraftStatistic(Identifier key) {
+        this.key = key;
 
         this.bukkit = org.bukkit.Statistic.valueOf(this.name());
         Preconditions.checkState(this.bukkit != null, "Bukkit statistic %s does not exist", this.name());

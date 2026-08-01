@@ -16,7 +16,8 @@ import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.MapView;
 
 @DelegateDeserialization(SerializableMeta.class)
-class CraftMetaMap extends CraftMetaItem implements MapMeta {
+public class CraftMetaMap extends CraftMetaItem implements MapMeta {
+
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<MapPostProcessing> MAP_POST_PROCESSING = new ItemMetaKeyType<>(DataComponents.MAP_POST_PROCESSING);
     static final ItemMetaKey MAP_SCALING = new ItemMetaKey("scaling");
@@ -24,6 +25,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
     static final ItemMetaKey MAP_LOC_NAME = new ItemMetaKey("display-loc-name");
     static final ItemMetaKeyType<MapItemColor> MAP_COLOR = new ItemMetaKeyType<>(DataComponents.MAP_COLOR, "display-map-color");
     static final ItemMetaKeyType<MapId> MAP_ID = new ItemMetaKeyType<>(DataComponents.MAP_ID, "map-id");
+
     static final byte SCALING_EMPTY = (byte) 0;
     static final byte SCALING_TRUE = (byte) 1;
     static final byte SCALING_FALSE = (byte) 2;
@@ -44,20 +46,20 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         this.color = mapMeta.color;
     }
 
-    CraftMetaMap(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaMap(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaMap.MAP_ID).ifPresent((mapId) -> {
-            this.mapId = mapId.id();
+        getOrEmpty(patch, CraftMetaMap.MAP_ID).ifPresent((map) -> {
+            this.mapId = map.id();
         });
 
-        getOrEmpty(tag, CraftMetaMap.MAP_POST_PROCESSING).ifPresent((mapPostProcessing) -> {
+        getOrEmpty(patch, CraftMetaMap.MAP_POST_PROCESSING).ifPresent((mapPostProcessing) -> {
             this.scaling = (mapPostProcessing == MapPostProcessing.SCALE) ? CraftMetaMap.SCALING_TRUE : CraftMetaMap.SCALING_FALSE;
         });
 
-        getOrEmpty(tag, CraftMetaMap.MAP_COLOR).ifPresent((mapColor) -> {
+        getOrEmpty(patch, CraftMetaMap.MAP_COLOR).ifPresent((color) -> {
             try {
-                this.color = mapColor.rgb();
+                this.color = color.rgb();
             } catch (IllegalArgumentException ex) {
                 // Invalid colour
             }

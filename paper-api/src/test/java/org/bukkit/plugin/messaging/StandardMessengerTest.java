@@ -139,6 +139,23 @@ public class StandardMessengerTest {
     }
 
     @Test
+    public void testUnregisterOutgoingPluginChannel_SharedChannel() {
+        Messenger messenger = getMessenger();
+        BukkitTestPlugin plugin1 = getPlugin();
+        BukkitTestPlugin plugin2 = getPlugin();
+
+        messenger.registerOutgoingPluginChannel(plugin1, "test:foo");
+        messenger.registerOutgoingPluginChannel(plugin2, "test:foo");
+
+        messenger.unregisterOutgoingPluginChannel(plugin1, "test:foo");
+
+        assertTrue(messenger.getOutgoingChannels().contains("test:foo"), "Channel should still be present because plugin2 is still registered");
+
+        assertTrue(messenger.isOutgoingChannelRegistered(plugin2, "test:foo"), "Second plugin should still be registered");
+        assertFalse(messenger.isOutgoingChannelRegistered(plugin1, "test:foo"), "First plugin should no longer be registered");
+    }
+
+    @Test
     public void testUnregisterIncomingPluginChannel_Plugin() {
         Messenger messenger = getMessenger();
         BukkitTestPlugin plugin = getPlugin();

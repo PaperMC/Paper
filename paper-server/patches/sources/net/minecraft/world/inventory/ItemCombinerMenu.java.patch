@@ -13,8 +13,8 @@
 +    protected final ResultContainer resultSlots; // Paper - Add missing InventoryHolders; delay field init
      private final int resultSlotIndex;
  
-     protected boolean mayPickup(Player player, boolean hasStack) {
-@@ -36,6 +_,14 @@
+     protected boolean mayPickup(final Player player, final boolean hasItem) {
+@@ -40,6 +_,14 @@
      ) {
          super(menuType, containerId);
          this.access = access;
@@ -27,29 +27,44 @@
 +        };
 +        // Paper end - Add missing InventoryHolders; delay field init
          this.player = inventory.player;
-         this.inputSlots = this.createContainer(slotDefinition.getNumOfInputSlots());
-         this.resultSlotIndex = slotDefinition.getResultSlotIndex();
-@@ -79,7 +_,7 @@
+         this.inputSlots = this.createContainer(itemInputSlots.getNumOfInputSlots());
+         this.resultSlotIndex = itemInputSlots.getResultSlotIndex();
+@@ -49,11 +_,11 @@
+     }
+ 
+     private void createInputSlots(final ItemCombinerMenuSlotDefinition itemInputSlots) {
+-        for (final ItemCombinerMenuSlotDefinition.SlotDefinition slot : itemInputSlots.getSlots()) {
+-            this.addSlot(new Slot(this.inputSlots, slot.slotIndex(), slot.x(), slot.y()) {
++        for (final ItemCombinerMenuSlotDefinition.SlotDefinition slotDefinition : itemInputSlots.getSlots()) { // Paper - fix conflicting variable name
++            this.addSlot(new Slot(this.inputSlots, slotDefinition.slotIndex(), slotDefinition.x(), slotDefinition.y()) { // Paper - fix conflicting variable name
+                 @Override
+                 public boolean mayPlace(final ItemStack itemStack) {
+-                    return slot.mayPlace().test(itemStack);
++                    return slotDefinition.mayPlace().test(itemStack); // Paper - fix conflicting variable name
+                 }
+             });
+         }
+@@ -83,7 +_,7 @@
      public abstract void createResult();
  
-     private SimpleContainer createContainer(int size) {
+     private SimpleContainer createContainer(final int size) {
 -        return new SimpleContainer(size) {
-+        return new SimpleContainer(this.createBlockHolder(this.access), size) {
++        return new SimpleContainer(this.createBlockHolder(this.access), size) { // Paper - pass block holder
              @Override
              public void setChanged() {
                  super.setChanged();
-@@ -93,6 +_,7 @@
-         super.slotsChanged(inventory);
-         if (inventory == this.inputSlots) {
+@@ -97,6 +_,7 @@
+         super.slotsChanged(container);
+         if (container == this.inputSlots) {
              this.createResult();
 +            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, this instanceof SmithingMenu ? 3 : 2); // Paper - Add PrepareResultEvent
          }
      }
  
-@@ -104,6 +_,7 @@
+@@ -108,6 +_,7 @@
  
      @Override
-     public boolean stillValid(Player player) {
+     public boolean stillValid(final Player player) {
 +        if (!this.checkReachable) return true; // CraftBukkit
          return this.access
              .evaluate((level, pos) -> !this.isValidBlock(level.getBlockState(pos)) ? false : player.isWithinBlockInteractionRange(pos, 4.0), true);

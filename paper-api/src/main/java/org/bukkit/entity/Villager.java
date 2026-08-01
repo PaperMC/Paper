@@ -1,10 +1,11 @@
 package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import java.util.Locale;
 import java.util.Map; // Paper
 import java.util.UUID; // Paper
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -87,7 +88,6 @@ public interface Villager extends AbstractVillager {
      */
     public void setVillagerExperience(int experience);
 
-    // Paper start
     /**
      * Increases the level of this villager.
      * The villager will also unlock new recipes unlike the raw
@@ -96,13 +96,11 @@ public interface Villager extends AbstractVillager {
      * A villager with a level of 1 and no experience is liable to lose its
      * profession.
      * <p>
-     * A master villager has a level of 5 in its profession and
-     * will unlock 10 trades (2 per level).
+     * A master villager has a level of 5 in its profession.
      *
      * @param amount The amount of level
-     * @return Whether trades are unlocked
-     * @throws IllegalArgumentException if current level plus the amount
-     * isn't between [1, 5] or the amount isn't positive
+     * @return Whether level got increased
+     * @throws IllegalArgumentException if the amount is not positive
      * @see #setVillagerLevel(int)
      */
     boolean increaseLevel(int amount);
@@ -127,7 +125,6 @@ public interface Villager extends AbstractVillager {
      * @param restocksToday new restock count
      */
     public void setRestocksToday(int restocksToday);
-    // Paper end
 
     /**
      * Attempts to make this villager sleep at the given location.
@@ -188,8 +185,8 @@ public interface Villager extends AbstractVillager {
         // End generate - VillagerType
 
         @NotNull
-        private static Type getType(@NotNull String key) {
-            return Registry.VILLAGER_TYPE.getOrThrow(NamespacedKey.minecraft(key));
+        private static Type getType(@NotNull @KeyPattern.Value String key) {
+            return Registry.VILLAGER_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
 
         /**
@@ -200,19 +197,20 @@ public interface Villager extends AbstractVillager {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type valueOf(@NotNull String name) {
-            Type type = Registry.VILLAGER_TYPE.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+            Type type = key == null ? null : Registry.VILLAGER_TYPE.get(key);
             Preconditions.checkArgument(type != null, "No villager type found with the name %s", name);
             return type;
         }
 
         /**
          * @return an array of all known villager types.
-         * @deprecated use {@link Registry#iterator()}.
+         * @deprecated use {@link Registry#stream()}.
          */
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type[] values() {
-            return Lists.newArrayList(Registry.VILLAGER_TYPE).toArray(new Type[0]);
+            return Registry.VILLAGER_TYPE.stream().toArray(Type[]::new);
         }
     }
 
@@ -311,8 +309,8 @@ public interface Villager extends AbstractVillager {
         // End generate - VillagerProfession
 
         @NotNull
-        private static Profession getProfession(@NotNull String key) {
-            return Registry.VILLAGER_PROFESSION.getOrThrow(NamespacedKey.minecraft(key));
+        private static Profession getProfession(@NotNull @KeyPattern.Value String key) {
+            return Registry.VILLAGER_PROFESSION.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
         }
 
         /**
@@ -323,19 +321,20 @@ public interface Villager extends AbstractVillager {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Profession valueOf(@NotNull String name) {
-            Profession profession = Registry.VILLAGER_PROFESSION.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+            Profession profession = key == null ? null : Registry.VILLAGER_PROFESSION.get(key);
             Preconditions.checkArgument(profession != null, "No villager profession found with the name %s", name);
             return profession;
         }
 
         /**
          * @return an array of all known villager professions.
-         * @deprecated use {@link Registry#iterator()}.
+         * @deprecated use {@link Registry#stream()}.
          */
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Profession[] values() {
-            return Lists.newArrayList(Registry.VILLAGER_PROFESSION).toArray(new Profession[0]);
+            return Registry.VILLAGER_PROFESSION.stream().toArray(Profession[]::new);
         }
 
         // Paper start

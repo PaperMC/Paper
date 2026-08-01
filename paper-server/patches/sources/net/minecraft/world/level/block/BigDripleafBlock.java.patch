@@ -1,18 +1,18 @@
 --- a/net/minecraft/world/level/block/BigDripleafBlock.java
 +++ b/net/minecraft/world/level/block/BigDripleafBlock.java
-@@ -126,7 +_,7 @@
+@@ -127,7 +_,7 @@
  
      @Override
-     protected void onProjectileHit(Level level, BlockState state, BlockHitResult hit, Projectile projectile) {
--        this.setTiltAndScheduleTick(state, level, hit.getBlockPos(), Tilt.FULL, SoundEvents.BIG_DRIPLEAF_TILT_DOWN);
-+        this.setTiltAndScheduleTick(state, level, hit.getBlockPos(), Tilt.FULL, SoundEvents.BIG_DRIPLEAF_TILT_DOWN, projectile); // CraftBukkit
+     protected void onProjectileHit(final Level level, final BlockState state, final BlockHitResult blockHit, final Projectile projectile) {
+-        this.setTiltAndScheduleTick(state, level, blockHit.getBlockPos(), Tilt.FULL, SoundEvents.BIG_DRIPLEAF_TILT_DOWN);
++        this.setTiltAndScheduleTick(state, level, blockHit.getBlockPos(), Tilt.FULL, SoundEvents.BIG_DRIPLEAF_TILT_DOWN, projectile); // CraftBukkit
      }
  
      @Override
-@@ -189,9 +_,23 @@
- 
-     @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean pastEdges) {
+@@ -195,9 +_,23 @@
+         final InsideBlockEffectApplier effectApplier,
+         final boolean isPrecise
+     ) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (!level.isClientSide()) {
              if (state.getValue(TILT) == Tilt.NONE && canEntityTilt(pos, entity) && !level.hasNeighborSignal(pos)) {
@@ -34,7 +34,7 @@
              }
          }
      }
-@@ -203,9 +_,9 @@
+@@ -209,9 +_,9 @@
          } else {
              Tilt tilt = state.getValue(TILT);
              if (tilt == Tilt.UNSTABLE) {
@@ -46,13 +46,13 @@
              } else if (tilt == Tilt.FULL) {
                  resetTilt(state, level, pos);
              }
-@@ -228,8 +_,11 @@
+@@ -236,8 +_,11 @@
          return entity.onGround() && entity.position().y > pos.getY() + 0.6875F;
      }
  
--    private void setTiltAndScheduleTick(BlockState state, Level level, BlockPos pos, Tilt tilt, @Nullable SoundEvent sound) {
+-    private void setTiltAndScheduleTick(final BlockState state, final Level level, final BlockPos pos, final Tilt tilt, final @Nullable SoundEvent sound) {
 -        setTilt(state, level, pos, tilt);
-+    private void setTiltAndScheduleTick(BlockState state, Level level, BlockPos pos, Tilt tilt, @Nullable SoundEvent sound, @Nullable Entity entity) {
++    private void setTiltAndScheduleTick(final BlockState state, final Level level, final BlockPos pos, final Tilt tilt, final @Nullable SoundEvent sound, @Nullable Entity entity) {
 +        if (!setTilt(state, level, pos, tilt, entity)) {
 +            return;
 +        }
@@ -60,10 +60,10 @@
          if (sound != null) {
              playTiltSound(level, pos, sound);
          }
-@@ -241,18 +_,26 @@
+@@ -249,18 +_,26 @@
      }
  
-     private static void resetTilt(BlockState state, Level level, BlockPos pos) {
+     private static void resetTilt(final BlockState state, final Level level, final BlockPos pos) {
 -        setTilt(state, level, pos, Tilt.NONE);
 +        setTilt(state, level, pos, Tilt.NONE, null); // CraftBukkit
          if (state.getValue(TILT) != Tilt.NONE) {
@@ -71,18 +71,18 @@
          }
      }
  
--    private static void setTilt(BlockState state, Level level, BlockPos pos, Tilt tilt) {
+-    private static void setTilt(final BlockState state, final Level level, final BlockPos pos, final Tilt tilt) {
 +    // CraftBukkit start
-+    private static boolean setTilt(BlockState state, Level level, BlockPos pos, Tilt tilt, @Nullable Entity entity) {
++    private static boolean setTilt(final BlockState state, final Level level, final BlockPos pos, final Tilt tilt, @Nullable Entity entity) {
 +        if (entity != null) {
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, state.setValue(BigDripleafBlock.TILT, tilt))) {
 +                return false;
 +            }
 +        }
 +        // CraftBukkit end
-         Tilt tilt1 = state.getValue(TILT);
+         Tilt previousTilt = state.getValue(TILT);
          level.setBlock(pos, state.setValue(TILT, tilt), Block.UPDATE_CLIENTS);
-         if (tilt.causesVibration() && tilt != tilt1) {
+         if (tilt.causesVibration() && tilt != previousTilt) {
              level.gameEvent(null, GameEvent.BLOCK_CHANGE, pos);
          }
 +        return true; // CraftBukkit

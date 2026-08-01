@@ -165,8 +165,7 @@ public class ParticleBuilder implements Cloneable {
                 throw new IllegalStateException("Please set location first");
             }
             this.receivers = Lists.newArrayList();
-            for (final Player nearbyPlayer : this.location.getWorld()
-                .getNearbyPlayers(this.location, radius, radius, radius)) {
+            for (final Player nearbyPlayer : this.location.getWorld().getNearbyPlayers(this.location, radius, radius, radius)) {
                 final Location loc = nearbyPlayer.getLocation();
                 final double x = NumberConversions.square(this.location.getX() - loc.getX());
                 final double y = NumberConversions.square(this.location.getY() - loc.getY());

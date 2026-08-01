@@ -21,9 +21,8 @@ public class CraftDisplay extends CraftEntity implements Display {
 
     @Override
     public Transformation getTransformation() {
-        com.mojang.math.Transformation nms = net.minecraft.world.entity.Display.createTransformation(this.getHandle().getEntityData());
-
-        return new Transformation(new Vector3f(nms.getTranslation()), new Quaternionf(nms.getLeftRotation()), new Vector3f(nms.getScale()), new Quaternionf(nms.getRightRotation()));
+        com.mojang.math.Transformation transformation = net.minecraft.world.entity.Display.createTransformation(this.getHandle().getEntityData());
+        return new Transformation(new Vector3f(transformation.translation()), new Quaternionf(transformation.leftRotation()), new Vector3f(transformation.scale()), new Quaternionf(transformation.rightRotation()));
     }
 
     @Override
@@ -137,7 +136,7 @@ public class CraftDisplay extends CraftEntity implements Display {
     public Color getGlowColorOverride() {
         int color = this.getHandle().getGlowColorOverride();
 
-        return (color == -1) ? null : Color.fromARGB(color);
+        return (color == -1) ? null : Color.fromRGB(color & 0x00FFFFFF); // skip alpha channel
     }
 
     @Override
@@ -145,7 +144,7 @@ public class CraftDisplay extends CraftEntity implements Display {
         if (color == null) {
             this.getHandle().setGlowColorOverride(-1);
         } else {
-            this.getHandle().setGlowColorOverride(color.asARGB());
+            this.getHandle().setGlowColorOverride(color.asRGB());
         }
     }
 

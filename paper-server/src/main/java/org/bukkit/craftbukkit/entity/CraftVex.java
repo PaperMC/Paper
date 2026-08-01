@@ -1,12 +1,15 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.Optionull;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityReference;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Vex;
+import org.jetbrains.annotations.Nullable;
 
 public class CraftVex extends CraftMonster implements Vex {
 
@@ -20,14 +23,13 @@ public class CraftVex extends CraftMonster implements Vex {
     }
 
     @Override
-    public org.bukkit.entity.Mob getSummoner() {
-        net.minecraft.world.entity.Mob owner = this.getHandle().getOwner();
-        return owner != null ? (org.bukkit.entity.Mob) owner.getBukkitEntity() : null;
+    public @Nullable LivingEntity getOwner() {
+        return Optionull.map(this.getHandle().getOwner(), net.minecraft.world.entity.LivingEntity::getBukkitLivingEntity);
     }
 
     @Override
-    public void setSummoner(org.bukkit.entity.Mob summoner) {
-        this.getHandle().owner = summoner == null ? null : EntityReference.of(((CraftMob) summoner).getHandle());
+    public void setOwner(final @Nullable LivingEntity owner) {
+        this.getHandle().owner = owner == null ? null : EntityReference.of(((CraftLivingEntity) owner).getHandle());
     }
 
     @Override
@@ -72,13 +74,8 @@ public class CraftVex extends CraftMonster implements Vex {
             this.getHandle().setBoundOrigin(null);
         } else {
             Preconditions.checkArgument(this.getWorld().equals(location.getWorld()), "The bound world cannot be different to the entity's world.");
-            this.getHandle().setBoundOrigin(CraftLocation.toBlockPosition(location));
+            this.getHandle().setBoundOrigin(CraftLocation.toBlockPos(location));
         }
-    }
-
-    @Override
-    public int getLifeTicks() {
-        return this.getHandle().limitedLifeTicks;
     }
 
     @Override
@@ -87,10 +84,5 @@ public class CraftVex extends CraftMonster implements Vex {
         if (lifeTicks < 0) {
             this.getHandle().hasLimitedLife = false;
         }
-    }
-
-    @Override
-    public boolean hasLimitedLife() {
-        return this.getHandle().hasLimitedLife;
     }
 }

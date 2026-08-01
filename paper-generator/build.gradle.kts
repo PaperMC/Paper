@@ -24,10 +24,10 @@ dependencies {
         isTransitive = false // paper-api already have everything
     }
     implementation("info.picocli:picocli:4.7.7")
-    implementation("io.github.classgraph:classgraph:4.8.179")
+    implementation("io.github.classgraph:classgraph:4.8.184")
     implementation("org.jetbrains:annotations:26.0.2")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.0.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
 
     serverRuntimeClasspath(project(":paper-server", "runtimeConfiguration"))
 }

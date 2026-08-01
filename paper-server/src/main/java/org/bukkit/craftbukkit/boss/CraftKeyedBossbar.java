@@ -13,7 +13,7 @@ public class CraftKeyedBossbar extends CraftBossBar implements KeyedBossBar {
 
     @Override
     public NamespacedKey getKey() {
-        return CraftNamespacedKey.fromMinecraft(this.getHandle().getTextId());
+        return CraftNamespacedKey.fromMinecraft(this.getHandle().customId());
     }
 
     @Override

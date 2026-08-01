@@ -30,9 +30,9 @@ public class BukkitCommandConversionTest {
     public void test() throws CommandSyntaxException {
         CommandSender sender = this.getSender();
         CommandSourceStack object = Mockito.mock(CommandSourceStack.class);
-        Mockito.when(object.getLocation()).thenReturn(new Location(null, 0, 0, 0));;
+        Mockito.when(object.getLocation()).thenReturn(new Location(null, 0, 0, 0));
 
-        CommandDispatcher dispatcher = RegistryHelper.context().datapack().commands.getDispatcher();
+        CommandDispatcher dispatcher = RegistryHelper.context().datapack().getCommands().getDispatcher();
         dispatcher.setConsumer((context, success, result) -> {});
         CommandMap commandMap = new SimpleCommandMap(Bukkit.getServer(), new BukkitBrigForwardingMap());
         Map<String, Command> stringCommandMap = commandMap.getKnownCommands();

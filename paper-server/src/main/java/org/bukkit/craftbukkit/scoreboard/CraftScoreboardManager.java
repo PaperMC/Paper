@@ -77,7 +77,7 @@ public final class CraftScoreboardManager implements ScoreboardManager {
         for (net.minecraft.world.scores.DisplaySlot displaySlot : net.minecraft.world.scores.DisplaySlot.values()) { // Paper - clear all display slots
             Objective objective = oldBoard.getDisplayObjective(displaySlot); // Paper - clear all display slots
             if (objective != null && !removed.contains(objective)) {
-                serverPlayer.connection.send(new ClientboundSetObjectivePacket(objective, 1));
+                serverPlayer.connection.send(new ClientboundSetObjectivePacket(objective, ClientboundSetObjectivePacket.METHOD_REMOVE));
                 removed.add(objective);
             }
         }

@@ -244,7 +244,7 @@ public final class ChatProcessor {
 
         @Override
         public void sendMessageChanged(CraftPlayer player, net.minecraft.network.chat.Component renderedMessage, Set<Audience> viewers, ChatType.Bound chatType) {
-            this.broadcastToViewers(viewers, chatType, $ -> renderedMessage);
+            this.broadcastToViewers(viewers, chatType, _ -> renderedMessage);
         }
 
         @Override

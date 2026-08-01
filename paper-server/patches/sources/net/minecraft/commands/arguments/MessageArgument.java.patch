@@ -1,41 +1,42 @@
 --- a/net/minecraft/commands/arguments/MessageArgument.java
 +++ b/net/minecraft/commands/arguments/MessageArgument.java
-@@ -41,6 +_,11 @@
+@@ -41,6 +_,12 @@
  
-     public static void resolveChatMessage(CommandContext<CommandSourceStack> context, String key, Consumer<PlayerChatMessage> callback) throws CommandSyntaxException {
-         MessageArgument.Message message = context.getArgument(key, MessageArgument.Message.class);
+     public static void resolveChatMessage(final CommandContext<CommandSourceStack> context, final String name, final Consumer<PlayerChatMessage> task) throws CommandSyntaxException {
+         MessageArgument.Message message = context.getArgument(name, MessageArgument.Message.class);
 +        // Paper start - brig message argument support
-+        resolveChatMessage(message, context, key, callback);
++        resolveChatMessage(message, context, name, task);
 +    }
-+    public static void resolveChatMessage(MessageArgument.Message message, CommandContext<CommandSourceStack> context, String key, Consumer<PlayerChatMessage> callback) throws CommandSyntaxException {
++
++    public static void resolveChatMessage(final MessageArgument.Message message, final CommandContext<CommandSourceStack> context, final String name, final Consumer<PlayerChatMessage> task) throws CommandSyntaxException {
 +        // Paper end - brig message argument support
-         CommandSourceStack commandSourceStack = context.getSource();
-         Component component = message.resolveComponent(commandSourceStack);
-         CommandSigningContext signingContext = commandSourceStack.getSigningContext();
+         CommandSourceStack sender = context.getSource();
+         Component formatted = message.resolveComponent(sender);
+         CommandSigningContext signingContext = sender.getSigningContext();
 @@ -55,17 +_,21 @@
-     private static void resolveSignedMessage(Consumer<PlayerChatMessage> callback, CommandSourceStack source, PlayerChatMessage message) {
-         MinecraftServer server = source.getServer();
-         CompletableFuture<FilteredText> completableFuture = filterPlainText(source, message);
--        Component component = server.getChatDecorator().decorate(source.getPlayer(), message.decoratedContent());
--        source.getChatMessageChainer().append(completableFuture, filteredText -> {
--            PlayerChatMessage playerChatMessage = message.withUnsignedContent(component).filter(filteredText.mask());
+     private static void resolveSignedMessage(final Consumer<PlayerChatMessage> task, final CommandSourceStack sender, final PlayerChatMessage signedArgument) {
+         MinecraftServer server = sender.getServer();
+         CompletableFuture<FilteredText> filteredFuture = filterPlainText(sender, signedArgument);
+-        Component decorated = server.getChatDecorator().decorate(sender.getPlayer(), signedArgument.decoratedContent());
+-        sender.getChatMessageChainer().append(filteredFuture, filtered -> {
+-            PlayerChatMessage filteredMessage = signedArgument.withUnsignedContent(decorated).filter(filtered.mask());
 +        // Paper start - support asynchronous chat decoration
-+        CompletableFuture<Component> componentFuture = server.getChatDecorator().decorate(source.getPlayer(), source, message.decoratedContent());
-+        source.getChatMessageChainer().append(CompletableFuture.allOf(completableFuture, componentFuture), filtered -> {
-+            PlayerChatMessage playerChatMessage = message.withUnsignedContent(componentFuture.join()).filter(completableFuture.join().mask());
++        CompletableFuture<Component> decoratedFuture = server.getChatDecorator().decorate(sender.getPlayer(), sender, signedArgument.decoratedContent());
++        sender.getChatMessageChainer().append(CompletableFuture.allOf(filteredFuture, decoratedFuture), filtered -> {
++            PlayerChatMessage filteredMessage = signedArgument.withUnsignedContent(decoratedFuture.join()).filter(filteredFuture.join().mask());
 +            // Paper end - support asynchronous chat decoration
-             callback.accept(playerChatMessage);
+             task.accept(filteredMessage);
          });
      }
  
-     private static void resolveDisguisedMessage(Consumer<PlayerChatMessage> callback, CommandSourceStack source, PlayerChatMessage message) {
-         ChatDecorator chatDecorator = source.getServer().getChatDecorator();
--        Component component = chatDecorator.decorate(source.getPlayer(), message.decoratedContent());
--        callback.accept(message.withUnsignedContent(component));
+     private static void resolveDisguisedMessage(final Consumer<PlayerChatMessage> task, final CommandSourceStack sender, final PlayerChatMessage argument) {
+         ChatDecorator decorator = sender.getServer().getChatDecorator();
+-        Component decorated = decorator.decorate(sender.getPlayer(), argument.decoratedContent());
+-        task.accept(argument.withUnsignedContent(decorated));
 +        // Paper start - support asynchronous chat decoration
-+        CompletableFuture<Component> componentFuture = chatDecorator.decorate(source.getPlayer(), source, message.decoratedContent());
-+        source.getChatMessageChainer().append(componentFuture, (result) -> callback.accept(message.withUnsignedContent(result)));
++        CompletableFuture<Component> decoratedFuture = decorator.decorate(sender.getPlayer(), sender, argument.decoratedContent());
++        sender.getChatMessageChainer().append(decoratedFuture, result -> task.accept(argument.withUnsignedContent(result)));
 +        // Paper end - support asynchronous chat decoration
      }
  
-     private static CompletableFuture<FilteredText> filterPlainText(CommandSourceStack source, PlayerChatMessage message) {
+     private static CompletableFuture<FilteredText> filterPlainText(final CommandSourceStack sender, final PlayerChatMessage message) {

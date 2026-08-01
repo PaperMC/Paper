@@ -145,6 +145,13 @@ public final class EntityTypeTagKeys {
     public static final TagKey<EntityType> CANDIDATE_FOR_IRON_GOLEM_GIFT = create(key("candidate_for_iron_golem_gift"));
 
     /**
+     * {@code #minecraft:cannot_be_age_locked}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CANNOT_BE_AGE_LOCKED = create(key("cannot_be_age_locked"));
+
+    /**
      * {@code #minecraft:cannot_be_pushed_onto_boats}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -269,6 +276,13 @@ public final class EntityTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<EntityType> NON_CONTROLLING_RIDER = create(key("non_controlling_rider"));
+
+    /**
+     * {@code #minecraft:not_affected_by_geysers}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> NOT_AFFECTED_BY_GEYSERS = create(key("not_affected_by_geysers"));
 
     /**
      * {@code #minecraft:not_scary_for_pufferfish}

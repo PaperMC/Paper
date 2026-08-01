@@ -33,7 +33,7 @@ public class CraftCommandBlock extends CraftBlockEntityState<CommandBlockEntity>
 
     @Override
     public void setName(String name) {
-        this.getSnapshot().getCommandBlock().setCustomName(CraftChatMessage.fromStringOrNull(name != null ? name : "@"));
+        this.getSnapshot().getCommandBlock().setCustomName(CraftChatMessage.fromStringOrNull(name));
     }
 
     @Override
@@ -53,7 +53,7 @@ public class CraftCommandBlock extends CraftBlockEntityState<CommandBlockEntity>
 
     @Override
     public void name(net.kyori.adventure.text.Component name) {
-        this.getSnapshot().getCommandBlock().setCustomName(name == null ? net.minecraft.network.chat.Component.literal("@") : io.papermc.paper.adventure.PaperAdventure.asVanilla(name));
+        this.getSnapshot().getCommandBlock().setCustomName(io.papermc.paper.adventure.PaperAdventure.asVanilla(name));
     }
 
     @Override

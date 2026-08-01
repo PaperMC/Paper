@@ -14,7 +14,7 @@ public interface PaperConsumableEffect {
     static io.papermc.paper.datacomponent.item.consumable.ConsumeEffect fromVanilla(net.minecraft.world.item.consume_effects.ConsumeEffect consumable) {
         return switch (consumable) {
             case ApplyStatusEffectsConsumeEffect effect -> new PaperApplyStatusEffects(effect);
-            case ClearAllStatusEffectsConsumeEffect $ -> PaperClearAllStatusEffects.INSTANCE;
+            case ClearAllStatusEffectsConsumeEffect _ -> PaperClearAllStatusEffects.INSTANCE;
             case PlaySoundConsumeEffect effect -> new PaperPlaySound(effect);
             case RemoveStatusEffectsConsumeEffect effect -> new PaperRemoveStatusEffects(effect);
             case TeleportRandomlyConsumeEffect effect -> new PaperTeleportRandomly(effect);

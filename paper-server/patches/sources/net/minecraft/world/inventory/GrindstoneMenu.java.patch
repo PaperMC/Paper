@@ -5,7 +5,7 @@
  
  public class GrindstoneMenu extends AbstractContainerMenu {
 +    // CraftBukkit start
-+    private @javax.annotation.Nullable org.bukkit.craftbukkit.inventory.CraftInventoryView view = null;
++    private org.bukkit.craftbukkit.inventory.@org.jspecify.annotations.Nullable CraftInventoryView view = null;
 +    private final org.bukkit.entity.Player player;
 +
 +    @Override
@@ -27,7 +27,7 @@
      private static final int USE_ROW_SLOT_START = 30;
      private static final int USE_ROW_SLOT_END = 39;
 -    private final Container resultSlots = new ResultContainer();
--    final Container repairSlots = new SimpleContainer(2) {
+-    private final Container repairSlots = new SimpleContainer(2) {
 -        @Override
 -        public void setChanged() {
 -            super.setChanged();
@@ -38,10 +38,10 @@
 +    final Container repairSlots; // Paper - Add missing InventoryHolders - move down
      private final ContainerLevelAccess access;
  
-     public GrindstoneMenu(int containerId, Inventory playerInventory) {
+     public GrindstoneMenu(final int containerId, final Inventory inventory) {
 @@ -45,6 +_,22 @@
  
-     public GrindstoneMenu(int containerId, Inventory playerInventory, final ContainerLevelAccess access) {
+     public GrindstoneMenu(final int containerId, final Inventory inventory, final ContainerLevelAccess access) {
          super(MenuType.GRINDSTONE, containerId);
 +        // Paper start - Add missing InventoryHolders
 +        this.resultSlots = new ResultContainer(this.createBlockHolder(access)); // Paper - Add missing InventoryHolders
@@ -63,29 +63,29 @@
          this.addSlot(new Slot(this.repairSlots, 0, 49, 19) {
              @Override
 @@ -68,7 +_,11 @@
-             public void onTake(Player player, ItemStack stack) {
-                 access.execute((level, blockPos) -> {
-                     if (level instanceof ServerLevel) {
--                        ExperienceOrb.award((ServerLevel)level, Vec3.atCenterOf(blockPos), this.getExperienceAmount(level));
+             public void onTake(final Player player, final ItemStack carried) {
+                 access.execute((level, pos) -> {
+                     if (level instanceof ServerLevel serverLevel) {
+-                        ExperienceOrb.award(serverLevel, Vec3.atCenterOf(pos), this.getExperienceAmount(level));
 +                        // Paper start - Fire BlockExpEvent on grindstone use
-+                        org.bukkit.event.block.BlockExpEvent event = new org.bukkit.event.block.BlockExpEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, blockPos), this.getExperienceAmount(level));
++                        org.bukkit.event.block.BlockExpEvent event = new org.bukkit.event.block.BlockExpEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), this.getExperienceAmount(level));
 +                        event.callEvent();
-+                        ExperienceOrb.awardWithDirection((ServerLevel) level, Vec3.atCenterOf(blockPos), Vec3.ZERO, event.getExpToDrop(), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player, null);
++                        ExperienceOrb.awardWithDirection(serverLevel, Vec3.atCenterOf(pos), Vec3.ZERO, event.getExpToDrop(), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player, null);
 +                        // Paper end - Fire BlockExpEvent on grindstone use
                      }
  
-                     level.levelEvent(LevelEvent.SOUND_GRINDSTONE_USED, blockPos, 0);
+                     level.levelEvent(LevelEvent.SOUND_GRINDSTONE_USED, pos, 0);
 @@ -105,6 +_,7 @@
              }
          });
-         this.addStandardInventorySlots(playerInventory, 8, 84);
-+        this.player = (org.bukkit.entity.Player) playerInventory.player.getBukkitEntity(); // CraftBukkit
+         this.addStandardInventorySlots(inventory, 8, 84);
++        this.player = (org.bukkit.entity.Player) inventory.player.getBukkitEntity(); // CraftBukkit
      }
  
      @Override
 @@ -112,11 +_,13 @@
-         super.slotsChanged(inventory);
-         if (inventory == this.repairSlots) {
+         super.slotsChanged(container);
+         if (container == this.repairSlots) {
              this.createResult();
 +            org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, RESULT_SLOT); // Paper - Add PrepareResultEvent
          }
@@ -98,10 +98,10 @@
          this.broadcastChanges();
      }
  
-@@ -202,6 +_,7 @@
+@@ -206,6 +_,7 @@
  
      @Override
-     public boolean stillValid(Player player) {
+     public boolean stillValid(final Player player) {
 +        if (!this.checkReachable) return true; // CraftBukkit
          return stillValid(this.access, player, Blocks.GRINDSTONE);
      }
