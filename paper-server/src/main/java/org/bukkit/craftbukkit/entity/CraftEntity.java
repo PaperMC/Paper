@@ -1357,7 +1357,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return this.getHandleRaw().get(PaperDataComponentType.bukkitToMinecraft(type)) != null;
     }
 
-    // Paper start
     @Override
     public int getDespawnTime() {
         return this.entity.despawnTime;
@@ -1367,5 +1366,4 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public void setDespawnTime(int ticks) {
         this.entity.despawnTime = ticks;
     }
-    // Paper end
 }
