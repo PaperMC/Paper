@@ -43,7 +43,7 @@ public abstract class PlayerPickItemEvent extends PlayerEvent implements Cancell
     }
 
     /**
-     * Returns the item that is being picked. The item can be empty.
+     * Returns the item that is being picked.
      *
      * @return picked item
      */
