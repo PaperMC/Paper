@@ -99,7 +99,7 @@ public class MerchantRecipe implements Recipe {
         this.setIngredients(recipe.ingredients);
     }
     // Paper end
-    
+
     @Override
     public ItemStack getResult() {
         return result.clone(); // Paper
@@ -123,7 +123,7 @@ public class MerchantRecipe implements Recipe {
             this.ingredients.add(item.clone());
         }
     }
-    
+
     public List<ItemStack> getIngredients() {
         List<ItemStack> copy = new ArrayList<ItemStack>();
         for (ItemStack item : ingredients) {
@@ -318,7 +318,7 @@ public class MerchantRecipe implements Recipe {
         this.ignoreDiscounts = ignoreDiscounts;
     }
     // Paper end
-    
+
     /**
      * Creates a {@link Builder} instance to use for modifying values such as the result
      * item.<br>
@@ -329,7 +329,7 @@ public class MerchantRecipe implements Recipe {
     public Builder builder() {
         return new Builder(this);
     }
-    
+
     /**
      * Builder class for creating a new {@link MerchantRecipe}.
      * This class allows the result ItemStack to be modified until the
@@ -350,7 +350,7 @@ public class MerchantRecipe implements Recipe {
         private int villagerExperience = 0;
         private float priceMultiplier = 0.0F;
         private boolean ignoreDiscounts = false;
-        
+
         /**
          * Basic constructor to create a new Builder class from a provided result
          * ItemStack and maxUses integer.<br>
@@ -365,7 +365,7 @@ public class MerchantRecipe implements Recipe {
             this.result = result;
             this.maxUses = maxUses;
         }
-        
+
         /**
          * Constructor for creating a Builder instance from an existing
          * {@link MerchantRecipe} instance.<br>
@@ -386,7 +386,7 @@ public class MerchantRecipe implements Recipe {
             this.priceMultiplier = merchantRecipe.getPriceMultiplier();
             this.ignoreDiscounts = merchantRecipe.shouldIgnoreDiscounts();
         }
-        
+
         /**
          * Sets the {@link ItemStack} to use as the result for this MerchantRecipe.
          *
@@ -398,7 +398,7 @@ public class MerchantRecipe implements Recipe {
             this.result = result.clone();
             return this;
         }
-        
+
         /**
          * Adds an {@link ItemStack} as a new Ingredient for this MerchantRecipe.<br>
          * The position of the ItemStack in the list determines which ingredient
@@ -413,7 +413,7 @@ public class MerchantRecipe implements Recipe {
             ingredients.add(item.clone());
             return this;
         }
-        
+
         /**
          * Removes an ingredient from the provided index in the ingredients list.
          *
@@ -424,7 +424,7 @@ public class MerchantRecipe implements Recipe {
             ingredients.remove(index);
             return this;
         }
-        
+
         /**
          * Sets the {@link ItemStack List of ItemStacks} to use for this MerchantRecipe.
          *
@@ -441,7 +441,7 @@ public class MerchantRecipe implements Recipe {
             this.ingredients = copy;
             return this;
         }
-        
+
         /**
          * Resets the demand for this MerchantRecipe to 0.<br>
          * This is a convenience method for {@code setDemand(0)}.
@@ -451,7 +451,7 @@ public class MerchantRecipe implements Recipe {
         public Builder resetDemand() {
             return setDemand(0);
         }
-        
+
         /**
          * Sets the demand for this MerchantRecipe.
          * @param demand Demant for this MerchantRecipe.
@@ -461,7 +461,7 @@ public class MerchantRecipe implements Recipe {
             this.demand = demand;
             return this;
         }
-        
+
         /**
          * Resets the special price for this MerchantRecipe to 0.<br>
          * This is a convenience method for {@code setSpecialPrice(0)}.
@@ -471,7 +471,7 @@ public class MerchantRecipe implements Recipe {
         public Builder resetSpecialPrice() {
             return setSpecialPrice(0);
         }
-        
+
         /**
          * Sets the special price for this MerchantRecipe.
          * @param specialPrice Special Price for this MerchantRecipe.
@@ -481,7 +481,7 @@ public class MerchantRecipe implements Recipe {
             this.specialPrice = specialPrice;
             return this;
         }
-        
+
         /**
          * Resets the Use count for this MerchantRecipe to 0.<br>
          * This is a convenience method for {@code setUses(0)}.
@@ -491,7 +491,7 @@ public class MerchantRecipe implements Recipe {
         public Builder resetUses() {
             return setUses(0);
         }
-        
+
         /**
          * Sets the uses for this MerchantRecipe.
          *
@@ -502,7 +502,7 @@ public class MerchantRecipe implements Recipe {
             this.uses = uses;
             return this;
         }
-        
+
         /**
          * Sets the max uses for this MerchantRecipe.
          *
@@ -513,7 +513,7 @@ public class MerchantRecipe implements Recipe {
             this.maxUses = maxUses;
             return this;
         }
-        
+
         /**
          * Enables the MerchantRecipe to give experience to the player on
          * completing the trade.<br>
@@ -524,7 +524,7 @@ public class MerchantRecipe implements Recipe {
         public Builder experienceReward() {
             return setExperienceReward(true);
         }
-        
+
         /**
          * Sets whether this MerchantRecipe should give experience to a player
          * on completing the trade.
@@ -536,7 +536,7 @@ public class MerchantRecipe implements Recipe {
             this.experienceReward = experienceReward;
             return this;
         }
-        
+
         /**
          * Sets amount of experience the Villager gains when completing a trade.
          *
@@ -547,7 +547,7 @@ public class MerchantRecipe implements Recipe {
             this.villagerExperience = villagerExperience;
             return this;
         }
-        
+
         /**
          * Sets the multiplier to apply on prices for this MerchantRecipe.
          *
@@ -558,7 +558,7 @@ public class MerchantRecipe implements Recipe {
             this.priceMultiplier = priceMultiplier;
             return this;
         }
-        
+
         /**
          * Enables this MerchantRecipe to ignore any discounts from cases like a
          * Player having the {@link PotionEffectType#HERO_OF_THE_VILLAGE Hero of the Village}
@@ -570,7 +570,7 @@ public class MerchantRecipe implements Recipe {
         public Builder ignoreDiscounts() {
             return setIgnoreDiscounts(true);
         }
-        
+
         /**
          * Sets whether this MerchantRecipe should ignore discounts applued from
          * cases like a Player having the {@link PotionEffectType#HERO_OF_THE_VILLAGE Hero of the Village}
@@ -583,7 +583,7 @@ public class MerchantRecipe implements Recipe {
             this.ignoreDiscounts = ignoreDiscounts;
             return this;
         }
-        
+
         /**
          * Creates a new {@link MerchantRecipe} instance with the values of this class
          * applies.
