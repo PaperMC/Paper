@@ -184,15 +184,6 @@ public final class EnchantmentTagKeys {
     public static final TagKey<Enchantment> TRADES_DESERT_COMMON = create(key("trades/desert_common"));
 
     /**
-     * {@code #minecraft:trades/desert_special}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.TRADE_REBALANCE)
-    public static final TagKey<Enchantment> TRADES_DESERT_SPECIAL = create(key("trades/desert_special"));
-
-    /**
      * {@code #minecraft:trades/jungle_common}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -200,15 +191,6 @@ public final class EnchantmentTagKeys {
     @ApiStatus.Experimental
     @MinecraftExperimental(MinecraftExperimental.Requires.TRADE_REBALANCE)
     public static final TagKey<Enchantment> TRADES_JUNGLE_COMMON = create(key("trades/jungle_common"));
-
-    /**
-     * {@code #minecraft:trades/jungle_special}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.TRADE_REBALANCE)
-    public static final TagKey<Enchantment> TRADES_JUNGLE_SPECIAL = create(key("trades/jungle_special"));
 
     /**
      * {@code #minecraft:trades/plains_common}
@@ -220,15 +202,6 @@ public final class EnchantmentTagKeys {
     public static final TagKey<Enchantment> TRADES_PLAINS_COMMON = create(key("trades/plains_common"));
 
     /**
-     * {@code #minecraft:trades/plains_special}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.TRADE_REBALANCE)
-    public static final TagKey<Enchantment> TRADES_PLAINS_SPECIAL = create(key("trades/plains_special"));
-
-    /**
      * {@code #minecraft:trades/savanna_common}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -236,15 +209,6 @@ public final class EnchantmentTagKeys {
     @ApiStatus.Experimental
     @MinecraftExperimental(MinecraftExperimental.Requires.TRADE_REBALANCE)
     public static final TagKey<Enchantment> TRADES_SAVANNA_COMMON = create(key("trades/savanna_common"));
-
-    /**
-     * {@code #minecraft:trades/savanna_special}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.TRADE_REBALANCE)
-    public static final TagKey<Enchantment> TRADES_SAVANNA_SPECIAL = create(key("trades/savanna_special"));
 
     /**
      * {@code #minecraft:trades/snow_common}
@@ -256,15 +220,6 @@ public final class EnchantmentTagKeys {
     public static final TagKey<Enchantment> TRADES_SNOW_COMMON = create(key("trades/snow_common"));
 
     /**
-     * {@code #minecraft:trades/snow_special}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.TRADE_REBALANCE)
-    public static final TagKey<Enchantment> TRADES_SNOW_SPECIAL = create(key("trades/snow_special"));
-
-    /**
      * {@code #minecraft:trades/swamp_common}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -274,15 +229,6 @@ public final class EnchantmentTagKeys {
     public static final TagKey<Enchantment> TRADES_SWAMP_COMMON = create(key("trades/swamp_common"));
 
     /**
-     * {@code #minecraft:trades/swamp_special}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.TRADE_REBALANCE)
-    public static final TagKey<Enchantment> TRADES_SWAMP_SPECIAL = create(key("trades/swamp_special"));
-
-    /**
      * {@code #minecraft:trades/taiga_common}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -290,15 +236,6 @@ public final class EnchantmentTagKeys {
     @ApiStatus.Experimental
     @MinecraftExperimental(MinecraftExperimental.Requires.TRADE_REBALANCE)
     public static final TagKey<Enchantment> TRADES_TAIGA_COMMON = create(key("trades/taiga_common"));
-
-    /**
-     * {@code #minecraft:trades/taiga_special}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.TRADE_REBALANCE)
-    public static final TagKey<Enchantment> TRADES_TAIGA_SPECIAL = create(key("trades/taiga_special"));
 
     /**
      * {@code #minecraft:treasure}

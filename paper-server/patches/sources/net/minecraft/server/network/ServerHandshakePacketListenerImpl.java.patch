@@ -18,13 +18,13 @@
      private final Connection connection;
  
 +
-     public ServerHandshakePacketListenerImpl(MinecraftServer server, Connection connection) {
+     public ServerHandshakePacketListenerImpl(final MinecraftServer server, final Connection connection) {
          this.server = server;
          this.connection = connection;
 @@ -24,6 +_,7 @@
  
      @Override
-     public void handleIntention(ClientIntentionPacket packet) {
+     public void handleIntention(final ClientIntentionPacket packet) {
 +        this.connection.hostname = packet.hostName() + ":" + packet.port(); // CraftBukkit  - set hostname
          switch (packet.intention()) {
              case LOGIN:
@@ -40,7 +40,8 @@
 +        // Paper end
      }
  
-     private void beginLogin(ClientIntentionPacket packet, boolean transferred) {
+-    private void beginLogin(final ClientIntentionPacket packet, final boolean transfer) {
++    private void beginLogin(ClientIntentionPacket packet, final boolean transfer) { // Paper - remove packet final
          this.connection.setupOutboundProtocol(LoginProtocols.CLIENTBOUND);
 +        // Paper start - Connection throttle
 +        try {
@@ -65,7 +66,7 @@
 +                        ServerHandshakePacketListenerImpl.throttleCounter = 0;
 +
 +                        // Cleanup stale entries
-+                        ServerHandshakePacketListenerImpl.throttleTracker.values().removeIf(time -> time > connectionThrottle);
++                        ServerHandshakePacketListenerImpl.throttleTracker.values().removeIf(time -> currentTime - time > connectionThrottle);
 +                    }
 +                }
 +            }
@@ -74,28 +75,28 @@
 +        }
 +        // Paper end - Connection throttle
          if (packet.protocolVersion() != SharedConstants.getCurrentVersion().protocolVersion()) {
--            Component component;
+-            Component reason;
 -            if (packet.protocolVersion() < 754) {
--                component = Component.translatable("multiplayer.disconnect.outdated_client", SharedConstants.getCurrentVersion().name());
-+            net.kyori.adventure.text.Component adventureComponent; // Paper - Fix hex colors not working in some kick messages
+-                reason = Component.translatable("multiplayer.disconnect.outdated_client", SharedConstants.getCurrentVersion().name());
++            net.kyori.adventure.text.Component adventureReason; // Paper - Fix hex colors not working in some kick messages
 +            if (packet.protocolVersion() < SharedConstants.getCurrentVersion().protocolVersion()) { // Spigot - SPIGOT-7546: Handle version check correctly for outdated client message
-+                adventureComponent = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().name())); // Spigot // Paper - Fix hex colors not working in some kick messages
++                adventureReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().name())); // Spigot // Paper - Fix hex colors not working in some kick messages
              } else {
--                component = Component.translatable("multiplayer.disconnect.incompatible", SharedConstants.getCurrentVersion().name());
-+                adventureComponent = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().name())); // Spigot // Paper - Fix hex colors not working in some kick messages
+-                reason = Component.translatable("multiplayer.disconnect.incompatible", SharedConstants.getCurrentVersion().name());
++                adventureReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().name())); // Spigot // Paper - Fix hex colors not working in some kick messages
              }
-+            Component component = io.papermc.paper.adventure.PaperAdventure.asVanilla(adventureComponent); // Paper - Fix hex colors not working in some kick messages
++            Component reason = io.papermc.paper.adventure.PaperAdventure.asVanilla(adventureReason); // Paper - Fix hex colors not working in some kick messages
  
-             this.connection.send(new ClientboundLoginDisconnectPacket(component));
-             this.connection.disconnect(component);
+             this.connection.send(new ClientboundLoginDisconnectPacket(reason));
+             this.connection.disconnect(reason);
          } else {
-             this.connection.setupInboundProtocol(LoginProtocols.SERVERBOUND, new ServerLoginPacketListenerImpl(this.server, this.connection, transferred));
+             this.connection.setupInboundProtocol(LoginProtocols.SERVERBOUND, new ServerLoginPacketListenerImpl(this.server, this.connection, transfer));
 +            // Paper start - PlayerHandshakeEvent
 +            boolean proxyLogicEnabled = org.spigotmc.SpigotConfig.bungee;
 +            boolean handledByEvent = false;
 +            // Try and handle the handshake through the event
 +            if (com.destroystokyo.paper.event.player.PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
-+                java.net.SocketAddress socketAddress = this.connection.address;
++                java.net.SocketAddress socketAddress = this.connection.getRemoteAddress();
 +                String hostnameOfRemote = socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getHostString() : java.net.InetAddress.getLoopbackAddress().getHostAddress();
 +                com.destroystokyo.paper.event.player.PlayerHandshakeEvent event = new com.destroystokyo.paper.event.player.PlayerHandshakeEvent(packet.hostName(), hostnameOfRemote, !proxyLogicEnabled);
 +                if (event.callEvent()) {
@@ -134,7 +135,7 @@
 +                    this.connection.hostname = split[0];
 +                    this.connection.address = new java.net.InetSocketAddress(split[1], socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getPort() : 0);
 +                    // Paper end - Unix domain socket support
-+                    this.connection.spoofedUUID = com.mojang.util.UndashedUuid.fromStringLenient( split[2] );
++                    this.connection.spoofedUUID = com.mojang.util.UndashedUuid.fromStringLenient(split[2]);
 +                } else {
 +                    Component message = Component.literal("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!");
 +                    this.connection.send(new ClientboundLoginDisconnectPacket(message));

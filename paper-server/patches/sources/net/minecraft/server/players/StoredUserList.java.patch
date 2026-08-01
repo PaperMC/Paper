@@ -8,11 +8,11 @@
 +    private final Map<String, V> map = Maps.newConcurrentMap(); // Paper - Use ConcurrentHashMap in StoredUserList
      protected final NotificationService notificationService;
  
-     public StoredUserList(File file, NotificationService notificationService) {
+     public StoredUserList(final File file, final NotificationService notificationService) {
 @@ -59,8 +_,11 @@
      }
  
-     public @Nullable V get(K user) {
+     public @Nullable V get(final K user) {
 -        this.removeExpired();
 -        return this.map.get(this.getKeyForUser(user));
 +        // Paper start - Use ConcurrentHashMap in StoredUserList
@@ -22,41 +22,44 @@
 +        // Paper end - Use ConcurrentHashMap in StoredUserList
      }
  
-     public boolean remove(K user) {
-@@ -105,21 +_,12 @@
+     public boolean remove(final K user) {
+@@ -105,22 +_,15 @@
      }
  
-     protected boolean contains(K entry) {
+     protected boolean contains(final K user) {
 +        this.removeExpired(); // CraftBukkit - SPIGOT-7589: Consistently remove expired entries to mirror .get(...)
-         return this.map.containsKey(this.getKeyForUser(entry));
+         return this.map.containsKey(this.getKeyForUser(user));
      }
  
++    // Paper start - Use ConcurrentHashMap in StoredUserList
      private void removeExpired() {
--        List<K> list = Lists.newArrayList();
+-        List<K> toRemove = Lists.newArrayList();
 -
--        for (V storedUserEntry : this.map.values()) {
--            if (storedUserEntry.hasExpired()) {
--                list.add(storedUserEntry.getUser());
+-        for (V entry : this.map.values()) {
+-            if (entry.hasExpired()) {
+-                toRemove.add(entry.getUser());
 -            }
 -        }
 -
--        for (K object : list) {
--            this.map.remove(this.getKeyForUser(object));
+-        for (K user : toRemove) {
+-            this.map.remove(this.getKeyForUser(user));
 -        }
-+        this.map.values().removeIf(StoredUserEntry::hasExpired); // Paper - Use ConcurrentHashMap in StoredUserList
++        this.map.values().removeIf(StoredUserEntry::hasExpired);
      }
++    // Paper end - Use ConcurrentHashMap in StoredUserList
  
-     protected abstract StoredUserEntry<K> createEntry(JsonObject entryData);
+     protected abstract StoredUserEntry<K> createEntry(final JsonObject object);
+ 
 @@ -129,6 +_,7 @@
      }
  
      public void save() throws IOException {
 +        this.removeExpired(); // Paper - remove expired values before saving
-         JsonArray jsonArray = new JsonArray();
-         this.map.values().stream().map(storedEntry -> Util.make(new JsonObject(), storedEntry::serialize)).forEach(jsonArray::add);
+         JsonArray result = new JsonArray();
+         this.map.values().stream().map(entry -> Util.make(new JsonObject(), entry::serialize)).forEach(result::add);
  
 @@ -153,7 +_,14 @@
-                         this.map.put(this.getKeyForUser(storedUserEntry.getUser()), (V)storedUserEntry);
+                         this.map.put(this.getKeyForUser(entry.getUser()), (V)entry);
                      }
                  }
 +            // Spigot start

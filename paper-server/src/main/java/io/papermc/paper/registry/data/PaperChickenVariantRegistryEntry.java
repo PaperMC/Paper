@@ -3,6 +3,7 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
 import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.util.MCUtil;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.world.entity.animal.chicken.ChickenVariant;
 import net.minecraft.world.entity.variant.ModelAndTexture;
@@ -17,28 +18,32 @@ public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryE
 
     protected ChickenVariant.@Nullable ModelType model;
     protected ClientAsset.@Nullable ResourceTexture clientTextureAsset;
+    protected ClientAsset.@Nullable ResourceTexture babyClientTextureAsset;
     protected SpawnPrioritySelectors spawnConditions;
 
-    protected final Conversions conversions;
-
     public PaperChickenVariantRegistryEntry(
-        final Conversions conversions,
+        final Conversions ignoredConversions,
         final @Nullable ChickenVariant internal
     ) {
-        this.conversions = conversions;
         if (internal == null) {
             this.spawnConditions = SpawnPrioritySelectors.EMPTY;
             return;
         }
 
         this.clientTextureAsset = internal.modelAndTexture().asset();
+        this.babyClientTextureAsset = internal.babyTexture();
         this.model = internal.modelAndTexture().model();
         this.spawnConditions = internal.spawnConditions();
     }
 
     @Override
     public ClientTextureAsset clientTextureAsset() {
-        return this.conversions.asBukkit(asConfigured(this.clientTextureAsset, "clientTextureAsset"));
+        return MCUtil.toTextureAsset(asConfigured(this.clientTextureAsset, "clientTextureAsset"));
+    }
+
+    @Override
+    public ClientTextureAsset babyClientTextureAsset() {
+        return MCUtil.toTextureAsset(asConfigured(this.babyClientTextureAsset, "babyClientTextureAsset"));
     }
 
     @Override
@@ -57,7 +62,13 @@ public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryE
 
         @Override
         public Builder clientTextureAsset(final ClientTextureAsset clientTextureAsset) {
-            this.clientTextureAsset = this.conversions.asVanilla(asArgument(clientTextureAsset, "clientTextureAsset"));
+            this.clientTextureAsset = MCUtil.toResourceTexture(asArgument(clientTextureAsset, "clientTextureAsset"));
+            return this;
+        }
+
+        @Override
+        public Builder babyClientTextureAsset(final ClientTextureAsset babyClientTextureAsset) {
+            this.babyClientTextureAsset = MCUtil.toResourceTexture(asArgument(babyClientTextureAsset, "babyClientTextureAsset"));
             return this;
         }
 
@@ -74,6 +85,7 @@ public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryE
         public ChickenVariant build() {
             return new ChickenVariant(
                 new ModelAndTexture<>(asConfigured(this.model, "model"), asConfigured(this.clientTextureAsset, "clientTextureAsset")),
+                asConfigured(this.babyClientTextureAsset, "babyClientTextureAsset"),
                 asConfigured(this.spawnConditions, "spawnConditions")
             );
         }

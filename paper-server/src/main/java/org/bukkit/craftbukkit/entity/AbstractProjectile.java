@@ -63,7 +63,14 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
 
     @Override
     public final org.bukkit.projectiles.ProjectileSource getShooter() {
-        this.getHandle().refreshProjectileSource(true); // Paper - Refresh ProjectileSource for projectiles
+        net.minecraft.world.entity.projectile.Projectile handle = this.getHandle();
+
+        // Refresh the source if unset
+        Entity owner = handle.getOwner();
+        if (owner != null && handle.projectileSource == null && owner.getBukkitEntity() instanceof org.bukkit.projectiles.ProjectileSource projSource) {
+            handle.projectileSource = projSource;
+        }
+
         return this.getHandle().projectileSource;
     }
 

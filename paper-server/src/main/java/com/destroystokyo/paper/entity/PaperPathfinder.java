@@ -8,9 +8,9 @@ import javax.annotation.Nullable;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.Path;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
 
 public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinder {
@@ -49,17 +49,19 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
 
     @Nullable
     @Override
-    public PathResult findPath(Location loc) {
+    public PathResult findPath(final Location loc, final int reachRange) {
         Preconditions.checkArgument(loc != null, "Location can not be null");
-        Path path = this.entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), 0);
+        Preconditions.checkArgument(reachRange >= 0, "Reach range can not be negative");
+        Path path = this.entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), reachRange);
         return path != null ? new PaperPathResult(path) : null;
     }
 
     @Nullable
     @Override
-    public PathResult findPath(LivingEntity target) {
+    public PathResult findPath(final Entity target, final int reachRange) {
         Preconditions.checkArgument(target != null, "Target can not be null");
-        Path path = this.entity.getNavigation().createPath(((CraftLivingEntity) target).getHandle(), 0);
+        Preconditions.checkArgument(reachRange >= 0, "Reach range can not be negative");
+        Path path = this.entity.getNavigation().createPath(((CraftEntity) target).getHandle(), reachRange);
         return path != null ? new PaperPathResult(path) : null;
     }
 
@@ -140,7 +142,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
             if (this.path.isDone()) {
                 return null;
             }
-            return CraftLocation.toBukkit(this.path.nodes.get(this.path.getNextNodeIndex()), PaperPathfinder.this.entity.level());
+            return CraftLocation.toBukkit(this.path.getNode(this.path.getNextNodeIndex()), PaperPathfinder.this.entity.level());
         }
     }
 }

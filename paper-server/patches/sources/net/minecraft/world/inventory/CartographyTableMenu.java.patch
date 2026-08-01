@@ -5,7 +5,7 @@
  
  public class CartographyTableMenu extends AbstractContainerMenu {
 +    // CraftBukkit start
-+    private @javax.annotation.Nullable org.bukkit.craftbukkit.inventory.CraftInventoryView view = null;
++    private org.bukkit.craftbukkit.inventory.@org.jspecify.annotations.Nullable CraftInventoryView view = null;
 +    private final org.bukkit.entity.Player player;
 +
 +    @Override
@@ -25,7 +25,7 @@
 @@ -24,20 +_,8 @@
      private static final int USE_ROW_SLOT_END = 39;
      private final ContainerLevelAccess access;
-     long lastSoundTime;
+     private long lastSoundTime;
 -    public final Container container = new SimpleContainer(2) {
 -        @Override
 -        public void setChanged() {
@@ -43,11 +43,11 @@
 +    public final Container container; // Paper - Add missing InventoryHolders - move down
 +    private final ResultContainer resultContainer; // Paper - Add missing InventoryHolders - move down
  
-     public CartographyTableMenu(int containerId, Inventory playerInventory) {
-         this(containerId, playerInventory, ContainerLevelAccess.NULL);
+     public CartographyTableMenu(final int containerId, final Inventory inventory) {
+         this(containerId, inventory, ContainerLevelAccess.NULL);
 @@ -45,6 +_,34 @@
  
-     public CartographyTableMenu(int containerId, Inventory playerInventory, final ContainerLevelAccess access) {
+     public CartographyTableMenu(final int containerId, final Inventory inventory, final ContainerLevelAccess access) {
          super(MenuType.CARTOGRAPHY_TABLE, containerId);
 +        // Paper start - Add missing InventoryHolders - move down
 +        this.container = new SimpleContainer(this.createBlockHolder(access), 2) {
@@ -80,24 +80,24 @@
          this.access = access;
          this.addSlot(new Slot(this.container, 0, 15, 15) {
              @Override
-@@ -80,10 +_,12 @@
+@@ -87,10 +_,12 @@
              }
          });
-         this.addStandardInventorySlots(playerInventory, 8, 84);
-+        this.player = (org.bukkit.entity.Player) playerInventory.player.getBukkitEntity(); // CraftBukkit
+         this.addStandardInventorySlots(inventory, 8, 84);
++        this.player = (org.bukkit.entity.Player) inventory.player.getBukkitEntity(); // CraftBukkit
      }
  
      @Override
-     public boolean stillValid(Player player) {
+     public boolean stillValid(final Player player) {
 +        if (!this.checkReachable) return true; // CraftBukkit
          return stillValid(this.access, player, Blocks.CARTOGRAPHY_TABLE);
      }
  
-@@ -99,6 +_,7 @@
+@@ -106,6 +_,7 @@
          } else {
              this.resultContainer.removeItemNoUpdate(2);
          }
 +        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, RESULT_SLOT); // Paper - Add PrepareResultEvent
      }
  
-     private void setupResultSlot(ItemStack map, ItemStack firstSlotStack, ItemStack resultOutput) {
+     private void setupResultSlot(final ItemStack mapStack, final ItemStack additionalStack, final ItemStack resultStack) {

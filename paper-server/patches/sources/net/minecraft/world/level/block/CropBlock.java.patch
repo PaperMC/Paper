@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/CropBlock.java
 +++ b/net/minecraft/world/level/block/CropBlock.java
-@@ -80,8 +_,25 @@
+@@ -81,8 +_,25 @@
              int age = this.getAge(state);
              if (age < this.getMaxAge()) {
                  float growthSpeed = getGrowthSpeed(this, level, pos);
@@ -28,19 +28,19 @@
                  }
              }
          }
-@@ -89,7 +_,7 @@
+@@ -90,7 +_,7 @@
  
-     public void growCrops(Level level, BlockPos pos, BlockState state) {
-         int min = Math.min(this.getMaxAge(), this.getAge(state) + this.getBonemealAgeIncrease(level));
--        level.setBlock(pos, this.getStateForAge(min), Block.UPDATE_CLIENTS);
-+        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, this.getStateForAge(min), Block.UPDATE_CLIENTS); // CraftBukkit
+     public void growCrops(final Level level, final BlockPos pos, final BlockState state) {
+         int age = Math.min(this.getMaxAge(), this.getAge(state) + this.getBonemealAgeIncrease(level));
+-        level.setBlock(pos, this.getStateForAge(age), Block.UPDATE_CLIENTS);
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, this.getStateForAge(age), Block.UPDATE_CLIENTS); // CraftBukkit
      }
  
-     protected int getBonemealAgeIncrease(Level level) {
-@@ -151,7 +_,8 @@
- 
-     @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean pastEdges) {
+     protected int getBonemealAgeIncrease(final Level level) {
+@@ -159,7 +_,8 @@
+         final InsideBlockEffectApplier effectApplier,
+         final boolean isPrecise
+     ) {
 -        if (level instanceof ServerLevel serverLevel && entity instanceof Ravager && serverLevel.getGameRules().get(GameRules.MOB_GRIEFING)) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
 +        if (level instanceof ServerLevel serverLevel && entity instanceof Ravager && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.AIR.defaultBlockState(), !serverLevel.getGameRules().get(GameRules.MOB_GRIEFING))) { // CraftBukkit

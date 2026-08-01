@@ -20,7 +20,7 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
     public OptionalDouble maxDistance = OptionalDouble.empty();
     public FluidCollisionMode fluidCollisionMode = FluidCollisionMode.NEVER;
     public BlockCollisionMode blockCollisionMode = BlockCollisionMode.OUTLINE;
-    public double raySize = 0.0D;
+    public double raySize = 0.0;
     public @Nullable Predicate<? super Entity> entityFilter;
     public @Nullable Predicate<? super Block> blockFilter;
     public EnumSet<RayTraceTarget> targets = EnumSet.noneOf(RayTraceTarget.class);

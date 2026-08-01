@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.Container;
-import net.minecraft.world.entity.ContainerUser;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.bukkit.Location;
@@ -210,19 +209,6 @@ public class CraftInventoryCustom extends CraftInventory {
         }
 
         @Override
-        public boolean canPlaceItem(int slot, ItemStack stack) {
-            return true;
-        }
-
-        @Override
-        public void startOpen(ContainerUser player) {
-        }
-
-        @Override
-        public void stopOpen(ContainerUser player) {
-        }
-
-        @Override
         public void clearContent() {
             this.items.clear();
         }
@@ -242,8 +228,7 @@ public class CraftInventoryCustom extends CraftInventory {
 
         @Override
         public boolean isEmpty() {
-            Iterator iterator = this.items.iterator();
-
+            Iterator<ItemStack> iterator = this.items.iterator();
             ItemStack itemstack;
 
             do {
@@ -251,7 +236,7 @@ public class CraftInventoryCustom extends CraftInventory {
                     return true;
                 }
 
-                itemstack = (ItemStack) iterator.next();
+                itemstack = iterator.next();
             } while (itemstack.isEmpty());
 
             return false;

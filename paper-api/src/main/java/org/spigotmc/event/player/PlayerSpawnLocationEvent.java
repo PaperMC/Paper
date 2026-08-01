@@ -1,5 +1,6 @@
 package org.spigotmc.event.player;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.Warning;
@@ -49,6 +50,8 @@ public class PlayerSpawnLocationEvent extends PlayerEvent {
      * @param location the spawn location
      */
     public void setSpawnLocation(@NotNull Location location) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "World cannot be null");
         this.spawnLocation = location.clone();
     }
 

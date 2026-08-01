@@ -75,7 +75,7 @@ public interface JukeboxSongRegistryEntry {
          * <p>This will override both {@link #soundEvent(Consumer)} and {@link #soundEvent(RegistryHolder)}</p>
          *
          * @param soundEvent the sound event
-         * @return this builder
+         * @return this builder instance
          * @see #soundEvent(Consumer)
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -86,7 +86,7 @@ public interface JukeboxSongRegistryEntry {
          * <p>This will override both {@link #soundEvent(TypedKey)} and {@link #soundEvent(RegistryHolder)}</p>
          *
          * @param soundEvent the sound event
-         * @return this builder
+         * @return this builder instance
          * @see #soundEvent(TypedKey)
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -97,18 +97,18 @@ public interface JukeboxSongRegistryEntry {
          * <p>This will override both {@link #soundEvent(Consumer)} and {@link #soundEvent(TypedKey)}</p>
          *
          * @param soundEvent the sound event
-         * @return this builder
+         * @return this builder instance
          * @see #soundEvent(TypedKey)
          * @see #soundEvent(Consumer)
          */
-        @Contract( value = "_ -> this", mutates = "this")
+        @Contract(value = "_ -> this", mutates = "this")
         Builder soundEvent(RegistryHolder<Sound, SoundEventRegistryEntry> soundEvent);
 
         /**
          * Sets the description for this song.
          *
          * @param description the description
-         * @return this builder
+         * @return this builder instance
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder description(Component description);
@@ -117,7 +117,7 @@ public interface JukeboxSongRegistryEntry {
          * Sets the length in seconds for this song.
          *
          * @param lengthInSeconds the length in seconds (positive)
-         * @return this builder
+         * @return this builder instance
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder lengthInSeconds(@Positive float lengthInSeconds);
@@ -126,7 +126,7 @@ public interface JukeboxSongRegistryEntry {
          * Sets the comparator output for this song.
          *
          * @param comparatorOutput the comparator output [0-15]
-         * @return this builder
+         * @return this builder instance
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder comparatorOutput(@Range(from = 0, to = 15) int comparatorOutput);

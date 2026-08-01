@@ -56,7 +56,7 @@ public class CraftBlockDataDestroySpeedTest {
         itemStack.set(DataComponents.ENCHANTMENTS, mutable.toImmutable());
 
         // Compute expected value by running the entire attribute instance chain
-        final AttributeInstance dummyInstance = new AttributeInstance(Attributes.MINING_EFFICIENCY, $ -> {
+        final AttributeInstance dummyInstance = new AttributeInstance(Attributes.MINING_EFFICIENCY, _ -> {
         });
         EnchantmentHelper.forEachModifier(itemStack, EquipmentSlot.MAINHAND, (attributeHolder, attributeModifier) -> {
             if (attributeHolder.is(Attributes.MINING_EFFICIENCY)) dummyInstance.addTransientModifier(attributeModifier);

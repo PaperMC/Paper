@@ -11,7 +11,7 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
-class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
+public class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
     static final ItemMetaKeyType<FireworkExplosion> EXPLOSION = new ItemMetaKeyType<>(DataComponents.FIREWORK_EXPLOSION, "firework-effect");
 
     private FireworkEffect effect;
@@ -30,12 +30,12 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
         this.setEffect(SerializableMeta.getObject(FireworkEffect.class, map, CraftMetaCharge.EXPLOSION.BUKKIT, true));
     }
 
-    CraftMetaCharge(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
+    CraftMetaCharge(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
 
-        getOrEmpty(tag, CraftMetaCharge.EXPLOSION).ifPresent((f) -> {
+        getOrEmpty(patch, CraftMetaCharge.EXPLOSION).ifPresent((explosion) -> {
             try {
-                this.effect = CraftMetaFirework.getEffect(f);
+                this.effect = CraftMetaFirework.getEffect(explosion);
             } catch (IllegalArgumentException ex) {
                 // Ignore invalid effects
             }

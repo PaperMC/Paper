@@ -1,5 +1,20 @@
 --- a/net/minecraft/network/codec/ByteBufCodecs.java
 +++ b/net/minecraft/network/codec/ByteBufCodecs.java
+@@ -334,7 +_,13 @@
+         return new StreamCodec<ByteBuf, Tag>() {
+             @Override
+             public Tag decode(final ByteBuf input) {
+-                Tag result = FriendlyByteBuf.readNbt(input, accounter.get());
++                // Paper start - Track codec depth
++                final NbtAccounter acc = accounter.get();
++                if (input instanceof FriendlyByteBuf friendlyByteBuf && friendlyByteBuf.trackCodecDepth) {
++                    acc.pushDepth(friendlyByteBuf.codecDepth * 3);
++                }
++                Tag result = FriendlyByteBuf.readNbt(input, acc);
++                // Paper end - Track codec depth
+                 if (result == null) {
+                     throw new DecoderException("Expected non-null compound tag");
+                 } else {
 @@ -418,6 +_,48 @@
          };
      }
@@ -46,6 +61,15 @@
 +    }
 +    // Paper end - Track codec depth
 +
-     static <B extends ByteBuf, V> StreamCodec<B, Optional<V>> optional(final StreamCodec<? super B, V> codec) {
+     static <B extends ByteBuf, V> StreamCodec<B, Optional<V>> optional(final StreamCodec<? super B, V> original) {
          return new StreamCodec<B, Optional<V>>() {
              @Override
+@@ -598,7 +_,7 @@
+     }
+ 
+     static <V> StreamCodec.CodecOperation<RegistryFriendlyByteBuf, V, V> registryFriendlyLengthPrefixed(final int maxSize) {
+-        return lengthPrefixed(maxSize, (parent, child) -> new RegistryFriendlyByteBuf(child, parent.registryAccess()));
++        return lengthPrefixed(maxSize, (parent, child) -> new RegistryFriendlyByteBuf(child, parent)); // Paper - Track codec depth
+     }
+ 
+     static <T> StreamCodec<ByteBuf, T> idMapper(final IntFunction<T> byId, final ToIntFunction<T> toId) {

@@ -1,5 +1,9 @@
 package io.papermc.paper.util.sanitizer;
 
+import com.mojang.datafixers.util.Pair;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.DynamicOps;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.util.SafeAutoClosable;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -11,7 +15,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.component.ChargedProjectiles;
@@ -24,9 +28,30 @@ public final class OversizedItemComponentSanitizer {
     /*
     These represent codecs that are meant to help get rid of possibly big items by ALWAYS hiding this data.
      */
-    public static final StreamCodec<RegistryFriendlyByteBuf, ChargedProjectiles> CHARGED_PROJECTILES = codec(ChargedProjectiles.STREAM_CODEC, OversizedItemComponentSanitizer::sanitizeChargedProjectiles);
-    public static final StreamCodec<RegistryFriendlyByteBuf, ItemContainerContents> CONTAINER = codec(ItemContainerContents.STREAM_CODEC, OversizedItemComponentSanitizer::sanitizeItemContainerContents);
-    public static final StreamCodec<RegistryFriendlyByteBuf, BundleContents> BUNDLE_CONTENTS = new StreamCodec<>() {
+    public static final StreamCodec<RegistryFriendlyByteBuf, ChargedProjectiles> CHARGED_PROJECTILES_STREAM = codec(ChargedProjectiles.STREAM_CODEC, OversizedItemComponentSanitizer::sanitizeChargedProjectiles);
+    public static final Codec<ChargedProjectiles> CHARGED_PROJECTILES = codec(ChargedProjectiles.CODEC, OversizedItemComponentSanitizer::sanitizeChargedProjectiles);
+    public static final StreamCodec<RegistryFriendlyByteBuf, ItemContainerContents> CONTAINER_STREAM = codec(ItemContainerContents.STREAM_CODEC, OversizedItemComponentSanitizer::sanitizeItemContainerContents);
+    public static final Codec<ItemContainerContents> CONTAINER = codec(ItemContainerContents.CODEC, OversizedItemComponentSanitizer::sanitizeItemContainerContents);
+    public static final Codec<BundleContents> BUNDLE_CONTENTS = new Codec<>() {
+
+        @Override
+        public <T> DataResult<Pair<BundleContents, T>> decode(final DynamicOps<T> ops, final T input) {
+            return BundleContents.CODEC.decode(ops, input);
+        }
+
+        @Override
+        public <T> DataResult<T> encode(final BundleContents input, final DynamicOps<T> ops, final T prefix) {
+            if (!ItemObfuscationSession.currentSession().obfuscationLevel().obfuscateOversized()) {
+                return BundleContents.CODEC.encode(input, ops, prefix);
+            }
+
+            // Disable further obfuscation to skip e.g. count.
+            try (final SafeAutoClosable ignored = ItemObfuscationSession.withContext(c -> c.level(ItemObfuscationSession.ObfuscationLevel.OVERSIZED))) {
+                return BundleContents.CODEC.encode(sanitizeBundleContents(input), ops, prefix);
+            }
+        }
+    };
+    public static final StreamCodec<RegistryFriendlyByteBuf, BundleContents> BUNDLE_CONTENTS_STREAM = new StreamCodec<>() {
         @Override
         public BundleContents decode(final RegistryFriendlyByteBuf buffer) {
             return BundleContents.STREAM_CODEC.decode(buffer);
@@ -40,13 +65,17 @@ public final class OversizedItemComponentSanitizer {
             }
 
             // Disable further obfuscation to skip e.g. count.
-            try (final SafeAutoClosable ignored = ItemObfuscationSession.withContext(c -> c.level(ItemObfuscationSession.ObfuscationLevel.OVERSIZED))){
+            try (final SafeAutoClosable ignored = ItemObfuscationSession.withContext(c -> c.level(ItemObfuscationSession.ObfuscationLevel.OVERSIZED))) {
                 BundleContents.STREAM_CODEC.encode(buffer, sanitizeBundleContents(value));
             }
         }
     };
 
     private static <B, A> StreamCodec<B, A> codec(final StreamCodec<B, A> delegate, final UnaryOperator<A> sanitizer) {
+        return new DataSanitizationStreamCodec<>(delegate, sanitizer);
+    }
+
+    private static <A> Codec<A> codec(final Codec<A> delegate, final UnaryOperator<A> sanitizer) {
         return new DataSanitizationCodec<>(delegate, sanitizer);
     }
 
@@ -59,12 +88,7 @@ public final class OversizedItemComponentSanitizer {
             return projectiles;
         }
 
-        return ChargedProjectiles.of(List.of(
-            new ItemStack(
-                projectiles.contains(Items.FIREWORK_ROCKET)
-                    ? Items.FIREWORK_ROCKET
-                    : Items.ARROW
-            )));
+        return ChargedProjectiles.of(new ItemStackTemplate(projectiles.contains(Items.FIREWORK_ROCKET) ? Items.FIREWORK_ROCKET : Items.ARROW));
     }
 
     private static ItemContainerContents sanitizeItemContainerContents(final ItemContainerContents contents) {
@@ -86,16 +110,16 @@ public final class OversizedItemComponentSanitizer {
 
         // A bundles content weight may be anywhere from 0 to, basically, infinity.
         // A weight of 1 is the usual maximum case
-        int sizeUsed = Mth.mulAndTruncate(contents.weight(), 64);
+        int sizeUsed = Mth.mulAndTruncate(contents.weight().getOrThrow(), 64);
         // Early out, *most* bundles should not be overfilled above a weight of one.
         if (sizeUsed <= 64) {
-            return new BundleContents(List.of(new ItemStack(Items.PAPER, Math.max(1, sizeUsed))));
+            return new BundleContents(List.of(new ItemStackTemplate(Items.PAPER, Math.max(1, sizeUsed))));
         }
 
-        final List<ItemStack> sanitizedRepresentation = new ObjectArrayList<>(sizeUsed / 64 + 1);
+        final List<ItemStackTemplate> sanitizedRepresentation = new ObjectArrayList<>(sizeUsed / 64 + 1);
         while (sizeUsed > 0) {
             final int stackCount = Math.min(64, sizeUsed);
-            sanitizedRepresentation.add(new ItemStack(Items.PAPER, stackCount));
+            sanitizedRepresentation.add(new ItemStackTemplate(Items.PAPER, stackCount));
             sizeUsed -= stackCount;
         }
         // Now we add a single fake item that uses the same amount of slots as all other items.
@@ -103,9 +127,13 @@ public final class OversizedItemComponentSanitizer {
         return new BundleContents(sanitizedRepresentation);
     }
 
+    // Empty marker interface for encoder cache checks
+    public interface ObfuscationDependantCodec {
+    }
+
     // Codec used to override encoding if sanitization is enabled
-    private record DataSanitizationCodec<B, A>(StreamCodec<B, A> delegate,
-                                               UnaryOperator<A> sanitizer) implements StreamCodec<B, A> {
+    private record DataSanitizationStreamCodec<B, A>(StreamCodec<B, A> delegate,
+                                                     UnaryOperator<A> sanitizer) implements StreamCodec<B, A>, ObfuscationDependantCodec {
 
         @Override
         public @NonNull A decode(final @NonNull B buf) {
@@ -119,6 +147,25 @@ public final class OversizedItemComponentSanitizer {
                 this.delegate.encode(buf, value);
             } else {
                 this.delegate.encode(buf, this.sanitizer.apply(value));
+            }
+        }
+    }
+
+    // Codec used to override encoding if sanitization is enabled
+    private record DataSanitizationCodec<A>(Codec<A> delegate,
+                                            UnaryOperator<A> sanitizer) implements Codec<A>, ObfuscationDependantCodec {
+
+        @Override
+        public <T> DataResult<Pair<A, T>> decode(final DynamicOps<T> ops, final T input) {
+            return this.delegate.decode(ops, input);
+        }
+
+        @Override
+        public <T> DataResult<T> encode(final A input, final DynamicOps<T> ops, final T prefix) {
+            if (!ItemObfuscationSession.currentSession().obfuscationLevel().obfuscateOversized()) {
+                return this.delegate.encode(input, ops, prefix);
+            } else {
+                return this.delegate.encode(this.sanitizer.apply(input), ops, prefix);
             }
         }
     }

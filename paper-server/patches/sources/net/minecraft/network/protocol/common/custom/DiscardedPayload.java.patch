@@ -6,21 +6,21 @@
  
 -public record DiscardedPayload(Identifier id) implements CustomPacketPayload {
 +public record DiscardedPayload(Identifier id, byte[] data) implements CustomPacketPayload { // Paper - store data
-     public static <T extends FriendlyByteBuf> StreamCodec<T, DiscardedPayload> codec(Identifier id, int maxSize) {
--        return CustomPacketPayload.codec((value, output) -> {}, buffer -> {
-+        return CustomPacketPayload.codec((value, output) -> {
+     public static <T extends FriendlyByteBuf> StreamCodec<T, DiscardedPayload> codec(final Identifier id, final int maxPayloadSize) {
+-        return CustomPacketPayload.codec((payload, buf) -> {}, buf -> {
++        return CustomPacketPayload.codec((payload, buf) -> {
 +            // Paper start
 +            // Always write data
-+            output.writeBytes(value.data);
-+        }, buffer -> {
-             int i = buffer.readableBytes();
-             if (i >= 0 && i <= maxSize) {
--                buffer.skipBytes(i);
++            buf.writeBytes(payload.data);
++        }, buf -> {
+             int length = buf.readableBytes();
+             if (length >= 0 && length <= maxPayloadSize) {
+-                buf.skipBytes(length);
 -                return new DiscardedPayload(id);
-+                final byte[] data = new byte[i];
-+                buffer.readBytes(data);
++                final byte[] data = new byte[length];
++                buf.readBytes(data);
 +                return new DiscardedPayload(id, data);
 +                // Paper end
              } else {
-                 throw new IllegalArgumentException("Payload may not be larger than " + maxSize + " bytes");
+                 throw new IllegalArgumentException("Payload may not be larger than " + maxPayloadSize + " bytes");
              }

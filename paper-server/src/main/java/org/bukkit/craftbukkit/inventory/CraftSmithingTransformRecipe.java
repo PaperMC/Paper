@@ -1,9 +1,10 @@
 package org.bukkit.craftbukkit.inventory;
 
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.TransmuteResult;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.SmithingTransformRecipe;
@@ -22,21 +23,19 @@ public class CraftSmithingTransformRecipe extends SmithingTransformRecipe implem
         if (recipe instanceof CraftSmithingTransformRecipe) {
             return (CraftSmithingTransformRecipe) recipe;
         }
-        CraftSmithingTransformRecipe ret = new CraftSmithingTransformRecipe(recipe.getKey(), recipe.getResult(), recipe.getTemplate(), recipe.getBase(), recipe.getAddition(), recipe.willCopyDataComponents()); // Paper - Option to prevent data components copy
-        return ret;
+        return new CraftSmithingTransformRecipe(recipe.getKey(), recipe.getResult(), recipe.getTemplate(), recipe.getBase(), recipe.getAddition(), recipe.willCopyDataComponents());
     }
 
     @Override
-    public void addToCraftingManager() {
-        ItemStack result = this.getResult();
-        final net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(result);
+    public void addToRecipeManager() {
         final net.minecraft.world.item.crafting.SmithingTransformRecipe recipe = new net.minecraft.world.item.crafting.SmithingTransformRecipe(
-            this.toNMSOptional(this.getTemplate(), false),
-            this.toNMS(this.getBase(), false),
-            this.toNMSOptional(this.getAddition(), false),
-            new TransmuteResult(nmsStack.getItemHolder(), nmsStack.getCount(), nmsStack.getComponentsPatch())
-            , this.willCopyDataComponents()
+            new net.minecraft.world.item.crafting.Recipe.CommonInfo(true),
+            CraftRecipe.toPossibleIngredient(this.getTemplate(), false),
+            CraftRecipe.toIngredient(this.getBase(), false),
+            CraftRecipe.toPossibleIngredient(this.getAddition(), false),
+            CraftItemStack.asTemplate(this.getResult()),
+            this.willCopyDataComponents()
         );
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), recipe)); // Paper - Option to prevent data components copy
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe)); // Paper - Option to prevent data components copy
     }
 }

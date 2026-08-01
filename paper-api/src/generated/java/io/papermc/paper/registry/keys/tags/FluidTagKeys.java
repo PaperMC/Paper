@@ -26,11 +26,39 @@ import org.jspecify.annotations.NullMarked;
 @GeneratedClass
 public final class FluidTagKeys {
     /**
+     * {@code #minecraft:bubble_column_can_occupy}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> BUBBLE_COLUMN_CAN_OCCUPY = create(key("bubble_column_can_occupy"));
+
+    /**
      * {@code #minecraft:lava}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<Fluid> LAVA = create(key("lava"));
+
+    /**
+     * {@code #minecraft:supports_frogspawn}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> SUPPORTS_FROGSPAWN = create(key("supports_frogspawn"));
+
+    /**
+     * {@code #minecraft:supports_lily_pad}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> SUPPORTS_LILY_PAD = create(key("supports_lily_pad"));
+
+    /**
+     * {@code #minecraft:supports_sugar_cane_adjacently}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Fluid> SUPPORTS_SUGAR_CANE_ADJACENTLY = create(key("supports_sugar_cane_adjacently"));
 
     /**
      * {@code #minecraft:water}

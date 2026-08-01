@@ -9,6 +9,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import io.papermc.paper.profile.MutablePropertyMap;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.Util;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.server.MinecraftServer;
@@ -77,7 +78,7 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
         PropertyMap properties = profile.properties();
         properties.removeAll(name);
 
-        Preconditions.checkArgument(properties.size() < 16, "Cannot add more than 16 properties to a profile");
+        Preconditions.checkArgument(properties.size() < ExtraCodecs.MAX_PROPERTIES, "Cannot add more than %s properties to a profile", ExtraCodecs.MAX_PROPERTIES);
         properties.put(name, new Property(name, property.getValue(), property.getSignature()));
     }
 
@@ -187,8 +188,12 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
 
     @Override
     public @NotNull ResolvableProfile buildResolvableProfile() {
-        if (emptyName != emptyUUID && this.properties.isEmpty()) {
-            return new ResolvableProfile.Dynamic(emptyName ? Either.right(this.profile.id()) : Either.left(this.profile.name()), PlayerSkin.Patch.EMPTY);
+        if (this.emptyName != this.emptyUUID && this.properties.isEmpty()) {
+            if (this.emptyName) {
+                return ResolvableProfile.createUnresolved(this.profile.id());
+            } else {
+                return ResolvableProfile.createUnresolved(this.profile.name());
+            }
         }
         return ResolvableProfile.createResolved(this.buildGameProfile());
     }
@@ -406,7 +411,7 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
     public String toString() {
         return "CraftPlayerProfile [uniqueId=" + getId() +
             ", name=" + getName() +
-            ", properties=" + org.bukkit.craftbukkit.profile.CraftPlayerProfile.toString(this.profile.properties()) +
+            ", properties=" + this.profile.properties() +
             "]";
     }
 

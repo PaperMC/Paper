@@ -6,7 +6,7 @@
      private final SkeletonHorse horse;
 +    private java.util.List<org.bukkit.entity.HumanEntity> eligiblePlayers; // Paper
  
-     public SkeletonTrapGoal(SkeletonHorse horse) {
+     public SkeletonTrapGoal(final SkeletonHorse horse) {
          this.horse = horse;
 @@ -25,12 +_,13 @@
  
@@ -18,31 +18,31 @@
  
      @Override
      public void tick() {
-         ServerLevel serverLevel = (ServerLevel)this.horse.level();
+         ServerLevel level = (ServerLevel)this.horse.level();
 +        if (!new com.destroystokyo.paper.event.entity.SkeletonHorseTrapEvent((org.bukkit.entity.SkeletonHorse) this.horse.getBukkitEntity(), this.eligiblePlayers).callEvent()) return; // Paper
-         DifficultyInstance currentDifficultyAt = serverLevel.getCurrentDifficultyAt(this.horse.blockPosition());
+         DifficultyInstance difficulty = level.getCurrentDifficultyAt(this.horse.blockPosition());
          this.horse.setTrap(false);
          this.horse.setTamed(true);
 @@ -39,11 +_,11 @@
-         if (lightningBolt != null) {
-             lightningBolt.snapTo(this.horse.getX(), this.horse.getY(), this.horse.getZ());
-             lightningBolt.setVisualOnly(true);
--            serverLevel.addFreshEntity(lightningBolt);
-+            serverLevel.strikeLightning(lightningBolt, org.bukkit.event.weather.LightningStrikeEvent.Cause.TRAP); // CraftBukkit
-             Skeleton skeleton = this.createSkeleton(currentDifficultyAt, this.horse);
+         if (bolt != null) {
+             bolt.snapTo(this.horse.getX(), this.horse.getY(), this.horse.getZ());
+             bolt.setVisualOnly(true);
+-            level.addFreshEntity(bolt);
++            level.strikeLightning(bolt, org.bukkit.event.weather.LightningStrikeEvent.Cause.TRAP); // CraftBukkit
+             Skeleton skeleton = this.createSkeleton(difficulty, this.horse);
              if (skeleton != null) {
                  skeleton.startRiding(this.horse);
--                serverLevel.addFreshEntityWithPassengers(skeleton);
-+                serverLevel.addFreshEntityWithPassengers(skeleton, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRAP); // CraftBukkit
+-                level.addFreshEntityWithPassengers(skeleton);
++                level.addFreshEntityWithPassengers(skeleton, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRAP); // CraftBukkit
  
                  for (int i = 0; i < 3; i++) {
-                     AbstractHorse abstractHorse = this.createHorse(currentDifficultyAt);
+                     AbstractHorse otherHorse = this.createHorse(difficulty);
 @@ -52,7 +_,7 @@
-                         if (skeleton1 != null) {
-                             skeleton1.startRiding(abstractHorse);
-                             abstractHorse.push(this.horse.getRandom().triangle(0.0, 1.1485), 0.0, this.horse.getRandom().triangle(0.0, 1.1485));
--                            serverLevel.addFreshEntityWithPassengers(abstractHorse);
-+                            serverLevel.addFreshEntityWithPassengers(abstractHorse, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.JOCKEY); // CraftBukkit
+                         if (otherSkeleton != null) {
+                             otherSkeleton.startRiding(otherHorse);
+                             otherHorse.push(this.horse.getRandom().triangle(0.0, 1.1485), 0.0, this.horse.getRandom().triangle(0.0, 1.1485));
+-                            level.addFreshEntityWithPassengers(otherHorse);
++                            level.addFreshEntityWithPassengers(otherHorse, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.JOCKEY); // CraftBukkit
                          }
                      }
                  }

@@ -27,7 +27,7 @@ public class CraftMovingPiston extends CraftBlockEntityState<PistonMovingBlockEn
     // Paper start - Add Moving Piston API
     @Override
     public org.bukkit.block.data.BlockData getMovingBlock() {
-        return org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(this.getBlockEntity().getMovedState());
+        return this.getBlockEntity().getMovedState().asBlockData();
     }
 
     @Override
