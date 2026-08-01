@@ -1364,6 +1364,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setDespawnTime(int ticks) {
-        this.entity.despawnTime = ticks;
+        this.entity.despawnTime = Math.max(ticks, -1);
     }
 }
