@@ -29,7 +29,7 @@ public class CraftPotionType implements PotionType.InternalPotionData {
         Preconditions.checkArgument(minecraft != null);
 
         net.minecraft.core.Registry<Potion> registry = CraftRegistry.getMinecraftRegistry(Registries.POTION);
-        PotionType bukkit = Registry.POTION.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
+        PotionType bukkit = Registry.POTION.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().identifier()));
 
         Preconditions.checkArgument(bukkit != null);
 
@@ -94,7 +94,7 @@ public class CraftPotionType implements PotionType.InternalPotionData {
 
     @Override
     public PotionEffectType getEffectType() {
-        return this.getPotionEffects().isEmpty() ? null : this.getPotionEffects().get(0).getType();
+        return this.getPotionEffects().isEmpty() ? null : this.getPotionEffects().getFirst().getType();
     }
 
     @Override

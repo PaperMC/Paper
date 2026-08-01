@@ -48,7 +48,6 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapView;
-import org.bukkit.packs.DataPackManager;
 import org.bukkit.packs.ResourcePack;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.plugin.PluginManager;
@@ -266,7 +265,7 @@ public final class Bukkit {
     /**
      * Get world type (level-type setting) for default world.
      *
-     * @return the value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)
+     * @return the value of level-type (e.g. minecraft:normal, minecraft:flat, minecraft:large_biomes, minecraft:amplified)
      */
     @NotNull
     public static String getWorldType() {
@@ -326,18 +325,6 @@ public final class Bukkit {
     @NotNull
     public static List<String> getInitialDisabledPacks() {
         return server.getInitialDisabledPacks();
-    }
-
-    /**
-     * Get the DataPack Manager.
-     *
-     * @deprecated use {@link #getDatapackManager()}
-     * @return the manager
-     */
-    @NotNull
-    @Deprecated(forRemoval = true, since = "1.20")
-    public static DataPackManager getDataPackManager() {
-        return server.getDataPackManager();
     }
 
     /**
@@ -818,7 +805,7 @@ public final class Bukkit {
      *
      * @return true if the worlds are being ticked, false otherwise.
      */
-    public static boolean isTickingWorlds(){
+    public static boolean isTickingWorlds() {
         return server.isTickingWorlds();
     }
     // Paper end
@@ -870,11 +857,15 @@ public final class Bukkit {
     }
 
     /**
-     * Gets the world with the given name.
+     * Gets the world with the given legacy Bukkit name.
      *
-     * @param name the name of the world to retrieve
-     * @return a world with the given name, or null if none exists
+     * <p>This method is considered obsolete and is a candidate for future deprecation.
+     * Prefer using {@link #getWorld(NamespacedKey)}.</p>
+     *
+     * @param name the legacy Bukkit name of the world to retrieve
+     * @return a world with the given legacy Bukkit name, or null if none exists
      */
+    @ApiStatus.Obsolete
     @Nullable
     public static World getWorld(@NotNull String name) {
         return server.getWorld(name);
@@ -890,7 +881,7 @@ public final class Bukkit {
     public static World getWorld(@NotNull UUID uid) {
         return server.getWorld(uid);
     }
-    // Paper start
+
     /**
      * Gets the world from the given NamespacedKey
      *
@@ -912,7 +903,6 @@ public final class Bukkit {
     public static World getWorld(@NotNull net.kyori.adventure.key.Key worldKey) {
         return server.getWorld(worldKey);
     }
-    // Paper end
 
     /**
      * Create a new virtual {@link WorldBorder}.
@@ -1730,7 +1720,7 @@ public final class Bukkit {
     public static void setDefaultGameMode(@NotNull GameMode mode) {
         server.setDefaultGameMode(mode);
     }
-    
+
     /**
      * Gets whether the default gamemode is being enforced.
      *
@@ -1766,10 +1756,14 @@ public final class Bukkit {
     // Paper end
 
     /**
-     * Gets the folder that contains all of the various {@link World}s.
+     * Gets the folder that contains {@link Server#getLevelDirectory()}.
      *
-     * @return folder that contains all worlds
+     * <p>This is usually the server's current working directory
+     * but can be overridden using command line flags (i.e. {@code --universe} or {@code --world-container}).</p>
+     *
+     * @return folder that contains the level directory
      */
+    @ApiStatus.Obsolete
     @NotNull
     public static File getWorldContainer() {
         return server.getWorldContainer();
@@ -2246,7 +2240,7 @@ public final class Bukkit {
      * Size and type are implementation defined. An incompatible file is
      * guaranteed to throw an implementation-defined {@link Exception}.
      *
-     * @param file the file to load the from
+     * @param file the file to load from
      * @return a cached server-icon that can be used for a {@link
      *     ServerListPingEvent#setServerIcon(CachedServerIcon)}
      * @throws IllegalArgumentException if image is null
@@ -2566,7 +2560,7 @@ public final class Bukkit {
     }
 
     /**
-     * Gets a all tags which have been defined within the server.
+     * Gets all tags which have been defined within the server.
      * <br>
      * Server implementations are allowed to handle only the registries
      * indicated in {@link Tag}.
@@ -2763,7 +2757,7 @@ public final class Bukkit {
      * <p>
      * E.g. if the player 'jeb_' is currently playing on the server, calling {@code createProfile(null, "JEB_")} will
      * yield a profile with the name 'jeb_', their uuid and their textures.
-     * To bypass this pre-population on an case-insensitive name match, see {@link #createProfileExact(UUID, String)}.
+     * To bypass this pre-population on a case-insensitive name match, see {@link #createProfileExact(UUID, String)}.
      * <p>
      *
      * The name comparison will compare the {@link String#toLowerCase()} version of both the passed name parameter and

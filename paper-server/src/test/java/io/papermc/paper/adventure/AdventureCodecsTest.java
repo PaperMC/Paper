@@ -14,6 +14,7 @@ import java.lang.annotation.Target;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -37,14 +38,14 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.ComponentSerialization;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import org.bukkit.support.RegistryHelper;
 import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
 
@@ -59,6 +60,7 @@ import static net.kyori.adventure.key.Key.key;
 import static net.kyori.adventure.text.Component.blockNBT;
 import static net.kyori.adventure.text.Component.entityNBT;
 import static net.kyori.adventure.text.Component.keybind;
+import static net.kyori.adventure.text.Component.object;
 import static net.kyori.adventure.text.Component.score;
 import static net.kyori.adventure.text.Component.selector;
 import static net.kyori.adventure.text.Component.storageNBT;
@@ -71,6 +73,9 @@ import static net.kyori.adventure.text.event.HoverEvent.showEntity;
 import static net.kyori.adventure.text.format.Style.style;
 import static net.kyori.adventure.text.format.TextColor.color;
 import static net.kyori.adventure.text.minimessage.MiniMessage.miniMessage;
+import static net.kyori.adventure.text.object.ObjectContents.playerHead;
+import static net.kyori.adventure.text.object.ObjectContents.sprite;
+import static net.kyori.adventure.text.object.PlayerHeadObjectContents.property;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -104,21 +109,28 @@ class AdventureCodecsTest {
         final Key key = key("hello", "there");
         final Tag result = KEY_CODEC.encodeStart(NbtOps.INSTANCE, key).result().orElseThrow();
         assertEquals("\"" + key.asString() + "\"", result.toString());
-        final ResourceLocation location = ResourceLocation.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
+        final Identifier location = Identifier.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
         assertEquals(key.asString(), location.toString());
     }
 
+    static List<ClickEvent.Action<?>> clickEventActions() {
+        final var skip = Set.of(ClickEvent.Action.OPEN_FILE, ClickEvent.Action.SHOW_DIALOG, ClickEvent.Action.CUSTOM);
+        return ClickEvent.Action.NAMES.values().stream().filter(
+            action -> !skip.contains(action)
+        ).toList();
+    }
+
     @ParameterizedTest(name = PARAMETERIZED_NAME)
-    @EnumSource(value = ClickEvent.Action.class, mode = EnumSource.Mode.EXCLUDE, names = {"OPEN_FILE", "SHOW_DIALOG", "CUSTOM"})
-    void testClickEvent(final ClickEvent.Action action) {
-        final ClickEvent event = switch (action) {
-            case OPEN_URL -> openUrl("https://google.com");
-            case RUN_COMMAND -> ClickEvent.runCommand("/say hello");
-            case SUGGEST_COMMAND -> suggestCommand("/suggest hello");
-            case CHANGE_PAGE -> ClickEvent.changePage(2);
-            case COPY_TO_CLIPBOARD -> ClickEvent.copyToClipboard("clipboard content");
-            case CUSTOM -> ClickEvent.custom(key("test"), BinaryTagHolder.binaryTagHolder("3"));
-            case SHOW_DIALOG, OPEN_FILE -> throw new IllegalArgumentException();
+    @MethodSource("clickEventActions")
+    void testClickEvent(final ClickEvent.Action<?> action) {
+        final ClickEvent<?> event = switch (action) {
+            case ClickEvent.Action.OpenUrl _ -> openUrl("https://google.com");
+            case ClickEvent.Action.RunCommand _ -> ClickEvent.runCommand("/say hello");
+            case ClickEvent.Action.SuggestCommand _ -> suggestCommand("/suggest hello");
+            case ClickEvent.Action.ChangePage _ -> ClickEvent.changePage(2);
+            case ClickEvent.Action.CopyToClipboard _ -> ClickEvent.copyToClipboard("clipboard content");
+            case ClickEvent.Action.Custom _ -> ClickEvent.custom(key("test"), BinaryTagHolder.binaryTagHolder("3"));
+            case ClickEvent.Action.ShowDialog _, ClickEvent.Action.OpenFile _ -> throw new IllegalArgumentException();
         };
         final Tag result = CLICK_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, event).result().orElseThrow(() -> new RuntimeException("Failed to encode ClickEvent: " + event));
         final net.minecraft.network.chat.ClickEvent nms = net.minecraft.network.chat.ClickEvent.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
@@ -134,7 +146,7 @@ class AdventureCodecsTest {
                 assertEquals(((ClickEvent.Payload.Text) event.payload()).value(), value);
             case net.minecraft.network.chat.ClickEvent.ChangePage(int page) ->
                 assertEquals(((ClickEvent.Payload.Int) event.payload()).integer(), page);
-            case net.minecraft.network.chat.ClickEvent.Custom(ResourceLocation id, Optional<Tag> payload) -> {
+            case net.minecraft.network.chat.ClickEvent.Custom(Identifier id, Optional<Tag> payload) -> {
                 assertEquals(((ClickEvent.Payload.Custom) event.payload()).key().toString(), id.toString());
                 assertEquals(((ClickEvent.Payload.Custom) event.payload()).nbt(), payload.orElseThrow().asString());
             }
@@ -161,11 +173,11 @@ class AdventureCodecsTest {
         assertTrue(dataResult.result().isPresent(), () -> dataResult + " result is not present");
         final net.minecraft.network.chat.HoverEvent.ShowItem nms = (net.minecraft.network.chat.HoverEvent.ShowItem) dataResult.result().orElseThrow().getFirst();
         assertEquals(hoverEvent.action().toString(), nms.action().getSerializedName());
-        final ItemStack item = nms.item();
-        assertNotNull(item);
-        assertEquals(hoverEvent.value().count(), item.getCount());
-        assertEquals(hoverEvent.value().item().asString(), item.getItem().toString());
-        assertEquals(stack.getComponentsPatch(), item.getComponentsPatch());
+        final ItemStackTemplate itemTemplate = nms.item();
+        assertNotNull(itemTemplate);
+        assertEquals(hoverEvent.value().count(), itemTemplate.count());
+        assertEquals(hoverEvent.value().item().asString(), itemTemplate.item().unwrapKey().orElseThrow().identifier().toString());
+        assertEquals(stack.getComponentsPatch(), itemTemplate.components());
     }
 
     @Test
@@ -233,7 +245,7 @@ class AdventureCodecsTest {
             JavaOps.INSTANCE,
             JsonOps.INSTANCE
         )
-            .map(ops -> RegistryHelper.getRegistry().createSerializationContext(ops))
+            .map(ops -> RegistryHelper.registryAccess().createSerializationContext(ops))
             .toList();
     }
 
@@ -322,7 +334,8 @@ class AdventureCodecsTest {
     @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
     @MethodParameterSource({
         "testTexts", "testTranslatables", "testKeybinds", "testScores",
-        "testSelectors", "testBlockNbts", "testEntityNbts", "testStorageNbts"
+        "testSelectors", "testBlockNbts", "testEntityNbts", "testStorageNbts",
+        "testObjects"
     })
     @interface TestComponents {
     }
@@ -400,7 +413,7 @@ class AdventureCodecsTest {
 
     static List<Component> testBlockNbts() {
         return List.of(
-            blockNBT().nbtPath("abc").localPos(1.23d, 2.0d, 3.89d).build(),
+            blockNBT().nbtPath("abc").localPos(1.23, 2.0, 3.89).build(),
             blockNBT().nbtPath("xyz").absoluteWorldPos(4, 5, 6).interpret(true).build(),
             blockNBT().nbtPath("eeee").relativeWorldPos(7, 83, 900)
                 .separator(text(';'))
@@ -426,6 +439,20 @@ class AdventureCodecsTest {
             storageNBT().nbtPath("abc").storage(key("doom:apple")).build(),
             storageNBT().nbtPath("abc").storage(key("doom:apple")).separator(text(", ")).build(),
             storageNBT().nbtPath("abc").storage(key("doom:apple")).interpret(true).build()
+        );
+    }
+
+    static List<Component> testObjects() {
+        return List.of(
+            object(sprite(key("block/fire_0"))),
+            object(sprite(key("ae2", "blocks"), key("block/controller"))),
+            object(sprite(key("blocks"), key("block/fire_0"))),
+            object(playerHead("pig")),
+            object(playerHead().build()),
+            object(playerHead().name("sheep").id(UUID.randomUUID()).build()),
+            object(playerHead(UUID.randomUUID())),
+            object(playerHead().profileProperties(List.of(property("textures", "abc"))).build()),
+            object(playerHead().texture(key("apples")).build())
         );
     }
 }

@@ -3,6 +3,7 @@ package io.papermc.paper.registry.data.dialog.type;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
 import io.papermc.paper.registry.set.RegistrySet;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
@@ -37,7 +38,7 @@ public non-sealed interface DialogListType extends DialogType {
      * @return the number of columns
      */
     @Contract(pure = true)
-    @Range(from = 1, to = Integer.MAX_VALUE) int columns();
+    @Positive int columns();
 
     /**
      * Returns the width of each button in the dialog list.
@@ -69,7 +70,7 @@ public non-sealed interface DialogListType extends DialogType {
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder columns(final @Range(from = 1, to = Integer.MAX_VALUE) int columns);
+        Builder columns(final @Positive int columns);
 
         /**
          * Sets the width of each button in the dialog list.

@@ -2,7 +2,6 @@ package io.papermc.generator.rewriter.utils;
 
 import io.papermc.generator.utils.experimental.SingleFlagHolder;
 import io.papermc.typewriter.context.ImportCollector;
-import io.papermc.typewriter.util.ClassHelper;
 import java.lang.annotation.Annotation;
 import org.bukkit.MinecraftExperimental;
 import org.jetbrains.annotations.ApiStatus;
@@ -13,10 +12,6 @@ public final class Annotations {
 
     public static String annotation(Class<? extends Annotation> clazz, ImportCollector collector) {
         return "@%s".formatted(collector.getShortName(clazz));
-    }
-
-    public static String annotationStyle(Class<? extends Annotation> clazz) {
-        return "@%s".formatted(ClassHelper.retrieveFullNestedName(clazz));
     }
 
     public static String annotation(Class<? extends Annotation> clazz, ImportCollector collector, String param, String value) {

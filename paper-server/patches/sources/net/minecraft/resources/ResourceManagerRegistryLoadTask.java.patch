@@ -1,0 +1,26 @@
+--- a/net/minecraft/resources/ResourceManagerRegistryLoadTask.java
++++ b/net/minecraft/resources/ResourceManagerRegistryLoadTask.java
+@@ -40,6 +_,7 @@
+     @Override
+     public CompletableFuture<?> load(final RegistryOps.RegistryInfoLookup context, final Executor executor) {
+         FileToIdConverter lister = FileToIdConverter.registry(this.registryKey());
++        final io.papermc.paper.registry.data.util.Conversions conversions = new io.papermc.paper.registry.data.util.Conversions(context); // Paper - create conversions
+         return CompletableFuture.<Map<Identifier, Resource>>supplyAsync(() -> lister.listMatchingResources(this.resourceManager), executor)
+             .thenCompose(
+                 registryResources -> {
+@@ -61,11 +_,13 @@
+             )
+             .thenAcceptAsync(
+                 loadedEntries -> {
+-                    this.registerElements(loadedEntries.entrySet().stream().sorted(Entry.comparingByKey()).map(Entry::getValue));
++                    this.registerElements(loadedEntries.entrySet().stream().sorted(Entry.comparingByKey()).map(Entry::getValue), conversions);
++                    io.papermc.paper.registry.PaperRegistryAccess.instance().lockReferenceHolders(this.registryKey()); // Paper - lock reference holders
++                    io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.runFreezeListeners(this.registryKey(), conversions); // Paper - run pre-freeze listeners
+                     TagLoader.ElementLookup<Holder<T>> tagElementLookup = TagLoader.ElementLookup.fromGetters(
+                         this.registryKey(), this.concurrentRegistrationGetter, this.readOnlyRegistry()
+                     );
+-                    Map<TagKey<T>, List<Holder<T>>> pendingTags = TagLoader.loadTagsForRegistry(this.resourceManager, this.registryKey(), tagElementLookup);
++                    Map<TagKey<T>, List<Holder<T>>> pendingTags = TagLoader.loadTagsForRegistry(this.resourceManager, this.registryKey(), tagElementLookup, this.registry, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - tag lifecycle - add registry, cause
+                     this.registerTags(pendingTags);
+                 },
+                 executor

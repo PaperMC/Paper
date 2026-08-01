@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.7")
+@GeneratedClass
 public final class GameEventKeys {
     /**
      * {@code minecraft:block_activate}
@@ -87,6 +87,13 @@ public final class GameEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<GameEvent> BLOCK_PLACE = create(key("block_place"));
+
+    /**
+     * {@code minecraft:bounce}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<GameEvent> BOUNCE = create(key("bounce"));
 
     /**
      * {@code minecraft:container_close}

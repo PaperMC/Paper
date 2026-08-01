@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
+import io.papermc.paper.log.LoggerShutdown;
 import net.minecraft.server.MinecraftServer;
 
 public class ServerShutdownThread extends Thread {
@@ -13,7 +14,7 @@ public class ServerShutdownThread extends Thread {
     public void run() {
         try {
             // Paper start - try to shutdown on main
-            server.safeShutdown(false, false);
+            server.halt(false, false);
             for (int i = 1000; i > 0 && !server.hasStopped(); i -= 100) {
                 Thread.sleep(100);
             }
@@ -29,7 +30,7 @@ public class ServerShutdownThread extends Thread {
             e.printStackTrace();
             // Paper end
         } finally {
-            org.apache.logging.log4j.LogManager.shutdown(); // Paper
+            LoggerShutdown.shutdownLogging();
         }
     }
 }

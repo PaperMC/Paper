@@ -209,19 +209,6 @@ public class CraftInventoryCustom extends CraftInventory {
         }
 
         @Override
-        public boolean canPlaceItem(int slot, ItemStack stack) {
-            return true;
-        }
-
-        @Override
-        public void startOpen(Player player) {
-        }
-
-        @Override
-        public void stopOpen(Player player) {
-        }
-
-        @Override
         public void clearContent() {
             this.items.clear();
         }
@@ -241,8 +228,7 @@ public class CraftInventoryCustom extends CraftInventory {
 
         @Override
         public boolean isEmpty() {
-            Iterator iterator = this.items.iterator();
-
+            Iterator<ItemStack> iterator = this.items.iterator();
             ItemStack itemstack;
 
             do {
@@ -250,7 +236,7 @@ public class CraftInventoryCustom extends CraftInventory {
                     return true;
                 }
 
-                itemstack = (ItemStack) iterator.next();
+                itemstack = iterator.next();
             } while (itemstack.isEmpty());
 
             return false;

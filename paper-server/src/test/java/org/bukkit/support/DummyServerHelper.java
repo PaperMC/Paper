@@ -40,15 +40,15 @@ public final class DummyServerHelper {
 
         when(instance.getUnsafe()).then(mock -> CraftMagicNumbers.INSTANCE);
 
-        when(instance.createBlockData(any(Material.class))).then(mock -> CraftBlockData.newData(((Material) mock.getArgument(0)).asBlockType(), null));
+        when(instance.createBlockData(any(Material.class))).then(mock -> CraftBlockData.fromString(((Material) mock.getArgument(0)).asBlockType(), null));
 
         when(instance.getLootTable(any())).then(mock -> new CraftLootTable(mock.getArgument(0),
-                RegistryHelper.getDataPack().fullRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(mock.getArgument(0))))));
+                RegistryHelper.context().datapack().fullRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(mock.getArgument(0))))));
 
         when(instance.getTag(any(), any(), any())).then(mock -> {
             String registry = mock.getArgument(0);
             Class<?> clazz = mock.getArgument(2);
-            net.minecraft.resources.ResourceLocation key = CraftNamespacedKey.toMinecraft(mock.getArgument(1)); // Paper - address remapping issues
+            net.minecraft.resources.Identifier key = CraftNamespacedKey.toMinecraft(mock.getArgument(1)); // Paper - address remapping issues
 
             switch (registry) {
                 case org.bukkit.Tag.REGISTRY_BLOCKS -> {
@@ -94,17 +94,17 @@ public final class DummyServerHelper {
 
         // Paper start - testing additions
         final Thread currentThread = Thread.currentThread();
-        when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
-        final org.bukkit.plugin.PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance, new java.util.HashMap<>()), null);
+        when(instance.isPrimaryThread()).thenAnswer(_ -> Thread.currentThread().equals(currentThread));
+        final org.bukkit.plugin.PluginManager pluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance, new java.util.HashMap<>()), null);
         when(instance.getPluginManager()).thenReturn(pluginManager);
         // Paper end - testing additions
 
-        io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(RegistryHelper.getRegistry()); // Paper - configuration files - setup global configuration test base
+        io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(RegistryHelper.registryAccess()); // Paper - configuration files - setup global configuration test base
 
         // Paper start - add test for recipe conversion
-        when(instance.recipeIterator()).thenAnswer(ignored ->
+        when(instance.recipeIterator()).thenAnswer(_ ->
             com.google.common.collect.Iterators.transform(
-                RegistryHelper.getDataPack().getRecipeManager().recipes.byType.entries().iterator(),
+                RegistryHelper.context().datapack().getRecipeManager().recipes.byType.entries().iterator(),
                 input -> input.getValue().toBukkitRecipe()
             )
         );

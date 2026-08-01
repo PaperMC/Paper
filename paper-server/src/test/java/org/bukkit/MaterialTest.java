@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -21,7 +21,7 @@ public class MaterialTest {
 
     @Test
     public void verifyMapping() {
-        Map<ResourceLocation, Material> materials = Maps.newHashMap();
+        Map<Identifier, Material> materials = Maps.newHashMap();
         for (Material material : Material.values()) {
             if (LegacyHelper.getInvalidatedMaterials().contains(material)) {
                 continue;
@@ -36,7 +36,7 @@ public class MaterialTest {
             Item item = items.next();
             if (item == null) continue;
 
-            ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
+            Identifier id = BuiltInRegistries.ITEM.getKey(item);
             String name = item.getDescriptionId();
 
             Material material = materials.remove(id);

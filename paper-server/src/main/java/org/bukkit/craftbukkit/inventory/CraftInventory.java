@@ -20,6 +20,7 @@ import net.minecraft.world.level.block.entity.DropperBlockEntity;
 import net.minecraft.world.level.block.entity.Hopper;
 import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import net.minecraft.world.level.block.entity.LecternBlockEntity;
+import net.minecraft.world.level.block.entity.ShelfBlockEntity;
 import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.world.level.block.entity.SmokerBlockEntity;
 import org.bukkit.Location;
@@ -517,6 +518,8 @@ public class CraftInventory implements Inventory {
             return InventoryType.LECTERN;
         } else if (this.inventory instanceof ChiseledBookShelfBlockEntity) {
             return InventoryType.CHISELED_BOOKSHELF;
+        } else if (this.inventory instanceof ShelfBlockEntity) {
+            return InventoryType.SHELF;
         } else if (this instanceof CraftInventoryLoom) {
             return InventoryType.LOOM;
         } else if (this instanceof CraftInventoryCartography) {

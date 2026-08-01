@@ -8,7 +8,13 @@ import org.jetbrains.annotations.Nullable;
  * ValidatingPrompt is the base class for any prompt that requires validation.
  * ValidatingPrompt will keep replaying the prompt text until the user enters
  * a valid response.
+ *
+ * @deprecated The conversation API has been deprecated for removal. This system does not support component based messages
+ * and has been slowly losing functionality over the years as Minecraft has changed that this API can not adapt to.
+ * It is recommended you instead manually listen to the {@link io.papermc.paper.event.player.AsyncChatEvent}
+ * or alternatively using {@link io.papermc.paper.dialog.Dialog} to get user input.
  */
+@Deprecated(forRemoval = true)
 public abstract class ValidatingPrompt implements Prompt {
     public ValidatingPrompt() {
         super();

@@ -152,7 +152,7 @@ public final class ListPersistentDataTypeProvider {
 
     /**
      * Provides a shared {@link ListPersistentDataType} that is capable of
-     * persistent data containers..
+     * persistent data containers.
      *
      * @return the persistent data type.
      */

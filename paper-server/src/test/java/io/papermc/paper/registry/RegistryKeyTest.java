@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.bukkit.support.RegistryHelper;
 import org.bukkit.support.environment.AllFeatures;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -31,7 +31,7 @@ class RegistryKeyTest {
     @ParameterizedTest
     @MethodSource("data")
     void testApiRegistryKeysExist(final RegistryKey<?> key) {
-        final Optional<Registry<Object>> registry = RegistryHelper.getRegistry().lookup(ResourceKey.createRegistryKey(ResourceLocation.parse(key.key().asString())));
+        final Optional<Registry<Object>> registry = RegistryHelper.registryAccess().lookup(ResourceKey.createRegistryKey(Identifier.parse(key.key().asString())));
         assertTrue(registry.isPresent(), "Missing vanilla registry for " + key.key().asString());
     }
 

@@ -1,8 +1,8 @@
 /**
  * Dialog inputs for Paper API.
  */
-@ApiStatus.Experimental
 @NullMarked
+@ApiStatus.Experimental
 package io.papermc.paper.registry.data.dialog.input;
 
 import org.jetbrains.annotations.ApiStatus;

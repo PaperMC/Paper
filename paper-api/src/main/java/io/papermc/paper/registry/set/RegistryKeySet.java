@@ -46,7 +46,7 @@ public non-sealed interface RegistryKeySet<T extends Keyed> extends Iterable<Typ
      * @param registry the registry to resolve the values from (must match {@link #registryKey()})
      * @return the resolved values
      * @see RegistryKeySet#values()
-     * @see Registry#getTagValues(TagKey) 
+     * @see Registry#getTagValues(TagKey)
      */
     @Unmodifiable Collection<T> resolve(final Registry<T> registry);
 

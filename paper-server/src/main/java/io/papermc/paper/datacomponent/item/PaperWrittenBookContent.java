@@ -6,7 +6,10 @@ import io.papermc.paper.text.Filtered;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import net.kyori.adventure.inventory.Book;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -17,6 +20,7 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import static io.papermc.paper.adventure.PaperAdventure.asAdventure;
 import static io.papermc.paper.adventure.PaperAdventure.asVanilla;
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public record PaperWrittenBookContent(
     net.minecraft.world.item.component.WrittenBookContent impl
@@ -53,6 +57,19 @@ public record PaperWrittenBookContent(
     @Override
     public boolean resolved() {
         return this.impl.resolved();
+    }
+
+    @Override
+    public Book asBook() {
+        final Filtered<String> title = this.title();
+        return Book.book(
+            Component.text(Objects.requireNonNull(title.filtered(), title::raw)),
+            Component.text(this.author()),
+            this.pages()
+                .stream()
+                .map(filtered -> Objects.requireNonNullElseGet(filtered.filtered(), filtered::raw))
+                .collect(Collectors.toList())
+        );
     }
 
     static final class BuilderImpl implements WrittenBookContent.Builder {
@@ -116,13 +133,7 @@ public record PaperWrittenBookContent(
 
         @Override
         public WrittenBookContent.Builder generation(final int generation) {
-            Preconditions.checkArgument(
-                generation >= 0 && generation <= net.minecraft.world.item.component.WrittenBookContent.MAX_GENERATION,
-                "generation must be between %s and %s, was %s",
-                0, net.minecraft.world.item.component.WrittenBookContent.MAX_GENERATION,
-                generation
-            );
-            this.generation = generation;
+            this.generation = requireRange(generation, "generation", 0, net.minecraft.world.item.component.WrittenBookContent.MAX_GENERATION);
             return this;
         }
 

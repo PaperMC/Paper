@@ -7,26 +7,26 @@ import net.minecraft.network.Connection;
 
 public class PaperNetworkClient implements NetworkClient {
 
-    private final Connection networkManager;
+    private final Connection connection;
 
-    PaperNetworkClient(Connection networkManager) {
-        this.networkManager = networkManager;
+    PaperNetworkClient(Connection connection) {
+        this.connection = connection;
     }
 
     @Override
     public InetSocketAddress getAddress() {
-        return (InetSocketAddress) this.networkManager.getRemoteAddress();
+        return (InetSocketAddress) this.connection.getRemoteAddress();
     }
 
     @Override
     public int getProtocolVersion() {
-        return this.networkManager.protocolVersion;
+        return this.connection.protocolVersion;
     }
 
     @Nullable
     @Override
     public InetSocketAddress getVirtualHost() {
-        return this.networkManager.virtualHost;
+        return this.connection.virtualHost;
     }
 
     public static InetSocketAddress prepareVirtualHost(String host, int port) {
@@ -39,7 +39,7 @@ public class PaperNetworkClient implements NetworkClient {
         }
 
         // When clients connect with a SRV record, their host contains a trailing '.'
-        if (len > 0 && host.charAt(len -  1) == '.') {
+        if (len > 0 && host.charAt(len - 1) == '.') {
             len--;
         }
 

@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.inventory;
 
-import static org.bukkit.craftbukkit.inventory.CraftItemFactory.*;
 import com.google.common.collect.ImmutableMap.Builder;
 import java.util.Map;
 import java.util.Objects;
@@ -8,6 +7,8 @@ import net.minecraft.core.component.DataComponentPatch;
 import org.bukkit.Color;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.meta.ColorableArmorMeta;
+
+import static org.bukkit.craftbukkit.inventory.CraftItemFactory.DEFAULT_LEATHER_COLOR;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaColorableArmor extends CraftMetaArmor implements ColorableArmorMeta {
@@ -23,10 +24,10 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
         this.color = armorMeta.color;
     }
 
-    CraftMetaColorableArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
-        super(tag, extraHandledDcts);
-        getOrEmpty(tag, CraftMetaLeatherArmor.COLOR).ifPresent((dyedItemColor) -> {
-            this.color = dyedItemColor.rgb();
+    CraftMetaColorableArmor(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+        super(patch, extraHandledComponents);
+        getOrEmpty(patch, CraftMetaLeatherArmor.COLOR).ifPresent((itemColor) -> {
+            this.color = itemColor.rgb();
         });
     }
 

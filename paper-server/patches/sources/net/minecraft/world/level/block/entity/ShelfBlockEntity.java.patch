@@ -1,0 +1,60 @@
+--- a/net/minecraft/world/level/block/entity/ShelfBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/ShelfBlockEntity.java
+@@ -36,6 +_,47 @@
+     private final NonNullList<ItemStack> items = NonNullList.withSize(3, ItemStack.EMPTY);
+     private boolean alignItemsToBottom;
+ 
++    // CraftBukkit start - add fields and methods
++    public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
++    private int maxStack = MAX_STACK;
++
++    @Override
++    public java.util.List<net.minecraft.world.item.ItemStack> getContents() {
++        return this.items;
++    }
++
++    @Override
++    public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
++        this.transaction.add(player);
++    }
++
++    @Override
++    public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
++        this.transaction.remove(player);
++    }
++
++    @Override
++    public java.util.List<org.bukkit.entity.HumanEntity> getViewers() {
++        return this.transaction;
++    }
++
++    @Override
++    public int getMaxStackSize() {
++        return this.maxStack;
++    }
++
++    @Override
++    public void setMaxStackSize(int size) {
++        this.maxStack = size;
++    }
++
++    @Override
++    public org.bukkit.@Nullable Location getLocation() {
++        if (this.level == null) return null;
++        return org.bukkit.craftbukkit.util.CraftLocation.toBukkit(this.worldPosition, this.level);
++    }
++    // CraftBukkit end
++
+     public ShelfBlockEntity(final BlockPos worldPosition, final BlockState blockState) {
+         super(BlockEntityTypes.SHELF, worldPosition, blockState);
+     }
+@@ -64,7 +_,9 @@
+     public CompoundTag getUpdateTag(final HolderLookup.Provider registries) {
+         try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(this.problemPath(), LOGGER)) {
+             TagValueOutput output = TagValueOutput.createWithContext(reporter, registries);
++            try (io.papermc.paper.util.sanitizer.ItemObfuscationSession _ = io.papermc.paper.util.sanitizer.ItemObfuscationSession.start(io.papermc.paper.configuration.GlobalConfiguration.get().anticheat.obfuscation.items.binding.level)) { // Paper - data sanitization
+             ContainerHelper.saveAllItems(output, this.items, true);
++            } // Paper - data sanitization
+             output.putBoolean("align_items_to_bottom", this.alignItemsToBottom);
+             return output.buildResult();
+         }

@@ -123,7 +123,7 @@ public class MavenLibraryResolver implements ClassPathLibrary {
         if (MAVEN_CENTRAL_URLS.stream().anyMatch(remoteRepository.getUrl()::startsWith)) {
             LOGGER.warn(
                 "Use of Maven Central as a CDN is against the Maven Central Terms of Service. Use MavenLibraryResolver.MAVEN_CENTRAL_DEFAULT_MIRROR instead.",
-                new RuntimeException("Plugin used Maven Central for library resolution")
+                new RuntimeException("Plugin used Maven Central for library resolution (%s)".formatted(remoteRepository.toString()))
             );
         }
         this.repositories.add(remoteRepository);

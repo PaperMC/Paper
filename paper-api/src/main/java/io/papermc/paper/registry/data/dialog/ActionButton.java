@@ -24,7 +24,7 @@ public interface ActionButton {
      * @return a new ActionButton instance
      */
     @Contract(value = "_, _, _, _ -> new", pure = true)
-    static ActionButton create(final Component label, final @Nullable Component tooltip, final int width, final @Nullable DialogAction action) {
+    static ActionButton create(final Component label, final @Nullable Component tooltip, final @Range(from = 1, to = 1024) int width, final @Nullable DialogAction action) {
         return builder(label).tooltip(tooltip).width(width).action(action).build();
     }
 

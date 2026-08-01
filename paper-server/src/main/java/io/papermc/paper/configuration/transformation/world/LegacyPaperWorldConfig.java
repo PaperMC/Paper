@@ -11,7 +11,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.Item;
 import org.bukkit.Material;
@@ -103,7 +103,7 @@ public final class LegacyPaperWorldConfig {
             )
             .addVersion(26, ConfigurationTransformation.builder().addAction(path("alt-item-despawn-rate", "items", ConfigurationTransformation.WILDCARD_OBJECT), (path, value) -> {
                 String itemName = path.get(path.size() - 1).toString();
-                final Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.get(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
+                final Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.get(ResourceKey.create(Registries.ITEM, Identifier.parse(itemName.toLowerCase(Locale.ROOT))));
                 if (item.isEmpty()) {
                     itemName = Material.valueOf(itemName).getKey().getKey();
                 }
@@ -135,13 +135,13 @@ public final class LegacyPaperWorldConfig {
                     Map<String, Integer> rebuild = new HashMap<>();
                     value.childrenMap().forEach((key, node) -> {
                         String itemName = key.toString();
-                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.get(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
+                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.get(ResourceKey.create(Registries.ITEM, Identifier.parse(itemName.toLowerCase(Locale.ROOT))));
                         final String item;
                         if (itemHolder.isEmpty()) {
                             final Material bukkitMat = Material.matchMaterial(itemName);
                             item = bukkitMat != null ? bukkitMat.getKey().getKey() : null;
                         } else {
-                            item = itemHolder.get().unwrapKey().orElseThrow().location().getPath();
+                            item = itemHolder.get().unwrapKey().orElseThrow().identifier().getPath();
                         }
                         if (item != null) {
                             rebuild.put(item, node.getInt());

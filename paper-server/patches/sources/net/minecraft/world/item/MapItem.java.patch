@@ -1,22 +1,24 @@
 --- a/net/minecraft/world/item/MapItem.java
 +++ b/net/minecraft/world/item/MapItem.java
-@@ -97,8 +_,8 @@
-                             int i9 = (i1 / i + i6 - 64) * i;
-                             int i10 = (i2 / i + i7 - 64) * i;
-                             Multiset<MapColor> multiset = LinkedHashMultiset.create();
--                            LevelChunk chunk = level.getChunk(SectionPos.blockToSectionCoord(i9), SectionPos.blockToSectionCoord(i10));
+@@ -103,10 +_,10 @@
+                             int averagingAreaMinX = (centerX / scale + imgX - 64) * scale;
+                             int averagingAreaMinZ = (centerZ / scale + imgY - 64) * scale;
+                             Multiset<MapColor> colorCount = LinkedHashMultiset.create();
+-                            LevelChunk chunk = level.getChunk(
++                            LevelChunk chunk = level.getChunkIfLoaded( // Paper - Maps shouldn't load chunks
+                                 SectionPos.blockToSectionCoord(averagingAreaMinX), SectionPos.blockToSectionCoord(averagingAreaMinZ)
+                             );
 -                            if (!chunk.isEmpty()) {
-+                            LevelChunk chunk = level.getChunkIfLoaded(SectionPos.blockToSectionCoord(i9), SectionPos.blockToSectionCoord(i10)); // Paper - Maps shouldn't load chunks
 +                            if (chunk != null && !chunk.isEmpty()) { // Paper - Maps shouldn't load chunks
-                                 int i11 = 0;
-                                 double d1 = 0.0;
+                                 int waterDepth = 0;
+                                 double averageAreaHeight = 0.0;
                                  if (level.dimensionType().hasCeiling()) {
-@@ -205,7 +_,7 @@
+@@ -213,7 +_,7 @@
  
-                 for (int i5 = 0; i5 < 128; i5++) {
-                     for (int i6 = 0; i6 < 128; i6++) {
--                        Holder<Biome> biome = serverLevel.getBiome(mutableBlockPos.set((i3 + i6) * i, 0, (i4 + i5) * i));
-+                        Holder<Biome> biome = serverLevel.getUncachedNoiseBiome(net.minecraft.core.QuartPos.fromBlock((i3 + i6) * i), net.minecraft.core.QuartPos.fromBlock(0), net.minecraft.core.QuartPos.fromBlock((i4 + i5) * i)); // Paper - Perf: Use seed based lookup for treasure maps
-                         flags[i5 * 128 + i6] = biome.is(BiomeTags.WATER_ON_MAP_OUTLINES);
+                 for (int row = 0; row < 128; row++) {
+                     for (int column = 0; column < 128; column++) {
+-                        Holder<Biome> biome = level.getBiome(pos.set((unscaledStartX + column) * scale, 0, (unscaledStartZ + row) * scale));
++                        Holder<Biome> biome = level.getUncachedNoiseBiome(net.minecraft.core.QuartPos.fromBlock((unscaledStartX + column) * scale), net.minecraft.core.QuartPos.fromBlock(0), net.minecraft.core.QuartPos.fromBlock((unscaledStartZ + row) * scale)); // Paper - Perf: Use seed based lookup for treasure maps
+                         isBiomeWatery[row * 128 + column] = biome.is(BiomeTags.WATER_ON_MAP_OUTLINES);
                      }
                  }

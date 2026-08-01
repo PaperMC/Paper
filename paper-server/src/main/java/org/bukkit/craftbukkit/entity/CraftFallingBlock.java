@@ -26,7 +26,7 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
 
     @Override
     public BlockData getBlockData() {
-        return CraftBlockData.fromData(this.getHandle().getBlockState());
+        return this.getHandle().getBlockState().asBlockData();
     }
 
     @Override
@@ -41,7 +41,7 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
 
     @Override
     public org.bukkit.block.BlockState getBlockState() {
-        return org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(this.getHandle().blockState, this.getHandle().blockData);
+        return org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(this.getHandle().getBlockState(), this.getHandle().blockData);
     }
 
     @Override

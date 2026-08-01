@@ -49,6 +49,9 @@ class LoadOrderTree {
         }
 
         this.graph.addNode(identifier); // Make sure load order has at least one node
+        for (String provides : provider.getMeta().getProvidedPlugins()) {
+            this.graph.putEdge(provides, identifier); // Register provided plugins
+        }
     }
 
     public List<String> getLoadOrder() throws PluginGraphCycleException {

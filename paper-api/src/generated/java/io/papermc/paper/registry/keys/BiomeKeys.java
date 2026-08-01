@@ -2,7 +2,7 @@ package io.papermc.paper.registry.keys;
 
 import static net.kyori.adventure.key.Key.key;
 
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.paper.annotation.GeneratedClass;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.7")
+@GeneratedClass
 public final class BiomeKeys {
     /**
      * {@code minecraft:badlands}
@@ -395,6 +395,13 @@ public final class BiomeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Biome> STONY_SHORE = create(key("stony_shore"));
+
+    /**
+     * {@code minecraft:sulfur_caves}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Biome> SULFUR_CAVES = create(key("sulfur_caves"));
 
     /**
      * {@code minecraft:sunflower_plains}

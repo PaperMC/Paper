@@ -30,7 +30,7 @@ public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creat
     }
 
     public void setOwnerUUID(UUID uuid) {
-        this.getHandle().setOwnerReference(uuid == null ? null : new EntityReference<>(uuid));
+        this.getHandle().setOwnerReference(uuid == null ? null : EntityReference.of(uuid));
     }
 
     @Override

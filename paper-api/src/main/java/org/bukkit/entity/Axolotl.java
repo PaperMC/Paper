@@ -41,7 +41,7 @@ public interface Axolotl extends Animals, io.papermc.paper.entity.Bucketable { /
     void setVariant(@NotNull Variant variant);
 
     /**
-     * Represents the variant of a axolotl - ie its color.
+     * Represents the variant of an axolotl - ie its color.
      */
     public enum Variant {
 

@@ -45,21 +45,21 @@ public interface ChargedProjectiles {
         /**
          * Adds a projectile to be loaded in this builder.
          *
-         * @param stack projectile
+         * @param item projectile
          * @return the builder for chaining
          * @see #projectiles()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder add(ItemStack stack);
+        Builder add(ItemStack item);
 
         /**
          * Adds projectiles to be loaded in this builder.
          *
-         * @param stacks projectiles
+         * @param items projectiles
          * @return the builder for chaining
          * @see #projectiles()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder addAll(List<ItemStack> stacks);
+        Builder addAll(List<ItemStack> items);
     }
 }

@@ -2,6 +2,7 @@ package io.papermc.paper.registry.data.dialog.type;
 
 
 import io.papermc.paper.registry.data.dialog.ActionButton;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
@@ -28,7 +29,7 @@ public non-sealed interface ServerLinksType extends DialogType {
      * @return the number of columns
      */
     @Contract(pure = true)
-    @Range(from = 1, to = Integer.MAX_VALUE) int columns();
+    @Positive int columns();
 
     /**
      * Returns the width of each button in the server links dialog.

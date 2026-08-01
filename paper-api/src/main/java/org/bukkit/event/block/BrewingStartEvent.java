@@ -17,8 +17,8 @@ public class BrewingStartEvent extends InventoryBlockStartEvent {
     private int recipeBrewTime = 400;
 
     @ApiStatus.Internal
-    public BrewingStartEvent(@NotNull final Block furnace, @NotNull ItemStack source, int brewingTime) {
-        super(furnace, source);
+    public BrewingStartEvent(@NotNull final Block brewingStand, @NotNull ItemStack source, int brewingTime) {
+        super(brewingStand, source);
         this.brewingTime = brewingTime;
     }
 

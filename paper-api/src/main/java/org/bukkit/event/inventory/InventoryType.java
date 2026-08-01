@@ -144,6 +144,10 @@ public enum InventoryType {
      */
     CHISELED_BOOKSHELF(6, "Chiseled Bookshelf", null, false),
     /**
+     * Pseudo shelf inventory, with 3 slots of undefined type.
+     */
+    SHELF(3, "Shelf", null, false),
+    /**
      * Pseudo jukebox inventory with 1 slot of undefined type.
      */
     JUKEBOX(1, "Jukebox", null, false),

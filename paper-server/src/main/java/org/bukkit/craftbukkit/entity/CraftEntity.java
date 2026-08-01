@@ -7,18 +7,23 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.datacomponent.PaperDataComponentType;
+import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.TeleportFlag;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import io.papermc.paper.entity.LookAnchor;
 import java.util.concurrent.CompletableFuture;
+import io.papermc.paper.math.Angle;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ChunkLevel;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
@@ -27,10 +32,11 @@ import net.minecraft.server.level.TicketType;
 import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityProcessor;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.boss.EnderDragonPart;
+import net.minecraft.world.entity.EntitySpawnRequest;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
@@ -41,6 +47,7 @@ import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.PistonMoveReaction;
@@ -74,8 +81,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
-
-import net.md_5.bungee.api.chat.BaseComponent; // Spigot
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -249,9 +254,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isOnGround() {
-        if (this.entity instanceof AbstractArrow abstractArrow) {
-            return abstractArrow.isInGround();
-        }
         return this.entity.onGround();
     }
 
@@ -273,11 +275,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         yaw = Location.normalizeYaw(yaw);
         pitch = Location.normalizePitch(pitch);
 
-        this.entity.setYRot(yaw);
-        this.entity.setXRot(pitch);
-        this.entity.yRotO = yaw;
-        this.entity.xRotO = pitch;
-        this.entity.setYHeadRot(yaw);
+        this.getHandle().forceSetRotation(yaw, false, pitch, false);
+    }
+
+    @Override
+    public void setRotation(Angle yaw, Angle pitch) {
+        NumberConversions.checkFinite(pitch.degrees(), "pitch not finite");
+        NumberConversions.checkFinite(yaw.degrees(), "yaw not finite");
+
+        float yawValue = Location.normalizeYaw(yaw.degrees());
+        float pitchValue = Location.normalizePitch(pitch.degrees());
+
+        this.getHandle().forceSetRotation(yawValue, yaw.relative(), pitchValue, pitch.relative());
     }
 
     @Override
@@ -287,63 +296,64 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean teleport(Location location, TeleportCause cause) {
-        // Paper start - Teleport passenger API
-        return teleport(location, cause, new io.papermc.paper.entity.TeleportFlag[0]);
+        return teleport(location, cause, new TeleportFlag[0]);
     }
 
     @Override
-    public boolean teleport(Location location, TeleportCause cause, io.papermc.paper.entity.TeleportFlag... flags) {
-        // Paper end
+    public boolean teleport(Location location, TeleportCause cause, TeleportFlag... flags) {
         Preconditions.checkArgument(location != null, "location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "Target world cannot be null");
+        Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
         location.checkFinite();
-        // Paper start - Teleport passenger API
-        Set<io.papermc.paper.entity.TeleportFlag> flagSet = new HashSet<>(List.of(flags)); // Wrap into list while multiple old flags link to the same new one
-        boolean dismount = !flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
-        boolean retainPassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
-        // Don't allow teleporting between worlds while keeping passengers
-        if (flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS) && this.entity.isVehicle() && location.getWorld() != this.getWorld()) {
+
+        return this.teleport0(location, cause, flags);
+    }
+
+    protected boolean teleport0(Location location, TeleportCause cause, TeleportFlag... flags) {
+        Entity entity = this.getHandle();
+        if (!entity.isAlive() || !entity.valid) {
             return false;
         }
 
-        // Don't allow to teleport between worlds if remaining on vehicle
-        if (!dismount && this.entity.isPassenger() && location.getWorld() != this.getWorld()) {
-            return false;
-        }
-        // Paper end
-
-        if ((!retainPassengers && this.entity.isVehicle()) || this.entity.isRemoved()) { // Paper - Teleport passenger API
-            return false;
+        final Set<net.minecraft.world.entity.Relative> relativeFlags = EnumSet.noneOf(net.minecraft.world.entity.Relative.class);
+        for (final TeleportFlag flag : flags) {
+            if (flag instanceof TeleportFlag.Relative relativeFlag) {
+                relativeFlags.add(deltaRelativeToNMS(relativeFlag));
+            }
         }
 
-        // Paper start - fix teleport event not being called
-        org.bukkit.event.entity.EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(
-            this, this.getLocation(), location);
-        // cancelling the event is handled differently for players and entities,
-        // entities just stop teleporting, players will still teleport to the "from" location of the event
-        if (!event.callEvent() || event.getTo() == null) {
-            return false;
-        }
-        location = event.getTo();
-        // Paper end
+        return this.entity.teleport(new TeleportTransition(
+            ((CraftWorld) location.getWorld()).getHandle(),
+            CraftLocation.toVec3(location),
+            Vec3.ZERO,
+            location.getYaw(),
+            location.getPitch(),
+            false,
+            false,
+            relativeFlags,
+            TeleportTransition.DO_NOTHING,
+            cause,
+            TeleportTransition.PassengerTeleportationMode.POSITION_RIDER
+        )) != null;
+    }
 
-        // If this entity is riding another entity, we must dismount before teleporting.
-        if (dismount) this.entity.stopRiding(); // Paper - Teleport passenger API
+    public static net.minecraft.world.entity.Relative deltaRelativeToNMS(TeleportFlag.Relative apiFlag) {
+        return switch (apiFlag) {
+            case VELOCITY_X -> net.minecraft.world.entity.Relative.DELTA_X;
+            case VELOCITY_Y -> net.minecraft.world.entity.Relative.DELTA_Y;
+            case VELOCITY_Z -> net.minecraft.world.entity.Relative.DELTA_Z;
+            case VELOCITY_ROTATION -> net.minecraft.world.entity.Relative.ROTATE_DELTA;
+        };
+    }
 
-        // Let the server handle cross world teleports
-        if (location.getWorld() != null && !location.getWorld().equals(this.getWorld())) {
-            // Prevent teleportation to an other world during world generation
-            Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
-            this.entity.teleport(new TeleportTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3(location), Vec3.ZERO, location.getPitch(), location.getYaw(), Set.of(), TeleportTransition.DO_NOTHING, TeleportCause.PLUGIN));
-            return true;
-        }
-
-        // entity.snapTo() throws no event, and so cannot be cancelled
-        this.entity.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()); // Paper - use proper moveTo, as per vanilla teleporting
-
-        // Ensure passengers of entity are teleported
-        if (retainPassengers && this.entity.isVehicle()) this.entity.teleportPassengers();
-
-        return true;
+    public static TeleportFlag.@Nullable Relative deltaRelativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
+        return switch (nmsFlag) {
+            case DELTA_X -> TeleportFlag.Relative.VELOCITY_X;
+            case DELTA_Y -> TeleportFlag.Relative.VELOCITY_Y;
+            case DELTA_Z -> TeleportFlag.Relative.VELOCITY_Z;
+            case ROTATE_DELTA -> TeleportFlag.Relative.VELOCITY_ROTATION;
+            case X, Y, Z, Y_ROT, X_ROT -> null;
+        };
     }
 
     @Override
@@ -520,7 +530,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         Preconditions.checkArgument(passenger != null, "Entity passenger cannot be null");
         Preconditions.checkArgument(!this.equals(passenger), "Entity cannot ride itself.");
 
-        return ((CraftEntity) passenger).getHandle().startRiding(this.getHandle(), true);
+        return ((CraftEntity) passenger).getHandle().startRiding(this.getHandle(), true, true);
     }
 
     @Override
@@ -601,6 +611,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         Preconditions.checkArgument(effect.isApplicableTo(this), "Entity effect cannot apply to this entity");
 
         this.getHandle().level().broadcastEntityEvent(this.getHandle(), effect.getData());
+    }
+
+    @Override
+    public SoundCategory getSoundCategory() {
+        return SoundCategory.valueOf(this.getHandle().getSoundSource().name());
+    }
+
+    @Override
+    public net.kyori.adventure.sound.Sound.Source soundSource() {
+        return this.getSoundCategory().soundSource();
     }
 
     @Override
@@ -914,7 +934,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public Set<String> getScoreboardTags() {
-        return this.getHandle().getTags();
+        return this.getHandle().entityTags();
     }
 
     @Override
@@ -960,10 +980,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setPose(Pose pose, boolean fixed) {
-        Preconditions.checkNotNull(pose, "Pose cannot be null");
+        Preconditions.checkArgument(pose != null, "pose cannot be null");
+        this.setPose0(net.minecraft.world.entity.Pose.values()[pose.ordinal()], fixed);
+    }
+
+    public void setPose0(net.minecraft.world.entity.Pose pose, boolean fixed) {
         final Entity handle = this.getHandle();
         handle.fixedPose = false;
-        handle.setPose(net.minecraft.world.entity.Pose.values()[pose.ordinal()]);
+        handle.setPose(pose);
         handle.fixedPose = fixed;
     }
 
@@ -1030,7 +1054,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             final TagValueOutput output = TagValueOutput.createWithContext(problemReporter, level.registryAccess());
             this.getHandle().saveAsPassenger(output, false, true, true);
 
-            return net.minecraft.world.entity.EntityType.loadEntityRecursive(output.buildResult(), level, EntitySpawnReason.LOAD, java.util.function.Function.identity());
+            return net.minecraft.world.entity.EntityType.loadEntityRecursive(output.buildResult(), level, new EntitySpawnRequest(EntitySpawnReason.LOAD, false), EntityProcessor.NOP);
         }
     }
 
@@ -1114,27 +1138,26 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     // Paper start - more teleport API / async chunk API
     @Override
     public CompletableFuture<Boolean> teleportAsync(final Location location, final TeleportCause cause, final TeleportFlag... teleportFlags) {
-        Preconditions.checkArgument(location != null, "location");
+        Preconditions.checkArgument(location != null, "location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "Target world cannot be null");
+        Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
         location.checkFinite();
         Location locationClone = location.clone(); // clone so we don't need to worry about mutations after this call.
 
         ServerLevel world = ((CraftWorld)locationClone.getWorld()).getHandle();
-        CompletableFuture<Boolean> ret = new java.util.concurrent.CompletableFuture<>();
+        CompletableFuture<Boolean> ret = new CompletableFuture<>();
 
         world.loadChunksForMoveAsync(this.getHandle().getBoundingBoxAt(locationClone.getX(), locationClone.getY(), locationClone.getZ()),
-            this instanceof CraftPlayer ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL, (list) -> {
+            this instanceof CraftPlayer ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL, (chunks) -> {
                 MinecraftServer.getServer().scheduleOnMain(() -> {
                     final ServerChunkCache chunkCache = world.getChunkSource();
-                    for (final net.minecraft.world.level.chunk.ChunkAccess chunk : list) {
-                        chunkCache.addTicketAtLevel(TicketType.POST_TELEPORT, chunk.getPos(), 33);
+                    for (final net.minecraft.world.level.chunk.ChunkAccess chunk : chunks) {
+                        chunkCache.addTicketAtLevel(TicketType.POST_TELEPORT, chunk.getPos(), ChunkLevel.FULL_CHUNK_LEVEL);
                     }
                     try {
-                        ret.complete(CraftEntity.this.teleport(locationClone, cause, teleportFlags) ? Boolean.TRUE : Boolean.FALSE);
+                        ret.complete(CraftEntity.this.teleport0(locationClone, cause, teleportFlags) ? Boolean.TRUE : Boolean.FALSE);
                     } catch (Throwable throwable) {
-                        if (throwable instanceof ThreadDeath) {
-                            throw (ThreadDeath)throwable;
-                        }
-                        MinecraftServer.LOGGER.error("Failed to teleport entity " + CraftEntity.this, throwable);
+                        MinecraftServer.LOGGER.error("Failed to teleport entity {}", CraftEntity.this, throwable);
                         ret.completeExceptionally(throwable);
                     }
                 });
@@ -1318,19 +1341,20 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             ((CraftPlayer) player).sendHurtAnimation(0, this);
         }
     }
+
     @Override
     public <T> @Nullable T getData(@NotNull final DataComponentType.Valued<T> type) {
-        return this.entity.get(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type));
+        return PaperDataComponentType.convertDataComponentValue(this.getHandleRaw(), (PaperDataComponentType.ValuedImpl<T, ?>) type);
     }
 
     @Override
     public <T> @Nullable T getDataOrDefault(@NotNull final DataComponentType.Valued<? extends T> type, @Nullable final T fallback) {
-        return this.entity.getOrDefault(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type), fallback);
+        return Objects.requireNonNullElse(this.getData(type), fallback);
     }
 
     @Override
     public boolean hasData(final @NotNull DataComponentType type) {
-        return this.entity.get(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type)) != null;
+        return this.getHandleRaw().get(PaperDataComponentType.bukkitToMinecraft(type)) != null;
     }
 
 }

@@ -5,22 +5,25 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player discovers a new recipe in the recipe book.
  */
+@NullMarked
 public class PlayerRecipeDiscoverEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final NamespacedKey recipe;
     private boolean cancelled;
+    private boolean showNotification;
 
     @ApiStatus.Internal
-    public PlayerRecipeDiscoverEvent(@NotNull Player player, @NotNull NamespacedKey recipe) {
+    public PlayerRecipeDiscoverEvent(Player player, NamespacedKey recipe, boolean showNotification) {
         super(player);
         this.recipe = recipe;
+        this.showNotification = showNotification;
     }
 
     /**
@@ -28,9 +31,26 @@ public class PlayerRecipeDiscoverEvent extends PlayerEvent implements Cancellabl
      *
      * @return the discovered recipe
      */
-    @NotNull
     public NamespacedKey getRecipe() {
         return this.recipe;
+    }
+
+    /**
+     * Get if the player should be notified (toast) of the discovery.
+     *
+     * @return true if the player should be notified
+     */
+    public boolean shouldShowNotification() {
+        return this.showNotification;
+    }
+
+    /**
+     * Set if the player should be notified (toast) of the discovery.
+     *
+     * @param showNotification true if the player should be notified
+     */
+    public void shouldShowNotification(boolean showNotification) {
+        this.showNotification = showNotification;
     }
 
     @Override
@@ -43,13 +63,11 @@ public class PlayerRecipeDiscoverEvent extends PlayerEvent implements Cancellabl
         this.cancelled = cancel;
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }

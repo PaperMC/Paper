@@ -16,7 +16,7 @@ public record RegistryComposeEventImpl<T, B extends RegistryBuilder<T>>(
     RegistryKey<T> registryKey,
     WritableRegistry<T, B> registry,
     Conversions conversions
-) implements RegistryFreezeEvent<T, B>, PaperLifecycleEvent {
+) implements RegistryComposeEvent<T, B>, PaperLifecycleEvent {
 
     @Override
     public <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {

@@ -16,8 +16,8 @@ public record CustomClickActionImpl(Key id, @Nullable BinaryTagHolder additions)
             try {
                 final Tag tag = additions.get(PaperAdventure.NBT_CODEC);
                 Preconditions.checkArgument(tag instanceof CompoundTag, "Additions must be a compound tag");
-            } catch (final CommandSyntaxException e) {
-                throw new RuntimeException(e);
+            } catch (final CommandSyntaxException ex) {
+                throw new RuntimeException(ex);
             }
         }
     }

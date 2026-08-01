@@ -10,7 +10,6 @@ import org.jspecify.annotations.NullMarked;
 public enum SoundCategory implements Sound.Source.Provider {
 
     // Start generate - SoundCategory
-    // @GeneratedFrom 1.21.7
     MASTER,
     MUSIC,
     RECORDS,

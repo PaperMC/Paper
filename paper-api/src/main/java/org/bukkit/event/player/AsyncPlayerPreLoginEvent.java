@@ -16,6 +16,9 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * This event is asynchronous, and not run using main thread.
  * <p>
+ * This event is fired after the server has successfully completed
+ * Mojang authentication. The event is still fired if the server is in offline mode.
+ * <p>
  * When this event is fired, the player's locale is not
  * available. Therefore, any translatable component will be
  * rendered with the default locale, {@link java.util.Locale#US}.

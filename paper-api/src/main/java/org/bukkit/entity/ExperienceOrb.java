@@ -21,7 +21,7 @@ public interface ExperienceOrb extends Entity {
      * @param value Amount of experience
      */
     public void setExperience(int value);
-    
+
     // Paper start - expose count
     /**
      * Get the stacked count for this experience orb.

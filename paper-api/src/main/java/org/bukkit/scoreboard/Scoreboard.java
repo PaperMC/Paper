@@ -270,10 +270,10 @@ public interface Scoreboard {
     Team getPlayerTeam(@NotNull OfflinePlayer player);
 
     /**
-     * Gets a entries Team on this Scoreboard
+     * Gets an entry's Team on this Scoreboard
      *
      * @param entry the entry to search for
-     * @return the entries Team or null if the entry is not on a team
+     * @return the entry's Team or null if the entry is not on a team
      */
     @Nullable
     Team getEntryTeam(@NotNull String entry);

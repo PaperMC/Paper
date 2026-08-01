@@ -87,7 +87,7 @@ public interface BlockData extends Cloneable {
      * The semantics of this method are such that for manually created or
      * modified BlockData it has the same effect as
      * {@link Object#equals(java.lang.Object)}, whilst for parsed data (that to
-     * which {@link #merge(org.bukkit.block.data.BlockData)} applies, it will
+     * which {@link #merge(org.bukkit.block.data.BlockData)} applies), it will
      * return true when the type and all explicitly set states match.
      * <br>
      * <b>Note that these semantics mean that a.matches(b) may not be the same
@@ -317,4 +317,10 @@ public interface BlockData extends Cloneable {
      */
     boolean isRandomlyTicked();
     // Paper end - Tick API
+
+    /**
+     * Checks if this block can be immediately replaced by another block, such as placing a new block in air or tall grass.
+     * @return true if block is replaceable
+     */
+    boolean isReplaceable();
 }

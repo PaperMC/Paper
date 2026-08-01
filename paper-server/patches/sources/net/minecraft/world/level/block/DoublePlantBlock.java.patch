@@ -1,21 +1,21 @@
 --- a/net/minecraft/world/level/block/DoublePlantBlock.java
 +++ b/net/minecraft/world/level/block/DoublePlantBlock.java
-@@ -110,11 +_,16 @@
+@@ -114,11 +_,17 @@
+         final BlockState state,
+         final @Nullable BlockEntity blockEntity,
+         final ItemStack destroyedWith
++        , boolean includeDrops, boolean dropExp // Paper - fix drops not preventing stats/food exhaustion
+     ) {
+-        super.playerDestroy(level, player, pos, Blocks.AIR.defaultBlockState(), blockEntity, destroyedWith);
++        super.playerDestroy(level, player, pos, Blocks.AIR.defaultBlockState(), blockEntity, destroyedWith, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion;
      }
  
-     @Override
--    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity te, ItemStack stack) {
--        super.playerDestroy(level, player, pos, Blocks.AIR.defaultBlockState(), te, stack);
-+    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity te, ItemStack stack, boolean includeDrops, boolean dropExp) { // Paper - fix drops not preventing stats/food exhaustion
-+        super.playerDestroy(level, player, pos, Blocks.AIR.defaultBlockState(), te, stack, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion;
-     }
- 
-     protected static void preventDropFromBottomPart(Level level, BlockPos pos, BlockState state, Player player) {
+     protected static void preventDropFromBottomPart(final Level level, final BlockPos pos, final BlockState state, final Player player) {
 +        // CraftBukkit start
 +        if (((net.minecraft.server.level.ServerLevel)level).hasPhysicsEvent && org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(level, pos).isCancelled()) { // Paper
 +            return;
 +        }
 +        // CraftBukkit end
-         DoubleBlockHalf doubleBlockHalf = state.getValue(HALF);
-         if (doubleBlockHalf == DoubleBlockHalf.UPPER) {
-             BlockPos blockPos = pos.below();
+         DoubleBlockHalf part = state.getValue(HALF);
+         if (part == DoubleBlockHalf.UPPER) {
+             BlockPos bottomPos = pos.below();

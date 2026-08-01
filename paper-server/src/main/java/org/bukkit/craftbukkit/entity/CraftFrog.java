@@ -50,16 +50,8 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
     public static class CraftVariant extends OldEnumHolderable<Variant, FrogVariant> implements Variant {
         private static int count = 0;
 
-        public static Variant minecraftToBukkit(FrogVariant minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.FROG_VARIANT);
-        }
-
         public static Variant minecraftHolderToBukkit(Holder<FrogVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.FROG_VARIANT);
-        }
-
-        public static FrogVariant bukkitToMinecraft(Variant bukkit) {
-            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<FrogVariant> bukkitToMinecraftHolder(Variant bukkit) {

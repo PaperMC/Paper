@@ -1,9 +1,56 @@
 --- a/net/minecraft/util/thread/BlockableEventLoop.java
 +++ b/net/minecraft/util/thread/BlockableEventLoop.java
-@@ -83,6 +_,14 @@
-         }
+@@ -38,6 +_,45 @@
+         MetricsRegistry.INSTANCE.add(this);
      }
  
++    // Paper start
++    public final boolean executeAllRecentInternalTasks() {
++        final int pending = this.pendingRunnables.size();
++
++        // note: due to possible recursive execution, we may execute more tasks than we want to
++
++        int ran = 0;
++
++        for (int i = 0; i < pending; ++i) {
++            final R run = this.pendingRunnables.poll();
++            if (run == null) {
++                // recursion
++                break;
++            }
++            this.doRunTask(run);
++            ++ran;
++        }
++
++        return ran > 0;
++    }
++
++    public boolean runTaskIf(final java.util.function.Predicate<? super R> predicate) {
++        if (!this.isSameThread()) {
++            throw new IllegalStateException();
++        }
++
++        final R run = this.pendingRunnables.peek();
++        if (run == null || (predicate != null && !predicate.test(run))) {
++            return false;
++        }
++
++        this.pendingRunnables.remove();
++
++        this.doRunTask(run);
++
++        return true;
++    }
++    // Paper end
++
+     protected abstract boolean shouldRun(final R task);
+ 
+     public boolean isSameThread() {
+@@ -87,6 +_,14 @@
+             runnable.run();
+         }
+     }
++
 +    // Paper start
 +    public void scheduleOnMain(Runnable runnable) {
 +        // postToMainThread does not work the same as older versions of mc
@@ -11,7 +58,6 @@
 +        this.schedule(this.wrapRunnable(runnable));
 +    }
 +    // Paper end
-+
+ 
      @Override
-     public void schedule(R task) {
-         this.pendingRunnables.add(task);
+     public void schedule(final R r) {

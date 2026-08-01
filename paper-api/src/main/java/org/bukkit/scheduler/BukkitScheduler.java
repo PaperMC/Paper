@@ -138,7 +138,7 @@ public interface BukkitScheduler {
      * @param <T> The callable's return type
      * @param plugin Plugin that owns the task
      * @param task Task to be executed
-     * @return Future Future object related to the task
+     * @return Future object related to the task
      */
     @NotNull
     public <T> Future<T> callSyncMethod(@NotNull Plugin plugin, @NotNull Callable<T> task);

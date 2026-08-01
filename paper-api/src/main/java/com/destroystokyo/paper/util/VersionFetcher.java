@@ -40,6 +40,9 @@ public interface VersionFetcher {
         return getVersionMessage();
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     class DummyVersionFetcher implements VersionFetcher {
 

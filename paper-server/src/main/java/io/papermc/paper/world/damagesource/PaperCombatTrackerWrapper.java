@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.minecraft.Optionull;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.world.damagesource.FallLocation;
 import org.bukkit.entity.LivingEntity;
 import org.jspecify.annotations.NullMarked;

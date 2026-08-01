@@ -1,0 +1,47 @@
+--- a/net/minecraft/world/level/gamerules/GameRuleMap.java
++++ b/net/minecraft/world/level/gamerules/GameRuleMap.java
+@@ -22,9 +_,16 @@
+         Identifier.withDefaultNamespace("game_rules"), GameRuleMap::of, CODEC, DataFixTypes.SAVED_DATA_GAME_RULES
+     );
+     private final Reference2ObjectMap<GameRule<?>, Object> map;
++    private final @Nullable Object[] idAccess; // Paper - array backed gamerule access - array storage
+ 
+     private GameRuleMap(final Reference2ObjectMap<GameRule<?>, Object> map) {
+         this.map = map;
++        // Paper start - array backed gamerule access - array storage
++        idAccess = new Object[GameRule.LAST_GAMERULE_INDEX];
++        for (final Map.Entry<GameRule<?>, Object> entry : map.entrySet()) {
++            idAccess[entry.getKey().gameRuleIndex] = entry.getValue();
++        }
++        // Paper end - array backed gamerule access - array storage
+     }
+ 
+     private static GameRuleMap ofTrusted(final Map<GameRule<?>, Object> map) {
+@@ -46,16 +_,17 @@
+     }
+ 
+     public boolean has(final GameRule<?> gameRule) {
+-        return this.map.containsKey(gameRule);
++        return this.idAccess[gameRule.gameRuleIndex] != null; // Paper - array backed gamerule access - the gamerule map does not allow null values, so this suffices for a contains check (see net.minecraft.world.level.gamerules.GameRuleMap.setGameRule's non-null checks)
+     }
+ 
+     public <T> @Nullable T get(final GameRule<T> gameRule) {
+-        return (T)this.map.get(gameRule);
++        return (T)this.idAccess[gameRule.gameRuleIndex]; // Paper - array backed gamerule access
+     }
+ 
+     public <T> void set(final GameRule<T> gameRule, final T value) {
+         this.setDirty();
+         this.map.put(gameRule, value);
++        this.idAccess[gameRule.gameRuleIndex] = value; // Paper - array backed gamerule access - above map is kept in sync instead of fully removing the map, which needs more diff.
+     }
+ 
+     public <T> void reset(final GameRule<T> gameRule) {
+@@ -64,6 +_,7 @@
+ 
+     public <T> @Nullable T remove(final GameRule<T> gameRule) {
+         this.setDirty();
++        this.idAccess[gameRule.gameRuleIndex] = null; // Paper - array backed gamerule access
+         return (T)this.map.remove(gameRule);
+     }
+ 

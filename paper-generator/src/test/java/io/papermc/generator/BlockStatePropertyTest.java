@@ -16,6 +16,7 @@ import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.block.ChiseledBookShelfBlock;
 import net.minecraft.world.level.block.MossyCarpetBlock;
 import net.minecraft.world.level.block.PipeBlock;
+import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.junit.jupiter.api.Assertions;
@@ -57,7 +58,8 @@ public class BlockStatePropertyTest {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         lookup.findStaticVarHandle(ChiseledBookShelfBlock.class, "SLOT_OCCUPIED_PROPERTIES", List.class);
         lookup.findStaticVarHandle(PipeBlock.class, "PROPERTY_BY_DIRECTION", Map.class);
-        MethodHandles.privateLookupIn(MossyCarpetBlock.class, lookup).findStaticVarHandle(MossyCarpetBlock.class, "PROPERTY_BY_DIRECTION", Map.class);
+        lookup.findStaticVarHandle(WallBlock.class, "PROPERTY_BY_DIRECTION", Map.class);
+        lookup.findStaticVarHandle(MossyCarpetBlock.class, "PROPERTY_BY_DIRECTION", Map.class);
     }
 
     @Test

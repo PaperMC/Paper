@@ -159,7 +159,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         this.checkState();
 
         net.minecraft.network.chat.numbers.NumberFormat vanilla = this.objective.numberFormat();
-        
+
         if (vanilla == null) {
             return null;
         }
