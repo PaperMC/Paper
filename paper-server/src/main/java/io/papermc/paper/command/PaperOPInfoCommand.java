@@ -1,12 +1,13 @@
 package io.papermc.paper.command;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
-import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.server.MinecraftServer;
@@ -15,9 +16,9 @@ import net.minecraft.server.players.NameAndId;
 import net.minecraft.server.players.ServerOpList;
 import net.minecraft.server.players.ServerOpListEntry;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static net.kyori.adventure.text.Component.text;
 
@@ -30,7 +31,7 @@ public class PaperOPInfoCommand {
         return Commands.literal("opinfo")
             .requires(source -> source.getSender().hasPermission("bukkit.command.opinfo"))
             .executes(command::executeList)
-            .then(Commands.argument("player", ArgumentTypes.player())
+            .then(Commands.argument("player", ArgumentTypes.playerProfiles())
                 .executes(command::executePlayer))
             .build();
     }
@@ -60,20 +61,27 @@ public class PaperOPInfoCommand {
         ServerOpList opList = server.getPlayerList().getOps();
 
         try {
-            PlayerSelectorArgumentResolver resolver = context.getArgument("player", PlayerSelectorArgumentResolver.class);
-            Collection<Player> players = resolver.resolve(context.getSource());
+            PlayerProfileListResolver resolver = context.getArgument("player", PlayerProfileListResolver.class);
+            Collection<PlayerProfile> profiles = resolver.resolve(context.getSource());
 
-            if (players.isEmpty()) {
+            if (profiles.isEmpty()) {
                 sender.sendMessage(text("Player not found.", NamedTextColor.RED));
                 return 0;
             }
 
-            for (Player player : players) {
-                NameAndId nameAndId = new NameAndId(player.getUniqueId(), player.getName());
+            for (PlayerProfile profile : profiles) {
+                UUID uuid = profile.getId();
+                String name = profile.getName();
+
+                if (uuid == null || name == null) {
+                    continue;
+                }
+
+                NameAndId nameAndId = new NameAndId(uuid, name);
                 ServerOpListEntry entry = opList.get(nameAndId);
 
                 if (entry == null) {
-                    sender.sendMessage(text(player.getName() + " is not an operator.", NamedTextColor.RED));
+                    sender.sendMessage(text(name + " is not an operator.", NamedTextColor.RED));
                 } else {
                     formatAndSendEntry(sender, entry);
                 }
