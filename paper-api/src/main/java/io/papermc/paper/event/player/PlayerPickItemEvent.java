@@ -48,7 +48,7 @@ public abstract class PlayerPickItemEvent extends PlayerEvent implements Cancell
      * @return picked item
      */
     public ItemStack getItem() {
-        return this.item;
+        return this.item.clone();
     }
 
     /**
