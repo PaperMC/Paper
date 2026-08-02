@@ -6,7 +6,7 @@ plugins {
 val testData = sourceSets.create("testData")
 
 dependencies {
-    implementation("com.puppycrawl.tools:checkstyle:12.1.2")
+    implementation("com.puppycrawl.tools:checkstyle:13.8.0")
     implementation("org.jspecify:jspecify:1.0.0")
 
     testCompileOnly("org.jetbrains:annotations:26.0.2")
