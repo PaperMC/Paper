@@ -109,7 +109,7 @@ public interface CombatTracker {
     @Nullable FallLocationType calculateFallLocationType();
 
     /**
-     * Returns time since last damage in ticks
+     * Returns time since last damage in ticks.
      *
      * @return ticks since last damage
      */
