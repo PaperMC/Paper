@@ -1327,6 +1327,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
+    public void setAllowMonsterSpawning(final boolean allowMonsters) {
+        this.world.getChunkSource().setSpawnSettings(allowMonsters);
+    }
+
+    @Override
     public void setSpawnFlags(boolean allowMonsters, boolean allowAnimals) {
         this.world.getChunkSource().setSpawnSettings(allowMonsters, allowAnimals);
     }

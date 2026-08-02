@@ -8,14 +8,20 @@
          if (placementState == null) {
              return InteractionResult.FAIL;
          }
-@@ -75,19 +_,43 @@
+@@ -73,21 +_,47 @@
+         Player player = updatedPlaceContext.getPlayer();
+         ItemStack itemStack = updatedPlaceContext.getItemInHand();
          BlockState placedState = level.getBlockState(pos);
++        java.util.function.UnaryOperator<InteractionResult.PaperSuccessContext> context = c -> c.placedBlockAt(pos.immutable()); // Paper - track placed block position from block item
          if (placedState.is(placementState.getBlock())) {
              placedState = this.updateBlockStateFromTag(pos, level, itemStack, placedState);
+-            this.updateCustomBlockEntityTag(pos, level, player, itemStack, placedState);
+-            updateBlockEntityComponents(level, pos, itemStack);
 +            // Paper start - Reset placed block on exception
 +            try {
-             this.updateCustomBlockEntityTag(pos, level, player, itemStack, placedState);
-             updateBlockEntityComponents(level, pos, itemStack);
++                boolean updatedBlockEntity = this.updateCustomBlockEntityTag(pos, level, player, itemStack, placedState);
++                context = context.andThen(c -> c.updatedBlockEntity(updatedBlockEntity))::apply; // track whether the block entity got updated or not
++                updateBlockEntityComponents(level, pos, itemStack);
 +            } catch (Exception ex) {
 +                ((org.bukkit.craftbukkit.block.CraftBlockState) previousState).revertPlace(false);
 +                if (player instanceof ServerPlayer serverPlayer) {
@@ -49,7 +55,7 @@
          level.gameEvent(GameEvent.BLOCK_PLACE, pos, GameEvent.Context.of(player, placedState));
          itemStack.consume(1, player);
 -        return InteractionResult.SUCCESS;
-+        return InteractionResult.SUCCESS.configurePaper(e -> e.placedBlockAt(pos.immutable())); // Paper - track placed block position from block item
++        return InteractionResult.SUCCESS.configurePaper(context); // Paper
      }
  
      protected SoundEvent getPlaceSound(final BlockState blockState) {

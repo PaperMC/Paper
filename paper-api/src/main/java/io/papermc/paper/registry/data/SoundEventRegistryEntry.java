@@ -46,7 +46,7 @@ public interface SoundEventRegistryEntry {
          * Sets the resource pack location for this sound event.
          *
          * @param location the location
-         * @return this builder
+         * @return this builder instance
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder location(Key location);
@@ -55,7 +55,7 @@ public interface SoundEventRegistryEntry {
          * Sets the fixed range for this sound event.
          *
          * @param fixedRange the fixed range
-         * @return this builder
+         * @return this builder instance
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder fixedRange(@Nullable Float fixedRange);

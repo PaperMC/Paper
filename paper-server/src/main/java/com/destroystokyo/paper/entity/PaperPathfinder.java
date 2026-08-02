@@ -49,17 +49,19 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
 
     @Nullable
     @Override
-    public PathResult findPath(Location loc) {
+    public PathResult findPath(final Location loc, final int reachRange) {
         Preconditions.checkArgument(loc != null, "Location can not be null");
-        Path path = this.entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), 0);
+        Preconditions.checkArgument(reachRange >= 0, "Reach range can not be negative");
+        Path path = this.entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), reachRange);
         return path != null ? new PaperPathResult(path) : null;
     }
 
     @Nullable
     @Override
-    public PathResult findPath(Entity target) {
+    public PathResult findPath(final Entity target, final int reachRange) {
         Preconditions.checkArgument(target != null, "Target can not be null");
-        Path path = this.entity.getNavigation().createPath(((CraftEntity) target).getHandle(), 0);
+        Preconditions.checkArgument(reachRange >= 0, "Reach range can not be negative");
+        Path path = this.entity.getNavigation().createPath(((CraftEntity) target).getHandle(), reachRange);
         return path != null ? new PaperPathResult(path) : null;
     }
 
