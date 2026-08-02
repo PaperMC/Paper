@@ -4054,4 +4054,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     default ObjectContents asObjectContents() {
         return this.getPlayerProfile().asObjectContents();
     }
+
+    /**
+     * Updates the player's pose according to the current game state,
+     * clearing any fixed pose in the process.
+     */
+    void unsetFixedPose();
 }
