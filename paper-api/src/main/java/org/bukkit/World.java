@@ -2110,7 +2110,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Check if this world has a world clock. Some worlds, such as the Nether, do not have a world clock.
      *
-     * @return True if this world has a world clock, false otherwise
+     * @return {@code true} if this world has a world clock, {@code false} otherwise
      */
     public boolean hasWorldClock();
 
