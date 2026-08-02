@@ -4051,5 +4051,5 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Updates the player's pose according to the current game state,
      * clearing any fixed pose in the process.
      */
-    void resetPose();
+    void unsetFixedPose();
 }

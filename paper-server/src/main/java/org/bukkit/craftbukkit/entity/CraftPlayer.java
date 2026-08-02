@@ -3374,7 +3374,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public void resetPose() {
+    public void unsetFixedPose() {
         this.getHandle().fixedPose = false;
         this.getHandle().updatePlayerPose();
     }
