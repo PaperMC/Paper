@@ -37,9 +37,4 @@ public class CraftSmithingTransformRecipe extends SmithingTransformRecipe implem
             this.willCopyDataComponents()
         ));
     }
-
-    @Override
-    public void addToRecipeManager() {
-        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe()); // Paper - Option to prevent data components copy
-    }
 }

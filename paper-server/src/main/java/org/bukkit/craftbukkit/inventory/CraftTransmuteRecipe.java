@@ -37,9 +37,4 @@ public class CraftTransmuteRecipe extends TransmuteRecipe implements CraftRecipe
             false
         ));
     }
-
-    @Override
-    public void addToRecipeManager() {
-        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
-    }
 }

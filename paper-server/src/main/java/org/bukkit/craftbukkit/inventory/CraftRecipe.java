@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import org.bukkit.inventory.BlastingRecipe;
@@ -32,7 +33,10 @@ import org.jspecify.annotations.Nullable;
 public interface CraftRecipe extends Recipe {
 
     RecipeHolder<?> toMinecraftRecipe();
-    void addToRecipeManager();
+
+    default void addToRecipeManager() {
+        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
+    }
 
     static Optional<Ingredient> toPossibleIngredient(@Nullable RecipeChoice bukkit, boolean requireNotEmpty) {
         return (bukkit == null || bukkit == RecipeChoice.empty()) ? Optional.empty() : Optional.of(toIngredient(bukkit, requireNotEmpty)); // Paper - support "empty" choices

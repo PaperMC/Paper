@@ -62,11 +62,6 @@ public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe {
         ));
     }
 
-    @Override
-    public void addToRecipeManager() {
-        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
-    }
-
     private static String[] replaceUndefinedIngredientsWithEmpty(String[] shape, Map<Character, org.bukkit.inventory.RecipeChoice> ingredients) {
         for (int i = 0; i < shape.length; i++) {
             String row = shape[i];

@@ -35,9 +35,4 @@ public class CraftBlastingRecipe extends BlastingRecipe implements CraftRecipe {
             this.getCookingTime()
         ));
     }
-
-    @Override
-    public void addToRecipeManager() {
-        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
-    }
 }

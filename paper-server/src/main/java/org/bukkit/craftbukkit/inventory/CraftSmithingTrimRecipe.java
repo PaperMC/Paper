@@ -39,9 +39,4 @@ public class CraftSmithingTrimRecipe extends SmithingTrimRecipe implements Craft
             this.willCopyDataComponents()
         ));
     }
-
-    @Override
-    public void addToRecipeManager() {
-        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
-    }
 }

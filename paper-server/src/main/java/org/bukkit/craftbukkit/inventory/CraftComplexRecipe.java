@@ -22,9 +22,4 @@ public class CraftComplexRecipe extends CraftingRecipe implements CraftRecipe, C
     public RecipeHolder<?> toMinecraftRecipe() {
         return new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe);
     }
-
-    @Override
-    public void addToRecipeManager() {
-        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
-    }
 }

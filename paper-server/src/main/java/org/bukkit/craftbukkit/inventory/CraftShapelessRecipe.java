@@ -53,9 +53,4 @@ public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
             ingredients
         ));
     }
-
-    @Override
-    public void addToRecipeManager() {
-        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
-    }
 }
