@@ -77,10 +77,7 @@ public record PaperCustomModelData(
         @Override
         public Builder floats(final List<Float> floats) {
             this.floats.clear();
-            for (Float f : floats) {
-                Preconditions.checkArgument(f != null, "Float cannot be null");
-            }
-            this.floats.addAll(floats);
+            this.addFloats(floats);
             return this;
         }
 
@@ -102,10 +99,7 @@ public record PaperCustomModelData(
         @Override
         public Builder flags(final List<Boolean> flags) {
             this.flags.clear();
-            for (Boolean flag : flags) {
-                Preconditions.checkArgument(flag != null, "Flag cannot be null");
-            }
-            this.flags.addAll(flags);
+            this.addFlags(flags);
             return this;
         }
 
@@ -125,7 +119,7 @@ public record PaperCustomModelData(
         @Override
         public Builder strings(final List<String> strings) {
             this.strings.clear();
-            strings.forEach(this::addString);
+            this.addStrings(strings);
             return this;
         }
 
@@ -145,7 +139,7 @@ public record PaperCustomModelData(
         @Override
         public Builder colors(final List<Color> colors) {
             this.colors.clear();
-            colors.forEach(this::addColor);
+            this.addColors(colors);
             return this;
         }
 

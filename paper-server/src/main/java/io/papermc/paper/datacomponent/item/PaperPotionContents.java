@@ -113,7 +113,7 @@ public record PaperPotionContents(
         @Override
         public Builder customEffects(final List<PotionEffect> effects) {
             this.customEffects.clear();
-            effects.forEach(this::addCustomEffect);
+            this.addCustomEffects(effects);
             return this;
         }
 

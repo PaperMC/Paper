@@ -48,9 +48,7 @@ public record PaperDeathProtection(
         @Override
         public Builder effects(final List<ConsumeEffect> effects) {
             this.effects.clear();
-            for (final ConsumeEffect effect : effects) {
-                this.effects.add(PaperConsumableEffect.toVanilla(effect));
-            }
+            this.addEffects(effects);
             return this;
         }
 

@@ -60,18 +60,9 @@ public record PaperItemContainerContents(
         }
 
         @Override
-        public Builder stacks(final List<ItemStack> stacks) {
+        public Builder contents(final List<ItemStack> contents) {
             this.items.clear();
-            Preconditions.checkArgument(
-                stacks.size() <= net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
-                "Cannot have more than %s items, had %s",
-                net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
-                stacks.size()
-            );
-            MCUtil.addAndConvert(this.items, stacks, stack -> {
-                Preconditions.checkArgument(stack != null, "Cannot pass null item!");
-                return CraftItemStack.asNMSCopy(stack);
-            });
+            this.addAll(contents);
             return this;
         }
 

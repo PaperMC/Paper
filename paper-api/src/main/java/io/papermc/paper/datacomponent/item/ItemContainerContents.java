@@ -63,11 +63,11 @@ public interface ItemContainerContents extends BuildableDataComponent<ItemContai
         /**
          * Sets item stacks to the container.
          *
-         * @param stacks the item stacks
+         * @param contents the item stacks
          * @return the builder for chaining
          * @see #contents()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder stacks(List<ItemStack> stacks);
+        Builder contents(List<ItemStack> contents);
     }
 }

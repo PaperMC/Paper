@@ -45,9 +45,10 @@ public record PaperBundleContents(
         }
 
         @Override
-        public Builder stacks(final List<ItemStack> stacks) {
-            items.clear();
-            stacks.forEach(this::add);
+        public Builder contents(final List<ItemStack> contents) {
+            Preconditions.checkArgument(contents != null, "contents cannot be null");
+            this.items.clear();
+            this.addAll(contents);
             return this;
         }
 

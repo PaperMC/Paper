@@ -52,7 +52,7 @@ public record PaperSuspiciousStewEffects(
         @Override
         public Builder effects(final Collection<SuspiciousEffectEntry> entries) {
             this.effects.clear();
-            entries.forEach(this::add);
+            this.addAll(entries);
             return this;
         }
 

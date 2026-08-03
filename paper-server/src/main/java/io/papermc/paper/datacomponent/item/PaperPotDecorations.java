@@ -33,10 +33,10 @@ public record PaperPotDecorations(
     @Override
     public Builder toBuilder() {
         return new BuilderImpl()
-            .front(this.front())
-            .right(this.right())
             .back(this.back())
-            .left(this.left());
+            .left(this.left())
+            .right(this.right())
+            .front(this.front());
     }
 
     @Override

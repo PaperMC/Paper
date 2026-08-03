@@ -90,11 +90,7 @@ public record PaperWritableBookContent(
         @Override
         public Builder pages(final List<String> pages) {
             this.pages.clear();
-            validatePageCount(0, pages.size());
-            for (final String page : pages) {
-                validatePageLength(page);
-                this.pages.add(Filterable.passThrough(page));
-            }
+            this.addPages(pages);
             return this;
         }
 
@@ -125,14 +121,7 @@ public record PaperWritableBookContent(
         @Override
         public Builder filteredPages(final List<Filtered<String>> pages) {
             this.pages.clear();
-            validatePageCount(0, pages.size());
-            for (final Filtered<String> page : pages) {
-                validatePageLength(page.raw());
-                if (page.filtered() != null) {
-                    validatePageLength(page.filtered());
-                }
-                this.pages.add(new Filterable<>(page.raw(), Optional.ofNullable(page.filtered())));
-            }
+            this.addFilteredPages(pages);
             return this;
         }
 

@@ -2,7 +2,6 @@ package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.MCUtil;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;

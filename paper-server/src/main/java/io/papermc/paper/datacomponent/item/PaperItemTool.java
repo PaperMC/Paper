@@ -117,7 +117,7 @@ public record PaperItemTool(
         @Override
         public Builder rules(final Collection<Rule> rules) {
             this.rules.clear();
-            rules.forEach(this::addRule);
+            this.addRules(rules);
             return this;
         }
 

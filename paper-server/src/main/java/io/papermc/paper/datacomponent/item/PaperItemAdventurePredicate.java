@@ -59,7 +59,7 @@ public record PaperItemAdventurePredicate(
         @Override
         public Builder predicates(final List<BlockPredicate> predicates) {
             this.predicates.clear();
-            predicates.forEach(this::addPredicate);
+            this.addPredicates(predicates);
             return this;
         }
 

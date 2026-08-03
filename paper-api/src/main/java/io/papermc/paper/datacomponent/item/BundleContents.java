@@ -66,11 +66,11 @@ public interface BundleContents extends BuildableDataComponent<BundleContents, B
         /**
          * Sets items to this builder.
          *
-         * @param stacks items
+         * @param contents items
          * @return the builder for chaining
          * @see #contents()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder stacks(List<ItemStack> stacks);
+        Builder contents(List<ItemStack> contents);
     }
 }

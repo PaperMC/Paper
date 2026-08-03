@@ -74,14 +74,8 @@ public record PaperFireworks(
 
         @Override
         public Builder effects(final List<FireworkEffect> effects) {
-            Preconditions.checkArgument(
-                effects.size() <= net.minecraft.world.item.component.Fireworks.MAX_EXPLOSIONS,
-                "Cannot have more than %s effects, had %s",
-                net.minecraft.world.item.component.Fireworks.MAX_EXPLOSIONS,
-                effects.size()
-            );
             this.effects.clear();
-            MCUtil.addAndConvert(this.effects, effects, CraftMetaFirework::getExplosion);
+            this.addEffects(effects);
             return this;
         }
 

@@ -175,11 +175,7 @@ public record PaperWrittenBookContent(
         @Override
         public Builder pages(final List<? extends ComponentLike> pages) {
             this.pages.clear();
-            for (final ComponentLike page : pages) {
-                final Component component = page.asComponent();
-                validatePageLength(component);
-                this.pages.add(Filterable.passThrough(asVanilla(component)));
-            }
+            this.addPages(pages);
             return this;
         }
 
@@ -205,7 +201,7 @@ public record PaperWrittenBookContent(
         @Override
         public Builder filteredPages(final List<Filtered<? extends ComponentLike>> pages) {
             this.pages.clear();
-            pages.forEach(this::addFilteredPage);
+            this.addFilteredPages(pages);
             return this;
         }
 

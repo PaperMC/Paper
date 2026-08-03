@@ -62,7 +62,7 @@ public record PaperItemEnchantments(
         @Override
         public Builder enchantments(final Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments) {
             this.enchantments.clear();
-            enchantments.forEach(this::add);
+            this.addAll(enchantments);
             return this;
         }
 
