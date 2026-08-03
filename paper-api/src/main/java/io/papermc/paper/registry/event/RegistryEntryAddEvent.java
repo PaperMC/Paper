@@ -6,6 +6,7 @@ import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.registry.tag.TagKey;
 import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 
 /**
  * Event object for {@link RegistryEventProvider#entryAdd()}. This
@@ -40,6 +41,19 @@ public interface RegistryEntryAddEvent<T, B extends RegistryBuilder<T>> extends 
      * @param tagKey the tag key
      * @return the tag
      * @param <V> the tag value type
+     * @deprecated use {@link #retriever()}
      */
-    <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey);
+    @Deprecated(forRemoval = true)
+    default <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) { // TODO remove Keyed
+        return this.retriever().getOrCreateTag(tagKey);
+    }
+
+    /**
+     * Gets the registry retriever, which can be used to retrieve or create
+     * entries in the registry.
+     *
+     * @return the registry retriever
+     */
+    @Contract(pure = true)
+    RegistryRetriever retriever();
 }
