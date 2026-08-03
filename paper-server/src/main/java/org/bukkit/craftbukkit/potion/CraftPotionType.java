@@ -28,7 +28,7 @@ public class CraftPotionType implements PotionType.InternalPotionData {
     public static PotionType minecraftToBukkit(Potion minecraft) {
         Preconditions.checkArgument(minecraft != null);
 
-        net.minecraft.core.Registry<Potion> registry = CraftRegistry.getMinecraftRegistry(Registries.POTION);
+        net.minecraft.core.Registry<Potion> registry = CraftRegistry.getRegistry(Registries.POTION);
         PotionType bukkit = Registry.POTION.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().identifier()));
 
         Preconditions.checkArgument(bukkit != null);
@@ -39,14 +39,14 @@ public class CraftPotionType implements PotionType.InternalPotionData {
     public static Potion bukkitToMinecraft(PotionType bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        return CraftRegistry.getMinecraftRegistry(Registries.POTION)
+        return CraftRegistry.getRegistry(Registries.POTION)
                 .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
     }
 
     public static Holder<Potion> bukkitToMinecraftHolder(PotionType bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        net.minecraft.core.Registry<Potion> registry = CraftRegistry.getMinecraftRegistry(Registries.POTION);
+        net.minecraft.core.Registry<Potion> registry = CraftRegistry.getRegistry(Registries.POTION);
 
         if (registry.wrapAsHolder(CraftPotionType.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<Potion> holder) {
             return holder;

@@ -291,7 +291,7 @@ public final class MCUtil {
             return CraftItemStack.asCraftMirror(ItemStack.EMPTY);
         }
         return CraftItemStack.asCraftMirror(ItemStack.CODEC.parse(
-            CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), tag
+            CraftRegistry.getRegistryAccess().createSerializationContext(NbtOps.INSTANCE), tag
         ).getOrThrow());
     }
 

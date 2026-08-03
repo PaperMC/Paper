@@ -37,7 +37,8 @@ public class AllFeaturesExtension extends BaseExtension {
 
         // Paper - Add RegistryAccess for managing registries - replaced with registry access
 
-        CraftRegistry.setMinecraftRegistry(RegistryHelper.registryAccess());
+        CraftRegistry.setRegistryAccess(RegistryHelper.registryAccess());
+        CraftRegistry.setReloadableRegistries(RegistryHelper.context().datapack().fullRegistries());
     }
 
     @Override

@@ -151,7 +151,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
                 () -> "blockEntityTag", LOGGER
             )) {
-                final TagValueOutput output = TagValueOutput.createWrappingWithContext(problemReporter, CraftRegistry.getMinecraftRegistry(), blockEntityTag);
+                final TagValueOutput output = TagValueOutput.createWrappingWithContext(problemReporter, CraftRegistry.getRegistryAccess(), blockEntityTag);
                 if (blockEntityTag.isEmpty()) {
                     BlockEntity.addEntityType(output, java.util.Objects.requireNonNull(CraftBlockStates.getBlockEntityType(this.materialForBlockEntityType())));
                 }
@@ -177,7 +177,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                     () -> "CraftMetaBlockState#apply", LOGGER
                 )) {
                     BlockEntity.addEntityType(
-                        TagValueOutput.createWrappingWithContext(problemReporter, CraftRegistry.getMinecraftRegistry(), nbt),
+                        TagValueOutput.createWrappingWithContext(problemReporter, CraftRegistry.getRegistryAccess(), nbt),
                         java.util.Objects.requireNonNull(CraftBlockStates.getBlockEntityType(this.materialForBlockEntityType()))
                     );
                 }
@@ -207,7 +207,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             this.blockEntityTag = blockEntityCustomTag.copy();
         });
         tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT).ifPresent(components -> {
-            this.components = DataComponentMap.CODEC.parse(CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), components).getOrThrow();
+            this.components = DataComponentMap.CODEC.parse(CraftRegistry.getRegistryAccess().createSerializationContext(NbtOps.INSTANCE), components).getOrThrow();
         });
         // Paper end - new serialization format
     }
@@ -219,7 +219,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             internalTags.put(CraftMetaBlockState.BLOCK_ENTITY_TAG_CUSTOM_DATA.NBT, this.blockEntityTag); // unsafe because it's serialized right away
         }
         if (!this.components.isEmpty()) {
-            final Tag componentsTag = DataComponentMap.CODEC.encodeStart(CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), this.components).getOrThrow();
+            final Tag componentsTag = DataComponentMap.CODEC.encodeStart(CraftRegistry.getRegistryAccess().createSerializationContext(NbtOps.INSTANCE), this.components).getOrThrow();
             internalTags.put(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT, componentsTag);
         }
         // Paper end - new serialization format
@@ -304,7 +304,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         final net.minecraft.world.level.block.state.BlockState nmsBlockState = ((org.bukkit.craftbukkit.block.data.CraftBlockData) this.getBlockData(stateMaterial)).getState();
         final net.minecraft.world.level.block.entity.BlockEntity blockEntity = java.util.Objects.requireNonNull(type.create(pos, nmsBlockState));
         if (!this.blockEntityTag.isEmpty()) {
-            TypedEntityData.decodeBlockEntity(this.blockEntityTag).loadInto(blockEntity, CraftRegistry.getMinecraftRegistry());
+            TypedEntityData.decodeBlockEntity(this.blockEntityTag).loadInto(blockEntity, CraftRegistry.getRegistryAccess());
         }
         final PatchedDataComponentMap patchedMap = new PatchedDataComponentMap(nmsBlockState.getBlock().asItem().components());
         patchedMap.setAll(this.components);
@@ -334,7 +334,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         }
 
         // This is expected to always return a CraftBlockEntityState for the passed material:
-        return (CraftBlockEntityState<?>) CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), pos, stateMaterial, blockEntityTag);
+        return (CraftBlockEntityState<?>) CraftBlockStates.getBlockState(CraftRegistry.getRegistryAccess(), pos, stateMaterial, blockEntityTag);
     }
 
     @Override

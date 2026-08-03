@@ -32,7 +32,7 @@ public final class CraftJukeboxComponent implements JukeboxPlayableComponent {
     public CraftJukeboxComponent(Map<String, Object> map) {
         String song = SerializableMeta.getObject(String.class, map, "song", false);
 
-        final net.minecraft.core.Registry<net.minecraft.world.item.JukeboxSong> registry = CraftRegistry.getMinecraftRegistry(Registries.JUKEBOX_SONG);
+        final net.minecraft.core.Registry<net.minecraft.world.item.JukeboxSong> registry = CraftRegistry.getRegistry(Registries.JUKEBOX_SONG);
         final Holder.Reference<net.minecraft.world.item.JukeboxSong> holder = registry.get(Identifier.parse(song)).orElseThrow();
         this.handle = new JukeboxPlayable(holder);
     }
@@ -69,7 +69,7 @@ public final class CraftJukeboxComponent implements JukeboxPlayableComponent {
     public void setSongKey(NamespacedKey song) {
         Preconditions.checkArgument(song != null, "song cannot be null");
 
-        final net.minecraft.core.Registry<net.minecraft.world.item.JukeboxSong> registry = CraftRegistry.getMinecraftRegistry(Registries.JUKEBOX_SONG);
+        final net.minecraft.core.Registry<net.minecraft.world.item.JukeboxSong> registry = CraftRegistry.getRegistry(Registries.JUKEBOX_SONG);
         final Holder.Reference<net.minecraft.world.item.JukeboxSong> holder = registry.get(CraftNamespacedKey.toMinecraft(song)).orElseThrow();
         this.handle = new JukeboxPlayable(holder);
     }

@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureElement;
@@ -71,7 +72,7 @@ public class RegistryFieldRewriter<T> extends SearchReplaceRewriter {
     @Override
     protected void insert(SearchMetadata metadata, StringBuilder builder) {
         boolean isInterface = Objects.requireNonNull(this.fieldClass.knownClass()).isInterface();
-        Registry<T> registry = this.registryEntry.registry();
+        HolderLookup.RegistryLookup<T> registry = this.registryEntry.registry();
         this.experimentalKeys = Suppliers.memoize(() -> ExperimentalCollector.collectDataDrivenElementIds(registry));
         Iterator<Holder.Reference<T>> referenceIterator = registry.listElements().filter(this::canPrintField).sorted(this.comparator()).iterator();
 

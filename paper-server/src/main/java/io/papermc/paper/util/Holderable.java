@@ -41,7 +41,7 @@ public interface Holderable<M> extends Handleable<M> {
                 if (!(registry instanceof final CraftRegistry<?, ?> craftRegistry) || !craftRegistry.supportsDirectHolders()) {
                     throw new IllegalArgumentException("Cannot deserialize direct holders for " + registry);
                 }
-                final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
+                final RegistryOps<JsonElement> ops = CraftRegistry.getRegistryAccess().createSerializationContext(JsonOps.INSTANCE);
                 final M holder = directCodec.decode(ops, element).getOrThrow().getFirst();
                 yield ((CraftRegistry<T, M>) registry).createBukkit(Holder.direct(holder));
             }
@@ -52,7 +52,7 @@ public interface Holderable<M> extends Handleable<M> {
     default Object toBukkitSerializationObject(final Codec<? super M> directCodec) {
         return switch (this.getHolder()) {
             case final Holder.Direct<M> direct -> {
-                final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
+                final RegistryOps<JsonElement> ops = CraftRegistry.getRegistryAccess().createSerializationContext(JsonOps.INSTANCE);
                 yield new JsonObjectWrapper(directCodec.encodeStart(ops, direct.value()).getOrThrow().getAsJsonObject());
             }
             case final Holder.Reference<M> reference -> reference.key().identifier().toString();

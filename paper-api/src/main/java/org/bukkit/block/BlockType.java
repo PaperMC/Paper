@@ -125,6 +125,7 @@ import org.bukkit.block.data.type.WallHangingSign;
 import org.bukkit.block.data.type.WallSign;
 import org.bukkit.block.data.type.WallSkull;
 import org.bukkit.inventory.ItemType;
+import org.bukkit.loot.LootTable;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -2805,4 +2806,11 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      * @return false if this block never has collision, true if it <b>might</b> have collision
      */
     boolean hasCollision();
+
+    /**
+     * Gets the associated loot table if defined
+     *
+     * @return the loot table associated
+     */
+    @Nullable LootTable getLootTable();
 }

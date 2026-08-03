@@ -75,7 +75,7 @@ public final class DumpItemCommand implements PaperSubcommand {
         }
         remainingComponents.removeIf(DataComponentType::isTransient);
 
-        final RegistryOps<Tag> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE);
+        final RegistryOps<Tag> ops = CraftRegistry.getRegistryAccess().createSerializationContext(NbtOps.INSTANCE);
         final List<ComponentLike> writtenComponents = new ArrayList<>();
         final List<String> componentsToCopy = new ArrayList<>();
         for (final Map.Entry<DataComponentType<?>, Optional<?>> entry : patch.entrySet()) { // patch

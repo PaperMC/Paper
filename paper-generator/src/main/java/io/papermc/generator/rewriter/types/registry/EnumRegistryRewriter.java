@@ -11,6 +11,7 @@ import io.papermc.typewriter.preset.model.EnumValue;
 import java.util.Map;
 import java.util.function.Supplier;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureElement;
@@ -25,7 +26,7 @@ import static io.papermc.generator.utils.Formatting.quoted;
 @ApiStatus.Obsolete
 public class EnumRegistryRewriter<T> extends EnumRewriter<Holder.Reference<T>> {
 
-    private final Supplier<Registry<T>> registry;
+    private final Supplier<HolderLookup.RegistryLookup<T>> registry;
     private final Supplier<Map<ResourceKey<T>, SingleFlagHolder>> experimentalKeys;
     private final boolean isFilteredRegistry;
     private final boolean hasKeyArgument;
@@ -35,7 +36,7 @@ public class EnumRegistryRewriter<T> extends EnumRewriter<Holder.Reference<T>> {
     }
 
     protected EnumRegistryRewriter(ResourceKey<? extends Registry<T>> registryKey, boolean hasKeyArgument) {
-        this.registry = Suppliers.memoize(() -> Main.REGISTRY_ACCESS.lookupOrThrow(registryKey));
+        this.registry = Suppliers.memoize(() -> Main.REGISTRIES.lookupOrThrow(registryKey));
         this.experimentalKeys = Suppliers.memoize(() -> ExperimentalCollector.collectDataDrivenElementIds(this.registry.get()));
         this.isFilteredRegistry = FeatureElement.FILTERED_REGISTRIES.contains(registryKey);
         this.hasKeyArgument = hasKeyArgument;

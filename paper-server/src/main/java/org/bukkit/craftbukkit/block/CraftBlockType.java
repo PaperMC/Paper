@@ -29,12 +29,14 @@ import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemType;
+import org.bukkit.loot.LootTable;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -251,4 +253,9 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
         return this.getHandle().hasCollision;
     }
     // Paper end - hasCollision API
+
+    @Override
+    public @Nullable LootTable getLootTable() {
+        return this.getHandle().getLootTable().map(CraftLootTable::minecraftKeyToBukkit).orElse(null);
+    }
 }

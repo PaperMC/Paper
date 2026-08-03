@@ -12,12 +12,12 @@ public interface PaperLootableBlock extends PaperLootable {
     /* Lootable */
     @Override
     default @Nullable LootTable getLootTable() {
-        return CraftLootTable.minecraftToBukkit(this.getRandomizableContainer().getLootTable());
+        return CraftLootTable.minecraftKeyToBukkit(this.getRandomizableContainer().getLootTable());
     }
 
     @Override
     default void setLootTable(final @Nullable LootTable table, final long seed) {
-        this.getRandomizableContainer().setLootTable(CraftLootTable.bukkitToMinecraft(table), seed);
+        this.getRandomizableContainer().setLootTable(CraftLootTable.bukkitToMinecraftKey(table), seed);
     }
 
     @Override

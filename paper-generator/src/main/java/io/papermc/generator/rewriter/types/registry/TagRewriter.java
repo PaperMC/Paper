@@ -8,6 +8,7 @@ import io.papermc.typewriter.replace.SearchMetadata;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
 import java.util.Iterator;
 import java.util.Locale;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -46,7 +47,7 @@ public class TagRewriter extends SearchReplaceRewriter {
             final TagRegistry tagRegistry = SUPPORTED_REGISTRIES[i];
 
             final ResourceKey<? extends Registry<?>> registryKey = tagRegistry.registryKey();
-            final Registry<?> registry = Main.REGISTRY_ACCESS.lookupOrThrow(registryKey);
+            final HolderLookup.RegistryLookup<?> registry = Main.REGISTRIES.lookupOrThrow(registryKey);
 
             final String fieldPrefix = Formatting.formatTagFieldPrefix(tagRegistry.legacyFolderName(), registryKey);
             final String registryFieldName = "REGISTRY_" + tagRegistry.legacyFolderName().toUpperCase(Locale.ENGLISH);

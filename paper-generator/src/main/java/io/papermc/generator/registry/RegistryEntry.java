@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import javax.lang.model.SourceVersion;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
@@ -59,8 +60,8 @@ public final class RegistryEntry<T> {
         return this.registryKey;
     }
 
-    public Registry<T> registry() {
-        return Main.REGISTRY_ACCESS.lookupOrThrow(this.registryKey);
+    public HolderLookup.RegistryLookup<T> registry() {
+        return Main.REGISTRIES.lookupOrThrow(this.registryKey);
     }
 
     public String registryKeyField() {
@@ -180,7 +181,11 @@ public final class RegistryEntry<T> {
     }
 
     private <TO> Map<ResourceKey<T>, TO> getFields(Map<ResourceKey<T>, TO> map, Function<Field, @Nullable TO> transform) {
-        Registry<T> registry = this.registry();
+        HolderLookup.RegistryLookup<T> lookup = this.registry();
+        if (!(lookup instanceof Registry<T> registry)) {
+            return map;
+        }
+
         try {
             for (Field field : this.holderElementsClass.getDeclaredFields()) {
                 if (!ResourceKey.class.isAssignableFrom(field.getType()) && !Holder.Reference.class.isAssignableFrom(field.getType()) && !this.elementClass.isAssignableFrom(field.getType())) {
