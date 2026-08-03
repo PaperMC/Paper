@@ -12,6 +12,7 @@ import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.util.BlockTransformer;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.EntityTransformer;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -110,6 +111,7 @@ public interface Structure extends PersistentDataHolder {
      * @param blockTransformers A collection of {@link BlockTransformer}s to apply to the structure.
      * @param entityTransformers A collection of {@link EntityTransformer}s to apply to the structure.
      */
+    @ApiStatus.Experimental
     void place(@NotNull Location location, boolean includeEntities, @NotNull StructureRotation structureRotation, @NotNull Mirror mirror, int palette, float integrity, @NotNull Random random, @NotNull Collection<BlockTransformer> blockTransformers, @NotNull Collection<EntityTransformer> entityTransformers);
 
     /**
@@ -150,6 +152,7 @@ public interface Structure extends PersistentDataHolder {
      * @param blockTransformers A collection of {@link BlockTransformer}s to apply to the structure.
      * @param entityTransformers A collection of {@link EntityTransformer}s to apply to the structure.
      */
+    @ApiStatus.Experimental
     void place(@NotNull RegionAccessor regionAccessor, @NotNull BlockVector location, boolean includeEntities, @NotNull StructureRotation structureRotation, @NotNull Mirror mirror, int palette, float integrity, @NotNull Random random, @NotNull Collection<BlockTransformer> blockTransformers, @NotNull Collection<EntityTransformer> entityTransformers);
 
     /**
