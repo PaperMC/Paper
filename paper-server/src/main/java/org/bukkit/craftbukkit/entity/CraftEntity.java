@@ -1373,6 +1373,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     public boolean considersEntityAsAlly0(org.bukkit.entity.Entity entity) {
+        if (this.additionalAlliedRules.isEmpty()) {
+            return false;
+        }
         return this.additionalAlliedRules.values().stream().anyMatch(entityPredicate -> entityPredicate.test(entity));
     }
 
