@@ -1,6 +1,5 @@
 package io.papermc.paper.datacomponent.item;
 
-import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.bukkit.Color;
 import org.jetbrains.annotations.ApiStatus;
@@ -14,11 +13,16 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface MapItemColor extends BuildableDataComponent<MapItemColor, MapItemColor.Builder> {
+public interface MapItemColor {
 
     @Contract(value = "-> new", pure = true)
     static MapItemColor.Builder mapItemColor() {
         return ItemComponentTypesBridge.bridge().mapItemColor();
+    }
+
+    @Contract(value = "_ -> new", pure = true)
+    static MapItemColor mapItemColor(Color color) {
+        return ItemComponentTypesBridge.bridge().mapItemColor(color);
     }
 
     /**

@@ -27,11 +27,6 @@ public record PaperPotionContents(
     }
 
     @Override
-    public @Unmodifiable List<PotionEffect> customEffects() {
-        return MCUtil.transformUnmodifiable(this.impl.customEffects(), CraftPotionUtil::toBukkit);
-    }
-
-    @Override
     public @Nullable PotionType potion() {
         return this.impl.potion()
             .map(CraftPotionType::minecraftHolderToBukkit)
@@ -43,6 +38,11 @@ public record PaperPotionContents(
         return this.impl.customColor()
             .map(Color::fromARGB) // alpha channel is supported for tipped arrows, so let's just leave it in
             .orElse(null);
+    }
+
+    @Override
+    public @Unmodifiable List<PotionEffect> customEffects() {
+        return MCUtil.transformUnmodifiable(this.impl.customEffects(), CraftPotionUtil::toBukkit);
     }
 
     @Override
@@ -68,8 +68,8 @@ public record PaperPotionContents(
         return new BuilderImpl()
             .potion(this.potion())
             .customColor(this.customColor())
-            .customName(this.customName())
-            .customEffects(this.customEffects());
+            .customEffects(this.customEffects())
+            .customName(this.customName());
     }
 
     static final class BuilderImpl implements PotionContents.Builder {
@@ -92,13 +92,6 @@ public record PaperPotionContents(
         }
 
         @Override
-        public Builder customName(final @Nullable String name) {
-            Preconditions.checkArgument(name == null || name.length() <= Short.MAX_VALUE, "Custom name is longer than %s characters", Short.MAX_VALUE);
-            this.customName = name;
-            return this;
-        }
-
-        @Override
         public PotionContents.Builder addCustomEffect(final PotionEffect effect) {
             this.customEffects.add(CraftPotionUtil.fromBukkit(effect));
             return this;
@@ -114,6 +107,13 @@ public record PaperPotionContents(
         public Builder customEffects(final List<PotionEffect> effects) {
             this.customEffects.clear();
             this.addCustomEffects(effects);
+            return this;
+        }
+
+        @Override
+        public Builder customName(final @Nullable String name) {
+            Preconditions.checkArgument(name == null || name.length() <= Short.MAX_VALUE, "Custom name is longer than %s characters", Short.MAX_VALUE);
+            this.customName = name;
             return this;
         }
 

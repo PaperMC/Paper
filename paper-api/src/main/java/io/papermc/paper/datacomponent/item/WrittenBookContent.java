@@ -121,17 +121,6 @@ public interface WrittenBookContent extends BookLike, BuildableDataComponent<Wri
         Builder generation(@IntRange(from = 0, to = 3) int generation);
 
         /**
-         * Sets if the chat components in this book have already been resolved (entity selectors, scores substituted).
-         * If {@code false}, will be resolved when opened by a player.
-         *
-         * @param resolved resolved
-         * @return the builder for chaining
-         * @see #resolved()
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder resolved(boolean resolved);
-
-        /**
          * Adds a page to this book.
          *
          * @param page the page
@@ -190,5 +179,16 @@ public interface WrittenBookContent extends BookLike, BuildableDataComponent<Wri
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder filteredPages(List<Filtered<? extends ComponentLike>> pages);
+
+        /**
+         * Sets if the chat components in this book have already been resolved (entity selectors, scores substituted).
+         * If {@code false}, will be resolved when opened by a player.
+         *
+         * @param resolved resolved
+         * @return the builder for chaining
+         * @see #resolved()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder resolved(boolean resolved);
     }
 }

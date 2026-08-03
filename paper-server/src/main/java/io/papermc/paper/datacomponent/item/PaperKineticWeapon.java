@@ -93,8 +93,8 @@ public record PaperKineticWeapon(
             .delayTicks(this.delayTicks())
             .dismountConditions(this.dismountConditions())
             .knockbackConditions(this.knockbackConditions())
-            .forwardMovement(this.forwardMovement())
             .damageConditions(this.damageConditions())
+            .forwardMovement(this.forwardMovement())
             .damageMultiplier(this.damageMultiplier())
             .sound(this.sound())
             .hitSound(this.hitSound());

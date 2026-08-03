@@ -117,26 +117,6 @@ public interface Tool extends BuildableDataComponent<Tool, Tool.Builder> {
     interface Builder extends DataComponentBuilder<Tool> {
 
         /**
-         * Controls the amount of durability to remove each time a block is mined with this tool.
-         *
-         * @param damage durability to remove
-         * @return the builder for chaining
-         * @see #damagePerBlock()
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder damagePerBlock(@NonNegative int damage);
-
-        /**
-         * Controls mining speed to use if no rules match and don't override mining speed.
-         *
-         * @param miningSpeed mining speed
-         * @return the builder for chaining
-         * @see #defaultMiningSpeed()
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder defaultMiningSpeed(float miningSpeed);
-
-        /**
          * Adds a rule to the tool that controls the breaking speed / damage per block if matched.
          *
          * @param rule rule
@@ -145,16 +125,6 @@ public interface Tool extends BuildableDataComponent<Tool, Tool.Builder> {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addRule(Rule rule);
-
-        /**
-         * Controls whether this tool can destroy blocks in creative mode.
-         *
-         * @param canDestroyBlocksInCreative whether this tool can destroy blocks in creative mode
-         * @return the builder for chaining
-         * @see #canDestroyBlocksInCreative()
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder canDestroyBlocksInCreative(boolean canDestroyBlocksInCreative);
 
         /**
          * Adds rules to the tool that control the breaking speed / damage per block if matched.
@@ -174,5 +144,35 @@ public interface Tool extends BuildableDataComponent<Tool, Tool.Builder> {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder rules(Collection<Rule> rules);
+
+        /**
+         * Controls mining speed to use if no rules match and don't override mining speed.
+         *
+         * @param miningSpeed mining speed
+         * @return the builder for chaining
+         * @see #defaultMiningSpeed()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder defaultMiningSpeed(float miningSpeed);
+
+        /**
+         * Controls the amount of durability to remove each time a block is mined with this tool.
+         *
+         * @param damage durability to remove
+         * @return the builder for chaining
+         * @see #damagePerBlock()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder damagePerBlock(@NonNegative int damage);
+
+        /**
+         * Controls whether this tool can destroy blocks in creative mode.
+         *
+         * @param canDestroyBlocksInCreative whether this tool can destroy blocks in creative mode
+         * @return the builder for chaining
+         * @see #canDestroyBlocksInCreative()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder canDestroyBlocksInCreative(boolean canDestroyBlocksInCreative);
     }
 }

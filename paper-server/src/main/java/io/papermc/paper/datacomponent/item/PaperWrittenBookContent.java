@@ -64,7 +64,7 @@ public record PaperWrittenBookContent(
         return new BuilderImpl(this.title(), this.author())
             .generation(this.generation())
             .resolved(this.resolved())
-            .pages(this.pages().stream()
+            .pages(this.pages().stream() // todo check seems wrong
                 .map(Filtered::filtered)
                 .filter(Objects::nonNull)
                 .toList());
@@ -149,12 +149,6 @@ public record PaperWrittenBookContent(
         }
 
         @Override
-        public WrittenBookContent.Builder resolved(final boolean resolved) {
-            this.resolved = resolved;
-            return this;
-        }
-
-        @Override
         public WrittenBookContent.Builder addPage(final ComponentLike page) {
             final Component component = page.asComponent();
             validatePageLength(component);
@@ -202,6 +196,12 @@ public record PaperWrittenBookContent(
         public Builder filteredPages(final List<Filtered<? extends ComponentLike>> pages) {
             this.pages.clear();
             this.addFilteredPages(pages);
+            return this;
+        }
+
+        @Override
+        public WrittenBookContent.Builder resolved(final boolean resolved) {
+            this.resolved = resolved;
             return this;
         }
 

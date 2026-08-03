@@ -104,8 +104,8 @@ public record PaperEquippable(
             .swappable(this.swappable())
             .damageOnHurt(this.damageOnHurt())
             .equipOnInteract(this.equipOnInteract())
-            .shearSound(this.shearSound())
-            .canBeSheared(this.canBeSheared());
+            .canBeSheared(this.canBeSheared())
+            .shearSound(this.shearSound());
     }
 
 

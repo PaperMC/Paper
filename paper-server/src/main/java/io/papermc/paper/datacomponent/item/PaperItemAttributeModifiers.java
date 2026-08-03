@@ -41,7 +41,7 @@ public record PaperItemAttributeModifiers(
     @Override
     public Builder toBuilder() {
         Builder builder = new BuilderImpl();
-        this.modifiers().forEach(entry -> builder.addModifier(entry.attribute(), entry.modifier(), entry.display()));
+        this.modifiers().forEach(entry -> builder.addModifier(entry.attribute(), entry.modifier(), entry.display())); // todo check slot group
         return builder;
     }
 

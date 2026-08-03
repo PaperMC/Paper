@@ -53,16 +53,6 @@ public interface Fireworks extends BuildableDataComponent<Fireworks, Fireworks.B
     interface Builder extends DataComponentBuilder<Fireworks> {
 
         /**
-         * Sets the number of gunpowder used in this builder.
-         *
-         * @param duration duration
-         * @return the builder for chaining
-         * @see #flightDuration()
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder flightDuration(@IntRange(from = 0, to = 255) int duration);
-
-        /**
          * Adds an explosion to this builder.
          *
          * @param effect effect
@@ -91,5 +81,15 @@ public interface Fireworks extends BuildableDataComponent<Fireworks, Fireworks.B
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder effects(List<FireworkEffect> effects);
+
+        /**
+         * Sets the number of gunpowder used in this builder.
+         *
+         * @param duration duration
+         * @return the builder for chaining
+         * @see #flightDuration()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder flightDuration(@IntRange(from = 0, to = 255) int duration);
     }
 }

@@ -10,6 +10,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.component.OminousBottleAmplifier;
+import org.bukkit.Color;
 import org.bukkit.JukeboxSong;
 import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -80,6 +81,11 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     @Override
     public MapItemColor.Builder mapItemColor() {
         return new PaperMapItemColor.BuilderImpl();
+    }
+
+    @Override
+    public MapItemColor mapItemColor(Color color) {
+        return new PaperMapItemColor(new net.minecraft.world.item.component.MapItemColor(color.asRGB()));
     }
 
     @Override

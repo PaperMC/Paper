@@ -108,16 +108,6 @@ public interface PotionContents extends BuildableDataComponent<PotionContents, P
         Builder customColor(@Nullable Color color);
 
         /**
-         * Sets the suffix to the translation key of the potion item.
-         *
-         * @param name name
-         * @return the builder for chaining
-         * @see #customName()
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder customName(@Nullable String name);
-
-        /**
          * Adds a custom effect instance to this builder.
          *
          * @param effect effect
@@ -146,5 +136,15 @@ public interface PotionContents extends BuildableDataComponent<PotionContents, P
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder customEffects(List<PotionEffect> effects);
+
+        /**
+         * Sets the suffix to the translation key of the potion item.
+         *
+         * @param name name
+         * @return the builder for chaining
+         * @see #customName()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder customName(@Nullable String name);
     }
 }

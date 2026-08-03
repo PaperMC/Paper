@@ -25,7 +25,7 @@ import org.jspecify.annotations.Nullable;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
+public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource { // todo toBuilder
 
     @Contract(value = "_ -> new", pure = true)
     static ResolvableProfile resolvableProfile(final PlayerProfile profile) {
