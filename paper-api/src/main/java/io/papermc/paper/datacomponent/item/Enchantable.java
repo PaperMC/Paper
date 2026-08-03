@@ -24,7 +24,7 @@ public interface Enchantable {
      * a higher value allows enchantments with a higher cost to be picked.
      *
      * @return the value
-     * @see <a href="https://minecraft.wiki/w/Enchanting_mechanics#Java_Edition_2">Minecraft Wiki</a>
+     * @see <a href="https://minecraft.wiki/w/Enchanting_table_mechanics#Java_Edition">Minecraft Wiki</a>
      */
     @Contract(pure = true)
     @Positive int value();
