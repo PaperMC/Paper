@@ -60,9 +60,13 @@ public interface InternalAPIBridge {
         return Holder.INSTANCE;
     }
 
-    @Deprecated(forRemoval = true, since = "1.21.5")
-    @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
+    @Deprecated(since = "1.21.5", forRemoval = true)
+    @ApiStatus.ScheduledForRemoval(inVersion = "26.4")
     Biome constructLegacyCustomBiome();
+
+    @Deprecated(since = "26.2", forRemoval = true)
+    @ApiStatus.ScheduledForRemoval(inVersion = "26.4")
+    EntityType<?> constructLegacyUnknownEntityType();
 
     CombatEntry createCombatEntry(LivingEntity entity, DamageSource damageSource, float damage);
 

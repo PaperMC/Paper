@@ -88,7 +88,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
             this.spawnPotentialsDefinition = WeightedList.of(); // need clear the spawnPotentials to avoid nextSpawnData being replaced later
             return;
         }
-        Preconditions.checkArgument(entityType != EntityType.UNKNOWN, "Can't spawn EntityType %s from mob spawners!", entityType);
+        Preconditions.checkArgument(entityType != CraftEntityType.LegacyUnknownImpl.INSTANCE, "Can't spawn EntityType %s from mob spawners!", entityType);
 
         SpawnData data = new SpawnData();
         data.getEntityToSpawn().putString(Entity.TAG_ID, BuiltInRegistries.ENTITY_TYPE.getKey(CraftEntityType.bukkitToMinecraft(entityType)).toString());

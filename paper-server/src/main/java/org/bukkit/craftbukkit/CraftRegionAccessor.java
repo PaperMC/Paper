@@ -253,11 +253,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public Entity spawnEntity(Location loc, EntityType type, boolean randomizeData) {
-        return this.spawn(loc, type.getEntityClass(), null, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
-    }
-
-    @Override
     public List<Entity> getEntities() {
         List<Entity> list = new ArrayList<>();
 
@@ -341,31 +336,53 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends Entity> T createEntity(Location location, Class<T> clazz) throws IllegalArgumentException {
+    public <E extends Entity> E createEntity(Location location, Class<E> clazz) throws IllegalArgumentException {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(clazz != null, "Entity class cannot be null");
         net.minecraft.world.entity.Entity entity = this.createEntity(location, clazz, true);
 
         if (!this.isNormalWorld()) {
             entity.generation = true;
         }
 
-        return (T) entity.getBukkitEntity();
+        return (E) entity.getBukkitEntity();
     }
 
     @Override
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function) throws IllegalArgumentException {
-        return this.spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM);
+    @SuppressWarnings("unchecked")
+    public <E extends Entity> E createEntity(Location location, EntityType<E> type) throws IllegalArgumentException {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(type != null, "Entity type cannot be null");
+        net.minecraft.world.entity.Entity entity = this.createEntity(location, type, true);
+
+        if (!this.isNormalWorld()) {
+            entity.generation = true;
+        }
+
+        return (E) entity.getBukkitEntity();
     }
 
     @Override
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, boolean randomizeData, Consumer<? super T> function) throws IllegalArgumentException {
-        return this.spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
+    public <E extends Entity> E spawnEntity(Location location, EntityType<E> type, boolean randomizeData, CreatureSpawnEvent.SpawnReason reason, Consumer<? super E> function) throws IllegalArgumentException {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(type != null, "Entity type cannot be null");
+        net.minecraft.world.entity.Entity entity = this.createEntity(location, type, randomizeData);
+
+        return this.addEntity(entity, reason, function, randomizeData);
     }
 
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
-        return this.spawn(location, clazz, function, reason, true);
+    @Override
+    public <E extends Entity> E spawn(Location location, Class<E> clazz, boolean randomizeData, Consumer<? super E> function) throws IllegalArgumentException {
+        return this.spawn0(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
     }
 
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason, boolean randomizeData) throws IllegalArgumentException {
+    public <E extends Entity> E spawn(Location location, Class<E> clazz, Consumer<? super E> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
+        return this.spawn0(location, clazz, function, reason, true);
+    }
+
+    protected <E extends Entity> E spawn0(Location location, Class<E> clazz, Consumer<? super E> function, CreatureSpawnEvent.SpawnReason reason, boolean randomizeData) throws IllegalArgumentException {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(clazz != null, "Entity class cannot be null");
         net.minecraft.world.entity.Entity entity = this.createEntity(location, clazz, randomizeData);
 
         return this.addEntity(entity, reason, function, randomizeData);
@@ -373,7 +390,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends Entity> T addEntity(T entity) {
+    public <E extends Entity> E addEntity(E entity) {
         Preconditions.checkArgument(!entity.isInWorld(), "Entity has already been added to a world");
         net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
         if (nmsEntity.level() != this.getHandle().getLevel()) {
@@ -381,16 +398,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         }
 
         this.addEntityWithPassengers(nmsEntity, CreatureSpawnEvent.SpawnReason.CUSTOM);
-        return (T) nmsEntity.getBukkitEntity();
+        return (E) nmsEntity.getBukkitEntity();
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Entity> T addEntity(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
-        return this.addEntity(entity, reason, null, true);
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T extends Entity> T addEntity(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason, Consumer<? super T> function, boolean randomizeData) throws IllegalArgumentException {
+    public <E extends Entity> E addEntity(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason, Consumer<? super E> function, boolean randomizeData) throws IllegalArgumentException {
         Preconditions.checkArgument(entity != null, "Cannot spawn null entity");
 
         if (randomizeData && entity instanceof Mob) {
@@ -402,24 +414,44 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         }
 
         if (function != null) {
-            function.accept((T) entity.getBukkitEntity());
+            function.accept((E) entity.getBukkitEntity());
         }
 
         this.addEntityToWorld(entity, reason);
-        return (T) entity.getBukkitEntity();
+        return (E) entity.getBukkitEntity();
     }
 
     public abstract void addEntityToWorld(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
 
     public abstract void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
 
-    public net.minecraft.world.entity.Entity createEntity(Location location, Class<? extends Entity> clazz, boolean randomizeData) throws IllegalArgumentException {
-        Preconditions.checkArgument(location != null, "Location cannot be null");
-        Preconditions.checkArgument(clazz != null, "Entity class cannot be null");
+    public <E extends Entity> net.minecraft.world.entity.Entity createEntity(Location location, EntityType<E> type, boolean randomizeData) throws IllegalArgumentException {
+        CraftEntityTypes.EntityTypeData<?, ?> entityTypeData = CraftEntityTypes.getEntityTypeData(type);
+        if (entityTypeData.spawnFunction() == null) {
+            throw new IllegalArgumentException("Cannot spawn an entity for " + type.key().asString());
+        }
 
+        if (!this.isEnabled(type)) {
+            throw new IllegalArgumentException("Cannot spawn an entity for " + type.key().asString() + " because it is not an enabled feature");
+        }
+
+        if (this.getHandle().getDifficulty() == Difficulty.PEACEFUL && !CraftEntityType.bukkitToMinecraft(type).isAllowedInPeaceful()) {
+            throw new IllegalStateException("Cannot spawn monster for " + type.key().asString() + " in Peaceful difficulty");
+        }
+
+        net.minecraft.world.entity.Entity entity = entityTypeData.spawnFunction().apply(new CraftEntityTypes.SpawnData(this.getHandle(), location, randomizeData, this.isNormalWorld()));
+
+        if (entity != null) {
+            return entity;
+        }
+
+        throw new IllegalArgumentException("Cannot spawn an entity for " + type.key().asString());
+    }
+
+    public net.minecraft.world.entity.Entity createEntity(Location location, Class<? extends Entity> clazz, boolean randomizeData) throws IllegalArgumentException {
         // Convert classes which have no direct entity type, but where spawn able by the if cases
-        Consumer<net.minecraft.world.entity.Entity> runOld = other -> { };
-        if (clazz == AbstractArrow.class) {
+        // todo move with asm util
+        if (clazz == AbstractArrow.class || clazz == TippedArrow.class) {
             clazz = Arrow.class;
         } else if (clazz == AbstractHorse.class) {
             clazz = Horse.class;
@@ -433,39 +465,21 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             clazz = SplashPotion.class;
         } else if (clazz == Minecart.class) {
             clazz = RideableMinecart.class;
-        } else if (clazz == TippedArrow.class) {
-            clazz = Arrow.class;
-            runOld = other -> ((Arrow) other.getBukkitEntity()).setBasePotionType(PotionType.WATER);
         }
 
         CraftEntityTypes.EntityTypeData<?, ?> entityTypeData = CraftEntityTypes.getEntityTypeData(clazz);
-
         if (entityTypeData == null || entityTypeData.spawnFunction() == null) {
             if (CraftEntity.class.isAssignableFrom(clazz)) {
-                // SPIGOT-7565: Throw a more descriptive error message when a developer tries to spawn an entity from a CraftBukkit class
-                throw new IllegalArgumentException(String.format("Cannot spawn an entity from its CraftBukkit implementation class '%s' use the Bukkit class instead. "
-                        + "You can get the Bukkit representation via Entity#getType()#getEntityClass()", clazz.getName()));
+                throw new IllegalArgumentException(String.format("Cannot spawn an entity from its CraftBukkit implementation class '%s' use the entity type instead.", clazz.getName()));
             } else {
                 throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName());
             }
         }
-
-        if (!this.isEnabled(entityTypeData.entityType())) {
-            throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName() + " because it is not an enabled feature");
+        net.minecraft.world.entity.Entity entity = this.createEntity(location, entityTypeData.entityType(), randomizeData);
+        if (clazz == TippedArrow.class) {
+            ((Arrow) entity.getBukkitEntity()).setBasePotionType(PotionType.WATER);
         }
-
-        if (this.getHandle().getDifficulty() == Difficulty.PEACEFUL && !CraftEntityType.bukkitToMinecraft(entityTypeData.entityType()).isAllowedInPeaceful()) {
-            throw new IllegalStateException("Cannot spawn monster for " + clazz.getName() + " in Peaceful difficulty");
-        }
-
-        net.minecraft.world.entity.Entity entity = entityTypeData.spawnFunction().apply(new CraftEntityTypes.SpawnData(this.getHandle(), location, randomizeData, this.isNormalWorld()));
-
-        if (entity != null) {
-            runOld.accept(entity);
-            return entity;
-        }
-
-        throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName());
+        return entity;
     }
 
     @Override

@@ -154,6 +154,9 @@ dependencies {
     testImplementation("org.ow2.asm:asm-tree:9.9.1")
     testImplementation("org.junit-pioneer:junit-pioneer:2.3.0") // CartesianTest
 
+    // Bytecode framework
+    implementation("io.papermc:asm-utils:0.0.4-SNAPSHOT")
+
     // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
     implementation("me.lucko:spark-paper:1.10.152")

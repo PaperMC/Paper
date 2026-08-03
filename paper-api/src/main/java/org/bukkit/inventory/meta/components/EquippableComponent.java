@@ -83,7 +83,7 @@ public interface EquippableComponent extends ConfigurationSerializable {
      * @return the entities
      */
     @Nullable
-    Collection<EntityType> getAllowedEntities();
+    Collection<EntityType<?>> getAllowedEntities();
 
     /**
      * Sets the entities which can equip this item.
