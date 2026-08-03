@@ -24,8 +24,7 @@ public abstract class PlayerPickItemEvent extends PlayerEvent implements Cancell
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final boolean includeData;
-
+    private boolean includeData;
     private int targetSlot;
     private int sourceSlot;
 
@@ -46,6 +45,17 @@ public abstract class PlayerPickItemEvent extends PlayerEvent implements Cancell
      */
     public boolean isIncludeData() {
         return includeData;
+    }
+
+    /**
+     * Sets whether block/entity data should be included.<br>
+     *
+     * This does not bypass gamemode and permission checks.
+     *
+     * @param includeData whether to include blopck/entity data
+     */
+    public void setIncludeData(final boolean includeData) {
+        this.includeData = includeData;
     }
 
     /**
