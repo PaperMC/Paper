@@ -35,9 +35,4 @@ public class CraftFurnaceRecipe extends FurnaceRecipe implements CraftRecipe {
             this.getCookingTime()
         ));
     }
-
-    @Override
-    public void addToRecipeManager() {
-        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
-    }
 }

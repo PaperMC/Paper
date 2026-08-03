@@ -30,9 +30,4 @@ public class CraftStonecuttingRecipe extends StonecuttingRecipe implements Craft
             CraftItemStack.asTemplate(this.getResult())
         ));
     }
-
-    @Override
-    public void addToRecipeManager() {
-        MinecraftServer.getServer().getRecipeManager().addRecipe(toMinecraftRecipe());
-    }
 }
