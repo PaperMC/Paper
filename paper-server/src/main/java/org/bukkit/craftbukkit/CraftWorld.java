@@ -966,10 +966,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Collection<Entity> getNearbyEntities(BoundingBox boundingBox, Predicate<? super Entity> filter) {
-        org.spigotmc.AsyncCatcher.catchOp("getNearbyEntities"); // Spigot
         Preconditions.checkArgument(boundingBox != null, "BoundingBox cannot be null");
 
         AABB bb = new AABB(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ(), boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ());
+        TickThread.ensureTickThread(getHandle(), bb, "Cannot get nearby entities asynchronously");
         List<net.minecraft.world.entity.Entity> entityList = this.getHandle().getEntities((net.minecraft.world.entity.Entity) null, bb, Predicates.alwaysTrue());
         List<Entity> bukkitEntityList = new ArrayList<org.bukkit.entity.Entity>(entityList.size());
 
