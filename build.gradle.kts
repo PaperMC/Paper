@@ -27,15 +27,15 @@ subprojects {
             typeUseAnnotationsFile.set(rootProject.layout.projectDirectory.file(".checkstyle/type_use_annotations.txt"))
         }
 
-        tasks.withType<PaperCheckstyleTask>().configureEach {
+        /*tasks.withType<PaperCheckstyleTask>().configureEach {
             configDirectory = rootProject.layout.projectDirectory.dir(".checkstyle")
-            configFile = layout.projectDirectory.file(".checkstyle/checkstyle.xml").asFile
+            // configFile = layout.projectDirectory.file(".checkstyle/checkstyle.xml").asFile // use the base file if not overwritten
             maxHeapSize = "2g"
             reports {
                 xml.required = true
                 html.required = true
             }
-        }
+        }*/
 
         dependencies {
             "checkstyle"(project(":paper-checkstyle"))
