@@ -3622,7 +3622,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return Percentage of attack power available
      * @see #getCooledAttackStrength(float)
-     * @since 26.1.2
+     * @since 26.2
      */
     default float getCooledAttackStrength() {
         return getCooledAttackStrength(0F);
@@ -3642,7 +3642,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param strength The new percentage of attack power available
      * @see #getCooledAttackStrength(float)
-     * @since 26.1.2
+     * @since 26.2
      */
     void setCooledAttackStrength(float strength);
 
