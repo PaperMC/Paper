@@ -78,10 +78,10 @@ index 0000000000000000000000000000000000000000..9e621873454cc2edc2e59e6c7554d811
 +}
 diff --git a/io/papermc/paper/inventory/recipe/StackedContentsExtrasMap.java b/io/papermc/paper/inventory/recipe/StackedContentsExtrasMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f47c12e9dd6cfa857ca07a764edc22de372e25b6
+index 0000000000000000000000000000000000000000..12da5da5b6a9732d74f2a9acedc7dec84eb3bfee
 --- /dev/null
 +++ b/io/papermc/paper/inventory/recipe/StackedContentsExtrasMap.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,80 @@
 +package io.papermc.paper.inventory.recipe;
 +
 +import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -94,12 +94,16 @@ index 0000000000000000000000000000000000000000..f47c12e9dd6cfa857ca07a764edc22de
 +import net.minecraft.world.item.crafting.CraftingInput;
 +import net.minecraft.world.item.crafting.Ingredient;
 +import net.minecraft.world.item.crafting.Recipe;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.function.Predicate;
 +
 +public final class StackedContentsExtrasMap {
 +
 +    private final StackedContents<ItemOrExact> contents;
 +    public Object2IntMap<ItemOrExact.Item> regularRemoved = new Object2IntOpenHashMap<>(); // needed for re-using the regular contents (for ShapelessRecipe)
 +    public final ObjectSet<ItemStack> exactIngredients = new ObjectOpenCustomHashSet<>(ItemStackLinkedSet.TYPE_AND_TAG);
++    public final List<Predicate<ItemStack>> predicateIngredients = new ArrayList<>();
 +
 +    public StackedContentsExtrasMap(final StackedContents<ItemOrExact> contents) {
 +        this.contents = contents;
@@ -108,7 +112,9 @@ index 0000000000000000000000000000000000000000..f47c12e9dd6cfa857ca07a764edc22de
 +    public void initialize(final Recipe<?> recipe) {
 +        this.exactIngredients.clear();
 +        for (final Ingredient ingredient : recipe.placementInfo().ingredients()) {
-+            if (ingredient.isExact()) {
++            if (ingredient.stackPredicate != null) {
++                this.predicateIngredients.add(ingredient.stackPredicate);
++            } else if (ingredient.isExact()) {
 +                this.exactIngredients.addAll(ingredient.itemStacks());
 +            }
 +        }
@@ -138,11 +144,17 @@ index 0000000000000000000000000000000000000000..f47c12e9dd6cfa857ca07a764edc22de
 +        for (final Object2IntMap.Entry<ItemOrExact.Item> entry : this.regularRemoved.object2IntEntrySet()) {
 +            this.contents.amounts.addTo(entry.getKey(), entry.getIntValue());
 +        }
++        this.predicateIngredients.clear();
 +        this.exactIngredients.clear();
 +        this.regularRemoved.clear();
 +    }
 +
 +    public boolean accountStack(final ItemStack stack, final int count) {
++        for (Predicate<ItemStack> stackPredicate : this.predicateIngredients) {
++            if (!stackPredicate.test(stack)) continue;
++            this.contents.account(new ItemOrExact.Exact(stack), count);
++            return true;
++        }
 +        if (this.exactIngredients.contains(stack)) {
 +            this.contents.account(new ItemOrExact.Exact(stack), count);
 +            return true;
@@ -356,9 +368,10 @@ index 1a6870fd5dd02022d6b0df88e8f55f8ba9cf07c9..4f3697573fbfec3865751037de00a562
      public static final StreamCodec<RegistryFriendlyByteBuf, Ingredient> CONTENTS_STREAM_CODEC = ByteBufCodecs.holderSet(Registries.ITEM)
          .map(Ingredient::new, i -> i.values);
      public static final StreamCodec<RegistryFriendlyByteBuf, Optional<Ingredient>> OPTIONAL_CONTENTS_STREAM_CODEC = ByteBufCodecs.holderSet(Registries.ITEM)
-@@ -34,19 +34,23 @@ public final class Ingredient implements Predicate<ItemStack>, StackedContents.I
+@@ -34,20 +34,24 @@ public final class Ingredient implements Predicate<ItemStack>, StackedContents.IngredientInfo<io.papermc.paper.inventory.recipe.ItemOrExact> {
      public static final Codec<Ingredient> CODEC = ExtraCodecs.nonEmptyHolderSet(NON_AIR_HOLDER_SET_CODEC).xmap(Ingredient::new, i -> i.values);
      public final HolderSet<Item> values;
+     public java.util.function.@org.jspecify.annotations.Nullable Predicate<ItemStack> stackPredicate; // Paper - add PredicateChoice
      // CraftBukkit start
 -    private java.util.@org.jspecify.annotations.Nullable List<ItemStack> itemStacks;
 +    private java.util.@org.jspecify.annotations.Nullable Set<ItemStack> itemStacks; // Paper - Improve exact choice recipe ingredients
@@ -383,8 +396,13 @@ index 1a6870fd5dd02022d6b0df88e8f55f8ba9cf07c9..4f3697573fbfec3865751037de00a562
          return ingredient;
      }
      // CraftBukkit end
-@@ -81,21 +85,22 @@ public final class Ingredient implements Predicate<ItemStack>, StackedContents.I
+@@ -82,26 +86,31 @@ public final class Ingredient implements Predicate<ItemStack>, StackedContents.IngredientInfo<io.papermc.paper.inventory.recipe.ItemOrExact> {
      public boolean test(final ItemStack input) {
+         // Paper start - add PredicateChoice
+         if (this.stackPredicate != null) {
+             return this.stackPredicate.test(input);
+         }
+         // Paper end - add PredicateChoice
          // CraftBukkit start
          if (this.isExact()) {
 -            for (ItemStack item : this.itemStacks()) {
@@ -408,14 +426,18 @@ index 1a6870fd5dd02022d6b0df88e8f55f8ba9cf07c9..4f3697573fbfec3865751037de00a562
 +        return switch (itemOrExact) {
 +            case io.papermc.paper.inventory.recipe.ItemOrExact.Item(final Holder<Item> item) ->
 +                !this.isExact() && this.values.contains(item);
-+            case io.papermc.paper.inventory.recipe.ItemOrExact.Exact(final ItemStack exact) ->
-+                this.isExact() && this.itemStacks.contains(exact);
++            case io.papermc.paper.inventory.recipe.ItemOrExact.Exact(final ItemStack exact) -> {
++                if (this.stackPredicate != null) {
++                    yield this.stackPredicate.test(exact);
++                }
++                yield this.isExact() && this.itemStacks.contains(exact);
++            }
 +        };
 +        // Paper end - Improve exact choice recipe ingredients
      }
  
      @Override
-@@ -125,6 +130,11 @@ public final class Ingredient implements Predicate<ItemStack>, StackedContents.I
+@@ -131,6 +140,11 @@ public final class Ingredient implements Predicate<ItemStack>, StackedContents.IngredientInfo<io.papermc.paper.inventory.recipe.ItemOrExact> {
      }
  
      public SlotDisplay display() {
