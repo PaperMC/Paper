@@ -43,6 +43,7 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
@@ -196,8 +197,8 @@ public class WorldConfiguration extends ConfigurationPart {
             }
 
             public @ThrowExceptions Reference2ObjectMap<EntityType<?>, IntOr.Disabled> despawnTime = Util.make(new Reference2ObjectOpenHashMap<>(), map -> {
-                map.put(EntityType.SNOWBALL, IntOr.Disabled.DISABLED);
-                map.put(EntityType.LLAMA_SPIT, IntOr.Disabled.DISABLED);
+                map.put(EntityTypes.SNOWBALL, IntOr.Disabled.DISABLED);
+                map.put(EntityTypes.LLAMA_SPIT, IntOr.Disabled.DISABLED);
             });
 
             @PostProcess
@@ -282,13 +283,13 @@ public class WorldConfiguration extends ConfigurationPart {
             public double babyZombieMovementModifier = 0.5;
             public boolean allowSpiderWorldBorderClimbing = true;
 
-            private static final List<EntityType<?>> ZOMBIE_LIKE = List.of(EntityType.ZOMBIE, EntityType.HUSK, EntityType.ZOMBIE_VILLAGER, EntityType.ZOMBIFIED_PIGLIN);
+            private static final List<EntityType<?>> ZOMBIE_LIKE = List.of(EntityTypes.ZOMBIE, EntityTypes.HUSK, EntityTypes.ZOMBIE_VILLAGER, EntityTypes.ZOMBIFIED_PIGLIN);
             @MergeMap
             public Map<EntityType<?>, List<Difficulty>> doorBreakingDifficulty = Util.make(new IdentityHashMap<>(), map -> {
                 for (final EntityType<?> type : ZOMBIE_LIKE) {
                     map.put(type, Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList());
                 }
-                map.put(EntityType.VINDICATOR, Arrays.stream(Difficulty.values()).filter(Vindicator.DOOR_BREAKING_PREDICATE).toList());
+                map.put(EntityTypes.VINDICATOR, Arrays.stream(Difficulty.values()).filter(Vindicator.DOOR_BREAKING_PREDICATE).toList());
             });
 
             public boolean disableCreeperLingeringEffect = false;
@@ -477,6 +478,12 @@ public class WorldConfiguration extends ConfigurationPart {
     public class UnsupportedSettings extends ConfigurationPart {
         public boolean fixInvulnerableEndCrystalExploit = true;
         public boolean disableWorldTickingWhenEmpty = false;
+        public Ticking ticking;
+
+        public class Ticking extends ConfigurationPart {
+            public boolean chunks = true;
+            public boolean blockEntities = true;
+        }
     }
 
     public Hopper hopper;
@@ -508,12 +515,12 @@ public class WorldConfiguration extends ConfigurationPart {
         public Duration delayChunkUnloadsBy = Duration.of("10s");
         public Reference2IntMap<EntityType<?>> entityPerChunkSaveLimit = Util.make(new Reference2IntOpenHashMap<>(BuiltInRegistries.ENTITY_TYPE.size()), map -> {
             map.defaultReturnValue(-1);
-            map.put(EntityType.EXPERIENCE_ORB, -1);
-            map.put(EntityType.SNOWBALL, -1);
-            map.put(EntityType.ENDER_PEARL, -1);
-            map.put(EntityType.ARROW, -1);
-            map.put(EntityType.FIREBALL, -1);
-            map.put(EntityType.SMALL_FIREBALL, -1);
+            map.put(EntityTypes.EXPERIENCE_ORB, -1);
+            map.put(EntityTypes.SNOWBALL, -1);
+            map.put(EntityTypes.ENDER_PEARL, -1);
+            map.put(EntityTypes.ARROW, -1);
+            map.put(EntityTypes.FIREBALL, -1);
+            map.put(EntityTypes.SMALL_FIREBALL, -1);
         });
         public boolean flushRegionsOnSave = false;
 
@@ -538,8 +545,8 @@ public class WorldConfiguration extends ConfigurationPart {
         public int mobSpawner = 1;
         public int wetFarmland = 1;
         public int dryFarmland = 1;
-        public Table<EntityType<?>, String, Integer> sensor = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "secondarypoisensor", 40));
-        public Table<EntityType<?>, String, Integer> behavior = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "validatenearbypoi", -1));
+        public Table<EntityType<?>, String, Integer> sensor = Util.make(HashBasedTable.create(), table -> table.put(EntityTypes.VILLAGER, "secondarypoisensor", 40));
+        public Table<EntityType<?>, String, Integer> behavior = Util.make(HashBasedTable.create(), table -> table.put(EntityTypes.VILLAGER, "validatenearbypoi", -1));
     }
 
     @Setting(FeatureSeedsGeneration.FEATURE_SEEDS_KEY)

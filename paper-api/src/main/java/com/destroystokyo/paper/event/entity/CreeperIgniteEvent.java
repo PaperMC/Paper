@@ -1,9 +1,11 @@
 package com.destroystokyo.paper.event.entity;
 
+import io.papermc.paper.event.entity.EntityIgniteEvent;
 import org.bukkit.entity.Creeper;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -13,16 +15,13 @@ import org.jspecify.annotations.NullMarked;
  * {@link Creeper#setIgnited(boolean)}.
  */
 @NullMarked
-public class CreeperIgniteEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
+public class CreeperIgniteEvent extends EntityIgniteEvent {
 
     private boolean ignited;
-    private boolean cancelled;
 
     @ApiStatus.Internal
     public CreeperIgniteEvent(final Creeper creeper, final boolean ignited) {
-        super(creeper);
+        super(creeper, creeper.getMaxFuseTicks());
         this.ignited = ignited;
     }
 
@@ -40,21 +39,22 @@ public class CreeperIgniteEvent extends EntityEvent implements Cancellable {
     }
 
     @Override
+    public @Positive int getFuseTime() {
+        return this.getEntity().getMaxFuseTicks();
+    }
+
+    @Override
+    public void setFuseTime(final @Positive int ticks) {
+        this.getEntity().setMaxFuseTicks(ticks);
+    }
+
+    @Override
     public boolean isCancelled() {
-        return this.cancelled;
+        return super.isCancelled();
     }
 
     @Override
     public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+        super.setCancelled(cancel);
     }
 }

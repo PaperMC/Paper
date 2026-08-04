@@ -129,4 +129,6 @@ interface ItemComponentTypesBridge {
     SwingAnimation.Builder swingAnimation();
 
     KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed);
+
+    SulfurCubeContent sulfurCubeContent(ItemStack absorbedItem);
 }

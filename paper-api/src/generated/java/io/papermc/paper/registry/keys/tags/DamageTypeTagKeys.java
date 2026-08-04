@@ -243,6 +243,13 @@ public final class DamageTypeTagKeys {
     public static final TagKey<DamageType> PANIC_ENVIRONMENTAL_CAUSES = create(key("panic_environmental_causes"));
 
     /**
+     * {@code #minecraft:sulfur_cube_with_block_immune_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<DamageType> SULFUR_CUBE_WITH_BLOCK_IMMUNE_TO = create(key("sulfur_cube_with_block_immune_to"));
+
+    /**
      * {@code #minecraft:witch_resistant_to}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

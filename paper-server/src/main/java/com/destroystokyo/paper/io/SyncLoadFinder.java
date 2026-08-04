@@ -71,7 +71,7 @@ public class SyncLoadFinder {
 
             final JsonObject worldData = new JsonObject();
 
-            worldData.addProperty("name", world.getWorld().getName());
+            worldData.addProperty("key", world.getWorld().key().asString());
 
             final List<Pair<ThrowableWithEquals, SyncLoadInformation>> data = new ArrayList<>();
 
