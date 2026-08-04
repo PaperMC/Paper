@@ -123,7 +123,7 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
         if (player instanceof CraftPlayer craftPlayer) {
             this.profile = ResolvableProfile.createResolved(craftPlayer.getProfile());
         } else {
-            this.profile = new ResolvableProfile.Dynamic(Either.right(player.getUniqueId()), PlayerSkin.Patch.EMPTY);
+            this.profile = ResolvableProfile.createUnresolved(player.getUniqueId());
         }
     }
 

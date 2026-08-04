@@ -5,6 +5,7 @@ import java.util.Map;
 import com.destroystokyo.paper.ClientOption;
 import org.bukkit.ServerLinks;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a connection that has properties shared between the GAME and CONFIG stage.
@@ -43,4 +44,13 @@ public interface PlayerCommonConnection extends WritablePlayerCookieConnection, 
      * @return the client option value of the player
      */
     <T> T getClientOption(ClientOption<T> type);
+
+    /**
+     * Returns player's client brand name. If the client didn't send this information, the brand name will be null.
+     * <p>
+     * For the Notchian client this name defaults to {@code vanilla}. Some modified clients report other names such as {@code neoforge}.
+     *
+     * @return client brand name
+     */
+    @Nullable String getClientBrandName();
 }

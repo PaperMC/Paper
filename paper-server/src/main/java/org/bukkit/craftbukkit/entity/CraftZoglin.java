@@ -64,6 +64,6 @@ public class CraftZoglin extends CraftMonster implements Zoglin {
     }
 
     @Override
-    public void setBreed(boolean b) {
+    public void setBreed(boolean breed) {
     }
 }

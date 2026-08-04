@@ -7,6 +7,7 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
+import io.papermc.paper.util.MCUtil;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -127,7 +128,7 @@ public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
 
     @Override
     public List<org.bukkit.inventory.EquipmentSlotGroup> activeSlots() {
-        return Collections.unmodifiableList(Lists.transform(asConfigured(this.activeSlots, "activeSlots"), CraftEquipmentSlot::getSlotGroup));
+        return MCUtil.transformUnmodifiable(asConfigured(this.activeSlots, "activeSlots"), CraftEquipmentSlot::getSlotGroup);
     }
 
     @Override

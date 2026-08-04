@@ -61,7 +61,6 @@ public final class SimplePluginManager implements PluginManager {
     public final Map<Boolean, Map<Permissible, Boolean>> defSubs = new HashMap<Boolean, Map<Permissible, Boolean>>();
     public PluginManager paperPluginManager;
     // Paper end
-    private boolean useTimings = false;
 
     public SimplePluginManager(@NotNull Server instance, @NotNull SimpleCommandMap commandMap) {
         server = instance;
@@ -720,12 +719,7 @@ public final class SimplePluginManager implements PluginManager {
             throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
         }
 
-        executor = new co.aikar.timings.TimedEventExecutor(executor, plugin, null, event); // Paper
-        if (false) { // Spigot - RL handles useTimings check now // Paper
-            getEventListeners(event).register(new TimedRegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
-        } else {
-            getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
-        }
+        getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
     }
 
     @NotNull

@@ -87,7 +87,7 @@ public class PaperVersionFetcher implements VersionFetcher {
                 case 0 -> apiResult.ifPresent(result -> {
                     COMPONENT_LOGGER.warn(text("*************************************************************************************"));
                     COMPONENT_LOGGER.warn(text("You are running the latest build for your Minecraft version (" + BUILD_INFO.minecraftVersionId() + ")"));
-                    COMPONENT_LOGGER.warn(text("However, you are " + result.distance() + " release(s) behind the latest stable release (" + result.latestVersion() + ")!"));
+                    COMPONENT_LOGGER.warn(text("However, you are " + result.distance() + " release" + (result.distance() == 1 ? "" : "s") + " behind the latest stable release (" + result.latestVersion() + ")!"));
                     COMPONENT_LOGGER.warn(text("It is recommended that you update as soon as possible"));
                     COMPONENT_LOGGER.warn(text(DOWNLOAD_PAGE));
                     COMPONENT_LOGGER.warn(text("*************************************************************************************"));
@@ -95,10 +95,11 @@ public class PaperVersionFetcher implements VersionFetcher {
                 case DISTANCE_UNKNOWN -> COMPONENT_LOGGER.warn(text("*** You are running an unknown version! Cannot fetch version info ***"));
                 default -> {
                     if (apiResult.isPresent()) {
-                        COMPONENT_LOGGER.warn(text("*** You are running an outdated version of Minecraft, which is " + apiResult.get().distance() + " release(s) and " + distance + " build(s) behind!"));
+                        final MinecraftVersionFetcher result = apiResult.get();
+                        COMPONENT_LOGGER.warn(text("*** You are running an outdated version of Minecraft, which is " + result.distance() + " release" + (result.distance() == 1 ? "" : "s") + " and " + distance + " build" + (distance == 1 ? "" : "s") + " behind!"));
                         COMPONENT_LOGGER.warn(text("*** Please update to the latest stable version on " + DOWNLOAD_PAGE + " ***"));
                     } else {
-                        COMPONENT_LOGGER.info(text("*** Currently you are " + distance + " build(s) behind ***"));
+                        COMPONENT_LOGGER.info(text("*** Currently you are " + distance + " build" + (distance == 1 ? "" : "s") + " behind ***"));
                         COMPONENT_LOGGER.info(text("*** It is highly recommended to download the latest build from " + DOWNLOAD_PAGE + " ***"));
                     }
                 }
@@ -174,6 +175,11 @@ public class PaperVersionFetcher implements VersionFetcher {
                                 final int currentIndex = versionList.indexOf(currentVersion);
                                 final int latestIndex = versionList.indexOf(latestVersion);
                                 final int distance = currentIndex - latestIndex;
+                                if (distance < 0) {
+                                    // Avoid logging warnings for early unpublished snapshot builds
+                                    return Optional.empty();
+                                }
+
                                 return Optional.of(new MinecraftVersionFetcher(latestVersion, distance));
                             }
                         } catch (final JsonSyntaxException ex) {

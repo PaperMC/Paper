@@ -4,7 +4,27 @@
      ) throws FileFixException {
          int loadedVersion = NbtUtils.getDataVersion(levelDataTag);
          if (this.requiresFileFixing(loadedVersion)) {
-+            if (!io.papermc.paper.world.migration.WorldFolderMigration.didInitialLoad) io.papermc.paper.world.migration.WorldFolderMigration.warnAndDelayStartupMigration(); // Paper
++            if (!io.papermc.paper.world.migration.WorldFolderMigration.didInitialLoad && worldVersionToFileFixerVersion(loadedVersion) == 0) io.papermc.paper.world.migration.WorldFolderMigration.warnAndDelayStartupMigration(); // Paper - warn and delay migration if performing the intial migration from 1.21.11 to >= 26.1
              LOGGER.info("Starting upgrade for world \"{}\"", worldAccess.getLevelId());
              Path worldFolder = worldAccess.getLevelDirectory().path();
              Path fileFixDirectory = worldFolder.resolve("filefix");
+@@ -312,7 +_,7 @@
+                     try {
+                         Files.deleteIfExists(movesFile);
+                     } catch (IOException e2) {
+-                        LOGGER.warn("Failed to delete {}", movesFile, e);
++                        LOGGER.warn("Failed to delete {}", movesFile, e2); // Paper - print correct stacktrace (MC-308790)
+                     }
+                 }
+ 
+@@ -351,8 +_,8 @@
+                     try {
+                         deleteDirectory(worldFolder);
+                     } catch (Exception e2) {
+-                        LOGGER.warn("Failed to delete outdated world folder: ", e);
+-                        throw new FailedCleanupFileFixException(e, tempWorldTopLevel.getFileName().toString(), fileSystemCapabilities);
++                        LOGGER.warn("Failed to delete outdated world folder: ", e2); // Paper - print correct stacktrace (MC-308790)
++                        throw new FailedCleanupFileFixException(e2, tempWorldTopLevel.getFileName().toString(), fileSystemCapabilities); // Paper - print correct stacktrace (MC-308790)
+                     }
+                 }
+ 

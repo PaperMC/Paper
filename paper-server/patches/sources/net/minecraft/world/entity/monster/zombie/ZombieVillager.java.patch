@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/entity/monster/zombie/ZombieVillager.java
 +++ b/net/minecraft/world/entity/monster/zombie/ZombieVillager.java
-@@ -200,12 +_,20 @@
+@@ -196,12 +_,20 @@
      }
  
-     public void startConverting(final @Nullable UUID player, final int time) {
+     private void startConverting(final @Nullable UUID player, final int time) {
 +        // Paper start - missing entity behaviour api - converting without entity event
 +        this.startConverting(player, time, true);
 +    }
@@ -24,23 +24,23 @@
      }
  
      @Override
-@@ -235,7 +_,7 @@
+@@ -231,7 +_,7 @@
      }
  
      private void finishConversion(final ServerLevel level) {
 -        this.convertTo(
 +        Villager converted = this.convertTo( // CraftBukkit
-             EntityType.VILLAGER,
+             EntityTypes.VILLAGER,
              ConversionParams.single(this, false, false),
              villager -> {
-@@ -261,19 +_,24 @@
+@@ -258,19 +_,24 @@
                  villager.finalizeSpawn(level, level.getCurrentDifficultyAt(villager.blockPosition()), EntitySpawnReason.CONVERSION, null);
                  villager.refreshBrain(level);
                  if (this.conversionStarter != null) {
 -                    Player player = level.getPlayerByUUID(this.conversionStarter);
 +                    Player player = level.getGlobalPlayerByUUID(this.conversionStarter); // Paper - check global player list where appropriate
-                     if (player instanceof ServerPlayer) {
-                         CriteriaTriggers.CURED_ZOMBIE_VILLAGER.trigger((ServerPlayer)player, this, villager);
+                     if (player instanceof ServerPlayer serverPlayer) {
+                         CriteriaTriggers.CURED_ZOMBIE_VILLAGER.trigger(serverPlayer, this, villager);
                          level.onReputationEvent(ReputationEventType.ZOMBIE_VILLAGER_CURED, player, villager);
                      }
                  }
