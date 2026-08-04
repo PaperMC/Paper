@@ -2432,15 +2432,15 @@ public class CraftEventFactory {
             return drops; // No listeners, skip event creation
         }
 
-        var converted = new ArrayList<org.bukkit.inventory.ItemStack>();
-        for (var drop : drops) {
+        List<org.bukkit.inventory.ItemStack> converted = new ArrayList<>();
+        for (ItemStack drop : drops) {
             converted.add(CraftItemStack.asCraftMirror(drop));
         }
 
-        var stateSnapshot = CraftBlockStates.getBlockState(level, pos);
+        CraftBlockState stateSnapshot = CraftBlockStates.getBlockState(level, pos);
         stateSnapshot.setBlock(state);
 
-        var event = new BlockDropResourcesEvent(
+        final var event = new BlockDropResourcesEvent(
             CraftBlock.at(level, pos),
             stateSnapshot,
             converted, breaker == null ? null : breaker.getBukkitEntity(),

@@ -8,34 +8,35 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 import java.util.List;
 
 /**
-    Called when a block is about to drop items
-
- <p>
-    This event will be called once for every block broken, even if multiple blocks are broken simultaneously.
-    For example, this event will be called twice when breaking a block with a torch on top.
- </p>
- <p>
-    This event will also be called when a block is dropping items as a result of being consumed, for example a cake dropping its candle after being eaten.
- </p>
- <p>
-    If you do not need the drops of each individual block, use {@link org.bukkit.event.block.BlockBreakEvent}.
- </p>
+ * Called when a block is about to drop items
+ *
+ * <p>
+ *    This event will be called once for every block broken, even if multiple blocks are broken simultaneously.
+ *    For example, this event will be called twice when breaking a block with a torch on top.
+ * </p>
+ * <p>
+ *    This event will also be called when a block is dropping items as a result of being consumed, for example a cake dropping its candle after being eaten.
+ * </p>
+ * <p>
+ *    If you do not need the drops of each individual block, use {@link org.bukkit.event.block.BlockBreakEvent}.
+ * </p>
  */
+@NullMarked
 public class BlockDropResourcesEvent extends BlockEvent implements Cancellable {
     private static final HandlerList HANDLER_LIST = new HandlerList();
-    private boolean cancelled;
     private final List<ItemStack> drops;
     private final Entity breaker;
     private final ItemStack tool;
     private final BlockState state;
+    private boolean cancelled;
 
     @ApiStatus.Internal
-    public BlockDropResourcesEvent(final @NotNull Block block, final @NotNull BlockState state, final @NotNull List<ItemStack> drops, final @Nullable Entity breaker, final @Nullable ItemStack tool) {
+    public BlockDropResourcesEvent(final Block block, final BlockState state, final List<ItemStack> drops, final @Nullable Entity breaker, final @Nullable ItemStack tool) {
         super(block);
         this.cancelled = false;
         this.drops = drops;
@@ -54,6 +55,7 @@ public class BlockDropResourcesEvent extends BlockEvent implements Cancellable {
 
     /**
      * Get the tool used to break the block
+     *
      * @return The tool used, or null
      */
     public @Nullable ItemStack getTool() {
@@ -65,15 +67,16 @@ public class BlockDropResourcesEvent extends BlockEvent implements Cancellable {
      *
      * @return A mutable list of items to be dropped
      */
-    public @NotNull List<ItemStack> getItems() {
+    public List<ItemStack> getItems() {
         return drops;
     }
 
     /**
      * Get the block state of the block that is about to drop resources
+     *
      * @return The block state
      */
-    public @NotNull BlockState getBlockState() {
+    public BlockState getBlockState() {
         return state;
     }
 
@@ -88,10 +91,11 @@ public class BlockDropResourcesEvent extends BlockEvent implements Cancellable {
     }
 
     @Override
-    public @NotNull HandlerList getHandlers() {
+    public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
-    public @NotNull static HandlerList getHandlerList() {
+
+    public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
 }
