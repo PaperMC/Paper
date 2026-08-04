@@ -14,17 +14,6 @@ import org.jspecify.annotations.Nullable;
 
 public class BetterSuppressionSingleFilter extends AbstractAutomaticBean implements Filter {
 
-    private static final MethodHandle VIOLATION_ARGS;
-
-    static {
-        try {
-            VIOLATION_ARGS = MethodHandles.privateLookupIn(Violation.class, MethodHandles.lookup())
-                .findGetter(Violation.class, "args", Object[].class);
-        } catch (final IllegalAccessException | NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private @Nullable BetterSuppressFilterElement filter;
     private @Nullable Pattern checks;
     private @Nullable Pattern messageKey;
