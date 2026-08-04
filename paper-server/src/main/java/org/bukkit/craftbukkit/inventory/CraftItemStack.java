@@ -8,6 +8,8 @@ import io.papermc.paper.inventory.tooltip.TooltipContext;
 import io.papermc.paper.persistence.PaperPersistentDataContainerView;
 import io.papermc.paper.persistence.PersistentDataContainerView;
 import io.papermc.paper.util.MCUtil;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
@@ -297,15 +299,27 @@ public final class CraftItemStack extends ItemStack {
     }
 
     @Override
-    public byte @NotNull [] serializeAsBytes() {
+    public void serializeBytes(final OutputStream output) throws IOException {
+        Preconditions.checkNotNull(output, "OutputStream cannot be null");
         Preconditions.checkArgument(!this.isEmpty(), "Empty item cannot be serialized");
 
-        return MCUtil.serializeTagToBytes(
-            (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
+        CompoundTag itemTag = serializeAsTag();
+        MCUtil.serializeTag(itemTag, output);
+    }
+
+    @Override
+    public byte[] serializeAsBytes(final boolean compress) {
+        Preconditions.checkArgument(!this.isEmpty(), "Empty item cannot be serialized");
+
+        CompoundTag itemTag = serializeAsTag();
+        return MCUtil.serializeTagToBytes(itemTag, compress);
+    }
+
+    private CompoundTag serializeAsTag() {
+        return (CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(
                 CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE),
                 this.handle
-            ).getOrThrow()
-        );
+        ).getOrThrow();
     }
 
     @Override

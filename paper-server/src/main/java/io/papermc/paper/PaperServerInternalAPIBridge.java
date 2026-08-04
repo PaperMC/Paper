@@ -21,6 +21,7 @@ import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
@@ -185,8 +186,16 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
-    public ItemStack deserializeItem(final byte[] data) {
-        CompoundTag tag = MCUtil.deserializeTagFromBytes(data);
+    public ItemStack deserializeItem(final InputStream input) throws IOException {
+        CompoundTag tag = MCUtil.deserializeTag(input);
+        int dataVersion = NbtUtils.getDataVersion(tag, 0);
+        Preconditions.checkArgument(dataVersion <= CraftMagicNumbers.INSTANCE.getDataVersion(), "Newer version! Server downgrades are not supported!");
+        return MCUtil.deserializeItem(tag);
+    }
+
+    @Override
+    public ItemStack deserializeItem(final byte[] data, boolean decompress) {
+        CompoundTag tag = MCUtil.deserializeTagFromBytes(data, decompress);
         int dataVersion = NbtUtils.getDataVersion(tag, 0);
         Preconditions.checkArgument(dataVersion <= CraftMagicNumbers.INSTANCE.getDataVersion(), "Newer version! Server downgrades are not supported!");
         return MCUtil.deserializeItem(tag);

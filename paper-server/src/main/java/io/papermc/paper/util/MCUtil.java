@@ -9,9 +9,13 @@ import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.math.Position;
 import io.papermc.paper.registry.data.client.ClientTextureAsset;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -23,6 +27,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
+import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.ClientAsset;
 import net.minecraft.core.Vec3i;
@@ -295,24 +303,36 @@ public final class MCUtil {
         ).getOrThrow());
     }
 
-    public static byte[] serializeTagToBytes(final CompoundTag tag) {
+    public static void serializeTag(final CompoundTag tag, final OutputStream output) throws IOException {
         NbtUtils.addCurrentDataVersion(tag);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try {
-            NbtIo.writeCompressed(tag, outputStream);
+        try (final DataOutputStream dos = new DataOutputStream(output)) {
+            NbtIo.write(tag, dos);
+        }
+    }
+
+    public static byte[] serializeTagToBytes(final CompoundTag tag, final boolean compress) {
+        final FastByteArrayOutputStream bos = new FastByteArrayOutputStream();
+        try (final OutputStream os = compress ? new BufferedOutputStream(new GZIPOutputStream(bos)) : bos) {
+            serializeTag(tag, os);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        return outputStream.toByteArray();
+        return bos.toByteArray();
     }
 
-    public static CompoundTag deserializeTagFromBytes(final byte[] data) {
+    public static CompoundTag deserializeTag(final InputStream input) throws IOException {
+        return NbtIo.read(new DataInputStream(input), NbtAccounter.unlimitedHeap());
+    }
+
+    public static CompoundTag deserializeTagFromBytes(final byte[] data, final boolean decompress) {
         CompoundTag tag;
-        try {
-            tag = NbtIo.readCompressed(new ByteArrayInputStream(data), NbtAccounter.unlimitedHeap());
+        final FastByteArrayInputStream bis = new FastByteArrayInputStream(data);
+        try (final InputStream is = decompress ? new BufferedInputStream(new GZIPInputStream(bis)) : bis) {
+            tag = deserializeTag(is);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
         return tag;
     }
+
 }
