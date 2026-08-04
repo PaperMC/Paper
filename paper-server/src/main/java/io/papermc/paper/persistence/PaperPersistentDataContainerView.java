@@ -8,12 +8,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataAdapterContext;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
+import org.bukkit.persistence.ListPersistentDataType;
 import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -74,6 +76,18 @@ public abstract class PaperPersistentDataContainerView implements PersistentData
     }
 
     @Override
+    public @Nullable PersistentDataType<?, ?> getType(final NamespacedKey key) {
+        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+
+        final Tag value = this.getTag(key.toString());
+        if (value == null) {
+            return null;
+        }
+
+        return getTagType(value);
+    }
+
+    @Override
     public Set<NamespacedKey> getKeys() {
         final Set<String> names = this.toTagCompound().keySet();
         final Set<NamespacedKey> keys = new HashSet<>(names.size());
@@ -116,5 +130,58 @@ public abstract class PaperPersistentDataContainerView implements PersistentData
             NbtIo.write(root, dataOutput);
             return byteArrayOutput.toByteArray();
         }
+    }
+
+    private static @Nullable PersistentDataType<?, ?> getTagType(final Tag value) {
+        return switch (value.getId()) {
+            case Tag.TAG_BYTE -> PersistentDataType.BYTE;
+            case Tag.TAG_SHORT -> PersistentDataType.SHORT;
+            case Tag.TAG_INT -> PersistentDataType.INTEGER;
+            case Tag.TAG_LONG -> PersistentDataType.LONG;
+            case Tag.TAG_FLOAT -> PersistentDataType.FLOAT;
+            case Tag.TAG_DOUBLE -> PersistentDataType.DOUBLE;
+            case Tag.TAG_BYTE_ARRAY -> PersistentDataType.BYTE_ARRAY;
+            case Tag.TAG_STRING -> PersistentDataType.STRING;
+            case Tag.TAG_COMPOUND -> PersistentDataType.TAG_CONTAINER;
+            case Tag.TAG_INT_ARRAY -> PersistentDataType.INTEGER_ARRAY;
+            case Tag.TAG_LONG_ARRAY -> PersistentDataType.LONG_ARRAY;
+            case Tag.TAG_LIST -> {
+                if (!(value instanceof ListTag listTag)) {
+                    yield null;
+                }
+
+                yield getListTagType(listTag);
+            }
+            default -> null;
+        };
+    }
+
+    private static @Nullable ListPersistentDataType<?, ?> getListTagType(final ListTag value) {
+        return switch (value.identifyRawElementType()) {
+            case Tag.TAG_BYTE -> PersistentDataType.LIST.bytes();
+            case Tag.TAG_SHORT -> PersistentDataType.LIST.shorts();
+            case Tag.TAG_INT -> PersistentDataType.LIST.integers();
+            case Tag.TAG_LONG -> PersistentDataType.LIST.longs();
+            case Tag.TAG_FLOAT -> PersistentDataType.LIST.floats();
+            case Tag.TAG_DOUBLE -> PersistentDataType.LIST.doubles();
+            case Tag.TAG_BYTE_ARRAY -> PersistentDataType.LIST.byteArrays();
+            case Tag.TAG_STRING -> PersistentDataType.LIST.strings();
+            case Tag.TAG_COMPOUND -> PersistentDataType.LIST.dataContainers();
+            case Tag.TAG_INT_ARRAY -> PersistentDataType.LIST.integerArrays();
+            case Tag.TAG_LONG_ARRAY -> PersistentDataType.LIST.longArrays();
+            case Tag.TAG_LIST -> {
+                if (value.isEmpty()) {
+                    yield null;
+                }
+
+                final Tag nestedTag = value.getFirst();
+                if (!(nestedTag instanceof ListTag nestedListTag)) {
+                    yield null;
+                }
+
+                yield getListTagType(nestedListTag);
+            }
+            default -> null;
+        };
     }
 }

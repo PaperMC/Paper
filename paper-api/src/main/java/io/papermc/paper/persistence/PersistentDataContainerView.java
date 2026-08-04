@@ -111,6 +111,15 @@ public interface PersistentDataContainerView {
     <P, C> C getOrDefault(NamespacedKey key, PersistentDataType<P, C> type, C defaultValue);
 
     /**
+     * Returns the type of the value that is stored on the
+     * {@link PersistentDataHolder} instance.
+     *
+     * @param key the key to loop up the value type of
+     * @return the data type or null if no value is present for the given key
+     */
+    @Nullable PersistentDataType<?, ?> getType(NamespacedKey key);
+
+    /**
      * Get the set of keys present on this {@link PersistentDataContainer}
      * instance.
      * <p>
