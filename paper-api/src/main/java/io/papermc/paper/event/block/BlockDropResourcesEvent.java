@@ -20,7 +20,8 @@ import java.util.List;
  *    For example, this event will be called twice when breaking a block with a torch on top.
  * </p>
  * <p>
- *    This event will also be called when a block is dropping items as a result of being consumed, for example a cake dropping its candle after being eaten.
+ *    This event will also be called when a block is dropping items as a result of a state change,
+ *    for example a cake dropping its candle after being eaten.
  * </p>
  * <p>
  *    If you do not need the drops of each individual block, use {@link org.bukkit.event.block.BlockBreakEvent}.
