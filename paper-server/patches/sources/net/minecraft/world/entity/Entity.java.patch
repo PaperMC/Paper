@@ -106,6 +106,14 @@
      private static final Logger LOGGER = LogUtils.getLogger();
      public static final String TAG_ID = "id";
      public static final String TAG_UUID = "UUID";
+@@ -233,6 +_,7 @@
+     public boolean hurtMarked;
+     protected Vec3 stuckSpeedMultiplier = Vec3.ZERO;
+     private Entity.@Nullable RemovalReason removalReason;
++    private org.bukkit.event.entity.EntityRemoveEvent.Cause removeEventCause;
+     public static final float DEFAULT_BB_WIDTH = 0.6F;
+     public static final float DEFAULT_BB_HEIGHT = 1.8F;
+     public float moveDist;
 @@ -243,7 +_,7 @@
      public double yOld;
      public double zOld;
@@ -1822,9 +1830,14 @@
      public float getYRot() {
          return this.yRot;
      }
-@@ -3934,7 +_,9 @@
+@@ -3933,10 +_,18 @@
+         return this.removalReason;
      }
  
++    public org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause getRemoveEventCause() {
++        return this.removeEventCause;
++    }
++
      @Override
 -    public final void setRemoved(final Entity.RemovalReason reason) {
 +    public final void setRemoved(final Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause cause) { // CraftBukkit - add Bukkit remove cause
@@ -1832,8 +1845,11 @@
 +        final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
          if (this.removalReason == null) {
              this.removalReason = reason;
++            this.removeEventCause = cause;
          }
-@@ -3946,12 +_,28 @@
+ 
+         if (this.removalReason.shouldDestroy()) {
+@@ -3946,11 +_,28 @@
          this.getPassengers().forEach(Entity::stopRiding);
          this.levelCallback.onRemove(reason);
          this.onRemoval(reason);
@@ -1847,8 +1863,10 @@
  
      public void unsetRemoved() {
          this.removalReason = null;
-     }
- 
+-    }
++        this.removeEventCause = null;
++    }
++
 +    // Paper start - Folia schedulers
 +    /**
 +     * Invoked only when the entity is truly removed from the server, never to be added to any world.
@@ -1858,10 +1876,9 @@
 +        this.getBukkitEntity().taskScheduler.retire();
 +    }
 +    // Paper end - Folia schedulers
-+
+ 
      @Override
      public void setLevelCallback(final EntityInLevelCallback levelCallback) {
-         this.levelCallback = levelCallback;
 @@ -4173,4 +_,10 @@
              return this.save;
          }
