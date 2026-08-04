@@ -1,11 +1,8 @@
 package io.papermc.paper.math;
 
-import org.jspecify.annotations.NullMarked;
-
 /**
  * Represents an angle that can be relative or absolute.
  */
-@NullMarked
 public sealed interface Angle permits AngleImpl {
 
     /**
@@ -15,7 +12,7 @@ public sealed interface Angle permits AngleImpl {
      * @param degrees the angle value, measured in degrees
      * @return a new {@code Angle} instance with the specified value
      */
-    static Angle absolute(float degrees) {
+    static Angle absolute(final float degrees) {
         return new AngleImpl(degrees, false);
     }
 
@@ -26,7 +23,7 @@ public sealed interface Angle permits AngleImpl {
      * @param degrees the angle value, measured in degrees
      * @return a new {@code Angle} instance with the specified value
      */
-    static Angle relative(float degrees) {
+    static Angle relative(final float degrees) {
         return new AngleImpl(degrees, true);
     }
 
