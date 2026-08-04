@@ -47,6 +47,7 @@ public class BlockDropResourcesEvent extends BlockEvent implements Cancellable {
 
     /**
      * Get the entity that caused the block to drop resources
+     *
      * @return The responsible entity, or null if no entity was involved
      */
     public @Nullable Entity getEntity() {
