@@ -10,9 +10,9 @@ public class SpawnCategoryTest {
 
     @Test
     public void testMatch() {
-        for (MobCategory enumCreatureType : MobCategory.values()) {
+        for (MobCategory category : MobCategory.values()) {
             // If it is missing a convert to Bukkit then throw a UnsupportedOperationException
-            SpawnCategory spawnCategory = CraftSpawnCategory.toBukkit(enumCreatureType);
+            SpawnCategory spawnCategory = CraftSpawnCategory.toBukkit(category);
 
             if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
                 long defaultTicks = CraftSpawnCategory.getDefaultTicksPerSpawn(spawnCategory);
@@ -23,7 +23,7 @@ public class SpawnCategoryTest {
 
         for (SpawnCategory spawnCategory : SpawnCategory.values()) {
             // If it is missing a convert to NMS then throw a UnsupportedOperationException
-            MobCategory enumCreatureType = CraftSpawnCategory.toNMS(spawnCategory);
+            MobCategory category = CraftSpawnCategory.toNMS(spawnCategory);
         }
     }
 }
