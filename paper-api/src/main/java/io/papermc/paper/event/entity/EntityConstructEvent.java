@@ -35,7 +35,7 @@ public class EntityConstructEvent extends EntityEvent implements Cancellable {
     /**
      * Get an immutable list of the blocks required for this construction, including
      * any required air blocks.
-     * 
+     *
      * @return the blocks
      */
     public @Unmodifiable List<Block> getBlocks() {
