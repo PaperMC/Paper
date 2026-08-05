@@ -16,7 +16,6 @@ import org.jspecify.annotations.Nullable;
 public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> extends CraftAbstractLocationInventoryViewBuilder<V> {
 
     private final Block block;
-    private final boolean useFakeBlockEntity;
     private final @Nullable CraftBlockInventoryBuilder builder;
 
     public CraftBlockEntityInventoryViewBuilder(
@@ -24,17 +23,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
         final Block block,
         final @Nullable CraftBlockInventoryBuilder builder
     ) {
-        this(handle, block, builder, true);
-    }
-
-    public CraftBlockEntityInventoryViewBuilder(
-        final MenuType<?> handle,
-        final Block block,
-        final @Nullable CraftBlockInventoryBuilder builder,
-        final boolean useFakeBlockEntity
-    ) {
         super(handle);
-        this.useFakeBlockEntity = useFakeBlockEntity;
         this.block = block;
         this.builder = builder;
     }
@@ -71,6 +60,9 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
     private AbstractContainerMenu buildFakeBlockEntity(final ServerPlayer player) {
         final MenuProvider inventory = this.builder.build(this.position, this.block.defaultBlockState());
         if (inventory instanceof final BlockEntity blockEntity) {
+            blockEntity.setLevel(this.world);
+            // marks this as "not in world" for gating general level broadcasts
+            blockEntity.real = false;
             super.defaultTitle = inventory.getDisplayName();
         }
 
@@ -79,7 +71,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
 
     @Override
     public LocationInventoryViewBuilder<V> copy() {
-        final CraftBlockEntityInventoryViewBuilder<V> copy = new CraftBlockEntityInventoryViewBuilder<>(super.handle, this.block, this.builder, this.useFakeBlockEntity);
+        final CraftBlockEntityInventoryViewBuilder<V> copy = new CraftBlockEntityInventoryViewBuilder<>(super.handle, this.block, this.builder);
         copy.world = this.world;
         copy.position = this.position;
         copy.checkReachable = super.checkReachable;

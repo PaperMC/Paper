@@ -81,7 +81,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftDoubleChestInventoryViewBuilder<>(handle)));
         }
         if (menuType == MenuType.GENERIC_9X3) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.CHEST, ChestBlockEntity::new, false)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.CHEST, ChestBlockEntity::new)));
         }
         // this isn't ideal as both dispenser and dropper are 3x3, InventoryType can't currently handle generic 3x3s with size 9
         // this needs to be removed when inventory creation is overhauled

@@ -1,14 +1,5 @@
 --- a/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-@@ -93,7 +_,7 @@
-                     BeaconBlockEntity.this.levels = value;
-                     break;
-                 case 1:
--                    if (!BeaconBlockEntity.this.level.isClientSide() && !BeaconBlockEntity.this.beamSections.isEmpty()) {
-+                    if (BeaconBlockEntity.this.level != null && !BeaconBlockEntity.this.level.isClientSide() && !BeaconBlockEntity.this.beamSections.isEmpty()) { // Paper - don't broadcast for fake BlockEntity
-                         BeaconBlockEntity.playSound(BeaconBlockEntity.this.level, BeaconBlockEntity.this.worldPosition, SoundEvents.BEACON_POWER_SELECT);
-                     }
- 
 @@ -109,6 +_,51 @@
              return 3;
          }
@@ -223,14 +214,12 @@
      }
  
      public void setCustomName(final @Nullable Component name) {
-@@ -347,8 +_,8 @@
+@@ -347,7 +_,7 @@
  
      @Override
      public @Nullable AbstractContainerMenu createMenu(final int containerId, final Inventory inventory, final Player player) {
 -        if (this.lockKey.canUnlock(player)) {
--            return new BeaconMenu(containerId, inventory, this.dataAccess, ContainerLevelAccess.create(this.level, this.getBlockPos()));
 +        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockLockCheckEvent(this, this.lockKey, this.getDisplayName(), player)) { // Paper - Call BlockLockCheckEvent
-+            return new BeaconMenu(containerId, inventory, this.dataAccess, this.level == null ? ContainerLevelAccess.NULL : ContainerLevelAccess.create(this.level, this.getBlockPos())); // Paper - fake BlockEntity has no level to access
+             return new BeaconMenu(containerId, inventory, this.dataAccess, ContainerLevelAccess.create(this.level, this.getBlockPos()));
          }
  
-         BaseContainerBlockEntity.sendChestLockedNotifications(Vec3.atCenterOf(this.getBlockPos()), player, this.getDisplayName());
