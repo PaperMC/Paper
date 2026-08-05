@@ -113,11 +113,6 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
         );
     }
 
-    @Override
-    public SpawnCategory getSpawnCategory(EntityType entityType) {
-        return CraftSpawnCategory.toBukkit(CraftEntityType.bukkitToMinecraft(entityType).getCategory());
-    }
-
     private CombatEntry createCombatEntry(
         final net.minecraft.world.damagesource.DamageSource damageSource,
         final float damage,
@@ -184,6 +179,11 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public String getTranslationKey(final EntityType entityType) {
         return CraftEntityType.bukkitToMinecraft(entityType).getDescriptionId();
+    }
+
+    @Override
+    public SpawnCategory getSpawnCategory(final EntityType entityType) {
+        return CraftSpawnCategory.toBukkit(CraftEntityType.bukkitToMinecraft(entityType).getCategory());
     }
 
     @Override
