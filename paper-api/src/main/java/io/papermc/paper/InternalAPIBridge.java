@@ -29,6 +29,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pose;
+import org.bukkit.entity.SpawnCategory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -96,6 +97,8 @@ public interface InternalAPIBridge {
     DamageEffect getDamageEffect(String key);
 
     String getTranslationKey(EntityType entityType);
+
+    SpawnCategory getSpawnCategory(EntityType entityType);
 
     /*
      * Called once by the version command on first use, then cached.
