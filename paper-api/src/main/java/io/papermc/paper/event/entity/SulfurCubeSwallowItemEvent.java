@@ -47,7 +47,7 @@ public class SulfurCubeSwallowItemEvent extends EntityEvent implements Cancellab
     }
 
     /**
-     * Gets the item that is currently swallowed by the SulfurCube
+     * Gets the item that is currently swallowed by the SulfurCube.
      *
      * @return an ItemStack for the item currently swallowed
      */
@@ -67,7 +67,7 @@ public class SulfurCubeSwallowItemEvent extends EntityEvent implements Cancellab
     }
 
     /**
-     * Set the item being swallowed
+     * Set the item being swallowed.
      *
      * @param newItem the item being swallowed
      */
