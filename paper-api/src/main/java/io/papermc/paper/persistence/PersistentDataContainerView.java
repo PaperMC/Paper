@@ -114,7 +114,7 @@ public interface PersistentDataContainerView {
      * Returns the type of the value that is stored on the
      * {@link PersistentDataHolder} instance.
      *
-     * @param key the key to loop up the value type of
+     * @param key the key to look up the value type of
      * @return the data type or null if no value is present for the given key
      */
     @Nullable PersistentDataType<?, ?> getType(NamespacedKey key);
