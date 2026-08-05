@@ -18,20 +18,11 @@ public final class PaperCommands {
     private PaperCommands() {
     }
 
-    private static final Map<String, Command> COMMANDS = new HashMap<>();
-
-    public static void registerLegacyCommands(final MinecraftServer server) {
-        COMMANDS.forEach((s, command) -> {
-            server.server.getCommandMap().register(s, "Paper", command);
-        });
-    }
-
     public static void registerCommands() {
-        // Paper commands go here
+        registerInternalCommand(PaperCommand.create(), "paper", PaperCommand.DESCRIPTION, List.of(), Set.of());
         registerInternalCommand(PaperMSPTCommand.create(), "paper", PaperMSPTCommand.DESCRIPTION, List.of(), Set.of());
         registerInternalCommand(PaperVersionCommand.create(), "bukkit", PaperVersionCommand.DESCRIPTION, List.of("ver", "about"), Set.of());
         registerInternalCommand(PaperPluginsCommand.create(), "bukkit", PaperPluginsCommand.DESCRIPTION, List.of("pl"), Set.of());
-        registerInternalCommand(PaperCommand.create(), "paper", PaperCommand.DESCRIPTION, List.of(), Set.of());
     }
 
     private static void registerInternalCommand(final LiteralCommandNode<CommandSourceStack> node, final String namespace, final String description, final List<String> aliases, final Set<CommandRegistrationFlag> flags) {

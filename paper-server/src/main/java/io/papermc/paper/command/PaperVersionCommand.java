@@ -45,8 +45,8 @@ public final class PaperVersionCommand {
     private static final Component FAILED_TO_FETCH = Component.text("Could not fetch version information!", NamedTextColor.RED);
     private static final Component FETCHING = Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC);
 
-    private final VersionFetcher versionFetcher = InternalAPIBridge.get().getVersionFetcher();
-    private CompletableFuture<ComputedVersion> computedVersion = CompletableFuture.completedFuture(new ComputedVersion(Component.empty(), -1)); // Precompute-- someday move that stuff out of bukkit
+    private static final VersionFetcher versionFetcher = InternalAPIBridge.get().getVersionFetcher();
+    private static CompletableFuture<ComputedVersion> computedVersion = CompletableFuture.completedFuture(new ComputedVersion(Component.empty(), -1)); // Precompute-- someday move that stuff out of bukkit
 
     public static LiteralCommandNode<CommandSourceStack> create() {
         return Commands.literal("version")
