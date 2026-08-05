@@ -332,13 +332,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
         final AdvancementTree tree = server.getAdvancements().tree();
         tree.addAll(newEntries.stream().map(AdvancementEntry::advancement).toList());
 
-        final boolean shouldSave;
-        if (persist) {
-            shouldSave = DynamicBuiltinPacks.BUKKIT.createIfNeeded(DynamicBuiltinPack.LevelPathAccess.SERVER);
-        } else {
-            shouldSave = false;
-        }
-
         final Set<AdvancementNode> roots = new HashSet<>();
         for (final AdvancementEntry entry : newEntries) {
             final AdvancementNode node = Objects.requireNonNull(tree.get(entry.id()));
@@ -349,6 +342,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
             if (root.holder().value().display().isPresent()) {
                 TreeNodePosition.run(root);
             }
+        }
+
+        boolean shouldSave = persist && !newEntries.isEmpty();
+        if (shouldSave) {
+            shouldSave = DynamicBuiltinPacks.BUKKIT.createIfNeeded(DynamicBuiltinPack.LevelPathAccess.SERVER);
         }
 
         final List<Advancement> deserializedAdvancements = new ArrayList<>(advancements.size());
