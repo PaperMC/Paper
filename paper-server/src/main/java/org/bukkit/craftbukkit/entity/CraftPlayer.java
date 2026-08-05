@@ -18,6 +18,7 @@ import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.math.Angle;
 import io.papermc.paper.math.Position;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
@@ -1299,6 +1300,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
+    public void setRotation(@NonNull Angle yaw, @NonNull Angle pitch) {
+        if (this.getHandle().connection == null) return;
+
+        super.setRotation(yaw, pitch);
+    }
+
+    @Override
     public void lookAt(org.bukkit.entity.@NonNull Entity entity, @NonNull LookAnchor playerAnchor, @NonNull LookAnchor entityAnchor) {
         this.getHandle().lookAt(toNmsAnchor(playerAnchor), ((CraftEntity) entity).getHandle(), toNmsAnchor(entityAnchor));
     }
@@ -2461,6 +2469,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
     // Paper end - flying fall damage
 
+
+    @Override
+    public void resetFlyingTicks() {
+        if (getHandle().connection == null) {
+            return;
+        }
+
+        getHandle().connection.resetFlyingTicks();
+    }
+
     @Override
     public void setFlySpeed(float value) {
         this.validateSpeed(value);
@@ -3363,5 +3381,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void knockback(final double strength, final double directionX, final double directionZ) {
         super.knockback(strength, directionX, directionZ);
         this.entity.hurtMarked = true;
+    }
+
+    @Override
+    public void unsetFixedPose() {
+        this.getHandle().fixedPose = false;
+        this.getHandle().updatePlayerPose();
     }
 }
