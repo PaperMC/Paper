@@ -14,12 +14,14 @@ import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.level.MoonPhase;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
@@ -35,12 +37,14 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.entity.CraftEntityTypes;
 import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractCow;
+import org.bukkit.entity.AbstractCubeMob;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Cow;
@@ -52,6 +56,7 @@ import org.bukkit.entity.LargeFireball;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Minecart;
 import org.bukkit.entity.SizedFireball;
+import org.bukkit.entity.Slime;
 import org.bukkit.entity.SplashPotion;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.TippedArrow;
@@ -112,11 +117,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public void setBlockData(int x, int y, int z, BlockData blockData) {
-        WorldGenLevel world = this.getHandle();
         BlockPos pos = new BlockPos(x, y, z);
-        net.minecraft.world.level.block.state.BlockState old = this.getHandle().getBlockState(pos);
-
-        CraftBlock.setBlockState(world, pos, old, ((CraftBlockData) blockData).getState(), true);
+        this.getHandle().setBlock(pos, ((CraftBlockData) blockData).getState(), Block.UPDATE_ALL);
     }
 
     @Override
@@ -411,7 +413,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     public abstract void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
 
-    @SuppressWarnings("unchecked")
     public net.minecraft.world.entity.Entity createEntity(Location location, Class<? extends Entity> clazz, boolean randomizeData) throws IllegalArgumentException {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(clazz != null, "Entity class cannot be null");
@@ -424,14 +425,14 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             clazz = Horse.class;
         } else if (clazz == AbstractCow.class) {
             clazz = Cow.class;
-        } else if (clazz == Fireball.class) {
+        } else if (clazz == AbstractCubeMob.class) {
+            clazz = Slime.class;
+        } else if (clazz == Fireball.class || clazz == SizedFireball.class) {
             clazz = LargeFireball.class;
         } else if (clazz == ThrownPotion.class) {
             clazz = SplashPotion.class;
         } else if (clazz == Minecart.class) {
             clazz = RideableMinecart.class;
-        } else if (clazz == SizedFireball.class) {
-            clazz = LargeFireball.class;
         } else if (clazz == TippedArrow.class) {
             clazz = Arrow.class;
             runOld = other -> ((Arrow) other.getBukkitEntity()).setBasePotionType(PotionType.WATER);
@@ -451,6 +452,10 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
         if (!this.isEnabled(entityTypeData.entityType())) {
             throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName() + " because it is not an enabled feature");
+        }
+
+        if (this.getHandle().getDifficulty() == Difficulty.PEACEFUL && !CraftEntityType.bukkitToMinecraft(entityTypeData.entityType()).isAllowedInPeaceful()) {
+            throw new IllegalStateException("Cannot spawn monster for " + clazz.getName() + " in Peaceful difficulty");
         }
 
         net.minecraft.world.entity.Entity entity = entityTypeData.spawnFunction().apply(new CraftEntityTypes.SpawnData(this.getHandle(), location, randomizeData, this.isNormalWorld()));

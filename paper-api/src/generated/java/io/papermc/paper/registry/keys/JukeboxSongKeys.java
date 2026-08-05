@@ -54,6 +54,13 @@ public final class JukeboxSongKeys {
     public static final TypedKey<JukeboxSong> BLOCKS = create(key("blocks"));
 
     /**
+     * {@code minecraft:bounce}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<JukeboxSong> BOUNCE = create(key("bounce"));
+
+    /**
      * {@code minecraft:cat}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

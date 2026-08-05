@@ -3,6 +3,7 @@ package io.papermc.paper.plugin.manager;
 import com.google.common.base.Preconditions;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
+import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import io.papermc.paper.plugin.entrypoint.Entrypoint;
 import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
@@ -14,6 +15,14 @@ import io.papermc.paper.plugin.provider.source.DirectoryProviderSource;
 import io.papermc.paper.plugin.provider.source.FileArrayProviderSource;
 import io.papermc.paper.plugin.provider.source.FileProviderSource;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.World;
@@ -34,21 +43,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.Appender;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.AsyncAppender;
-
-@SuppressWarnings("UnstableApiUsage")
 class PaperPluginInstanceManager {
 
     private static final FileProviderSource FILE_PROVIDER_SOURCE = new FileProviderSource("File '%s'"::formatted);
@@ -245,8 +239,8 @@ class PaperPluginInstanceManager {
             }
 
             // Flush async appender before unloading, avoids issues when a log message with class context
-            // tries to print after it's source has unloaded (i.e., Guice enhanced errors)
-            this.flushAsyncAppenders();
+            // tries to print after its source has unloaded (i.e., Guice enhanced errors)
+            FeatureHooks.flushAsyncAppenders();
 
             ClassLoader classLoader = plugin.getClass().getClassLoader();
             if (classLoader instanceof ConfiguredPluginClassLoader configuredPluginClassLoader) {
@@ -334,21 +328,6 @@ class PaperPluginInstanceManager {
     private void handlePluginException(String msg, Throwable ex, Plugin plugin) {
         Bukkit.getServer().getLogger().log(Level.SEVERE, msg, ex);
         this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));
-    }
-
-    private void flushAsyncAppenders() {
-        if (!(LogManager.getContext(false) instanceof LoggerContext context)) {
-            return;
-        }
-
-        for (final Appender appender : context.getConfiguration().getAppenders().values()) {
-            if (appender instanceof AsyncAppender asyncAppender) {
-                final boolean flushed = asyncAppender.flush(100, TimeUnit.MILLISECONDS);
-                if (!flushed) {
-                    this.server.getLogger().log(Level.WARNING, "Failed to flush log messages before plugin unload.");
-                }
-            }
-        }
     }
 
     public boolean isTransitiveDepend(@NotNull PluginMeta plugin, @NotNull PluginMeta depend) {

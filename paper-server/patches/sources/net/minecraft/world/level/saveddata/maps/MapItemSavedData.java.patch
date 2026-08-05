@@ -17,13 +17,12 @@
      public final List<MapItemSavedData.HoldingPlayer> carriedBy = Lists.newArrayList();
      public final Map<Player, MapItemSavedData.HoldingPlayer> carriedByPlayers = Maps.newHashMap();
      private final Map<String, MapBanner> bannerMarkers = Maps.newHashMap();
-@@ -76,6 +_,13 @@
+@@ -76,6 +_,12 @@
      private final Map<String, MapFrame> frameMarkers = Maps.newHashMap();
      private int trackedDecorationCount;
  
 +    // CraftBukkit start
 +    public final org.bukkit.craftbukkit.map.CraftMapView mapView;
-+    private final org.bukkit.craftbukkit.CraftServer server;
 +    public java.util.UUID uniqueId;
 +    public MapId id;
 +    // CraftBukkit end
@@ -31,14 +30,13 @@
      public static SavedDataType<MapItemSavedData> type(final MapId id) {
          return new SavedDataType<>(Identifier.withDefaultNamespace(id.key()), () -> {
              throw new IllegalStateException("Should never create an empty map saved data");
-@@ -98,7 +_,29 @@
+@@ -98,7 +_,28 @@
          this.trackingPosition = trackingPosition;
          this.unlimitedTracking = unlimitedTracking;
          this.locked = locked;
 -    }
 +        // CraftBukkit start
 +        this.mapView = new org.bukkit.craftbukkit.map.CraftMapView(this);
-+        this.server = (org.bukkit.craftbukkit.CraftServer) org.bukkit.Bukkit.getServer();
 +        this.vanillaRender.buffer = colors; // Paper - Use Vanilla map renderer when possible
 +        // CraftBukkit end
 +    }
@@ -99,7 +97,7 @@
 @@ -375,7 +_,12 @@
      }
  
-     public void setColorsDirty(final int x, final int y) {
+     private void setColorsDirty(final int x, final int y) {
 -        this.setDirty();
 +    // Paper start - Fix unnecessary map data saves
 +        this.setColorsDirty(x, y, true);
@@ -119,7 +117,7 @@
                  this.bannerMarkers.put(banner.getId(), banner);
                  this.addDecoration(banner.getDecoration(), level, banner.getId(), xPos, zPos, 180.0, banner.name().orElse(null));
                  this.setDirty();
-@@ -524,7 +_,7 @@
+@@ -518,7 +_,7 @@
              this.player = player;
          }
  
@@ -128,7 +126,7 @@
              int startX = this.minDirtyX;
              int startY = this.minDirtyY;
              int width = this.maxDirtyX + 1 - this.minDirtyX;
-@@ -533,7 +_,7 @@
+@@ -527,7 +_,7 @@
  
              for (int x = 0; x < width; x++) {
                  for (int y = 0; y < height; y++) {
@@ -137,7 +135,7 @@
                  }
              }
  
-@@ -542,17 +_,38 @@
+@@ -536,17 +_,38 @@
  
          private @Nullable Packet<?> nextUpdatePacket(final MapId id) {
              MapItemSavedData.MapPatch patch;
@@ -179,7 +177,7 @@
              } else {
                  decorations = null;
              }
-@@ -580,6 +_,23 @@
+@@ -574,6 +_,23 @@
          private void markDecorationsDirty() {
              this.dirtyDecorations = true;
          }
@@ -203,7 +201,7 @@
      }
  
      private record MapDecorationLocation(Holder<MapDecorationType> type, byte x, byte y, byte rot) {
-@@ -624,4 +_,71 @@
+@@ -618,4 +_,71 @@
              }
          }
      }

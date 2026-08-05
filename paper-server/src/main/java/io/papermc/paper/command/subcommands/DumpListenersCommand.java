@@ -77,7 +77,7 @@ public final class DumpListenersCommand implements PaperSubcommand {
         try {
             Files.createDirectories(parent);
             Files.createFile(path);
-            try (final PrintWriter writer = new PrintWriter(path.toFile())){
+            try (final PrintWriter writer = new PrintWriter(path.toFile())) {
                 for (final String eventClass : eventClassNames()) {
                     final HandlerList handlers;
                     try {

@@ -320,6 +320,13 @@ public final class DamageTypeKeys {
     public static final TypedKey<DamageType> STING = create(key("sting"));
 
     /**
+     * {@code minecraft:sulfur_cube_hot}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DamageType> SULFUR_CUBE_HOT = create(key("sulfur_cube_hot"));
+
+    /**
      * {@code minecraft:sweet_berry_bush}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

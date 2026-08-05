@@ -22,7 +22,7 @@ public abstract class CraftLootable<T extends RandomizableContainerBlockEntity> 
     public void applyTo(T blockEntity) {
         super.applyTo(blockEntity);
 
-        if (this.getSnapshot().lootTable == null) {
+        if (this.getSnapshot().getLootTable() == null) {
             blockEntity.setLootTable(null, 0L);
         }
     }

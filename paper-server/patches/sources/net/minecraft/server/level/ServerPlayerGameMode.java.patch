@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -46,16 +_,37 @@
+@@ -46,17 +_,37 @@
      private BlockPos delayedDestroyPos = BlockPos.ZERO;
      private int delayedTickStart;
      private int lastSentState = -1;
@@ -23,38 +23,40 @@
 +        // Paper end - Expand PlayerGameModeChangeEvent
          if (gameModeForPlayer == this.gameModeForPlayer) {
 -            return false;
+-        }
+-
 +            return null; // Paper - Expand PlayerGameModeChangeEvent
-         } else {
-+            // CraftBukkit start
-+            org.bukkit.event.player.PlayerGameModeChangeEvent event = new org.bukkit.event.player.PlayerGameModeChangeEvent(
-+                this.player.getBukkitEntity(),
-+                org.bukkit.GameMode.getByValue(gameModeForPlayer.getId()),
-+                playerGameModeChangeCause, // Paper
-+                cancelMessage
-+            );
-+            if (!event.callEvent()) {
-+                return event; // Paper - Expand PlayerGameModeChangeEvent
-+            }
-+            // CraftBukkit end
-             Abilities abilities = this.player.getAbilities();
-             this.setGameModeForPlayer(gameModeForPlayer, this.gameModeForPlayer);
-             if (abilities.flying && gameModeForPlayer != GameType.SPECTATOR && this.isInRangeOfGround()) {
-@@ -66,13 +_,13 @@
-             this.level
-                 .getServer()
-                 .getPlayerList()
--                .broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player));
-+                .broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
-             this.level.updateSleepingPlayerList();
-             if (gameModeForPlayer == GameType.CREATIVE) {
-                 this.player.resetCurrentImpulseContext();
-             }
- 
--            return true;
++        }
++        // CraftBukkit start
++        org.bukkit.event.player.PlayerGameModeChangeEvent event = new org.bukkit.event.player.PlayerGameModeChangeEvent(
++            this.player.getBukkitEntity(),
++            org.bukkit.GameMode.getByValue(gameModeForPlayer.getId()),
++            playerGameModeChangeCause,
++            cancelMessage
++        );
++        if (!event.callEvent()) {
 +            return event; // Paper - Expand PlayerGameModeChangeEvent
++        }
++        // CraftBukkit end
+         Abilities abilities = this.player.getAbilities();
+         this.setGameModeForPlayer(gameModeForPlayer, this.gameModeForPlayer);
+         if (abilities.flying && gameModeForPlayer != GameType.SPECTATOR && this.isInRangeOfGround()) {
+@@ -67,13 +_,13 @@
+         this.level
+             .getServer()
+             .getPlayerList()
+-            .broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player));
++            .broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
+         this.level.updateSleepingPlayerList();
+         if (gameModeForPlayer == GameType.CREATIVE) {
+             this.player.resetCurrentImpulseContext();
          }
+ 
+-        return true;
++        return event; // Paper - Expand PlayerGameModeChangeEvent
      }
  
+     protected void setGameModeForPlayer(final GameType gameModeForPlayer, final @Nullable GameType previousGameModeForPlayer) {
 @@ -105,10 +_,11 @@
      }
  
@@ -189,7 +191,7 @@
              }
          }
      }
-@@ -261,17 +_,62 @@
+@@ -261,13 +_,53 @@
  
      public boolean destroyBlock(final BlockPos pos) {
          BlockState state = this.level.getBlockState(pos);
@@ -235,103 +237,98 @@
 +
 +        if (false && !this.player.getMainHandItem().canDestroyBlock(state, this.level, pos, this.player)) { // CraftBukkit - false
              return false;
-         } else {
-+            state = this.level.getBlockState(pos); // CraftBukkit - update state from plugins
-+            if (state.isAir()) return false; // CraftBukkit - A plugin set block to air without cancelling
-             BlockEntity blockEntity = this.level.getBlockEntity(pos);
-             Block block = state.getBlock();
--            if (block instanceof GameMasterBlock && !this.player.canUseGameMasterBlocks()) {
-+            if (block instanceof GameMasterBlock && !this.player.canUseGameMasterBlocks() && !(block instanceof net.minecraft.world.level.block.CommandBlock && (this.player.isCreative() && this.player.getBukkitEntity().hasPermission("minecraft.commandblock")))) { // Paper - command block permission
-                 this.level.sendBlockUpdated(pos, state, state, Block.UPDATE_ALL);
-                 return false;
-             } else if (this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) {
-                 return false;
-             } else {
-+                // CraftBukkit start
-+                org.bukkit.block.BlockState bState = bblock.getState();
-+                this.level.captureDrops = new java.util.ArrayList<>();
-+                // CraftBukkit end
-                 BlockState adjustedState = block.playerWillDestroy(this.level, pos, state, this.player);
-                 boolean changed = this.level.removeBlock(pos, false);
-                 if (SharedConstants.DEBUG_BLOCK_BREAK) {
-@@ -282,19 +_,44 @@
-                     block.destroy(this.level, pos, adjustedState);
-                 }
- 
-+                ItemStack mainHandStack = null; // Paper - Trigger bee_nest_destroyed trigger in the correct place
-+                boolean isCorrectTool = false; // Paper - Trigger bee_nest_destroyed trigger in the correct place
-                 if (this.player.preventsBlockDrops()) {
--                    return true;
-+                    // return true; // CraftBukkit
-                 } else {
-                     ItemStack itemStack = this.player.getMainHandItem();
-                     ItemStack destroyedWith = itemStack.copy();
-                     boolean canDestroy = this.player.hasCorrectToolForDrops(adjustedState);
-+                    mainHandStack = destroyedWith; // Paper - Trigger bee_nest_destroyed trigger in the correct place
-+                    isCorrectTool = canDestroy; // Paper - Trigger bee_nest_destroyed trigger in the correct place
-                     itemStack.mineBlock(this.level, adjustedState, pos, this.player);
--                    if (changed && canDestroy) {
--                        block.playerDestroy(this.level, this.player, pos, adjustedState, blockEntity, destroyedWith);
--                    }
+         }
 -
--                    return true;
--                }
-+                    if (changed && canDestroy) { // CraftBukkit - Check if block should drop items // Paper - fix drops not preventing stats/food exhaustion
-+                        block.playerDestroy(this.level, this.player, pos, adjustedState, blockEntity, destroyedWith, event.isDropItems(), false); // Paper - fix drops not preventing stats/food exhaustion
-+                    }
-+
-+                    // return true; // CraftBukkit
-+                }
-+                // CraftBukkit start
-+                java.util.List<net.minecraft.world.entity.item.ItemEntity> itemsToDrop = this.level.captureDrops; // Paper - capture all item additions to the world
-+                this.level.captureDrops = null; // Paper - capture all item additions to the world; Remove this earlier so that we can actually drop stuff
-+                if (event.isDropItems()) {
-+                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, bState, this.player, itemsToDrop); // Paper - capture all item additions to the world
-+                }
-+
-+                // Drop event experience
-+                if (changed) {
-+                    state.getBlock().popExperience(this.level, pos, event.getExpToDrop(), this.player); // Paper
-+                }
-+                // Paper start - Trigger bee_nest_destroyed trigger in the correct place (check impls of block#playerDestroy)
-+                if (mainHandStack != null) {
-+                    if (changed && isCorrectTool && event.isDropItems() && block instanceof net.minecraft.world.level.block.BeehiveBlock && blockEntity instanceof net.minecraft.world.level.block.entity.BeehiveBlockEntity beehiveBlockEntity) { // simulates the guard on block#playerDestroy above
-+                        CriteriaTriggers.BEE_NEST_DESTROYED.trigger(player, state, mainHandStack, beehiveBlockEntity.getOccupantCount());
-+                    }
-+                }
-+                // Paper end - Trigger bee_nest_destroyed trigger in the correct place
-+
-+                return true;
-+                // CraftBukkit end
-             }
++        state = this.level.getBlockState(pos); // CraftBukkit - update state from plugins
++        if (state.isAir()) return false; // CraftBukkit - A plugin set block to air without cancelling
+         BlockEntity blockEntity = this.level.getBlockEntity(pos);
+         Block block = state.getBlock();
+-        if (block instanceof GameMasterBlock && !this.player.canUseGameMasterBlocks()) {
++        if (block instanceof GameMasterBlock && !this.player.canUseGameMasterBlocks() && !(block instanceof net.minecraft.world.level.block.CommandBlock && (this.player.isCreative() && this.player.getBukkitEntity().hasPermission("minecraft.commandblock")))) { // Paper - command block permission
+             this.level.sendBlockUpdated(pos, state, state, Block.UPDATE_ALL);
+             return false;
          }
+@@ -276,6 +_,10 @@
+             return false;
+         }
+ 
++        // CraftBukkit start
++        org.bukkit.block.BlockState bState = bblock.getState();
++        this.level.captureDrops = new java.util.ArrayList<>();
++        // CraftBukkit end
+         BlockState adjustedState = block.playerWillDestroy(this.level, pos, state, this.player);
+         boolean changed = this.level.removeBlock(pos, false);
+         if (SharedConstants.DEBUG_BLOCK_BREAK) {
+@@ -286,17 +_,38 @@
+             block.destroy(this.level, pos, adjustedState);
+         }
+ 
+-        if (this.player.preventsBlockDrops()) {
+-            return true;
+-        }
++        ItemStack destroyedWith = null; // Paper - Trigger bee_nest_destroyed trigger in the correct place
++        boolean canDestroy = false; // Paper - Trigger bee_nest_destroyed trigger in the correct place
+ 
++        if (!this.player.preventsBlockDrops()) { // CraftBukkit
+         ItemStack itemStack = this.player.getMainHandItem();
+-        ItemStack destroyedWith = itemStack.copy();
+-        boolean canDestroy = this.player.hasCorrectToolForDrops(adjustedState);
++        destroyedWith = itemStack.copy(); // Paper
++        canDestroy = this.player.hasCorrectToolForDrops(adjustedState); // Paper
+         itemStack.mineBlock(this.level, adjustedState, pos, this.player);
+         if (changed && canDestroy) {
+-            block.playerDestroy(this.level, this.player, pos, adjustedState, blockEntity, destroyedWith);
+-        }
++            block.playerDestroy(this.level, this.player, pos, adjustedState, blockEntity, destroyedWith, event.isDropItems(), false); // Paper - fix drops not preventing stats/food exhaustion
++        }
++        } // CraftBukkit
++
++        // CraftBukkit start
++        List<net.minecraft.world.entity.item.ItemEntity> itemsToDrop = this.level.captureDrops; // Paper - capture all item additions to the world
++        this.level.captureDrops = null; // Paper - capture all item additions to the world; Remove this earlier so that we can actually drop stuff
++        if (event.isDropItems()) {
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, bState, this.player, itemsToDrop); // Paper - capture all item additions to the world
++        }
++
++        // Drop event experience
++        if (changed) {
++            state.getBlock().popExperience(this.level, pos, event.getExpToDrop(), this.player); // Paper
++        }
++        // Paper start - Trigger bee_nest_destroyed trigger in the correct place (check impls of block#playerDestroy)
++        if (destroyedWith != null) {
++            if (changed && canDestroy && event.isDropItems() && block instanceof net.minecraft.world.level.block.BeehiveBlock && blockEntity instanceof net.minecraft.world.level.block.entity.BeehiveBlockEntity beehiveBlockEntity) { // simulates the guard on block#playerDestroy above
++                CriteriaTriggers.BEE_NEST_DESTROYED.trigger(this.player, state, destroyedWith, beehiveBlockEntity.getOccupantCount());
++            }
++        }
++        // Paper end - Trigger bee_nest_destroyed trigger in the correct place
++        // CraftBukkit end
+ 
+         return true;
      }
-@@ -307,6 +_,7 @@
-         } else {
-             int oldCount = itemStack.getCount();
-             int oldDamage = itemStack.getDamageValue();
-+            final ItemStack stackBeforeUse = itemStack.copy(); // Paper - Store stack before use for interact prediction check
-             InteractionResult result = itemStack.use(level, player, hand);
-             ItemStack resultStack;
-             if (result instanceof InteractionResult.Success success) {
-@@ -332,7 +_,14 @@
-                 }
+@@ -312,6 +_,7 @@
  
-                 if (!player.isUsingItem()) {
--                    player.inventoryMenu.sendAllDataToRemote();
-+                    // Paper start - Optimize sendAllDataToRemote calls
-+                    // This is a weird one where the Vanilla behavior is from an ancient version, but also isn't calling startUsingItem on certain instant-use items
-+                    // TODO Check up on this proper, possibly remove all and move into more specific places
-+                    if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(player, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), stackBeforeUse)) {
-+                        player.inventoryMenu.forceHeldSlot(hand);
-+                    }
-+                    player.inventoryMenu.broadcastChanges();
-+                    // Paper end - Optimize sendAllDataToRemote calls
-                 }
- 
-                 return result;
-@@ -340,17 +_,55 @@
+         int oldCount = itemStack.getCount();
+         int oldDamage = itemStack.getDamageValue();
++        final ItemStack stackBeforeUse = itemStack.copy(); // Paper - Store stack before use for interact prediction check
+         InteractionResult result = itemStack.use(level, player, hand);
+         ItemStack resultStack;
+         if (result instanceof InteractionResult.Success success) {
+@@ -340,25 +_,70 @@
          }
+ 
+         if (!player.isUsingItem()) {
+-            player.inventoryMenu.sendAllDataToRemote();
++            // Paper start - Optimize sendAllDataToRemote calls
++            // This is a weird one where the Vanilla behavior is from an ancient version, but also isn't calling startUsingItem on certain instant-use items
++            // TODO Check up on this proper, possibly remove all and move into more specific places
++            if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(player, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), stackBeforeUse)) {
++                player.inventoryMenu.forceHeldSlot(hand);
++            }
++            player.inventoryMenu.broadcastChanges();
++            // Paper end - Optimize sendAllDataToRemote calls
+         }
+ 
+         return result;
      }
  
 +    // CraftBukkit start - whole method
@@ -349,7 +346,9 @@
 +        boolean cancelledItem = false; // Paper - correctly handle items on cooldown
          if (!state.getBlock().isEnabled(level.enabledFeatures())) {
              return InteractionResult.FAIL;
-         } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
+         }
+ 
+         if (this.gameModeForPlayer == GameType.SPECTATOR) {
              MenuProvider menuProvider = state.getMenuProvider(level, pos);
 -            if (menuProvider != null) {
 -                player.openMenu(menuProvider);
@@ -388,7 +387,7 @@
                  return InteractionResult.CONSUME;
              } else {
                  return InteractionResult.PASS;
-@@ -375,7 +_,7 @@
+@@ -383,7 +_,7 @@
                  }
              }
  
@@ -397,7 +396,7 @@
                  UseOnContext context = new UseOnContext(player, hand, hitResult);
                  InteractionResult success;
                  if (player.hasInfiniteMaterials()) {
-@@ -392,6 +_,11 @@
+@@ -400,6 +_,11 @@
  
                  return success;
              } else {

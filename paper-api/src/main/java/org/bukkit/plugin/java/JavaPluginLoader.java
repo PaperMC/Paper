@@ -290,7 +290,7 @@ public final class JavaPluginLoader implements PluginLoader {
                 }
             }
 
-            EventExecutor executor = new co.aikar.timings.TimedEventExecutor(new EventExecutor() { // Paper
+            EventExecutor executor = new EventExecutor() {
                 @Override
                 public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException { // Paper
                     try {
@@ -304,7 +304,7 @@ public final class JavaPluginLoader implements PluginLoader {
                         throw new EventException(t);
                     }
                 }
-            }, plugin, method, eventClass); // Paper
+            };
             eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
         }
         return ret;

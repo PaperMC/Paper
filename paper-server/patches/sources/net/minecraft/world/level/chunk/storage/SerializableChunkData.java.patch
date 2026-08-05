@@ -8,7 +8,7 @@
  ) {
      private static final Codec<List<SavedTick<Block>>> BLOCK_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.BLOCK.byNameCodec()).listOf();
      private static final Codec<List<SavedTick<Fluid>>> FLUID_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.FLUID.byNameCodec()).listOf();
-@@ -107,13 +_,39 @@
+@@ -107,6 +_,24 @@
      public static final String BLOCK_LIGHT_TAG = "BlockLight";
      public static final String SKY_LIGHT_TAG = "SkyLight";
  
@@ -33,48 +33,49 @@
      public static SerializableChunkData parse(
          final LevelHeightAccessor levelHeight, final PalettedContainerFactory containerFactory, final CompoundTag chunkData
      ) {
-         if (chunkData.getString("Status").isEmpty()) {
+@@ -114,7 +_,15 @@
              return null;
-         } else {
--            ChunkPos chunkPos = new ChunkPos(chunkData.getIntOr("xPos", 0), chunkData.getIntOr("zPos", 0));
-+            // Paper start - Do not let the server load chunks from newer versions
-+            chunkData.getInt("DataVersion").ifPresent(dataVersion -> {
-+                if (!JUST_CORRUPT_IT && dataVersion > CURRENT_DATA_VERSION) {
-+                    new RuntimeException("Server attempted to load chunk saved with newer version of minecraft! " + dataVersion + " > " + CURRENT_DATA_VERSION).printStackTrace();
-+                    System.exit(1);
-+                }
-+            });
-+            // Paper end - Do not let the server load chunks from newer versions
-+            ChunkPos chunkPos = new ChunkPos(chunkData.getIntOr("xPos", 0), chunkData.getIntOr("zPos", 0)); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
-             long lastUpdateTime = chunkData.getLongOr("LastUpdate", 0L);
-             long inhabitedTime = chunkData.getLongOr("InhabitedTime", 0L);
-             ChunkStatus status = chunkData.read("Status", ChunkStatus.CODEC).orElse(ChunkStatus.EMPTY);
-@@ -152,7 +_,7 @@
-             CompoundTag structureData = chunkData.getCompoundOrEmpty("structures");
-             ListTag sectionTags = chunkData.getListOrEmpty("sections");
-             List<SerializableChunkData.SectionData> sectionData = new ArrayList<>(sectionTags.size());
--            Codec<PalettedContainerRO<Holder<Biome>>> biomesCodec = containerFactory.biomeContainerCodec();
-+            Codec<PalettedContainer<Holder<Biome>>> biomesCodec = containerFactory.biomeContainerRWCodec(); // CraftBukkit - read/write
-             Codec<PalettedContainer<BlockState>> blockStatesCodec = containerFactory.blockStatesContainerCodec();
- 
-             for (int i = 0; i < sectionTags.size(); i++) {
-@@ -169,7 +_,7 @@
-                                     .getOrThrow(SerializableChunkData.ChunkReadException::new)
-                             )
-                             .orElseGet(containerFactory::createForBlockStates);
--                        PalettedContainerRO<Holder<Biome>> biomes = sectionTag.getCompound("biomes")
-+                        PalettedContainer<Holder<Biome>> biomes = sectionTag.getCompound("biomes") // CraftBukkit - read/write
-                             .map(
-                                 container -> biomesCodec.parse(NbtOps.INSTANCE, container)
-                                     .promotePartial(msg -> logErrors(chunkPos, y, msg))
-@@ -206,6 +_,7 @@
-                 entities,
-                 blockEntities,
-                 structureData
-+                , chunkData.get("ChunkBukkitValues") // CraftBukkit - ChunkBukkitValues
-             );
          }
+ 
+-        ChunkPos chunkPos = new ChunkPos(chunkData.getIntOr("xPos", 0), chunkData.getIntOr("zPos", 0));
++        // Paper start - Do not let the server load chunks from newer versions
++        chunkData.getInt("DataVersion").ifPresent(dataVersion -> {
++            if (!JUST_CORRUPT_IT && dataVersion > CURRENT_DATA_VERSION) {
++                new RuntimeException("Server attempted to load chunk saved with newer version of minecraft! " + dataVersion + " > " + CURRENT_DATA_VERSION).printStackTrace();
++                System.exit(1);
++            }
++        });
++        // Paper end - Do not let the server load chunks from newer versions
++        ChunkPos chunkPos = new ChunkPos(chunkData.getIntOr("xPos", 0), chunkData.getIntOr("zPos", 0)); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
+         long lastUpdateTime = chunkData.getLongOr("LastUpdate", 0L);
+         long inhabitedTime = chunkData.getLongOr("InhabitedTime", 0L);
+         ChunkStatus status = chunkData.read("Status", ChunkStatus.CODEC).orElse(ChunkStatus.EMPTY);
+@@ -153,7 +_,7 @@
+         CompoundTag structureData = chunkData.getCompoundOrEmpty("structures");
+         ListTag sectionTags = chunkData.getListOrEmpty("sections");
+         List<SerializableChunkData.SectionData> sectionData = new ArrayList<>(sectionTags.size());
+-        Codec<PalettedContainerRO<Holder<Biome>>> biomesCodec = containerFactory.biomeContainerCodec();
++        Codec<PalettedContainer<Holder<Biome>>> biomesCodec = containerFactory.biomeContainerRWCodec(); // CraftBukkit - read/write
+         Codec<PalettedContainer<BlockState>> blockStatesCodec = containerFactory.blockStatesContainerCodec();
+ 
+         for (int i = 0; i < sectionTags.size(); i++) {
+@@ -170,7 +_,7 @@
+                                 .getOrThrow(SerializableChunkData.ChunkReadException::new)
+                         )
+                         .orElseGet(containerFactory::createForBlockStates);
+-                    PalettedContainerRO<Holder<Biome>> biomes = sectionTag.getCompound("biomes")
++                    PalettedContainer<Holder<Biome>> biomes = sectionTag.getCompound("biomes") // CraftBukkit - read/write
+                         .map(
+                             container -> biomesCodec.parse(NbtOps.INSTANCE, container)
+                                 .promotePartial(msg -> logErrors(chunkPos, y, msg))
+@@ -207,6 +_,7 @@
+             entities,
+             blockEntities,
+             structureData
++            , chunkData.get("ChunkBukkitValues") // CraftBukkit - ChunkBukkitValues
+         );
      }
+ 
 @@ -283,6 +_,12 @@
              }
          }
@@ -88,28 +89,28 @@
          chunk.setLightCorrect(this.lightCorrect);
          EnumSet<Heightmap.Types> toPrime = EnumSet.noneOf(Heightmap.Types.class);
  
-@@ -389,6 +_,12 @@
-             CompoundTag structureData = packStructureData(
-                 StructurePieceSerializationContext.fromLevel(level), pos, chunk.getAllStarts(), chunk.getAllReferences()
-             );
-+            // CraftBukkit start - store chunk persistent data in nbt
-+            CompoundTag persistentDataContainer = null;
-+            if (!chunk.persistentDataContainer.isEmpty()) { // SPIGOT-6814: Always save PDC to account for 1.17 to 1.18 chunk upgrading.
-+                persistentDataContainer = chunk.persistentDataContainer.toTagCompound();
-+            }
-+            // CraftBukkit end
-             return new SerializableChunkData(
-                 level.palettedContainerFactory(),
-                 pos,
-@@ -408,6 +_,7 @@
-                 entities,
-                 blockEntities,
-                 structureData
-+                , persistentDataContainer // CraftBukkit - persistentDataContainer
-             );
-         }
+@@ -388,6 +_,12 @@
+             .map(shorts -> shorts != null && !shorts.isEmpty() ? new ShortArrayList(shorts) : null)
+             .toArray(ShortList[]::new);
+         CompoundTag structureData = packStructureData(StructurePieceSerializationContext.fromLevel(level), pos, chunk.getAllStarts(), chunk.getAllReferences());
++        // CraftBukkit start - store chunk persistent data in nbt
++        CompoundTag persistentDataContainer = null;
++        if (!chunk.persistentDataContainer.isEmpty()) { // SPIGOT-6814: Always save PDC to account for 1.17 to 1.18 chunk upgrading.
++            persistentDataContainer = chunk.persistentDataContainer.toTagCompound();
++        }
++        // CraftBukkit end
+         return new SerializableChunkData(
+             level.palettedContainerFactory(),
+             pos,
+@@ -407,6 +_,7 @@
+             entities,
+             blockEntities,
+             structureData
++            , persistentDataContainer // CraftBukkit - persistentDataContainer
+         );
      }
-@@ -475,6 +_,11 @@
+ 
+@@ -473,6 +_,11 @@
          this.heightmaps.forEach((type, data) -> heightmapsTag.put(type.getSerializationKey(), new LongArrayTag(data)));
          tag.put("Heightmaps", heightmapsTag);
          tag.put("structures", this.structureData);
@@ -121,7 +122,7 @@
          return tag;
      }
  
-@@ -558,6 +_,12 @@
+@@ -556,6 +_,12 @@
              } else {
                  StructureStart start = StructureStart.loadStaticStart(context, startsTag.getCompoundOrEmpty(key), seed);
                  if (start != null) {

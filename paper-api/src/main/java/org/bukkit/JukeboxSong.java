@@ -22,6 +22,8 @@ public interface JukeboxSong extends Keyed, Translatable {
 
     JukeboxSong BLOCKS = get("blocks");
 
+    JukeboxSong BOUNCE = get("bounce");
+
     JukeboxSong CAT = get("cat");
 
     JukeboxSong CHIRP = get("chirp");

@@ -87,7 +87,7 @@ import org.bukkit.block.data.type.Observer;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.block.data.type.PistonHead;
 import org.bukkit.block.data.type.PitcherCrop;
-import org.bukkit.block.data.type.PointedDripstone;
+import org.bukkit.block.data.type.PotentSulfur;
 import org.bukkit.block.data.type.RedstoneRail;
 import org.bukkit.block.data.type.RedstoneWallTorch;
 import org.bukkit.block.data.type.RedstoneWire;
@@ -107,6 +107,7 @@ import org.bukkit.block.data.type.Skull;
 import org.bukkit.block.data.type.Slab;
 import org.bukkit.block.data.type.SmallDripleaf;
 import org.bukkit.block.data.type.Snow;
+import org.bukkit.block.data.type.Speleothem;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.block.data.type.StructureBlock;
 import org.bukkit.block.data.type.Switch;
@@ -570,6 +571,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<ChiseledBookshelf> CHISELED_BOOKSHELF = getBlockType("chiseled_bookshelf");
 
+    BlockType.Typed<BlockData> CHISELED_CINNABAR = getBlockType("chiseled_cinnabar");
+
     BlockType.Typed<BlockData> CHISELED_COPPER = getBlockType("chiseled_copper");
 
     BlockType.Typed<BlockData> CHISELED_DEEPSLATE = getBlockType("chiseled_deepslate");
@@ -588,6 +591,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> CHISELED_STONE_BRICKS = getBlockType("chiseled_stone_bricks");
 
+    BlockType.Typed<BlockData> CHISELED_SULFUR = getBlockType("chiseled_sulfur");
+
     BlockType.Typed<BlockData> CHISELED_TUFF = getBlockType("chiseled_tuff");
 
     BlockType.Typed<BlockData> CHISELED_TUFF_BRICKS = getBlockType("chiseled_tuff_bricks");
@@ -595,6 +600,22 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Ageable> CHORUS_FLOWER = getBlockType("chorus_flower");
 
     BlockType.Typed<MultipleFacing> CHORUS_PLANT = getBlockType("chorus_plant");
+
+    BlockType.Typed<BlockData> CINNABAR = getBlockType("cinnabar");
+
+    BlockType.Typed<Slab> CINNABAR_BRICK_SLAB = getBlockType("cinnabar_brick_slab");
+
+    BlockType.Typed<Stairs> CINNABAR_BRICK_STAIRS = getBlockType("cinnabar_brick_stairs");
+
+    BlockType.Typed<Wall> CINNABAR_BRICK_WALL = getBlockType("cinnabar_brick_wall");
+
+    BlockType.Typed<BlockData> CINNABAR_BRICKS = getBlockType("cinnabar_bricks");
+
+    BlockType.Typed<Slab> CINNABAR_SLAB = getBlockType("cinnabar_slab");
+
+    BlockType.Typed<Stairs> CINNABAR_STAIRS = getBlockType("cinnabar_stairs");
+
+    BlockType.Typed<Wall> CINNABAR_WALL = getBlockType("cinnabar_wall");
 
     BlockType.Typed<BlockData> CLAY = getBlockType("clay");
 
@@ -1662,7 +1683,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Snowable> PODZOL = getBlockType("podzol");
 
-    BlockType.Typed<PointedDripstone> POINTED_DRIPSTONE = getBlockType("pointed_dripstone");
+    BlockType.Typed<Speleothem> POINTED_DRIPSTONE = getBlockType("pointed_dripstone");
 
     BlockType.Typed<BlockData> POLISHED_ANDESITE = getBlockType("polished_andesite");
 
@@ -1692,6 +1713,14 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Wall> POLISHED_BLACKSTONE_WALL = getBlockType("polished_blackstone_wall");
 
+    BlockType.Typed<BlockData> POLISHED_CINNABAR = getBlockType("polished_cinnabar");
+
+    BlockType.Typed<Slab> POLISHED_CINNABAR_SLAB = getBlockType("polished_cinnabar_slab");
+
+    BlockType.Typed<Stairs> POLISHED_CINNABAR_STAIRS = getBlockType("polished_cinnabar_stairs");
+
+    BlockType.Typed<Wall> POLISHED_CINNABAR_WALL = getBlockType("polished_cinnabar_wall");
+
     BlockType.Typed<BlockData> POLISHED_DEEPSLATE = getBlockType("polished_deepslate");
 
     BlockType.Typed<Slab> POLISHED_DEEPSLATE_SLAB = getBlockType("polished_deepslate_slab");
@@ -1712,6 +1741,14 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Stairs> POLISHED_GRANITE_STAIRS = getBlockType("polished_granite_stairs");
 
+    BlockType.Typed<BlockData> POLISHED_SULFUR = getBlockType("polished_sulfur");
+
+    BlockType.Typed<Slab> POLISHED_SULFUR_SLAB = getBlockType("polished_sulfur_slab");
+
+    BlockType.Typed<Stairs> POLISHED_SULFUR_STAIRS = getBlockType("polished_sulfur_stairs");
+
+    BlockType.Typed<Wall> POLISHED_SULFUR_WALL = getBlockType("polished_sulfur_wall");
+
     BlockType.Typed<BlockData> POLISHED_TUFF = getBlockType("polished_tuff");
 
     BlockType.Typed<Slab> POLISHED_TUFF_SLAB = getBlockType("polished_tuff_slab");
@@ -1723,6 +1760,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<BlockData> POPPY = getBlockType("poppy");
 
     BlockType.Typed<Ageable> POTATOES = getBlockType("potatoes");
+
+    BlockType.Typed<PotentSulfur> POTENT_SULFUR = getBlockType("potent_sulfur");
 
     BlockType.Typed<BlockData> POTTED_ACACIA_SAPLING = getBlockType("potted_acacia_sapling");
 
@@ -2175,6 +2214,24 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<BlockData> STRUCTURE_VOID = getBlockType("structure_void");
 
     BlockType.Typed<Ageable> SUGAR_CANE = getBlockType("sugar_cane");
+
+    BlockType.Typed<BlockData> SULFUR = getBlockType("sulfur");
+
+    BlockType.Typed<Slab> SULFUR_BRICK_SLAB = getBlockType("sulfur_brick_slab");
+
+    BlockType.Typed<Stairs> SULFUR_BRICK_STAIRS = getBlockType("sulfur_brick_stairs");
+
+    BlockType.Typed<Wall> SULFUR_BRICK_WALL = getBlockType("sulfur_brick_wall");
+
+    BlockType.Typed<BlockData> SULFUR_BRICKS = getBlockType("sulfur_bricks");
+
+    BlockType.Typed<Slab> SULFUR_SLAB = getBlockType("sulfur_slab");
+
+    BlockType.Typed<Speleothem> SULFUR_SPIKE = getBlockType("sulfur_spike");
+
+    BlockType.Typed<Stairs> SULFUR_STAIRS = getBlockType("sulfur_stairs");
+
+    BlockType.Typed<Wall> SULFUR_WALL = getBlockType("sulfur_wall");
 
     BlockType.Typed<Bisected> SUNFLOWER = getBlockType("sunflower");
 

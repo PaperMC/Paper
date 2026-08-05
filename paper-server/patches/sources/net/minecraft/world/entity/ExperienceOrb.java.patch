@@ -50,7 +50,7 @@
 +    }
 +    public ExperienceOrb(final Level level, final Vec3 pos, final Vec3 roughly, final int value, org.bukkit.entity.ExperienceOrb.@Nullable SpawnReason reason, final @Nullable Entity triggerId, final @Nullable Entity sourceId) {
 +    // Paper end - add reasons for orbs
-         this(EntityType.EXPERIENCE_ORB, level);
+         this(EntityTypes.EXPERIENCE_ORB, level);
 +        // Paper start - add reasons for orbs
 +        this.sourceEntityId = sourceId != null ? sourceId.getUUID() : null;
 +        this.triggerEntityId = triggerId != null ? triggerId.getUUID() : null;
@@ -59,7 +59,7 @@
          this.setPos(pos);
          if (!level.isClientSide()) {
              this.setYRot(this.random.nextFloat() * 360.0F);
-@@ -146,12 +_,13 @@
+@@ -146,7 +_,7 @@
  
              this.age++;
              if (this.age >= 6000) {
@@ -68,13 +68,15 @@
              }
          }
      }
+@@ -157,6 +_,7 @@
+     }
  
      private void followNearbyPlayer() {
 +        Player prevTarget = this.followingPlayer; // CraftBukkit - store old target
          if (this.followingPlayer == null || this.followingPlayer.isSpectator() || this.followingPlayer.distanceToSqr(this) > 64.0) {
              Player nearestPlayer = this.level().getNearestPlayer(this, 8.0);
              if (nearestPlayer != null && !nearestPlayer.isSpectator() && !nearestPlayer.isDeadOrDying()) {
-@@ -161,7 +_,24 @@
+@@ -166,7 +_,24 @@
              }
          }
  
@@ -100,7 +102,7 @@
              Vec3 delta = new Vec3(
                  this.followingPlayer.getX() - this.getX(),
                  this.followingPlayer.getY() + this.followingPlayer.getEyeHeight() / 2.0 - this.getY(),
-@@ -191,18 +_,24 @@
+@@ -196,18 +_,24 @@
      }
  
      public static void awardWithDirection(final ServerLevel level, final Vec3 pos, final Vec3 roughDirection, int amount) {
@@ -127,7 +129,7 @@
          List<ExperienceOrb> orbs = level.getEntities(EntityTypeTest.forClass(ExperienceOrb.class), box, orbx -> canMerge(orbx, id, value));
          if (!orbs.isEmpty()) {
              ExperienceOrb orb = orbs.get(0);
-@@ -219,13 +_,18 @@
+@@ -224,13 +_,18 @@
      }
  
      private static boolean canMerge(final ExperienceOrb orb, final int id, final int value) {
@@ -148,16 +150,16 @@
      }
  
      private void setUnderwaterMovement() {
-@@ -250,7 +_,7 @@
-             this.markHurt();
-             this.health = (int)(this.health - damage);
-             if (this.health <= 0) {
--                this.discard();
-+                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
-             }
+@@ -256,7 +_,7 @@
+         this.markHurt();
+         this.health = (int)(this.health - damage);
+         if (this.health <= 0) {
+-            this.discard();
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
+         }
  
-             return true;
-@@ -261,32 +_,34 @@
+         return true;
+@@ -266,32 +_,34 @@
      protected void addAdditionalSaveData(final ValueOutput output) {
          output.putShort("Health", (short)this.health);
          output.putShort("Age", (short)this.age);
@@ -198,7 +200,7 @@
                  }
              }
          }
-@@ -298,9 +_,19 @@
+@@ -303,9 +_,19 @@
              ItemStack itemStack = selected.get().itemStack();
              int toRepairFromXpAmount = EnchantmentHelper.modifyDurabilityToRepairFromXp(player.level(), itemStack, amount);
              int repair = Math.min(toRepairFromXpAmount, itemStack.getDamageValue());
@@ -219,7 +221,7 @@
                  if (remaining > 0) {
                      return this.repairPlayerItems(player, remaining);
                  }
-@@ -346,6 +_,24 @@
+@@ -351,6 +_,24 @@
      }
  
      public static int getExperienceValue(final int maxValue) {

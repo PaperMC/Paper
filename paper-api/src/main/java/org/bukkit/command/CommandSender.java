@@ -1,8 +1,9 @@
 package org.bukkit.command;
 
+import java.util.Objects;
 import java.util.UUID;
-import net.kyori.adventure.audience.MessageType;
-import net.kyori.adventure.identity.Identity;
+import net.kyori.adventure.chat.ChatType;
+import net.kyori.adventure.chat.SignedMessage;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Server;
 import org.bukkit.permissions.Permissible;
@@ -38,7 +39,7 @@ public interface CommandSender extends net.kyori.adventure.audience.Audience, Pe
      *
      * @param message Message to be displayed
      * @param sender The sender of this message
-     * @see #sendMessage(net.kyori.adventure.identity.Identified, net.kyori.adventure.text.Component)
+     * @see #sendMessage(net.kyori.adventure.text.Component)
      * @deprecated sender UUID is ignored
      */
     @Deprecated // Paper
@@ -49,7 +50,7 @@ public interface CommandSender extends net.kyori.adventure.audience.Audience, Pe
      *
      * @param messages An array of messages to be displayed
      * @param sender The sender of this message
-     * @see #sendMessage(net.kyori.adventure.identity.Identified, net.kyori.adventure.text.Component)
+     * @see #sendMessage(net.kyori.adventure.text.Component)
      * @deprecated sender UUID is ignored
      */
     @Deprecated // Paper
@@ -134,8 +135,18 @@ public interface CommandSender extends net.kyori.adventure.audience.Audience, Pe
     public net.kyori.adventure.text.@NotNull Component name();
 
     @Override
-    default void sendMessage(final net.kyori.adventure.identity.@NotNull Identity identity, final net.kyori.adventure.text.@NotNull Component message, final net.kyori.adventure.audience.@NotNull MessageType type) {
+    default void sendMessage(final net.kyori.adventure.text.@NotNull Component message) {
         this.sendMessage(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(message));
+    }
+
+    @Override
+    default void sendMessage(final @NotNull Component message, final ChatType.@NotNull Bound boundChatType) {
+        this.sendMessage(message);
+    }
+
+    @Override
+    default void sendMessage(final @NotNull SignedMessage signedMessage, final ChatType.@NotNull Bound boundChatType) {
+        this.sendMessage(Objects.requireNonNullElseGet(signedMessage.unsignedContent(), () -> Component.text(signedMessage.message())));
     }
 
     /**
@@ -179,7 +190,7 @@ public interface CommandSender extends net.kyori.adventure.audience.Audience, Pe
      * the component will be sent as legacy text.</p>
      *
      * @param component the component to send
-     * @deprecated use {@link #sendMessage(Identity, Component, MessageType)} instead
+     * @deprecated use {@link #sendMessage(Component)} instead
      */
     @Deprecated
     default void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
@@ -193,7 +204,7 @@ public interface CommandSender extends net.kyori.adventure.audience.Audience, Pe
      * the components will be sent as legacy text.</p>
      *
      * @param components the components to send
-     * @deprecated use {@link #sendMessage(Identity, Component, MessageType)} instead
+     * @deprecated use {@link #sendMessage(Component)} instead
      */
     @Deprecated
     default void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {

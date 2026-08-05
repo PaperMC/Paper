@@ -1,27 +1,23 @@
 --- a/net/minecraft/world/entity/animal/sheep/Sheep.java
 +++ b/net/minecraft/world/entity/animal/sheep/Sheep.java
-@@ -140,7 +_,19 @@
+@@ -148,7 +_,15 @@
          ItemStack itemStack = player.getItemInHand(hand);
          if (itemStack.is(Items.SHEARS)) {
              if (this.level() instanceof ServerLevel level && this.readyForShearing()) {
 -                this.shear(level, SoundSource.PLAYERS, itemStack);
-+                // CraftBukkit start
-+                // Paper start - custom shear drops
++                // Paper start - call PlayerShearEntityEvent
 +                java.util.List<ItemStack> drops = this.generateDefaultDrops(level, itemStack);
 +                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemStack, hand, drops);
-+                if (event != null) {
-+                    if (event.isCancelled()) {
-+                        return InteractionResult.PASS;
-+                    }
-+                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
-+                    // Paper end - custom shear drops
++                if (event.isCancelled()) {
++                    return InteractionResult.PASS;
 +                }
-+                // CraftBukkit end
-+                this.shear(level, SoundSource.PLAYERS, itemStack, drops); // Paper - custom shear drops
++                drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++                this.shear(level, SoundSource.PLAYERS, itemStack, drops);
++                // Paper end - call PlayerShearEntityEvent
                  this.gameEvent(GameEvent.SHEAR, player);
                  itemStack.hurtAndBreak(1, player, hand.asEquipmentSlot());
                  return InteractionResult.SUCCESS_SERVER;
-@@ -154,14 +_,28 @@
+@@ -162,14 +_,26 @@
  
      @Override
      public void shear(final ServerLevel level, final SoundSource soundSource, final ItemStack tool) {
@@ -33,7 +29,7 @@
 +    public java.util.List<ItemStack> generateDefaultDrops(final ServerLevel level, final ItemStack tool) {
 +        final java.util.List<ItemStack> drops = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
 +        this.dropFromShearingLootTable(level, BuiltInLootTables.SHEAR_SHEEP, tool, (ignored, stack) -> {
-+            for (int i = 0; i < stack.getCount(); ++i)  drops.add(stack.copyWithCount(1));
++            for (int i = 0; i < stack.getCount(); ++i) drops.add(stack.copyWithCount(1));
 +        });
 +        return drops;
 +    }
@@ -51,13 +47,11 @@
 -                    ItemEntity entity = this.spawnAtLocation(l, drop.copyWithCount(1), 1.0F);
 +        drops.forEach(itemStack -> { // Paper - custom drops - loop in generated default drops
 +            { // Paper - custom drops - loop in generated default drops
-+                this.forceDrops = true; // CraftBukkit
 +                ItemEntity entity = this.spawnAtLocation(level, itemStack, 1.0F); // Paper - custom drops - copy already done above
-+                this.forceDrops = false; // CraftBukkit
                      if (entity != null) {
                          entity.setDeltaMovement(
                              entity.getDeltaMovement()
-@@ -279,6 +_,7 @@
+@@ -292,6 +_,7 @@
  
      @Override
      public void ate() {
