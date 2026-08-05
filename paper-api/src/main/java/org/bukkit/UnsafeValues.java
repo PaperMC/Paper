@@ -2,6 +2,8 @@ package org.bukkit;
 
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
+import java.util.List;
+import java.util.Map;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.advancement.Advancement;
@@ -16,8 +18,6 @@ import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This interface provides value conversions that may be specific to a
@@ -53,26 +53,26 @@ public interface UnsafeValues {
     /**
      * Load an advancement represented by the specified string into the server.
      * The advancement format is governed by Minecraft and has no specified layout.
-     * <br>
+     * <p>
      * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancement">Minecraft wiki</a>.
-     * <br>
+     * <p>
      * Loaded advancements will be stored and persisted across server restarts
      * and reloads.
      *
      * @param key the unique advancement key
      * @param advancement representation of the advancement
-     * @return the loaded advancement or null if an error occurred
+     * @return the loaded advancement or {@code null} if an error occurred
      */
-    default @Nullable Advancement loadAdvancement(NamespacedKey key, String advancement) {
+    default @Nullable Advancement loadAdvancement(final NamespacedKey key, final String advancement) {
         return this.loadAdvancement(key, advancement, true);
     }
 
     /**
      * Load an advancement represented by the specified string into the server.
      * The advancement format is governed by Minecraft and has no specified layout.
-     * <br>
+     * <p>
      * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancement">Minecraft wiki</a>.
-     * <br>
+     * <p>
      * Loaded advancements will only be stored and persisted across server restarts
      * and reloads, if the {@code persist} parameter is set to true.
      *
@@ -86,12 +86,12 @@ public interface UnsafeValues {
     /**
      * Load multiple advancements represented by the specified strings into the server.
      * The advancement format is governed by Minecraft and has no specified layout.
-     * <br>
+     * <p>
      * It is currently a JSON object, as described by the <a href="https://minecraft.wiki/w/Advancement">Minecraft wiki</a>.
-     * <br>
+     * <p>
      * Loaded advancements will only be stored and persisted across server restarts
      * and reloads, if the {@code persist} parameter is set to true.
-     * <br>
+     * <p>
      * Callers should be prepared for {@link Exception} to be thrown.
      *
      * @param advancements the advancements to register. The key is the unique advancement key and the value is the advancement's JSON representation

@@ -20,6 +20,7 @@ import io.papermc.paper.datapack.DynamicBuiltinPack;
 import io.papermc.paper.datapack.DynamicBuiltinPacks;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.util.MCUtil;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,7 +35,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
-import io.papermc.paper.util.MCUtil;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.minecraft.SharedConstants;
@@ -282,29 +282,33 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return this.loadAdvancements(advancements, persist, false);
     }
 
-    public List<Advancement> loadAdvancements(final Map<Key, String> advancements, final boolean persist, final boolean lenient) {
+    private List<Advancement> loadAdvancements(final Map<Key, String> advancements, final boolean persist, final boolean lenient) {
         final MinecraftServer server = MinecraftServer.getServer();
         for (final Key key : advancements.keySet()) {
             final Identifier id = PaperAdventure.asVanilla(key);
             Preconditions.checkArgument(server.getAdvancements().get(id) == null, "Advancement %s already exists" , id);
         }
 
-        record AdvancementEntry(AdvancementHolder advancement, JsonElement json) {
-            public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+        record AdvancementEntry(AdvancementHolder advancement, JsonElement element) {
+            private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
             public Identifier id() {
                 return this.advancement.id();
             }
+
+            public String asJsonString() {
+                return GSON.toJson(this.element);
+            }
         }
-        final ImmutableMap.Builder<Identifier, AdvancementHolder> mapBuilder = ImmutableMap.builderWithExpectedSize(server.getAdvancements().advancements.size() + advancements.size());
-        mapBuilder.putAll(server.getAdvancements().advancements);
+        final ImmutableMap.Builder<Identifier, AdvancementHolder> allAdvancements = ImmutableMap.builderWithExpectedSize(server.getAdvancements().advancements.size() + advancements.size());
+        allAdvancements.putAll(server.getAdvancements().advancements);
 
         final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
-        final List<AdvancementEntry> advancementEntries = new ArrayList<>(advancements.size());
+        final List<AdvancementEntry> newEntries = new ArrayList<>(advancements.size());
         for (final Map.Entry<Key, String> entry : advancements.entrySet()) {
-            final JsonElement json;
+            final JsonElement element;
             try {
-                json = StrictJsonParser.parse(entry.getValue());
+                element = StrictJsonParser.parse(entry.getValue());
             } catch (final JsonParseException ex) {
                 if (!lenient) {
                     throw ex; // rethrow
@@ -313,20 +317,20 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 }
             }
 
-            final DataResult<net.minecraft.advancements.Advancement> advancement = net.minecraft.advancements.Advancement.CODEC.parse(ops, json);
+            final DataResult<net.minecraft.advancements.Advancement> advancement = net.minecraft.advancements.Advancement.CODEC.parse(ops, element);
             if (lenient && advancement.isError()) {
                 continue;
             }
 
             final Identifier id = PaperAdventure.asVanilla(entry.getKey());
             final AdvancementHolder holder = new AdvancementHolder(id, advancement.getOrThrow(JsonParseException::new));
-            mapBuilder.put(id, holder);
-            advancementEntries.add(new AdvancementEntry(holder, json));
+            allAdvancements.put(id, holder);
+            newEntries.add(new AdvancementEntry(holder, element));
         }
-        server.getAdvancements().advancements = mapBuilder.build();
+        server.getAdvancements().advancements = allAdvancements.build();
 
         final AdvancementTree tree = server.getAdvancements().tree();
-        tree.addAll(advancementEntries.stream().map(AdvancementEntry::advancement).toList());
+        tree.addAll(newEntries.stream().map(AdvancementEntry::advancement).toList());
 
         final boolean shouldSave;
         if (persist) {
@@ -336,7 +340,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
 
         final Set<AdvancementNode> roots = new HashSet<>();
-        for (final AdvancementEntry entry : advancementEntries) {
+        for (final AdvancementEntry entry : newEntries) {
             final AdvancementNode node = Objects.requireNonNull(tree.get(entry.id()));
             roots.add(node.root());
         }
@@ -347,25 +351,25 @@ public final class CraftMagicNumbers implements UnsafeValues {
             }
         }
 
-        final List<Advancement> outAdvancements = new ArrayList<>(advancements.size());
-        for (final AdvancementEntry entry : advancementEntries) {
+        final List<Advancement> deserializedAdvancements = new ArrayList<>(advancements.size());
+        for (final AdvancementEntry entry : newEntries) {
             if (shouldSave) {
                 final Path file = getAddedAdvancements().json(entry.id());
 
                 try {
                     Files.createDirectories(file.getParent());
-                    Files.writeString(file, AdvancementEntry.GSON.toJson(entry.json()), StandardCharsets.UTF_8);
+                    Files.writeString(file, entry.asJsonString(), StandardCharsets.UTF_8);
                 } catch (final IOException ex) {
-                    Bukkit.getLogger().log(Level.SEVERE, "Error saving advancement " + entry.id(), ex);
+                    LOGGER.error("Error saving advancement {}", entry.id(), ex);
                 }
             }
-            outAdvancements.add(entry.advancement().toBukkit());
+            deserializedAdvancements.add(entry.advancement().toBukkit());
         }
 
-        if (!outAdvancements.isEmpty()) {
+        if (!deserializedAdvancements.isEmpty()) {
             server.getPlayerList().reloadAdvancementData();
         }
-        return outAdvancements;
+        return deserializedAdvancements;
     }
 
     @Override

@@ -51,7 +51,7 @@ public record DynamicBuiltinPack(String name, Component description) {
         try {
             this.createMetadata(mcmetaFile, SharedConstants.getCurrentVersion().packVersion(PackType.SERVER_DATA), true);
             return true;
-        } catch (final IOException ignored) {
+        } catch (final IOException _) {
             return false;
         }
     }
@@ -91,11 +91,11 @@ public record DynamicBuiltinPack(String name, Component description) {
         }
     }
 
-    private void regenerateMetadata(final Path path, final PackFormat version) throws IOException {
+    private void regenerateMetadata(final Path path, final PackFormat version) {
         try {
             this.createMetadata(path, version, false);
         } catch (final IOException ex) {
-            throw new IOException("Unable to regenerate metadata for pack " + this.name, ex);
+            throw new RuntimeException("Unable to regenerate metadata for pack " + this.name, ex);
         }
     }
 
