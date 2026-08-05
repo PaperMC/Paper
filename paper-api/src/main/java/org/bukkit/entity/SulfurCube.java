@@ -110,7 +110,7 @@ public interface SulfurCube extends AbstractCubeMob, Shearable, Bucketable, Agea
      * <p>
      * This method will call a {@link EntityEquipmentChangedEvent}.
      *
-     * @param itemStack the item stack to be equipped
+     * @param itemStack the item stack to be equipped, use {@link ItemStack#empty()} to unset the item
      * @see #swallow(ItemStack) set the swallowed item, following any Vanilla swallow logic
      */
     default void setEquipped(final ItemStack itemStack) {
@@ -123,7 +123,8 @@ public interface SulfurCube extends AbstractCubeMob, Shearable, Bucketable, Agea
      * This method acts as a simple utility method to get the {@link EquipmentSlot#BODY}
      * equipment slot of this sulfur cube, which holds the sulfur cube's swallowed item.
      *
-     * @return the item stack in the {@link EquipmentSlot#BODY} equipment slot
+     * @return the item stack in the {@link EquipmentSlot#BODY} equipment slot, returns {@link ItemStack#empty()}
+     * if no item is present
      */
     default ItemStack getEquipped() {
         return this.getEquipment().getItem(EquipmentSlot.BODY);
