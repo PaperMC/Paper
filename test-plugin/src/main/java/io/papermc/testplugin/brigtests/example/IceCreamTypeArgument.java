@@ -12,6 +12,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
 public class IceCreamTypeArgument implements CustomArgumentType.Converted<IceCreamType, String> {
@@ -19,7 +20,7 @@ public class IceCreamTypeArgument implements CustomArgumentType.Converted<IceCre
     @Override
     public @NotNull IceCreamType convert(String nativeType) throws CommandSyntaxException {
         try {
-            return IceCreamType.valueOf(nativeType.toUpperCase());
+            return IceCreamType.valueOf(nativeType.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ignored) {
             throw new ComponentCommandExceptionType(Component.text("Invalid species %s!".formatted(nativeType), NamedTextColor.RED)).create();
         }

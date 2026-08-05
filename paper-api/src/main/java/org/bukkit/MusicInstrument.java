@@ -46,7 +46,7 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
     public static final MusicInstrument YEARN_GOAT_HORN = getInstrument("yearn_goat_horn");
     // End generate - MusicInstrument
 
-    private static MusicInstrument getInstrument(final @KeyPattern.Value String key) {
+    private static MusicInstrument getInstrument(@KeyPattern.Value final String key) {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.INSTRUMENT).getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 

@@ -278,6 +278,13 @@ public final class EntityTypeTagKeys {
     public static final TagKey<EntityType> NON_CONTROLLING_RIDER = create(key("non_controlling_rider"));
 
     /**
+     * {@code #minecraft:not_affected_by_geysers}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> NOT_AFFECTED_BY_GEYSERS = create(key("not_affected_by_geysers"));
+
+    /**
      * {@code #minecraft:not_scary_for_pufferfish}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

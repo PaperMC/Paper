@@ -18,9 +18,7 @@ public final class PaperCommands {
     private PaperCommands() {
     }
 
-    private static final Map<String, Command> COMMANDS = Util.make(new HashMap<>(), map -> {
-        map.put("mspt", new MSPTCommand("mspt"));
-    });
+    private static final Map<String, Command> COMMANDS = new HashMap<>();
 
     public static void registerLegacyCommands(final MinecraftServer server) {
         COMMANDS.forEach((s, command) -> {
@@ -29,7 +27,8 @@ public final class PaperCommands {
     }
 
     public static void registerCommands() {
-        // brigadier commands go here
+        // Paper commands go here
+        registerInternalCommand(PaperMSPTCommand.create(), "paper", PaperMSPTCommand.DESCRIPTION, List.of(), Set.of());
         registerInternalCommand(PaperVersionCommand.create(), "bukkit", PaperVersionCommand.DESCRIPTION, List.of("ver", "about"), Set.of());
         registerInternalCommand(PaperPluginsCommand.create(), "bukkit", PaperPluginsCommand.DESCRIPTION, List.of("pl"), Set.of());
         registerInternalCommand(PaperCommand.create(), "paper", PaperCommand.DESCRIPTION, List.of(), Set.of());

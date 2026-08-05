@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
@@ -15,9 +16,11 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntitySpawnRequest;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
@@ -31,6 +34,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftRegionAccessor;
+import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.generator.LimitedRegion;
@@ -91,7 +95,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
             for (int z = -(this.buffer >> 4); z <= (this.buffer >> 4); z++) {
                 ProtoChunk chunk = (ProtoChunk) access.getChunk(this.centerChunkX + x, this.centerChunkZ + z);
                 for (CompoundTag compound : chunk.getEntities()) {
-                    EntityType.loadEntityRecursive(compound, access.getMinecraftWorld(), EntitySpawnReason.LOAD, (entity) -> {
+                    EntityType.loadEntityRecursive(compound, access.getMinecraftWorld(), new EntitySpawnRequest(EntitySpawnReason.LOAD, false), (entity) -> {
                         if (this.region.contains(entity.getX(), entity.getY(), entity.getZ())) {
                             entity.generation = true;
                             this.entities.add(entity);
@@ -249,6 +253,12 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     }
 
     @Override
+    public boolean generateTree(Location location, Random random, TreeType treeType, Predicate<? super BlockState> statePredicate) {
+        Preconditions.checkArgument(this.isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return super.generateTree(location, random, treeType, statePredicate);
+    }
+
+    @Override
     public Collection<net.minecraft.world.entity.Entity> getNMSEntities() {
         // Only load entities if we need them
         this.loadEntities();
@@ -256,9 +266,9 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     }
 
     @Override
-    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
+    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason, boolean randomizeData) {
         Preconditions.checkArgument(this.isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        return super.spawn(location, clazz, function, reason);
+        return super.spawn(location, clazz, function, reason, randomizeData);
     }
 
     @Override
@@ -273,33 +283,45 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
 
     // Paper start - Add more LimitedRegion API
     @Override
-    public void setBlockState(int x, int y, int z, BlockState state) {
+    public void setBlockState(int x, int y, int z, BlockState state) { // todo deprecate, this doesn't make sense plugin should use the update method after fetching it from getBlockState
+        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+        if (!(state instanceof CraftBlockEntityState<?> entityState)) {
+            throw new IllegalArgumentException("state is not a valid block entity (TileState)");
+        }
+
         BlockPos pos = new BlockPos(x, y, z);
-        if (!state.getBlockData().matches(getHandle().getBlockState(pos).asBlockData())) {
+        if (!state.getBlockData().matches(this.getHandle().getBlockState(pos).asBlockData())) {
             throw new IllegalArgumentException("BlockData does not match! Expected " + state.getBlockData().getAsString(false) + ", got " + getHandle().getBlockState(pos).asBlockData().getAsString(false));
+        }
+
+        BlockEntity entity = this.getHandle().getBlockEntity(pos);
+        if (entity == null) {
+            return;
         }
 
         try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
             () -> "CraftLimitedRegion@" + pos.toShortString(), LOGGER
         )) {
-            getHandle().getBlockEntity(pos).loadWithComponents(TagValueInput.create(
+            entity.loadWithComponents(TagValueInput.create(
                 problemReporter,
                 this.getHandle().registryAccess(),
-                ((org.bukkit.craftbukkit.block.CraftBlockEntityState<?>) state).getSnapshotNBT()
+                entityState.getSnapshotNBT()
             ));
         }
     }
 
     @Override
     public void scheduleBlockUpdate(int x, int y, int z) {
-        BlockPos position = new BlockPos(x, y, z);
-        getHandle().scheduleTick(position, getHandle().getBlockState(position).getBlock(), 0);
+        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+        BlockPos pos = new BlockPos(x, y, z);
+        this.getHandle().scheduleTick(pos, this.getHandle().getBlockState(pos).getBlock(), 0);
     }
 
     @Override
     public void scheduleFluidUpdate(int x, int y, int z) {
-        BlockPos position = new BlockPos(x, y, z);
-        getHandle().scheduleTick(position, getHandle().getFluidState(position).getType(), 0);
+        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+        BlockPos pos = new BlockPos(x, y, z);
+        this.getHandle().scheduleTick(pos, this.getHandle().getFluidState(pos).getType(), 0);
     }
 
     @Override
@@ -307,17 +329,17 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
         // reading/writing the returned Minecraft world causes a deadlock.
         // By implementing this, and covering it in warnings, we're assuming people won't be stupid, and
         // if they are stupid, they'll figure it out pretty fast.
-        return getHandle().getMinecraftWorld().getWorld();
+        return this.getHandle().getMinecraftWorld().getWorld();
     }
 
     @Override
     public int getCenterChunkX() {
-        return centerChunkX;
+        return this.centerChunkX;
     }
 
     @Override
     public int getCenterChunkZ() {
-        return centerChunkZ;
+        return this.centerChunkZ;
     }
     // Paper end - Add more LimitedRegion API
     // Paper start - Fluid API

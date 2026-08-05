@@ -8,7 +8,6 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a player animation event
- * <br>Use {@link io.papermc.paper.event.player.PlayerArmSwingEvent} for determining which arm was swung.
  */
 public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
 

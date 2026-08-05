@@ -299,6 +299,20 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> CAULDRONS = create(key("cauldrons"));
 
     /**
+     * {@code #minecraft:causes_continuous_geyser_eruptions}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CAUSES_CONTINUOUS_GEYSER_ERUPTIONS = create(key("causes_continuous_geyser_eruptions"));
+
+    /**
+     * {@code #minecraft:causes_periodic_geyser_eruptions}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CAUSES_PERIODIC_GEYSER_ERUPTIONS = create(key("causes_periodic_geyser_eruptions"));
+
+    /**
      * {@code #minecraft:cave_vines}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -355,11 +369,18 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> COMPLETES_FIND_TREE_TUTORIAL = create(key("completes_find_tree_tutorial"));
 
     /**
-     * {@code #minecraft:concrete_powder}
+     * {@code #minecraft:concrete}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TagKey<BlockType> CONCRETE_POWDER = create(key("concrete_powder"));
+    public static final TagKey<BlockType> CONCRETE = create(key("concrete"));
+
+    /**
+     * {@code #minecraft:concrete_powders}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CONCRETE_POWDERS = create(key("concrete_powders"));
 
     /**
      * {@code #minecraft:convertable_to_mud}
@@ -458,6 +479,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> DEEPSLATE_ORE_REPLACEABLES = create(key("deepslate_ore_replaceables"));
+
+    /**
+     * {@code #minecraft:default_immune_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> DEFAULT_IMMUNE_TO = create(key("default_immune_to"));
 
     /**
      * {@code #minecraft:diamond_ores}
@@ -614,6 +642,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> FOREST_ROCK_CAN_PLACE_ON = create(key("forest_rock_can_place_on"));
 
     /**
+     * {@code #minecraft:fox_immune_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> FOX_IMMUNE_TO = create(key("fox_immune_to"));
+
+    /**
      * {@code #minecraft:foxes_spawnable_on}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -640,6 +675,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> GEODE_INVALID_BLOCKS = create(key("geode_invalid_blocks"));
+
+    /**
+     * {@code #minecraft:glazed_terracotta}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> GLAZED_TERRACOTTA = create(key("glazed_terracotta"));
 
     /**
      * {@code #minecraft:goats_spawnable_on}
@@ -1069,6 +1111,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> PLANKS = create(key("planks"));
 
     /**
+     * {@code #minecraft:polar_bear_immune_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> POLAR_BEAR_IMMUNE_TO = create(key("polar_bear_immune_to"));
+
+    /**
      * {@code #minecraft:polar_bears_spawnable_on_alternate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1174,6 +1223,27 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> SCULK_REPLACEABLE_WORLD_GEN = create(key("sculk_replaceable_world_gen"));
 
     /**
+     * {@code #minecraft:shears_extreme_breaking_speed}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> SHEARS_EXTREME_BREAKING_SPEED = create(key("shears_extreme_breaking_speed"));
+
+    /**
+     * {@code #minecraft:shears_major_breaking_speed}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> SHEARS_MAJOR_BREAKING_SPEED = create(key("shears_major_breaking_speed"));
+
+    /**
+     * {@code #minecraft:shears_minor_breaking_speed}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> SHEARS_MINOR_BREAKING_SPEED = create(key("shears_minor_breaking_speed"));
+
+    /**
      * {@code #minecraft:shulker_boxes}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1237,6 +1307,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> SNOW = create(key("snow"));
 
     /**
+     * {@code #minecraft:snow_golem_immune_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> SNOW_GOLEM_IMMUNE_TO = create(key("snow_golem_immune_to"));
+
+    /**
      * {@code #minecraft:soul_fire_base_blocks}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1249,6 +1326,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> SOUL_SPEED_BLOCKS = create(key("soul_speed_blocks"));
+
+    /**
+     * {@code #minecraft:speleothems}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> SPELEOTHEMS = create(key("speleothems"));
 
     /**
      * {@code #minecraft:spruce_logs}
@@ -1300,6 +1384,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> STONE_PRESSURE_PLATES = create(key("stone_pressure_plates"));
 
     /**
+     * {@code #minecraft:stray_immune_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> STRAY_IMMUNE_TO = create(key("stray_immune_to"));
+
+    /**
      * {@code #minecraft:strider_warm_blocks}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1312,6 +1403,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> SUBSTRATE_OVERWORLD = create(key("substrate_overworld"));
+
+    /**
+     * {@code #minecraft:sulfur_spike_replaceable_blocks}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> SULFUR_SPIKE_REPLACEABLE_BLOCKS = create(key("sulfur_spike_replaceable_blocks"));
 
     /**
      * {@code #minecraft:support_override_cactus_flower}
@@ -1538,6 +1636,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> SUPPORTS_WITHER_ROSE = create(key("supports_wither_rose"));
 
     /**
+     * {@code #minecraft:suppresses_bounce}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> SUPPRESSES_BOUNCE = create(key("suppresses_bounce"));
+
+    /**
      * {@code #minecraft:sword_efficient}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1676,6 +1781,20 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> WITHER_IMMUNE = create(key("wither_immune"));
+
+    /**
+     * {@code #minecraft:wither_immune_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> WITHER_IMMUNE_TO = create(key("wither_immune_to"));
+
+    /**
+     * {@code #minecraft:wither_skeleton_immune_to}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> WITHER_SKELETON_IMMUNE_TO = create(key("wither_skeleton_immune_to"));
 
     /**
      * {@code #minecraft:wither_summon_base_blocks}

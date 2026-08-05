@@ -26,9 +26,9 @@
      public static Properties loadFromFile(final Path file) {
 +        if (!Files.exists(file)) return new Properties(); // CraftBukkit - SPIGOT-7465, MC-264979: Don't load if file doesn't exist
          try {
-             try {
-                 Properties var13;
-@@ -65,7 +_,53 @@
+             try (InputStream is = Files.newInputStream(file)) {
+                 CharsetDecoder reportingUtf8Decoder = StandardCharsets.UTF_8
+@@ -57,7 +_,53 @@
      }
  
      public void store(final Path output) {
@@ -81,9 +81,9 @@
 +            java.io.BufferedWriter os = new java.io.BufferedWriter(new java.io.OutputStreamWriter(bufferedOutputStream, java.nio.charset.StandardCharsets.UTF_8.newEncoder()));
 +            // Paper end - allow skipping server.properties comments
              this.properties.store(os, "Minecraft server properties");
-         } catch (IOException var7) {
+         } catch (IOException e) {
              LOGGER.error("Failed to store properties to file: {}", output);
-@@ -95,7 +_,7 @@
+@@ -87,7 +_,7 @@
      }
  
      public @Nullable String getStringRaw(final String key) {
@@ -92,7 +92,7 @@
      }
  
      protected <V> @Nullable V getLegacy(final String key, final Function<String, V> deserializer) {
-@@ -109,6 +_,16 @@
+@@ -101,6 +_,16 @@
      }
  
      protected <V> V get(final String key, final Function<String, @Nullable V> deserializer, final Function<V, String> serializer, final V defaultValue) {
@@ -109,7 +109,7 @@
          String value = this.getStringRaw(key);
          V result = MoreObjects.firstNonNull(value != null ? deserializer.apply(value) : null, defaultValue);
          this.properties.put(key, serializer.apply(result));
-@@ -191,7 +_,7 @@
+@@ -183,7 +_,7 @@
          return result;
      }
  
@@ -118,7 +118,7 @@
  
      public class MutableValue<V> implements Supplier<V> {
          private final String key;
-@@ -214,7 +_,7 @@
+@@ -204,7 +_,7 @@
          public T update(final RegistryAccess registryAccess, final V value) {
              Properties properties = Settings.this.cloneProperties();
              properties.put(this.key, this.serializer.apply(value));

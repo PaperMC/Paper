@@ -41,13 +41,13 @@ public class CraftItem extends CraftEntity implements Item {
 
     @Override
     public void setPickupDelay(int delay) {
-        this.getHandle().pickupDelay = Math.min(delay, NO_PICKUP_TIME);
+        this.getHandle().setPickUpDelay(Math.min(delay, NO_PICKUP_TIME));
     }
 
     @Override
     public void setUnlimitedLifetime(boolean unlimited) {
         if (unlimited) {
-            this.getHandle().age = NO_AGE_TIME;
+            this.getHandle().setUnlimitedLifetime();
         } else {
             this.getHandle().age = this.getTicksLived();
         }
@@ -85,12 +85,12 @@ public class CraftItem extends CraftEntity implements Item {
 
      @Override
      public void setCanPlayerPickup(boolean canPlayerPickup) {
-        this.getHandle().pickupDelay = canPlayerPickup ? 0 : NO_PICKUP_TIME;
+        this.getHandle().setPickUpDelay(canPlayerPickup ? 0 : NO_PICKUP_TIME);
      }
 
      @Override
      public boolean willAge() {
-        return this.getHandle().age != NO_AGE_TIME;
+        return this.getHandle().getAge() != NO_AGE_TIME;
      }
 
      @Override

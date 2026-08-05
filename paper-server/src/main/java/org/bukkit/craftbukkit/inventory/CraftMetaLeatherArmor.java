@@ -15,7 +15,7 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import static org.bukkit.craftbukkit.inventory.CraftItemFactory.DEFAULT_LEATHER_COLOR;
 
 @DelegateDeserialization(SerializableMeta.class)
-class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
+public class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
 
     static final ItemMetaKeyType<DyedItemColor> COLOR = new ItemMetaKeyType<>(DataComponents.DYED_COLOR, "color");
 

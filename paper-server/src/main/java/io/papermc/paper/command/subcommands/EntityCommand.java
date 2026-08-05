@@ -37,7 +37,11 @@ public final class EntityCommand {
             .requires(PaperCommand.hasPermission("entity"))
             .then(Commands.literal("list")
                 .executes(context -> {
-                    return listEntities(context.getSource().getSender(), BuiltInRegistries.ENTITY_TYPE.listElements().toList(), context.getSource().getLocation().getWorld());
+                    return listEntities(
+                        context.getSource().getSender(),
+                        BuiltInRegistries.ENTITY_TYPE.listElements().toList(),
+                        context.getSource().getLocation().getWorld()
+                    );
                 })
                 .then(Commands.argument("entity-type", VanillaArgumentProviderImpl.resourceOrTag(Registries.ENTITY_TYPE))
                     .executes(context -> {

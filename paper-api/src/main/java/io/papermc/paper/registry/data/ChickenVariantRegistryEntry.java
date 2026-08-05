@@ -31,21 +31,21 @@ public interface ChickenVariantRegistryEntry {
     /**
      * Provides the client texture asset of the chicken variant, which represents the texture to use.
      *
-     * @return the client texture asset.
+     * @return the client texture asset
      */
     ClientTextureAsset clientTextureAsset();
 
     /**
      * Provides the client texture asset of the baby chicken variant, which represents the texture to use.
      *
-     * @return the baby client texture asset.
+     * @return the baby client texture asset
      */
     ClientTextureAsset babyClientTextureAsset();
 
     /**
      * Provides the model of the chicken variant.
      *
-     * @return the model.
+     * @return the model
      */
     Model model();
 
@@ -66,8 +66,8 @@ public interface ChickenVariantRegistryEntry {
         /**
          * Sets the client texture asset of the chicken variant, which is the location of the texture to use.
          *
-         * @param clientTextureAsset the client texture asset.
-         * @return this builder instance.
+         * @param clientTextureAsset the client texture asset
+         * @return this builder instance
          * @see ChickenVariantRegistryEntry#clientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -76,8 +76,8 @@ public interface ChickenVariantRegistryEntry {
         /**
          * Sets the client texture asset of the baby chicken variant, which is the location of the texture to use.
          *
-         * @param babyClientTextureAsset the baby client texture asset.
-         * @return this builder instance.
+         * @param babyClientTextureAsset the baby client texture asset
+         * @return this builder instance
          * @see ChickenVariantRegistryEntry#babyClientTextureAsset()
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -86,8 +86,8 @@ public interface ChickenVariantRegistryEntry {
         /**
          * Sets the model to use for this chicken variant.
          *
-         * @param model the model.
-         * @return this builder instance.
+         * @param model the model
+         * @return this builder instance
          * @see ChickenVariantRegistryEntry#model()
          */
         @Contract(value = "_ -> this", mutates = "this")

@@ -2,6 +2,7 @@ package io.papermc.paper.registry;
 
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -26,6 +27,7 @@ import org.bukkit.entity.Cow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Pig;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieNautilus;
@@ -92,6 +94,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.VillagerProfessionKeys
      */
     RegistryKey<Villager.Profession> VILLAGER_PROFESSION = create("villager_profession");
+    /**
+     * Built-in registry for poi types.
+     * @see io.papermc.paper.registry.keys.PoiTypeKeys
+     */
+    RegistryKey<PoiType> POINT_OF_INTEREST_TYPE = create("point_of_interest_type");
     /**
      * Built-in registry for villager types.
      * @see io.papermc.paper.registry.keys.VillagerTypeKeys
@@ -246,6 +253,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.ZombieNautilusVariantKeys
      */
     RegistryKey<ZombieNautilus.Variant> ZOMBIE_NAUTILUS_VARIANT = create("zombie_nautilus_variant");
+    /**
+     * Data-driven registry for sulfur cube archetypes.
+     * @see io.papermc.paper.registry.keys.SulfurCubeArchetypeKeys
+     */
+    RegistryKey<SulfurCube.Archetype> SULFUR_CUBE_ARCHETYPE = create("sulfur_cube_archetype");
     /**
      * Data-driven registry for dialogs.
      * @see io.papermc.paper.registry.keys.DialogKeys

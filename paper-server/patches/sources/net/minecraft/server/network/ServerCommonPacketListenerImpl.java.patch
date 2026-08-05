@@ -9,19 +9,18 @@
      private final boolean transferred;
      private long keepAliveTime;
      private boolean keepAlivePending;
-@@ -46,6 +_,17 @@
+@@ -46,6 +_,16 @@
      private boolean closed = false;
      private int latency;
      private volatile boolean suspendFlushingOnServerThread = false;
 +    // CraftBukkit start
 +    public final org.bukkit.craftbukkit.CraftServer cserver;
-+    public boolean processedDisconnect;
 +    // CraftBukkit end
 +    public final java.util.Map<java.util.UUID, net.kyori.adventure.resource.ResourcePackCallback> packCallbacks = new java.util.concurrent.ConcurrentHashMap<>(); // Paper - adventure resource pack callbacks
 +    private static final long KEEPALIVE_LIMIT = Long.getLong("paper.playerconnection.keepalive", 30) * 1000; // Paper - provide property to set keepalive limit
 +    protected static final net.minecraft.resources.Identifier MINECRAFT_BRAND = net.minecraft.resources.Identifier.withDefaultNamespace("brand"); // Paper - Brand support
 +    // Paper start - retain certain values
-+    public @Nullable String playerBrand;
++    public @Nullable String clientBrand;
 +    public final java.util.Set<String> pluginMessagerChannels;
 +    // Paper end - retain certain values
  
@@ -32,7 +31,7 @@
          this.latency = cookie.latency();
          this.transferred = cookie.transferred();
 +        // Paper start
-+        this.playerBrand = cookie.brandName();
++        this.clientBrand = cookie.clientBrand();
 +        this.cserver = server.server;
 +        this.pluginMessagerChannels = cookie.channels();
 +        // Paper end
@@ -96,13 +95,13 @@
 +            }
 +
 +            if (identifier.equals(MINECRAFT_BRAND)) {
-+                this.playerBrand = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(data)).readUtf(256);
++                this.clientBrand = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(data)).readUtf(256);
 +            }
 +
 +            this.cserver.getMessenger().dispatchIncomingMessage(paperConnection(), identifier.toString(), data);
 +        } catch (final Exception e) {
 +            LOGGER.error("Couldn't handle custom payload on channel {}", identifier, e);
-+            this.disconnect(net.minecraft.network.chat.Component.literal("Invalid custom payload payload!"), io.papermc.paper.connection.DisconnectionReason.INVALID_PAYLOAD); // Paper - kick event cause
++            this.disconnect(Component.literal("Invalid custom payload payload!"), io.papermc.paper.connection.DisconnectionReason.INVALID_PAYLOAD); // Paper - kick event cause
 +        }
 +    }
 +
@@ -139,7 +138,7 @@
 +        final io.papermc.paper.event.player.PaperPlayerCustomClickEvent event = new io.papermc.paper.event.player.PaperPlayerCustomClickEvent(io.papermc.paper.adventure.PaperAdventure.asAdventure(packet.id()), this.getApiConnection(), packet.payload().orElse(null));
 +        event.callEvent();
 +        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.DIALOG_CLICK_MANAGER.tryRunCallback(this.getAudience(), packet.id(), packet.payload());
-+        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.ADVENTURE_CLICK_MANAGER.tryRunCallback(this.getAudience(), packet.id(),  packet.payload());
++        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.ADVENTURE_CLICK_MANAGER.tryRunCallback(this.getAudience(), packet.id(), packet.payload());
 +        // Paper end - Implement click callbacks with custom click action
      }
  
@@ -189,7 +188,7 @@
 +        if (!this.isSingleplayerOwner() && elapsedTime >= 15000L) { // use vanilla's 15000L between keep alive packets
              if (this.keepAlivePending) {
 -                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE);
-+                if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
++                if (elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
 +                    this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE, io.papermc.paper.connection.DisconnectionReason.TIMEOUT); // Paper - kick event cause
 +                }
 +                // Paper end - give clients a longer time to respond to pings as per pre 1.12.2 timings
@@ -210,7 +209,7 @@
  
      public void send(final Packet<?> packet, final @Nullable ChannelFutureListener listener) {
 +        // CraftBukkit start
-+        if (packet == null || this.processedDisconnect) { // Spigot
++        if (packet == null) {
 +            return;
 +        } else if (packet instanceof net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket defaultSpawnPositionPacket && this instanceof ServerGamePacketListenerImpl serverGamePacketListener) {
 +            serverGamePacketListener.player.compassTarget = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(defaultSpawnPositionPacket.respawnData().pos(), serverGamePacketListener.getPlayer().level());
@@ -219,11 +218,11 @@
          if (packet.isTerminal()) {
              this.close();
          }
-@@ -174,15 +_,111 @@
+@@ -174,15 +_,108 @@
          }
      }
  
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - kick event causes
++    @Deprecated // Paper - kick event causes TODO check on update: ensure all call to this are from the configuration phase
      public void disconnect(final Component reason) {
 -        this.disconnect(new DisconnectionDetails(reason));
 +        // Paper start - kick event causes
@@ -237,13 +236,13 @@
  
      public void disconnect(final DisconnectionDetails details) {
 +        // CraftBukkit start - fire PlayerKickEvent
-+        if (this.processedDisconnect) {
++        if (!this.connection.isConnected()) {
 +            return;
 +        }
 +        if (!this.cserver.isPrimaryThread()) {
 +            org.bukkit.craftbukkit.util.Waitable waitable = new org.bukkit.craftbukkit.util.Waitable() {
 +                @Override
-+                protected Object evaluate() {
++                protected @Nullable Object evaluate() {
 +                    ServerCommonPacketListenerImpl.this.disconnect(details);
 +                    return null;
 +                }
@@ -285,7 +284,7 @@
 +            }
 +
 +            reason = io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason());
-+            leaveMessage =  io.papermc.paper.adventure.PaperAdventure.asVanilla(event.leaveMessage());
++            leaveMessage = io.papermc.paper.adventure.PaperAdventure.asVanilla(event.leaveMessage());
 +            serverGamePacketListener.player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.KICKED; // Paper - Add API for quit reason
 +            // Log kick to console *after* event was processed.
 +            switch (cause) {
@@ -303,14 +302,11 @@
 +    }
 +
 +    private void disconnect0(final DisconnectionDetails details) {
-+        // CraftBukkit end
          this.connection.send(new ClientboundDisconnectPacket(details.reason()), PacketSendListener.thenRun(() -> this.connection.disconnect(details)));
-+        this.onDisconnect(details); // CraftBukkit - fire quit instantly
          this.connection.setReadOnly();
 -        this.server.executeBlocking(this.connection::handleDisconnection);
 -    }
-+        // CraftBukkit - Don't wait
-+        this.server.scheduleOnMain(this.connection::handleDisconnection); // Paper
++        this.connection.handleConnectionDisconnectOnNextTick = true; // Paper - Force kill connection ticking. Let this close the connection
 +    }
 +
 +    // Paper start - add proper async disconnect
@@ -339,6 +335,6 @@
  
      protected CommonListenerCookie createCookie(final ClientInformation clientInformation) {
 -        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred);
-+        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.playerBrand, this.pluginMessagerChannels); // Paper
++        return new CommonListenerCookie(this.playerProfile(), this.latency, clientInformation, this.transferred, this.clientBrand, this.pluginMessagerChannels); // Paper
      }
  }

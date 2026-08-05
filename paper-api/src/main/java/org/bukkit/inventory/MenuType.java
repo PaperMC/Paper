@@ -236,7 +236,7 @@ public interface MenuType extends Keyed, io.papermc.paper.world.flag.FeatureDepe
     Class<? extends InventoryView> getInventoryViewClass();
 
     @SuppressWarnings("unchecked")
-    private static <T extends MenuType> T get(final @KeyPattern.Value String key) {
+    private static <T extends MenuType> T get(@KeyPattern.Value final String key) {
         return (T) Registry.MENU.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 }
