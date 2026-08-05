@@ -68,10 +68,7 @@ public final class MobcapsCommand {
         return Commands.literal("playermobcaps")
             .requires(PaperCommand.hasPermission("playermobcaps"))
             .executes(context -> {
-                if (!(context.getSource().getExecutor() instanceof Player player)) {
-                    throw net.minecraft.commands.CommandSourceStack.ERROR_NOT_PLAYER.create();
-                }
-                return printPlayerMobcaps(context.getSource().getSender(), player);
+                return printPlayerMobcaps(context.getSource().getSender(), context.getSource().getPlayerOrThrow());
             })
             .then(Commands.argument("player", ArgumentTypes.player())
                 .executes(context -> {
