@@ -83,7 +83,7 @@ public final class PaperCommand {
         list.add(ReloadCommand.create());
         list.add(VersionCommand.create("version"));
         list.add(DumpPluginsCommand.create());
-        list.add(SyncLoadInfoCommand.create());
+        // list.add(SyncLoadInfoCommand.create());
         list.add(DumpItemCommand.create());
         list.add(MobcapsCommand.createGlobal());
         list.add(MobcapsCommand.createPlayer());
