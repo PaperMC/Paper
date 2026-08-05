@@ -179,7 +179,12 @@ public abstract class PaperPersistentDataContainerView implements PersistentData
                     yield null;
                 }
 
-                yield getListTagType(nestedListTag);
+                ListPersistentDataType<?, ?> nestedListType = getListTagType(nestedListTag);
+                if (nestedListType == null) {
+                    yield null;
+                }
+
+                yield PersistentDataType.LIST.listTypeFrom(nestedListType);
             }
             default -> null;
         };
