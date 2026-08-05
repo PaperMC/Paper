@@ -55,6 +55,7 @@ import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.StrictJsonParser;
@@ -283,10 +284,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     private List<Advancement> loadAdvancements(final Map<Key, String> advancements, final boolean persist, final boolean lenient) {
-        final MinecraftServer server = MinecraftServer.getServer();
+        final ServerAdvancementManager manager = MinecraftServer.getServer().getAdvancements();
         for (final Key key : advancements.keySet()) {
             final Identifier id = PaperAdventure.asVanilla(key);
-            Preconditions.checkArgument(server.getAdvancements().get(id) == null, "Advancement %s already exists" , id);
+            Preconditions.checkArgument(manager.get(id) == null, "Advancement %s already exists" , id);
         }
 
         record AdvancementEntry(AdvancementHolder advancement, JsonElement element) {
@@ -300,8 +301,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 return GSON.toJson(this.element);
             }
         }
-        final ImmutableMap.Builder<Identifier, AdvancementHolder> allAdvancements = ImmutableMap.builderWithExpectedSize(server.getAdvancements().advancements.size() + advancements.size());
-        allAdvancements.putAll(server.getAdvancements().advancements);
+
+        final ImmutableMap.Builder<Identifier, AdvancementHolder> allAdvancements = ImmutableMap.builderWithExpectedSize(manager.advancements.size() + advancements.size());
+        allAdvancements.putAll(manager.advancements);
 
         final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
         final List<AdvancementEntry> newEntries = new ArrayList<>(advancements.size());
@@ -327,11 +329,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
             allAdvancements.put(id, holder);
             newEntries.add(new AdvancementEntry(holder, element));
         }
-        server.getAdvancements().advancements = allAdvancements.build();
+        manager.advancements = allAdvancements.build();
 
-        final AdvancementTree tree = server.getAdvancements().tree();
+        final AdvancementTree tree = manager.tree();
         tree.addAll(newEntries.stream().map(AdvancementEntry::advancement).toList());
 
+        // recalculate advancement position
         final Set<AdvancementNode> roots = new HashSet<>();
         for (final AdvancementEntry entry : newEntries) {
             final AdvancementNode node = Objects.requireNonNull(tree.get(entry.id()));
@@ -365,7 +368,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
 
         if (!deserializedAdvancements.isEmpty()) {
-            server.getPlayerList().reloadAdvancementData();
+            MinecraftServer.getServer().getPlayerList().reloadAdvancementData();
         }
         return deserializedAdvancements;
     }
