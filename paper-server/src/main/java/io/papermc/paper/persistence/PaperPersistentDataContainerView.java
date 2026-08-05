@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import net.kyori.adventure.key.Key;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
@@ -76,10 +77,10 @@ public abstract class PaperPersistentDataContainerView implements PersistentData
     }
 
     @Override
-    public @Nullable PersistentDataType<?, ?> getType(final NamespacedKey key) {
+    public @Nullable PersistentDataType<?, ?> estimatePrimitiveDataType(final Key key) {
         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
 
-        final Tag value = this.getTag(key.toString());
+        final Tag value = this.getTag(key.asString());
         if (value == null) {
             return null;
         }
