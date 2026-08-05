@@ -280,7 +280,7 @@ public class CraftBlock implements Block {
     }
 
     public static List<Block> getMatchingBlocks(LevelAccessor level, BlockPattern.BlockPatternMatch match) {
-        List<Block> blocks = new ArrayList<>();
+        List<Block> blocks = new ArrayList<>(match.getWidth() * match.getHeight());
         for (int x = 0; x < match.getWidth(); x++) {
             for (int y = 0; y < match.getHeight(); y++) {
                 BlockInWorld block = match.getBlock(x, y, 0);
