@@ -125,8 +125,8 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
     }
 
     @Override
-    protected JavaFile.Builder file(JavaFile.Builder builder) {
-        return builder.addStaticImport(Key.class, "key");
+    protected void file(JavaFile.Builder builder) {
+        builder.addStaticImport(Key.class, "key");
     }
 
     protected @Nullable SingleFlagHolder getRequiredFeature(Holder.Reference<T> reference) {
