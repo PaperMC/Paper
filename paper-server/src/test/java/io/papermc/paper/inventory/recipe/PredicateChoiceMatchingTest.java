@@ -157,6 +157,29 @@ class PredicateChoiceMatchingTest {
     }
 
     @Test
+    void initialize_clearsStalePredicateIngredients() {
+        // initialize() rebuilds the extras from a recipe. It clears exactIngredients but must ALSO
+        // clear predicateIngredients, otherwise a reused extras map (e.g. a cached
+        // CraftingInput#stackedContents whose resetExtras was skipped because amounts was empty)
+        // carries a previous recipe's predicates into the next recipe's matching.
+        final StackedContents<ItemOrExact> raw = new StackedContents<>();
+        final StackedContentsExtrasMap extras = new StackedContentsExtrasMap(raw);
+
+        final Recipe<?> withPredicate = mock(Recipe.class);
+        when(withPredicate.placementInfo()).thenReturn(PlacementInfo.create(List.of(
+            predicate(s -> s.is(Items.STONE), new ItemStack(Items.STONE))
+        )));
+        extras.initialize(withPredicate);
+        assertEquals(1, extras.predicateIngredients.size(), "the predicate was registered");
+
+        // Re-initialize for a predicate-free recipe, mirroring a reuse where resetExtras did not run.
+        final Recipe<?> noPredicate = mock(Recipe.class);
+        when(noPredicate.placementInfo()).thenReturn(PlacementInfo.create(List.of(regular(Items.DIRT))));
+        extras.initialize(noPredicate);
+        assertEquals(0, extras.predicateIngredients.size(), "initialize() must drop the stale predicate");
+    }
+
+    @Test
     void twoPredicates_notEnough() {
         final Predicate<ItemStack> isStone = s -> s.is(Items.STONE);
         final Outcome o = run(
