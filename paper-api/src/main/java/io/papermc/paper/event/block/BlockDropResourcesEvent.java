@@ -31,8 +31,8 @@ import java.util.List;
 public class BlockDropResourcesEvent extends BlockEvent implements Cancellable {
     private static final HandlerList HANDLER_LIST = new HandlerList();
     private final List<ItemStack> drops;
-    private final Entity breaker;
-    private final ItemStack tool;
+    private @Nullable final Entity breaker;
+    private @Nullable final ItemStack tool;
     private final BlockState state;
     private boolean cancelled;
 
