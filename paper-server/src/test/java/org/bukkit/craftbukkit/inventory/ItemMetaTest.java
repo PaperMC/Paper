@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -175,6 +176,32 @@ public class ItemMetaTest {
         }
     }
     // Paper end
+
+    private void testHasItemMeta(ItemStack stack) {
+        assertThat(stack.hasItemMeta(), is(false), "Should not have ItemMeta");
+
+        stack.setDurability((short) 0);
+        assertThat(stack.hasItemMeta(), is(false), "ItemStack with zero durability should not have ItemMeta");
+
+        stack.setDurability((short) 2);
+        assertThat(stack.hasItemMeta(), is(true), "ItemStack with non-zero durability should have ItemMeta");
+
+        stack.setLore(Collections.singletonList("Lore"));
+        assertThat(stack.hasItemMeta(), is(true), "ItemStack with lore and durability should have ItemMeta");
+
+        stack.setDurability((short) 0);
+        assertThat(stack.hasItemMeta(), is(true), "ItemStack with lore should have ItemMeta");
+
+        stack.setLore(null);
+    }
+
+    @Test
+    public void testHasItemMeta() {
+        ItemStack itemStack = new ItemStack(Material.SHEARS);
+
+        testHasItemMeta(itemStack);
+        testHasItemMeta(CraftItemStack.asCraftCopy(itemStack));
+    }
 
     @Test
     public void testEachExtraData() {
