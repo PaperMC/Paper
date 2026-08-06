@@ -77,7 +77,7 @@ public abstract class PaperPersistentDataContainerView implements PersistentData
     }
 
     @Override
-    public @Nullable PersistentDataType<?, ?> estimatePrimitiveDataType(final Key key) {
+    public @Nullable PersistentDataType<?, ?> getPrimitiveStorageType(final Key key) {
         Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
 
         final Tag value = this.getTag(key.asString());

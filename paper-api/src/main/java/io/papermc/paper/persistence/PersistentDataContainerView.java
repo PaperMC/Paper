@@ -112,7 +112,8 @@ public interface PersistentDataContainerView {
     <P, C> C getOrDefault(NamespacedKey key, PersistentDataType<P, C> type, C defaultValue);
 
     /**
-     * Estimates the {@link PersistentDataType} of the value.
+     * Estimates the {@link PersistentDataType} of the value based on the primitive
+     * type that is stored for the given key.
      * <br>
      * <b>WARNING:</b> This method will only return data types
      * defined in {@link PersistentDataType} which directly map to a specific
@@ -125,7 +126,7 @@ public interface PersistentDataContainerView {
      * @return estimated data type or null if no value is present, the type is
      * unknown or an empty list is encountered as value.
      */
-    @Nullable PersistentDataType<?, ?> estimatePrimitiveDataType(Key key);
+    @Nullable PersistentDataType<?, ?> getPrimitiveStorageType(Key key);
 
     /**
      * Get the set of keys present on this {@link PersistentDataContainer}
