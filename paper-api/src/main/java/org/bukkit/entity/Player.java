@@ -2078,6 +2078,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     // Paper end
 
     /**
+
+     * Resets the player's flying tick counter used for flight checks.
+     * <p>
+     * Only valid once the player's connection is initialized.
+     */
+    public void resetFlyingTicks();
+
+    /**
      * Hides a player from this player
      *
      * @param player Player to hide
@@ -4046,4 +4054,10 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     default ObjectContents asObjectContents() {
         return this.getPlayerProfile().asObjectContents();
     }
+
+    /**
+     * Updates the player's pose according to the current game state,
+     * clearing any fixed pose in the process.
+     */
+    void unsetFixedPose();
 }
