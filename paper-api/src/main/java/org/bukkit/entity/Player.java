@@ -3815,7 +3815,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param pitch the pitch
      * @see #setRotation(Angle, Angle)
      */
-    @ApiStatus.Obsolete(since = "26.2")
     void setRotation(float yaw, float pitch);
 
     /**

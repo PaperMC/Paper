@@ -138,7 +138,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param pitch the pitch
      * @see #setRotation(Angle, Angle)
      */
-    @ApiStatus.Obsolete(since = "26.2")
     public void setRotation(float yaw, float pitch);
 
     /**
