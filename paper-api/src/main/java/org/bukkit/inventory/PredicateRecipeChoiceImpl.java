@@ -23,7 +23,7 @@ record PredicateRecipeChoiceImpl(Predicate<? super ItemStack> stackPredicate, It
     @SuppressWarnings({"MethodDoesntCallSuperMethod", "FunctionalExpressionCanBeFolded"})
     @Override
     public PredicateRecipeChoiceImpl clone() {
-        return new PredicateRecipeChoiceImpl(this.stackPredicate::test, this.exampleStack.clone());
+        return new PredicateRecipeChoiceImpl(this.stackPredicate::test, this.exampleStack);
     }
 
     @Override
@@ -33,9 +33,6 @@ record PredicateRecipeChoiceImpl(Predicate<? super ItemStack> stackPredicate, It
 
     @Override
     public RecipeChoice validate(final boolean allowEmptyRecipes) {
-        if (this.exampleStack.getType().isAir()) {
-            throw new IllegalArgumentException("RecipeChoice.ExactChoice cannot contain air");
-        }
         return this;
     }
 }
