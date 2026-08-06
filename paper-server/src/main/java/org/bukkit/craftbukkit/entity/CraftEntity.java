@@ -280,9 +280,6 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setRotation(Angle yaw, Angle pitch) {
-        NumberConversions.checkFinite(pitch.degrees(), "pitch not finite");
-        NumberConversions.checkFinite(yaw.degrees(), "yaw not finite");
-
         float yawValue = Location.normalizeYaw(yaw.degrees());
         float pitchValue = Location.normalizePitch(pitch.degrees());
 
