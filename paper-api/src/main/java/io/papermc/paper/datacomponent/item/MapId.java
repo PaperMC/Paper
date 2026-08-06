@@ -10,7 +10,6 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @ApiStatus.NonExtendable
-@ApiStatus.Experimental
 public interface MapId {
 
     @Contract(value = "_ -> new", pure = true)

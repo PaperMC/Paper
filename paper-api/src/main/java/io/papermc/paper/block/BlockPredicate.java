@@ -8,7 +8,6 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface BlockPredicate {
 
@@ -38,7 +37,6 @@ public interface BlockPredicate {
 
     @Nullable RegistryKeySet<BlockType> blocks();
 
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder {
 

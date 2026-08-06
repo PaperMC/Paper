@@ -11,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CONTAINER_LOOT
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface SeededContainerLoot {
 
@@ -44,7 +43,6 @@ public interface SeededContainerLoot {
     /**
      * Builder for {@link SeededContainerLoot}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<SeededContainerLoot> {
 

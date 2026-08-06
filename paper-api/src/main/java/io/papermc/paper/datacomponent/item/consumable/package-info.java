@@ -1,9 +1,6 @@
-/**
- * This package contains classes related to dialog actions in the Paper API.
- */
 @NullMarked
 @MinecraftVersionDependent
-package io.papermc.paper.registry.data.dialog.action;
+package io.papermc.paper.datacomponent.item.consumable;
 
 import io.papermc.paper.annotation.MinecraftVersionDependent;
 import org.jspecify.annotations.NullMarked;

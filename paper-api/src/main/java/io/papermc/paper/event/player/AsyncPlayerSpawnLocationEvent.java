@@ -16,7 +16,6 @@ import org.jspecify.annotations.NullMarked;
  * <p>The player will be kept in the configuration phase until all event handlers return and
  * the spawn location is loaded.</p>
  */
-@ApiStatus.Experimental
 @NullMarked
 public class AsyncPlayerSpawnLocationEvent extends Event {
 

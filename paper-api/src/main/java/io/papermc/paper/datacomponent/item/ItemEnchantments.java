@@ -15,7 +15,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#STORED_ENCHANTMENTS
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ItemEnchantments {
 
@@ -40,7 +39,6 @@ public interface ItemEnchantments {
     /**
      * Builder for {@link ItemEnchantments}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemEnchantments> {
 

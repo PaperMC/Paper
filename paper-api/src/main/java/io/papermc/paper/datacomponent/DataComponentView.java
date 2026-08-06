@@ -24,7 +24,6 @@ public interface DataComponentView {
      * @see #hasData(DataComponentType) for DataComponentType.NonValued
      */
     @Contract(pure = true)
-    @ApiStatus.Experimental
     <T> @Nullable T getData(final DataComponentType.Valued<T> type);
 
     /**
@@ -38,7 +37,6 @@ public interface DataComponentView {
      */
     @Utility
     @Contract(value = "_, !null -> !null", pure = true)
-    @ApiStatus.Experimental
     <T> @Nullable T getDataOrDefault(final DataComponentType.Valued<? extends T> type, final @Nullable T fallback);
 
     /**
@@ -48,7 +46,6 @@ public interface DataComponentView {
      * @return {@code true} if set, {@code false} otherwise
      */
     @Contract(pure = true)
-    @ApiStatus.Experimental
     boolean hasData(final DataComponentType type);
 
     // Not applicable to entities
@@ -58,6 +55,5 @@ public interface DataComponentView {
     //  * @return an immutable set of data component types
     //  */
     // @Contract("-> new")
-    // @ApiStatus.Experimental
     // @Unmodifiable Set<DataComponentType> getDataTypes();
 }
