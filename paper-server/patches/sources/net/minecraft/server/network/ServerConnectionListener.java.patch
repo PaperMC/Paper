@@ -109,14 +109,14 @@
 +            channel.channel().close();
 +        }
 +
-+        final long startTime = System.currentTimeMillis();
++        final long startTime = System.nanoTime();
 +        // Paper end - Add maximum time to wait for channels to close
          for (ChannelFuture channel : this.channels) {
              try {
 -                channel.channel().close().sync();
 +                // Paper start - Add maximum time to wait for channels to close
 +                final ChannelFuture closeFuture = channel.channel().closeFuture();
-+                if (!closeFuture.await(30_000 - (System.currentTimeMillis() - startTime), TimeUnit.MILLISECONDS)) {
++                if (!closeFuture.await(TimeUnit.SECONDS.toNanos(30) - (System.nanoTime() - startTime), TimeUnit.NANOSECONDS)) {
 +                    LOGGER.error("Timed out whilst waiting for channel to close");
 +                }
 +
@@ -175,11 +175,11 @@
 +                connection.channel.close();
 +            }
 +
-+            final long startTime = System.currentTimeMillis();
++            final long startTime = System.nanoTime();
 +            for (final Connection connection : this.connections) {
 +                final ChannelFuture closeFuture = connection.channel.closeFuture();
 +
-+                if (closeFuture.awaitUninterruptibly(30_000 - (System.currentTimeMillis() - startTime))) {
++                if (closeFuture.awaitUninterruptibly(TimeUnit.SECONDS.toNanos(30) - (System.nanoTime() - startTime), TimeUnit.NANOSECONDS)) {
 +                    connection.handleDisconnection();
 +                } else {
 +                    LOGGER.error("Timed out whilst waiting for player connection channel to close");
