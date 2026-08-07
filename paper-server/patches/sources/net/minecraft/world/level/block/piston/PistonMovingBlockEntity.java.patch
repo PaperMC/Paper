@@ -18,3 +18,24 @@
                          Block.updateOrDestroy(entity.movedState, newState, level, pos, Block.UPDATE_ALL);
                      } else {
                          if (newState.hasProperty(BlockStateProperties.WATERLOGGED) && newState.getValue(BlockStateProperties.WATERLOGGED)) {
+@@ -347,8 +_,10 @@
+         super.loadAdditional(input);
+         this.movedState = input.read("blockState", BlockState.CODEC).orElse(DEFAULT_BLOCK_STATE);
+         this.direction = input.read("facing", Direction.LEGACY_ID_CODEC).orElse(Direction.DOWN);
+-        this.progress = input.getFloatOr("progress", 0.0F);
+-        this.progressO = this.progress;
++        // Paper start - Fix #9220 missing progressO read, causing desyncs and dupes
++        this.progressO = input.getFloatOr("progress", 0.0F);
++        this.progress = input.getFloatOr("progressCurrent", this.progressO);
++        // Paper end - Fix #9220 missing progressO read, causing desyncs and dupes
+         this.extending = input.getBooleanOr("extending", false);
+         this.isSourcePiston = input.getBooleanOr("source", false);
+     }
+@@ -359,6 +_,7 @@
+         output.store("blockState", BlockState.CODEC, this.movedState);
+         output.store("facing", Direction.LEGACY_ID_CODEC, this.direction);
+         output.putFloat("progress", this.progressO);
++        output.putFloat("progressCurrent", this.progress); // Paper - Fix #9220 missing progressO read, causing desyncs and dupes
+         output.putBoolean("extending", this.extending);
+         output.putBoolean("source", this.isSourcePiston);
+     }
