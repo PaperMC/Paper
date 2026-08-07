@@ -12,8 +12,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a {@link Player} selects an item inside a bundle.
- * <p>
- * NOTE: This event does not fire for bundle item selections in creative mode player inventories.
+ *
+ * @apiNote This event does not fire for bundle item selections in creative mode player inventories.
  */
 @NullMarked
 public final class PlayerBundleItemSelectEvent extends InventoryEvent {
@@ -123,8 +123,8 @@ public final class PlayerBundleItemSelectEvent extends InventoryEvent {
 
     /**
      * Gets the direction from the previous selection to the new one.
-     * <p>
-     * <b>Note:</b> The direction cannot be reliably determined if there are less than three item stacks inside the bundle, in which case this returns {@link Direction#UNKNOWN}.
+     *
+     * @apiNote The direction cannot be reliably determined if there are less than three item stacks inside the bundle, in which case this returns {@link Direction#UNKNOWN}.
      *
      * @return the direction
      */
