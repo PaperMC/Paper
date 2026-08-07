@@ -305,9 +305,7 @@ public final class MCUtil {
 
     public static void serializeTag(final CompoundTag tag, final OutputStream output) throws IOException {
         NbtUtils.addCurrentDataVersion(tag);
-        try (final DataOutputStream dos = new DataOutputStream(output)) {
-            NbtIo.write(tag, dos);
-        }
+        NbtIo.write(tag, new DataOutputStream(output));
     }
 
     public static byte[] serializeTagToBytes(final CompoundTag tag, final boolean compress) {
