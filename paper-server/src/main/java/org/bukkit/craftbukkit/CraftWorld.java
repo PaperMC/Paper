@@ -689,7 +689,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         arrow.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-        arrow.shoot(direction.getX(), direction.getY(), direction.getZ(), speed, spread);
+        arrow.shoot(direction.getX(), direction.getY(), direction.getZ(), speed, io.papermc.paper.configuration.ProjectileUncertainty.resolve(arrow.getType(), spread)); // Paper - configurable projectile uncertainty
         this.world.addFreshEntity(arrow);
         return (T) arrow.getBukkitEntity();
     }

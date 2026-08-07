@@ -558,13 +558,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
         if (Snowball.class.isAssignableFrom(projectile)) {
             launch = new net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.SNOWBALL));
-            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // ItemSnowball
+            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, io.papermc.paper.configuration.ProjectileUncertainty.resolve(launch.getType(), 1.0F)); // ItemSnowball // Paper - configurable projectile uncertainty
         } else if (Egg.class.isAssignableFrom(projectile)) {
             launch = new ThrownEgg(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.EGG));
-            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // ItemEgg
+            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, io.papermc.paper.configuration.ProjectileUncertainty.resolve(launch.getType(), 1.0F)); // ItemEgg // Paper - configurable projectile uncertainty
         } else if (EnderPearl.class.isAssignableFrom(projectile)) {
             launch = new ThrownEnderpearl(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.ENDER_PEARL));
-            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // ItemEnderPearl
+            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, io.papermc.paper.configuration.ProjectileUncertainty.resolve(launch.getType(), 1.0F)); // ItemEnderPearl // Paper - configurable projectile uncertainty
         } else if (AbstractArrow.class.isAssignableFrom(projectile)) {
             if (TippedArrow.class.isAssignableFrom(projectile)) {
                 launch = new net.minecraft.world.entity.projectile.arrow.Arrow(world, this.getHandle(), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
@@ -576,17 +576,17 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             } else {
                 launch = new net.minecraft.world.entity.projectile.arrow.Arrow(world, this.getHandle(), new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
             }
-            ((net.minecraft.world.entity.projectile.arrow.AbstractArrow) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, Trident.class.isAssignableFrom(projectile) ? net.minecraft.world.item.TridentItem.PROJECTILE_SHOOT_POWER : 3.0F, 1.0F); // ItemBow // Paper - see TridentItem
+            ((net.minecraft.world.entity.projectile.arrow.AbstractArrow) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, Trident.class.isAssignableFrom(projectile) ? net.minecraft.world.item.TridentItem.PROJECTILE_SHOOT_POWER : 3.0F, io.papermc.paper.configuration.ProjectileUncertainty.resolve(launch.getType(), 1.0F)); // ItemBow // Paper - see TridentItem; configurable projectile uncertainty
         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
             if (LingeringPotion.class.isAssignableFrom(projectile)) {
                 launch = new net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownLingeringPotion(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.LINGERING_POTION));
             } else {
                 launch = new net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplashPotion(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.SPLASH_POTION));
             }
-            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), -20.0F, 0.5F, 1.0F); // ItemSplashPotion
+            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), -20.0F, 0.5F, io.papermc.paper.configuration.ProjectileUncertainty.resolve(launch.getType(), 1.0F)); // ItemSplashPotion // Paper - configurable projectile uncertainty
         } else if (ThrownExpBottle.class.isAssignableFrom(projectile)) {
             launch = new ThrownExperienceBottle(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.EXPERIENCE_BOTTLE));
-            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), -20.0F, 0.7F, 1.0F); // ItemExpBottle
+            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), -20.0F, 0.7F, io.papermc.paper.configuration.ProjectileUncertainty.resolve(launch.getType(), 1.0F)); // ItemExpBottle // Paper - configurable projectile uncertainty
         } else if (FishHook.class.isAssignableFrom(projectile) && this.getHandle() instanceof net.minecraft.world.entity.player.Player) {
             launch = new FishingHook((net.minecraft.world.entity.player.Player) this.getHandle(), world, 0, 0);
         } else if (Fireball.class.isAssignableFrom(projectile)) {
@@ -608,7 +608,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                 }
 
                 ((net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) launch).setOwner(this.getHandle());
-                ((net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // WindChargeItem
+                ((net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, io.papermc.paper.configuration.ProjectileUncertainty.resolve(launch.getType(), 1.0F)); // WindChargeItem // Paper - configurable projectile uncertainty
             } else {
                 launch = new LargeFireball(world, this.getHandle(), vec, 1);
             }
@@ -622,7 +622,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             launch = EntityTypes.LLAMA_SPIT.create(world, EntitySpawnReason.TRIGGERED);
 
             ((net.minecraft.world.entity.projectile.LlamaSpit) launch).setOwner(this.getHandle());
-            ((net.minecraft.world.entity.projectile.LlamaSpit) launch).shoot(direction.getX(), direction.getY(), direction.getZ(), 1.5F, 10.0F); // EntityLlama
+            ((net.minecraft.world.entity.projectile.LlamaSpit) launch).shoot(direction.getX(), direction.getY(), direction.getZ(), 1.5F, io.papermc.paper.configuration.ProjectileUncertainty.resolve(launch.getType(), 10.0F)); // EntityLlama // Paper - configurable projectile uncertainty
             launch.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         } else if (ShulkerBullet.class.isAssignableFrom(projectile)) {
             Location location = this.getEyeLocation();
@@ -650,7 +650,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             org.joml.Quaternionf upQuaternion = new org.joml.Quaternionf().setAngleAxis((double)(angle * (float) (Math.PI / 180.0)), upVector.x, upVector.y, upVector.z);
             Vec3 viewVec = this.getHandle().getViewVector(1.0F);
             org.joml.Vector3f shotVector = viewVec.toVector3f().rotate(upQuaternion);
-            ((FireworkRocketEntity) launch).shoot(shotVector.x(), shotVector.y(), shotVector.z(), net.minecraft.world.item.CrossbowItem.FIREWORK_POWER, 1.0F);
+            ((FireworkRocketEntity) launch).shoot(shotVector.x(), shotVector.y(), shotVector.z(), net.minecraft.world.item.CrossbowItem.FIREWORK_POWER, io.papermc.paper.configuration.ProjectileUncertainty.resolve(launch.getType(), 1.0F)); // Paper - configurable projectile uncertainty
             // Paper end
         }
 
