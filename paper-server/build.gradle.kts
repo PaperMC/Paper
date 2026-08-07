@@ -156,7 +156,7 @@ dependencies {
 
     // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
-    implementation("me.lucko:spark-paper:1.10.152")
+    implementation("me.lucko:spark-paper:1.10.172")
 }
 
 tasks.jar {
@@ -265,6 +265,7 @@ fun TaskContainer.registerRunTask(
     block: JavaExec.() -> Unit
 ): TaskProvider<JavaExec> = register<JavaExec>(name) {
     group = "runs"
+    description = "Registers the $name run task"
     mainClass.set("org.bukkit.craftbukkit.Main")
     standardInput = System.`in`
     workingDir = rootProject.layout.projectDirectory
@@ -272,10 +273,10 @@ fun TaskContainer.registerRunTask(
         .asFile
     javaLauncher.set(project.javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(25))
-        // TODO - JB runtime 25 has issues with spark rn
-        // vendor.set(JvmVendorSpec.JETBRAINS)
+        @Suppress("UnstableApiUsage")
+        vendor.set(JvmVendorSpec.JETBRAINS)
     })
-    //jvmArgs("-XX:+AllowEnhancedClassRedefinition")
+    jvmArgs("-XX:+AllowEnhancedClassRedefinition", "--enable-native-access=ALL-UNNAMED")
 
     if (rootProject.childProjects["test-plugin"] != null) {
         val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
