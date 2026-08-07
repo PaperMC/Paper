@@ -757,6 +757,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
 
     /**
      * Deserializes this itemstack from a stream of uncompressed NBT data.<br>
+     * The provided stream is passed as-is, it is the caller's responsibility to handle buffering.<br>
      * NBT is safer for data migrations as it will use the built-in data converter
      * instead of bukkits dangerous serialization system.
      * <p>
@@ -775,7 +776,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     /**
-     * Serializes this itemstack as a stream of uncompressed NBT data.<br>
+     * Serializes this itemstack as uncompressed NBT data to the provided OutputStream.<br>
+     * The provided stream is passed as-is, it is the caller's responsibility to handle buffering.<br>
      * NBT is safer for data migrations as it will use the built-in data converter
      * instead of bukkits dangerous serialization system.
      *

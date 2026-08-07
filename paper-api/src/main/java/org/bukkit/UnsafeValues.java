@@ -182,7 +182,8 @@ public interface UnsafeValues {
     byte @NotNull [] serializeEntity(@NotNull Entity entity, boolean compress, @NotNull EntitySerializationFlag... serializationFlags);
 
     /**
-     * Serializes the provided entity as uncompressed NBT to the provided OutputStream.
+     * Serializes the provided entity as uncompressed NBT to the provided OutputStream.<br>
+     * The provided stream is passed as-is, it is the caller's responsibility to handle buffering.
      *
      * @param entity entity
      * @param output the stream to write the data to
@@ -263,7 +264,8 @@ public interface UnsafeValues {
     @NotNull Entity deserializeEntity(byte @NotNull [] data, boolean decompress, @NotNull World world, boolean preserveUUID, boolean preservePassengers);
 
     /**
-     * Deserializes the entity from a stream of uncompressed NBT data.
+     * Deserializes the entity from a stream of uncompressed NBT data.<br>
+     * The provided stream is passed as-is, it is the caller's responsibility to handle buffering.
      *
      * @param input the InputStream of raw, uncompressed NBT data
      * @param world world
