@@ -1,24 +1,16 @@
-From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/resources/RegistryDataLoader.java b/net/minecraft/resources/RegistryDataLoader.java
-index 2cc8d8367e4faf1623a0cf99b1c060144605ec12..aeb6055a246e3be2f88c81d5934253a7293cc158 100644
 --- a/net/minecraft/resources/RegistryDataLoader.java
 +++ b/net/minecraft/resources/RegistryDataLoader.java
-@@ -246,11 +246,21 @@ public class RegistryDataLoader {
-         final Map<ResourceKey<? extends Registry<?>>, RegistryOps.RegistryInfo<?>> result = new HashMap<>();
-         contextRegistries.forEach(e -> result.put(e.key(), createInfoForContextRegistry((HolderLookup.RegistryLookup<?>)e)));
-         newRegistriesAndLoaders.forEach(e -> result.put(e.registryKey(), e.createRegistryInfo()));
+@@ -269,11 +_,21 @@
+         final Map<ResourceKey<? extends Registry<?>>, HolderGetter<?>> result = new HashMap<>();
+         contextRegistries.forEach(e -> result.put(e.key(), e));
+         newRegistriesAndLoaders.forEach(e -> result.put(e.registryKey(), e.concurrentRegistrationGetter));
 +        // this creates a HolderLookup.Provider to be used exclusively to obtain real instances of values to pre-populate builders
 +        // for the Registry Modification API. This concatenates the context registry lookups and the empty registries about to be filled.
 +        final HolderLookup.Provider providerForBuilders = HolderLookup.Provider.create(java.util.stream.Stream.concat(contextRegistries.stream(), newRegistriesAndLoaders.stream().map(t -> t.registry))); // Paper - add method to get the value for pre-filling builders in the reg mod API
          return new RegistryOps.RegistryInfoLookup() {
              @Override
-             public <T> Optional<RegistryOps.RegistryInfo<T>> lookup(final ResourceKey<? extends Registry<? extends T>> key) {
-                 return Optional.ofNullable((RegistryOps.RegistryInfo<T>)result.get(key));
+             public <T> Optional<HolderGetter<T>> lookup(final ResourceKey<? extends Registry<? extends T>> key) {
+                 return Optional.ofNullable((HolderGetter<T>)result.get(key));
              }
 +
 +            // Paper start - add method to get the value for pre-filling builders in the reg mod API
