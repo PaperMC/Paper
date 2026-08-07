@@ -1,34 +1,6 @@
 --- a/net/minecraft/world/level/block/SculkVeinBlock.java
 +++ b/net/minecraft/world/level/block/SculkVeinBlock.java
-@@ -40,7 +_,7 @@
-         boolean hasAtLeastOneFace = false;
-         BlockState newState = Blocks.SCULK_VEIN.defaultBlockState();
- 
--        for (Direction face : faces) {
-+        for (final Direction face : faces) {
-             if (canAttachTo(level, pos, face)) {
-                 newState = newState.setValue(getFaceProperty(face), true);
-                 hasAtLeastOneFace = true;
-@@ -62,15 +_,15 @@
-     @Override
-     public void onDischarged(final LevelAccessor level, BlockState state, final BlockPos pos, final RandomSource random) {
-         if (state.is(this)) {
--            for (Direction dir : DIRECTIONS) {
--                BooleanProperty sideProperty = getFaceProperty(dir);
-+            for (final Direction dir : DIRECTIONS) {
-+                final BooleanProperty sideProperty = getFaceProperty(dir);
-                 if (state.getValue(sideProperty) && level.getBlockState(pos.relative(dir)).is(Blocks.SCULK)) {
-                     state = state.setValue(sideProperty, false);
-                 }
-             }
- 
-             if (!hasAnyFace(state)) {
--                FluidState fluidState = level.getFluidState(pos);
-+                final FluidState fluidState = level.getFluidState(pos);
-                 state = (fluidState.isEmpty() ? Blocks.AIR : Blocks.WATER).defaultBlockState();
-             }
- 
-@@ -88,33 +_,37 @@
+@@ -88,24 +_,28 @@
          final SculkSpreader spreader,
          final boolean spreadVeins
      ) {
@@ -41,23 +13,18 @@
      }
  
 -    private boolean attemptPlaceSculk(final SculkSpreader spreader, final LevelAccessor level, final BlockPos pos, final RandomSource random) {
--        BlockState state = level.getBlockState(pos);
--        TagKey<Block> replaceTag = spreader.replaceableBlocks();
 +    private boolean attemptPlaceSculk(final SculkSpreader spreader, final LevelAccessor level, final BlockPos pos, final RandomSource random, final BlockPos originPos) { // CraftBukkit
-+        final BlockState state = level.getBlockState(pos);
-+        final TagKey<Block> replaceTag = spreader.replaceableBlocks();
+         BlockState state = level.getBlockState(pos);
+         TagKey<Block> replaceTag = spreader.replaceableBlocks();
  
 -        for (Direction support : Direction.allShuffled(random)) {
 +        for (final Direction support : Direction.allShuffled(random)) {
              if (hasFace(state, support)) {
--                BlockPos supportPos = pos.relative(support);
--                BlockState supportState = level.getBlockState(supportPos);
-+                final BlockPos supportPos = pos.relative(support);
-+                final BlockState supportState = level.getBlockState(supportPos);
+                 BlockPos supportPos = pos.relative(support);
+                 BlockState supportState = level.getBlockState(supportPos);
                  if (supportState.is(replaceTag)) {
--                    BlockState defaultSculk = Blocks.SCULK.defaultBlockState();
+                     BlockState defaultSculk = Blocks.SCULK.defaultBlockState();
 -                    level.setBlockAndUpdate(supportPos, defaultSculk);
-+                    final BlockState defaultSculk = Blocks.SCULK.defaultBlockState();
 +                    // CraftBukkit start - Call BlockSpreadEvent
 +                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, originPos, supportPos, defaultSculk, Block.UPDATE_ALL)) {
 +                        return false;
@@ -66,45 +33,3 @@
                      Block.pushEntitiesUp(supportState, defaultSculk, level, supportPos);
                      level.playSound(null, supportPos, SoundEvents.SCULK_BLOCK_SPREAD, SoundSource.BLOCKS, 1.0F, 1.0F);
                      this.veinSpreader.spreadAll(defaultSculk, level, supportPos, spreader.isWorldGeneration());
--                    Direction skip = support.getOpposite();
-+                    final Direction skip = support.getOpposite();
- 
--                    for (Direction veinBlocks : DIRECTIONS) {
-+                    for (final Direction veinBlocks : DIRECTIONS) {
-                         if (veinBlocks != skip) {
--                            BlockPos veinPos = supportPos.relative(veinBlocks);
--                            BlockState possibleVeinBlock = level.getBlockState(veinPos);
-+                            final BlockPos veinPos = supportPos.relative(veinBlocks);
-+                            final BlockState possibleVeinBlock = level.getBlockState(veinPos);
-                             if (possibleVeinBlock.is(this)) {
-                                 this.onDischarged(level, possibleVeinBlock, veinPos, random);
-                             }
-@@ -134,7 +_,7 @@
-             return false;
-         }
- 
--        for (Direction direction : DIRECTIONS) {
-+        for (final Direction direction : DIRECTIONS) {
-             if (hasFace(state, direction) && level.getBlockState(pos.relative(direction)).is(BlockTags.SCULK_REPLACEABLE)) {
-                 return true;
-             }
-@@ -155,16 +_,16 @@
-         public boolean stateCanBeReplaced(
-             final BlockGetter level, final BlockPos sourcePos, final BlockPos placementPos, final Direction placementDirection, final BlockState existingState
-         ) {
--            BlockState againstState = level.getBlockState(placementPos.relative(placementDirection));
-+            final BlockState againstState = level.getBlockState(placementPos.relative(placementDirection));
-             if (!againstState.is(Blocks.SCULK) && !againstState.is(Blocks.SCULK_CATALYST) && !againstState.is(Blocks.MOVING_PISTON)) {
-                 if (sourcePos.distManhattan(placementPos) == 2) {
--                    BlockPos neighourPos = sourcePos.relative(placementDirection.getOpposite());
-+                    final BlockPos neighourPos = sourcePos.relative(placementDirection.getOpposite());
-                     if (level.getBlockState(neighourPos).isFaceSturdy(level, neighourPos, placementDirection)) {
-                         return false;
-                     }
-                 }
- 
--                FluidState fluidState = existingState.getFluidState();
-+                final FluidState fluidState = existingState.getFluidState();
-                 return (fluidState.isEmpty() || fluidState.is(Fluids.WATER))
-                     && !existingState.is(BlockTags.FIRE)
-                     && (existingState.canBeReplaced() || super.stateCanBeReplaced(level, sourcePos, placementPos, placementDirection, existingState));
