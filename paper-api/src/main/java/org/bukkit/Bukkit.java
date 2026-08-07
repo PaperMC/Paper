@@ -1136,6 +1136,19 @@ public final class Bukkit {
     }
 
     /**
+     * Adds multiple recipes to the crafting manager at once, resending recipes only once
+     * after all have been added.
+     *
+     * @apiNote This method differs from {@link #addRecipe} in that it will only resend the recipe book once instead of once per every recipe added
+     * @param recipes the recipes to add
+     * @return true if any recipe was added, false if none were for some reason
+     * @see #addRecipe
+     */
+    public static boolean addRecipes(@NotNull Iterable<Recipe> recipes) {
+        return server.addRecipes(recipes);
+    }
+
+    /**
      * Get a list of all recipes for a given item. The stack size is ignored
      * in comparisons. If the durability is -1, it will match any data value.
      *
@@ -1313,6 +1326,16 @@ public final class Bukkit {
     }
 
     /**
+     * Checks if the server has a recipe
+     *
+     * @param key NamespacedKey of recipe to check for
+     * @return True if there is a recipe with a matching key
+     */
+    public static boolean hasRecipe(@NotNull NamespacedKey key) {
+        return server.hasRecipe(key);
+    }
+
+    /**
      * Remove a recipe from the server.
      *
      * <b>Note that removing a recipe may cause permanent loss of data
@@ -1343,6 +1366,18 @@ public final class Bukkit {
         return server.removeRecipe(key, resendRecipes);
     }
     // Paper end - method to resend recipes
+
+    /**
+     * Remove multiple recipes from the server.
+     *
+     * @apiNote This method differs from {@link #removeRecipe} in that it will only resend the recipe book once instead of once per every recipe removed
+     * @param keys the NamespacedKeys of the recipes to remove
+     * @return true if any recipe was removed, false if none were for some reason
+     * @see #removeRecipe
+     */
+    public static boolean removeRecipes(@NotNull Iterable<NamespacedKey> keys) {
+        return server.removeRecipes(keys);
+    }
 
     /**
      * Gets a list of command aliases defined in the server properties.
