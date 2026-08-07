@@ -143,7 +143,7 @@
              }
          }
      }
-@@ -139,11 +_,11 @@
+@@ -139,21 +_,23 @@
  
      private void verifyLoginAndFinishConnectionSetup(final GameProfile profile) {
          PlayerList playerList = this.server.getPlayerList();
@@ -157,9 +157,18 @@
 +            this.disconnectAsync(CommonComponents.CONNECT_FAILED); // Paper
          } else {
              if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
-                 this.connection
-@@ -153,7 +_,7 @@
-                     );
+-                this.connection
+-                    .send(
+-                        new ClientboundLoginCompressionPacket(this.server.getCompressionThreshold()),
+-                        PacketSendListener.thenRun(() -> this.connection.setupCompression(this.server.getCompressionThreshold(), true))
+-                    );
++                // Paper start - Keep compression packet write and setup in the same Netty task
++                final int compressionThreshold = this.server.getCompressionThreshold();
++                this.connection.scheduleNettyTask(() -> {
++                    this.connection.send(new ClientboundLoginCompressionPacket(compressionThreshold));
++                    this.connection.setupCompression(compressionThreshold, true);
++                });
++                // Paper end - Keep compression packet write and setup in the same Netty task
              }
  
 -            boolean waitForDisconnection = playerList.disconnectAllPlayersWithProfile(profile.id());
