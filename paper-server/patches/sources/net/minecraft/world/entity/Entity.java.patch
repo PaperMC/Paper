@@ -1322,20 +1322,20 @@
  
      public void setAirSupply(final int supply) {
 -        this.entityData.set(DATA_AIR_SUPPLY_ID, supply);
-+        // CraftBukkit start
-+        org.bukkit.event.entity.EntityAirChangeEvent event = new org.bukkit.event.entity.EntityAirChangeEvent(this.getBukkitEntity(), supply);
++        // Paper start - EntityAirChangeEvent
++        int newAmount = supply;
 +        // Suppress during worldgen
-+        if (this.valid) {
-+            event.getEntity().getServer().getPluginManager().callEvent(event);
-+        }
-+        if (event.isCancelled() && this.getAirSupply() != supply) {
-+            if (this instanceof ServerPlayer player) {
-+                this.resendPossiblyDesyncedDataValues(java.util.List.of(DATA_AIR_SUPPLY_ID), player); // todo is that even needed?
++        if (this.valid && org.bukkit.event.entity.EntityAirChangeEvent.getHandlerList().hasListeners() && this.getAirSupply() != supply) {
++            final org.bukkit.event.entity.EntityAirChangeEvent event = new org.bukkit.event.entity.EntityAirChangeEvent(this.getBukkitEntity(), supply);
++            if (!event.callEvent()) {
++                return;
 +            }
-+            return;
++
++            newAmount = event.getAmount();
 +        }
-+        this.entityData.set(DATA_AIR_SUPPLY_ID, event.getAmount());
-+        // CraftBukkit end
++
++        this.entityData.set(DATA_AIR_SUPPLY_ID, newAmount);
++        // Paper end - EntityAirChangeEvent
      }
  
      public void clearFreeze() {
