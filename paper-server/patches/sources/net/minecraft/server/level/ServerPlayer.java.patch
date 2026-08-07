@@ -125,7 +125,7 @@
          if (this.isSleeping()) {
              this.stopSleeping();
          }
-@@ -405,12 +_,26 @@
+@@ -405,12 +_,44 @@
          this.respawnConfig = input.read("respawn", ServerPlayer.RespawnConfig.CODEC).orElse(null);
          this.spawnExtraParticlesOnFall = input.getBooleanOr("spawn_extra_particles_on_fall", false);
          this.raidOmenPosition = input.read("raid_omen_position", BlockPos.CODEC).orElse(null);
@@ -138,16 +138,34 @@
  
 +    // Paper start - Expand PlayerGameModeChangeEvent
 +    private void loadGameTypes(ValueInput input) {
-+        if (this.server.getForcedGameType() != null && this.server.getForcedGameType() != readPlayerMode(input, "playerGameType")) {
-+            if (new org.bukkit.event.player.PlayerGameModeChangeEvent(this.getBukkitEntity(), org.bukkit.GameMode.getByValue(this.server.getDefaultGameType().getId()), org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, null).callEvent()) {
++        GameType playerGameType = readPlayerMode(input, "playerGameType");
++        GameType previousPlayerGameType = readPlayerMode(input, "previousPlayerGameType");
++
++        if (this.server.getForcedGameType() != null && this.server.getForcedGameType() != playerGameType) {
++            if (this.getBukkitEntity().hasPermission("minecraft.force-gamemode.bypass")) { // Paper - add bypass permission
++                this.gameMode.setGameModeForPlayer(
++                    playerGameType != null ? playerGameType : this.calculateGameModeForNewPlayer(null),
++                    previousPlayerGameType
++                );
++                return;
++            }
++
++            org.bukkit.GameMode forcedBukkitGameMode = org.bukkit.GameMode.getByValue(this.server.getDefaultGameType().getId());
++            if (forcedBukkitGameMode == null) {
++                forcedBukkitGameMode = org.bukkit.GameMode.SURVIVAL;
++            }
++
++            if (new org.bukkit.event.player.PlayerGameModeChangeEvent(this.getBukkitEntity(), forcedBukkitGameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, null).callEvent()) {
 +                this.gameMode.setGameModeForPlayer(this.server.getForcedGameType(), GameType.DEFAULT_MODE);
 +            } else {
-+                this.gameMode.setGameModeForPlayer(readPlayerMode(input, "playerGameType"), readPlayerMode(input, "previousPlayerGameType"));
++                this.gameMode.setGameModeForPlayer(
++                    playerGameType != null ? playerGameType : this.calculateGameModeForNewPlayer(null),
++                    previousPlayerGameType
++                );
 +            }
 +            return;
 +        }
-+        this.gameMode
-+            .setGameModeForPlayer(this.calculateGameModeForNewPlayer(readPlayerMode(input, "playerGameType")), readPlayerMode(input, "previousPlayerGameType"));
++        this.gameMode.setGameModeForPlayer(this.calculateGameModeForNewPlayer(playerGameType), previousPlayerGameType);
 +    }
 +    // Paper end - Expand PlayerGameModeChangeEvent
 +
