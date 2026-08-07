@@ -1,0 +1,58 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/server/commands/SetSpawnCommand.java b/net/minecraft/server/commands/SetSpawnCommand.java
+index 227d4c40feeb435ec393e940e5d9bbdf26aa799d..6fec6aa3b15cb5fd5f1d2648fff4c295e9c2defa 100644
+--- a/net/minecraft/server/commands/SetSpawnCommand.java
++++ b/net/minecraft/server/commands/SetSpawnCommand.java
+@@ -74,12 +74,22 @@ public class SetSpawnCommand {
+         float yaw = Mth.wrapDegrees(rotationVector.y);
+         float pitch = Mth.clamp(rotationVector.x, -90.0F, 90.0F);
+ 
++        final Collection<ServerPlayer> actualTargets = new java.util.ArrayList<>(); // Paper - Add PlayerSetSpawnEvent
+         for (ServerPlayer target : targets) {
+-            target.setRespawnPosition(new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(dimension, pos, yaw, pitch), true), false);
++            // Paper start - Add PlayerSetSpawnEvent
++            if (target.setRespawnPosition(new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(dimension, pos, yaw, pitch), true), false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.COMMAND)) {
++                actualTargets.add(target);
++            }
++            // Paper end - Add PlayerSetSpawnEvent
+         }
++        // Paper start - Add PlayerSetSpawnEvent
++        if (actualTargets.isEmpty()) {
++            return 0;
++        }
++        // Paper end - Add PlayerSetSpawnEvent
+ 
+         String dimensionName = dimension.identifier().toString();
+-        if (targets.size() == 1) {
++        if (actualTargets.size() == 1) { // Paper - Add PlayerSetSpawnEvent
+             source.sendSuccess(
+                 () -> Component.translatable(
+                     "commands.spawnpoint.success.single",
+@@ -89,19 +99,19 @@ public class SetSpawnCommand {
+                     yaw,
+                     pitch,
+                     dimensionName,
+-                    targets.iterator().next().getDisplayName()
++                    actualTargets.iterator().next().getDisplayName() // Paper - Add PlayerSetSpawnEvent
+                 ),
+                 true
+             );
+         } else {
+             source.sendSuccess(
+                 () -> Component.translatable(
+-                    "commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), yaw, pitch, dimensionName, targets.size()
++                    "commands.spawnpoint.success.multiple", pos.getX(), pos.getY(), pos.getZ(), yaw, pitch, dimensionName, actualTargets.size() // Paper - Add PlayerSetSpawnEvent
+                 ),
+                 true
+             );
+         }
+ 
+-        return targets.size();
++        return actualTargets.size(); // Paper - Add PlayerSetSpawnEvent
+     }
+ }

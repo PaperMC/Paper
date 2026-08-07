@@ -1,0 +1,35 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownLingeringPotion.java b/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownLingeringPotion.java
+index 0026fb2e321fe53aab2e9b960e2db514181fd680..67f7f9a75186f240e59f8664b7190ea70258a3d3 100644
+--- a/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownLingeringPotion.java
++++ b/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownLingeringPotion.java
+@@ -30,7 +30,7 @@ public class ThrownLingeringPotion extends AbstractThrownPotion {
+     }
+ 
+     @Override
+-    public void onHitAsPotion(final ServerLevel level, final ItemStack potionItem, final HitResult hitResult) {
++    public boolean onHitAsPotion(final ServerLevel level, final ItemStack potionItem, final @org.jspecify.annotations.Nullable HitResult hitResult) { // Paper - More projectile API
+         AreaEffectCloud cloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
+         if (this.getOwner() instanceof LivingEntity owner) {
+             cloud.setOwner(owner);
+@@ -42,6 +42,15 @@ public class ThrownLingeringPotion extends AbstractThrownPotion {
+         cloud.setWaitTime(10);
+         cloud.setRadiusPerTick(-cloud.getRadius() / cloud.getDuration());
+         cloud.applyComponentsFromItemStack(potionItem);
++        boolean noEffects = this.getItem().getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS, net.minecraft.world.item.alchemy.PotionContents.EMPTY).hasEffects(); // Paper - Fix potions splash events
++        // CraftBukkit start
++        org.bukkit.event.entity.LingeringPotionSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLingeringPotionSplashEvent(this, hitResult, cloud);
++        if (!(event.isCancelled() || cloud.isRemoved() || (!event.allowsEmptyCreation() && (noEffects && !cloud.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS).hasEffects())))) { // Paper - don't spawn area effect cloud if the effects were empty and not changed during the event handling
+         level.addFreshEntity(cloud);
++        } else {
++            cloud.discard(null);
++        }
++        // CraftBukkit end
++        return !event.isCancelled(); // Paper - Fix potions splash events
+     }
+ }

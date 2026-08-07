@@ -1,0 +1,45 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/crafting/RecipeMap.java b/net/minecraft/world/item/crafting/RecipeMap.java
+index a70b059d5c421a6e9c5b1370e00d9cb92861c838..ca18f048955a4ea937914f1145ee52c40f56a7fa 100644
+--- a/net/minecraft/world/item/crafting/RecipeMap.java
++++ b/net/minecraft/world/item/crafting/RecipeMap.java
+@@ -30,9 +30,33 @@ public class RecipeMap {
+             byKey.put(recipe.id(), recipe);
+         }
+ 
+-        return new RecipeMap(byType.build(), byKey.build());
++        // CraftBukkit start - mutable
++        return new RecipeMap(com.google.common.collect.LinkedHashMultimap.create(byType.build()), com.google.common.collect.Maps.newLinkedHashMap(byKey.build()));
+     }
+ 
++    public void addRecipe(RecipeHolder<?> holder) {
++        Collection<RecipeHolder<?>> recipes = this.byType.get(holder.value().getType());
++
++        if (this.byKey.containsKey(holder.id())) {
++            throw new IllegalStateException("Duplicate recipe ignored with ID " + holder.id());
++        } else {
++            recipes.add(holder);
++            this.byKey.put(holder.id(), holder);
++        }
++    }
++    // CraftBukkit end
++
++    // Paper start - replace removeRecipe implementation
++    public boolean removeRecipe(ResourceKey<Recipe<?>> id) {
++        final RecipeHolder<?> remove = this.byKey.remove(id);
++        if (remove == null) {
++            return false;
++        }
++        final Collection<? extends RecipeHolder<?>> recipes = this.byType(remove.value().getType());
++        return recipes.remove(remove);
++    }
++    // Paper end - replace removeRecipe implementation
++
+     public <I extends RecipeInput, T extends Recipe<I>> Collection<RecipeHolder<T>> byType(final RecipeType<T> type) {
+         return (Collection)this.byType.get(type);
+     }

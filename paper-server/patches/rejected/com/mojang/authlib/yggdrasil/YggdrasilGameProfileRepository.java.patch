@@ -1,0 +1,48 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/com/mojang/authlib/yggdrasil/YggdrasilGameProfileRepository.java b/com/mojang/authlib/yggdrasil/YggdrasilGameProfileRepository.java
+index 2c84b2f8650ba58e617dd758e8c9c21fdff1ef47..74a2b3dfd0dcc40727ad0bd13b08dede1e81a55d 100644
+--- a/com/mojang/authlib/yggdrasil/YggdrasilGameProfileRepository.java
++++ b/com/mojang/authlib/yggdrasil/YggdrasilGameProfileRepository.java
+@@ -48,6 +48,7 @@ public class YggdrasilGameProfileRepository implements GameProfileRepository {
+             .collect(Collectors.toSet());
+ 
+         final int page = 0;
++        boolean hasRequested = false; // Paper - Don't sleep after profile lookups if not needed
+ 
+         for (final List<String> request : Iterables.partition(criteria, ENTRIES_PER_PAGE)) {
+             final List<String> normalizedRequest = request.stream().map(YggdrasilGameProfileRepository::normalizeName).toList();
+@@ -79,6 +80,12 @@ public class YggdrasilGameProfileRepository implements GameProfileRepository {
+                         LOGGER.debug("Couldn't find profile {}", name);
+                         callback.onProfileLookupFailed(name, new ProfileNotFoundException("Server did not find the requested profile"));
+                     }
++                    // Paper start - Don't sleep after profile lookups if not needed
++                    if (!hasRequested) {
++                        hasRequested = true;
++                        continue;
++                    }
++                    // Paper end - Don't sleep after profile lookups if not needed
+ 
+                     try {
+                         Thread.sleep(DELAY_BETWEEN_PAGES);
+@@ -109,7 +116,15 @@ public class YggdrasilGameProfileRepository implements GameProfileRepository {
+         try {
+             return Optional.ofNullable(client.get(HttpAuthenticationService.constantURL(nameLookupUrl + normalizeName(name)), NameAndId.class));
+         } catch (final MinecraftClientException e) {
+-            LOGGER.warn("Couldn't find profile with name: {}", name, e);
++            // Paper start - only log details when debug is enabled
++            if (net.minecraft.server.MinecraftServer.getServer().isDebugging() && e instanceof com.mojang.authlib.exceptions.MinecraftClientHttpException httpException) {
++                LOGGER.warn("Couldn't find profile with name: {}. Received status {} - {}", name, httpException.getStatus(), httpException.getMessage(), e);
++            } else if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) {
++                LOGGER.warn("Couldn't find profile with name: {}", name, e);
++            } else {
++                LOGGER.warn("Couldn't find profile with name: {}", name);
++            }
++            // Paper end - only log details when debug is enabled
+             return Optional.empty();
+         }
+     }

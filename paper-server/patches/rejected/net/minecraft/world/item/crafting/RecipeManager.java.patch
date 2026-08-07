@@ -1,0 +1,72 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/item/crafting/RecipeManager.java b/net/minecraft/world/item/crafting/RecipeManager.java
+index c838ad1009a70213f9ed343619cbad15446016df..6812ade4d9de26d507234b8357b109ec7e5cbb50 100644
+--- a/net/minecraft/world/item/crafting/RecipeManager.java
++++ b/net/minecraft/world/item/crafting/RecipeManager.java
+@@ -87,7 +87,26 @@ public class RecipeManager extends SimplePreparableReloadListener<RecipeMap> imp
+         LOGGER.info("Loaded {} recipes", recipes.values().size());
+     }
+ 
++    // CraftBukkit start
++    public void addRecipe(RecipeHolder<?> holder) {
++        org.spigotmc.AsyncCatcher.catchOp("Recipe Add"); // Spigot
++        this.recipes.addRecipe(holder);
++        this.finalizeRecipeLoading();
++    }
++
++    private FeatureFlagSet enabledFlags;
++
++    public void finalizeRecipeLoading() {
++        if (this.enabledFlags != null) {
++            this.finalizeRecipeLoading(this.enabledFlags);
++
++            net.minecraft.server.MinecraftServer.getServer().getPlayerList().reloadResources();
++        }
++    }
++
+     public void finalizeRecipeLoading(final FeatureFlagSet enabledFlags) {
++        this.enabledFlags = enabledFlags;
++        // CraftBukkit end
+         List<SelectableRecipe.SingleInputEntry<StonecutterRecipe>> stonecutterRecipes = new ArrayList<>();
+         List<RecipeManager.IngredientCollector> propertySetCollectors = RECIPE_PROPERTY_SETS.entrySet()
+             .stream()
+@@ -144,7 +163,10 @@ public class RecipeManager extends SimplePreparableReloadListener<RecipeMap> imp
+     }
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> Optional<RecipeHolder<T>> getRecipeFor(final RecipeType<T> type, final I input, final Level level) {
+-        return this.recipes.getRecipesFor(type, input, level).findFirst();
++        // CraftBukkit start
++        List<RecipeHolder<T>> list = this.recipes.getRecipesFor(type, input, level).toList();
++        return (list.isEmpty()) ? Optional.empty() : Optional.of(list.getLast()); // CraftBukkit - SPIGOT-4638: last recipe gets priority
++        // CraftBukkit end
+     }
+ 
+     public Optional<RecipeHolder<?>> byKey(final ResourceKey<Recipe<?>> recipeId) {
+@@ -196,6 +218,22 @@ public class RecipeManager extends SimplePreparableReloadListener<RecipeMap> imp
+         return new RecipeHolder<>(id, recipe);
+     }
+ 
++    // CraftBukkit start
++    public boolean removeRecipe(ResourceKey<Recipe<?>> id) {
++        boolean removed = this.recipes.removeRecipe(id);
++        if (removed) {
++            this.finalizeRecipeLoading();
++        }
++
++        return removed;
++    }
++
++    public void clearRecipes() {
++        this.recipes = RecipeMap.create(java.util.Collections.emptyList());
++        this.finalizeRecipeLoading();
++    }
++    // CraftBukkit end
++
+     public static <I extends RecipeInput, T extends Recipe<I>> RecipeManager.CachedCheck<I, T> createCheck(final RecipeType<T> type) {
+         return new RecipeManager.CachedCheck<I, T>() {
+             private @Nullable ResourceKey<Recipe<?>> lastRecipe;

@@ -1,0 +1,83 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/SculkSensorBlock.java b/net/minecraft/world/level/block/SculkSensorBlock.java
+index 65946cc66bb68f98088dfe1297516927a4706eb4..10cff0f9db2910c543c20fa055c0c5b759becc15 100644
+--- a/net/minecraft/world/level/block/SculkSensorBlock.java
++++ b/net/minecraft/world/level/block/SculkSensorBlock.java
+@@ -103,6 +103,18 @@ public class SculkSensorBlock extends BaseEntityBlock implements SimpleWaterlogg
+             && level.getBlockEntity(pos) instanceof SculkSensorBlockEntity sculkSensor
+             && level instanceof ServerLevel serverLevel
+             && sculkSensor.getVibrationUser().canReceiveVibration(serverLevel, pos, GameEvent.STEP, GameEvent.Context.of(onState))) {
++            // CraftBukkit start
++            org.bukkit.event.Cancellable cancellable;
++            if (entity instanceof net.minecraft.world.entity.player.Player player) {
++                cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(player, org.bukkit.event.block.Action.PHYSICAL, pos, null, null, null);
++            } else {
++                cancellable = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos));
++                level.getCraftServer().getPluginManager().callEvent((org.bukkit.event.entity.EntityInteractEvent) cancellable);
++            }
++            if (cancellable.isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
+             sculkSensor.getListener().forceScheduleVibration(serverLevel, GameEvent.STEP, GameEvent.Context.of(entity), entity.position());
+         }
+ 
+@@ -190,10 +202,17 @@ public class SculkSensorBlock extends BaseEntityBlock implements SimpleWaterlogg
+     }
+ 
+     public static boolean canActivate(final BlockState state) {
+-        return getPhase(state) == SculkSensorPhase.INACTIVE;
++        return state.getBlock() instanceof SculkSensorBlock && getPhase(state) == SculkSensorPhase.INACTIVE; // Paper - Check for a valid type
+     }
+ 
+     public static void deactivate(final Level level, final BlockPos pos, final BlockState state) {
++        // Paper start - Call BlockRedstoneEvent
++        int newCurrent = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(level, pos, state.getValue(POWER), 0).getNewCurrent();
++        if (newCurrent > 0) {
++            level.setBlock(pos, state.setValue(POWER, newCurrent), Block.UPDATE_ALL);
++            return;
++        }
++        // Paper end - Call BlockRedstoneEvent
+         level.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.COOLDOWN).setValue(POWER, 0), Block.UPDATE_ALL);
+         level.scheduleTick(pos, state.getBlock(), 10);
+         updateNeighbours(level, pos, state);
+@@ -209,9 +228,15 @@ public class SculkSensorBlock extends BaseEntityBlock implements SimpleWaterlogg
+         final Level level,
+         final BlockPos pos,
+         final BlockState state,
+-        final int calculatedPower,
++        int calculatedPower, // Paper - remove final
+         final int vibrationFrequency
+     ) {
++        // Paper start - Call BlockRedstoneEvent
++        calculatedPower = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(level, pos, state.getValue(POWER), calculatedPower).getNewCurrent();
++        if (calculatedPower == 0) {
++            return;
++        }
++        // Paper end - Call BlockRedstoneEvent
+         level.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.ACTIVE).setValue(POWER, calculatedPower), Block.UPDATE_ALL);
+         level.scheduleTick(pos, state.getBlock(), this.getActiveTicks());
+         updateNeighbours(level, pos, state);
+@@ -289,8 +314,16 @@ public class SculkSensorBlock extends BaseEntityBlock implements SimpleWaterlogg
+     @Override
+     protected void spawnAfterBreak(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+         super.spawnAfterBreak(state, level, pos, tool, dropExperience);
++        // CraftBukkit start - Delegate to getExpDrop
++    }
++
++    @Override
++    public int getExpDrop(final BlockState state, final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+         if (dropExperience) {
+-            this.tryDropExperience(level, pos, tool, ConstantInt.of(5));
++            return this.tryDropExperience(level, pos, tool, ConstantInt.of(5));
+         }
++
++        return 0;
++        // CraftBukkit end
+     }
+ }

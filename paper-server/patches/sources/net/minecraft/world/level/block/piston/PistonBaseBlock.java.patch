@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 +++ b/net/minecraft/world/level/block/piston/PistonBaseBlock.java
-@@ -150,6 +_,12 @@
+@@ -139,6 +_,12 @@
      @Override
      protected boolean triggerEvent(final BlockState state, final Level level, final BlockPos pos, final int b0, final int b1) {
          Direction direction = state.getValue(FACING);
@@ -13,7 +13,7 @@
          BlockState extendedState = state.setValue(EXTENDED, true);
          if (!level.isClientSide()) {
              boolean extend = this.getNeighborSignal(level, pos, direction);
-@@ -181,10 +_,17 @@
+@@ -170,10 +_,17 @@
                  .defaultBlockState()
                  .setValue(MovingPistonBlock.FACING, direction)
                  .setValue(MovingPistonBlock.TYPE, this.isSticky ? PistonType.STICKY : PistonType.DEFAULT);
@@ -32,8 +32,8 @@
                  )
              );
              level.updateNeighborsAt(pos, movingPistonState.getBlock());
-@@ -208,13 +_,27 @@
-                         || movingState.getPistonPushReaction() != PushReaction.NORMAL
+@@ -197,13 +_,27 @@
+                         || movingState.getPistonPushReaction() != PushReaction.PUSH_PULL
                              && !movingState.is(Blocks.PISTON)
                              && !movingState.is(Blocks.STICKY_PISTON)) {
 +                        // Paper start - Fix sticky pistons and BlockPistonRetractEvent; fire BlockPistonRetractEvent for sticky pistons retracting nothing (air)
@@ -61,7 +61,7 @@
              }
  
              level.playSound(null, pos, SoundEvents.PISTON_CONTRACT, SoundSource.BLOCKS, 0.5F, random.nextFloat() * 0.15F + 0.6F);
-@@ -232,7 +_,7 @@
+@@ -221,7 +_,7 @@
          final boolean allowDestroyable,
          final Direction connectionDirection
      ) {
@@ -70,7 +70,7 @@
              return false;
          }
  
-@@ -297,12 +_,58 @@
+@@ -286,12 +_,58 @@
          BlockState[] toUpdate = new BlockState[toPush.size() + toDestroy.size()];
          Direction pushDirection = extending ? direction : direction.getOpposite();
          int updateIndex = 0;
@@ -128,9 +128,9 @@
 -            dropResources(state, level, pos, blockEntity);
 +            dropResources(state, level, pos, blockEntity, pistonPos); // Paper - Add BlockBreakBlockEvent
              if (!state.is(BlockTags.FIRE) && level.isClientSide()) {
-                 level.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, getId(state));
+                 level.levelEvent(LevelEvent.PARTICLES_AND_SOUND_DESTROY_BLOCK, pos, getId(state));
              }
-@@ -313,13 +_,28 @@
+@@ -302,13 +_,28 @@
          }
  
          for (int i = toPush.size() - 1; i >= 0; i--) {

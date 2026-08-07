@@ -1,0 +1,48 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/FlowerPotBlock.java b/net/minecraft/world/level/block/FlowerPotBlock.java
+index c144be9c933995f66ee3af75eb9f47ce702bfcd9..63e26b3d3e2c81e833b477d71eda4bc9add89204 100644
+--- a/net/minecraft/world/level/block/FlowerPotBlock.java
++++ b/net/minecraft/world/level/block/FlowerPotBlock.java
+@@ -75,6 +75,18 @@ public class FlowerPotBlock extends Block {
+             return InteractionResult.CONSUME;
+         }
+ 
++        // Paper start - Add PlayerFlowerPotManipulateEvent
++        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
++        org.bukkit.inventory.ItemStack placedStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemStack);
++
++        io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent event = new io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent((org.bukkit.entity.Player) player.getBukkitEntity(), block, placedStack, true);
++        if (!event.callEvent()) {
++            // Update client
++            player.containerMenu.forceHeldSlot(hand);
++
++            return InteractionResult.CONSUME;
++        }
++        // Paper end - Add PlayerFlowerPotManipulateEvent
+         level.setBlock(pos, newContents, Block.UPDATE_ALL);
+         level.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
+         player.awardStat(Stats.POT_FLOWER);
+@@ -91,6 +103,18 @@ public class FlowerPotBlock extends Block {
+         }
+ 
+         ItemStack plant = new ItemStack(this.potted);
++        // Paper start - Add PlayerFlowerPotManipulateEvent
++        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
++        org.bukkit.inventory.ItemStack pottedStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(plant);
++
++        io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent event = new io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent((org.bukkit.entity.Player) player.getBukkitEntity(), block, pottedStack, false);
++        if (!event.callEvent()) {
++            // Update client
++            player.containerMenu.sendAllDataToRemote();
++
++            return InteractionResult.PASS;
++        }
++        // Paper end - Add PlayerFlowerPotManipulateEvent
+         if (!player.addItem(plant)) {
+             player.drop(plant, false);
+         }

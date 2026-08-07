@@ -1,0 +1,54 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/storage/loot/LootTable.java b/net/minecraft/world/level/storage/loot/LootTable.java
+index 9460793f0c688090d05fa8e55de20a1e4cc5008e..14fc07badbd14a5a4c8e8c7d237d08a4eb6a6f12 100644
+--- a/net/minecraft/world/level/storage/loot/LootTable.java
++++ b/net/minecraft/world/level/storage/loot/LootTable.java
+@@ -52,6 +52,7 @@ public class LootTable implements Validatable {
+     private final List<LootPool> pools;
+     private final List<LootItemFunction> functions;
+     private final BiFunction<ItemStack, LootContext, ItemStack> compositeFunction;
++    public org.bukkit.craftbukkit.CraftLootTable craftLootTable; // CraftBukkit
+ 
+     private LootTable(
+         final ContextKeySet paramSet, final Optional<Identifier> randomSequence, final List<LootPool> pools, final List<LootItemFunction> functions
+@@ -64,9 +65,10 @@ public class LootTable implements Validatable {
+     }
+ 
+     public static Consumer<ItemStack> createStackSplitter(final ServerLevel level, final Consumer<ItemStack> output) {
++        boolean skipSplitter = level != null && !level.paperConfig().fixes.splitOverstackedLoot; // Paper - preserve overstacked items
+         return result -> {
+             if (result.isItemEnabled(level.enabledFeatures())) {
+-                if (result.getCount() < result.getMaxStackSize()) {
++                if (skipSplitter || result.getCount() < result.getMaxStackSize()) { // Paper - preserve overstacked items
+                     output.accept(result);
+                 } else {
+                     int count = result.getCount();
+@@ -144,9 +146,22 @@ public class LootTable implements Validatable {
+     }
+ 
+     public void fill(final Container container, final LootParams params, final long optionalRandomSeed) {
+-        LootContext context = new LootContext.Builder(params).withOptionalRandomSeed(optionalRandomSeed).create(this.randomSequence);
++        // CraftBukkit start
++        this.fill(container, params, optionalRandomSeed == 0L ? null : RandomSource.create(optionalRandomSeed), false);
++    }
++
++    public void fill(Container container, LootParams params, RandomSource randomSource, boolean plugin) {
++        // CraftBukkit end
++        LootContext context = new LootContext.Builder(params).withOptionalRandomSource(randomSource).create(this.randomSequence);
+         ObjectArrayList<ItemStack> itemStacks = this.getRandomItems(context);
+         RandomSource random = context.getRandom();
++        // CraftBukkit start
++        org.bukkit.event.world.LootGenerateEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLootGenerateEvent(container, this, context, itemStacks, plugin);
++        if (event.isCancelled()) {
++            return;
++        }
++        itemStacks = event.getLoot().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).collect(ObjectArrayList.toList());
++        // CraftBukkit end
+         List<Integer> availableSlots = this.getAvailableSlots(container, random);
+         this.shuffleAndSplitItems(itemStacks, availableSlots.size(), random);
+ 

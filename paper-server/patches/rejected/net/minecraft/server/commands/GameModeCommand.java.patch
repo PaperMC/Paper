@@ -1,0 +1,38 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/server/commands/GameModeCommand.java b/net/minecraft/server/commands/GameModeCommand.java
+index f069f590fd3fba3405f29af8d94933a6998a4981..5d92a8a810c9994f51446adceae1a63ae2268392 100644
+--- a/net/minecraft/server/commands/GameModeCommand.java
++++ b/net/minecraft/server/commands/GameModeCommand.java
+@@ -69,7 +69,14 @@ public class GameModeCommand {
+     }
+ 
+     private static boolean setGameMode(final CommandSourceStack source, final ServerPlayer player, final GameType type) {
+-        if (player.setGameMode(type)) {
++        // Paper start - Expand PlayerGameModeChangeEvent
++        return setGameMode(source, player, type, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.COMMAND);
++    }
++
++    public static boolean setGameMode(final CommandSourceStack source, final ServerPlayer player, final GameType type, final org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause) {
++        org.bukkit.event.player.PlayerGameModeChangeEvent event = player.setGameMode(type, cause, null);
++        if (event != null && !event.isCancelled()) {
++            // Paper end - Expand PlayerGameModeChangeEvent
+             MinecraftServer server = source.getServer();
+             if (server.isSingleplayerOwner(player.nameAndId())) {
+                 server.setDefaultGameType(type);
+@@ -77,6 +84,11 @@ public class GameModeCommand {
+ 
+             logGamemodeChange(source, player, type);
+             return true;
++            // Paper start - Expand PlayerGameModeChangeEvent
++        } else if (event != null && event.cancelMessage() != null) {
++            source.sendSuccess(() -> io.papermc.paper.adventure.PaperAdventure.asVanilla(event.cancelMessage()), true);
++            return false;
++            // Paper end - Expand PlayerGameModeChangeEvent
+         } else {
+             return false;
+         }

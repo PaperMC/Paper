@@ -1,0 +1,44 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/animal/happyghast/HappyGhast.java b/net/minecraft/world/entity/animal/happyghast/HappyGhast.java
+index 30a65161fedbc9e70067797f06b598c0324455fa..ee400d1bfd24cc738ca02c1ec50332d7cfc9c266 100644
+--- a/net/minecraft/world/entity/animal/happyghast/HappyGhast.java
++++ b/net/minecraft/world/entity/animal/happyghast/HappyGhast.java
+@@ -308,7 +308,7 @@ public class HappyGhast extends Animal {
+     @Override
+     protected void addPassenger(final Entity passenger) {
+         if (!this.isVehicle()) {
+-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.HARNESS_GOGGLES_DOWN, this.getSoundSource(), 1.0F, 1.0F);
++            this.playSound(SoundEvents.HARNESS_GOGGLES_DOWN, 1.0F, 1.0F); // Paper - don't play sound if silenced (Fixes MC-297169)
+         }
+ 
+         super.addPassenger(passenger);
+@@ -322,16 +322,21 @@ public class HappyGhast extends Animal {
+     }
+ 
+     @Override
+-    protected void removePassenger(final Entity passenger) {
+-        super.removePassenger(passenger);
++    // Paper start - cancellable passengers
++    protected boolean removePassenger(final Entity passenger, final boolean suppressCancellation) {
++        if (!super.removePassenger(passenger, suppressCancellation)) {
++            return false;
++        }
++        // Paper end - cancellable passengers
+         if (!this.level().isClientSide()) {
+             this.setServerStillTimeout(10);
+         }
+ 
+         if (!this.isVehicle()) {
+             this.clearHome();
+-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.HARNESS_GOGGLES_UP, this.getSoundSource(), 1.0F, 1.0F);
++            this.playSound(SoundEvents.HARNESS_GOGGLES_UP, 1.0F, 1.0F); // Paper - don't play sound if silenced (Fixes MC-297169)
+         }
++        return true; // Paper - cancellable passengers
+     }
+ 
+     @Override

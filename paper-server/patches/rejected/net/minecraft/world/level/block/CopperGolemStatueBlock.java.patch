@@ -1,0 +1,35 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/block/CopperGolemStatueBlock.java b/net/minecraft/world/level/block/CopperGolemStatueBlock.java
+index a76a053ccdc23d2df138c4ac102c1fe609779f39..d42cd67804afe78488f98ad22c984fc01a74df2a 100644
+--- a/net/minecraft/world/level/block/CopperGolemStatueBlock.java
++++ b/net/minecraft/world/level/block/CopperGolemStatueBlock.java
+@@ -112,14 +112,20 @@ public class CopperGolemStatueBlock extends BaseEntityBlock implements SimpleWat
+             return InteractionResult.PASS;
+         }
+ 
+-        this.updatePose(level, state, pos, player);
+-        return InteractionResult.SUCCESS;
++        return this.updatePose(level, state, pos, player); // Paper - call EntityChangeBlockEvent
+     }
+ 
+-    protected void updatePose(final Level level, final BlockState state, final BlockPos pos, final Player player) {
++    // Paper start - call EntityChangeBlockEvent
++    protected InteractionResult updatePose(final Level level, final BlockState state, final BlockPos pos, final Player player) {
++        BlockState newState = state.setValue(POSE, state.getValue(POSE).getNextPose());
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, newState)) {
++            return InteractionResult.PASS;
++        }
+         level.playSound(null, pos, SoundEvents.COPPER_GOLEM_BECOME_STATUE, SoundSource.BLOCKS);
+-        level.setBlock(pos, state.setValue(POSE, state.getValue(POSE).getNextPose()), Block.UPDATE_ALL);
++        level.setBlock(pos, newState, Block.UPDATE_ALL);
+         level.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
++        return InteractionResult.SUCCESS;
++        // Paper end - call EntityChangeBlockEvent
+     }
+ 
+     @Override

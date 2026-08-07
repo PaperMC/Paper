@@ -1,0 +1,28 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java b/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
+index 438192ecfc80bca5359149e9d57669d3db1aa0e2..e33598c3ea748f81c7efcaa06d9d0597624a852b 100644
+--- a/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
++++ b/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
+@@ -74,9 +74,16 @@ public class BreakDoorGoal extends DoorInteractGoal {
+         }
+ 
+         if (this.breakTime == this.getDoorBreakTime() && this.isValidDifficulty(this.mob.level().getDifficulty())) {
++            // CraftBukkit start
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreakDoorEvent(this.mob, this.doorPos, this.mob.level().getFluidState(this.doorPos).createLegacyBlock()).isCancelled()) { // Paper - fix wrong block state
++                this.start();
++                return;
++            }
++            // CraftBukkit end
++            final net.minecraft.world.level.block.state.BlockState oldState = this.mob.level().getBlockState(this.doorPos); // Paper - fix MC-263999
+             this.mob.level().removeBlock(this.doorPos, false);
+             this.mob.level().levelEvent(LevelEvent.SOUND_ZOMBIE_DOOR_CRASH, this.doorPos, 0);
+-            this.mob.level().levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, this.doorPos, Block.getId(this.mob.level().getBlockState(this.doorPos)));
++            this.mob.level().levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, this.doorPos, Block.getId(oldState)); // Paper - fix MC-263999
+         }
+     }
+ 

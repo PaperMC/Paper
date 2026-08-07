@@ -1,0 +1,27 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/advancements/triggers/SimpleCriterionTrigger.java b/net/minecraft/advancements/triggers/SimpleCriterionTrigger.java
+index 770dbfa8ef4c4729bf8345c5c75e521df7f6a8d8..d76a338ab4f326e6105adc451eee3d4601403c98 100644
+--- a/net/minecraft/advancements/triggers/SimpleCriterionTrigger.java
++++ b/net/minecraft/advancements/triggers/SimpleCriterionTrigger.java
+@@ -20,14 +20,14 @@ public abstract class SimpleCriterionTrigger<T extends SimpleCriterionTrigger.Si
+         PlayerAdvancements advancements = player.getAdvancements();
+         Map<PlayerAdvancements.TriggerInstanceKey, T> listenersForType = advancements.getTriggerMapForType(this);
+         if (listenersForType != null && !listenersForType.isEmpty()) {
+-            LootContext playerContext = EntityPredicate.createContext(player, player);
++            LootContext playerContext = null; // EntityPredicate.createContext(player, player); // Paper - Perf: lazily create LootContext for criterions
+             List<PlayerAdvancements.TriggerInstanceKey> matchedConditions = null;
+ 
+             for (Entry<PlayerAdvancements.TriggerInstanceKey, T> entry : listenersForType.entrySet()) {
+                 T value = entry.getValue();
+                 if (matcher.test(value)) {
+                     Optional<ContextAwarePredicate> predicate = value.player();
+-                    if (!predicate.isPresent() || predicate.get().matches(playerContext)) {
++                    if (!predicate.isPresent() || predicate.get().matches(playerContext = (playerContext == null ? EntityPredicate.createContext(player, player) : playerContext))) { // Paper - Perf: lazily create LootContext for criterions
+                         if (matchedConditions == null) {
+                             matchedConditions = new ArrayList<>();
+                         }

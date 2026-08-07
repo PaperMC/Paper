@@ -1,0 +1,61 @@
+From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/levelgen/DensityFunctions.java b/net/minecraft/world/level/levelgen/DensityFunctions.java
+index edd4d88563514a4eff9da5c867acbebce9906635..ba8d4411b3868b60738b93e3d9e0f5df8a79639d 100644
+--- a/net/minecraft/world/level/levelgen/DensityFunctions.java
++++ b/net/minecraft/world/level/levelgen/DensityFunctions.java
+@@ -499,6 +499,16 @@ public final class DensityFunctions {
+         );
+         private static final float ISLAND_THRESHOLD = -0.9F;
+         private final SimplexNoise islandNoise;
++        // Paper start - Perf: Optimize end generation
++        private static final class NoiseCache {
++            public long[] keys = new long[8192];
++            public float[] values = new float[8192];
++            public NoiseCache() {
++                java.util.Arrays.fill(keys, Long.MIN_VALUE);
++            }
++        }
++        private static final ThreadLocal<java.util.Map<SimplexNoise, NoiseCache>> noiseCache = ThreadLocal.withInitial(java.util.WeakHashMap::new);
++        // Paper end - Perf: Optimize end generation
+ 
+         public EndIslandDensityFunction(final long seed) {
+             RandomSource islandRandom = new LegacyRandomSource(seed);
+@@ -511,15 +521,31 @@ public final class DensityFunctions {
+             int chunkZ = sectionZ / 2;
+             int subSectionX = sectionX % 2;
+             int subSectionZ = sectionZ % 2;
+-            float doffs = 100.0F - Mth.sqrt(sectionX * sectionX + sectionZ * sectionZ) * 8.0F;
++            float doffs = 100.0F - (ca.spottedleaf.moonrise.common.PlatformHooks.get().configFixMC159283() ? Mth.sqrt((long) sectionX * (long) sectionX + (long) sectionZ * (long) sectionZ) : Mth.sqrt(sectionX * sectionX + sectionZ * sectionZ)) * 8.0F; // Paper - cast ints to long when MC-159283 fix enabled
+             doffs = Mth.clamp(doffs, -100.0F, 80.0F);
+ 
++            NoiseCache cache = noiseCache.get().computeIfAbsent(islandNoise, noiseKey -> new NoiseCache()); // Paper - Perf: Optimize end generation
+             for (int xo = -12; xo <= 12; xo++) {
+                 for (int zo = -12; zo <= 12; zo++) {
+                     long totalChunkX = chunkX + xo;
+                     long totalChunkZ = chunkZ + zo;
++                    // Paper start - Perf: Optimize end generation by using a noise cache
++                    final long chunkKey = net.minecraft.world.level.ChunkPos.pack((int) totalChunkX, (int) totalChunkZ);
++                    final int cacheIndex = (int) it.unimi.dsi.fastutil.HashCommon.mix(chunkKey) & 8191;
++                    float islandSize = Float.MIN_VALUE; // noise value
++                    if (cache.keys[cacheIndex] == chunkKey) {
++                        // Use cache
++                        islandSize = cache.values[cacheIndex];
++                    } else {
++                    // Vanilla function
+                     if (totalChunkX * totalChunkX + totalChunkZ * totalChunkZ > 4096L && islandNoise.getValue(totalChunkX, totalChunkZ) < -0.9F) {
+-                        float islandSize = (Mth.abs((float)totalChunkX) * 3439.0F + Mth.abs((float)totalChunkZ) * 147.0F) % 13.0F + 9.0F;
++                            islandSize = (Mth.abs((float)totalChunkX) * 3439.0F + Mth.abs((float) totalChunkZ) * 147.0F) % 13.0F + 9.0F;
++                        }
++                        cache.keys[cacheIndex] = chunkKey;
++                        cache.values[cacheIndex] = islandSize;
++                    }
++                    if (islandSize != Float.MIN_VALUE) {
++                        // Paper end - Perf: Optimize end generation
+                         float xd = subSectionX - xo * 2;
+                         float zd = subSectionZ - zo * 2;
+                         float newDoffs = 100.0F - Mth.sqrt(xd * xd + zd * zd) * islandSize;
