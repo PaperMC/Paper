@@ -265,7 +265,6 @@ fun TaskContainer.registerRunTask(
     block: JavaExec.() -> Unit
 ): TaskProvider<JavaExec> = register<JavaExec>(name) {
     group = "runs"
-    description = "Registers the $name run task"
     mainClass.set("org.bukkit.craftbukkit.Main")
     standardInput = System.`in`
     workingDir = rootProject.layout.projectDirectory
@@ -273,10 +272,10 @@ fun TaskContainer.registerRunTask(
         .asFile
     javaLauncher.set(project.javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(25))
-        @Suppress("UnstableApiUsage")
-        vendor.set(JvmVendorSpec.JETBRAINS)
+        // TODO - JB runtime 25 has issues with spark rn
+        // vendor.set(JvmVendorSpec.JETBRAINS)
     })
-    jvmArgs("-XX:+AllowEnhancedClassRedefinition", "--enable-native-access=ALL-UNNAMED")
+    jvmArgs(/*"-XX:+AllowEnhancedClassRedefinition", */"--enable-native-access=ALL-UNNAMED")
 
     if (rootProject.childProjects["test-plugin"] != null) {
         val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
