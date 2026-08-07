@@ -311,7 +311,6 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * Gets the connection for the player logging in.
      * @return connection
      */
-    @ApiStatus.Experimental
     @NotNull
     public PlayerLoginConnection getConnection() {
         return playerLoginConnection;

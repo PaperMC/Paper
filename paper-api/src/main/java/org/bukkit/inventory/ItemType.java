@@ -3401,7 +3401,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @param type the data component type
      * @return {@code true} if there is a default value
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     boolean hasDefaultData(DataComponentType type);
 
     /**

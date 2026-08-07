@@ -31,7 +31,6 @@ public interface BrewingStand extends Container {
      * @param recipeBrewTime recipe brew time (in ticks)
      * @throws IllegalArgumentException if the recipe brew time is non-positive
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     void setRecipeBrewTime(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int recipeBrewTime);
 
     /**
@@ -41,7 +40,6 @@ public interface BrewingStand extends Container {
      *
      * @return recipe brew time (in ticks)
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     @org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int getRecipeBrewTime();
     // Paper end - Add recipeBrewTime
 

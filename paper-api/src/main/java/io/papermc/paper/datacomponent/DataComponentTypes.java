@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent;
 
+import io.papermc.paper.annotation.MinecraftVersionDependent;
 import io.papermc.paper.datacomponent.item.AttackRange;
 import io.papermc.paper.datacomponent.item.BannerPatternLayers;
 import io.papermc.paper.datacomponent.item.BlockItemDataProperties;
@@ -80,7 +81,6 @@ import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.checker.index.qual.Positive;
 import org.checkerframework.common.value.qual.IntRange;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -88,7 +88,7 @@ import org.jspecify.annotations.NullMarked;
  * and {@link org.bukkit.inventory.ItemType ItemTypes} can have.
  */
 @NullMarked
-@ApiStatus.Experimental
+@MinecraftVersionDependent
 public final class DataComponentTypes {
 
     /**

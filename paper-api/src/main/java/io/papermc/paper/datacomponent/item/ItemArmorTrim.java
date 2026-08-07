@@ -11,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#TRIM
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ItemArmorTrim  {
 
@@ -31,7 +30,6 @@ public interface ItemArmorTrim  {
     /**
      * Builder for {@link ItemArmorTrim}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemArmorTrim> {
 

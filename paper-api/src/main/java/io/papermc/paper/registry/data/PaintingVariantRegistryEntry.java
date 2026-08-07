@@ -12,7 +12,6 @@ import org.jspecify.annotations.Nullable;
 /**
  * A data-centric version-specific registry entry for the {@link Art} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface PaintingVariantRegistryEntry {
 
@@ -66,7 +65,6 @@ public interface PaintingVariantRegistryEntry {
      *     <li>{@link #assetId(Key)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends PaintingVariantRegistryEntry, RegistryBuilder<Art> {
 

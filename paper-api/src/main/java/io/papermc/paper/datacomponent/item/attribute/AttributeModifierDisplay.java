@@ -13,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.item.ItemAttributeModifiers#itemAttributes()
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface AttributeModifierDisplay {
 
@@ -53,7 +52,6 @@ public interface AttributeModifierDisplay {
     /**
      * Hidden statistics display for the attribute modifier.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Hidden extends AttributeModifierDisplay {
     }
@@ -62,7 +60,6 @@ public interface AttributeModifierDisplay {
      * Default display for the attribute modifier, showing
      * the statistic of its effect.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Default extends AttributeModifierDisplay {
     }
@@ -71,7 +68,6 @@ public interface AttributeModifierDisplay {
      * Specifies an overridden text to show instead of
      * the default behavior for the attribute modifier.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface OverrideText extends AttributeModifierDisplay {
 

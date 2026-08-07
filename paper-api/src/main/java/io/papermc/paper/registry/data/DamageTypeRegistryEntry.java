@@ -11,7 +11,6 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link DamageType} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface DamageTypeRegistryEntry {
 
@@ -63,7 +62,6 @@ public interface DamageTypeRegistryEntry {
      *     <li>{@link #damageScaling(DamageScaling)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DamageTypeRegistryEntry, RegistryBuilder<DamageType> {
 

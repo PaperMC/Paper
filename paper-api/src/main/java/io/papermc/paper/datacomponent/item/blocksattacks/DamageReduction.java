@@ -16,7 +16,6 @@ import org.jspecify.annotations.Nullable;
  * @see io.papermc.paper.datacomponent.item.BlocksAttacks#damageReductions()
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface DamageReduction {
 
@@ -56,7 +55,6 @@ public interface DamageReduction {
     /**
      * Builder for {@link DamageReduction}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<DamageReduction> {
 

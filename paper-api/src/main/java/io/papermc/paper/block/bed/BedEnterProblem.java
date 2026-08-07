@@ -10,7 +10,6 @@ import org.jspecify.annotations.Nullable;
  * its spawn point
  */
 @ApiStatus.NonExtendable
-@ApiStatus.Experimental
 public interface BedEnterProblem {
 
     /**

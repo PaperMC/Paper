@@ -8,6 +8,7 @@ import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.RecordBuilder;
 import com.mojang.serialization.codecs.OptionalFieldCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.papermc.paper.adventure.AdventureCodecs;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -18,6 +19,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.RegistryOps;
+import net.minecraft.server.packs.metadata.MetadataSectionType;
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
 import org.jspecify.annotations.NullMarked;
@@ -80,6 +82,12 @@ public final class PaperCodecs {
                 }
             }
         });
+    }
+
+    public static <T> Codec<T> packMetaCodec(final MetadataSectionType<T> type) {
+        return RecordCodecBuilder.create(instance -> instance.group(
+            type.codec().fieldOf(type.name()).forGetter(Function.identity())
+        ).apply(instance, Function.identity()));
     }
 
     private PaperCodecs() {

@@ -5,7 +5,6 @@ import io.papermc.paper.connection.PlayerConnection;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -242,6 +241,5 @@ public interface Messenger {
      * @param channel Channel that the message was sent by.
      * @param message Raw payload of the message.
      */
-    @ApiStatus.Experimental
     public void dispatchIncomingMessage(@NotNull PlayerConnection source, @NotNull String channel, byte @NotNull [] message);
 }

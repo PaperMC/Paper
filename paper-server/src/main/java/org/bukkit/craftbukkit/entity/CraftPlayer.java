@@ -3382,4 +3382,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         super.knockback(strength, directionX, directionZ);
         this.entity.hurtMarked = true;
     }
+
+    @Override
+    public void unsetFixedPose() {
+        this.getHandle().fixedPose = false;
+        this.getHandle().updatePlayerPose();
+    }
 }

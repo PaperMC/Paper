@@ -3075,10 +3075,10 @@ index 0000000000000000000000000000000000000000..59cbbf65c9df5c680b803f6dd6436a35
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0cfdbdee091f43ca011bc68f7479eb7b84801b09
+index 0000000000000000000000000000000000000000..01873fc32799c3429771ef6da77d370b83b630e8
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
-@@ -0,0 +1,591 @@
+@@ -0,0 +1,593 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.level.entity;
 +
 +import ca.spottedleaf.moonrise.common.PlatformHooks;
@@ -3595,8 +3595,9 @@ index 0000000000000000000000000000000000000000..0cfdbdee091f43ca011bc68f7479eb7b
 +            final int minSection = this.slices.minSection;
 +            final int maxSection = this.slices.maxSection;
 +
-+            final int min = Mth.clamp(Mth.floor(box.minY - 2.0) >> 4, minSection, maxSection);
-+            final int max = Mth.clamp(Mth.floor(box.maxY + 2.0) >> 4, minSection, maxSection);
++            // See EntitySectionStorage#forEachAccessibleNonEmptySection
++            final int min = Mth.clamp(Mth.floor(box.minY - 4.0) >> 4, minSection, maxSection);
++            final int max = Mth.clamp(Mth.floor(box.maxY + 0.0) >> 4, minSection, maxSection);
 +
 +            final BasicEntityList<Entity>[] entitiesBySection = this.entitiesBySection;
 +
@@ -3634,8 +3635,9 @@ index 0000000000000000000000000000000000000000..0cfdbdee091f43ca011bc68f7479eb7b
 +            final int minSection = this.slices.minSection;
 +            final int maxSection = this.slices.maxSection;
 +
-+            final int min = Mth.clamp(Mth.floor(box.minY - 2.0) >> 4, minSection, maxSection);
-+            final int max = Mth.clamp(Mth.floor(box.maxY + 2.0) >> 4, minSection, maxSection);
++            // See EntitySectionStorage#forEachAccessibleNonEmptySection
++            final int min = Mth.clamp(Mth.floor(box.minY - 4.0) >> 4, minSection, maxSection);
++            final int max = Mth.clamp(Mth.floor(box.maxY + 0.0) >> 4, minSection, maxSection);
 +
 +            final BasicEntityList<Entity>[] entitiesBySection = this.entitiesBySection;
 +
@@ -4942,14 +4944,13 @@ index 0000000000000000000000000000000000000000..2ff58cf753c60913ee73aae015182e9c
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2bc436cdf5180a7943c45fabb9fbbedae6f7db56
+index 0000000000000000000000000000000000000000..ba372f75dec3ee8b89c48df2cc646f071a47d25a
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/server/ServerEntityLookup.java
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,158 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server;
 +
 +import ca.spottedleaf.moonrise.common.PlatformHooks;
-+import ca.spottedleaf.moonrise.common.list.ReferenceList;
 +import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
 +import ca.spottedleaf.moonrise.common.util.TickThread;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
@@ -4967,10 +4968,7 @@ index 0000000000000000000000000000000000000000..2bc436cdf5180a7943c45fabb9fbbeda
 +
 +public final class ServerEntityLookup extends EntityLookup {
 +
-+    private static final Entity[] EMPTY_ENTITY_ARRAY = new Entity[0];
-+
 +    private final ServerLevel serverWorld;
-+    public final ReferenceList<Entity> trackerEntities = new ReferenceList<>(EMPTY_ENTITY_ARRAY); // Moonrise - entity tracker
 +
 +    // Vanilla does not increment ticket timeouts if the chunk is progressing in generation. They made this change in 1.21.6 so that the ender pearl
 +    // ticket does not expire if the chunk fails to generate before the timeout expires. Rather than blindly adjusting the entire system behavior
@@ -5058,16 +5056,12 @@ index 0000000000000000000000000000000000000000..2bc436cdf5180a7943c45fabb9fbbeda
 +
 +    @Override
 +    protected void entityStartLoaded(final Entity entity) {
-+        // Moonrise start - entity tracker
-+        this.trackerEntities.add(entity);
-+        // Moonrise end - entity tracker
++
 +    }
 +
 +    @Override
 +    protected void entityEndLoaded(final Entity entity) {
-+        // Moonrise start - entity tracker
-+        this.trackerEntities.remove(entity);
-+        // Moonrise end - entity tracker
++
 +    }
 +
 +    @Override
@@ -5405,7 +5399,7 @@ index 0000000000000000000000000000000000000000..003a857e70ead858e8437e3c1bfaf22f
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java b/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0743659c9f1122088adad4992b93649efc9ba873
+index 0000000000000000000000000000000000000000..45c927417d34ddd48c92116efd9b5777bfc52e35
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
 @@ -0,0 +1,1104 @@
@@ -5785,7 +5779,7 @@ index 0000000000000000000000000000000000000000..0743659c9f1122088adad4992b93649e
 +                .add(100L, TimeUnit.MILLISECONDS, 4.0)
 +                .add(500L, TimeUnit.MILLISECONDS, 2.0)
 +                .add(1_000L, TimeUnit.MILLISECONDS, 1.25)
-+                .add(3_000L, TimeUnit.SECONDS, 1.0)
++                .add(3_000L, TimeUnit.MILLISECONDS, 1.0)
 +                .build();
 +        }
 +
@@ -6665,7 +6659,7 @@ index 0000000000000000000000000000000000000000..7dda31a98de2ddf0ca7a520ae48025fc
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..05d374f679919d082064e8f2bb363a419bc9648e
+index 0000000000000000000000000000000000000000..e418820359c430b91bb91eb65d137b9cdbe2db4b
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
 @@ -0,0 +1,1568 @@
@@ -6843,11 +6837,11 @@ index 0000000000000000000000000000000000000000..05d374f679919d082064e8f2bb363a41
 +    }
 +
 +    public Iterable<ChunkHolder> getOldChunkHoldersIterable() {
-+        return new Iterable<ChunkHolder>() {
++        return new Iterable<>() {
 +            @Override
 +            public Iterator<ChunkHolder> iterator() {
 +                final Iterator<NewChunkHolder> iterator = ChunkHolderManager.this.chunkHolders.valueIterator();
-+                return new Iterator<ChunkHolder>() {
++                return new Iterator<>() {
 +                    @Override
 +                    public boolean hasNext() {
 +                        return iterator.hasNext();
@@ -9296,6 +9290,418 @@ index 0000000000000000000000000000000000000000..640548d78b87653871dd1f7b0f84574c
 +                }
 +            }
 +        }
++    }
++}
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/MoonriseChunkHolderMap.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/MoonriseChunkHolderMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7f75cc224d1dea04405f19880b6a1b570fdf1591
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/MoonriseChunkHolderMap.java
+@@ -0,0 +1,406 @@
++package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
++
++import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
++import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
++import it.unimi.dsi.fastutil.longs.AbstractLongSortedSet;
++import it.unimi.dsi.fastutil.longs.Long2ObjectFunction;
++import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
++import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
++import it.unimi.dsi.fastutil.longs.LongBidirectionalIterator;
++import it.unimi.dsi.fastutil.longs.LongComparator;
++import it.unimi.dsi.fastutil.longs.LongSortedSet;
++import it.unimi.dsi.fastutil.objects.AbstractObjectCollection;
++import it.unimi.dsi.fastutil.objects.AbstractObjectSortedSet;
++import it.unimi.dsi.fastutil.objects.ObjectBidirectionalIterator;
++import it.unimi.dsi.fastutil.objects.ObjectCollection;
++import it.unimi.dsi.fastutil.objects.ObjectIterator;
++import java.util.Comparator;
++import java.util.Iterator;
++import java.util.List;
++import java.util.function.BiFunction;
++import java.util.function.LongFunction;
++import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
++import net.minecraft.server.level.ChunkHolder;
++import net.minecraft.server.level.ServerLevel;
++import org.jspecify.annotations.Nullable;
++
++/**
++ * A delegating Long2ObjectLinkedOpenHashMap that exposes loaded chunk holders
++ * from Moonrise's ChunkHolderManager to third-party mods which may be
++ * expecting updatingChunkMap/visibleChunkMap to be non-null, matching vanilla.
++ */
++public final class MoonriseChunkHolderMap extends Long2ObjectLinkedOpenHashMap<ChunkHolder> {
++
++    private final ServerLevel level;
++
++    public MoonriseChunkHolderMap(final ServerLevel level) {
++        this.level = level;
++    }
++
++    private ChunkHolderManager getHolderManager() {
++        if (this.level == null) {
++            return null;
++        }
++        return ((ChunkSystemServerLevel) this.level).moonrise$getChunkTaskScheduler().chunkHolderManager;
++    }
++
++    @Override
++    public int size() {
++        final ChunkHolderManager manager = this.getHolderManager();
++        return manager == null ? 0 : manager.size();
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return this.size() == 0;
++    }
++
++    @Override
++    public ChunkHolder get(final long key) {
++        final ChunkHolderManager manager = this.getHolderManager();
++        if (manager == null) {
++            return null;
++        }
++        final NewChunkHolder holder = manager.getChunkHolder(key);
++        return holder == null ? null : holder.vanillaChunkHolder;
++    }
++
++    @Override
++    public boolean containsKey(final long key) {
++        return this.get(key) != null;
++    }
++
++    @Override
++    public ChunkHolder put(final long k, final ChunkHolder chunkHolder) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder remove(final long k) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder removeFirst() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder removeLast() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder getAndMoveToFirst(final long k) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder getAndMoveToLast(final long k) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder putAndMoveToFirst(final long k, final ChunkHolder chunkHolder) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder putAndMoveToLast(final long k, final ChunkHolder chunkHolder) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public boolean containsValue(final Object v) {
++        return this.values().contains(v);
++    }
++
++    @Override
++    public ChunkHolder getOrDefault(final long k, final ChunkHolder defaultValue) {
++        final ChunkHolder ret = this.get(k);
++        return ret == null ? defaultValue : ret;
++    }
++
++    @Override
++    public @Nullable ChunkHolder putIfAbsent(final long key, final ChunkHolder value) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public boolean remove(final long k, final Object v) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public boolean replace(final long key, final ChunkHolder oldValue, final ChunkHolder newValue) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder replace(final long k, final ChunkHolder chunkHolder) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder computeIfAbsent(final long k, final LongFunction<? extends ChunkHolder> mappingFunction) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder computeIfAbsent(final long key, final Long2ObjectFunction<? extends ChunkHolder> mappingFunction) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder computeIfPresent(final long k, final BiFunction<? super Long, ? super ChunkHolder, ? extends ChunkHolder> remappingFunction) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder compute(final long k, final BiFunction<? super Long, ? super ChunkHolder, ? extends ChunkHolder> remappingFunction) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public ChunkHolder merge(final long k, final ChunkHolder chunkHolder, final BiFunction<? super ChunkHolder, ? super ChunkHolder, ? extends ChunkHolder> remappingFunction) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public void clear() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public long firstLongKey() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public long lastLongKey() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public boolean trim(final int n) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public Long2ObjectLinkedOpenHashMap<ChunkHolder> clone() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public int hashCode() {
++        return this.long2ObjectEntrySet().hashCode();
++    }
++
++    @Override
++    public boolean equals(final Object o) {
++        return this == o;
++    }
++
++    @Override
++    public FastSortedEntrySet<ChunkHolder> long2ObjectEntrySet() {
++        class Set extends AbstractObjectSortedSet<Long2ObjectMap.Entry<ChunkHolder>> implements FastSortedEntrySet<ChunkHolder> {
++
++            @Override
++            public ObjectBidirectionalIterator<Entry<ChunkHolder>> fastIterator() {
++                return this.iterator();
++            }
++
++            @Override
++            public ObjectBidirectionalIterator<Entry<ChunkHolder>> fastIterator(final Entry<ChunkHolder> from) {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public ObjectBidirectionalIterator<Entry<ChunkHolder>> iterator(final Entry<ChunkHolder> fromElement) {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public ObjectBidirectionalIterator<Entry<ChunkHolder>> iterator() {
++                final ChunkHolderManager manager = MoonriseChunkHolderMap.this.getHolderManager();
++                final List<NewChunkHolder> holders = manager == null ? List.of() : manager.getChunkHolders();
++                final Iterator<NewChunkHolder> iterator = holders.iterator();
++                return new ObjectBidirectionalIterator<>() {
++                    @Override
++                    public Entry<ChunkHolder> previous() {
++                        throw new UnsupportedOperationException();
++                    }
++
++                    @Override
++                    public boolean hasPrevious() {
++                        throw new UnsupportedOperationException();
++                    }
++
++                    @Override
++                    public boolean hasNext() {
++                        return iterator.hasNext();
++                    }
++
++                    @Override
++                    public Entry<ChunkHolder> next() {
++                        final NewChunkHolder holder = iterator.next();
++                        return new Entry<>() {
++                            @Override
++                            public long getLongKey() {
++                                return CoordinateUtils.getChunkKey(holder.chunkX, holder.chunkZ);
++                            }
++
++                            @Override
++                            public ChunkHolder getValue() {
++                                return holder.vanillaChunkHolder;
++                            }
++
++                            @Override
++                            public ChunkHolder setValue(final ChunkHolder value) {
++                                throw new UnsupportedOperationException();
++                            }
++                        };
++                    }
++                };
++            }
++
++            @Override
++            public int size() {
++                return MoonriseChunkHolderMap.this.size();
++            }
++
++            @Override
++            public @Nullable Comparator<? super Entry<ChunkHolder>> comparator() {
++                return null;
++            }
++
++            @Override
++            public ObjectSortedSet<Entry<ChunkHolder>> subSet(final Entry<ChunkHolder> fromElement, final Entry<ChunkHolder> toElement) {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public ObjectSortedSet<Entry<ChunkHolder>> headSet(final Entry<ChunkHolder> toElement) {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public ObjectSortedSet<Entry<ChunkHolder>> tailSet(final Entry<ChunkHolder> fromElement) {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public Entry<ChunkHolder> first() {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public Entry<ChunkHolder> last() {
++                throw new UnsupportedOperationException();
++            }
++        }
++        return new Set();
++    }
++
++    @Override
++    public LongSortedSet keySet() {
++        return new AbstractLongSortedSet() {
++            @Override
++            public LongBidirectionalIterator iterator() {
++                final ChunkHolderManager manager = MoonriseChunkHolderMap.this.getHolderManager();
++                final List<NewChunkHolder> holders = manager == null ? List.of() : manager.getChunkHolders();
++                final Iterator<NewChunkHolder> iterator = holders.iterator();
++                return new LongBidirectionalIterator() {
++                    @Override
++                    public long previousLong() {
++                        throw new UnsupportedOperationException();
++                    }
++
++                    @Override
++                    public boolean hasPrevious() {
++                        throw new UnsupportedOperationException();
++                    }
++
++                    @Override
++                    public long nextLong() {
++                        final NewChunkHolder holder = iterator.next();
++                        return CoordinateUtils.getChunkKey(holder.chunkX, holder.chunkZ);
++                    }
++
++                    @Override
++                    public boolean hasNext() {
++                        return iterator.hasNext();
++                    }
++                };
++            }
++
++            @Override
++            public LongBidirectionalIterator iterator(final long fromElement) {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public LongSortedSet subSet(final long fromElement, final long toElement) {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public LongSortedSet headSet(final long toElement) {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public LongSortedSet tailSet(final long fromElement) {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public LongComparator comparator() {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public long firstLong() {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public long lastLong() {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public int size() {
++                return MoonriseChunkHolderMap.this.size();
++            }
++        };
++    }
++
++    @Override
++    public ObjectCollection<ChunkHolder> values() {
++        return new AbstractObjectCollection<>() {
++            @Override
++            public ObjectIterator<ChunkHolder> iterator() {
++                final ChunkHolderManager manager = MoonriseChunkHolderMap.this.getHolderManager();
++                final List<ChunkHolder> holders = manager == null ? List.of() : manager.getOldChunkHolders();
++                final Iterator<ChunkHolder> iterator = holders.iterator();
++                return new ObjectIterator<>() {
++                    @Override
++                    public boolean hasNext() {
++                        return iterator.hasNext();
++                    }
++
++                    @Override
++                    public ChunkHolder next() {
++                        return iterator.next();
++                    }
++                };
++            }
++
++            @Override
++            public int size() {
++                return MoonriseChunkHolderMap.this.size();
++            }
++        };
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
@@ -23832,7 +24238,7 @@ index 9d9fa99ff7694a3356421df711c7b1443047b057..c79206e0eb455081f63cf4de2c974136
      }
  
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 196f47bb89a49e4d053cabad62059836823e6c21..82eb863da02d58b7643cd1ebd6b2f642b3474c5d 100644
+index e95e0a773cf80645d8901646843bc599a2075fd8..90fcdd0b859ea2cbc24938a8fa09c964d5de7114 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -189,7 +189,7 @@ import net.minecraft.world.scores.ScoreboardSaveData;
@@ -23967,7 +24373,7 @@ index 196f47bb89a49e4d053cabad62059836823e6c21..82eb863da02d58b7643cd1ebd6b2f642
              result = true;
          }
  
-@@ -947,7 +1038,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -946,7 +1037,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              }
          }
  
@@ -23976,7 +24382,7 @@ index 196f47bb89a49e4d053cabad62059836823e6c21..82eb863da02d58b7643cd1ebd6b2f642
              this.nextTickTimeNanos = Util.getNanos() + TimeUtil.NANOSECONDS_PER_MILLISECOND;
  
              for (ServerLevel level : this.getAllLevels()) {
-@@ -958,17 +1049,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -957,17 +1048,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.waitUntilNextTick();
          }
  
@@ -24001,7 +24407,7 @@ index 196f47bb89a49e4d053cabad62059836823e6c21..82eb863da02d58b7643cd1ebd6b2f642
  
          this.isSaving = false;
          this.savedDataStorage.close();
-@@ -989,6 +1077,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -988,6 +1076,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.services().nameToIdCache().save(false); // Paper - Perf: Async GameProfileCache saving
          }
          // Spigot end
@@ -24016,7 +24422,7 @@ index 196f47bb89a49e4d053cabad62059836823e6c21..82eb863da02d58b7643cd1ebd6b2f642
          // Paper start - Improved watchdog support - move final shutdown items here
          Util.shutdownExecutors();
          this.onServerExit();
-@@ -1083,16 +1179,31 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1082,16 +1178,31 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              // execute small amounts of other tasks just in case the number of tasks we are
              // draining is large - chunk system and packet processing may be latency sensitive
  
@@ -24051,7 +24457,7 @@ index 196f47bb89a49e4d053cabad62059836823e6c21..82eb863da02d58b7643cd1ebd6b2f642
          profiler.pop(); // moonrise:run_all_chunk
          profiler.pop(); // moonrise:run_all_tasks
  
-@@ -1393,6 +1504,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1392,6 +1503,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      private boolean pollTaskInternal() {
          if (super.pollTask()) {
@@ -24059,7 +24465,7 @@ index 196f47bb89a49e4d053cabad62059836823e6c21..82eb863da02d58b7643cd1ebd6b2f642
              return true;
          }
  
-@@ -1534,6 +1646,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1533,6 +1645,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // Paper - improve tick loop - moved into runAllTasksAtTickStart
          this.runAllTasksAtTickStart(); // Paper - improve tick loop
          this.tickServer(sprinting ? () -> false : this::haveTime);
@@ -24073,7 +24479,7 @@ index 196f47bb89a49e4d053cabad62059836823e6c21..82eb863da02d58b7643cd1ebd6b2f642
          this.tickFrame.end();
          this.recordEndOfTick(); // Paper - improve tick loop
          profiler.pop();
-@@ -2588,6 +2707,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2587,6 +2706,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -24589,7 +24995,7 @@ index 5e5aad112058b567214c28ccd719271f12240a35..cd5a325d37f617431ceb568a65570160
  
      @FunctionalInterface
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e0fbd90a1 100644
+index 4a9e9707bebe85e26d28260b389e236156ba5637..3a6410f4b061c7431ad09b23be9691160c36ef6c 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
 @@ -124,10 +124,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
@@ -25012,7 +25418,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
      }
  
      private ChunkAccess handleChunkLoadFailure(final Throwable throwable, final ChunkPos pos) {
-@@ -659,231 +436,139 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -659,230 +436,138 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
  
      @Override
      public GenerationChunkHolder acquireGeneration(final long chunkNode) {
@@ -25298,8 +25704,8 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
 +            ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionFileType.CHUNK_DATA
 +        );
 +        return null;
-     }
- 
++    }
++
 +    @Override
 +    public CompletableFuture<Void> synchronize(final boolean flush) {
 +        try {
@@ -25311,12 +25717,11 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
 +        } catch (final Exception ex) {
 +            return CompletableFuture.failedFuture(ex);
 +        }
-+    }
+     }
 +    // Paper end - rewrite chunk system
-+
+ 
      public @Nullable LevelChunk getChunkToSend(final long key) {
          ChunkHolder chunkHolder = this.getVisibleChunkIfPresent(key);
-         return chunkHolder == null ? null : chunkHolder.getChunkToSend();
 @@ -965,7 +650,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          return this.read(pos).thenApplyAsync(chunkTag -> chunkTag.map(this::upgradeChunkTag), Util.backgroundExecutor().forName("upgradeChunk"));
      }
@@ -25591,7 +25996,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
      }
  
      public boolean hasEntityWithId(final int id) {
-@@ -1233,6 +968,12 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1233,6 +968,14 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
  
                  ChunkMap.TrackedEntity trackedEntity = new ChunkMap.TrackedEntity(entity, range, updateInterval, type.trackDeltas());
                  this.entityMap.put(entity.getId(), trackedEntity);
@@ -25600,38 +26005,60 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
 +                    throw new IllegalStateException("Entity is already tracked");
 +                }
 +                ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$setTrackedEntity(trackedEntity);
++                // note: the tick loop is OK when adding entities
++                this.trackerEntities.add(entity);
 +                // Paper end - optimise entity tracker
                  trackedEntity.updatePlayers(this.level.players());
                  if (entity instanceof ServerPlayer player) {
                      this.updatePlayerStatus(player, true);
-@@ -1261,12 +1002,38 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1261,12 +1004,58 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          if (trackedEntity != null) {
              trackedEntity.broadcastRemoved();
          }
-+        ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$setTrackedEntity(null); // Paper - optimise entity tracker
-     }
- 
-+    // Paper start - optimise entity tracker
-+    private void newTrackerTick() {
-+        final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup entityLookup = (ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup)((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getEntityLookup();;
-+
-+        final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.entity.Entity> trackerEntities = entityLookup.trackerEntities;
-+        final Entity[] trackerEntitiesRaw = trackerEntities.getRawDataUnchecked();
-+        for (int i = 0, len = trackerEntities.size(); i < len; ++i) {
-+            final Entity entity = trackerEntitiesRaw[i];
-+            final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity();
-+            if (tracker == null) {
-+                continue;
-+            }
-+            ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity)tracker).moonrise$tick(((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)entity).moonrise$getChunkData().nearbyPlayers);
-+            if (((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity)tracker).moonrise$hasPlayers()
-+                || ((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)entity).moonrise$getChunkStatus().isOrAfter(FullChunkStatus.ENTITY_TICKING)) {
-+                tracker.serverEntity.sendChanges();
-+            }
-+        }
++        // Paper start - optimise entity tracker
++        ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$setTrackedEntity(null);
++        this.checkIteratingTrackerEntities();
++        this.trackerEntities.remove(entity);
++        // Paper end - optimise entity tracker
 +    }
-+    // Paper end - optimise entity tracker
 +
++    // Paper start - optimise entity tracker
++    private static final Entity[] EMPTY_ENTITY_ARRAY = new Entity[0];
++    private ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.entity.Entity> trackerEntities = new ca.spottedleaf.moonrise.common.list.ReferenceList<>(EMPTY_ENTITY_ARRAY);
++    private boolean iteratingTrackerEntities = false;
++
++    private void checkIteratingTrackerEntities() {
++        if (!this.iteratingTrackerEntities) {
++            return;
++        }
++
++        this.trackerEntities = this.trackerEntities.copy();
++        this.iteratingTrackerEntities = false;
++    }
++
++    private void newTrackerTick() {
++        this.iteratingTrackerEntities = true;
++        try {
++            final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.entity.Entity> trackerEntities = this.trackerEntities;
++            final Entity[] trackerEntitiesRaw = trackerEntities.getRawDataUnchecked();
++            for (int i = 0, len = trackerEntities.size(); i < len; ++i) {
++                final Entity entity = trackerEntitiesRaw[i];
++                final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity();
++                if (tracker == null) {
++                    continue;
++                }
++                ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity)tracker).moonrise$tick(((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)entity).moonrise$getChunkData().nearbyPlayers);
++                if (((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity)tracker).moonrise$hasPlayers()
++                    || ((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)entity).moonrise$getChunkStatus().isOrAfter(FullChunkStatus.ENTITY_TICKING)) {
++                    tracker.serverEntity.sendChanges();
++                }
++            }
++        } finally {
++            this.iteratingTrackerEntities = false;
++        }
+     }
++    // Paper end - optimise entity tracker
+ 
      protected void tick() {
 -        for (ServerPlayer player : this.playerMap.getAllPlayers()) {
 -            this.updateChunkTracking(player);
@@ -25645,7 +26072,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
  
          List<ServerPlayer> movedPlayers = Lists.newArrayList();
          List<ServerPlayer> players = this.level.players();
-@@ -1365,17 +1132,11 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1365,17 +1154,11 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
      }
  
      public void waitForLightBeforeSending(final ChunkPos centerChunk, final int chunkRadius) {
@@ -25665,7 +26092,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
              LevelChunk chunk = chunkHolder.getChunkToSend();
              if (chunk != null) {
                  consumer.accept(chunk);
-@@ -1383,14 +1144,21 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1383,14 +1166,21 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          }
      }
  
@@ -25689,7 +26116,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
          }
  
          @Override
-@@ -1404,13 +1172,96 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1404,13 +1194,96 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          }
      }
  
@@ -25787,7 +26214,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..c3da011196e9cac1d90b2ae40952680e
          public TrackedEntity(final Entity entity, final int range, final int updateInterval, final boolean trackDelta) {
              this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, updateInterval, trackDelta, this, this.seenBy); // Paper
              this.entity = entity;
-@@ -1522,17 +1373,24 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1522,17 +1395,24 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          }
  
          private int getEffectiveRange() {
@@ -28864,7 +29291,7 @@ index 09b6da207530987b483444cebeadc2f1c9a15247..3666c3efd188508153b6482db425648e
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index a9302dcc5614595bffd377eb4f77b7af3798e2ba..00d1ba3e42076f0de52455d66c4e056fdc48cd7a 100644
+index ec8b47eebc30a73adb3195aa91fd5b82518cac2d..4b74c91b47318d048abc53952ebeae7615f50524 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -164,7 +164,7 @@ public abstract class Entity
@@ -28958,7 +29385,7 @@ index a9302dcc5614595bffd377eb4f77b7af3798e2ba..00d1ba3e42076f0de52455d66c4e056f
      }
      // Paper end - Share random for entities to make them more random
      public org.bukkit.event.entity.CreatureSpawnEvent.@Nullable SpawnReason spawnReason; // Paper - Entity#getEntitySpawnReason
-@@ -433,6 +389,156 @@ public abstract class Entity
+@@ -434,6 +390,156 @@ public abstract class Entity
          return this.dimensions.makeBoundingBox(x, y, z);
      }
      // Paper end
@@ -29115,7 +29542,7 @@ index a9302dcc5614595bffd377eb4f77b7af3798e2ba..00d1ba3e42076f0de52455d66c4e056f
  
      public Entity(final EntityType<?> type, final Level level) {
          this.type = type;
-@@ -1483,34 +1589,76 @@ public abstract class Entity
+@@ -1484,34 +1590,76 @@ public abstract class Entity
      }
  
      private Vec3 collide(final Vec3 movement) {
@@ -29215,7 +29642,7 @@ index a9302dcc5614595bffd377eb4f77b7af3798e2ba..00d1ba3e42076f0de52455d66c4e056f
      }
  
      private static float[] collectCandidateStepUpHeights(
-@@ -2826,17 +2974,106 @@ public abstract class Entity
+@@ -2832,17 +2980,106 @@ public abstract class Entity
              return false;
          }
  
@@ -29332,7 +29759,7 @@ index a9302dcc5614595bffd377eb4f77b7af3798e2ba..00d1ba3e42076f0de52455d66c4e056f
      }
  
      public InteractionResult interact(final Player player, final InteractionHand hand, final Vec3 location) {
-@@ -4443,15 +4680,17 @@ public abstract class Entity
+@@ -4449,15 +4686,17 @@ public abstract class Entity
      }
  
      public Iterable<Entity> getIndirectPassengers() {
@@ -29358,7 +29785,7 @@ index a9302dcc5614595bffd377eb4f77b7af3798e2ba..00d1ba3e42076f0de52455d66c4e056f
      }
  
      public int countPlayerPassengers() {
-@@ -4762,6 +5001,15 @@ public abstract class Entity
+@@ -4768,6 +5007,15 @@ public abstract class Entity
      }
  
      public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
@@ -29374,7 +29801,7 @@ index a9302dcc5614595bffd377eb4f77b7af3798e2ba..00d1ba3e42076f0de52455d66c4e056f
          if (!checkPosition(this, x, y, z)) {
              return;
          }
-@@ -4911,6 +5159,12 @@ public abstract class Entity
+@@ -4917,6 +5165,12 @@ public abstract class Entity
  
      @Override
      public final void setRemoved(final Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause cause) { // CraftBukkit - add Bukkit remove cause
@@ -29387,7 +29814,7 @@ index a9302dcc5614595bffd377eb4f77b7af3798e2ba..00d1ba3e42076f0de52455d66c4e056f
          org.bukkit.craftbukkit.event.CraftEventFactory.callEntityRemoveEvent(this, cause); // CraftBukkit
          final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
          if (this.removalReason == null) {
-@@ -4921,7 +5175,7 @@ public abstract class Entity
+@@ -4928,7 +5182,7 @@ public abstract class Entity
              this.stopRiding();
          }
  
@@ -29396,7 +29823,7 @@ index a9302dcc5614595bffd377eb4f77b7af3798e2ba..00d1ba3e42076f0de52455d66c4e056f
          this.levelCallback.onRemove(reason);
          this.onRemoval(reason);
          // Paper start - Folia schedulers
-@@ -4955,7 +5209,7 @@ public abstract class Entity
+@@ -4966,7 +5220,7 @@ public abstract class Entity
      public boolean shouldBeSaved() {
          return (this.removalReason == null || this.removalReason.shouldSave())
              && !this.isPassenger()

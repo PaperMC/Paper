@@ -1599,7 +1599,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the level directory
      */
-    @ApiStatus.Experimental
     @NotNull
     Path getLevelDirectory();
 
@@ -1941,7 +1940,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the server's links
      */
     @NotNull
-    @ApiStatus.Experimental
     ServerLinks getServerLinks();
 
     /**

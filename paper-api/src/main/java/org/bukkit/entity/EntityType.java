@@ -335,7 +335,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
 
     // Paper start
     /**
-     * @throws IllegalArgumentException if the entity does not have a translation key (is probably a custom entity)
+     * @throws IllegalArgumentException if the entity does not have a translation key
      */
     @Override
     public @NotNull String translationKey() {
@@ -344,7 +344,18 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     }
 
     /**
-     * Checks if the entity has default attributes.
+     * Gets the spawn category of this entity type.
+     *
+     * @return the spawn category
+     * @throws IllegalArgumentException if the entity does not have a spawn category
+     */
+    public @NotNull SpawnCategory getSpawnCategory() {
+        Preconditions.checkArgument(this != UNKNOWN, "UNKNOWN entities do not have a spawn category");
+        return InternalAPIBridge.get().getSpawnCategory(this);
+    }
+
+    /**
+     * Checks if the entity type has default attributes.
      *
      * @return true if it has default attributes
      */
@@ -356,10 +367,10 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     }
 
     /**
-     * Gets the default attributes for the entity.
+     * Gets the default attributes for the entity type.
      *
      * @return an unmodifiable instance of Attributable for reading default attributes.
-     * @throws IllegalArgumentException if the entity does not exist of have default attributes (use {@link #hasDefaultAttributes()} first)
+     * @throws IllegalArgumentException if it doesn't have default attributes (use {@link #hasDefaultAttributes()} first)
      */
     public @NotNull org.bukkit.attribute.Attributable getDefaultAttributes() {
         Preconditions.checkArgument(this.hasDefaultAttributes(), this.key + " doesn't have default attributes");
