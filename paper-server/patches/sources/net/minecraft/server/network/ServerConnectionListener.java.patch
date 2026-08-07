@@ -1,28 +1,8 @@
-From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
-index a52d1c5890d39dc9240adeb196ea8efaa1604cfb..846d94662c27cdc8e33d7009b2c721ac4dba442b 100644
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
-@@ -53,9 +53,31 @@ public class ServerConnectionListener {
-         this.running = true;
+@@ -57,8 +_,19 @@
      }
  
-+    // Paper start - prevent blocking on adding a new connection while the server is ticking
-+    private final java.util.Queue<Connection> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
-+
-+    private final void addPending() {
-+        Connection connection;
-+        while ((connection = this.pending.poll()) != null) {
-+            this.connections.add(connection);
-+        }
-+    }
-+    // Paper end - prevent blocking on adding a new connection while the server is ticking
-+
      public void startTcpServerListener(final @Nullable InetAddress address, final int port) throws IOException {
 +        // Paper start - Unix domain socket support
 +        this.startTcpServerListener(new java.net.InetSocketAddress(address, port));
@@ -41,11 +21,10 @@ index a52d1c5890d39dc9240adeb196ea8efaa1604cfb..846d94662c27cdc8e33d7009b2c721ac
              this.channels
                  .add(
                      new ServerBootstrap()
-@@ -79,22 +101,64 @@ public class ServerConnectionListener {
+@@ -82,22 +_,63 @@
                                      Connection connection = rateLimitPacketsPerSecond > 0
                                          ? new RateKickingConnection(rateLimitPacketsPerSecond)
                                          : new Connection(PacketFlow.SERVERBOUND);
--                                    ServerConnectionListener.this.connections.add(connection);
 +                                    // Paper start - Add support for Proxy Protocol
 +                                    if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
 +                                        channel.pipeline().addAfter(HandlerNames.TIMEOUT, "haproxy-decoder", new io.netty.handler.codec.haproxy.HAProxyMessageDecoder());
@@ -75,8 +54,7 @@ index a52d1c5890d39dc9240adeb196ea8efaa1604cfb..846d94662c27cdc8e33d7009b2c721ac
 +                                        });
 +                                    }
 +                                    // Paper end - Add support for proxy protocol
-+                                    // ServerConnectionListener.this.connections.add(connection); // Paper - prevent blocking on adding a new connection while the server is ticking
-+                                    ServerConnectionListener.this.pending.add(connection); // Paper - prevent blocking on adding a new connection while the server is ticking
+                                     ServerConnectionListener.this.pendingConnections.add(connection);
                                      connection.configurePacketHandler(pipeline);
                                      connection.setListenerForServerboundHandshake(
                                          new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, connection)
@@ -108,7 +86,7 @@ index a52d1c5890d39dc9240adeb196ea8efaa1604cfb..846d94662c27cdc8e33d7009b2c721ac
      public SocketAddress startMemoryChannel() {
          ChannelFuture newChannel;
          synchronized (this.channels) {
-@@ -157,9 +221,26 @@ public class ServerConnectionListener {
+@@ -138,9 +_,26 @@
      public void stop() {
          this.running = false;
  
@@ -136,12 +114,11 @@ index a52d1c5890d39dc9240adeb196ea8efaa1604cfb..846d94662c27cdc8e33d7009b2c721ac
              } catch (InterruptedException ignored) {
                  LOGGER.error("Interrupted whilst closing channel");
              }
-@@ -187,12 +268,26 @@ public class ServerConnectionListener {
- 
+@@ -169,12 +_,25 @@
      public void tick() {
          synchronized (this.connections) {
+             this.addPendingConnections();
 +            // Spigot start
-+            this.addPending(); // Paper - prevent blocking on adding a new connection while the server is ticking
 +            // This prevents players from 'gaming' the server, and strategically relogging to increase their position in the tick order
 +            if (org.spigotmc.SpigotConfig.playerShuffle > 0 && MinecraftServer.currentTick % org.spigotmc.SpigotConfig.playerShuffle == 0) {
 +                Collections.shuffle(this.connections);
@@ -163,7 +140,7 @@ index a52d1c5890d39dc9240adeb196ea8efaa1604cfb..846d94662c27cdc8e33d7009b2c721ac
                          try {
                              connection.tick();
                          } catch (Exception e) {
-@@ -206,6 +301,7 @@ public class ServerConnectionListener {
+@@ -188,6 +_,7 @@
                              connection.setReadOnly();
                          }
                      } else {
@@ -171,7 +148,7 @@ index a52d1c5890d39dc9240adeb196ea8efaa1604cfb..846d94662c27cdc8e33d7009b2c721ac
                          iterator.remove();
                          connection.handleDisconnection();
                      }
-@@ -219,6 +315,28 @@ public class ServerConnectionListener {
+@@ -201,6 +_,28 @@
              }
          }
      }
