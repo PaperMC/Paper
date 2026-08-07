@@ -11,6 +11,9 @@ import java.util.List;
 /**
  * Fired when two entities collide with each other.
  * If cancelled, the entities won't get pushed away from each other.
+ * <p>
+ * Note that even if cancelled, the client may still run its own collision unless
+ * disabled via player teams.
  */
 public class EntityCollideWithEntityEvent extends Event implements Cancellable {
 
