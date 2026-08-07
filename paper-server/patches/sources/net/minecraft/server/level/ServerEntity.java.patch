@@ -61,27 +61,22 @@
                  Packet<ClientGamePacketListener> packet = null;
                  boolean pos = positionChanged || this.tickCount % 60 == 0;
                  boolean sentPosition = false;
-@@ -223,6 +_,25 @@
+@@ -223,6 +_,20 @@
  
          this.tickCount++;
          if (this.entity.hurtMarked) {
 +            // CraftBukkit start - Create PlayerVelocity event
-+            boolean cancelled = false;
++            if (this.entity.getBukkitEntity() instanceof org.bukkit.entity.Player player) {
++                final org.bukkit.util.Vector velocity = player.getVelocity();
 +
-+            if (this.entity instanceof ServerPlayer) {
-+                org.bukkit.entity.Player player = (org.bukkit.entity.Player) this.entity.getBukkitEntity();
-+                org.bukkit.util.Vector velocity = player.getVelocity();
-+
-+                org.bukkit.event.player.PlayerVelocityEvent event = new org.bukkit.event.player.PlayerVelocityEvent(player, velocity.clone());
-+                if (!event.callEvent()) {
-+                    cancelled = true;
-+                } else if (!velocity.equals(event.getVelocity())) {
++                final org.bukkit.event.player.PlayerVelocityEvent event = new org.bukkit.event.player.PlayerVelocityEvent(player, velocity.clone());
++                if (event.callEvent()) {
++                    this.entity.hurtMarked = false; // Paper - avoid bucle if was called for knockback
++                    return;
++                }
++                if (!velocity.equals(event.getVelocity())) {
 +                    player.setVelocity(event.getVelocity());
 +                }
-+            }
-+
-+            if (cancelled) {
-+                return;
 +            }
 +            // CraftBukkit end
              this.entity.hurtMarked = false;
