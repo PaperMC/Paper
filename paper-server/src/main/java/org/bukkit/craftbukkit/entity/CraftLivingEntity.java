@@ -62,6 +62,7 @@ import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.craftbukkit.inventory.CraftEntityEquipment;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractWindCharge;
 import org.bukkit.entity.Arrow;
@@ -772,6 +773,25 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public boolean isSleeping() {
         return this.getHandle().isSleeping();
+    }
+
+    @Override
+    public boolean sleep(Location location) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(location.getWorld() != null, "Location needs to be in a world");
+        Preconditions.checkArgument(location.getWorld().equals(this.getWorld()), "Cannot sleep across worlds");
+        Preconditions.checkState(!this.getHandle().generation, "Cannot sleep during world generation");
+
+        this.getHandle().startSleeping(CraftLocation.toBlockPos(location));
+        return true;
+    }
+
+    @Override
+    public void wakeup() {
+        Preconditions.checkState(this.isSleeping(), "Cannot wakeup if not sleeping");
+        Preconditions.checkState(!this.getHandle().generation, "Cannot wakeup during world generation");
+
+        this.getHandle().stopSleeping();
     }
 
     @Override
