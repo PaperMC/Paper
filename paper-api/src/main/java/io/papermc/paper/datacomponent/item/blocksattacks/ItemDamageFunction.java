@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item.blocksattacks;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
@@ -14,7 +15,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @ApiStatus.NonExtendable
-public interface ItemDamageFunction {
+public interface ItemDamageFunction extends BuildableDataComponent<ItemDamageFunction, ItemDamageFunction.Builder> {
 
     @Contract(value = "-> new", pure = true)
     static ItemDamageFunction.Builder itemDamageFunction() {

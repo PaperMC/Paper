@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.List;
 import org.bukkit.FireworkEffect;
@@ -15,7 +16,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @ApiStatus.NonExtendable
-public interface Fireworks {
+public interface Fireworks extends BuildableDataComponent<Fireworks, Fireworks.Builder> {
 
     @Contract(value = "_, _ -> new", pure = true)
     static Fireworks fireworks(final List<FireworkEffect> effects, final int flightDuration) {
@@ -50,16 +51,6 @@ public interface Fireworks {
     interface Builder extends DataComponentBuilder<Fireworks> {
 
         /**
-         * Sets the number of gunpowder used in this builder.
-         *
-         * @param duration duration
-         * @return the builder for chaining
-         * @see #flightDuration()
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder flightDuration(@IntRange(from = 0, to = 255) int duration);
-
-        /**
          * Adds an explosion to this builder.
          *
          * @param effect effect
@@ -78,5 +69,25 @@ public interface Fireworks {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addEffects(List<FireworkEffect> effects);
+
+        /**
+         * Sets explosions to this builder.
+         *
+         * @param effects effects
+         * @return the builder for chaining
+         * @see #effects()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder effects(List<FireworkEffect> effects);
+
+        /**
+         * Sets the number of gunpowder used in this builder.
+         *
+         * @param duration duration
+         * @return the builder for chaining
+         * @see #flightDuration()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder flightDuration(@IntRange(from = 0, to = 255) int duration);
     }
 }

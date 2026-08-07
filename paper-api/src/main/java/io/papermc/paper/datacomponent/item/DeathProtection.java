@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 import java.util.List;
@@ -14,7 +15,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @ApiStatus.NonExtendable
-public interface DeathProtection {
+public interface DeathProtection extends BuildableDataComponent<DeathProtection, DeathProtection.Builder> {
 
     @Contract(value = "_ -> new", pure = true)
     static DeathProtection deathProtection(final List<ConsumeEffect> deathEffects) {
@@ -40,5 +41,8 @@ public interface DeathProtection {
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder addEffects(List<ConsumeEffect> effects);
+
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder effects(List<ConsumeEffect> effects);
     }
 }
