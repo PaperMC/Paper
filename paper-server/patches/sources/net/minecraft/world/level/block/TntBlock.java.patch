@@ -27,13 +27,12 @@
          }
  
          return super.playerWillDestroy(level, pos, state, player);
-@@ -79,9 +_,17 @@
+@@ -79,15 +_,23 @@
      public static boolean prime(final Level level, final BlockPos pos) {
          return prime(level, pos, null, ItemStack.EMPTY);
      }
 -
      public static boolean prime(final Level level, final BlockPos pos, final @Nullable LivingEntity source, final ItemStack itemStack) {
--        if (!(level instanceof ServerLevel serverLevel && serverLevel.getGameRules().get(GameRules.TNT_EXPLODES))) {
 +    // Paper start
 +        return prime(level, pos, source, itemStack, () -> true);
 +    }
@@ -42,11 +41,18 @@
 +    // Paper end
 +    }
 +
-+    private static boolean prime(final Level level, final BlockPos pos, final @Nullable LivingEntity source, final ItemStack itemStack, final java.util.function.BooleanSupplier event) { // Paper
-+        if (!(level instanceof ServerLevel serverLevel && serverLevel.getGameRules().get(GameRules.TNT_EXPLODES) && event.getAsBoolean())) {
++    private static boolean prime(final Level level, final BlockPos pos, final @Nullable LivingEntity source, final ItemStack itemStack, final java.util.function.BooleanSupplier event) { // Paper - event supplier
+         if (!(level instanceof ServerLevel serverLevel && serverLevel.getGameRules().get(GameRules.TNT_EXPLODES))) {
              return false;
          } else if (source instanceof Player player
              && player.gameMode() == GameType.ADVENTURE
+             && !itemStack.canBreakBlockInAdventureMode(new BlockInWorld(level, pos, false))) {
+             return false;
+-        } else {
++        } else if (event.getAsBoolean()) { // Paper - event supplier
+             PrimedTnt tnt = new PrimedTnt(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, source);
+             level.addFreshEntity(tnt);
+             level.playSound(null, tnt.getX(), tnt.getY(), tnt.getZ(), SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 1.0F, 1.0F);
 @@ -109,8 +_,7 @@
          if (!itemStack.is(Items.FLINT_AND_STEEL) && !itemStack.is(Items.FIRE_CHARGE)) {
              return super.useItemOn(itemStack, state, level, pos, player, hand, hitResult);
