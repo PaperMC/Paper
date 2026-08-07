@@ -482,14 +482,13 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public @Nullable EntityRemoveEvent.Cause getRemoveEventCause() {
-        return this.entity.getRemoveEventCause();
+        return this.entity.removeEventCause;
     }
 
     @Override
     public @Nullable RemovalReason getRemovalReason() {
         final Entity.RemovalReason removalReason = this.entity.getRemovalReason();
-        if (removalReason == null) return null;
-        return RemovalReason.valueOf(removalReason.name());
+        return removalReason == null ? null : RemovalReason.valueOf(removalReason.name());
     }
 
     @Override
