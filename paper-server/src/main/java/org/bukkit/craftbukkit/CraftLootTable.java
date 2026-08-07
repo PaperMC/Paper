@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
@@ -149,22 +150,34 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     }
 
     public static LootContext convertContext(net.minecraft.world.level.storage.loot.LootContext info) {
-        Vec3 position = info.getOptionalParameter(LootContextParams.ORIGIN);
-        if (position == null) {
-            position = info.getOptionalParameter(LootContextParams.THIS_ENTITY).position(); // Every vanilla context has origin or this_entity, see LootContextParamSets
+        return convertParams(info.getParams());
+    }
+
+    public static LootContext convertParams(LootParams info) {
+        // Every vanilla context (excluding empty) has at least one of these, see LootContextParamSets
+        Vec3 position;
+        if (info.contextMap().has(LootContextParams.ORIGIN)) {
+            position = info.contextMap().getOrThrow(LootContextParams.ORIGIN);
+        } else if (info.contextMap().has(LootContextParams.THIS_ENTITY)) {
+            position = info.contextMap().getOrThrow(LootContextParams.THIS_ENTITY).position();
+        } else if (info.contextMap().has(LootContextParams.TARGET_ENTITY)) {
+            position = info.contextMap().getOrThrow(LootContextParams.TARGET_ENTITY).position();
+        } else {
+            position = info.contextMap().getOrThrow(LootContextParams.INTERACTING_ENTITY).position();
         }
+
         Location location = CraftLocation.toBukkit(position, info.getLevel());
         LootContext.Builder contextBuilder = new LootContext.Builder(location);
 
-        if (info.hasParameter(LootContextParams.ATTACKING_ENTITY)) {
-            CraftEntity killer = info.getOptionalParameter(LootContextParams.ATTACKING_ENTITY).getBukkitEntity();
+        if (info.contextMap().has(LootContextParams.ATTACKING_ENTITY)) {
+            CraftEntity killer = info.contextMap().getOptional(LootContextParams.ATTACKING_ENTITY).getBukkitEntity();
             if (killer instanceof CraftHumanEntity) {
                 contextBuilder.killer((CraftHumanEntity) killer);
             }
         }
 
-        if (info.hasParameter(LootContextParams.THIS_ENTITY)) {
-            contextBuilder.lootedEntity(info.getOptionalParameter(LootContextParams.THIS_ENTITY).getBukkitEntity());
+        if (info.contextMap().has(LootContextParams.THIS_ENTITY)) {
+            contextBuilder.lootedEntity(info.contextMap().getOptional(LootContextParams.THIS_ENTITY).getBukkitEntity());
         }
 
         contextBuilder.luck(info.getLuck());
