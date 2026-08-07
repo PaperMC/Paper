@@ -26,8 +26,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -134,10 +136,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     // ========================================================================
-    private static final Map<Block, Material> BLOCK_MATERIAL = new HashMap<>();
-    private static final Map<Item, Material> ITEM_MATERIAL = new HashMap<>();
-    private static final Map<Material, Item> MATERIAL_ITEM = new HashMap<>();
-    private static final Map<Material, Block> MATERIAL_BLOCK = new HashMap<>();
+    private static final Map<Block, Material> BLOCK_MATERIAL = new IdentityHashMap<>();
+    private static final Map<Item, Material> ITEM_MATERIAL = new IdentityHashMap<>();
+    private static final Map<Material, Item> MATERIAL_ITEM = new EnumMap<>(Material.class);
+    private static final Map<Material, Block> MATERIAL_BLOCK = new EnumMap<>(Material.class);
 
     static {
         for (Block block : BuiltInRegistries.BLOCK) {
