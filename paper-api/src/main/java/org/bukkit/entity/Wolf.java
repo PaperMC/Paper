@@ -1,7 +1,9 @@
 package org.bukkit.entity;
 
+import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.DyeColor;
@@ -108,7 +110,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
     /**
      * Represents the variant of a wolf.
      */
-    interface Variant extends Keyed {
+    interface Variant extends Keyed, Registered.Buildable<Variant, WolfVariantRegistryEntry, WolfVariantRegistryEntry.Builder> {
 
         // Start generate - WolfVariant
         // @GeneratedFrom 1.21.5

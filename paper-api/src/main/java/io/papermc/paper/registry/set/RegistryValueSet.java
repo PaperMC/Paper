@@ -12,7 +12,9 @@ import org.jetbrains.annotations.Unmodifiable;
  * in the context of a {@link io.papermc.paper.registry.RegistryBuilder},
  * there are methods to create them like {@link DialogRegistryEntry.Builder#registryValueSet()}.
  * @param <T> registry value type
+ * @deprecated use {@link RegistryHolderSet} and {@link RegistryHolderSetBuilder}
  */
+@Deprecated(since = "26.3", forRemoval = true)
 public sealed interface RegistryValueSet<T> extends Iterable<T>, RegistrySet<T> permits RegistryValueSetImpl {
 
     @Override

@@ -10,8 +10,10 @@ import org.jetbrains.annotations.ApiStatus;
  *
  * @param <API> the API type
  * @param <ENTRY_BUILDER> the type of the entry builder,
+ * @deprecated use {@link RegistryHolderSetBuilder}
  */
 @ApiStatus.NonExtendable
+@Deprecated(since = "26.3", forRemoval = true)
 public interface RegistryValueSetBuilder<API, ENTRY_BUILDER extends RegistryBuilder<API>> {
 
     /**

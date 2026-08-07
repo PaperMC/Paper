@@ -1,5 +1,6 @@
 package org.bukkit.inventory.meta.trim;
 
+import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryKey;
@@ -19,7 +20,7 @@ import org.jspecify.annotations.NullMarked;
  * Represents a pattern that may be used in an {@link ArmorTrim}.
  */
 @NullMarked
-public interface TrimPattern extends Keyed, Translatable {
+public interface TrimPattern extends Keyed, Translatable, Registered.Inlineable<TrimPattern, TrimPatternRegistryEntry, TrimPatternRegistryEntry.Builder> {
 
     /**
      * Creates an inlined trim pattern.
@@ -28,7 +29,7 @@ public interface TrimPattern extends Keyed, Translatable {
      * @return the created trim pattern
      */
     static TrimPattern create(final Consumer<RegistryBuilderFactory<TrimPattern, ? extends TrimPatternRegistryEntry.Builder>> value) {
-        return InlinedRegistryBuilderProvider.instance().createTrimPattern(value);
+        return InlinedRegistryBuilderProvider.instance().create(RegistryKey.TRIM_PATTERN, value);
     }
 
     // Start generate - TrimPattern

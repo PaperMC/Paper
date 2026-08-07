@@ -16,12 +16,12 @@ public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBu
 
     private static final RegistrationInfo FROM_PLUGIN = new RegistrationInfo(Optional.empty(), Lifecycle.experimental());
 
-    private final RegistryEntryMeta.Buildable<M, T, B> meta;
+    private final RegistryEntryMeta.Buildable<M, T, ?, B> meta;
     private final MappedRegistry<M> registry;
 
     public WritableCraftRegistry(
         final MappedRegistry<M> registry,
-        final RegistryEntryMeta.Buildable<M, T, B> meta
+        final RegistryEntryMeta.Buildable<M, T, ?, B> meta
     ) {
         super(meta, registry);
         this.registry = registry;

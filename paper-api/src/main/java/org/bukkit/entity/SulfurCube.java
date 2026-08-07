@@ -2,8 +2,10 @@ package org.bukkit.entity;
 
 import io.papermc.paper.entity.Bucketable;
 import io.papermc.paper.entity.Shearable;
+import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.SulfurCubeArchetypeRegistryEntry;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
@@ -78,7 +80,7 @@ public interface SulfurCube extends AbstractCubeMob, Shearable, Bucketable, Agea
      * which define a lot of possible behavior and interaction
      * throughout its lifetime.
      */
-    interface Archetype extends Keyed {
+    interface Archetype extends Keyed, Registered.Buildable<Archetype, SulfurCubeArchetypeRegistryEntry, SulfurCubeArchetypeRegistryEntry.Builder> {
 
         // Start generate - SulfurCubeArchetype
         Archetype BOUNCY = getArchetype("bouncy");

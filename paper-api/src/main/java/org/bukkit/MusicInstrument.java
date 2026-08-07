@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryKey;
@@ -14,7 +15,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public abstract class MusicInstrument implements Keyed, net.kyori.adventure.translation.Translatable {
+public abstract class MusicInstrument implements Keyed, net.kyori.adventure.translation.Translatable, Registered.Inlineable<MusicInstrument, InstrumentRegistryEntry, InstrumentRegistryEntry.Builder> {
 
     /**
      * Creates an inlined music instrument.
@@ -23,7 +24,7 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
      * @return the created music instrument
      */
     public static MusicInstrument create(final Consumer<RegistryBuilderFactory<MusicInstrument, ? extends InstrumentRegistryEntry.Builder>> value) {
-        return InlinedRegistryBuilderProvider.instance().createInstrument(value);
+        return InlinedRegistryBuilderProvider.instance().create(RegistryKey.INSTRUMENT, value);
     }
 
     // Start generate - MusicInstrument

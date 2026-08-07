@@ -1,14 +1,13 @@
 package io.papermc.paper.registry.data;
 
-import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.registry.Registered;
+import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.RegistryBuilderFactory;
-import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
-import org.bukkit.MusicInstrument;
-import org.bukkit.inventory.meta.trim.TrimMaterial;
-import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -25,11 +24,5 @@ public interface InlinedRegistryBuilderProvider {
         return Holder.INSTANCE.orElseThrow();
     }
 
-    MusicInstrument createInstrument(Consumer<RegistryBuilderFactory<MusicInstrument, ? extends InstrumentRegistryEntry.Builder>> value);
-
-    Dialog createDialog(Consumer<RegistryBuilderFactory<Dialog, ? extends DialogRegistryEntry.Builder>> value);
-
-    TrimMaterial createTrimMaterial(Consumer<RegistryBuilderFactory<TrimMaterial, ? extends TrimMaterialRegistryEntry.Builder>> value);
-
-    TrimPattern createTrimPattern(Consumer<RegistryBuilderFactory<TrimPattern, ? extends TrimPatternRegistryEntry.Builder>> value);
+    <T extends Registered.Inlineable<T, ?, B> & Keyed, B extends RegistryBuilder<T>> T create(final RegistryKey<T> key, final Consumer<RegistryBuilderFactory<T, ? extends B>> value);
 }

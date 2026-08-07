@@ -34,4 +34,11 @@ public interface RegistryComposeEvent<T, B extends RegistryBuilder<T>> extends R
      * @param <V> the tag value type
      */
     <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey); // TODO remove Keyed
+
+    /**
+     * Gets the factory for creating tags, holders, and holder sets.
+     *
+     * @return the registry factory
+     */
+    RegistryFactory factory();
 }

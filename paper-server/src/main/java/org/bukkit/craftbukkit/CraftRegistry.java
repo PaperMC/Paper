@@ -73,6 +73,10 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         return bukkit;
     }
 
+    public static <B extends Keyed, M> B minecraftHolderToBukkit(final Holder.Reference<M> minecraft) {
+        return minecraftHolderToBukkit(minecraft, minecraft.key().registryKey());
+    }
+
     public static <B extends Keyed, M> B minecraftHolderToBukkit(final Holder<M> minecraft, final ResourceKey<? extends net.minecraft.core.Registry<M>> registryKey) {
         Preconditions.checkArgument(minecraft != null);
 
