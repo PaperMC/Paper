@@ -1,18 +1,13 @@
-From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/biome/MobSpawnSettings.java b/net/minecraft/world/level/biome/MobSpawnSettings.java
-index cbef5192bb22bd3dd992759ea1a789da0ba8152a..2f8649829c3090d9c9f68fc7db2c48fa85f3e9ea 100644
 --- a/net/minecraft/world/level/biome/MobSpawnSettings.java
 +++ b/net/minecraft/world/level/biome/MobSpawnSettings.java
-@@ -68,9 +68,33 @@ public class MobSpawnSettings {
+@@ -76,7 +_,32 @@
      }
  
      public static class Builder {
+-        private final Map<MobCategory, WeightedList.Builder<MobSpawnSettings.SpawnerData>> spawnsByCategory = new EnumMap<>(MobCategory.class);
 +        // Paper start - Perf: keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
++        private final Map<MobCategory, MobListBuilder<MobSpawnSettings.SpawnerData>> spawnsByCategory = new EnumMap<>(MobCategory.class); // Paper - explict MobListBuilder
++
 +        public static class MobListBuilder<E> extends WeightedList.Builder<E> {
 +            @Override
 +            public WeightedList<E> build() {
@@ -35,11 +30,25 @@ index cbef5192bb22bd3dd992759ea1a789da0ba8152a..2f8649829c3090d9c9f68fc7db2c48fa
 +                return this.spawnerDataSet.contains(element);
 +            }
 +        }
-         private final Map<MobCategory, WeightedList.Builder<MobSpawnSettings.SpawnerData>> spawners = Util.makeEnumMap(
--            MobCategory.class, c -> WeightedList.builder()
-+            MobCategory.class, c -> new MobListBuilder<>()
-         );
 +        // Paper end - Perf: keep track of data in a pair set to give O(1) contains calls
          private final Map<EntityType<?>, MobSpawnSettings.MobSpawnCost> mobSpawnCosts = Maps.newLinkedHashMap();
-         private float creatureGenerationProbability = 0.1F;
+ 
+         public MobSpawnSettings.Builder addSpawn(final EntityType<?> type, final int weight, final int minCount, final int maxCount) {
+@@ -108,7 +_,7 @@
+         }
+ 
+         public MobSpawnSettings.Builder noSpawns(final MobCategory category) {
+-            this.spawnsByCategory.put(category, WeightedList.builder());
++            this.spawnsByCategory.put(category, new net.minecraft.world.level.biome.MobSpawnSettings.Builder.MobListBuilder<>()); // Paper - use double-tracked MobListBuilder
+             return this;
+         }
+ 
+@@ -135,7 +_,7 @@
+         }
+ 
+         private WeightedList.Builder<MobSpawnSettings.SpawnerData> forCategory(final MobCategory category) {
+-            return this.spawnsByCategory.computeIfAbsent(category, var0 -> WeightedList.builder());
++            return this.spawnsByCategory.computeIfAbsent(category, var0 -> new net.minecraft.world.level.biome.MobSpawnSettings.Builder.MobListBuilder<>()); // Paper - use double-tracked MobListBuilder
+         }
+     }
  
