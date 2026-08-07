@@ -30,8 +30,8 @@ public class CraftAttributeInstance implements AttributeInstance {
     }
 
     @Override
-    public void setBaseValue(double d) {
-        this.handle.setBaseValue(d);
+    public void setBaseValue(double value) {
+        this.handle.setBaseValue(value);
     }
 
     @Override

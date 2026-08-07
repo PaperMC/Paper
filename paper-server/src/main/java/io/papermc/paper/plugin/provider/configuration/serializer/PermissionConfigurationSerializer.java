@@ -3,6 +3,7 @@ package io.papermc.paper.plugin.provider.configuration.serializer;
 import io.papermc.paper.plugin.provider.configuration.type.PermissionConfiguration;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
+import org.bukkit.plugin.InvalidDescriptionException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.serialize.SerializationException;
 import org.spongepowered.configurate.serialize.TypeSerializer;
@@ -31,6 +32,9 @@ public class PermissionConfigurationSerializer {
                 permissionDefault = PermissionDefault.OP;
             } else {
                 permissionDefault = PermissionDefault.getByName(permNode.getString());
+            }
+            if (permissionDefault == null) {
+                throw new SerializationException("defaultPerm is not a valid choice");
             }
 
             List<Permission> result = new ArrayList<>();

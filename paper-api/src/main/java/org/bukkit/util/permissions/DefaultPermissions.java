@@ -4,22 +4,21 @@ import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @hidden
+ */
+@ApiStatus.Internal
 public final class DefaultPermissions {
     private static final String ROOT = "craftbukkit";
-    private static final String LEGACY_PREFIX = "craft";
 
     private DefaultPermissions() {}
 
     @NotNull
     public static Permission registerPermission(@NotNull Permission perm) {
-        return registerPermission(perm, true);
-    }
-
-    @NotNull
-    public static Permission registerPermission(@NotNull Permission perm, boolean withLegacy) {
         Permission result = perm;
 
         try {
@@ -27,12 +26,6 @@ public final class DefaultPermissions {
         } catch (IllegalArgumentException ex) {
             result = Bukkit.getPluginManager().getPermission(perm.getName());
             assert result != null;
-        }
-
-        if (withLegacy) {
-            Permission legacy = new Permission(LEGACY_PREFIX + result.getName(), result.getDescription(), PermissionDefault.FALSE);
-            legacy.getChildren().put(result.getName(), true);
-            registerPermission(perm, false);
         }
 
         return result;

@@ -78,4 +78,9 @@ public final class DelayedRegistry<T extends Keyed, R extends Registry<T>> imple
     public Collection<Tag<T>> getTags() {
         return this.delegate().getTags();
     }
+
+    @Override
+    public String toString() {
+        return this.delegate().toString();
+    }
 }

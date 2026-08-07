@@ -25,6 +25,7 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
             return false;
         }
         this.setPeriod(CraftTask.CANCEL);
+        this.notifyAll();
         return true;
     }
 
