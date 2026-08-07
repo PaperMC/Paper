@@ -552,6 +552,20 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     public void setPersistent(boolean persistent);
 
     /**
+     * This getter refers to the <a href="https://docs.papermc.io/paper/reference/world-configuration/#entities_spawning_despawn_time">despawn time</a> configuration added by Paper.
+     * <p>
+     * {@return the amount of time in ticks that the entity will live before being discarded, or -1 to indicate that this entity will not be removed by this}
+     */
+    int getDespawnTime();
+
+    /**
+     * This setter refers to the <a href="https://docs.papermc.io/paper/reference/world-configuration/#entities_spawning_despawn_time">despawn time</a> configuration added by Paper.
+     *
+     * @param ticks the amount of time in ticks that the entity will live before being discarded, or -1 to indicate that this entity should not be removed by this
+     */
+    void setDespawnTime(int ticks);
+
+    /**
      * Gets the primary passenger of a vehicle. For vehicles that could have
      * multiple passengers, this will only return the primary passenger.
      *
