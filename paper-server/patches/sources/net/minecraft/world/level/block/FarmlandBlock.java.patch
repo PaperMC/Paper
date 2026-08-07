@@ -1,14 +1,6 @@
-From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/block/FarmlandBlock.java b/net/minecraft/world/level/block/FarmlandBlock.java
-index d0b6dc3db2143561593d26e4673315d61612f33e..902735a0ae76c0a8b3397c00bb8e4480b4120c6e 100644
 --- a/net/minecraft/world/level/block/FarmlandBlock.java
 +++ b/net/minecraft/world/level/block/FarmlandBlock.java
-@@ -94,31 +94,59 @@ public class FarmlandBlock extends Block {
+@@ -89,19 +_,22 @@
      @Override
      protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
          int moisture = state.getValue(MOISTURE);
@@ -19,7 +11,7 @@ index d0b6dc3db2143561593d26e4673315d61612f33e..902735a0ae76c0a8b3397c00bb8e4480
 -                level.setBlock(pos, state.setValue(MOISTURE, moisture - 1), Block.UPDATE_CLIENTS);
 +                org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(level, pos, state.setValue(MOISTURE, moisture - 1), Block.UPDATE_CLIENTS); // CraftBukkit
              } else if (!shouldMaintainFarmland(level, pos)) {
-                 turnToDirt(null, state, level, pos);
+                 this.turnToBaseBlock(null, state, level, pos);
              }
          } else if (moisture < 7) {
 -            level.setBlock(pos, state.setValue(MOISTURE, 7), Block.UPDATE_CLIENTS);
@@ -30,11 +22,13 @@ index d0b6dc3db2143561593d26e4673315d61612f33e..902735a0ae76c0a8b3397c00bb8e4480
      @Override
      public void fallOn(final Level level, final BlockState state, final BlockPos pos, final Entity entity, final double fallDistance) {
 +        super.fallOn(level, state, pos, entity, fallDistance); // CraftBukkit - moved here as game rules / events shouldn't affect fall damage.
-         if (level instanceof ServerLevel serverLevel
-             && level.getRandom().nextFloat() < fallDistance - 0.5
-             && entity instanceof LivingEntity
-             && (entity instanceof Player || serverLevel.getGameRules().get(GameRules.MOB_GRIEFING))
-             && entity.getBbWidth() * entity.getBbWidth() * entity.getBbHeight() > 0.512F) {
+         if (level instanceof ServerLevel serverLevel && level.getRandom().nextFloat() < fallDistance - 0.5 && entity instanceof LivingEntity) {
+             if (entity instanceof Player player) {
+                 if (level.getServer().isUnderSpawnProtection(serverLevel, pos, player)) {
+@@ -112,14 +_,39 @@
+             }
+ 
+             if (entity.getBbWidth() * entity.getBbWidth() * entity.getBbHeight() > 0.512F) {
 +            // CraftBukkit start - Interact soil
 +            org.bukkit.event.Cancellable cancellable;
 +            if (entity instanceof Player) {
@@ -52,14 +46,15 @@ index d0b6dc3db2143561593d26e4673315d61612f33e..902735a0ae76c0a8b3397c00bb8e4480
 +                return;
 +            }
 +            // CraftBukkit end
-             turnToDirt(entity, state, level, pos);
+                 this.turnToBaseBlock(entity, state, level, pos);
+             }
          }
  
 -        super.fallOn(level, state, pos, entity, fallDistance);
 +        // super.fallOn(level, state, pos, entity, fallDistance); // CraftBukkit - moved up
      }
  
-     public static void turnToDirt(final @Nullable Entity sourceEntity, final BlockState state, final Level level, final BlockPos pos) {
+     public void turnToBaseBlock(final @Nullable Entity sourceEntity, final BlockState state, final Level level, final BlockPos pos) {
 +        // CraftBukkit start
 +        if (sourceEntity == null) {
 +            if (org.bukkit.craftbukkit.event.CraftEventFactory
@@ -68,16 +63,14 @@ index d0b6dc3db2143561593d26e4673315d61612f33e..902735a0ae76c0a8b3397c00bb8e4480
 +            }
 +        }
 +        // CraftBukkit end
-         BlockState newState = pushEntitiesUp(state, Blocks.DIRT.defaultBlockState(), level, pos);
+         BlockState newState = pushEntitiesUp(state, this.baseBlock.defaultBlockState(), level, pos);
          level.setBlockAndUpdate(pos, newState);
          level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(sourceEntity, newState));
-@@ -129,13 +157,27 @@ public class FarmlandBlock extends Block {
+@@ -130,7 +_,27 @@
      }
  
      private static boolean isNearWater(final LevelReader level, final BlockPos pos) {
--        for (BlockPos blockPos : BlockPos.betweenClosed(pos.offset(-4, 0, -4), pos.offset(4, 1, 4))) {
--            if (level.getFluidState(blockPos).is(FluidTags.WATER)) {
--                return true;
+-        return level.findBlocksIn(pos.offset(-4, 0, -4), pos.offset(4, 1, 4)).filterState(state -> state.getFluidState().is(FluidTags.WATER)).anyMatched();
 +        // Paper start - Perf: remove abstract block iteration
 +        int xOff = pos.getX();
 +        int yOff = pos.getY();
@@ -94,10 +87,10 @@ index d0b6dc3db2143561593d26e4673315d61612f33e..902735a0ae76c0a8b3397c00bb8e4480
 +                        return true;
 +                    }
 +                }
-             }
-         }
- 
-         return false;
++            }
++        }
++
++        return false;
 +        // Paper end - Perf: remove abstract block iteration
      }
  
