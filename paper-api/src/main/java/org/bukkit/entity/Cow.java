@@ -1,7 +1,9 @@
 package org.bukkit.entity;
 
+import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.CowVariantRegistryEntry;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
@@ -44,7 +46,7 @@ public interface Cow extends AbstractCow {
     /**
      * Represents the variant of a cow.
      */
-    interface Variant extends Keyed {
+    interface Variant extends Keyed, Registered.Buildable<Variant, CowVariantRegistryEntry, CowVariantRegistryEntry.Builder> {
 
         // Start generate - CowVariant
         Variant COLD = getVariant("cold");

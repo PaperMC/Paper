@@ -1,7 +1,6 @@
 package io.papermc.paper.registry.set;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryAccess;

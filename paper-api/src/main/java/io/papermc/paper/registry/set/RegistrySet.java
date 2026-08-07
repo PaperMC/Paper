@@ -1,6 +1,8 @@
 package io.papermc.paper.registry.set;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.registry.Registered;
+import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.tag.Tag;
@@ -16,13 +18,30 @@ import org.jetbrains.annotations.Contract;
  *     These are obtained via {@link org.bukkit.Registry#getTag(io.papermc.paper.registry.tag.TagKey)}.</li>
  *     <li>{@link RegistryKeySet} which is a set of keys linked to values that are present in the registry. These are
  *     created via {@link #keySet(RegistryKey, Iterable)} or {@link #keySetFromValues(RegistryKey, Iterable)}.</li>
- *     <li>{@link RegistryValueSet} which is a set of values which are anonymous (don't have keys in the registry). These are
- *     created via {@link #valueSet(RegistryKey, Iterable)}.</li>
+ *     <li>{@link RegistryHolderSet} which is a mixed set of values, some of which are anonymous (don't have keys in the registry). These are
+ *     created via {@link #holderSetBuilder(RegistryKey)}.</li>
  * </ul>
  *
  * @param <T> registry value type
  */
-public sealed interface RegistrySet<T> permits RegistryKeySet, RegistryValueSet {
+public sealed interface RegistrySet<T> permits RegistryHolderSet, RegistryKeySet, RegistryValueSet {
+
+    /**
+     * Creates a new builder for a {@link RegistryHolderSet}, a mixed set of registry-backed
+     * references and inlined, anonymous values.
+     * <p>
+     * In a registry event context, use {@link io.papermc.paper.registry.event.RegistryFactory#createSetBuilder(RegistryKey)} instead.
+     *
+     * @param registryKey the registry key for the type of these values
+     * @return a new holder set builder
+     * @param <T> the API type
+     * @param <E> the registry entry type
+     * @param <B> the builder type
+     */
+    @Contract(value = "_ -> new", pure = true)
+    static <T extends Keyed & Registered.Inlineable<T, E, B>, E, B extends RegistryBuilder<T>> RegistryHolderSetBuilder<T, E, B> holderSetBuilder(final RegistryKey<T> registryKey) { // TODO remove Keyed
+        return RegistrySetProvider.instance().registryHolderSetBuilder(registryKey);
+    }
 
     /**
      * Creates a {@link RegistryValueSet} from anonymous values.
@@ -32,8 +51,10 @@ public sealed interface RegistrySet<T> permits RegistryKeySet, RegistryValueSet 
      * @param values the values
      * @return a new registry set
      * @param <T> the type of the values
+     * @deprecated Use {@link #holderSetBuilder(RegistryKey)}
      */
     @Contract(value = "_, _ -> new", pure = true)
+    @Deprecated(since = "26.3", forRemoval = true)
     static <T> RegistryValueSet<T> valueSet(final RegistryKey<T> registryKey, final Iterable<? extends T> values) {
         return RegistryValueSetImpl.create(registryKey, values);
     }
@@ -57,7 +78,7 @@ public sealed interface RegistrySet<T> permits RegistryKeySet, RegistryValueSet 
     }
 
     /**
-     * Creates a direct {@link RegistrySet} from {@link TypedKey TypedKeys}.
+     * Creates a direct {@code RegistrySet} from {@link TypedKey TypedKeys}.
      *
      * @param registryKey the registry key for the owner of these keys
      * @param keys the keys for the values
@@ -70,7 +91,7 @@ public sealed interface RegistrySet<T> permits RegistryKeySet, RegistryValueSet 
     }
 
     /**
-     * Creates a direct {@link RegistrySet} from {@link TypedKey TypedKeys}.
+     * Creates a direct {@code RegistrySet} from {@link TypedKey TypedKeys}.
      *
      * @param registryKey the registry key for the owner of these keys
      * @param keys the keys for the values

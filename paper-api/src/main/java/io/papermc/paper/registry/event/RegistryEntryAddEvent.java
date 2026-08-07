@@ -42,4 +42,11 @@ public interface RegistryEntryAddEvent<T, B extends RegistryBuilder<T>> extends 
      * @param <V> the tag value type
      */
     <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey);
+
+    /**
+     * Gets the factory for creating tags, holders, and holder sets.
+     *
+     * @return the registry factory
+     */
+    RegistryFactory factory();
 }

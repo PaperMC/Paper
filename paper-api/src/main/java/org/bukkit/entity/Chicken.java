@@ -1,7 +1,9 @@
 package org.bukkit.entity;
 
+import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Keyed;
@@ -72,7 +74,7 @@ public interface Chicken extends Animals {
     /**
      * Represents the variant of a chicken.
      */
-    interface Variant extends Keyed {
+    interface Variant extends Keyed, Registered.Buildable<Variant, ChickenVariantRegistryEntry, ChickenVariantRegistryEntry.Builder> {
 
         // Start generate - ChickenVariant
         Variant COLD = getVariant("cold");

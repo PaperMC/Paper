@@ -1,8 +1,10 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -18,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * There may be additional arts present in the server, for example from a {@link io.papermc.paper.datapack.Datapack}
  * which can be accessed via {@link RegistryAccess#registryAccess()} and {@link RegistryKey#PAINTING_VARIANT}.
  */
-public interface Art extends OldEnum<Art>, Keyed {
+public interface Art extends OldEnum<Art>, Keyed, Registered.Buildable<Art, PaintingVariantRegistryEntry, PaintingVariantRegistryEntry.Builder> {
 
     // Start generate - Art
     Art ALBAN = getArt("alban");

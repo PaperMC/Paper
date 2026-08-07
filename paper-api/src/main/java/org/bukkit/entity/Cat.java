@@ -1,8 +1,10 @@
 package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.Registered;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -68,7 +70,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
     /**
      * Represents the various different cat types there are.
      */
-    interface Type extends OldEnum<Type>, Keyed {
+    interface Type extends OldEnum<Type>, Keyed, Registered.Buildable<Type, CatTypeRegistryEntry, CatTypeRegistryEntry.Builder> {
 
         // Start generate - CatType
         Type ALL_BLACK = getType("all_black");
