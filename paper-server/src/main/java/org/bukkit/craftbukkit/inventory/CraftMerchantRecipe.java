@@ -135,9 +135,9 @@ public class CraftMerchantRecipe extends MerchantRecipe {
     }
     // Paper end
 
-    // Paper start - write ingredient changes straight through to the handle,
-    // matching the scalar setters above (they mutate this.handle directly) so
-    // ingredient updates take effect immediately instead of only on trade refresh
+    // Write ingredient changes straight through to the handle, matching the
+    // scalar setters above (they mutate this.handle directly) so ingredient
+    // updates take effect immediately instead of only on trade refresh.
     @Override
     public void addIngredient(ItemStack item) {
         super.addIngredient(item);
@@ -175,7 +175,6 @@ public class CraftMerchantRecipe extends MerchantRecipe {
             this.handle.costB = Optional.empty();
         }
     }
-    // Paper end
 
     public net.minecraft.world.item.trading.MerchantOffer toMinecraft() {
         Preconditions.checkState(!this.getIngredients().isEmpty(), "No offered ingredients");
