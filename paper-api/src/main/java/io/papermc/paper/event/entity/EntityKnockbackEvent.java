@@ -95,6 +95,10 @@ public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
          */
         ENTITY_ATTACK,
         /**
+         * Knockback caused by the sprint bonus applied during an entity attack.
+         */
+        ENTITY_SPRINT_ATTACK,
+        /**
          * Knockback caused by an explosion.
          */
         EXPLOSION,
