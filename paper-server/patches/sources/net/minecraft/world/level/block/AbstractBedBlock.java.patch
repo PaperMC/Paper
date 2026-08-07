@@ -1,0 +1,51 @@
+--- a/net/minecraft/world/level/block/AbstractBedBlock.java
++++ b/net/minecraft/world/level/block/AbstractBedBlock.java
+@@ -92,22 +_,46 @@
+             }
+ 
+             BedRule bedRule = this.getBedRule(level, pos);
+-            if (bedRule.destroyOnUse()) {
++            if (false && bedRule.destroyOnUse()) { // CraftBukkit - moved world and biome check into Player
+                 bedRule.errorMessage().ifPresent(player::sendOverlayMessage);
+                 return this.destroyOnUse(state, level, pos, player);
+             }
+ 
+             if (state.getValue(OCCUPIED)) {
++                if (bedRule.destroyOnUse()) return this.destroyOnUse(state, level, pos, player); // Paper - check explode first
+                 if (!this.kickVillagerOutOfBed(level, pos)) {
+                     player.sendOverlayMessage(Component.translatable("block.minecraft.bed.occupied"));
+                 }
+ 
+                 return InteractionResult.SUCCESS_SERVER;
+             } else {
++                // CraftBukkit start
++                final BlockState finalState = state;
++                final BlockPos finalPos = pos;
++                // CraftBukkit end
+                 player.startSleepInBed(this, state, bedRule, pos).ifLeft(problem -> {
+-                    if (problem.message() != null) {
++                    // Paper start - PlayerBedFailEnterEvent
++                    if (false && problem.message() != null) { // Moved down
+                         player.sendOverlayMessage(problem.message());
+                     }
++                    if (problem != null) {
++                        io.papermc.paper.event.player.PlayerBedFailEnterEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBedFailEnterEvent(player, finalPos, problem);
++                        if (event.isCancelled()) {
++                            return;
++                        }
++                        // Paper end - PlayerBedFailEnterEvent
++                        // CraftBukkit start - handling bed explosion from below here
++                        if (event.getWillExplode()) { // Paper - PlayerBedFailEnterEvent
++                            this.destroyOnUse(finalState, level, finalPos, player);
++                        }
++                        // CraftBukkit end
++                        // Paper start - PlayerBedFailEnterEvent
++                        final net.kyori.adventure.text.Component message = event.getMessage();
++                        if (message != null) {
++                            player.sendOverlayMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message));
++                        }
++                    }
++                    // Paper end - PlayerBedFailEnterEvent
+                 });
+                 return InteractionResult.SUCCESS_SERVER;
+             }
