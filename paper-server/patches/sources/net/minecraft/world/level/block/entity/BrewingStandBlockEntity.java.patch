@@ -1,0 +1,135 @@
+--- a/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
+@@ -93,6 +_,40 @@
+         public int getCount() {
+             return 4;
+         }
++        // CraftBukkit start - add fields and methods
++        public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
++        private int maxStack = MAX_STACK;
++
++        @Override
++        public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
++            this.transaction.add(player);
++        }
++
++        @Override
++        public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
++            this.transaction.remove(player);
++        }
++
++        @Override
++        public java.util.List<org.bukkit.entity.HumanEntity> getViewers() {
++            return this.transaction;
++        }
++
++        @Override
++        public java.util.List<net.minecraft.world.item.ItemStack> getContents() {
++            return this.items;
++        }
++
++        @Override
++        public int getMaxStackSize() {
++            return this.maxStack;
++        }
++
++        @Override
++        public void setMaxStackSize(int size) {
++            this.maxStack = size;
++        }
++        // CraftBukkit end
+     };
+     private final RecipeManager.CachedCheck<BrewingInput, BrewingRecipe> quickCheck = RecipeManager.createCheck(RecipeType.BREWING);
+ 
+@@ -132,10 +_,20 @@
+         ItemStack fuel = entity.items.get(4);
+         BrewingFuel brewingFuel = fuel.get(DataComponents.BREWING_FUEL);
+         if (entity.fuel <= 0 && brewingFuel != null) {
+-            entity.fuel = entity.getUses(level, brewingFuel);
++            // Paper start - call BrewingStandFuelEvent
++            org.bukkit.event.inventory.BrewingStandFuelEvent event = new org.bukkit.event.inventory.BrewingStandFuelEvent(
++                org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
++                org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(fuel),
++                entity.getUses(level, brewingFuel)
++            );
++            if (!event.callEvent()) {
++                return;
++            }
++            entity.fuel = event.getFuelPower();
++            // Paper end - call BrewingStandFuelEvent
+             entity.totalFuel = entity.fuel;
+             entity.speedMultiplier = entity.getSpeedMultiplier(level, brewingFuel);
+-            fuel.shrink(1);
++            if (entity.fuel > 0 && event.isConsuming()) fuel.shrink(1); // Paper - call BrewingStandFuelEvent
+             setChanged(level, pos, selfState);
+         }
+ 
+@@ -155,8 +_,16 @@
+         } else if (brewable && entity.fuel > 0) {
+             float speedMutliplier = entity.speedMultiplier > 0.0F ? entity.speedMultiplier : 1.0F;
+             entity.fuel--;
+-            entity.brewTime = (int)Math.ceil(400.0F / speedMutliplier);
+-            entity.totalBrewTime = entity.brewTime;
++            // Paper start - call BrewingStartEvent
++            org.bukkit.event.block.BrewingStartEvent event = new org.bukkit.event.block.BrewingStartEvent(
++                org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
++                org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(ingredient),
++                (int)Math.ceil(400.0F / speedMutliplier)
++            );
++            event.callEvent();
++            entity.brewTime = event.getBrewingTime();
++            entity.totalBrewTime = event.getRecipeBrewTime();
++            // Paper end - call BrewingStartEvent
+             entity.ingredient = ingredient.getItem();
+             setChanged(level, pos, selfState);
+         }
+@@ -218,12 +_,38 @@
+         NonNullList<ItemStack> items = entity.getItems();
+         ItemStack ingredient = items.get(3);
+ 
++        // Paper start - call BrewEvent
++        org.bukkit.inventory.InventoryHolder owner = entity.getOwner();
++        java.util.List<org.bukkit.inventory.ItemStack> brewResults = new java.util.ArrayList<>(3);
++        // Paper end - call BrewEvent
+         for (int dest = 0; dest < 3; dest++) {
+             ItemStack container = items.get(dest);
+             BrewingInput input = new BrewingInput(container, ingredient);
+             Optional<RecipeHolder<BrewingRecipe>> recipe = entity.quickCheck.getRecipeFor(input, level);
+-            items.set(dest, recipe.isPresent() ? recipe.get().value().assemble(input) : container);
+-        }
++            brewResults.add(dest, org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(recipe.isPresent() ? recipe.get().value().assemble(input) : container)); // Paper - call BrewEvent - store results in map first.
++        }
++
++        // Paper start - call BrewEvent
++        if (owner != null) {
++            org.bukkit.event.inventory.BrewEvent event = new org.bukkit.event.inventory.BrewEvent(
++                org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
++                (org.bukkit.inventory.BrewerInventory) owner.getInventory(),
++                brewResults,
++                entity.fuel
++            );
++            if (!event.callEvent()) {
++                return;
++            }
++
++            for (int dest = 0; dest < 3; dest++) {
++                if (dest < brewResults.size()) {
++                    items.set(dest, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(brewResults.get(dest)));
++                } else {
++                    items.set(dest, ItemStack.EMPTY);
++                }
++            }
++        }
++        // Paper end - call BrewEvent
+ 
+         ItemStackTemplate remainder = ingredient.getItem().getCraftingRemainder();
+         ingredient.shrink(1);
+@@ -279,7 +_,7 @@
+         RecipeAccess recipeAccess = this.level.recipeAccess();
+         return slot == 3
+             ? recipeAccess.propertySet(RecipePropertySet.BREWING_REAGENTS).test(itemStack)
+-            : recipeAccess.propertySet(RecipePropertySet.BREWING_INPUTS).test(itemStack) && this.getItem(slot).isEmpty();
++            : recipeAccess.propertySet(RecipePropertySet.BREWING_INPUTS).test(itemStack) && this.getItem(slot).isEmpty(); // TODO - snapshot(lynxplay) - reimplement PotionBrewer
+     }
+ 
+     @Override
