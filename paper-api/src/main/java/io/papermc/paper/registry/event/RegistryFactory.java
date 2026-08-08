@@ -34,12 +34,18 @@ public interface RegistryFactory {
     /**
      * Gets or creates a reference holder for the given key. The referenced
      * value does not need to be present in the registry yet.
+     * <p>
+     * You can only create new reference holders for registries in the same registry layer. For example,
+     * since {@link RegistryKey#SOUND_EVENT} is a built-in registry, you cannot create new
+     * reference holders while in an event for {@link RegistryKey#SULFUR_CUBE_ARCHETYPE} as that
+     * is in a later layer. Try a {@link #createInlinedHolder(RegistryKey, Consumer)}.
      *
      * @param key the key of the referenced value
      * @return the reference holder
      * @param <V> the API type
      * @param <E> the registry entry type
      * @param <B> the builder type
+     * @see #createInlinedHolder(RegistryKey, Consumer)
      */
     <V extends Keyed & RegistryElement.Buildable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Reference<V, E> getOrCreateReferenceHolder(TypedKey<V> key); // TODO remove Keyed
 
@@ -53,6 +59,7 @@ public interface RegistryFactory {
      * @param <V> the API type
      * @param <E> the registry entry type
      * @param <B> the builder type
+     * @see #getOrCreateReferenceHolder(TypedKey)
      */
     <V extends Keyed & RegistryElement.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Inlined<V, E> createInlinedHolder(RegistryKey<V> registryKey, Consumer<RegistryBuilderFactory<V, ? extends B>> value); // TODO remove Keyed
 

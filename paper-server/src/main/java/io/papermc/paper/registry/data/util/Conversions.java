@@ -72,11 +72,15 @@ public class Conversions implements RegistryFactory {
 
     public <M, T> Holder.Reference<M> getReferenceHolder(final TypedKey<T> key) {
         final ResourceKey<M> nms = PaperRegistries.toNms(key);
-        return this.lookup.lookup(nms.registryKey()).orElseThrow().getter().getOrThrow(nms);
+        return this.getReferenceHolder(nms);
     }
 
     public <M> Holder.Reference<M> getReferenceHolder(final ResourceKey<M> key) {
-        return this.lookup.lookup(key.registryKey()).orElseThrow().getter().getOrThrow(key);
+        try {
+            return this.lookup.lookup(key.registryKey()).orElseThrow().getter().getOrThrow(key);
+        } catch (final IllegalStateException ex) {
+            throw new IllegalStateException("Did you try to create a reference holder for a registry in a later layer? Try a inlined holder instead.", ex);
+        }
     }
 
     @Contract("null -> null; !null -> !null")
