@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.tag.TagKey;
 import io.papermc.paper.util.OldEnumHolderable;
 import java.util.Objects;
@@ -84,6 +85,11 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
         @Override
         public String toString() {
             return "CUSTOM";
+        }
+
+        @Override
+        public boolean is(final TypedKey<Biome> type) {
+            return this.is(type.key());
         }
 
         @Override

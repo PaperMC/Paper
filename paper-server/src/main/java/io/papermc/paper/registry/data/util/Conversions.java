@@ -120,7 +120,7 @@ public class Conversions implements RegistryFactory {
     ) {
         final ResourceKey<? extends Registry<M>> resourceRegistryKey = PaperRegistries.registryToNms(registryKey);
         final HolderLookup.RegistryLookup<M> lookupForBuilders = this.lookup.lookupForValueCopyViaBuilders().lookupOrThrow(resourceRegistryKey);
-        return new PaperRegistryBuilderFactory<>(resourceRegistryKey, this, buildableMeta.builderFiller(), lookupForBuilders::getValueForCopying);
+        return new PaperRegistryBuilderFactory<>(this, buildableMeta.builderFiller(), lookupForBuilders::getValueForCopying);
     }
 
 

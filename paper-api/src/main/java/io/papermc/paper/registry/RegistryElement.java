@@ -25,9 +25,7 @@ public interface RegistryElement<T> {
      * @param type the key
      * @return whether this element is identified by the given key.
      */
-    default boolean is(final TypedKey<T> type) { // TypedKey shouldn't extend Key
-        return this.is(type.key());
-    }
+    boolean is(final TypedKey<T> type);
 
     /**
      * Checks whether this element is identified by the given key.
