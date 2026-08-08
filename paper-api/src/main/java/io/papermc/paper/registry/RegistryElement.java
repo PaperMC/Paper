@@ -25,7 +25,7 @@ public interface RegistryElement<T> {
      * @param type the key
      * @return whether this element is identified by the given key.
      */
-    boolean is(final TypedKey<T> type);
+    boolean is(TypedKey<T> type);
 
     /**
      * Checks whether this element is identified by the given key.
@@ -52,6 +52,7 @@ public interface RegistryElement<T> {
      * @param <E> the registry entry type
      * @param <B> the builder type
      */
+    @SuppressWarnings("unused")
     @ApiStatus.Experimental
     interface Buildable<T, E, B extends RegistryBuilder<T>> extends RegistryElement<T> {
     }

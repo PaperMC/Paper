@@ -61,8 +61,8 @@ public class PaperRegistriesRewriter extends SearchReplaceRewriter {
                     case NONE -> builder.append(".create(");
                 }
                 // the builder impl is always nested in the base entry class; reference the base entry constructor first, then the builder constructor
-                final String builderImpl = entry.apiRegistryBuilderImpl();
-                final String entryImpl = builderImpl.substring(0, builderImpl.lastIndexOf('.'));
+                String builderImpl = entry.apiRegistryBuilderImpl();
+                String entryImpl = builderImpl.substring(0, builderImpl.lastIndexOf('.'));
                 builder.append(this.importCollector.getShortName(this.classNamedView.findFirst(entryImpl).resolve(this.classResolver))).append("::new");
                 builder.append(", ");
                 builder.append(this.importCollector.getShortName(this.classNamedView.findFirst(builderImpl).resolve(this.classResolver))).append("::new");

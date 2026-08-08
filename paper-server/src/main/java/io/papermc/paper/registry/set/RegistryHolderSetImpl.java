@@ -2,7 +2,6 @@ package io.papermc.paper.registry.set;
 
 import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.holder.PaperRegistryHolders;
 import io.papermc.paper.registry.holder.RegistryHolder;
 import java.util.ArrayList;
@@ -26,7 +25,7 @@ final class RegistryHolderSetImpl<T extends Keyed & RegistryElement.Buildable<T,
         this.registryKey = registryKey;
         this.entryCreator = entryCreator;
         this.holders = holders;
-        this.size = this.holders.size();
+        this.size = holders.size();
     }
 
     public HolderSet.Direct<M> nmsHolders() {
@@ -36,8 +35,8 @@ final class RegistryHolderSetImpl<T extends Keyed & RegistryElement.Buildable<T,
     @Override
     public Collection<RegistryHolder<T, E>> holders() {
         if (this.apiHolders == null) {
-            final List<RegistryHolder<T, E>> newHolders = new ArrayList<>();
-            for (final Holder<M> holder : this.nmsHolders()) {
+            final List<RegistryHolder<T, E>> newHolders = new ArrayList<>(this.size);
+            for (final Holder<M> holder : this.holders) {
                 newHolders.add(PaperRegistryHolders.create(this.registryKey, holder, this.entryCreator));
             }
             this.apiHolders = List.copyOf(newHolders);

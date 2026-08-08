@@ -1,7 +1,6 @@
 package io.papermc.paper.registry.holder;
 
 import io.papermc.paper.registry.PaperRegistries;
-import io.papermc.paper.registry.PaperRegistryElement;
 import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import net.minecraft.core.Holder;

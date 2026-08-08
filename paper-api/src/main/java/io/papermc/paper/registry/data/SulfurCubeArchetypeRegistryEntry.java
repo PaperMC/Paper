@@ -198,7 +198,7 @@ public interface SulfurCubeArchetypeRegistryEntry {
         float pushSoundImpulseThreshold();
 
         /**
-         * {@return the amount of seconds before the push sound can be played again}
+         * {@return the number of seconds before the push sound can be played again}
          */
         float pushSoundCooldown();
 
@@ -212,7 +212,6 @@ public interface SulfurCubeArchetypeRegistryEntry {
          * @return the created instance
          */
         @Contract(value = "_, _, _, _ -> new", pure = true)
-        @ApiStatus.Experimental
         static SoundSettings of(final TypedKey<Sound> hitSound, final TypedKey<Sound> pushSound, final float pushSoundImpulseThreshold, final float pushSoundCooldown) {
             return of(transientHolder(hitSound), transientHolder(pushSound), pushSoundImpulseThreshold, pushSoundCooldown);
         }
@@ -229,7 +228,6 @@ public interface SulfurCubeArchetypeRegistryEntry {
          * @return the created instance
          */
         @Contract(value = "_, _, _, _ -> new", pure = true)
-        @ApiStatus.Experimental
         static SoundSettings of(final RegistryHolder<Sound, SoundEventRegistryEntry> hitSound, final RegistryHolder<Sound, SoundEventRegistryEntry> pushSound, final float pushSoundImpulseThreshold, final float pushSoundCooldown) {
             record Impl(RegistryHolder<Sound, SoundEventRegistryEntry> hitSound, RegistryHolder<Sound, SoundEventRegistryEntry> pushSound, float pushSoundImpulseThreshold, float pushSoundCooldown) implements SoundSettings {
             }

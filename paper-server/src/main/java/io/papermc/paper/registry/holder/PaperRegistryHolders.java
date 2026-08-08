@@ -35,5 +35,6 @@ public final class PaperRegistryHolders {
     public static <API extends Keyed & RegistryElement.Buildable<API, ENTRY, ?>, ENTRY, M> RegistryHolder.Inlined<API, ENTRY> createInlined(final RegistryKey<API> registryKey, final Holder.Direct<M> holder, final Function<M, ENTRY> entryCreator) { // TODO remove Keyed
         return new InlinedRegistryHolderImpl<>(registryKey, entryCreator.apply(holder.value()), holder);
     }
+
     private PaperRegistryHolders() {}
 }

@@ -30,7 +30,7 @@ public interface InlinedRegistryBuilderProvider {
         return instance().createTransientReferenceHolder(key);
     }
 
-    <T extends RegistryElement.Inlineable<T, ?, B> & Keyed, B extends RegistryBuilder<T>> T create(final RegistryKey<T> key, final Consumer<RegistryBuilderFactory<T, ? extends B>> value);
+    <T extends RegistryElement.Inlineable<T, ?, B> & Keyed, B extends RegistryBuilder<T>> T create(RegistryKey<T> key, Consumer<RegistryBuilderFactory<T, ? extends B>> value);
 
-    <T extends RegistryElement.Buildable<T, E, ?>, E> RegistryHolder.Reference<T, E> createTransientReferenceHolder(final TypedKey<T> key);
+    <T extends RegistryElement.Buildable<T, E, ?>, E> RegistryHolder.Reference<T, E> createTransientReferenceHolder(TypedKey<T> key);
 }

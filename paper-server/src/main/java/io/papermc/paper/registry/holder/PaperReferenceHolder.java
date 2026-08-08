@@ -6,5 +6,5 @@ import net.minecraft.core.Holder;
 
 public interface PaperReferenceHolder<API extends RegistryElement.Buildable<API, E, ?>, E, M> extends RegistryHolder.Reference<API, E> {
 
-    Holder.Reference<M> getHolder(final Conversions conversions);
+    Holder.Reference<M> getHolder(Conversions conversions);
 }

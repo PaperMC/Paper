@@ -34,7 +34,7 @@ public abstract class HolderableBase<M, A> implements HolderableElement<M, A> {
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
         return HolderableElement.super.implToString();
     }
 

@@ -54,7 +54,7 @@ public interface RegistryFactory {
      * @param <E> the registry entry type
      * @param <B> the builder type
      */
-    <V extends Keyed & RegistryElement.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Inlined<V, E> getOrCreateInlinedHolder(RegistryKey<V> registryKey, final Consumer<RegistryBuilderFactory<V, ? extends B>> value); // TODO remove Keyed
+    <V extends Keyed & RegistryElement.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Inlined<V, E> getOrCreateInlinedHolder(RegistryKey<V> registryKey, Consumer<RegistryBuilderFactory<V, ? extends B>> value); // TODO remove Keyed
 
     /**
      * Creates a new builder for a {@link RegistryHolderSetBuilder holder set} of the given registry.
