@@ -389,7 +389,7 @@
          this.player.getRecipeBook().setBookSetting(packet.getBookType(), packet.isOpen(), packet.isFiltering());
      }
  
-@@ -594,8 +_,28 @@
+@@ -594,8 +_,68 @@
          }
      }
  
@@ -414,7 +414,47 @@
 +            return;
 +        }
 +        // Paper end - throttle tab completions
-+        // TODO - snapshot(lynxplay) - reimplement AsyncTabCompleteEvent.
++        // Paper start - AsyncTabCompleteEvent
++        TAB_COMPLETE_EXECUTOR.execute(() -> callAndHandleAsyncTabCompleteEvent(packet));
++    }
++    public void callAndHandleAsyncTabCompleteEvent(final ServerboundCommandSuggestionPacket packet) {
++        final com.destroystokyo.paper.event.server.AsyncTabCompleteEvent event = new com.destroystokyo.paper.event.server.AsyncTabCompleteEvent(
++            this.getCraftPlayer(), packet.command(), true, null
++        );
++        event.callEvent();
++        final List<com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion> completions = event.isCancelled()
++            ? com.google.common.collect.ImmutableList.of()
++            : event.completions();
++        // If the event isn't handled, we can assume that we have no completions, and so we'll ask the server
++        if (!event.isHandled()) {
++            if (event.isCancelled()) {
++                return;
++            }
++
++            this.sendServerSuggestions(packet); // This method will schedule work onto the main thread.
++        } else if (!completions.isEmpty()) {
++            final com.mojang.brigadier.suggestion.SuggestionsBuilder builder0 = new com.mojang.brigadier.suggestion.SuggestionsBuilder(packet.command(), packet.command().length());
++            final com.mojang.brigadier.suggestion.SuggestionsBuilder builder = builder0.createOffset(builder0.getInput().lastIndexOf(' ') + 1);
++            for (final com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion completion : completions) {
++                final Integer intSuggestion = com.google.common.primitives.Ints.tryParse(completion.suggestion());
++                if (intSuggestion != null) {
++                    builder.suggest(intSuggestion, PaperAdventure.asVanilla(completion.tooltip()));
++                } else {
++                    builder.suggest(completion.suggestion(), PaperAdventure.asVanilla(completion.tooltip()));
++                }
++            }
++            com.mojang.brigadier.suggestion.Suggestions suggestions = builder.buildFuture().join();
++            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, packet.getCommand());
++            suggestEvent.setCancelled(suggestions.isEmpty());
++            if (suggestEvent.callEvent()) {
++                this.connection.send(new ClientboundCommandSuggestionsPacket(
++                    packet.id(), ServerCommandSuggestionsProvider.limitSuggestionCount(suggestEvent.getSuggestions())
++                ));
++            }
++        }
++    }
++    public void sendServerSuggestions(final ServerboundCommandSuggestionPacket packet) {
++        // Paper end - Async TabComplete Event
          int clientId = packet.id();
          this.commandSuggestionsProvider
              .request(packet.command())
