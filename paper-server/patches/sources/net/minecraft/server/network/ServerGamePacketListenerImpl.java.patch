@@ -1807,7 +1807,7 @@
                              LOGGER.warn("Player {} tried to attack an invalid entity", this.player.getPlainTextName());
                          } else if (mainHandItem.isItemEnabled(level.enabledFeatures())) {
                              if (!this.player.cannotAttackWithItem(mainHandItem, 5)) {
-@@ -1836,25 +_,88 @@
+@@ -1836,25 +_,52 @@
                      }
                  }
              }
@@ -1845,49 +1845,13 @@
                      if (tool.isItemEnabled(level.enabledFeatures())) {
                          ItemStack usedItemStack = tool.copy();
 +                        // CraftBukkit start
-+                        final Item itemType = tool.getItem();
-+                        boolean triggerLeashUpdate = usedItemStack.is(Items.LEAD) && target instanceof net.minecraft.world.entity.Leashable;
-+
 +                        final PlayerInteractAtEntityEvent event = new PlayerInteractAtEntityEvent(
 +                            ServerGamePacketListenerImpl.this.getCraftPlayer(), target.getBukkitEntity(),
 +                            org.bukkit.craftbukkit.util.CraftVector.toBukkit(location), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand)
 +                        );
 +                        ServerGamePacketListenerImpl.this.cserver.getPluginManager().callEvent(event);
-+                        final boolean resendData = event.isCancelled() || !ServerGamePacketListenerImpl.this.player.getItemInHand(hand).is(itemType);
-+
-+                        // Entity in bucket - SPIGOT-4048 and SPIGOT-6859
-+                        if (itemType == Items.WATER_BUCKET && target instanceof net.minecraft.world.entity.Bucketable && target instanceof LivingEntity && resendData) {
-+                            target.resendPossiblyDesyncedEntityData(ServerGamePacketListenerImpl.this.player); // Paper - The entire mob gets deleted, so resend it
-+                        }
-+
-+                        // Paper start - Fix inventory desync
-+                        if (resendData) {
-+                            if (io.papermc.paper.util.MCUtil.clientPredictsInteraction(ServerGamePacketListenerImpl.this.player, target, tool)) {
-+                                ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
-+                            } else {
-+                                ServerGamePacketListenerImpl.this.player.containerMenu.forceHeldSlot(hand);
-+                            }
-+                        }
-+                        // Paper end - Fix inventory desync
-+
-+                        if (triggerLeashUpdate && resendData) {
-+                            // Refresh the current leash state
-+                            ServerGamePacketListenerImpl.this.send(new net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket(target, ((net.minecraft.world.entity.Leashable) target).getLeashHolder()));
-+                        }
-+
-+                        if (resendData) {
-+                            // Refresh the current entity metadata
-+                            target.refreshEntityData(ServerGamePacketListenerImpl.this.player);
-+                            // SPIGOT-7136 - Allays
-+                            if (target instanceof net.minecraft.world.entity.animal.allay.Allay || target instanceof net.minecraft.world.entity.animal.equine.AbstractHorse) { // Paper - Fix horse armor desync
-+                                ServerGamePacketListenerImpl.this.send(new net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket(
-+                                    target.getId(), java.util.Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values())
-+                                    .map((slot) -> com.mojang.datafixers.util.Pair.of(slot, ((LivingEntity) target).getItemBySlot(slot).copy()))
-+                                    .collect(Collectors.toList()), true)); // Paper - sanitize
-+                                player.containerMenu.sendAllDataToRemote();
-+                            } else {
-+                                ServerGamePacketListenerImpl.this.player.containerMenu.forceHeldSlot(hand); // Paper - fix slot desync (is this needed?)
-+                            }
++                        if (event.isCancelled() || !ItemStack.matches(usedItemStack, this.player.getItemInHand(hand))) {
++                            io.papermc.paper.util.MCUtil.resyncEntityInteraction(ServerGamePacketListenerImpl.this.player, target, hand, usedItemStack);
 +                        }
 +
 +                        if (event.isCancelled()) {
