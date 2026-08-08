@@ -91,7 +91,7 @@ public final class PaperAdventure {
                 if (argIdx != null) {
                     try {
                         final int idx = Integer.parseInt(argIdx) - 1;
-                        if (idx < args.size()) {
+                        if (idx >= 0 && idx < args.size()) {
                             consumer.accept(args.get(idx).asComponent());
                         }
                     } catch (final NumberFormatException ex) {
@@ -99,7 +99,7 @@ public final class PaperAdventure {
                     }
                 } else {
                     final int idx = argPosition++;
-                    if (idx < args.size()) {
+                    if (idx >= 0 && idx < args.size()) {
                         consumer.accept(args.get(idx).asComponent());
                     }
                 }
