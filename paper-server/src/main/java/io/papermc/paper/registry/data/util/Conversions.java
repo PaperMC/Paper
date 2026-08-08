@@ -138,7 +138,7 @@ public class Conversions implements RegistryFactory {
     }
 
     @Override
-    public <V extends Keyed & RegistryElement.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Inlined<V, E> getOrCreateInlinedHolder(final RegistryKey<V> registryKey, final Consumer<RegistryBuilderFactory<V, ? extends B>> value) {
+    public <V extends Keyed & RegistryElement.Inlineable<V, E, B>, E, B extends RegistryBuilder<V>> RegistryHolder.Inlined<V, E> createInlinedHolder(final RegistryKey<V> registryKey, final Consumer<RegistryBuilderFactory<V, ? extends B>> value) {
         final Holder.Direct<Object> directHolder = this.createHolderFromBuilder(registryKey, value);
         return PaperRegistryHolders.createInlined(registryKey, directHolder, this.getEntryCreator(registryKey));
     }

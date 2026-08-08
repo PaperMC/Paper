@@ -10,12 +10,11 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
+import io.papermc.paper.registry.event.RegistryComposeEvent;
+import io.papermc.paper.registry.event.RegistryComposeEventImpl;
 import io.papermc.paper.registry.event.RegistryEntryAddEvent;
 import io.papermc.paper.registry.event.RegistryEntryAddEventImpl;
 import io.papermc.paper.registry.event.RegistryEventMap;
-import io.papermc.paper.registry.event.RegistryEventProvider;
-import io.papermc.paper.registry.event.RegistryComposeEventImpl;
-import io.papermc.paper.registry.event.RegistryComposeEvent;
 import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
 import io.papermc.paper.registry.event.type.RegistryEntryAddEventTypeImpl;
 import io.papermc.paper.registry.event.type.RegistryLifecycleEventType;
@@ -27,8 +26,8 @@ import net.minecraft.core.RegistrationInfo;
 import net.minecraft.core.Registry;
 import net.minecraft.core.WritableRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
 import org.intellij.lang.annotations.Subst;
 import org.jspecify.annotations.Nullable;
@@ -167,19 +166,19 @@ public class PaperRegistryListenerManager {
         LifecycleEventRunner.INSTANCE.callEvent(this.composeEventType.getEventType(entry.apiKey()), event);
     }
 
-    public <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> getRegistryValueAddEventType(final RegistryEventProvider<T, B> type) {
-        final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(type.registryKey());
+    public <T extends RegistryElement.Buildable<T, E, B>, E, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> getRegistryValueAddEventType(final RegistryKey<T> registryKey) {
+        final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(registryKey);
         if (entry == null || !entry.meta().modificationApiSupport().canModify()) {
-            throw new IllegalArgumentException(type.registryKey() + " does not support " + RegistryEntryAddEvent.class.getSimpleName());
+            throw new IllegalArgumentException(registryKey + " does not support " + RegistryEntryAddEvent.class.getSimpleName());
         }
-        return this.valueAddEventTypes.getOrCreate(type.registryKey(), RegistryEntryAddEventTypeImpl::new);
+        return this.valueAddEventTypes.getOrCreate(registryKey, RegistryEntryAddEventTypeImpl::new);
     }
 
-    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<T, B>> getRegistryComposeEventType(final RegistryEventProvider<T, B> type) {
-        final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(type.registryKey());
+    public <T extends RegistryElement.Buildable<T, E, B>, E, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<T, B>> getRegistryComposeEventType(final RegistryKey<T> registryKey) {
+        final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(registryKey);
         if (entry == null || !entry.meta().modificationApiSupport().canAdd()) {
-            throw new IllegalArgumentException(type.registryKey() + " does not support " + RegistryComposeEvent.class.getSimpleName());
+            throw new IllegalArgumentException(registryKey + " does not support " + RegistryComposeEvent.class.getSimpleName());
         }
-        return this.composeEventType.getOrCreate(type.registryKey(), RegistryLifecycleEventType::new);
+        return this.composeEventType.getOrCreate(registryKey, RegistryLifecycleEventType::new);
     }
 }

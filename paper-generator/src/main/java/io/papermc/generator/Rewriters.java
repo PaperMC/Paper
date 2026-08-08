@@ -241,7 +241,6 @@ public final class Rewriters {
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
             .register("Tag", Tag.class, new TagRewriter())
             .register("MapPalette#colors", MapPalette.class, new MapPaletteRewriter());
-        RegistryBootstrapper.bootstrapApi(sourceSet);
     }
 
     private static void bootstrapServer(PatternSourceSetRewriter sourceSet) {

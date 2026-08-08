@@ -7,7 +7,7 @@ import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * Event object for {@link RegistryEventProvider#compose()}. This
+ * Event object for {@link RegistryEvents#compose(io.papermc.paper.registry.RegistryKey)}. This
  * event is fired after a registry is loaded with its normal values.
  * It provides a way for plugins to add new objects to the registry.
  *

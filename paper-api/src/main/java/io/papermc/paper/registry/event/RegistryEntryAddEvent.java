@@ -8,8 +8,8 @@ import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * Event object for {@link RegistryEventProvider#entryAdd()}. This
- * event is fired right before a specific entry is registered in/added to registry.
+ * Event object for {@link RegistryEvents#entryAdd(io.papermc.paper.registry.RegistryKey)}. This
+ * event is fired right before a specific entry is registered in/added to the registry.
  * It provides a way for plugins to modify parts of this entry.
  *
  * @param <T> registry entry type
