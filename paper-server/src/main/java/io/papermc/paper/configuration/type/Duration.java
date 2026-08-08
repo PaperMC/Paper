@@ -1,8 +1,10 @@
 package io.papermc.paper.configuration.type;
 
 import java.lang.reflect.Type;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.configurate.serialize.ScalarSerializer;
@@ -10,8 +12,9 @@ import org.spongepowered.configurate.serialize.SerializationException;
 
 public final class Duration {
 
-    private static final Pattern SPACE = Pattern.compile(" ");
-    private static final Pattern NOT_NUMERIC = Pattern.compile("[^-\\d.]");
+    private static final Pattern SPACE = Pattern.compile("\\s+");
+    private static final Pattern PLAIN_NUMBER = Pattern.compile("-?\\d+(\\.\\d+)?");
+    private static final Pattern DURATION = Pattern.compile("(\\d+(?:\\.\\d+)?)([dhms])", Pattern.CASE_INSENSITIVE);
     public static final ScalarSerializer<Duration> SERIALIZER = new Serializer();
 
     private final long seconds;
@@ -59,23 +62,43 @@ public final class Duration {
         return new Duration(time);
     }
 
-    private static int getSeconds(String str) {
-        str = SPACE.matcher(str).replaceAll("");
-        final char unit = str.charAt(str.length() - 1);
-        str = NOT_NUMERIC.matcher(str).replaceAll("");
-        double num;
-        try {
-            num = Double.parseDouble(str);
-        } catch (Exception e) {
-            num = 0D;
+    private static long getSeconds(String str) {
+        if (str == null || str.isBlank()) {
+            throw new IllegalArgumentException("Duration value must not be empty: '" + str + "'");
         }
-        switch (unit) {
-            case 'd': num *= (double) 60*60*24; break;
-            case 'h': num *= (double) 60*60; break;
-            case 'm': num *= (double) 60; break;
-            default: case 's': break;
+        str = SPACE.matcher(str).replaceAll("").toLowerCase(Locale.ROOT);
+        if (str.isEmpty()) {
+            throw new IllegalArgumentException("Duration value must not be empty");
         }
-        return (int) num;
+
+        // A plain number (optionally negative or decimal) is interpreted as seconds.
+        if (PLAIN_NUMBER.matcher(str).matches()) {
+            return (long) Double.parseDouble(str);
+        }
+
+        long totalSeconds = 0;
+        final Matcher matcher = DURATION.matcher(str);
+        int lastEnd = 0;
+        boolean matched = false;
+        while (matcher.find()) {
+            if (matcher.start() != lastEnd) {
+                throw new IllegalArgumentException("Invalid duration value: '" + str + "'");
+            }
+            final double amount = Double.parseDouble(matcher.group(1));
+            totalSeconds += (long) (amount * switch (matcher.group(2).charAt(0)) {
+                case 'd' -> 86400.0;
+                case 'h' -> 3600.0;
+                case 'm' -> 60.0;
+                case 's' -> 1.0;
+                default -> throw new IllegalStateException("Unreachable");
+            });
+            lastEnd = matcher.end();
+            matched = true;
+        }
+        if (!matched || lastEnd != str.length()) {
+            throw new IllegalArgumentException("Invalid duration value: '" + str + "'");
+        }
+        return totalSeconds;
     }
 
     static final class Serializer extends ScalarSerializer<Duration> {
@@ -85,7 +108,11 @@ public final class Duration {
 
         @Override
         public Duration deserialize(Type type, Object obj) throws SerializationException {
-            return new Duration(obj.toString());
+            try {
+                return new Duration(obj.toString());
+            } catch (final IllegalArgumentException ex) {
+                throw new SerializationException(type, ex);
+            }
         }
 
         @Override
