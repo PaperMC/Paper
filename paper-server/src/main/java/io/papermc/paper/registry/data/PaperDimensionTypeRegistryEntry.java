@@ -3,13 +3,15 @@ package io.papermc.paper.registry.data;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.math.provider.IntProvider;
 import io.papermc.paper.math.provider.PaperIntProvider;
-import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.PaperRegistryBuilder;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.util.Conversions;
-import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.registry.set.PaperRegistrySets;
+import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.Optional;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.util.Mth;
 import net.minecraft.world.attribute.EnvironmentAttributeMap;
 import net.minecraft.world.clock.WorldClock;
@@ -37,7 +39,7 @@ public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEnt
     protected @Nullable Integer minY;
     protected @Nullable Integer height;
     protected @Nullable Integer logicalHeight;
-    protected net.minecraft.tags.@Nullable TagKey<Block> infiniburn;
+    protected @Nullable HolderSet<Block> infiniburn;
     protected @Nullable Float ambientLight;
     protected net.minecraft.util.valueproviders.@Nullable IntProvider monsterSpawnLightTest;
     protected @Nullable Integer monsterSpawnBlockLightLimit;
@@ -113,8 +115,8 @@ public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEnt
     }
 
     @Override
-    public TagKey<BlockType> infiniburn() {
-        return PaperRegistries.fromNms(asConfigured(this.infiniburn, "infiniburn"));
+    public RegistryKeySet<BlockType> infiniburn() {
+        return PaperRegistrySets.convertToApi(RegistryKey.BLOCK, asConfigured(this.infiniburn, "infiniburn"));
     }
 
     @Override
@@ -199,8 +201,8 @@ public class PaperDimensionTypeRegistryEntry implements DimensionTypeRegistryEnt
         }
 
         @Override
-        public Builder infiniburn(final TagKey<BlockType> infiniburn) {
-            this.infiniburn = PaperRegistries.toNms(asArgument(infiniburn, "infiniburn"));
+        public Builder infiniburn(final RegistryKeySet<BlockType> infiniburn) {
+            this.infiniburn = PaperRegistrySets.convertToNms(Registries.BLOCK, this.conversions.lookup(), asArgument(infiniburn, "infiniburn"));
             return this;
         }
 

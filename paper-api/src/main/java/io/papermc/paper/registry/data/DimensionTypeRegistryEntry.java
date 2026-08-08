@@ -2,7 +2,7 @@ package io.papermc.paper.registry.data;
 
 import io.papermc.paper.math.provider.IntProvider;
 import io.papermc.paper.registry.RegistryBuilder;
-import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.world.worldgen.DimensionType;
 import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.ApiStatus;
@@ -44,7 +44,7 @@ public interface DimensionTypeRegistryEntry {
 
     @Range(from = 0, to = 4096) int logicalHeight();
 
-    TagKey<BlockType> infiniburn();
+    RegistryKeySet<BlockType> infiniburn();
 
     float ambientLight();
 
@@ -85,7 +85,7 @@ public interface DimensionTypeRegistryEntry {
         Builder logicalHeight(@Range(from = 0, to = 4096) int logicalHeight);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder infiniburn(TagKey<BlockType> infiniburn);
+        Builder infiniburn(RegistryKeySet<BlockType> infiniburn);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder ambientLight(float ambientLight);
