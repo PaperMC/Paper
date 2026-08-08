@@ -1,11 +1,13 @@
 package io.papermc.paper.configuration;
 
 import io.papermc.paper.configuration.type.Duration;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Normal
 class DurationTest {
 
     @Test
