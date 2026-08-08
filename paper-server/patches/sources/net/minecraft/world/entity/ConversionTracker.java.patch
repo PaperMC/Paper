@@ -1,0 +1,49 @@
+--- a/net/minecraft/world/entity/ConversionTracker.java
++++ b/net/minecraft/world/entity/ConversionTracker.java
+@@ -25,6 +_,20 @@
+     private final @Nullable BiConsumer<M, ServerLevel> postConversionStep;
+     private int afflictionTime = 0;
+     private int conversionTime;
++    // Paper start - add spawn and transform reasons
++    private org.bukkit.event.entity.EntityTransformEvent.TransformReason transformReason;
++    private org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason;
++
++    public ConversionTracker<M> withTransformReason(final org.bukkit.event.entity.EntityTransformEvent.TransformReason transformReason) {
++        this.transformReason = transformReason;
++        return this;
++    }
++
++    public ConversionTracker<M> withSpawnReason(final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        this.spawnReason = spawnReason;
++        return this;
++    }
++    // Paper end
+ 
+     public ConversionTracker(
+         final M mob,
+@@ -95,7 +_,7 @@
+     }
+ 
+     private void doConversion(final ServerLevel serverLevel) {
+-        this.mob.convertTo(this.convertsTo.get(), ConversionParams.single(this.mob, true, true), converted -> {
++        M mob = this.mob.convertTo(this.convertsTo.get(), ConversionParams.single(this.mob, true, true), converted -> { // Paper - Fix issues with mob conversion; reset conversion time to prevent event spam
+             if (this.postConversionStep != null) {
+                 this.postConversionStep.accept((M)converted, serverLevel);
+             }
+@@ -103,7 +_,15 @@
+             if (!converted.isSilent()) {
+                 serverLevel.levelEvent(null, this.conversionSound.get(), converted.blockPosition(), 0);
+             }
+-        });
++        // Paper start - add spawn and transform reasons
++        }, this.transformReason, this.spawnReason);
++
++        if (mob == null) {
++            // Reset conversion time to prevent event spam
++            // TODO snapshot: when this compile check if need also call setConverting or allow manage that for avoid reset the time and just skip forever
++            this.conversionTime = this.totalConversionTime;
++        }
++        // Paper end
+     }
+ 
+     public void startConversion(final int time) {
