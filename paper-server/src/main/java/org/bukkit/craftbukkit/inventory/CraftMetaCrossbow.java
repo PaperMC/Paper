@@ -151,7 +151,11 @@ public class CraftMetaCrossbow extends CraftMetaItem implements CrossbowMeta {
 
     @Override
     public CraftMetaCrossbow clone() {
-        return (CraftMetaCrossbow) super.clone();
+        CraftMetaCrossbow clone = (CraftMetaCrossbow) super.clone();
+        if (this.chargedProjectiles != null) {
+            clone.chargedProjectiles = new ArrayList<>(this.chargedProjectiles);
+        }
+        return clone;
     }
 
     @Override

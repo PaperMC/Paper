@@ -2,8 +2,13 @@ package org.bukkit.util.permissions;
 
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @hidden
+ */
+@ApiStatus.Internal
 public final class CommandPermissions {
     private static final String ROOT = "bukkit.command";
     private static final String PREFIX = ROOT + ".";

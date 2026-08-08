@@ -1262,10 +1262,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public boolean spawnAt(Location location, CreatureSpawnEvent.SpawnReason reason) {
         Preconditions.checkNotNull(location, "location cannot be null");
         Preconditions.checkNotNull(reason, "reason cannot be null");
+        if (this.entity.valid) return false;
         this.entity.setLevel(((CraftWorld) location.getWorld()).getHandle());
         this.entity.setPos(location.getX(), location.getY(), location.getZ());
         this.entity.setRot(location.getYaw(), location.getPitch());
-        final boolean spawned = !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
+        final boolean spawned = this.entity.level().addFreshEntity(this.entity, reason);
         if (!spawned) return false; // Do not attempt to spawn rest if root was not spawned in
         // Like net.minecraft.world.level.ServerLevelAccessor.addFreshEntityWithPassengers(net.minecraft.world.entity.Entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason)
         this.entity.getIndirectPassengers().forEach(e -> e.level().addFreshEntity(e, reason));
@@ -1358,7 +1359,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public <T> @Nullable T getDataOrDefault(@NotNull final DataComponentType.Valued<? extends T> type, @Nullable final T fallback) {
-        return Objects.requireNonNullElse(this.getData(type), fallback);
+        final T object = this.getData(type);
+        return object != null ? object : fallback;
     }
 
     @Override

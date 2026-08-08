@@ -1206,8 +1206,9 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
                 defaultPerm = PermissionDefault.getByName(map.get("default-permission").toString());
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "default-permission is of wrong type");
-            } catch (IllegalArgumentException ex) {
-                throw new InvalidDescriptionException(ex, "default-permission is not a valid choice");
+            }
+            if (defaultPerm == null) {
+                throw new InvalidDescriptionException("default-permission is not a valid choice");
             }
         }
 

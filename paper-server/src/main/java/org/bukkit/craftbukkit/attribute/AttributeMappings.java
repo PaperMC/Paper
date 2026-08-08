@@ -16,7 +16,7 @@ final class AttributeMappings {
         add(6967552254039378640L, -9116175396973475259L, "enchantment.aqua_affinity");
         add(5279725409867744698L, -5150363631200102632L, "attacking");
         add(148071211714102867L, -7685811609035173472L, "attacking");
-        add(6196088217904236654L, -7493791321850887290L, "effect.minining_fatigue");
+        add(6196088217904236654L, -7493791321850887290L, "effect.mining_fatigue");
         add(-5084161844451524480L, -8859020046251006329L, "enchantment.soul_speed");
         add(-7907339078496465106L, -8112074600724210224L, "enchantment.swift_sneak");
         add(6688265815086220243L, -6545541163342161890L, "drinking");

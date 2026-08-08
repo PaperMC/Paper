@@ -144,7 +144,7 @@ public class CraftInventoryCustom extends CraftInventory {
             ItemStack result;
             if (stack == ItemStack.EMPTY) return stack;
             if (stack.getCount() <= 1) {
-                this.setItem(slot, null);
+                this.setItem(slot, ItemStack.EMPTY);
                 result = stack;
             } else {
                 result = CraftItemStack.copyNMSStack(stack, 1);

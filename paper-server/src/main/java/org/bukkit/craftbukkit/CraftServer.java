@@ -153,7 +153,6 @@ import org.bukkit.craftbukkit.ban.CraftIpBanList;
 import org.bukkit.craftbukkit.ban.CraftProfileBanList;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftBossBar;
-import org.bukkit.craftbukkit.boss.CraftKeyedBossbar;
 import org.bukkit.craftbukkit.command.CraftCommandMap;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.entity.CraftEntityFactory;
@@ -926,8 +925,6 @@ public final class CraftServer implements Server {
         com.mojang.brigadier.ParseResults<CommandSourceStack> results = dispatcher.parse(command, sourceStack);
 
         CommandSender sender = sourceStack.getBukkitSender();
-        String[] args = org.apache.commons.lang3.StringUtils.split(command, ' '); // Paper - fix adjacent spaces (from console/plugins) causing empty array elements
-        Command target = this.commandMap.getCommand(args[0].toLowerCase(java.util.Locale.ENGLISH));
 
         try {
             if (results.getContext().getNodes().isEmpty()) {
@@ -937,13 +934,23 @@ public final class CraftServer implements Server {
             commands.performCommand(results, command, true);
             return true;
         } catch (CommandException ex) {
-            new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args)).callEvent(); // Paper
+            this.callEventOnFailingCommand(command, ex, sender);
             throw ex;
         } catch (Throwable ex) {
-            String msg = "Unhandled exception executing '" + command + "' in " + target;
-            new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args)).callEvent(); // Paper
-            throw new CommandException(msg, ex);
+            CommandException error = new CommandException("Unhandled exception executing '" + command, ex);
+            this.callEventOnFailingCommand(command, error, sender);
+            throw error;
         }
+    }
+
+    private void callEventOnFailingCommand(String command, RuntimeException error, CommandSender sender) {
+        String[] args = org.apache.commons.lang3.StringUtils.split(command, ' '); // fix adjacent spaces (from console/plugins) causing empty array elements
+        if (args.length == 0) {
+            return;
+        }
+
+        Command target = this.commandMap.getCommand(args[0].toLowerCase(java.util.Locale.ENGLISH));
+        new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(error, target, sender, args)).callEvent();
     }
 
     @Override

@@ -35,7 +35,7 @@ public class PaperPotionBrewer implements PotionBrewer {
         }
 
         final org.bukkit.potion.PotionType effectivePotionType = org.bukkit.Registry.POTION.get(effectiveKey);
-        Preconditions.checkNotNull(type, "Unknown potion type from data " + effectiveKey.asMinimalString()); // Legacy error message in 1.20.4
+        Preconditions.checkNotNull(effectivePotionType, "Unknown potion type from data " + effectiveKey.asMinimalString()); // Legacy error message in 1.20.4
         return effectivePotionType.getPotionEffects();
     }
 

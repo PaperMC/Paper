@@ -2132,6 +2132,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
             }
             clone.damage = this.damage;
             clone.maxDamage = this.maxDamage;
+            clone.unhandledTags.copy(this.unhandledTags.build());
             clone.version = this.version;
 
             if (this.canPlaceOnPredicates != null) {

@@ -164,7 +164,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * @param message Kick message to display to the user
      * @deprecated This method uses a deprecated enum from {@link
      *     PlayerPreLoginEvent}
-     * @see #disallow(Result, String)
+     * @see #disallow(Result, Component)
      */
     @Deprecated
     public void disallow(@NotNull final PlayerPreLoginEvent.Result result, @NotNull final net.kyori.adventure.text.Component message) {

@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.item.trading.Merchant;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
@@ -17,7 +16,7 @@ public abstract class CraftAbstractVillager extends CraftAgeable implements Craf
 
     @Override
     public net.minecraft.world.entity.npc.villager.AbstractVillager getHandle() {
-        return (Villager) this.entity;
+        return (net.minecraft.world.entity.npc.villager.AbstractVillager) this.entity;
     }
 
     @Override
