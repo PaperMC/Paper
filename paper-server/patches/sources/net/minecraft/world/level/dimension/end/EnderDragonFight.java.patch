@@ -1,14 +1,6 @@
-From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/dimension/end/EnderDragonFight.java b/net/minecraft/world/level/dimension/end/EnderDragonFight.java
-index dde58d0c6ed6253e76b91b4393028ce148751f59..26926083cbb2722bb5fbcbc81bcc44a99799ad9e 100644
 --- a/net/minecraft/world/level/dimension/end/EnderDragonFight.java
 +++ b/net/minecraft/world/level/dimension/end/EnderDragonFight.java
-@@ -155,6 +155,12 @@ public class EnderDragonFight extends SavedData {
+@@ -160,6 +_,12 @@
          );
          this.dragonEvent.setPlayBossMusic(true).setCreateWorldFog(true);
          this.validPlayer = EntitySelector.ENTITY_STILL_ALIVE.and(EntitySelector.withinDistance(origin.getX(), 128 + origin.getY(), origin.getZ(), 192.0));
@@ -21,7 +13,7 @@ index dde58d0c6ed6253e76b91b4393028ce148751f59..26926083cbb2722bb5fbcbc81bcc44a9
          if (this.gateways.isEmpty()) {
              ObjectArrayList<Integer> newGateways = new ObjectArrayList<>(ContiguousSet.create(Range.closedOpen(0, 20), DiscreteDomain.integers()));
              Util.shuffle(newGateways, RandomSource.createThreadLocalInstance(seed));
-@@ -241,9 +247,9 @@ public class EnderDragonFight extends SavedData {
+@@ -246,9 +_,9 @@
              this.dragonUUID = dragon.getUUID();
              LOGGER.info("Found that there's a dragon still alive ({})", dragon);
              this.dragonKilled = false;
@@ -33,18 +25,18 @@ index dde58d0c6ed6253e76b91b4393028ce148751f59..26926083cbb2722bb5fbcbc81bcc44a9
                  this.dragonUUID = null;
              }
          }
-@@ -403,13 +409,20 @@ public class EnderDragonFight extends SavedData {
+@@ -408,12 +_,20 @@
              this.dragonEvent.setVisible(false);
              this.spawnExitPortal(true);
              this.spawnNewGateway();
 -            if (!this.hasPreviouslyKilledDragon) {
 -                this.level
 -                    .setBlockAndUpdate(
--                        this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin)),
--                        Blocks.DRAGON_EGG.defaultBlockState()
+-                        this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, getPodiumLocation(this.origin)), Blocks.DRAGON_EGG.defaultBlockState()
 -                    );
+-            }
 +            // Paper start - Add DragonEggFormEvent
-+            BlockPos eggPosition = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin));
++            BlockPos eggPosition = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, getPodiumLocation(this.origin));
 +            org.bukkit.craftbukkit.block.CraftBlockState eggState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(this.level, eggPosition);
 +            eggState.setBlock(Blocks.DRAGON_EGG.defaultBlockState());
 +            io.papermc.paper.event.block.DragonEggFormEvent eggEvent = new io.papermc.paper.event.block.DragonEggFormEvent(
@@ -55,12 +47,12 @@ index dde58d0c6ed6253e76b91b4393028ce148751f59..26926083cbb2722bb5fbcbc81bcc44a9
 +            }
 +            if (eggEvent.callEvent()) {
 +                ((org.bukkit.craftbukkit.block.CraftBlockState)eggEvent.getNewState()).place(net.minecraft.world.level.block.Block.UPDATE_ALL);
-             }
++            }
 +            // Paper end - Add DragonEggFormEvent
  
              this.hasPreviouslyKilledDragon = true;
              this.dragonKilled = true;
-@@ -424,14 +437,26 @@ public class EnderDragonFight extends SavedData {
+@@ -428,14 +_,26 @@
          this.setDirty();
      }
  
@@ -88,7 +80,7 @@ index dde58d0c6ed6253e76b91b4393028ce148751f59..26926083cbb2722bb5fbcbc81bcc44a9
      }
  
      public void spawnNewGateway(final BlockPos pos) {
-@@ -455,6 +480,12 @@ public class EnderDragonFight extends SavedData {
+@@ -458,6 +_,12 @@
              this.exitPortalLocation = this.exitPortalLocation.atY(Math.max(this.level.getMinY() + 1, this.exitPortalLocation.getY()));
              this.setDirty();
          }
@@ -99,9 +91,9 @@ index dde58d0c6ed6253e76b91b4393028ce148751f59..26926083cbb2722bb5fbcbc81bcc44a9
 +        }
 +        // Paper end - Prevent "softlocked" exit portal generation
  
-         if (feature.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.exitPortalLocation)) {
-             int chunkRadius = Mth.positiveCeilDiv(4, 16);
-@@ -472,6 +503,7 @@ public class EnderDragonFight extends SavedData {
+         Holder.Reference<Feature> feature = this.level.registryAccess().getOrThrow(activated ? EndFeatures.END_PODIUM_ACTIVE : EndFeatures.END_PODIUM_INACTIVE);
+         if (feature.value().place(this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.exitPortalLocation)) {
+@@ -476,6 +_,7 @@
              dragon.snapTo(this.origin.getX(), 128 + this.origin.getY(), this.origin.getZ(), this.level.getRandom().nextFloat() * 360.0F, 0.0F);
              this.level.addFreshEntity(dragon);
              this.dragonUUID = dragon.getUUID();
@@ -109,7 +101,7 @@ index dde58d0c6ed6253e76b91b4393028ce148751f59..26926083cbb2722bb5fbcbc81bcc44a9
              this.setDirty();
          }
  
-@@ -484,6 +516,10 @@ public class EnderDragonFight extends SavedData {
+@@ -488,6 +_,10 @@
              this.ticksSinceDragonSeen = 0;
              if (dragon.hasCustomName()) {
                  this.dragonEvent.setName(dragon.getDisplayName());
@@ -120,7 +112,7 @@ index dde58d0c6ed6253e76b91b4393028ce148751f59..26926083cbb2722bb5fbcbc81bcc44a9
              }
          }
      }
-@@ -516,7 +552,13 @@ public class EnderDragonFight extends SavedData {
+@@ -520,7 +_,13 @@
          return this.hasPreviouslyKilledDragon;
      }
  
@@ -135,7 +127,7 @@ index dde58d0c6ed6253e76b91b4393028ce148751f59..26926083cbb2722bb5fbcbc81bcc44a9
          if (this.dragonKilled && this.respawnStage == null) {
              BlockPos location = this.exitPortalLocation;
              if (location == null) {
-@@ -531,6 +573,20 @@ public class EnderDragonFight extends SavedData {
+@@ -535,6 +_,20 @@
  
                  location = this.exitPortalLocation;
              }
@@ -156,7 +148,7 @@ index dde58d0c6ed6253e76b91b4393028ce148751f59..26926083cbb2722bb5fbcbc81bcc44a9
  
              List<EndCrystal> crystals = Lists.newArrayList();
              BlockPos center = location.above(1);
-@@ -538,18 +594,19 @@ public class EnderDragonFight extends SavedData {
+@@ -542,18 +_,19 @@
              for (Direction direction : Direction.Plane.HORIZONTAL) {
                  List<EndCrystal> found = this.level.getEntitiesOfClass(EndCrystal.class, new AABB(center.relative(direction, 3)));
                  if (found.isEmpty()) {
@@ -179,7 +171,7 @@ index dde58d0c6ed6253e76b91b4393028ce148751f59..26926083cbb2722bb5fbcbc81bcc44a9
          if (this.dragonKilled && this.respawnStage == null) {
              for (BlockPattern.BlockPatternMatch portal = this.findExitPortal(); portal != null; portal = this.findExitPortal()) {
                  for (int x = 0; x < this.exitPortalPattern.getWidth(); x++) {
-@@ -569,7 +626,9 @@ public class EnderDragonFight extends SavedData {
+@@ -573,7 +_,9 @@
              this.spawnExitPortal(false);
              this.respawnCrystals = crystals.stream().map(EntityReference::of).toList();
              this.setDirty();
