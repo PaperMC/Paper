@@ -1,24 +1,11 @@
-From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java b/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
-index c29bde113430cf61842a62d0d1763bdede731dee..646df0237a5a2863f75e6c5f9dfe9ddf512c540f 100644
---- a/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
-+++ b/net/minecraft/world/level/levelgen/structure/placement/StructurePlacement.java
-@@ -79,14 +79,31 @@ public abstract class StructurePlacement {
-         return this.exclusionZone;
+--- a/net/minecraft/world/level/levelgen/structure/placement/AbstractSpreadingStructurePlacement.java
++++ b/net/minecraft/world/level/levelgen/structure/placement/AbstractSpreadingStructurePlacement.java
+@@ -81,15 +_,24 @@
      }
  
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Add missing structure set seed configs
-     public boolean isStructureChunk(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ) {
-+        // Paper start - Add missing structure set seed configs
-+        return this.isStructureChunk(state, sourceX, sourceZ, null);
-+    }
-+
-+    public boolean isStructureChunk(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ, final net.minecraft.resources.@org.jspecify.annotations.Nullable ResourceKey<StructureSet> structureSetKey) {
+     @Override
+-    public boolean isStructureChunk(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ) {
++    public boolean isStructureChunk(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ, final net.minecraft.resources.@org.jspecify.annotations.Nullable ResourceKey<net.minecraft.world.level.levelgen.structure.StructureSet> structureSetKey) {
 +        Integer saltOverride = null;
 +        if (structureSetKey != null) {
 +            if (structureSetKey == net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.MINESHAFTS) {
@@ -30,40 +17,39 @@ index c29bde113430cf61842a62d0d1763bdede731dee..646df0237a5a2863f75e6c5f9dfe9ddf
 +        // Paper end - Add missing structure set seed configs
          return this.isPlacementChunk(state, sourceX, sourceZ)
 -            && this.applyAdditionalChunkRestrictions(sourceX, sourceZ, state.getLevelSeed())
-+            && this.applyAdditionalChunkRestrictions(sourceX, sourceZ, state.getLevelSeed(), saltOverride) // Paper - Add missing structure set seed configs
++            && this.applyAdditionalChunkRestrictions(sourceX, sourceZ, state.getLevelSeed(), saltOverride)  // Paper - Add missing structure set seed configs
              && this.applyInteractionsWithOtherStructures(state, sourceX, sourceZ);
      }
  
+     @Override
 -    public boolean applyAdditionalChunkRestrictions(final int sourceX, final int sourceZ, final long levelSeed) {
 -        return !(this.frequency < 1.0F) || this.frequencyReductionMethod.shouldGenerate(levelSeed, this.salt, sourceX, sourceZ, this.frequency);
-+    // Paper start - Add missing structure set seed configs
-+    public boolean applyAdditionalChunkRestrictions(final int sourceX, final int sourceZ, final long levelSeed, final @org.jspecify.annotations.Nullable Integer saltOverride) {
++    public boolean applyAdditionalChunkRestrictions(final int sourceX, final int sourceZ, final long levelSeed, final @org.jspecify.annotations.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs
 +        return !(this.frequency < 1.0F) || this.frequencyReductionMethod.shouldGenerate(levelSeed, this.salt, sourceX, sourceZ, this.frequency, saltOverride);
-+        // Paper end - Add missing structure set seed configs
      }
  
      public boolean applyInteractionsWithOtherStructures(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ) {
-@@ -101,25 +118,31 @@ public abstract class StructurePlacement {
+@@ -98,25 +_,31 @@
  
-     public abstract StructurePlacementType<?> type();
+     protected abstract boolean isPlacementChunk(final ChunkGeneratorStructureState state, final int sourceX, final int sourceZ);
  
 -    private static boolean probabilityReducer(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
-+    private static boolean probabilityReducer(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability, final @org.jspecify.annotations.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs; ignore here
-         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
-         random.setLargeFeatureWithSalt(seed, salt, sourceX, sourceZ);
-         return random.nextFloat() < probability;
-     }
- 
--    private static boolean legacyProbabilityReducerWithDouble(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
-+    private static boolean legacyProbabilityReducerWithDouble(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability, final @org.jspecify.annotations.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs
++    private static boolean probabilityReducer(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability, final @org.jspecify.annotations.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs
          WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
 +        if (saltOverride == null) { // Paper - Add missing structure set seed configs
-         random.setLargeFeatureSeed(seed, sourceX, sourceZ);
+         random.setLargeFeatureWithSalt(seed, salt, sourceX, sourceZ);
 +            // Paper start - Add missing structure set seed configs
 +        } else {
 +            random.setLargeFeatureWithSalt(seed, sourceX, sourceZ, saltOverride);
 +        }
 +        // Paper end - Add missing structure set seed configs
+         return random.nextFloat() < probability;
+     }
+ 
+-    private static boolean legacyProbabilityReducerWithDouble(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability) {
++    private static boolean legacyProbabilityReducerWithDouble(final long seed, final int salt, final int sourceX, final int sourceZ, final float probability, final @org.jspecify.annotations.Nullable Integer saltOverride) { // Paper - Add missing structure set seed configs; ignore here
+         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
+         random.setLargeFeatureSeed(seed, sourceX, sourceZ);
          return random.nextDouble() < probability;
      }
  
@@ -80,7 +66,7 @@ index c29bde113430cf61842a62d0d1763bdede731dee..646df0237a5a2863f75e6c5f9dfe9ddf
          int cx = sourceX >> 4;
          int cz = sourceZ >> 4;
          WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(0L));
-@@ -147,7 +170,7 @@ public abstract class StructurePlacement {
+@@ -144,7 +_,7 @@
  
      @FunctionalInterface
      public interface FrequencyReducer {
@@ -89,7 +75,7 @@ index c29bde113430cf61842a62d0d1763bdede731dee..646df0237a5a2863f75e6c5f9dfe9ddf
      }
  
      public enum FrequencyReductionMethod implements StringRepresentable {
-@@ -167,8 +190,8 @@ public abstract class StructurePlacement {
+@@ -164,8 +_,8 @@
              this.reducer = reducer;
          }
  

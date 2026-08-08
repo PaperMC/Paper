@@ -1,14 +1,6 @@
-From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/inventory/AbstractContainerMenu.java b/net/minecraft/world/inventory/AbstractContainerMenu.java
-index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae814c1ecfe 100644
 --- a/net/minecraft/world/inventory/AbstractContainerMenu.java
 +++ b/net/minecraft/world/inventory/AbstractContainerMenu.java
-@@ -64,6 +64,35 @@ public abstract class AbstractContainerMenu {
+@@ -67,6 +_,35 @@
      private final List<ContainerListener> containerListeners = Lists.newArrayList();
      private @Nullable ContainerSynchronizer synchronizer;
      private boolean suppressRemoteUpdates;
@@ -44,10 +36,12 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
  
      protected AbstractContainerMenu(final @Nullable MenuType<?> menuType, final int containerId) {
          this.menuType = menuType;
-@@ -175,8 +204,43 @@ public abstract class AbstractContainerMenu {
+@@ -178,8 +_,43 @@
  
          if (this.synchronizer != null) {
              this.synchronizer.sendInitialData(this, itemsToSend, carried.copy(), this.remoteDataSlots.toIntArray());
+-        }
+-    }
 +            this.synchronizer.sendOffHandSlotChange(); // Paper - Sync offhand slot in menus; update player's offhand since the offhand slot is not added to the slots for menus but can be changed by swapping from a menu slot
 +        }
 +    }
@@ -72,8 +66,8 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
 +
 +        if (this.synchronizer != null) {
 +            this.synchronizer.sendSlotChange(this, slotsIndex, item.copy());
-         }
-     }
++        }
++    }
 +    // Paper end
 +
 +    // CraftBukkit start - from synchronizeCarriedToRemote
@@ -88,7 +82,7 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
  
      public void removeSlotListener(final ContainerListener listener) {
          this.containerListeners.remove(listener);
-@@ -242,7 +306,7 @@ public abstract class AbstractContainerMenu {
+@@ -245,7 +_,7 @@
              this.lastSlots.set(i, newItem);
  
              for (ContainerListener containerListener : this.containerListeners) {
@@ -97,7 +91,7 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
              }
          }
      }
-@@ -350,6 +414,7 @@ public abstract class AbstractContainerMenu {
+@@ -353,6 +_,7 @@
                      this.resetQuickCraft();
                  }
              } else if (this.quickcraftStatus == QUICKCRAFT_HEADER_CONTINUE) {
@@ -105,7 +99,7 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
                  Slot slot = this.slots.get(slotIndex);
                  ItemStack carriedItemStack = this.getCarried();
                  if (canItemQuickReplace(slot, carriedItemStack, true)
-@@ -374,6 +439,7 @@ public abstract class AbstractContainerMenu {
+@@ -377,6 +_,7 @@
                      }
  
                      int remaining = this.getCarried().getCount();
@@ -113,18 +107,21 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
  
                      for (Slot slot : this.quickcraftSlots) {
                          ItemStack carriedItemStack = this.getCarried();
-@@ -386,12 +452,42 @@ public abstract class AbstractContainerMenu {
+@@ -389,12 +_,42 @@
                              int maxSize = Math.min(source.getMaxStackSize(), slot.getMaxStackSize(source));
                              int newCount = Math.min(getQuickCraftPlaceCount(this.quickcraftSlots.size(), this.quickcraftType, source) + carry, maxSize);
                              remaining -= newCount - carry;
 -                            slot.setByPlayer(source.copyWithCount(newCount));
-+                            // slot.setByPlayer(source.copyWithCount(newCount));
-+                            draggedSlots.put(slot.index, source.copyWithCount(newCount)); // CraftBukkit - Put in map instead of setting
-                         }
-                     }
- 
+-                        }
+-                    }
+-
 -                    source.setCount(remaining);
 -                    this.setCarried(source);
++                            // slot.setByPlayer(source.copyWithCount(newCount));
++                            draggedSlots.put(slot.index, source.copyWithCount(newCount)); // CraftBukkit - Put in map instead of setting
++                        }
++                    }
++
 +                    // CraftBukkit start - InventoryDragEvent
 +                    org.bukkit.inventory.InventoryView view = this.getBukkitView();
 +                    org.bukkit.inventory.ItemStack newCarried = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(source);
@@ -159,20 +156,20 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
                  }
  
                  this.resetQuickCraft();
-@@ -405,8 +501,11 @@ public abstract class AbstractContainerMenu {
+@@ -408,8 +_,11 @@
              if (slotIndex == SLOT_CLICKED_OUTSIDE) {
                  if (!this.getCarried().isEmpty()) {
                      if (clickAction == ClickAction.PRIMARY) {
--                        player.drop(this.getCarried(), true);
+-                        player.drop(this.getCarried(), true, Prediction.PREDICTED);
 +                        // CraftBukkit start
 +                        ItemStack carried = this.getCarried();
                          this.setCarried(ItemStack.EMPTY);
-+                        player.drop(carried, true);
++                        player.drop(carried, true, Prediction.PREDICTED);
 +                        // CraftBukkit end
                      } else {
-                         player.drop(this.getCarried().split(1), true);
+                         player.drop(this.getCarried().split(1), true, Prediction.PREDICTED);
                      }
-@@ -468,8 +567,18 @@ public abstract class AbstractContainerMenu {
+@@ -471,8 +_,18 @@
                  }
  
                  slot.setChanged();
@@ -191,20 +188,20 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
              ItemStack source = inventory.getItem(buttonNum);
              Slot target = this.slots.get(slotIndex);
              ItemStack targetItemStack = target.getItem();
-@@ -528,7 +637,11 @@ public abstract class AbstractContainerMenu {
+@@ -531,7 +_,11 @@
                      }
  
                      itemStack = slot.safeTake(amount, Integer.MAX_VALUE, player);
--                    player.drop(itemStack, true);
+-                    player.drop(itemStack, true, Prediction.PREDICTED);
 +                    // CraftBukkit start - SPIGOT-8010: break loop
-+                    if (player.drop(itemStack, true) == null) {
++                    if (player.drop(itemStack, true, Prediction.PREDICTED) == null) {
 +                        break;
 +                    }
 +                    // CraftBukkit end - SPIGOT-8010: break loop
                      player.handleCreativeModeItemDrop(itemStack);
                  }
              }
-@@ -589,14 +702,15 @@ public abstract class AbstractContainerMenu {
+@@ -604,15 +_,16 @@
          if (player instanceof ServerPlayer) {
              ItemStack carried = this.getCarried();
              if (!carried.isEmpty()) {
@@ -217,12 +214,13 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
      }
  
      private static void dropOrPlaceInInventory(final Player player, final ItemStack carried) {
--        boolean playerRemovedNotChangingDimension = player.isRemoved() && player.getRemovalReason() != Entity.RemovalReason.CHANGED_DIMENSION;
-+        boolean playerRemovedNotChangingDimension = !player.isAlive() && player.getRemovalReason() != Entity.RemovalReason.CHANGED_DIMENSION; // Paper - Make sure player is dead (https://github.com/PaperMC/Paper/pull/13002)
-         boolean serverPlayerHasDisconnected = player instanceof ServerPlayer serverPlayer && serverPlayer.hasDisconnected();
-         if (playerRemovedNotChangingDimension || serverPlayerHasDisconnected) {
-             player.drop(carried, false);
-@@ -636,6 +750,14 @@ public abstract class AbstractContainerMenu {
+         if (player instanceof ServerPlayer serverPlayer) {
+-            boolean playerRemovedNotChangingDimension = serverPlayer.isRemoved() && serverPlayer.getRemovalReason() != Entity.RemovalReason.CHANGED_DIMENSION;
++            boolean playerRemovedNotChangingDimension = !serverPlayer.isAlive() && serverPlayer.getRemovalReason() != Entity.RemovalReason.CHANGED_DIMENSION; // Paper - Make sure player is dead (https://github.com/PaperMC/Paper/pull/13002)
+             if (!playerRemovedNotChangingDimension && !serverPlayer.hasDisconnected()) {
+                 serverPlayer.getInventory().placeItemBackInInventory(carried, Prediction.SERVER_ONLY);
+             } else {
+@@ -652,6 +_,14 @@
      public abstract boolean stillValid(Player player);
  
      protected boolean moveItemStackTo(final ItemStack itemStack, final int startSlot, final int endSlot, final boolean backwards) {
@@ -237,7 +235,7 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
          boolean anythingChanged = false;
          int destSlot = startSlot;
          if (backwards) {
-@@ -646,18 +768,27 @@ public abstract class AbstractContainerMenu {
+@@ -662,18 +_,27 @@
              while (!itemStack.isEmpty() && (backwards ? destSlot >= startSlot : destSlot < endSlot)) {
                  Slot slot = this.slots.get(destSlot);
                  ItemStack target = slot.getItem();
@@ -265,7 +263,7 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
                          anythingChanged = true;
                      }
                  }
-@@ -680,10 +811,21 @@ public abstract class AbstractContainerMenu {
+@@ -696,10 +_,21 @@
              while (backwards ? destSlot >= startSlot : destSlot < endSlot) {
                  Slot slot = this.slots.get(destSlot);
                  ItemStack target = slot.getItem();
@@ -287,7 +285,7 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
                      anythingChanged = true;
                      break;
                  }
-@@ -767,6 +909,11 @@ public abstract class AbstractContainerMenu {
+@@ -783,6 +_,11 @@
      }
  
      public ItemStack getCarried() {
@@ -299,7 +297,7 @@ index e1a8bff17a2dac8980f3dd1677e69e16bf8dc550..b37618125e85c1c6f284c7287202aae8
          return this.carried;
      }
  
-@@ -820,4 +967,15 @@ public abstract class AbstractContainerMenu {
+@@ -836,4 +_,15 @@
          this.stateId = this.stateId + 1 & 32767;
          return this.stateId;
      }
