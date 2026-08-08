@@ -18,6 +18,8 @@ import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.attribute.BedRule;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
@@ -32,6 +34,7 @@ import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.level.block.AbstractBedBlock;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -197,11 +200,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         BlockPos pos = CraftLocation.toBlockPos(location);
         BlockState state = this.getHandle().level().getBlockState(pos);
-        if (!(state.getBlock() instanceof BedBlock)) {
+        if (!(state.getBlock() instanceof AbstractBedBlock bedBlock)) {
             return false;
         }
+        final BedRule dimensionValue = bedBlock.getBedRule(this.getHandle().level(), pos);
 
-        if (this.getHandle().startSleepInBed(pos, force).left().isPresent()) {
+        if (this.getHandle().startSleepInBed(bedBlock, state,dimensionValue, pos).left().isPresent()) {
             return false;
         }
 

@@ -1,14 +1,6 @@
-From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
-index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8ca7d6e268 100644
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
-@@ -66,8 +66,10 @@ public class Main {
+@@ -66,8 +_,10 @@
      private static final Logger LOGGER = LogUtils.getLogger();
  
      @SuppressForbidden(reason = "System.out needed before bootstrap")
@@ -20,7 +12,7 @@ index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8c
          OptionParser parser = new OptionParser();
          OptionSpec<Void> nogui = parser.accepts("nogui");
          OptionSpec<Void> initSettings = parser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");
-@@ -92,41 +94,97 @@ public class Main {
+@@ -92,41 +_,97 @@
                  parser.printHelpOn(System.err);
                  return;
              }
@@ -93,7 +85,7 @@ index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8c
              }
  
 -            File universePath = new File(options.valueOf(universe));
--            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), universePath);
+-            Services services = Services.create(MinecraftServicesDiscoveryService.create(Proxy.NO_PROXY), universePath);
 +            // Paper start - Detect headless JRE
 +            String awtException = io.papermc.paper.util.ServerEnvironment.awtDependencyCheck();
 +            if (awtException != null) {
@@ -126,7 +118,7 @@ index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8c
              LevelStorageSource levelStorageSource = LevelStorageSource.createDefault(universePath.toPath());
              LevelStorageSource.LevelStorageAccess access = levelStorageSource.validateAndCreateAccess(levelName);
              Dynamic<?> levelDataTag;
-@@ -154,13 +212,20 @@ public class Main {
+@@ -154,13 +_,20 @@
              } else {
                  levelDataTag = null;
              }
@@ -148,7 +140,7 @@ index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8c
  
              WorldStem worldStem;
              try {
-@@ -169,17 +234,31 @@ public class Main {
+@@ -169,17 +_,31 @@
                          executor -> WorldLoader.load(
                              worldLoadConfig,
                              context -> {
@@ -159,7 +151,7 @@ index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8c
 +                                    try {
 +                                        io.papermc.paper.world.migration.WorldFolderMigration.migrateStartupWorld(
 +                                            access,
-+                                            context.datapackWorldgen(),
++                                            context.datapackWorldRegistries(),
 +                                            levelName,
 +                                            LevelStem.OVERWORLD,
 +                                            Registries.levelStemToLevel(LevelStem.OVERWORLD)
@@ -169,8 +161,8 @@ index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8c
 +                                    }
 +                                    // Paper end - migrate startup world
                                      LevelDataAndDimensions worldData = LevelStorageSource.getLevelDataAndDimensions(
--                                        access, levelDataTag, context.dataConfiguration(), datapackDimensions, context.datapackWorldgen()
-+                                        access, levelDataTag, context.dataConfiguration(), datapackDimensions, context.datapackWorldgen(), net.minecraft.world.level.Level.OVERWORLD // Paper
+-                                        access, levelDataTag, context.dataConfiguration(), datapackDimensions, context.datapackWorldRegistries()
++                                        access, levelDataTag, context.dataConfiguration(), datapackDimensions, context.datapackWorldRegistries(), net.minecraft.world.level.Level.OVERWORLD // Paper
                                      );
                                      return new WorldLoader.DataLoadOutput<>(
                                          worldData.worldDataAndGenSettings(), worldData.dimensions().dimensionsRegistryAccess()
@@ -182,7 +174,7 @@ index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8c
                                  }
                              },
                              WorldStem::new,
-@@ -195,6 +274,7 @@ public class Main {
+@@ -195,6 +_,7 @@
                  return;
              }
  
@@ -190,7 +182,7 @@ index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8c
              RegistryAccess.Frozen registryHolder = worldStem.registries().compositeAccess();
              WorldData data = worldStem.worldDataAndGenSettings().data();
              boolean recreateRegionFilesValue = options.has(recreateRegionFiles);
-@@ -203,9 +283,12 @@ public class Main {
+@@ -203,9 +_,12 @@
              }
  
              access.saveDataTag(data);
@@ -203,7 +195,7 @@ index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8c
                          thread,
                          access,
                          packRepository,
-@@ -218,17 +301,35 @@ public class Main {
+@@ -218,17 +_,35 @@
                          notificationManager
                      );
                      notificationManager.setServer(server);
@@ -241,7 +233,7 @@ index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8c
              Thread shutdownThread = new Thread("Server Shutdown Thread") {
                  @Override
                  public void run() {
-@@ -237,12 +338,13 @@ public class Main {
+@@ -237,12 +_,13 @@
              };
              shutdownThread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
              Runtime.getRuntime().addShutdownHook(shutdownThread);
@@ -256,7 +248,7 @@ index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8c
          final DedicatedServerSettings settings,
          final WorldLoader.DataLoadContext context,
          final Registry<LevelStem> datapackDimensions,
-@@ -313,7 +415,11 @@ public class Main {
+@@ -313,7 +_,11 @@
          final RegistryAccess registryAccess,
          final boolean recreateRegionFiles
      ) {
@@ -269,7 +261,7 @@ index 3c5dbc4873102d4fe5a5da17d8a20f2d0fa4f2a8..6ee2239f388c0a9d08a9b0e402839c8c
  
          try (WorldUpgrader upgrader = new WorldUpgrader(storageSource, fixerUpper, registryAccess, eraseCache, recreateRegionFiles)) {
              Component lastStatus = null;
-@@ -341,5 +447,6 @@ public class Main {
+@@ -341,5 +_,6 @@
                  }
              }
          }
