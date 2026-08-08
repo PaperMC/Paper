@@ -385,6 +385,13 @@ public class WorldConfiguration extends ConfigurationPart {
         public Duration refreshMin = Duration.of("12h");
         public Duration refreshMax = Duration.of("2d");
         public boolean retainUnlootedShulkerBoxLootTableOnNonPlayerBreak = true;
+
+        @PostProcess
+        public void validateRefillRange() throws SerializationException {
+            if (this.refreshMax.seconds() < this.refreshMin.seconds()) {
+                throw new SerializationException("lootables.refresh-max (%s) must be greater than or equal to lootables.refresh-min (%s)".formatted(this.refreshMax.value(), this.refreshMin.value()));
+            }
+        }
     }
 
     public MaxGrowthHeight maxGrowthHeight;
