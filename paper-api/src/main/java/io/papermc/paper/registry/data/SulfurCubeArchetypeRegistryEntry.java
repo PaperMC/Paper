@@ -2,6 +2,7 @@ package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.TypedKey;
+import io.papermc.paper.registry.holder.RegistryHolder;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.List;
 import org.bukkit.Sound;
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
+import static io.papermc.paper.registry.data.InlinedRegistryBuilderProvider.transientHolder;
 import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 import static io.papermc.paper.util.BoundChecker.requirePositive;
 
@@ -180,18 +182,15 @@ public interface SulfurCubeArchetypeRegistryEntry {
     @ApiStatus.NonExtendable
     interface SoundSettings {
 
-        // todo The sounds should take a RegistryHolder but need more thoughts on the create method
         /**
          * {@return the sound played once the sulfur cube is knocked}
          */
-        @ApiStatus.Experimental
-        TypedKey<Sound> hitSound();
+        RegistryHolder<Sound, SoundEventRegistryEntry> hitSound();
 
         /**
          * {@return the sound played once the sulfur cube is pushed}
          */
-        @ApiStatus.Experimental
-        TypedKey<Sound> pushSound();
+        RegistryHolder<Sound, SoundEventRegistryEntry> pushSound();
 
         /**
          * {@return the smallest impulse required to play the push sound}
@@ -209,13 +208,30 @@ public interface SulfurCubeArchetypeRegistryEntry {
          * @param hitSound the sound played once the sulfur cube is knocked, as returned by {@link #hitSound()}
          * @param pushSound the sound played once the sulfur cube is pushed, as returned by {@link #pushSound()}
          * @param pushSoundImpulseThreshold the smallest impulse required to play the push sound, as returned by {@link #pushSoundImpulseThreshold()}
-         * @param pushSoundCooldown the amount of seconds before the push sound can be played again, as returned by {@link #pushSoundCooldown()}
+         * @param pushSoundCooldown the number of seconds before the push sound can be played again, as returned by {@link #pushSoundCooldown()}
          * @return the created instance
          */
         @Contract(value = "_, _, _, _ -> new", pure = true)
         @ApiStatus.Experimental
         static SoundSettings of(final TypedKey<Sound> hitSound, final TypedKey<Sound> pushSound, final float pushSoundImpulseThreshold, final float pushSoundCooldown) {
-            record Impl(TypedKey<Sound> hitSound, TypedKey<Sound> pushSound, float pushSoundImpulseThreshold, float pushSoundCooldown) implements SoundSettings {
+            return of(transientHolder(hitSound), transientHolder(pushSound), pushSoundImpulseThreshold, pushSoundCooldown);
+        }
+
+        /**
+         * Creates a new sound settings instance based on the passed values.
+         * <p>
+         * {@link RegistryHolder} instances can be created with {@link io.papermc.paper.registry.event.RegistryFactory}.
+         *
+         * @param hitSound the sound played once the sulfur cube is knocked, as returned by {@link #hitSound()}
+         * @param pushSound the sound played once the sulfur cube is pushed, as returned by {@link #pushSound()}
+         * @param pushSoundImpulseThreshold the smallest impulse required to play the push sound, as returned by {@link #pushSoundImpulseThreshold()}
+         * @param pushSoundCooldown the number of seconds before the push sound can be played again, as returned by {@link #pushSoundCooldown()}
+         * @return the created instance
+         */
+        @Contract(value = "_, _, _, _ -> new", pure = true)
+        @ApiStatus.Experimental
+        static SoundSettings of(final RegistryHolder<Sound, SoundEventRegistryEntry> hitSound, final RegistryHolder<Sound, SoundEventRegistryEntry> pushSound, final float pushSoundImpulseThreshold, final float pushSoundCooldown) {
+            record Impl(RegistryHolder<Sound, SoundEventRegistryEntry> hitSound, RegistryHolder<Sound, SoundEventRegistryEntry> pushSound, float pushSoundImpulseThreshold, float pushSoundCooldown) implements SoundSettings {
             }
 
             return new Impl(hitSound, pushSound, pushSoundImpulseThreshold, pushSoundCooldown);

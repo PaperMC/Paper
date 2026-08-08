@@ -21,9 +21,9 @@ public final class PaperRegistryHolders {
         };
     }
 
-    public static <API extends Keyed & RegistryElement.Buildable<API, ENTRY, ?>, ENTRY, M> Holder<M> convert(final RegistryHolder<API, ENTRY> holder) { // TODO remove Keyed
+    public static <API extends Keyed & RegistryElement.Buildable<API, ENTRY, ?>, ENTRY, M> Holder<M> convert(final RegistryHolder<API, ENTRY> holder, final Conversions conversions) { // TODO remove Keyed
         return switch (holder) {
-            case final RegistryHolder.Reference<API, ENTRY> ref -> ((ReferenceRegistryHolderImpl<API, ENTRY, M>) ref).holder();
+            case final RegistryHolder.Reference<API, ENTRY> ref -> ((PaperReferenceHolder<API, ENTRY, M>) ref).getHolder(conversions);
             case final RegistryHolder.Inlined<API, ENTRY> inlined -> ((InlinedRegistryHolderImpl<API, ENTRY, M>) inlined).holder();
         };
     }

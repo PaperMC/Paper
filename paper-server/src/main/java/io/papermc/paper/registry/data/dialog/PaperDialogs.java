@@ -59,7 +59,7 @@ public final class PaperDialogs {
             case final DialogListType list -> {
                 return new DialogListDialog(
                     common,
-                    PaperRegistrySets.convertToNmsWithDirects(Registries.DIALOG, conversions.lookup(), list.dialogs()),
+                    PaperRegistrySets.convertToNmsWithDirects(Registries.DIALOG, conversions, list.dialogs()),
                     Optional.ofNullable(list.exitAction()).map(convertButton),
                     list.columns(),
                     list.buttonWidth()

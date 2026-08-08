@@ -86,7 +86,7 @@ public class PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry {
 
         @Override
         public Builder soundEvent(final RegistryHolder<Sound, SoundEventRegistryEntry> soundEvent) {
-            this.soundEvent = PaperRegistryHolders.convert(soundEvent);
+            this.soundEvent = PaperRegistryHolders.convert(soundEvent, this.conversions);
             return this;
         }
 

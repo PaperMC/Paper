@@ -28,7 +28,7 @@ public final class PaperRegistrySets {
         }
     }
 
-    public static <A extends Keyed & RegistryElement.Buildable<A, E, ?>, E, M> HolderSet<M> convertToNmsWithDirects(final ResourceKey<? extends Registry<M>> resourceKey, final RegistryOps.RegistryInfoLookup lookup, final RegistrySet<A> registrySet) { // TODO remove Keyed
+    public static <A extends Keyed & RegistryElement.Buildable<A, E, ?>, E, M> HolderSet<M> convertToNmsWithDirects(final ResourceKey<? extends Registry<M>> resourceKey, final Conversions conversions, final RegistrySet<A> registrySet) { // TODO remove Keyed
         if (registrySet instanceof NamedRegistryKeySetImpl<A, ?>) {
             return ((NamedRegistryKeySetImpl<A, M>) registrySet).namedSet();
         } else if (registrySet.isEmpty()) {
@@ -43,7 +43,7 @@ public final class PaperRegistrySets {
             }
             return HolderSet.direct(directs);
         } else if (registrySet instanceof final RegistryKeySet<A> keySet) {
-            final RegistryOps.RegistryInfo<M> registryInfo = lookup.lookup(resourceKey).orElseThrow();
+            final RegistryOps.RegistryInfo<M> registryInfo = conversions.lookup().lookup(resourceKey).orElseThrow();
             return HolderSet.direct(
                 key -> {
                     return registryInfo.getter().getOrThrow(PaperRegistries.toNms(key));
