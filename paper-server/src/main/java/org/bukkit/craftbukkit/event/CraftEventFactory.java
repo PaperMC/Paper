@@ -1915,24 +1915,20 @@ public class CraftEventFactory {
     }
 
     public static boolean handleBlockFormEvent(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-        return CraftEventFactory.handleBlockFormEvent(level, pos, state, net.minecraft.world.level.block.Block.UPDATE_ALL, null);
+        return CraftEventFactory.handleBlockFormEvent(level, pos, state, null);
     }
 
-    public static boolean handleBlockFormEvent(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
-        return CraftEventFactory.handleBlockFormEvent(level, pos, state, flags, null);
+    public static boolean handleBlockFormEvent(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @Nullable Entity entity) {
+        return CraftEventFactory.handleBlockFormEvent(level, pos, state, entity, false);
     }
 
-    public static boolean handleBlockFormEvent(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags, @Nullable Entity entity) {
-        return CraftEventFactory.handleBlockFormEvent(level, pos, state, flags, entity, false);
-    }
-
-    public static boolean handleBlockFormEvent(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags, @Nullable Entity entity, boolean checkSetResult) {
+    public static boolean handleBlockFormEvent(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @Nullable Entity entity, boolean checkSetResult) {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(level, pos);
         snapshot.setBlock(state);
 
         BlockFormEvent event = (entity == null) ? new BlockFormEvent(snapshot.getBlock(), snapshot) : new EntityBlockFormEvent(entity.getBukkitEntity(), snapshot.getBlock(), snapshot);
         if (event.callEvent()) {
-            boolean result = snapshot.place(flags);
+            boolean result = snapshot.placeAndUpdate();
             return !checkSetResult || result;
         }
 
