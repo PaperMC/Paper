@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Tue, 11 Aug 2026 11:08:13 +0200
+Subject: [PATCH] fixup! paper File Patches
+
+
+diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
+index 277bc96efefed4525864f6afb2294d677ff038c7..242311ac9610b190371f217d1ae3d730e99fc39c 100644
+--- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
++++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
+@@ -199,7 +199,7 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
+ 
+     @Override
+     public long configAutoSaveInterval(final ServerLevel world) {
+-        return world.paperConfig().chunks.autoSaveInterval.value();
++        return world.paperConfig().chunks.autoSaveInterval;
+     }
+ 
+     @Override
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 20959e816c3887963db275f56d9b05b978e37faf..3de51658766d6c2431966c399a88b0ed0d09f4ac 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1640,7 +1640,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 this.saveGlobalData(false);
+             }
+             for (final ServerLevel level : this.getAllLevels()) {
+-                if (level.paperConfig().chunks.autoSaveInterval.value() > 0) {
++                if (level.paperConfig().chunks.autoSaveInterval > 0) {
+                     level.saveIncrementally(fullSave);
+                 }
+             }
+diff --git a/net/minecraft/server/ServerAdvancementManager.java b/net/minecraft/server/ServerAdvancementManager.java
+index c4b45a4166bfdadd8fee39cb3b5a716ce4f547e8..a041c15f81dbbc12aad81feaff8a98922756507f 100644
+--- a/net/minecraft/server/ServerAdvancementManager.java
++++ b/net/minecraft/server/ServerAdvancementManager.java
+@@ -34,7 +34,7 @@ public class ServerAdvancementManager extends SimpleJsonResourceReloadListener<A
+     @Override
+     protected void apply(final Map<Identifier, Advancement> preparations, final ResourceManager manager, final ProfilerFiller profiler) {
+         Builder<Identifier, AdvancementHolder> builder = ImmutableMap.builder();
+-        final java.util.List<String> disabledAdvancements = io.papermc.paper.configuration.PaperConfigurationsInitializer.initialization().disabledAdvancements; // Paper - read early, before the global config exists
++        final java.util.Set<String> disabledAdvancements = io.papermc.paper.configuration.PaperConfigurationsInitializer.initialization().disabledAdvancements; // Paper - read early, before the global config exists
+         preparations.forEach((id, advancement) -> {
+             // Spigot start
+             if (disabledAdvancements.contains("*") || disabledAdvancements.contains(id.toString()) || disabledAdvancements.contains(id.getNamespace())) {
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 348415f4f10b85773fc58c1de9bac431a8e71f1e..9c927c041e93c270cd55f1f322f0b2dfd0a1fed1 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -191,11 +191,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     // Paper end - Use getChunkIfLoadedImmediately
+     // Paper start - per world ticks per spawn
+     private int getTicksPerSpawn(SpawnCategory spawnCategory) {
+-        final int perWorld = this.paperConfig().entities.spawning.ticksPerSpawn.getInt(org.bukkit.craftbukkit.util.CraftSpawnCategory.toNMS(spawnCategory));
+-        if (perWorld >= 0) {
+-            return perWorld;
+-        }
+-        return this.getCraftServer().getTicksPerSpawns(spawnCategory);
++        return this.paperConfig().entities.spawning.ticksPerSpawn.getInt(org.bukkit.craftbukkit.util.CraftSpawnCategory.toNMS(spawnCategory));
+     }
+     // Paper end
+ 

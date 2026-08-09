@@ -92,20 +92,18 @@
          LOGGER.info("Loading properties");
          DedicatedServerProperties properties = this.settings.getProperties();
          if (this.isSingleplayer()) {
-@@ -197,8 +_,45 @@
+@@ -197,8 +_,43 @@
              this.setLocalIp(properties.serverIp);
          }
  
 -        this.worldData.setGameType(properties.gameMode.get());
-+        // Spigot start
-+        this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
-+        org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
-+        org.spigotmc.SpigotConfig.registerCommands();
-+        // Spigot end
-+        // Paper start - initialize global and world-defaults configuration
++        // Paper start - initialize global and world-defaults configuration; has to be before CraftServer
 +        this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
 +        this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
 +        // Paper end - initialize global and world-defaults configuration
++        // Spigot start
++        this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
++        // Spigot end
 +        this.server.spark.enableEarlyIfRequested(); // Paper - spark
 +        // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
 +        if (this.convertOldUsers()) {
@@ -113,7 +111,7 @@
 +        }
 +        this.getPlayerList().loadAndSaveFiles(); // Must be after convertNames
 +        // Paper end - fix converting txt to json file
-+        org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
++        org.spigotmc.WatchdogThread.doStart(io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.timeoutSeconds, io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.restartOnCrash); // Paper - start watchdog thread
 +        consoleThread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
 +        io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
 +        this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
@@ -129,7 +127,7 @@
 +                LOGGER.error("**** INVALID CONFIGURATION!");
 +                LOGGER.error("You are trying to use a Unix domain socket but you're not on a supported OS.");
 +                return false;
-+            } else if (!io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && !org.spigotmc.SpigotConfig.bungee) {
++            } else if (!io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && !io.papermc.paper.configuration.GlobalConfiguration.get().proxies.bungeeCord.enabled) {
 +                LOGGER.error("**** INVALID CONFIGURATION!");
 +                LOGGER.error("Unix domain sockets require IPs to be forwarded from a proxy.");
 +                return false;
@@ -167,7 +165,7 @@
 +        // CraftBukkit end
 +
 +        // Paper start - Add Velocity IP Forwarding Support
-+        boolean usingProxy = org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled;
++        boolean usingProxy = io.papermc.paper.configuration.GlobalConfiguration.get().proxies.bungeeCord.enabled || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled;
 +        String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
 +        String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
 +        // Paper end - Add Velocity IP Forwarding Support

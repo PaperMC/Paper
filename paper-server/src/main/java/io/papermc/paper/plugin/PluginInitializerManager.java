@@ -1,7 +1,7 @@
 package io.papermc.paper.plugin;
 
 import com.mojang.logging.LogUtils;
-import io.papermc.paper.configuration.PaperConfigurations;
+import io.papermc.paper.configuration.PaperConfigurationsInitializer;
 import io.papermc.paper.plugin.entrypoint.Entrypoint;
 import io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler;
 import io.papermc.paper.plugin.provider.PluginProvider;
@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import joptsimple.OptionSet;
 import net.minecraft.server.dedicated.DedicatedServer;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -34,14 +33,11 @@ public class PluginInitializerManager {
     }
 
     private static PluginInitializerManager parse(@NotNull final OptionSet minecraftOptionSet) throws Exception {
-        // // We have to load the bukkit configuration inorder to get the update folder location.
-        // final File configFileLocationBukkit = (File) minecraftOptionSet.valueOf("bukkit-settings");
-        //
-        // final Path pluginDirectory = ((File) minecraftOptionSet.valueOf("plugins")).toPath();
-        //
-        // final YamlConfiguration configuration = PaperConfigurations.loadLegacyConfigFile(configFileLocationBukkit);
+        final Path pluginDirectory = ((File) minecraftOptionSet.valueOf("plugins")).toPath();
 
-        final String updateDirectoryName = configuration.getString("settings.update-folder", "update");
+        // This runs before the registries are bootstrapped, so the full global config cannot be read
+        // here; the update folder comes from the early initialization pass instead.
+        final String updateDirectoryName = PaperConfigurationsInitializer.initialization().updateFolder;
         if (updateDirectoryName.isBlank()) {
             return new PluginInitializerManager(pluginDirectory, null);
         }
@@ -50,7 +46,7 @@ public class PluginInitializerManager {
         if (!Files.isDirectory(resolvedUpdateDirectory)) {
             if (Files.exists(resolvedUpdateDirectory)) {
                 LOGGER.error("Misconfigured update directory!");
-                LOGGER.error("Your configured update directory ({}) in bukkit.yml is pointing to a non-directory path. " +
+                LOGGER.error("Your configured update directory ({}) in initialization.update-folder is pointing to a non-directory path. " +
                     "Auto updating functionality will not work.", resolvedUpdateDirectory);
             }
             return new PluginInitializerManager(pluginDirectory, null);
@@ -67,7 +63,7 @@ public class PluginInitializerManager {
 
         if (isSameFile) {
             LOGGER.error("Misconfigured update directory!");
-            LOGGER.error(("Your configured update directory (%s) in bukkit.yml is pointing to the same location as the plugin directory (%s). " +
+            LOGGER.error(("Your configured update directory (%s) in initialization.update-folder is pointing to the same location as the plugin directory (%s). " +
                 "Disabling auto updating functionality.").formatted(resolvedUpdateDirectory, pluginDirectory));
 
             return new PluginInitializerManager(pluginDirectory, null);
@@ -97,7 +93,6 @@ public class PluginInitializerManager {
 
     public static void load(OptionSet optionSet) throws Exception {
         LOGGER.info("Initializing plugins...");
-        // We have to load the bukkit configuration inorder to get the update folder location.
         io.papermc.paper.plugin.PluginInitializerManager pluginSystem = io.papermc.paper.plugin.PluginInitializerManager.init(optionSet);
 
         // Register the default plugin directory

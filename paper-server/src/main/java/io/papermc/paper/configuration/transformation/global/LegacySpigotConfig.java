@@ -1,6 +1,8 @@
 package io.papermc.paper.configuration.transformation.global;
 
 import io.papermc.paper.configuration.Configuration;
+import io.papermc.paper.configuration.transformation.Transformations;
+import org.spongepowered.configurate.ConfigurateException;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -28,6 +30,13 @@ import static org.spongepowered.configurate.transformation.TransformAction.set;
 public final class LegacySpigotConfig {
 
     private LegacySpigotConfig() {}
+
+    public static void migrate(final ConfigurationNode node) throws ConfigurateException {
+        transformation().apply(node);
+        toNewFormat().apply(node);
+        Transformations.pruneEmptySections(node, "settings", "commands", "messages", "stats", "advancements", "players");
+        node.removeChild(Configuration.LEGACY_CONFIG_VERSION_FIELD);
+    }
 
     public static ConfigurationTransformation transformation() {
         return ConfigurationTransformation.chain(versioned(), notVersioned());
@@ -93,7 +102,7 @@ public final class LegacySpigotConfig {
                 value.raw(value.getInt(0) >= 0); // the int value isn't used anymore, it's only a bool now
                 return commands("tab-completion").array();
             })
-            // TODO "commands.silent-commandblock-console" needs a non-versioned transformation but at the proper time to have access to game-rules
+            .addAction(commands("silent-commandblock-console"), rename("silent-command-block-console"))
             .addAction(commands("spam-exclusions"), move(path("spam-limiter", "commands", "exclusions")))
             .addAction(commands("enable-spam-exclusions"), move(path("spam-limiter", "commands", "enabled")))
             // messages
@@ -104,7 +113,7 @@ public final class LegacySpigotConfig {
                         Set.of("You are not whitelisted on this server!", "You are not white-listed on this server!")::contains,
                         translatable("multiplayer.disconnect.not_whitelisted")
                     ),
-                    messages("kick", "not-whitelisted")
+                    messages("kick", "whitelist")
                 )
             )
             .addAction(messages("unknown-command"), (path, value) -> {
@@ -139,10 +148,11 @@ public final class LegacySpigotConfig {
             .addAction(messages("restart"), move(miniMessage(), messages("kick", "restart")))
             // players.disable-saving OK
             // advancements.disable-saving OK
-            // advancements.disabled OK
+            .addAction(path("advancements", "disabled"), move(path("initialization", "disabled-advancements"))) // read before datapacks load
             // stats.disable-saving OK
             .addAction(path("stats", "forced-stats"), rename("forced-custom-stat-values"))
             // settings
+            .addAction(settings("debug"), move(path("logging", "debug")))
             .addAction(settings("bungeecord"), move(path("proxies", "bungee-cord", "enabled")))
             .addAction(settings("log-villager-deaths"), move(path("logging", "villager-deaths")))
             .addAction(settings("log-named-deaths"), move(path("logging", "named-living-entity-deaths")))
@@ -156,10 +166,10 @@ public final class LegacySpigotConfig {
             .addAction(settings("netty-threads"), moveParent("misc"))
             .addAction(settings("sample-count"), moveParent("players"))
             .addAction(settings("player-shuffle"), move(path("players", "connection-shuffle")))
-            .addAction(settings("attribute", "maxAbsorption", "max"), move(path("attributes", "minecraft:max_absorption", "max")))
-            .addAction(settings("attribute", "maxHealth", "max"), move(path("attributes", "minecraft:max_health", "max")))
-            .addAction(settings("attribute", "movementSpeed", "max"), move(path("attributes", "minecraft:movement_speed", "max")))
-            .addAction(settings("attribute", "attackDamage", "max"), move(path("attributes", "minecraft:attack_damage", "max")))
+            .addAction(settings("attribute", "maxAbsorption", "max"), move(path("attributes", "overrides", "minecraft:max_absorption", "max")))
+            .addAction(settings("attribute", "maxHealth", "max"), move(path("attributes", "overrides", "minecraft:max_health", "max")))
+            .addAction(settings("attribute", "movementSpeed", "max"), move(path("attributes", "overrides", "minecraft:movement_speed", "max")))
+            .addAction(settings("attribute", "attackDamage", "max"), move(path("attributes", "overrides", "minecraft:attack_damage", "max")))
             .build();
     }
 
@@ -190,7 +200,7 @@ public final class LegacySpigotConfig {
         };
     }
 
-    private static TransformAction miniMessage() {
+    static TransformAction miniMessage() {
         return (path, value) -> {
             final Object val = value.raw();
             if (val != null) {

@@ -1,6 +1,6 @@
 --- a/net/minecraft/stats/ServerStatsCounter.java
 +++ b/net/minecraft/stats/ServerStatsCounter.java
-@@ -75,9 +_,21 @@
+@@ -75,9 +_,20 @@
                  LOGGER.error("Couldn't parse statistics file {}", file, e);
              }
          }
@@ -9,16 +9,15 @@
 +        // Disables saving any forced stats, so it stays at the same value (without enabling disableStatSaving)
 +        // Fixes stat initialization to not cause a NullPointerException
 +        // Spigot start
-+        for (Map.Entry<net.minecraft.resources.Identifier, Integer> entry : org.spigotmc.SpigotConfig.forcedStats.entrySet()) {
-+            Stat<net.minecraft.resources.Identifier> wrapper = Stats.CUSTOM.get(java.util.Objects.requireNonNull(BuiltInRegistries.CUSTOM_STAT.getValue(entry.getKey()))); // Paper - ensured by SpigotConfig#stats
-+            this.stats.put(wrapper, entry.getValue().intValue());
++        for (final it.unimi.dsi.fastutil.objects.Object2IntMap.Entry<net.minecraft.core.Holder<net.minecraft.resources.Identifier>> entry : io.papermc.paper.configuration.GlobalConfiguration.get().stats.forcedCustomStatValues.object2IntEntrySet()) {
++            this.stats.put(Stats.CUSTOM.get(entry.getKey().value()), entry.getIntValue());
 +        }
 +        // Spigot end
 +        // Paper end - Moved after stat fetching for player state file
      }
  
      public void save() {
-+        if (org.spigotmc.SpigotConfig.disableStatSaving) return; // Spigot
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().stats.disableSaving) return; // Spigot
          try {
              FileUtil.createDirectoriesSafe(this.file.getParent());
  
@@ -26,8 +25,8 @@
  
      @Override
      public void setValue(final Player player, final Stat<?> stat, final int count) {
-+        if (org.spigotmc.SpigotConfig.disableStatSaving) return; // Spigot
-+        if (stat.getType() == Stats.CUSTOM && stat.getValue() instanceof final net.minecraft.resources.Identifier key && org.spigotmc.SpigotConfig.forcedStats.get(key) != null) return; // Paper - disable saving forced stats
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().stats.disableSaving) return; // Spigot
++        if (stat.getType() == Stats.CUSTOM && stat.getValue() instanceof final net.minecraft.resources.Identifier key && io.papermc.paper.configuration.GlobalConfiguration.get().stats.forcedCustomStatValues.containsKey(BuiltInRegistries.CUSTOM_STAT.wrapAsHolder(key))) return; // Paper - disable saving forced stats
          super.setValue(player, stat, count);
          this.dirty.add(stat);
      }

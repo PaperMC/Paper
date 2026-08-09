@@ -4,8 +4,6 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.FeatureHooks;
-import io.papermc.paper.configuration.legacy.MaxEntityCollisionsInitializer;
-import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
 import io.papermc.paper.configuration.mapping.MergeMap;
 import io.papermc.paper.configuration.serializer.NbtPathSerializer;
 import io.papermc.paper.configuration.serializer.collection.map.ThrowExceptions;
@@ -16,10 +14,10 @@ import io.papermc.paper.configuration.type.Duration;
 import io.papermc.paper.configuration.type.DurationOrDisabled;
 import io.papermc.paper.configuration.type.EngineMode;
 import io.papermc.paper.configuration.type.fallback.ArrowDespawnRate;
-import io.papermc.paper.configuration.type.fallback.AutosavePeriod;
 import io.papermc.paper.configuration.type.number.BelowZeroToEmpty;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
+import io.papermc.paper.configuration.type.number.LongOr;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongMap;
@@ -60,7 +58,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import org.slf4j.Logger;
-import org.spigotmc.SpigotWorldConfig;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
 import org.spongepowered.configurate.objectmapping.meta.PostProcess;
@@ -71,13 +68,11 @@ import org.spongepowered.configurate.serialize.SerializationException;
 @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class WorldConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getClassLogger();
-    static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): migrate spawn loaded configs to gamerule
+    static final int CURRENT_VERSION = 32; // (when you change the version, change the comment, so it conflicts on rebases): spawn limits and save interval no longer defer to bukkit.yml
 
-    private final transient SpigotWorldConfig spigotConfig;
     private final transient Identifier worldKey;
 
-    WorldConfiguration(final SpigotWorldConfig spigotConfig, final Identifier worldKey) {
-        this.spigotConfig = spigotConfig;
+    WorldConfiguration(final Identifier worldKey) {
         this.worldKey = worldKey;
     }
 
@@ -170,8 +165,20 @@ public class WorldConfiguration extends ConfigurationPart {
         public Spawning spawning;
 
         public class Spawning extends ConfigurationPart {
-            public ArrowDespawnRate nonPlayerArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this.spigotConfig);
-            public ArrowDespawnRate creativeArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this.spigotConfig);
+            @Comment("The radius around a player, in chunks, that mobs may naturally spawn in.")
+            public int mobSpawnRange = 8;
+            @Comment("Whether mobs spawned by a monster spawner have reduced AI.")
+            public boolean nerfSpawnerMobs = false;
+            @Comment("Whether zombified piglins may spawn from nether portals.")
+            public boolean enableZombiePigmenPortalSpawns = true;
+            @Comment("Ticks before a dropped item despawns.")
+            public int itemDespawnRate = 6000;
+            @Comment("Ticks before a stuck arrow despawns.")
+            public int arrowDespawnRate = 1200;
+            @Comment("Ticks before a stuck trident despawns. Defaults to the arrow despawn rate.")
+            public IntOr.Default tridentDespawnRate = IntOr.Default.USE_DEFAULT;
+            public ArrowDespawnRate nonPlayerArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this);
+            public ArrowDespawnRate creativeArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this);
             public IntOr.Disabled maxArrowDespawnInvulnerability = new IntOr.Disabled(OptionalInt.of(200));
             public boolean filterBadTileEntityNbtFromFallingBlocks = true;
             public List<NbtPathArgument.NbtPath> filteredEntityTagNbtPaths = NbtPathSerializer.fromString(List.of("Pos", "Motion", "sleeping_pos"));
@@ -179,12 +186,28 @@ public class WorldConfiguration extends ConfigurationPart {
             public boolean perPlayerMobSpawns = true;
             public boolean scanForLegacyEnderDragon = true;
             @MergeMap
-            public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
+            public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> {
+                map.put(MobCategory.MONSTER, 70);
+                map.put(MobCategory.CREATURE, 10);
+                map.put(MobCategory.WATER_CREATURE, 5);
+                map.put(MobCategory.WATER_AMBIENT, 20);
+                map.put(MobCategory.UNDERGROUND_WATER_CREATURE, 5);
+                map.put(MobCategory.AXOLOTLS, 5);
+                map.put(MobCategory.AMBIENT, 15);
+            });
             @MergeMap
             public Map<MobCategory, DespawnRangePair> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> DespawnRangePair.createDefault()));
             public DespawnRange.Shape despawnRangeShape = DespawnRange.Shape.ELLIPSOID;
             @MergeMap
-            public Reference2IntMap<MobCategory> ticksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
+            public Reference2IntMap<MobCategory> ticksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> {
+                map.put(MobCategory.MONSTER, 1);
+                map.put(MobCategory.CREATURE, 400);
+                map.put(MobCategory.WATER_CREATURE, 1);
+                map.put(MobCategory.WATER_AMBIENT, 1);
+                map.put(MobCategory.UNDERGROUND_WATER_CREATURE, 1);
+                map.put(MobCategory.AXOLOTLS, 1);
+                map.put(MobCategory.AMBIENT, 1);
+            });
 
             @ConfigSerializable
             public record DespawnRangePair(@Required DespawnRange hard, @Required DespawnRange soft) {
@@ -336,6 +359,67 @@ public class WorldConfiguration extends ConfigurationPart {
             public boolean cooldownFailedBeehiveReleases = true;
             @Comment("The delay before retrying POI acquisition when entity navigation is stuck. This will reduce pathfinding performance impact. Measured in ticks.")
             public IntOr.Disabled stuckEntityPoiRetryDelay = new IntOr.Disabled(OptionalInt.of(200));
+            @Comment("Whether zombies are always hostile towards villagers, regardless of difficulty.")
+            public boolean zombieAggressiveTowardsVillager = true;
+
+            @Comment("The radius within which dropped items and experience orbs merge. Set to -1 to disable.")
+            public MergeRadius mergeRadius;
+
+            public class MergeRadius extends ConfigurationPart {
+                public double item = 0.5;
+                public double experience = -1.0;
+            }
+        }
+
+        @Comment("The horizontal distance, in blocks, at which entities of each category are sent to players.")
+        public TrackingRange trackingRange;
+
+        public class TrackingRange extends ConfigurationPart {
+            public int player = 128;
+            public int animal = 96;
+            public int monster = 96;
+            public int misc = 96;
+            public int display = 128;
+            public int other = 64;
+        }
+
+        @Comment("The distance, in blocks, at which entities of each category are ticked. Entities outside it are mostly frozen.")
+        public ActivationRange activationRange;
+
+        public class ActivationRange extends ConfigurationPart {
+            public int animals = 32;
+            public int monsters = 32;
+            public int raiders = 64;
+            public int misc = 16;
+            public int water = 16;
+            public int villagers = 32;
+            public int flyingMonsters = 32;
+            @Comment("Ticks a villager is immune to deactivation after starting work.")
+            public int villagersWorkImmunityAfter = 100;
+            public int villagersWorkImmunityFor = 20;
+            @Comment("Whether villagers stay active while panicking.")
+            public boolean villagersActiveForPanic = true;
+            public boolean tickInactiveVillagers = true;
+            @Comment("Whether spectators keep nearby entities active.")
+            public boolean ignoreSpectators = false;
+
+            @Comment("Periodically wakes a limited number of deactivated entities so they do not stay frozen forever.")
+            public WakeUpInactive wakeUpInactive;
+
+            public class WakeUpInactive extends ConfigurationPart {
+                public int animalsMaxPerTick = 4;
+                public int animalsEvery = 1200;
+                public int animalsFor = 100;
+                public int monstersMaxPerTick = 8;
+                public int monstersEvery = 400;
+                public int monstersFor = 100;
+                public int villagersMaxPerTick = 4;
+                public int villagersEvery = 600;
+                public int villagersFor = 100;
+                public int flyingMonstersMaxPerTick = 8;
+                public int flyingMonstersEvery = 200;
+                public int flyingMonstersFor = 100;
+            }
         }
 
         public TrackingRangeY trackingRangeY;
@@ -407,10 +491,86 @@ public class WorldConfiguration extends ConfigurationPart {
         public boolean useVanillaWorldScoreboardNameColoring = false;
     }
 
+    @Comment("""
+        Percentage chance that a growth tick actually advances the plant.
+        100 is vanilla speed, 50 is half as fast, 200 is twice as fast.""")
+    public GrowthModifiers growthModifiers;
+
+    public class GrowthModifiers extends ConfigurationPart {
+        public int cactus = 100;
+        public int cane = 100;
+        public int melon = 100;
+        public int mushroom = 100;
+        public int pumpkin = 100;
+        public int sapling = 100;
+        public int beetroot = 100;
+        public int carrot = 100;
+        public int potato = 100;
+        public int torchFlower = 100;
+        public int wheat = 100;
+        public int netherWart = 100;
+        public int vine = 100;
+        public int cocoa = 100;
+        public int bamboo = 100;
+        public int sweetBerry = 100;
+        public int kelp = 100;
+        public int twistingVines = 100;
+        public int weepingVines = 100;
+        public int caveVines = 100;
+        public int glowBerry = 100;
+        public int pitcherPlant = 100;
+    }
+
+    @Comment("Exhaustion added by each action. Higher values make the hunger bar drain faster.")
+    public Hunger hunger;
+
+    public class Hunger extends ConfigurationPart {
+        public float jumpWalkExhaustion = 0.05f;
+        public float jumpSprintExhaustion = 0.2f;
+        public float combatExhaustion = 0.1f;
+        public float regenExhaustion = 6.0f;
+        public float swimMultiplier = 0.01f;
+        public float sprintMultiplier = 0.1f;
+        public float otherMultiplier = 0.0f;
+    }
+
+    @Comment("""
+        Salts used when deciding where structures and other seeded features generate.
+        Changing these changes where they appear in newly generated chunks.""")
+    public Seeds seeds;
+
+    public class Seeds extends ConfigurationPart {
+        public int village = 10387312;
+        public int desert = 14357617;
+        public int igloo = 14357618;
+        public int jungle = 14357619;
+        public int swamp = 14357620;
+        public int monument = 10387313;
+        public int shipwreck = 165745295;
+        public int ocean = 14357621;
+        public int outpost = 165745296;
+        public int endCity = 10387313;
+        public int slime = 987234911;
+        public int nether = 30084232;
+        public int mansion = 10387319;
+        public int fossil = 14357921;
+        public int portal = 34222645;
+        public int ancientCity = 20083232;
+        public int trailRuins = 83469867;
+        public int trialChambers = 94251327;
+        public int buriedTreasure = 10387320;
+        @Comment("Set to 'default' to use the vanilla value.")
+        public IntOr.Default mineshaft = IntOr.Default.USE_DEFAULT;
+        @Comment("Set to 'default' to use the vanilla value.")
+        public LongOr.Default stronghold = LongOr.Default.USE_DEFAULT;
+    }
+
     public Environment environment;
 
     public class Environment extends ConfigurationPart {
         public boolean disableThunder = false;
+        @Comment("The 1-in-N chance per tick of a thunderstorm starting. Higher means less frequent.")
+        public int thunderChance = 100000;
         public boolean disableIceAndSnow = false;
         public boolean optimizeExplosions = false;
         public boolean disableExplosionKnockback = false;
@@ -466,6 +626,8 @@ public class WorldConfiguration extends ConfigurationPart {
 
     public class Fixes extends ConfigurationPart {
         public boolean fixItemsMergingThroughWalls = false;
+        @Comment("The maximum number of primed TNT entities ticked per tick. Set to -1 to disable the limit.")
+        public int maxTntPerTick = 100;
         public boolean disableUnloadedChunkEnderpearlExploit = false;
         public boolean preventTntFromMovingInWater = false;
         public boolean splitOverstackedLoot = true;
@@ -490,6 +652,10 @@ public class WorldConfiguration extends ConfigurationPart {
 
     public class Hopper extends ConfigurationPart {
         public boolean cooldownWhenFull = true;
+        @Comment("The number of items moved per hopper transfer.")
+        public int amount = 1;
+        @Comment("Whether hoppers may load chunks to pull from or push into containers across a chunk border.")
+        public boolean canLoadChunks = false;
         public boolean disableMoveEvent = false;
         public boolean ignoreOccludingBlocks = false;
     }
@@ -500,7 +666,6 @@ public class WorldConfiguration extends ConfigurationPart {
         public boolean onlyPlayersCollide = false;
         public boolean allowVehicleCollisions = true;
         public boolean fixClimbingBypassingCrammingRule = false;
-        @RequiresSpigotInitialization(MaxEntityCollisionsInitializer.class)
         public int maxEntityCollisions = 8;
         public boolean allowPlayerCrammingDamage = false;
     }
@@ -508,7 +673,14 @@ public class WorldConfiguration extends ConfigurationPart {
     public Chunks chunks;
 
     public class Chunks extends ConfigurationPart {
-        public AutosavePeriod autoSaveInterval = AutosavePeriod.def();
+        @Comment("Ticks between saves of this world. Set to 0 or below to disable automatic saving.")
+        public int autoSaveInterval = 6000;
+        @Comment("Per-world view distance. Defaults to the server.properties value.")
+        public IntOr.Default viewDistance = IntOr.Default.USE_DEFAULT;
+        @Comment("Per-world simulation distance. Defaults to the server.properties value.")
+        public IntOr.Default simulationDistance = IntOr.Default.USE_DEFAULT;
+        @Comment("Whether chunks kept loaded by a ticking-frozen world are unloaded.")
+        public boolean unloadFrozenChunks = false;
         public int maxAutoSaveChunksPerTick = 24;
         public int fixedChunkInhabitedTime = -1;
         public boolean preventMovingIntoUnloadedChunks = false;
@@ -541,6 +713,13 @@ public class WorldConfiguration extends ConfigurationPart {
 
     public class TickRates extends ConfigurationPart {
         public int grassSpread = 1;
+        @Comment("Ticks between hopper transfer attempts.")
+        public int hopperTransfer = 8;
+        @Comment("Ticks between hopper pickup checks.")
+        public int hopperCheck = 1;
+        @Comment("Ticks between hanging entity (item frame, painting) validity checks.")
+        public int hangingTickFrequency = 100;
+
         public int containerUpdate = 1;
         public int mobSpawner = 1;
         public int wetFarmland = 1;
@@ -575,6 +754,15 @@ public class WorldConfiguration extends ConfigurationPart {
     public Misc misc;
 
     public class Misc extends ConfigurationPart {
+        @Comment("Radius in blocks that these sounds are broadcast to. Set to 0 to use the vanilla behaviour.")
+        public SoundRadius soundRadius;
+
+        public class SoundRadius extends ConfigurationPart {
+            public int dragonDeath = 0;
+            public int witherSpawn = 0;
+            public int endPortal = 0;
+        }
+
         public boolean updatePathfindingOnBlockUpdate = true;
         public boolean showSignClickCommandFailureMsgsToPlayer = false;
         public RedstoneImplementation redstoneImplementation = RedstoneImplementation.VANILLA;

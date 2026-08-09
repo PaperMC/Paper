@@ -26,7 +26,7 @@ public class RestartCommand extends Command {
     }
 
     public static void restart() {
-        RestartCommand.restart(SpigotConfig.restartScript);
+        RestartCommand.restart(io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.restartScript);
     }
 
     private static void restart(final String restartScript) {
@@ -34,9 +34,9 @@ public class RestartCommand extends Command {
             // Paper - extract method and cleanup
             boolean isRestarting = addShutdownHook(restartScript);
             if (isRestarting) {
-                System.out.println("Attempting to restart with " + SpigotConfig.restartScript);
+                System.out.println("Attempting to restart with " + io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.restartScript);
             } else {
-                System.out.println("Startup script '" + SpigotConfig.restartScript + "' does not exist! Stopping server.");
+                System.out.println("Startup script '" + io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.restartScript + "' does not exist! Stopping server.");
             }
             // Stop the watchdog
             WatchdogThread.doStop();
@@ -53,7 +53,7 @@ public class RestartCommand extends Command {
         if (MinecraftServer.getServer().isSameThread()) {
             // Kick all players
             for (ServerPlayer p : com.google.common.collect.ImmutableList.copyOf(MinecraftServer.getServer().getPlayerList().getPlayers())) {
-                p.connection.disconnect(CraftChatMessage.fromStringOrEmpty(SpigotConfig.restartMessage, true), org.bukkit.event.player.PlayerKickEvent.Cause.RESTART_COMMAND); // Paper - kick event reason (cause is never used)
+                p.connection.disconnect(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.restart, org.bukkit.event.player.PlayerKickEvent.Cause.RESTART_COMMAND); // Paper - kick event reason (cause is never used)
             }
             // Give the socket a chance to send the packets
             try {

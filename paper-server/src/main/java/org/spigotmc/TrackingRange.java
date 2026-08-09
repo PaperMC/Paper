@@ -25,9 +25,9 @@ public final class TrackingRange {
             return defaultRange;
         }
 
-        final SpigotWorldConfig config = entity.level().spigotConfig;
+        final io.papermc.paper.configuration.WorldConfiguration config = entity.level().paperConfig();
         if (entity instanceof ServerPlayer) {
-            return config.playerTrackingRange;
+            return config.entities.trackingRange.player;
         }
 
         if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
@@ -39,20 +39,20 @@ public final class TrackingRange {
             case RAIDER:
             case MONSTER:
             case FLYING_MONSTER:
-                return config.monsterTrackingRange;
+                return config.entities.trackingRange.monster;
             case WATER:
             case VILLAGER:
             case ANIMAL:
-                return config.animalTrackingRange;
+                return config.entities.trackingRange.animal;
             case MISC:
         }
 
         if (entity instanceof ItemFrame || entity instanceof Painting || entity instanceof ItemEntity || entity instanceof ExperienceOrb) {
-            return config.miscTrackingRange;
+            return config.entities.trackingRange.misc;
         } else if (entity instanceof Display) {
-            return config.displayTrackingRange;
+            return config.entities.trackingRange.display;
         } else {
-            return config.otherTrackingRange;
+            return config.entities.trackingRange.other;
         }
     }
 }

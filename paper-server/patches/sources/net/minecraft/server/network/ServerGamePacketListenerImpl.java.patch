@@ -270,7 +270,7 @@
 +                    return;
 +                }
 +                // Paper end - Prevent moving into unloaded chunks
-+                if (movedDist - expectedDist > Math.max(100.0, Mth.square(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed)) && !this.isSingleplayerOwner()) {
++                if (movedDist - expectedDist > Math.max(100.0, Mth.square(io.papermc.paper.configuration.GlobalConfiguration.get().anticheat.movedTooQuicklyMultiplier * (float) i * speed)) && !this.isSingleplayerOwner()) {
 +                    // CraftBukkit end
                      LOGGER.warn(
                          "{} (vehicle of {}) moved too quickly! {},{},{}", vehicle.getPlainTextName(), this.player.getPlainTextName(), xDist, yDist, zDist
@@ -293,7 +293,7 @@
                  movedDist = xDist * xDist + yDist * yDist + zDist * zDist;
                  boolean fail = false;
 -                if (movedDist > 0.0625) {
-+                if (movedDist > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
++                if (movedDist > io.papermc.paper.configuration.GlobalConfiguration.get().anticheat.movedWronglyThreshold) { // Spigot
                      fail = true;
                      LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", vehicle.getPlainTextName(), this.player.getPlainTextName(), Math.sqrt(movedDist));
                  }
@@ -408,7 +408,7 @@
 +        }
 +        // CraftBukkit end
 +        // Paper start - Don't suggest if tab-complete is disabled
-+        if (org.spigotmc.SpigotConfig.tabComplete < 0) {
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().commands.tabCompletion) {
 +            return;
 +        }
 +        // Paper end - Don't suggest if tab-complete is disabled
@@ -483,7 +483,7 @@
 -            Suggestions suggestions = results.getList().size() <= 1000 ? results : new Suggestions(results.getRange(), results.getList().subList(0, 1000));
 -            this.send(new ClientboundCommandSuggestionsPacket(packet.getId(), suggestions));
 +            // Paper start - Don't tab-complete namespaced commands if send-namespaced is false
-+            if (!org.spigotmc.SpigotConfig.sendNamespaced && results.getRange().getStart() <= 1) {
++            if (!io.papermc.paper.configuration.GlobalConfiguration.get().commands.sendNamespacedCommands && results.getRange().getStart() <= 1) {
 +                results.getList().removeIf(suggestion -> suggestion.getText().contains(":"));
 +            }
 +            // Paper end - Don't tab-complete namespaced commands if send-namespaced is false
@@ -788,7 +788,7 @@
                                      if (this.shouldCheckPlayerMovement(isFallFlying)) {
                                          float metersPerTick = isFallFlying ? 300.0F : 100.0F;
 -                                        if (movedDist - expectedDist > metersPerTick * deltaPackets) {
-+                                        if (movedDist - expectedDist > Math.max(metersPerTick, Mth.square(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) deltaPackets * speed))) {
++                                        if (movedDist - expectedDist > Math.max(metersPerTick, Mth.square(io.papermc.paper.configuration.GlobalConfiguration.get().anticheat.movedTooQuicklyMultiplier * (float) deltaPackets * speed))) {
 +                                            // CraftBukkit end
 +                                            // Paper start - Add fail move event
 +                                            io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY,
@@ -857,7 +857,7 @@
 +                                boolean movedWrongly = false; // Paper - Add fail move event; rename
                                  if (!this.player.isChangingDimension()
 -                                    && movedDist > 0.0625
-+                                    && movedDist > org.spigotmc.SpigotConfig.movedWronglyThreshold // Spigot
++                                    && movedDist > io.papermc.paper.configuration.GlobalConfiguration.get().anticheat.movedWronglyThreshold // Spigot
                                      && !this.player.isSleeping()
                                      && !this.player.isCreative()
                                      && !this.player.isSpectator()
@@ -1455,7 +1455,7 @@
 +    // CraftBukkit start
 +    private void performUnsignedChatCommand(String command) {
 +        String prefixedCommand = "/" + command;
-+        if (org.spigotmc.SpigotConfig.logCommands) { // Paper - Add missing SpigotConfig logCommands check
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().logging.commandExecution) { // Paper - Add missing SpigotConfig logCommands check
 +            LOGGER.info("{} issued server command: {}", this.player.getScoreboardName(), prefixedCommand);
 +        }
 +
@@ -1490,7 +1490,7 @@
      private void performSignedChatCommand(final ServerboundChatCommandSignedPacket packet, final LastSeenMessages lastSeenMessages) {
 +        // CraftBukkit start
 +        String commandString = "/" + packet.command();
-+        if (org.spigotmc.SpigotConfig.logCommands) { // Paper - Add missing SpigotConfig logCommands check
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().logging.commandExecution) { // Paper - Add missing SpigotConfig logCommands check
 +            LOGGER.info("{} issued server command: {}", this.player.getScoreboardName(), commandString);
 +        } // Paper - Add missing SpigotConfig logCommands check
 +
@@ -1632,8 +1632,8 @@
 -        if (!throttler.isUnderThreshold()
 +    // Spigot start - spam exclusions
 +    private void detectRateSpam(final TickThrottler throttler, final String message) {
-+        if (org.spigotmc.SpigotConfig.enableSpamExclusions) {
-+            for (String exclude : org.spigotmc.SpigotConfig.spamExclusions) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.commands.enabled) {
++            for (String exclude : io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.commands.exclusions) {
 +                if (exclude != null && message.startsWith(exclude)) {
 +                    return;
 +                }

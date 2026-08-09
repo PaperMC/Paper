@@ -10,7 +10,10 @@ import com.google.common.collect.MapMaker;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.JsonOps;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.configuration.GlobalConfiguration;
+import io.papermc.paper.configuration.PaperConfigurations;
+import io.papermc.paper.configuration.PaperConfigurationsInitializer;
 import io.papermc.paper.configuration.PaperServerConfiguration;
 import io.papermc.paper.configuration.ServerConfiguration;
 import io.papermc.paper.util.MCUtil;
@@ -45,6 +48,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.Optionull;
 import net.minecraft.advancements.AdvancementHolder;
@@ -80,6 +84,7 @@ import net.minecraft.util.Util;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.village.VillageSiege;
 import net.minecraft.world.entity.npc.CatSpawner;
 import net.minecraft.world.entity.npc.wanderingtrader.WanderingTraderSpawner;
@@ -277,14 +282,11 @@ public final class CraftServer implements Server {
     final DedicatedServer console;
     private final DedicatedPlayerList playerList;
     private final Map<String, World> worlds = new LinkedHashMap<>();
-    private YamlConfiguration configuration;
-    private YamlConfiguration commandsConfiguration;
     private final Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
     private final Map<UUID, OfflinePlayer> offlinePlayers = new MapMaker().weakValues().makeMap();
     private final EntityMetadataStore entityMetadata = new EntityMetadataStore();
     private final PlayerMetadataStore playerMetadata = new PlayerMetadataStore();
     private final WorldMetadataStore worldMetadata = new WorldMetadataStore();
-    private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
     private File container;
     private WarningState warningState = WarningState.DEFAULT;
     public ApiVersion minimumAPI;
@@ -418,62 +420,17 @@ public final class CraftServer implements Server {
             this.getLogger().info("Console input is disabled due to --noconsole command argument");
         }
 
-        this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());
-        this.configuration.options().copyDefaults(true);
-        YamlConfiguration configurationDefaults = YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml"), StandardCharsets.UTF_8));
-        this.configuration.setDefaults(configurationDefaults);
-        this.configuration.options().setHeader(configurationDefaults.options().getHeader());
-        ConfigurationSection legacyAlias = null;
-        if (!this.configuration.isString("aliases")) {
-            legacyAlias = this.configuration.getConfigurationSection("aliases");
-            this.configuration.set("aliases", "now-in-commands.yml");
-        }
-        this.saveConfig();
-        if (this.getCommandsConfigFile().isFile()) {
-            legacyAlias = null;
-        }
-        this.commandsConfiguration = YamlConfiguration.loadConfiguration(this.getCommandsConfigFile());
-        this.commandsConfiguration.options().copyDefaults(true);
-        // Paper start - don't enforce icanhasbukkit default if alias block exists
-        final YamlConfiguration commandsDefaults = YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/commands.yml"), StandardCharsets.UTF_8));
-        if (this.commandsConfiguration.contains("aliases")) commandsDefaults.set("aliases", null);
-        this.commandsConfiguration.setDefaults(commandsDefaults);
-        // Paper end - don't enforce icanhasbukkit default if alias block exists
-        this.commandsConfiguration.options().setHeader(commandsDefaults.options().getHeader());
-        this.saveCommandsConfig();
-
-        // Migrate aliases from old file and add previously implicit $1- to pass all arguments
-        if (legacyAlias != null) {
-            ConfigurationSection aliases = this.commandsConfiguration.createSection("aliases");
-            for (String key : legacyAlias.getKeys(false)) {
-                List<String> commands = new ArrayList<>();
-
-                if (legacyAlias.isList(key)) {
-                    for (String command : legacyAlias.getStringList(key)) {
-                        commands.add(command + " $1-");
-                    }
-                } else {
-                    commands.add(legacyAlias.getString(key) + " $1-");
-                }
-
-                aliases.set(key, commands);
-            }
-        }
-
-        this.saveCommandsConfig();
-        this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
-        this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
-        this.overrideSpawnLimits();
-        console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
-        this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
-        TicketType.PLUGIN_TYPE_TIMEOUT = this.configuration.getInt("chunk-gc.period-in-ticks");
-        this.minimumAPI = ApiVersion.getOrCreateVersion(this.configuration.getString("settings.minimum-api"));
+        this.overrideAllCommandBlockCommands = GlobalConfiguration.get().commands.commandBlockOverrides.contains("*");
+        this.ignoreVanillaPermissions = GlobalConfiguration.get().commands.ignoreVanillaPermissions;
+        console.autosavePeriod = GlobalConfiguration.get().misc.autoSaveInterval;
+        this.warningState = GlobalConfiguration.get().misc.deprecatedVerbose;
+        TicketType.PLUGIN_TYPE_TIMEOUT = GlobalConfiguration.get().chunkSystem.pluginTicketTimeout;
+        this.minimumAPI = ApiVersion.getOrCreateVersion(GlobalConfiguration.get().misc.minimumApi);
         this.loadIcon();
-        this.loadCompatibilities();
         CraftMagicNumbers.INSTANCE.getCommodore().updateReroute(activeCompatibilities::contains);
 
         // Set map color cache
-        if (this.configuration.getBoolean("settings.use-map-color-cache")) {
+        if (GlobalConfiguration.get().misc.useMapColorCache) {
             MapPalette.setMapColorCache(new CraftMapColorCache(this.logger));
         }
         this.potionBrewer = new io.papermc.paper.potion.PaperPotionBrewer(console); // Paper - custom potion mixes
@@ -482,68 +439,14 @@ public final class CraftServer implements Server {
     }
 
     public boolean getCommandBlockOverride(String command) {
-        return this.overrideAllCommandBlockCommands || this.commandsConfiguration.getStringList("command-block-overrides").contains(command);
+        return this.overrideAllCommandBlockCommands || GlobalConfiguration.get().commands.commandBlockOverrides.contains(command);
     }
 
-    private File getConfigFile() {
-        return (File) this.console.options.valueOf("bukkit-settings");
-    }
 
-    private File getCommandsConfigFile() {
-        return (File) this.console.options.valueOf("commands-settings");
-    }
 
-    private void overrideSpawnLimits() {
-        for (SpawnCategory spawnCategory : SpawnCategory.values()) {
-            if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
-                this.spawnCategoryLimit.put(spawnCategory, this.configuration.getInt(CraftSpawnCategory.getConfigNameSpawnLimit(spawnCategory)));
-            }
-        }
-    }
 
-    private void saveConfig() {
-        try {
-            this.configuration.save(this.getConfigFile());
-        } catch (IOException ex) {
-            Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Could not save " + this.getConfigFile(), ex);
-        }
-    }
 
-    private void saveCommandsConfig() {
-        try {
-            this.commandsConfiguration.save(this.getCommandsConfigFile());
-        } catch (IOException ex) {
-            Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Could not save " + this.getCommandsConfigFile(), ex);
-        }
-    }
 
-    private void loadCompatibilities() {
-        if (true) return; // Paper - Big nope
-        ConfigurationSection compatibilities = this.configuration.getConfigurationSection("settings.compatibility");
-        if (compatibilities == null) {
-            this.activeCompatibilities = Collections.emptySet();
-            return;
-        }
-
-        this.activeCompatibilities = compatibilities
-                .getKeys(false)
-                .stream()
-                .filter(compatibilities::getBoolean)
-                .collect(Collectors.toSet());
-
-        if (!this.activeCompatibilities.isEmpty()) {
-            this.logger.info("Using following compatibilities: `" + Joiner.on("`, `").join(this.activeCompatibilities) + "`, this will affect performance and other plugins behavior.");
-            this.logger.info("Only use when necessary and prefer updating plugins if possible.");
-        }
-
-        if (this.activeCompatibilities.contains("enum-compatibility-mode")) {
-            this.getLogger().warning("Loading plugins in enum compatibility mode. This will affect plugin performance. Use only as a transition period or when absolutely necessary.");
-        } else if (System.getProperty("RemoveEnumBanner") == null) {
-            // TODO 2024-06-16: Remove in newer version
-            this.getLogger().info("*** This version of Spigot contains changes to some enums. If you notice that plugins no longer work after updating, please report this to the developers of those plugins first. ***");
-            this.getLogger().info("*** If you cannot update those plugins, you can try setting `settings.compatibility.enum-compatibility-mode` to `true` in `bukkit.yml`. ***");
-        }
-    }
 
     public void loadPlugins() {
         io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.INSTANCE.enter(io.papermc.paper.plugin.entrypoint.Entrypoint.PLUGIN); // Paper - replace implementation
@@ -580,7 +483,7 @@ public final class CraftServer implements Server {
         if (type == PluginLoadOrder.STARTUP) {
             this.helpMap.clear();
             this.helpMap.initializeGeneralTopics();
-            if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) loadCustomPermissions(); // Paper
+            if (GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) loadCustomPermissions(); // Paper
         }
 
         Plugin[] plugins = this.pluginManager.getPlugins();
@@ -597,7 +500,7 @@ public final class CraftServer implements Server {
             // Spigot end
             DefaultPermissions.registerCorePermissions();
             CraftDefaultPermissions.registerCorePermissions();
-            if (!io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) this.loadCustomPermissions(); // Paper
+            if (!GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) this.loadCustomPermissions(); // Paper
             this.syncCommands();
         }
     }
@@ -783,7 +686,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean getAllowEnd() {
-        return this.configuration.getBoolean("settings.allow-end");
+        return GlobalConfiguration.get().misc.enableEnd;
     }
 
     @Override
@@ -797,11 +700,11 @@ public final class CraftServer implements Server {
     }
 
     public boolean getWarnOnOverload() {
-        return this.configuration.getBoolean("settings.warn-on-overload");
+        return true; // Paper - option removed, nothing internal read it
     }
 
     public boolean getQueryPlugins() {
-        return this.configuration.getBoolean("settings.query-plugins");
+        return GlobalConfiguration.get().misc.queryPlugins;
     }
 
     @Override
@@ -857,21 +760,21 @@ public final class CraftServer implements Server {
 
     @Override
     public String getUpdateFolder() {
-        return this.configuration.getString("settings.update-folder", "update");
+        return PaperConfigurationsInitializer.initialization().updateFolder;
     }
 
     @Override
     public File getUpdateFolderFile() {
-        return new File((File) this.console.options.valueOf("plugins"), this.configuration.getString("settings.update-folder", "update"));
+        return new File((File) this.console.options.valueOf("plugins"), io.papermc.paper.configuration.PaperConfigurationsInitializer.initialization().updateFolder);
     }
 
     @Override
     public long getConnectionThrottle() {
         // Spigot start - Automatically set connection throttle for bungee configurations
-        if (org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) { // Paper - Add Velocity IP Forwarding Support
+        if (GlobalConfiguration.get().proxies.bungeeCord.enabled || GlobalConfiguration.get().proxies.velocity.enabled) { // Paper - Add Velocity IP Forwarding Support
             return -1;
         } else {
-            return this.configuration.getInt("settings.connection-throttle");
+            return GlobalConfiguration.get().misc.connectionThrottle;
         }
         // Spigot end
     }
@@ -880,7 +783,11 @@ public final class CraftServer implements Server {
     public int getTicksPerSpawns(SpawnCategory spawnCategory) {
         Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
         Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory.%s are not supported", spawnCategory);
-        return this.configuration.getInt(CraftSpawnCategory.getConfigNameTicksPerSpawn(spawnCategory));
+        // Paper - spawn intervals are per world; report the primary world's
+        final List<World> worlds = this.getWorlds();
+        return worlds.isEmpty()
+            ? (int) CraftSpawnCategory.getDefaultTicksPerSpawn(spawnCategory)
+            : (int) worlds.get(0).getTicksPerSpawns(spawnCategory);
     }
 
     @Override
@@ -955,21 +862,17 @@ public final class CraftServer implements Server {
         // Paper end - lifecycle events
         org.spigotmc.WatchdogThread.hasStarted = false; // Paper - Disable watchdog early timeout on reload
         this.reloadCount++;
-        this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());
-        this.commandsConfiguration = YamlConfiguration.loadConfiguration(this.getCommandsConfigFile());
 
         this.console.settings = new DedicatedServerSettings(this.console.options);
         DedicatedServerProperties config = this.console.settings.getProperties();
 
         this.console.setMotd(config.motd.get());
-        this.overrideSpawnLimits();
-        this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
-        TicketType.PLUGIN_TYPE_TIMEOUT = this.configuration.getInt("chunk-gc.period-in-ticks");
-        this.minimumAPI = ApiVersion.getOrCreateVersion(this.configuration.getString("settings.minimum-api"));
+        this.warningState = GlobalConfiguration.get().misc.deprecatedVerbose;
+        TicketType.PLUGIN_TYPE_TIMEOUT = GlobalConfiguration.get().chunkSystem.pluginTicketTimeout;
+        this.minimumAPI = ApiVersion.getOrCreateVersion(GlobalConfiguration.get().misc.minimumApi);
         this.printSaveWarning = false;
-        this.console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
+        this.console.autosavePeriod = GlobalConfiguration.get().misc.autoSaveInterval;
         this.loadIcon();
-        this.loadCompatibilities();
         CraftMagicNumbers.INSTANCE.getCommodore().updateReroute(activeCompatibilities::contains);
 
         try {
@@ -983,7 +886,6 @@ public final class CraftServer implements Server {
             this.logger.log(Level.WARNING, "Failed to load banned-players.json, " + ex.getMessage());
         }
 
-        org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
         this.console.paperConfigurations.reloadConfigs(this.console);
         for (ServerLevel world : this.console.getAllLevels()) {
             // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
@@ -991,15 +893,11 @@ public final class CraftServer implements Server {
 
             for (SpawnCategory spawnCategory : SpawnCategory.values()) {
                 if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
-                    long ticksPerCategorySpawn = this.getTicksPerSpawns(spawnCategory);
-                    if (ticksPerCategorySpawn < 0) {
-                        world.ticksPerSpawnCategory.put(spawnCategory, CraftSpawnCategory.getDefaultTicksPerSpawn(spawnCategory));
-                    } else {
-                        world.ticksPerSpawnCategory.put(spawnCategory, ticksPerCategorySpawn);
-                    }
+                    final MobCategory category = CraftSpawnCategory.toNMS(spawnCategory);
+                    world.ticksPerSpawnCategory.put(spawnCategory, world.paperConfig().entities.spawning.ticksPerSpawn.getInt(category));
+                    world.getWorld().setSpawnLimit(spawnCategory, world.paperConfig().entities.spawning.spawnLimits.getInt(category));
                 }
             }
-            world.spigotConfig.init(); // Spigot
         }
 
         Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
@@ -1016,8 +914,8 @@ public final class CraftServer implements Server {
         this.reloadData();
         io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper
         this.spark.registerCommandBeforePlugins(this); // Paper - spark
-        this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
-        this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
+        this.overrideAllCommandBlockCommands = GlobalConfiguration.get().commands.commandBlockOverrides.contains("*");
+        this.ignoreVanillaPermissions = GlobalConfiguration.get().commands.ignoreVanillaPermissions;
 
         int pollCount = 0;
 
@@ -1111,7 +1009,7 @@ public final class CraftServer implements Server {
     }
 
     private void loadCustomPermissions() {
-        File file = new File(this.configuration.getString("settings.permissions-file"));
+        File file = new File(GlobalConfiguration.get().misc.permissionsFile);
         if (!file.isFile()) {
             return;
         }
@@ -1664,23 +1562,8 @@ public final class CraftServer implements Server {
 
     @Override
     public Map<String, String[]> getCommandAliases() {
-        ConfigurationSection section = this.commandsConfiguration.getConfigurationSection("aliases");
-        Map<String, String[]> result = new LinkedHashMap<>();
-
-        if (section != null) {
-            for (String key : section.getKeys(false)) {
-                List<String> commands;
-
-                if (section.isList(key)) {
-                    commands = section.getStringList(key);
-                } else {
-                    commands = ImmutableList.of(section.getString(key));
-                }
-
-                result.put(key, commands.toArray(new String[commands.size()]));
-            }
-        }
-
+        final Map<String, String[]> result = new LinkedHashMap<>();
+        GlobalConfiguration.get().commands.aliases.forEach((key, commands) -> result.put(key, commands.toArray(new String[0])));
         return result;
     }
 
@@ -1693,7 +1576,7 @@ public final class CraftServer implements Server {
     @Override
     @Deprecated // Paper
     public String getShutdownMessage() {
-        return this.configuration.getString("settings.shutdown-message");
+        return CraftChatMessage.fromComponent(PaperAdventure.asVanilla(GlobalConfiguration.get().messages.shutdown));
     }
 
     @Override
@@ -1742,14 +1625,12 @@ public final class CraftServer implements Server {
     }
 
     public ChunkGenerator getGenerator(String world) {
-        ConfigurationSection section = this.configuration.getConfigurationSection("worlds");
+        final GlobalConfiguration.WorldGenerators generators = GlobalConfiguration.get().worldGenerators.get(world); // Paper - moved from bukkit.yml
         ChunkGenerator result = null;
 
-        if (section != null) {
-            section = section.getConfigurationSection(world);
-
-            if (section != null) {
-                String name = section.getString("generator");
+        if (generators != null) {
+            {
+                String name = generators.generator();
 
                 if (name != null && !name.isEmpty()) {
                     String[] split = name.split(":", 2);
@@ -1778,14 +1659,12 @@ public final class CraftServer implements Server {
     }
 
     public BiomeProvider getBiomeProvider(String world) {
-        ConfigurationSection section = this.configuration.getConfigurationSection("worlds");
+        GlobalConfiguration.WorldGenerators generators = GlobalConfiguration.get().worldGenerators.get(world); // Paper - moved from bukkit.yml
         BiomeProvider result = null;
 
-        if (section != null) {
-            section = section.getConfigurationSection(world);
-
-            if (section != null) {
-                String name = section.getString("biome-provider");
+        if (generators != null) {
+            {
+                String name = generators.biomeProvider();
 
                 if (name != null && !name.isEmpty()) {
                     String[] split = name.split(":", 2);
@@ -1919,7 +1798,7 @@ public final class CraftServer implements Server {
         }
         NameAndId nameAndId;
         // Only fetch an online UUID in online mode
-        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) {
+        if (GlobalConfiguration.get().proxies.isProxyOnlineMode()) {
             nameAndId = console.services().nameToIdCache().get(name).orElse(null);
         } else {
             // Make an OfflinePlayer using an offline mode UUID since the name has no profile
@@ -1937,7 +1816,7 @@ public final class CraftServer implements Server {
         if (result == null) {
             NameAndId profile = null;
             // Only fetch an online UUID in online mode
-            if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) { // Paper - Add setting for proxy online mode status
+            if (GlobalConfiguration.get().proxies.isProxyOnlineMode()) { // Paper - Add setting for proxy online mode status
                 // This is potentially blocking :(
                 profile = this.console.services().nameToIdCache().get(name).orElse(null);
             }
@@ -2297,11 +2176,8 @@ public final class CraftServer implements Server {
     public int getSpawnLimit(SpawnCategory spawnCategory) {
         Preconditions.checkArgument(spawnCategory != null, "SpawnCategory cannot be null");
         Preconditions.checkArgument(CraftSpawnCategory.isValidForLimits(spawnCategory), "SpawnCategory." + spawnCategory + " does not have a spawn limit.");
-        return this.getSpawnLimitUnsafe(spawnCategory);
-    }
-
-    public int getSpawnLimitUnsafe(final SpawnCategory spawnCategory) {
-        return this.spawnCategoryLimit.getOrDefault(spawnCategory, -1);
+        final List<World> worlds = this.getWorlds();
+        return worlds.isEmpty() ? -1 : worlds.get(0).getSpawnLimit(spawnCategory);
     }
 
     @Override
@@ -2704,27 +2580,6 @@ public final class CraftServer implements Server {
 
     private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot() {
 
-        @Deprecated
-        @Override
-        public YamlConfiguration getConfig() {
-            return this.getPaperConfig();
-        }
-
-        @Override
-        public YamlConfiguration getBukkitConfig() {
-            return this.getPaperConfig();
-        }
-
-        @Override
-        public YamlConfiguration getSpigotConfig() {
-            return this.getPaperConfig();
-        }
-
-        @Override
-        public YamlConfiguration getPaperConfig() {
-            return CraftServer.this.console.paperConfigurations.createLegacyObject(CraftServer.this.console);
-        }
-
         @Override
         public void restart() {
             CraftServer.this.restart();
@@ -2841,7 +2696,7 @@ public final class CraftServer implements Server {
     @Override
     public void reloadPermissions() {
         pluginManager.clearPermissions();
-        if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) loadCustomPermissions();
+        if (GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) loadCustomPermissions();
         for (Plugin plugin : pluginManager.getPlugins()) {
             for (Permission perm : plugin.getDescription().getPermissions()) {
                 try {
@@ -2851,7 +2706,7 @@ public final class CraftServer implements Server {
                 }
             }
         }
-        if (!io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) loadCustomPermissions();
+        if (!GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) loadCustomPermissions();
         DefaultPermissions.registerCorePermissions();
         CraftDefaultPermissions.registerCorePermissions();
     }
@@ -2862,32 +2717,24 @@ public final class CraftServer implements Server {
                 .map(key -> key.toLowerCase(java.util.Locale.ENGLISH))
                 .collect(java.util.stream.Collectors.toSet());
         getCommandMap().getKnownCommands().keySet().removeIf(removals::contains);
-        File file = getCommandsConfigFile();
-        try {
-            commandsConfiguration.load(file);
-        } catch (FileNotFoundException ex) {
-            return false;
-        } catch (IOException | org.bukkit.configuration.InvalidConfigurationException ex) {
-            Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file, ex);
-            return false;
-        }
+        this.console.paperConfigurations.reloadConfigs(this.console);
         commandMap.registerServerAliases();
         return true;
     }
 
     @Override
     public boolean suggestPlayerNamesWhenNullTabCompletions() {
-        return io.papermc.paper.configuration.GlobalConfiguration.get().commands.suggestPlayerNamesWhenNullTabCompletions;
+        return GlobalConfiguration.get().commands.suggestPlayerNamesWhenNullTabCompletions;
     }
 
     @Override
     public String getPermissionMessage() {
-        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacyAmpersand().serialize(io.papermc.paper.configuration.GlobalConfiguration.get().messages.noPermission);
+        return LegacyComponentSerializer.legacyAmpersand().serialize(GlobalConfiguration.get().messages.noPermission);
     }
 
     @Override
     public net.kyori.adventure.text.Component permissionMessage() {
-        return io.papermc.paper.configuration.GlobalConfiguration.get().messages.noPermission;
+        return GlobalConfiguration.get().messages.noPermission;
     }
 
     @Override

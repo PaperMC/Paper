@@ -103,7 +103,7 @@ public final class PaperFilledProfileCache {
     }
 
     private int maxSize() {
-        return org.spigotmc.SpigotConfig.userCacheCap;
+        return io.papermc.paper.configuration.GlobalConfiguration.get().players.userCacheSize;
     }
 
     private boolean tryCancelCleanup() {

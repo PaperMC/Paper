@@ -1,12 +1,12 @@
 package io.papermc.paper.configuration.type.fallback;
 
+import io.papermc.paper.configuration.WorldConfiguration;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import net.minecraft.server.MinecraftServer;
-import org.spigotmc.SpigotWorldConfig;
 import org.spongepowered.configurate.serialize.ScalarSerializer;
 import org.spongepowered.configurate.serialize.SerializationException;
 
@@ -18,7 +18,6 @@ public class FallbackValueSerializer extends ScalarSerializer<FallbackValue> {
 
     static {
         REGISTRY.put(ArrowDespawnRate.class, ArrowDespawnRate::new);
-        REGISTRY.put(AutosavePeriod.class, AutosavePeriod::new);
     }
 
     FallbackValueSerializer(Map<FallbackValue.ContextKey<?>, Object> contextMap) {
@@ -47,7 +46,7 @@ public class FallbackValueSerializer extends ScalarSerializer<FallbackValue> {
         return item.serialize();
     }
 
-    public static FallbackValueSerializer create(SpigotWorldConfig config, Supplier<MinecraftServer> server) {
-        return new FallbackValueSerializer(Map.of(FallbackValue.SPIGOT_WORLD_CONFIG, config, FallbackValue.MINECRAFT_SERVER, server));
+    public static FallbackValueSerializer create(WorldConfiguration config, Supplier<MinecraftServer> server) {
+        return new FallbackValueSerializer(Map.of(FallbackValue.WORLD_CONFIG, config, FallbackValue.MINECRAFT_SERVER, server));
     }
 }

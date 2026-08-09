@@ -1528,11 +1528,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     public final int getSpawnLimitUnsafe(final SpawnCategory spawnCategory) {
-        int limit = this.spawnCategoryLimit.getOrDefault(spawnCategory, -1);
-        if (limit < 0) {
-            limit = this.server.getSpawnLimitUnsafe(spawnCategory);
-        }
-        return limit;
+        return this.spawnCategoryLimit.getInt(spawnCategory);
     }
 
     @Override

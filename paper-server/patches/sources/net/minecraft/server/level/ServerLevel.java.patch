@@ -171,7 +171,7 @@
 +        savedDataStorage.set(io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE, loadedWorldData.pdc() == null ? io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE.constructor().get() : loadedWorldData.pdc());
 +        final GameRules gameRules = new GameRules(server.getWorldData().enabledFeatures(), savedDataStorage.computeIfAbsent(net.minecraft.world.level.gamerules.GameRuleMap.TYPE));
 +        this.gameRules = gameRules;
-+        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), loadedWorldData.bukkitName(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(server.storageSource.getDimensionPath(dimension), dimension.identifier(), spigotConfig, server.registryAccess(), gameRules))); // Paper - create paper world configs
++        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), loadedWorldData.bukkitName(), gen, biomeProvider, env, () -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(server.storageSource.getDimensionPath(dimension), dimension.identifier(), server.registryAccess(), gameRules))); // Paper - create paper world configs
 +        this.weatherData = savedDataStorage.computeIfAbsent(WeatherData.TYPE);
 +        this.weatherData.setLevel(this);
 +        this.typeKey = typeKey;
@@ -219,8 +219,8 @@
              generator,
 -            server.getPlayerList().getViewDistance(),
 -            server.getPlayerList().getSimulationDistance(),
-+            this.spigotConfig.viewDistance, // Spigot
-+            this.spigotConfig.simulationDistance, // Spigot
++            this.paperConfig().chunks.viewDistance.or(server.getPlayerList().getViewDistance()), // Paper - per world view distance
++            this.paperConfig().chunks.simulationDistance.or(server.getPlayerList().getSimulationDistance()), // Paper - per world simulation distance
              syncWrites,
              this.entityManager::updateChunkStatus,
              () -> server.overworld().getDataStorage()
@@ -333,7 +333,7 @@
              this.tickBlockEntities();
              profiler.pop();
 +            } // Paper - option to disable ticking
-+            this.spigotConfig.currentPrimedTnt = 0; // Spigot
++            this.currentPrimedTnt = 0; // Paper - max TNT per tick
          }
  
          profiler.push("entityManagement");
@@ -365,7 +365,7 @@
          ProfilerFiller profiler = Profiler.get();
          profiler.push("thunder");
 -        if (raining && this.isThundering() && this.random.nextInt(100000) == 0) {
-+        if (!this.paperConfig().environment.disableThunder && raining && this.isThundering() && this.spigotConfig.thunderChance > 0 && this.random.nextInt(this.spigotConfig.thunderChance) == 0) { // Spigot // Paper - Option to disable thunder
++        if (!this.paperConfig().environment.disableThunder && raining && this.isThundering() && this.paperConfig().environment.thunderChance > 0 && this.random.nextInt(this.paperConfig().environment.thunderChance) == 0) { // Spigot // Paper - Option to disable thunder
              BlockPos pos = this.findLightningTargetAround(this.getBlockRandomPos(minX, 0, minZ, 15));
              if (this.isRainingAt(pos)) {
                  DifficultyInstance difficulty = this.getCurrentDifficultyAt(pos);
@@ -1087,8 +1087,8 @@
 +        return this.getGameRules().get(GameRules.GLOBAL_SOUND_EVENTS) ? this.getServer().getPlayerList().getPlayers() : this.players();
 +    }
 +
-+    public double getGlobalSoundRangeSquared(java.util.function.Function<org.spigotmc.SpigotWorldConfig, Integer> rangeFunction) {
-+        final double range = rangeFunction.apply(this.spigotConfig);
++    public double getGlobalSoundRangeSquared(java.util.function.Function<io.papermc.paper.configuration.WorldConfiguration, Integer> rangeFunction) {
++        final double range = rangeFunction.apply(this.paperConfig());
 +        return range <= 0 ? 64.0 * 64.0 : range * range; // 64 is taken from default in ServerLevel#levelEvent
 +    }
 +    // Paper end - respect global sound events gamerule

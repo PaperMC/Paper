@@ -12,7 +12,7 @@
          OptionParser parser = new OptionParser();
          OptionSpec<Void> nogui = parser.accepts("nogui");
          OptionSpec<Void> initSettings = parser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");
-@@ -92,41 +_,97 @@
+@@ -92,41 +_,79 @@
                  parser.printHelpOn(System.err);
                  return;
              }
@@ -31,6 +31,7 @@
                  JvmProfiler.INSTANCE.start(Environment.SERVER);
              }
  
++            io.papermc.paper.configuration.PaperConfigurationsInitializer.load(options); // Paper - load the initialization config section before anything that needs it
 +            io.papermc.paper.plugin.PluginInitializerManager.load(options); // Paper
              Bootstrap.bootStrap();
              Bootstrap.validate();
@@ -49,24 +50,7 @@
              Path eulaFile = Paths.get("eula.txt");
              Eula eula = new Eula(eulaFile);
 -            if (options.has(initSettings)) {
-+            // Paper start - load config files early for access below if needed
-+            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) options.valueOf("bukkit-settings"));
-+            org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) options.valueOf("spigot-settings"));
-+            // Paper end - load config files early for access below if needed
 +            if (options.has("initSettings")) { // CraftBukkit
-+                // CraftBukkit start - SPIGOT-5761: Create bukkit.yml and commands.yml if not present
-+                File configFile = (File) options.valueOf("bukkit-settings");
-+                org.bukkit.configuration.file.YamlConfiguration configuration = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(configFile);
-+                configuration.options().copyDefaults(true);
-+                configuration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/bukkit.yml"), java.nio.charset.StandardCharsets.UTF_8)));
-+                configuration.save(configFile);
-+
-+                File commandFile = (File) options.valueOf("commands-settings");
-+                org.bukkit.configuration.file.YamlConfiguration commandsConfiguration = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(commandFile);
-+                commandsConfiguration.options().copyDefaults(true);
-+                commandsConfiguration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/commands.yml"), java.nio.charset.StandardCharsets.UTF_8)));
-+                commandsConfiguration.save(commandFile);
-+                // CraftBukkit end
                  LOGGER.info("Initialized '{}' and '{}'", settingsFile.toAbsolutePath(), eulaFile.toAbsolutePath());
                  return;
              }
@@ -98,8 +82,6 @@
 +            }
 +            // Paper end - Detect headless JRE
 +
-+            org.spigotmc.SpigotConfig.disabledAdvancements = spigotConfiguration.getStringList("advancements.disabled"); // Paper - fix SPIGOT-5885, must be set early in init
-+
 +            // Paper start - fix SPIGOT-5824
 +            File universePath;
 +            File userCacheFile = new File(Services.USERID_CACHE_FILE);
@@ -107,7 +89,7 @@
 +                universePath = (File) options.valueOf("universe"); // CraftBukkit
 +                userCacheFile = new File(universePath, Services.USERID_CACHE_FILE);
 +            } else {
-+                universePath = new File(bukkitConfiguration.getString("settings.world-container", "."));
++                universePath = new File(io.papermc.paper.configuration.PaperConfigurationsInitializer.initialization().worldContainer); // Paper - world container from the initialization config
 +            }
 +            // Paper end - fix SPIGOT-5824
 +            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), universePath, userCacheFile, options); // Paper - pass OptionSet to load paper config files; override authentication service; fix world-container

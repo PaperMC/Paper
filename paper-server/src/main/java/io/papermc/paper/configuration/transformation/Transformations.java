@@ -38,6 +38,22 @@ public final class Transformations {
         return ConfigurationTransformation.versionedBuilder().versionKey(Configuration.VERSION_FIELD);
     }
 
+    public static void pruneEmptySections(final ConfigurationNode node, final String... sections) {
+        for (final String section : sections) {
+            final ConfigurationNode child = node.node(section);
+            if (!child.virtual() && isEffectivelyEmpty(child)) {
+                node.removeChild(section);
+            }
+        }
+    }
+
+    private static boolean isEffectivelyEmpty(final ConfigurationNode node) {
+        if (node.isMap()) {
+            return node.childrenMap().values().stream().allMatch(Transformations::isEffectivelyEmpty);
+        }
+        return node.empty();
+    }
+
     public static ConfigurationTransformation single(final NodePath path, final TransformAction action) {
         return ConfigurationTransformation.builder().addAction(path, action).build();
     }

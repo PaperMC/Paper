@@ -4,7 +4,8 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.Table;
 import com.mojang.logging.LogUtils;
 import io.leangen.geantyref.TypeToken;
-import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
+import io.papermc.paper.configuration.constraint.Constraint;
+import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.mapping.Definition;
 import io.papermc.paper.configuration.mapping.FieldProcessor;
 import io.papermc.paper.configuration.mapping.InnerClassFieldDiscoverer;
@@ -30,6 +31,7 @@ import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneratio
 import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
 import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
 import io.papermc.paper.configuration.transformation.world.versioned.V30_RenameFilterNbtFromSpawnEgg;
+import io.papermc.paper.configuration.transformation.world.versioned.V32_SpawnAndSaveDefaults;
 import io.papermc.paper.configuration.type.BooleanOrDefault;
 import io.papermc.paper.configuration.type.DespawnRange;
 import io.papermc.paper.configuration.type.Duration;
@@ -38,6 +40,9 @@ import io.papermc.paper.configuration.type.EngineMode;
 import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
+import io.papermc.paper.configuration.type.number.LongOr;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2LongMap;
@@ -64,6 +69,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.gamerules.GameRules;
@@ -74,8 +80,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
-import org.spigotmc.SpigotConfig;
-import org.spigotmc.SpigotWorldConfig;
 import org.spongepowered.configurate.BasicConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
@@ -133,9 +137,9 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     private static final Function<ContextMap, String> WORLD_HEADER = map -> String.format("""
         This is a world configuration file for Paper.
         This file may start empty but can be filled with settings to override ones in the %s/%s
-        
+
         For more information, see https://docs.papermc.io/paper/reference/configuration/#per-world-configuration
-        
+
         World: %s""",
         PaperConfigurations.CONFIG_DIR,
         PaperConfigurations.WORLD_DEFAULTS_CONFIG_FILE_NAME,
@@ -143,14 +147,6 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     );
 
 
-    @VisibleForTesting
-    public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255), Key.key(RandomStringUtils.randomAlphabetic(255).toLowerCase(Locale.ROOT))) {
-        @Override // override to ensure "verbose" is false
-        public void init() {
-            SpigotConfig.readConfig(SpigotWorldConfig.class, this);
-        }
-    });
-    public static final ContextKey<Supplier<SpigotWorldConfig>> SPIGOT_WORLD_CONFIG_CONTEXT_KEY = new ContextKey<>(new TypeToken<Supplier<SpigotWorldConfig>>() {}, "spigot world config");
 
 
     public PaperConfigurations(final Path globalFolder) {
@@ -180,6 +176,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
             .register(new ComponentSerializer())
             .register(IntOr.Default.SERIALIZER)
             .register(IntOr.Disabled.SERIALIZER)
+            .register(LongOr.Default.SERIALIZER)
             .register(DoubleOr.Default.SERIALIZER)
             .register(DoubleOr.Disabled.SERIALIZER)
             .register(BooleanOrDefault.SERIALIZER)
@@ -211,6 +208,15 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
             .serializers(builder -> builder
                 .register(new ServerboundPacketClassSerializer())
                 .register(new RegistryValueSerializer<>(new TypeToken<DataComponentType<?>>() {}, registryAccess, Registries.DATA_COMPONENT_TYPE, false))
+                // stats.forced-custom-stat-values
+                .register(new TypeToken<Object2IntMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Object2IntMap<?>>(Object2IntOpenHashMap::new, Integer.TYPE))
+                .register(new RegistryHolderSerializer<>(new TypeToken<Identifier>() {}, registryAccess, Registries.CUSTOM_STAT, false))
+                // attributes.overrides
+                .register(new RegistryHolderSerializer<>(new TypeToken<Attribute>() {}, registryAccess, Registries.ATTRIBUTE, false))
+                // spawning.spawn-limits / spawning.ticks-per-spawn
+                .register(new TypeToken<Reference2IntMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2IntMap<?>>(Reference2IntOpenHashMap::new, Integer.TYPE))
+                .register(StringRepresentableSerializer::isValidFor, new StringRepresentableSerializer())
+                .register(new EnumValueSerializer())
             );
     }
 
@@ -222,24 +228,14 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     @Override
-    protected ContextMap.Builder createDefaultContextMap(final RegistryAccess registryAccess) {
-        return super.createDefaultContextMap(registryAccess)
-            .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, SPIGOT_WORLD_DEFAULTS);
-    }
-
-    @Override
     protected ObjectMapper.Factory.Builder createWorldObjectMapperFactoryBuilder(final ContextMap contextMap) {
         return super.createWorldObjectMapperFactoryBuilder(contextMap)
-            .addNodeResolver(new RequiresSpigotInitialization.Factory(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get()))
             .addNodeResolver(new NestedSetting.Factory())
             .addDiscoverer(InnerClassFieldDiscoverer.worldConfig(createWorldConfigInstance(contextMap), defaultFieldProcessors()));
     }
 
     private static WorldConfiguration createWorldConfigInstance(ContextMap contextMap) {
-        return new WorldConfiguration(
-            contextMap.require(PaperConfigurations.SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(),
-            contextMap.require(Configurations.WORLD_KEY)
-        );
+        return new WorldConfiguration(contextMap.require(Configurations.WORLD_KEY));
     }
 
     @Override
@@ -256,7 +252,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
                     .register(DespawnRange.class, DespawnRange.SERIALIZER)
                     .register(StringRepresentableSerializer::isValidFor, new StringRepresentableSerializer())
                     .register(EngineMode.SERIALIZER)
-                    .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
+                    .register(FallbackValueSerializer.create(createWorldConfigInstance(contextMap), MinecraftServer::getServer))
                     .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, access, Registries.ENTITY_TYPE, true))
                     .register(new RegistryValueSerializer<>(Item.class, access, Registries.ITEM, true))
                     .register(new RegistryValueSerializer<>(Block.class, access, Registries.BLOCK, true))
@@ -276,12 +272,23 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
         V29_ZeroWorldHeight.apply(versionedBuilder);
         V30_RenameFilterNbtFromSpawnEgg.apply(versionedBuilder);
+        V32_SpawnAndSaveDefaults.apply(versionedBuilder);
         // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
         versionedBuilder.build().apply(node);
     }
 
     @Override
     protected void applyGlobalConfigTransformations(ConfigurationNode node) throws ConfigurateException {
+        applyGlobalTransformations(node);
+    }
+
+    /**
+     * Applies removals and versioned transformations for the global config.
+     *
+     * @param node configuration node
+     * @see PaperConfigurationsInitializer#loadInitializationConfiguration(Path)
+     */
+    static void applyGlobalTransformations(final ConfigurationNode node) throws ConfigurateException {
         ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
         for (NodePath path : RemovedConfigurations.REMOVED_GLOBAL_PATHS) {
             builder.addAction(path, TransformAction.remove());
@@ -295,6 +302,29 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         V32_SpigotConfigCleanup.apply(versionedBuilder);
         // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
         versionedBuilder.build().apply(node);
+    }
+
+    /**
+     * A loader for the global config file that is usable before {@code RegistryAccess} exists.
+     * Can only deserialize primitives, strings and primitive collections/sections. See {@link InitializationConfiguration}.
+     *
+     * @param configFile config file path
+     * @return registry-free global loader
+     */
+    static YamlConfigurationLoader createRegistryFreeGlobalLoader(final Path configFile) {
+        final ObjectMapper.Factory factory = defaultGlobalFactoryBuilder(ObjectMapper.factoryBuilder()
+            .addConstraint(Constraint.class, new Constraint.Factory())
+            .addConstraint(Constraints.Min.class, Number.class, new Constraints.Min.Factory())
+            .addConstraint(Constraints.Max.class, Number.class, new Constraints.Max.Factory())
+        ).build();
+        return ConfigurationLoaders.naturallySorted()
+            .defaultOptions(PaperConfigurations::defaultOptions)
+            .defaultOptions(options -> options.serializers(builder -> builder
+                .register(type -> ConfigurationPart.class.isAssignableFrom(erase(type)), factory.asTypeSerializer())
+                .registerAnnotatedObjects(factory)
+            ))
+            .path(configFile)
+            .build();
     }
 
     @Override
@@ -339,14 +369,13 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     private static ContextMap createWorldContextMap(ServerLevel level) {
-        return createWorldContextMap(level.getServer().storageSource.getDimensionPath(level.dimension()), level.dimension().identifier(), level.spigotConfig, level.registryAccess(), level.getGameRules());
+        return createWorldContextMap(level.getServer().storageSource.getDimensionPath(level.dimension()), level.dimension().identifier(), level.registryAccess(), level.getGameRules());
     }
 
-    public static ContextMap createWorldContextMap(final Path dir, final Identifier worldKey, final SpigotWorldConfig spigotConfig, final RegistryAccess registryAccess, final GameRules gameRules) {
+    public static ContextMap createWorldContextMap(final Path dir, final Identifier worldKey, final RegistryAccess registryAccess, final GameRules gameRules) {
         return ContextMap.builder()
             .put(WORLD_DIRECTORY, dir)
             .put(WORLD_KEY, worldKey)
-            .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, Suppliers.ofInstance(spigotConfig))
             .put(REGISTRY_ACCESS, registryAccess)
             .put(GAME_RULES, gameRules)
             .build();
@@ -380,6 +409,11 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         ConfigurationOptions options = defaultGlobalOptions(registryAccess, defaultOptions(ConfigurationOptions.defaults()))
             .serializers(builder -> builder.register(type -> ConfigurationPart.class.isAssignableFrom(erase(type)), factory.asTypeSerializer()));
         return BasicConfigurationNode.root(options);
+    }
+
+    @VisibleForTesting
+    public static WorldConfiguration createWorldDefaultsForTesting() {
+        return new WorldConfiguration(Configurations.WORLD_DEFAULTS_KEY);
     }
 
     // Symlinks are not correctly checked in createDirectories

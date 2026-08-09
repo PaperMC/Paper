@@ -632,7 +632,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param spawnCategory the category of spawn
      * @return the default ticks per {@link SpawnCategory} mobs spawn value
      * @throws IllegalArgumentException if the category is {@link SpawnCategory#MISC}
+     * @deprecated this is configured per world; use {@link World#getTicksPerSpawns(SpawnCategory)}.
+     *  This returns the primary world's value.
      */
+    @Deprecated(forRemoval = true, since = "26.3")
     public int getTicksPerSpawns(@NotNull SpawnCategory spawnCategory);
 
     /**
@@ -1875,7 +1878,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param spawnCategory the category spawn
      * @return the {@link SpawnCategory} spawn limit
+     * @deprecated this is configured per world; use {@link World#getSpawnLimit(SpawnCategory)}.
+     *  This returns the primary world's value.
      */
+    @Deprecated(forRemoval = true, since = "26.3")
     int getSpawnLimit(@NotNull SpawnCategory spawnCategory);
 
     /**
@@ -2385,60 +2391,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public class Spigot {
 
         /**
-         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
-         *  wherever possible, rather than directly reading from a server config.
-         *
-         * @see #getServerConfig()
-         * @return The server's spigot config.
-         */
-        @Deprecated(since = "1.21.4", forRemoval = true)
-        @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getConfig() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        /**
-         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
-         *  wherever possible, rather than directly reading from a server config.
-         *
-         * @see #getServerConfig()
-         * @return The server's bukkit config.
-         */
-        // Paper start
-        @Deprecated(since = "1.21.4", forRemoval = true)
-        @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        /**
-         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
-         *  wherever possible, rather than directly reading from a server config.
-         *
-         * @see #getServerConfig()
-         * @return The server's spigot config.
-         */
-        @Deprecated(since = "1.21.4", forRemoval = true)
-        @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        /**
-         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
-         *  wherever possible, rather than directly reading from a server config.
-         *
-         * @see #getServerConfig()
-         * @return The server's paper config.
-         */
-        @Deprecated(since = "1.21.4", forRemoval = true)
-        @NotNull
-        public org.bukkit.configuration.file.YamlConfiguration getPaperConfig() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        // Paper end
-
-        /**
          * Sends the component to the player
          *
          * @param component the components to send
@@ -2484,8 +2436,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     void restart();
 
+    @Deprecated(forRemoval = true, since = "26.3")
     void reloadPermissions(); // Paper
 
+    @Deprecated(forRemoval = true, since = "26.3")
     boolean reloadCommandAliases(); // Paper
 
     // Paper start - allow preventing player name suggestions by default
@@ -2504,7 +2458,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated use {@link #permissionMessage()}
      */
     @NotNull
-    @Deprecated
+    @Deprecated(forRemoval = true)
     String getPermissionMessage();
 
     /**

@@ -5,7 +5,7 @@ Subject: [PATCH] Incremental chunk and player saving
 
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index bbc8899e2524f39a89525d6f54dc8bd0bded88d9..6de2929fda582cc4ceecd7bfe0b440ac6608669d 100644
+index de4c3cd553a600e588e9a9a46e9f3ae9c2ac1a74..a37efd8a3c2f843705d0be00e92d5ceea1fe0a97 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -936,7 +936,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -65,7 +65,7 @@ index bbc8899e2524f39a89525d6f54dc8bd0bded88d9..6de2929fda582cc4ceecd7bfe0b440ac
 -        if (this.autosavePeriod > 0 && this.ticksUntilAutosave <= 0) { // CraftBukkit
 -            this.autoSave();
 +        // Paper start - Incremental chunk and player saving
-+        int playerSaveInterval = io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.rate;
++        int playerSaveInterval = io.papermc.paper.configuration.GlobalConfiguration.get().players.autoSave.rate;
 +        if (playerSaveInterval < 0) {
 +            playerSaveInterval = this.autosavePeriod;
 +        }
@@ -113,7 +113,7 @@ index df2c346996204003dbc99c0f33adaeb0e5293d01..762e3b71a8df572234b03dec60d2b6e1
      public void save(final @Nullable ProgressListener progressListener, final boolean flush, final boolean noSave) {
          // Paper start - add close param
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 220409fd6335e17445e1acdbfac8d83ae36a99b4..0099e02d61e26bd6262457f99c6f9f06f90bf9f9 100644
+index f3c807bca84f819c0c07c3e1b5c93fa11c69f45e..9ff8fce7bf614822ff836f8ee84a820af5b4ae33 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -208,6 +208,7 @@ import org.slf4j.Logger;
@@ -125,7 +125,7 @@ index 220409fd6335e17445e1acdbfac8d83ae36a99b4..0099e02d61e26bd6262457f99c6f9f06
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
      private static final int FLY_STAT_RECORDING_SPEED = 25;
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index 1dbb1d49c797be89f3739c2fa226aef25f68ee87..779686f3d0c330b0c9ce4f37168503f3668b1f13 100644
+index 0da0bca4d0d9911ed314b50333a65a3399efbfe8..1ff7d0c366f0546a84c62c53f3eacd77103e85f3 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
 @@ -414,6 +414,7 @@ public abstract class PlayerList {
@@ -155,7 +155,7 @@ index 1dbb1d49c797be89f3739c2fa226aef25f68ee87..779686f3d0c330b0c9ce4f37168503f3
 +            for (final ServerPlayer player : this.players) {
 +            if (interval == -1 || now - player.lastSave >= interval) {
 +                this.save(player);
-+                if (interval != -1 && ++numSaved >= io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.maxPerTick()) {
++                if (interval != -1 && ++numSaved >= io.papermc.paper.configuration.GlobalConfiguration.get().players.autoSave.maxPerTick()) {
 +                    break;
 +                }
 +            }

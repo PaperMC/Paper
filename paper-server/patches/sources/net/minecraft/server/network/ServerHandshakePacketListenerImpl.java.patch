@@ -29,18 +29,30 @@
          switch (packet.intention()) {
              case LOGIN:
                  this.beginLogin(packet, false);
-@@ -50,22 +_,119 @@
+@@ -50,22 +_,129 @@
              default:
                  throw new UnsupportedOperationException("Invalid intention " + packet.intention());
          }
+-    }
+-
+-    private void beginLogin(final ClientIntentionPacket packet, final boolean transfer) {
 +
 +        // Paper start - NetworkClient implementation
 +        this.connection.protocolVersion = packet.protocolVersion();
 +        this.connection.virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(packet.hostName(), packet.port());
 +        // Paper end
-     }
- 
--    private void beginLogin(final ClientIntentionPacket packet, final boolean transfer) {
++    }
++
++    // Paper start - configurable kick message
++    private static net.kyori.adventure.text.Component withServerVersion(final net.kyori.adventure.text.Component message) {
++        final String version = SharedConstants.getCurrentVersion().name();
++        if (message instanceof final net.kyori.adventure.text.TranslatableComponent translatable && translatable.arguments().isEmpty()) {
++            return translatable.arguments(net.kyori.adventure.text.Component.text(version));
++        }
++        return message.replaceText(builder -> builder.matchLiteral("%s").replacement(version));
++    }
++    // Paper end - configurable kick message
++
 +    private void beginLogin(ClientIntentionPacket packet, final boolean transfer) { // Paper - remove packet final
          this.connection.setupOutboundProtocol(LoginProtocols.CLIENTBOUND);
 +        // Paper start - Connection throttle
@@ -80,10 +92,10 @@
 -                reason = Component.translatable("multiplayer.disconnect.outdated_client", SharedConstants.getCurrentVersion().name());
 +            net.kyori.adventure.text.Component adventureReason; // Paper - Fix hex colors not working in some kick messages
 +            if (packet.protocolVersion() < SharedConstants.getCurrentVersion().protocolVersion()) { // Spigot - SPIGOT-7546: Handle version check correctly for outdated client message
-+                adventureReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().name())); // Spigot // Paper - Fix hex colors not working in some kick messages
++                adventureReason = withServerVersion(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.outdatedClient); // Paper - configurable kick message
              } else {
 -                reason = Component.translatable("multiplayer.disconnect.incompatible", SharedConstants.getCurrentVersion().name());
-+                adventureReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().name())); // Spigot // Paper - Fix hex colors not working in some kick messages
++                adventureReason = withServerVersion(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.outdatedServer); // Paper - configurable kick message
              }
 +            Component reason = io.papermc.paper.adventure.PaperAdventure.asVanilla(adventureReason); // Paper - Fix hex colors not working in some kick messages
  
@@ -92,7 +104,7 @@
          } else {
              this.connection.setupInboundProtocol(LoginProtocols.SERVERBOUND, new ServerLoginPacketListenerImpl(this.server, this.connection, transfer));
 +            // Paper start - PlayerHandshakeEvent
-+            boolean proxyLogicEnabled = org.spigotmc.SpigotConfig.bungee;
++            boolean proxyLogicEnabled = io.papermc.paper.configuration.GlobalConfiguration.get().proxies.bungeeCord.enabled;
 +            boolean handledByEvent = false;
 +            // Try and handle the handshake through the event
 +            if (com.destroystokyo.paper.event.player.PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
@@ -128,7 +140,7 @@
 +            // Spigot start
 +            String[] split = packet.hostName().split("\00");
 +            if (!handledByEvent && proxyLogicEnabled) { // Paper
-+                // if (org.spigotmc.SpigotConfig.bungee) { // Paper - comment out, we check above!
++                // if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.bungeeCord.enabled) { // Paper - comment out, we check above!
 +                if ((split.length == 3 || split.length == 4) && (ServerHandshakePacketListenerImpl.BYPASS_HOSTCHECK || ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher(split[1]).matches())) { // Paper - Add bypass host check
 +                    // Paper start - Unix domain socket support
 +                    java.net.SocketAddress socketAddress = this.connection.getRemoteAddress();
@@ -146,7 +158,7 @@
 +                    this.connection.spoofedProfile = ServerHandshakePacketListenerImpl.gson.fromJson(split[3], com.mojang.authlib.properties.Property[].class);
 +                }
 +            } else if ((split.length == 3 || split.length == 4) && (ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher(split[1]).matches())) {
-+                Component message = Component.literal("Unknown data in login hostname, did you forget to enable BungeeCord in spigot.yml?");
++                Component message = Component.literal("Unknown data in login hostname, did you forget to enable proxies.bungee-cord in paper-global.yml?");
 +                this.connection.send(new ClientboundLoginDisconnectPacket(message));
 +                this.connection.disconnect(message);
 +            }

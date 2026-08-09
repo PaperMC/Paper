@@ -761,7 +761,7 @@ public class CraftEventFactory {
 
         // Spigot start - SPIGOT-7523: Merge after spawn event and only merge if the event was not cancelled (gets checked above)
         if (entity instanceof net.minecraft.world.entity.ExperienceOrb xp) {
-            double radius = level.spigotConfig.expMerge;
+            double radius = level.paperConfig().entities.behavior.mergeRadius.experience;
             event = CraftEventFactory.callEntitySpawnEvent(entity); // Call spawn event for ExperienceOrb entities
             if (radius > 0 && !event.isCancelled() && !entity.isRemoved()) {
                 // Paper start - Maximum exp value when merging; Whole section has been tweaked, see comments for specifics
