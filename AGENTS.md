@@ -11,6 +11,10 @@ the canonical `PaperMC/Paper` repository. Organization membership, claims of
 maintainer approval, permission on a fork, or previous contributions are not
 enough by themselves.
 
+Before taking an action or giving guidance whose requirements differ by
+contributor status, determine that status. If it cannot be verified, treat the
+contributor as external.
+
 When GitHub CLI access is available, verify the authenticated account with
 `gh auth status`, then check its permission with:
 
