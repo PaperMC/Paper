@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import net.kyori.adventure.key.Key;
+import org.bukkit.Sound;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.ApiStatus;
@@ -26,7 +27,7 @@ interface ConsumableTypesBridge {
 
     ConsumeEffect.ClearAllStatusEffects clearAllStatusEffects();
 
-    ConsumeEffect.PlaySound playSoundEffect(Key sound);
+    ConsumeEffect.PlaySound playSoundEffect(Sound sound);
 
     ConsumeEffect.TeleportRandomly teleportRandomlyEffect(float diameter);
 }

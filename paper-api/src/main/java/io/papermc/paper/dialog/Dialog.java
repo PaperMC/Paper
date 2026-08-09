@@ -4,7 +4,7 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
+import io.papermc.paper.registry.data.RegistryBuilderProvider;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
 import java.util.function.Consumer;
 import net.kyori.adventure.dialog.DialogLike;
@@ -29,7 +29,7 @@ public interface Dialog extends RegistryElement.Inlineable<Dialog, DialogRegistr
      * @return a new dialog instance
      */
     static Dialog create(final Consumer<RegistryBuilderFactory<Dialog, ? extends DialogRegistryEntry.Builder>> value) {
-        return InlinedRegistryBuilderProvider.instance().create(RegistryKey.DIALOG, value);
+        return RegistryBuilderProvider.instance().create(RegistryKey.DIALOG, value);
     }
 
     // Start generate - Dialog

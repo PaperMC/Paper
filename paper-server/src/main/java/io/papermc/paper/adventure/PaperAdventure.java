@@ -158,17 +158,6 @@ public final class PaperAdventure {
         return asVanilla(key);
     }
 
-    public static Holder<SoundEvent> resolveSound(final Key key) {
-        Identifier id = asVanilla(key);
-        Optional<Holder.Reference<SoundEvent>> vanilla = BuiltInRegistries.SOUND_EVENT.get(id);
-        if (vanilla.isPresent()) {
-            return vanilla.get();
-        }
-
-        // sound is not known so not in the registry but might be used by the client with a resource pack
-        return Holder.direct(SoundEvent.createVariableRangeEvent(id));
-    }
-
     // Component
 
     public static @NotNull Component asAdventure(final net.minecraft.network.chat.@Nullable Component component) {

@@ -1,10 +1,8 @@
 package io.papermc.paper.datacomponent.item;
 
-import io.papermc.paper.adventure.PaperAdventure;
 import java.util.Optional;
-import net.kyori.adventure.key.Key;
-import net.minecraft.core.Holder;
-import net.minecraft.sounds.SoundEvent;
+import org.bukkit.Sound;
+import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jspecify.annotations.Nullable;
@@ -69,21 +67,13 @@ public record PaperKineticWeapon(
     }
 
     @Override
-    public @Nullable Key sound() {
-        return this.impl.sound()
-            .map(Holder::value)
-            .map(SoundEvent::location)
-            .map(PaperAdventure::asAdventure)
-            .orElse(null);
+    public @Nullable Sound sound() {
+        return this.impl.sound().map(CraftSound::minecraftHolderToBukkit).orElse(null);
     }
 
     @Override
-    public @Nullable Key hitSound() {
-        return this.impl.hitSound()
-            .map(Holder::value)
-            .map(SoundEvent::location)
-            .map(PaperAdventure::asAdventure)
-            .orElse(null);
+    public @Nullable Sound hitSound() {
+        return this.impl.hitSound().map(CraftSound::minecraftHolderToBukkit).orElse(null);
     }
 
     public record PaperKineticWeaponCondition(
@@ -120,8 +110,8 @@ public record PaperKineticWeapon(
         private net.minecraft.world.item.component.KineticWeapon.@Nullable Condition knockbackConditions;
         private net.minecraft.world.item.component.KineticWeapon.@Nullable Condition damageConditions;
 
-        private @Nullable Key sound = null;
-        private @Nullable Key hitSound = null;
+        private @Nullable Sound sound = null;
+        private @Nullable Sound hitSound = null;
 
         private float damageMultiplier = 1;
         private float forwardMovement = 0.0F;
@@ -169,13 +159,13 @@ public record PaperKineticWeapon(
         }
 
         @Override
-        public KineticWeapon.Builder sound(final @Nullable Key sound) {
+        public KineticWeapon.Builder sound(final @Nullable Sound sound) {
             this.sound = sound;
             return this;
         }
 
         @Override
-        public KineticWeapon.Builder hitSound(final @Nullable Key sound) {
+        public KineticWeapon.Builder hitSound(final @Nullable Sound sound) {
             this.hitSound = sound;
             return this;
         }
@@ -191,8 +181,8 @@ public record PaperKineticWeapon(
                     Optional.ofNullable(this.damageConditions),
                     this.forwardMovement,
                     this.damageMultiplier,
-                    Optional.ofNullable(this.sound).map(PaperAdventure::resolveSound),
-                    Optional.ofNullable(this.hitSound).map(PaperAdventure::resolveSound)
+                    Optional.ofNullable(this.sound).map(CraftSound::bukkitToMinecraftHolder),
+                    Optional.ofNullable(this.hitSound).map(CraftSound::bukkitToMinecraftHolder)
                 )
             );
         }

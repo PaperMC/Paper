@@ -4,8 +4,8 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
 import io.papermc.paper.registry.data.InstrumentRegistryEntry;
+import io.papermc.paper.registry.data.RegistryBuilderProvider;
 import java.util.Collection;
 import java.util.function.Consumer;
 import net.kyori.adventure.key.Key;
@@ -24,7 +24,7 @@ public abstract class MusicInstrument implements RegistryElement.Inlineable<Musi
      * @return the created music instrument
      */
     public static MusicInstrument create(final Consumer<RegistryBuilderFactory<MusicInstrument, ? extends InstrumentRegistryEntry.Builder>> value) {
-        return InlinedRegistryBuilderProvider.instance().create(RegistryKey.INSTRUMENT, value);
+        return RegistryBuilderProvider.instance().create(RegistryKey.INSTRUMENT, value);
     }
 
     // Start generate - MusicInstrument

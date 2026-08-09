@@ -1,6 +1,5 @@
 package io.papermc.paper.datacomponent.item;
 
-import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
 import io.papermc.paper.datacomponent.item.blocksattacks.PaperDamageReduction;
@@ -12,8 +11,9 @@ import io.papermc.paper.registry.set.RegistryKeySet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
 import java.util.Optional;
-import net.kyori.adventure.key.Key;
 import net.minecraft.core.registries.Registries;
+import org.bukkit.Sound;
+import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageType;
 import org.checkerframework.checker.index.qual.NonNegative;
@@ -56,13 +56,13 @@ public record PaperBlocksAttacks(
     }
 
     @Override
-    public @Nullable Key blockSound() {
-        return this.impl.blockSound().map(holder -> PaperAdventure.asAdventure(holder.value().location())).orElse(null);
+    public @Nullable Sound blockSound() {
+        return this.impl.blockSound().map(CraftSound::minecraftHolderToBukkit).orElse(null);
     }
 
     @Override
-    public @Nullable Key disableSound() {
-        return this.impl.disableSound().map(holder -> PaperAdventure.asAdventure(holder.value().location())).orElse(null);
+    public @Nullable Sound disableSound() {
+        return this.impl.disableSound().map(CraftSound::minecraftHolderToBukkit).orElse(null);
     }
 
     static final class BuilderImpl implements Builder {
@@ -72,8 +72,8 @@ public record PaperBlocksAttacks(
         private List<DamageReduction> damageReductions = new ObjectArrayList<>();
         private ItemDamageFunction itemDamage = new PaperItemDamageFunction(net.minecraft.world.item.component.BlocksAttacks.ItemDamageFunction.DEFAULT);
         private @Nullable RegistryKeySet<DamageType> bypassedBy;
-        private @Nullable Key blockSound;
-        private @Nullable Key disableSound;
+        private @Nullable Sound blockSound;
+        private @Nullable Sound disableSound;
 
         @Override
         public Builder blockDelaySeconds(final @NonNegative float delay) {
@@ -112,13 +112,13 @@ public record PaperBlocksAttacks(
         }
 
         @Override
-        public Builder blockSound(final @Nullable Key sound) {
+        public Builder blockSound(final @Nullable Sound sound) {
             this.blockSound = sound;
             return this;
         }
 
         @Override
-        public Builder disableSound(final @Nullable Key sound) {
+        public Builder disableSound(final @Nullable Sound sound) {
             this.disableSound = sound;
             return this;
         }
@@ -131,8 +131,8 @@ public record PaperBlocksAttacks(
                 this.damageReductions.stream().map(damageReduction -> ((PaperDamageReduction) damageReduction).internal()).toList(),
                 ((PaperItemDamageFunction) this.itemDamage).internal(),
                 Optional.ofNullable(this.bypassedBy).map(holders -> PaperRegistrySets.convertToNms(Registries.DAMAGE_TYPE, Conversions.global().lookup(), holders)),
-                Optional.ofNullable(this.blockSound).map(PaperAdventure::resolveSound),
-                Optional.ofNullable(this.disableSound).map(PaperAdventure::resolveSound)
+                Optional.ofNullable(this.blockSound).map(CraftSound::bukkitToMinecraftHolder),
+                Optional.ofNullable(this.disableSound).map(CraftSound::bukkitToMinecraftHolder)
             ));
         }
     }

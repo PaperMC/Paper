@@ -2,6 +2,7 @@ package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import net.kyori.adventure.key.Key;
+import org.bukkit.Sound;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -51,10 +52,10 @@ public interface KineticWeapon {
     float damageMultiplier();
 
     @Contract(pure = true)
-    @Nullable Key sound();
+    @Nullable Sound sound();
 
     @Contract(pure = true)
-    @Nullable Key hitSound();
+    @Nullable Sound hitSound();
 
     interface Condition {
 
@@ -95,10 +96,26 @@ public interface KineticWeapon {
         @Contract(value = "_ -> this", mutates = "this")
         Builder damageMultiplier(float damageMultiplier);
 
+        /**
+         * Sets the sound to play while this weapon is active.
+         *
+         * @param sound the sound, or null to play no sound
+         * @return the builder for chaining
+         * @see Sound#create(net.kyori.adventure.key.Key, Float)
+         * @see Sound#create(java.util.function.Consumer)
+         */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder sound(@Nullable Key sound);
+        Builder sound(@Nullable Sound sound);
 
+        /**
+         * Sets the sound to play when this weapon hits an entity.
+         *
+         * @param sound the sound, or null to play no sound
+         * @return the builder for chaining
+         * @see Sound#create(net.kyori.adventure.key.Key, Float)
+         * @see Sound#create(java.util.function.Consumer)
+         */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder hitSound(@Nullable Key sound);
+        Builder hitSound(@Nullable Sound sound);
     }
 }

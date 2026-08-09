@@ -17,11 +17,11 @@ import org.jetbrains.annotations.ApiStatus;
  */
 @ApiStatus.Internal
 @ApiStatus.NonExtendable
-public interface InlinedRegistryBuilderProvider {
+public interface RegistryBuilderProvider {
 
-    static InlinedRegistryBuilderProvider instance() {
+    static RegistryBuilderProvider instance() {
         final class Holder {
-            static final Optional<InlinedRegistryBuilderProvider> INSTANCE = ServiceLoader.load(InlinedRegistryBuilderProvider.class, InlinedRegistryBuilderProvider.class.getClassLoader()).findFirst();
+            static final Optional<RegistryBuilderProvider> INSTANCE = ServiceLoader.load(RegistryBuilderProvider.class, RegistryBuilderProvider.class.getClassLoader()).findFirst();
         }
         return Holder.INSTANCE.orElseThrow();
     }

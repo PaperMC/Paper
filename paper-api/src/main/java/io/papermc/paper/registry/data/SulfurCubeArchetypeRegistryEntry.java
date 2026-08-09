@@ -17,7 +17,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
-import static io.papermc.paper.registry.data.InlinedRegistryBuilderProvider.transientHolder;
+import static io.papermc.paper.registry.data.RegistryBuilderProvider.transientHolder;
 import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 import static io.papermc.paper.util.BoundChecker.requirePositive;
 

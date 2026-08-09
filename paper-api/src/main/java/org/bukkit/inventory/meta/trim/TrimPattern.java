@@ -4,7 +4,7 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
+import io.papermc.paper.registry.data.RegistryBuilderProvider;
 import io.papermc.paper.registry.data.TrimPatternRegistryEntry;
 import java.util.function.Consumer;
 import net.kyori.adventure.key.Key;
@@ -29,7 +29,7 @@ public interface TrimPattern extends RegistryElement.Inlineable<TrimPattern, Tri
      * @return the created trim pattern
      */
     static TrimPattern create(final Consumer<RegistryBuilderFactory<TrimPattern, ? extends TrimPatternRegistryEntry.Builder>> value) {
-        return InlinedRegistryBuilderProvider.instance().create(RegistryKey.TRIM_PATTERN, value);
+        return RegistryBuilderProvider.instance().create(RegistryKey.TRIM_PATTERN, value);
     }
 
     // Start generate - TrimPattern

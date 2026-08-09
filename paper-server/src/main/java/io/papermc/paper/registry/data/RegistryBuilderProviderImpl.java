@@ -11,7 +11,7 @@ import io.papermc.paper.registry.holder.TransientReferenceRegistryHolder;
 import java.util.function.Consumer;
 import org.bukkit.Keyed;
 
-public final class InlinedRegistryBuilderProviderImpl implements InlinedRegistryBuilderProvider {
+public final class RegistryBuilderProviderImpl implements RegistryBuilderProvider {
 
     @Override
     public <T extends RegistryElement.Inlineable<T, ?, B> & Keyed, B extends RegistryBuilder<T>> T create(
