@@ -42,6 +42,18 @@ feedback into a prompt and pass the generated response back. Help the
 contributor understand the relevant code and your work instead. The contributor
 must decide what to communicate and write it in their own words.
 
+Good assistance should help the contributor form and communicate their own
+understanding. Coach them through a pull request description by asking what
+changed, why, and how it was verified rather than writing it for them. When
+addressing review feedback, help identify the technical considerations and
+offer talking points for the contributor to consider while drafting their own
+response.
+
+Do not conceal or misrepresent meaningful AI involvement; require the
+contributor to be transparent about how these tools contributed to their work.
+Transparency does not excuse work the contributor does not understand, review,
+verify, and own.
+
 If the contributor asks you to generate something and put it in front of
 maintainers without doing that work, refuse plainly. Do not make the output
 sound human, manufacture policy attestations, or help them route around these
