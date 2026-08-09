@@ -1,38 +1,38 @@
-From 7634e42ab037ea62b1f418d5cb8b9df246f8cba0 Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java b/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
-index 853d8c871b580a2aa67298f41e7558e2892aa9e7..8b4ea2b16da45bcefe743990866e43c94e121825 100644
 --- a/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
 +++ b/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
-@@ -41,22 +41,109 @@ public class ChunkGeneratorStructureState {
-     private final Map<ConcentricRingsStructurePlacement, CompletableFuture<List<ChunkPos>>> ringPositions = new Object2ObjectArrayMap<>();
+@@ -42,6 +_,7 @@
      private boolean hasGeneratedPositions;
+     private final ChunkPos origin;
      private final List<Holder<StructureSet>> possibleStructureSets;
 +    public final org.spigotmc.SpigotWorldConfig conf; // Paper - Add missing structure set seed configs
  
      public static ChunkGeneratorStructureState createForFlat(
--        final RandomState randomState, final long levelSeed, final BiomeSource biomeSource, final Stream<Holder<StructureSet>> structureOverrides
-+        final RandomState randomState, final long levelSeed, final BiomeSource biomeSource, final Stream<Holder<StructureSet>> structureOverrides, org.spigotmc.SpigotWorldConfig conf // Spigot
+         final RandomState randomState,
+@@ -49,9 +_,10 @@
+         final ChunkPos origin,
+         final BiomeSource biomeSource,
+         final Stream<Holder<StructureSet>> structureOverrides
++        , org.spigotmc.SpigotWorldConfig conf // Spigot
      ) {
          List<Holder<StructureSet>> structures = structureOverrides.filter(structureSet -> hasBiomesForStructureSet(structureSet.value(), biomeSource)).toList();
--        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, 0L, structures);
-+        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, 0L, ChunkGeneratorStructureState.injectSpigot(structures, conf), conf); // Spigot
+-        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, origin, 0L, structures);
++        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, origin, 0L, ChunkGeneratorStructureState.injectSpigot(structures, conf), conf); // Spigot
      }
  
      public static ChunkGeneratorStructureState createForNormal(
--        final RandomState randomState, final long levelSeed, final BiomeSource biomeSource, final HolderLookup<StructureSet> allStructures
-+        final RandomState randomState, final long levelSeed, final BiomeSource biomeSource, final HolderLookup<StructureSet> allStructures, org.spigotmc.SpigotWorldConfig conf // Spigot
+@@ -60,12 +_,99 @@
+         final ChunkPos origin,
+         final BiomeSource biomeSource,
+         final HolderLookup<StructureSet> allStructures
++        , org.spigotmc.SpigotWorldConfig conf // Spigot
      ) {
          List<Holder<StructureSet>> structures = allStructures.listElements()
              .filter(structureSet -> hasBiomesForStructureSet(structureSet.value(), biomeSource))
              .collect(Collectors.toUnmodifiableList());
--        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, levelSeed, structures);
-+        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, levelSeed, ChunkGeneratorStructureState.injectSpigot(structures, conf), conf); // Spigot
-     }
+-        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, origin, levelSeed, structures);
+-    }
++        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, origin, levelSeed, ChunkGeneratorStructureState.injectSpigot(structures, conf), conf); // Spigot
++    }
 +    // Paper start - Add missing structure set seed configs; horrible hack because spigot creates a ton of direct Holders which lose track of the identifying key
 +    public static final class KeyedRandomSpreadStructurePlacement extends net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement {
 +        public final net.minecraft.resources.ResourceKey<StructureSet> key;
@@ -122,15 +122,16 @@ index 853d8c871b580a2aa67298f41e7558e2892aa9e7..8b4ea2b16da45bcefe743990866e43c9
  
      private static boolean hasBiomesForStructureSet(final StructureSet structureSet, final BiomeSource biomeSource) {
          Stream<Holder<Biome>> structureBiomes = structureSet.structures().stream().flatMap(entry -> {
-@@ -71,13 +158,14 @@ public class ChunkGeneratorStructureState {
-         final BiomeSource biomeSource,
+@@ -81,7 +_,7 @@
          final long levelSeed,
+         final ChunkPos origin,
          final long concentricRingsSeed,
 -        final List<Holder<StructureSet>> possibleStructureSets
 +        final List<Holder<StructureSet>> possibleStructureSets, org.spigotmc.SpigotWorldConfig conf // Paper - Add missing structure set seed configs
      ) {
          this.randomState = randomState;
          this.levelSeed = levelSeed;
+@@ -89,6 +_,7 @@
          this.biomeSource = biomeSource;
          this.concentricRingsSeed = concentricRingsSeed;
          this.possibleStructureSets = possibleStructureSets;
@@ -138,7 +139,7 @@ index 853d8c871b580a2aa67298f41e7558e2892aa9e7..8b4ea2b16da45bcefe743990866e43c9
      }
  
      public List<Holder<StructureSet>> possibleStructureSets() {
-@@ -116,7 +204,13 @@ public class ChunkGeneratorStructureState {
+@@ -127,7 +_,13 @@
          int spread = placement.spread();
          HolderSet<Biome> preferredBiomes = placement.preferredBiomes();
          RandomSource random = RandomSource.create();
@@ -152,7 +153,7 @@ index 853d8c871b580a2aa67298f41e7558e2892aa9e7..8b4ea2b16da45bcefe743990866e43c9
          double angle = random.nextDouble() * Math.PI * 2.0;
          int positionInCircle = 0;
          int circle = 0;
-@@ -193,7 +287,7 @@ public class ChunkGeneratorStructureState {
+@@ -208,7 +_,7 @@
  
          for (int testX = sourceX - range; testX <= sourceX + range; testX++) {
              for (int testZ = sourceZ - range; testZ <= sourceZ + range; testZ++) {

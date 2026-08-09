@@ -9,6 +9,7 @@ import java.util.function.UnaryOperator;
 import net.minecraft.util.Util;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.component.Removed;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.RandomSource;
@@ -17,6 +18,7 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.LodestoneTracker;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public final class ItemComponentSanitizer {
@@ -82,19 +84,19 @@ public final class ItemComponentSanitizer {
         return GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key) == ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop.INSTANCE;
     }
 
-    public static Optional<?> override(final ItemObfuscationSession obfuscationSession, final DataComponentType<?> key, final Optional<?> value) {
+    public static Object override(final ItemObfuscationSession obfuscationSession, final DataComponentType<?> key, final Object value) {
         if (obfuscationSession.obfuscationLevel() != ItemObfuscationSession.ObfuscationLevel.ALL) return value; // Ignore if we are not obfuscating
 
         // Ignore removed values
-        if (value.isEmpty()) {
+        if (Removed.isRemoved(value)) {
             return value;
         }
 
         final ItemStack targetItemstack = obfuscationSession.context().itemStack();
 
         return switch (GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key)) {
-            case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop _ -> Optional.empty();
-            case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Sanitize sanitize -> Optional.of(sanitize.sanitizer().apply(value.get()));
+            case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop _ -> null;
+            case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Sanitize sanitize -> sanitize.sanitizer().apply(value);
             case null -> value;
         };
     }
