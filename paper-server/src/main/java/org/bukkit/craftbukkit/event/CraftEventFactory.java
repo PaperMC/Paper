@@ -1914,6 +1914,10 @@ public class CraftEventFactory {
         return event;
     }
 
+    public static boolean handleBlockFormEvent(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+        return CraftEventFactory.handleBlockFormEvent(level, pos, state, net.minecraft.world.level.block.Block.UPDATE_ALL, null);
+    }
+
     public static boolean handleBlockFormEvent(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, @net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         return CraftEventFactory.handleBlockFormEvent(level, pos, state, flags, null);
     }
