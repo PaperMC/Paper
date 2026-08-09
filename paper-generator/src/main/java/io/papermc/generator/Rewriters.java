@@ -189,12 +189,12 @@ public final class Rewriters {
             .register("JukeboxSong", JukeboxSong.class, new RegistryFieldRewriter<>(Registries.JUKEBOX_SONG, "get") {
                 @Override
                 protected String rewriteFieldName(Holder.Reference<net.minecraft.world.item.JukeboxSong> reference) {
-                    String keyedName = super.rewriteFieldName(reference);
-                    if (!SourceVersion.isIdentifier(keyedName)) {
+                    String constantName = super.rewriteFieldName(reference);
+                    if (!SourceVersion.isIdentifier(constantName)) {
                         // fallback to field names for invalid identifier (happens for 5, 11, 13 etc.)
                         return RegistryEntries.byRegistryKey(Registries.JUKEBOX_SONG).getFieldNames().get(reference.key());
                     }
-                    return keyedName;
+                    return constantName;
                 }
             })
             .register("GameRules", GameRules.class, new RegistryFieldRewriter<>(Registries.GAME_RULE, "getRule") {
