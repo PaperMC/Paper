@@ -1,18 +1,29 @@
 package io.papermc.paper.configuration;
 
 import com.mojang.logging.LogUtils;
+import io.papermc.paper.configuration.constraint.Constraint;
 import io.papermc.paper.configuration.constraint.Constraints;
+import io.papermc.paper.configuration.mapping.MergeMap;
 import io.papermc.paper.configuration.serializer.collection.map.WriteKeyBack;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
 import io.papermc.paper.util.sanitizer.ItemObfuscationBinding;
 import io.papermc.paper.util.sanitizer.OversizedItemComponentSanitizer;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -29,12 +40,20 @@ import java.util.Set;
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class GlobalConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getLogger();
-    static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): allow-nether property to config
+    static final int CURRENT_VERSION = 32; // (when you change the version, change the comment, so it conflicts on rebases): merge spigot.yml and bukkit.yml
     private static GlobalConfiguration instance;
     public static boolean isFirstStart = false;
     public static GlobalConfiguration get() {
         return instance;
     }
+
+    // public class Initialization extends ConfigurationPart {
+    //     public boolean allowEnd = true;
+    //     public String permissionsFile = "permissions.yml";
+    //     public String updateFolder = "updates";
+    //     public boolean pluginProfiling = false;
+    //     public String worldContainer = ".";
+    // }
 
     public ChunkLoadingBasic chunkLoadingBasic;
 
@@ -91,10 +110,16 @@ public class GlobalConfiguration extends ConfigurationPart {
             public Component connectionThrottle = Component.text("Connection throttled! Please wait before reconnecting.");
             public Component flyingPlayer = Component.translatable("multiplayer.disconnect.flying");
             public Component flyingVehicle = Component.translatable("multiplayer.disconnect.flying");
+            public Component whitelist = Component.translatable("multiplayer.disconnect.not_whitelisted");
+            public Component serverFull = Component.translatable("multiplayer.disconnect.server_full");
+            public Component outdatedClient = Component.translatable("multiplayer.disconnect.outdated_client");
+            public Component outdatedServer = Component.translatable("multiplayer.disconnect.outdated_server");
+            public Component restart = Component.text("Server is restarting");
         }
 
         public Component noPermission = Component.text("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", NamedTextColor.RED);
         public boolean useDisplayNameInQuitMessage = false;
+        public boolean sendCommandParseFailureMessage = true;
     }
 
     public Spark spark;
@@ -110,6 +135,7 @@ public class GlobalConfiguration extends ConfigurationPart {
         public BungeeCord bungeeCord;
 
         public class BungeeCord extends ConfigurationPart {
+            public boolean enabled = false;
             public boolean onlineMode = true;
         }
 
@@ -152,6 +178,9 @@ public class GlobalConfiguration extends ConfigurationPart {
     public Watchdog watchdog;
 
     public class Watchdog extends ConfigurationPart {
+        public int timeoutSeconds = 60;
+        public boolean restartOnCrash = true;
+        public String restartScript = "./start.sh";
         public int earlyWarningEvery = 5000;
         public int earlyWarningDelay = 10000;
     }
@@ -164,6 +193,12 @@ public class GlobalConfiguration extends ConfigurationPart {
         public int recipeSpamIncrement = 1;
         public int recipeSpamLimit = 20;
         public IntOr.Disabled incomingPacketThreshold = new IntOr.Disabled(OptionalInt.of(300));
+
+        public Commands commands;
+        public class Commands extends ConfigurationPart {
+            public boolean enabled = false;
+            public Set<String> exclusions = Set.of("/skill");
+        }
     }
 
     public UnsupportedSettings unsupportedSettings;
@@ -194,12 +229,27 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean suggestPlayerNamesWhenNullTabCompletions = true;
         @Comment("Allow mounting entities to a player in the Vanilla '/ride' command.")
         public boolean rideCommandAllowPlayerAsVehicle = false;
+        @Comment("Send commands with namespace prefixes to clients")
+        public boolean sendNamespacedCommands = true;
+        @Comment("Send tab completions to clients")
+        public boolean tabCompletion = true;
     }
 
     public Time time;
 
     public class Time extends ConfigurationPart {
         public boolean affectsAllWorlds = false;
+    }
+
+    public Logging logging;
+
+    public class Logging extends ConfigurationPart {
+        @Comment("Log the execution of commands")
+        public boolean commandExecution = true;
+        @Comment("Log the deaths of villagers")
+        public boolean villagerDeaths = true;
+        @Comment("Log the deaths of named living entities")
+        public boolean namedLivingEntityDeaths = true;
     }
 
     public Scoreboards scoreboards;
@@ -278,17 +328,26 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean sendFullPosForHardCollidingEntities = true;
     }
 
-    public PlayerAutoSave playerAutoSave;
+    public Players players;
 
+    public class Players extends ConfigurationPart {
 
-    public class PlayerAutoSave extends ConfigurationPart {
-        public int rate = -1;
-        private int maxPerTick = -1;
-        public int maxPerTick() {
-            if (this.maxPerTick < 0) {
-                return (this.rate == 1 || this.rate > 100) ? 10 : 20;
+        public boolean disableSaving = false;
+        public AutoSave autoSave;
+        public int userCacheSize = 1000;
+        public boolean saveUserCacheOnStopOnly = false;
+        @Constraint(Constraints.Positive.class)
+        public int sampleCount = 12;
+        public int connectionShuffle = 0;
+        public class AutoSave extends ConfigurationPart {
+            public int rate = -1;
+            private int maxPerTick = -1;
+            public int maxPerTick() {
+                if (this.maxPerTick < 0) {
+                    return (this.rate == 1 || this.rate > 100) ? 10 : 20;
+                }
+                return this.maxPerTick;
             }
-            return this.maxPerTick;
         }
     }
 
@@ -328,7 +387,6 @@ public class GlobalConfiguration extends ConfigurationPart {
         @Comment("See https://luckformula.emc.gs")
         public boolean useAlternativeLuckFormula = false;
         public boolean useDimensionTypeForCustomSpawners = false;
-        public boolean strictAdvancementDimensionCheck = false;
         public IntOr.Default compressionLevel = IntOr.Default.USE_DEFAULT;
         @Comment("Defines the leniency distance added on the server to the interaction range of a player when validating interact packets.")
         public DoubleOr.Default clientInteractionLeniencyDistance = DoubleOr.Default.USE_DEFAULT;
@@ -343,6 +401,12 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean fixFarEndTerrainGeneration = true;
         @Comment("Fix for MC-301114. This removes the oldest combat entry when it hits the cap, to fix a memory leak on constant entity damage.")
         public IntOr.Disabled maxTrackingCombatEntries = new IntOr.Disabled(OptionalInt.of(10240));
+        public int nettyThreads = 4;
+
+        @PostProcess
+        private void postProcess() {
+            System.setProperty("io.netty.eventLoopThreads", Integer.toString(this.nettyThreads));
+        }
     }
 
     public BlockUpdates blockUpdates;
@@ -357,6 +421,9 @@ public class GlobalConfiguration extends ConfigurationPart {
     public Anticheat anticheat;
 
     public class Anticheat extends ConfigurationPart {
+
+        public double movedWronglyThreshold = 0.0625D;
+        public double movedTooQuicklyMultiplier = 10.0D;
 
         public Obfuscation obfuscation;
 
@@ -395,5 +462,28 @@ public class GlobalConfiguration extends ConfigurationPart {
 
     public class UpdateChecker extends ConfigurationPart {
         public boolean enabled = true;
+    }
+
+    public Advancements advancements;
+    public class Advancements extends ConfigurationPart {
+        public boolean strictDimensionCheck = false;
+        public boolean disableSaving = false;
+        public List<String> disabled = List.of("minecraft:story/disabled");
+    }
+
+    public Stats stats;
+    public class Stats extends ConfigurationPart {
+        public boolean disableSaving = false;
+        public Object2IntMap<Holder<Identifier>> forcedCustomStatValues;
+    }
+
+    public AttributesSection attributes;
+    public class AttributesSection extends ConfigurationPart {
+        @ConfigSerializable
+        public record AttributeOverride(double max) {
+        }
+        @MergeMap
+        public Map<Holder<Attribute>, AttributeOverride> overrides = Stream.of(Attributes.MAX_ABSORPTION, Attributes.MAX_HEALTH, Attributes.MOVEMENT_SPEED, Attributes.ATTACK_DAMAGE)
+            .collect(Collectors.toMap(Function.identity(), a -> new AttributeOverride(((RangedAttribute) a.value()).maxValue)));
     }
 }

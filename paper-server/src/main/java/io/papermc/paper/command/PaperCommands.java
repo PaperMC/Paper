@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Set;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
+import org.spigotmc.RestartCommand;
+import org.spigotmc.TicksPerSecondCommand;
 
 @DefaultQualifier(NonNull.class)
 public final class PaperCommands {
@@ -23,6 +25,8 @@ public final class PaperCommands {
 
     public static void registerCommands(final MinecraftServer server) {
         COMMANDS.put("paper", new PaperCommand("paper"));
+        COMMANDS.put("tps", new TicksPerSecondCommand("tps")); // from spigot
+        COMMANDS.put("restart", new RestartCommand("restart")); // from spigot
 
         COMMANDS.forEach((s, command) -> {
             server.server.getCommandMap().register(s, "Paper", command);

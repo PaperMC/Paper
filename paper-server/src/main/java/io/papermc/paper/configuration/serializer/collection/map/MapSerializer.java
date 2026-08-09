@@ -172,5 +172,4 @@ public class MapSerializer implements TypeSerializer.Annotated<Map<?, ?>> {
         }
         return new LinkedHashMap<>();
     }
-
 }

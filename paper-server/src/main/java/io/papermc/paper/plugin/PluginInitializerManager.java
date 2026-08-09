@@ -34,12 +34,12 @@ public class PluginInitializerManager {
     }
 
     private static PluginInitializerManager parse(@NotNull final OptionSet minecraftOptionSet) throws Exception {
-        // We have to load the bukkit configuration inorder to get the update folder location.
-        final File configFileLocationBukkit = (File) minecraftOptionSet.valueOf("bukkit-settings");
-
-        final Path pluginDirectory = ((File) minecraftOptionSet.valueOf("plugins")).toPath();
-
-        final YamlConfiguration configuration = PaperConfigurations.loadLegacyConfigFile(configFileLocationBukkit);
+        // // We have to load the bukkit configuration inorder to get the update folder location.
+        // final File configFileLocationBukkit = (File) minecraftOptionSet.valueOf("bukkit-settings");
+        //
+        // final Path pluginDirectory = ((File) minecraftOptionSet.valueOf("plugins")).toPath();
+        //
+        // final YamlConfiguration configuration = PaperConfigurations.loadLegacyConfigFile(configFileLocationBukkit);
 
         final String updateDirectoryName = configuration.getString("settings.update-folder", "update");
         if (updateDirectoryName.isBlank()) {

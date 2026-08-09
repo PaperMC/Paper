@@ -1014,7 +1014,6 @@ public final class CraftServer implements Server {
         }
         // Paper end
         this.reloadData();
-        org.spigotmc.SpigotConfig.registerCommands(); // Spigot
         io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper
         this.spark.registerCommandBeforePlugins(this); // Paper - spark
         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
@@ -2708,17 +2707,17 @@ public final class CraftServer implements Server {
         @Deprecated
         @Override
         public YamlConfiguration getConfig() {
-            return org.spigotmc.SpigotConfig.config;
+            return this.getPaperConfig();
         }
 
         @Override
         public YamlConfiguration getBukkitConfig() {
-            return configuration;
+            return this.getPaperConfig();
         }
 
         @Override
         public YamlConfiguration getSpigotConfig() {
-            return org.spigotmc.SpigotConfig.config;
+            return this.getPaperConfig();
         }
 
         @Override

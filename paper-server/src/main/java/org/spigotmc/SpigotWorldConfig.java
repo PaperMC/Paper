@@ -38,7 +38,6 @@ public class SpigotWorldConfig {
 
     private void log(String s) {
         if (this.verbose) {
-            Bukkit.getLogger().info(s);
         }
     }
 
