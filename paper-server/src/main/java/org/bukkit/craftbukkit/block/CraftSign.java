@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.UUID;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
@@ -36,8 +37,8 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     @Override
     protected void load(T blockEntity) {
         super.load(blockEntity);
-        this.front = new CraftSignSide(blockEntity.getFrontText());
-        this.back = new CraftSignSide(blockEntity.getBackText());
+        this.front = new CraftSignSide(blockEntity.getText(SignTextSlot.FRONT));
+        this.back = new CraftSignSide(blockEntity.getText(SignTextSlot.BACK));
     }
 
     // Paper start
@@ -122,7 +123,7 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         this.ensureNoWorldGeneration();
         Preconditions.checkArgument(player != null, "player cannot be null");
 
-        if (this.getSnapshot().isFacingFrontText(((CraftPlayer) player).getHandle())) {
+        if (this.getSnapshot().getSlotPlayerIsFacing(((CraftPlayer) player).getHandle()) == SignTextSlot.FRONT) {
             return this.front;
         }
 
@@ -185,7 +186,7 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         SignBlockEntity blockEntity = ((CraftSign<?>) sign).getBlockEntity();
         blockEntity.setAllowedPlayerEditor(player.getUniqueId());
 
-        ((CraftPlayer) player).getHandle().openTextEdit(blockEntity, Side.FRONT == side);
+        ((CraftPlayer) player).getHandle().openTextEdit(blockEntity, toNms(side));
     }
 
     // Paper start
@@ -218,7 +219,7 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     @Override
     public Side getInteractableSideFor(final double x, final double z) {
         this.requirePlaced();
-        return this.getSnapshot().isFacingFrontText(x, z) ? Side.FRONT : Side.BACK;
+        return fromNms(this.getSnapshot().getSlotPlayerIsFacing(x, z));
     }
     // Paper end - More Sign Block API
 
@@ -246,5 +247,13 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
 
     private static String revertComponent(Component component) {
         return CraftChatMessage.fromComponent(component);
+    }
+
+    public static SignTextSlot toNms(Side side) {
+        return side == Side.FRONT ? SignTextSlot.FRONT : SignTextSlot.BACK;
+    }
+
+    public static Side fromNms(SignTextSlot slot) {
+        return slot == SignTextSlot.FRONT ? Side.FRONT : Side.BACK;
     }
 }
