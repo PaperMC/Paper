@@ -16,7 +16,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#ATTRIBUTE_MODIFIERS
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ItemAttributeModifiers {
 
@@ -76,7 +75,6 @@ public interface ItemAttributeModifiers {
     /**
      * Builder for {@link ItemAttributeModifiers}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemAttributeModifiers> {
 

@@ -9,10 +9,8 @@ import io.papermc.typewriter.parser.token.TokenType;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
 import io.papermc.typewriter.replace.SearchMetadata;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import net.minecraft.world.entity.Pose;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
@@ -22,16 +20,6 @@ public class PoseRewriter extends EnumCloneRewriter<Pose> {
         super(Pose.class);
     }
 
-    private static final Set<TokenType> FORMAT_TOKENS = EnumSet.of(
-        TokenType.COMMENT,
-        TokenType.SINGLE_COMMENT
-    );
-
-    private static final Set<TokenType> END_VALUE_MARKERS = EnumSet.of(
-        TokenType.CO,
-        TokenType.SECO
-    );
-
     private @MonotonicNonNull Map<String, CharSequenceBlockToken> javadocsPerConstant;
 
     private Map<String, CharSequenceBlockToken> parseConstantJavadocs(String content) {
@@ -39,11 +27,11 @@ public class PoseRewriter extends EnumCloneRewriter<Pose> {
 
         Lexer lex = new Lexer(content.toCharArray());
         lex.checkMarkdownDocComments = !this.sourcesMetadata.canSkipMarkdownDocComments();
-        SequenceTokens.wrap(lex, FORMAT_TOKENS)
+        SequenceTokens.wrap(lex, TokenTypeSets.COMMENT_TOKENS)
             .group(action -> {
                 ProtoConstant constant = new ProtoConstant();
                 action
-                    .map(TokenType.JAVADOC, token -> { // /** */
+                    .map(TokenTypeSets.JAVADOC_TOKENS::contains, token -> { // /** */
                         constant.javadocs(((CharSequenceBlockToken) token));
                     }, TokenTaskBuilder::asOptional)
                     .map(TokenType.IDENTIFIER, token -> { // <name>
@@ -51,7 +39,7 @@ public class PoseRewriter extends EnumCloneRewriter<Pose> {
                     })
                     .skipClosure(TokenType.LPAREN, TokenType.RPAREN, true, TokenTaskBuilder::asOptional) // (*)?
                     .skipClosure(TokenType.LSCOPE, TokenType.RSCOPE, true, TokenTaskBuilder::asOptional) // {*}?
-                    .map(END_VALUE_MARKERS::contains, _ -> { // ;|,
+                    .map(TokenTypeSets.ENUM_END_MARKER_TOKENS::contains, _ -> { // ;|,
                         // this part will fail for the last entry for enum without end (,;)
                         if (constant.isComplete()) {
                             map.put(constant.name(), constant.javadocs());

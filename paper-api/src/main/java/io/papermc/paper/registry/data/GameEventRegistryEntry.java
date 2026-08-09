@@ -9,14 +9,13 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link GameEvent} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface GameEventRegistryEntry {
 
     /**
      * Provides the range in which this game event will notify its listeners.
      *
-     * @return the range of blocks, represented as an int.
+     * @return the range of blocks, represented as an int
      * @see GameEvent#getRange()
      */
     @NonNegative int range();
@@ -29,15 +28,14 @@ public interface GameEventRegistryEntry {
      *     <li>{@link #range(int)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends GameEventRegistryEntry, RegistryBuilder<GameEvent> {
 
         /**
          * Sets the range in which this game event should notify its listeners.
          *
-         * @param range the range of blocks.
-         * @return this builder instance.
+         * @param range the range of blocks
+         * @return this builder instance
          * @see GameEventRegistryEntry#range()
          * @see GameEvent#getRange()
          */

@@ -1,10 +1,10 @@
 package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.InternalAPIBridge;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -176,6 +176,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     SQUID("squid", Squid.class, 94),
     STRAY("stray", Stray.class, 6),
     STRIDER("strider", Strider.class, -1),
+    SULFUR_CUBE("sulfur_cube", SulfurCube.class, -1),
     TADPOLE("tadpole", Tadpole.class, -1),
     TEXT_DISPLAY("text_display", TextDisplay.class, -1),
     TNT("tnt", TNTPrimed.class, 20),
@@ -329,36 +330,51 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
     @NotNull
     @Deprecated(forRemoval = true) // Paper
     public String getTranslationKey() {
-        return Bukkit.getUnsafe().getTranslationKey(this);
+        return this.translationKey();
     }
 
     // Paper start
     /**
-     * @throws IllegalArgumentException if the entity does not have a translation key (is probably a custom entity)
+     * @throws IllegalArgumentException if the entity does not have a translation key
      */
     @Override
     public @NotNull String translationKey() {
         Preconditions.checkArgument(this != UNKNOWN, "UNKNOWN entities do not have translation keys");
-        return org.bukkit.Bukkit.getUnsafe().getTranslationKey(this);
+        return InternalAPIBridge.get().getTranslationKey(this);
     }
 
     /**
-     * Checks if the entity has default attributes.
+     * Gets the spawn category of this entity type.
+     *
+     * @return the spawn category
+     * @throws IllegalArgumentException if the entity does not have a spawn category
+     */
+    public @NotNull SpawnCategory getSpawnCategory() {
+        Preconditions.checkArgument(this != UNKNOWN, "UNKNOWN entities do not have a spawn category");
+        return InternalAPIBridge.get().getSpawnCategory(this);
+    }
+
+    /**
+     * Checks if the entity type has default attributes.
      *
      * @return true if it has default attributes
      */
     public boolean hasDefaultAttributes() {
-        return org.bukkit.Bukkit.getUnsafe().hasDefaultEntityAttributes(this.key);
+        if (this == UNKNOWN) {
+            return false;
+        }
+        return InternalAPIBridge.get().hasDefaultEntityAttributes(this.key);
     }
 
     /**
-     * Gets the default attributes for the entity.
+     * Gets the default attributes for the entity type.
      *
      * @return an unmodifiable instance of Attributable for reading default attributes.
-     * @throws IllegalArgumentException if the entity does not exist of have default attributes (use {@link #hasDefaultAttributes()} first)
+     * @throws IllegalArgumentException if it doesn't have default attributes (use {@link #hasDefaultAttributes()} first)
      */
     public @NotNull org.bukkit.attribute.Attributable getDefaultAttributes() {
-        return org.bukkit.Bukkit.getUnsafe().getDefaultEntityAttributes(this.key);
+        Preconditions.checkArgument(this.hasDefaultAttributes(), this.key + " doesn't have default attributes");
+        return InternalAPIBridge.get().getDefaultEntityAttributes(this.key);
     }
     // Paper end
 }

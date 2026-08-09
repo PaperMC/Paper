@@ -13,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.item.BlocksAttacks#itemDamage()
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ItemDamageFunction {
 
@@ -54,7 +53,6 @@ public interface ItemDamageFunction {
     /**
      * Builder for {@link ItemDamageFunction}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemDamageFunction> {
 

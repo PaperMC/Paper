@@ -1,51 +1,53 @@
 --- a/net/minecraft/server/jsonrpc/internalapi/MinecraftGameRuleServiceImpl.java
 +++ b/net/minecraft/server/jsonrpc/internalapi/MinecraftGameRuleServiceImpl.java
-@@ -10,21 +_,30 @@
- 
+@@ -14,11 +_,22 @@
  public class MinecraftGameRuleServiceImpl implements MinecraftGameRuleService {
-     private final DedicatedServer server;
--    private GameRules gameRules;
-+    private @org.jspecify.annotations.Nullable GameRules gameRules; // Paper - per-world game rules
+     private final NotificationManager notificationManager;
      private final JsonRpcLogger jsonrpcLogger;
++    private @org.jspecify.annotations.Nullable GameRules gameRules; // Paper - per-world game rules
  
-     public MinecraftGameRuleServiceImpl(final DedicatedServer server, final JsonRpcLogger jsonrpcLogger) {
-         this.server = server;
--        this.gameRules = server.getGameRules();
-+        this.gameRules = null; // Paper - per-world game rules - cannot get game rules until server is started
+     public MinecraftGameRuleServiceImpl(final NotificationManager notificationManager, final JsonRpcLogger jsonrpcLogger) {
+         this.notificationManager = notificationManager;
          this.jsonrpcLogger = jsonrpcLogger;
-     }
- 
+-    }
++        this.gameRules = null; // Paper - per-world game rules - cannot get game rules until server is started
++    }
++
 +    // Paper start - per-world game rules
 +    public GameRules getGameRules() {
 +        if (this.gameRules == null) {
-+            this.gameRules = this.server.overworld().getGameRules();
++            this.gameRules = this.server().overworld().getGameRules();
 +        }
 +        return this.gameRules;
 +    }
 +    // Paper end
-+
-     @Override
+ 
+     private DedicatedServer server() {
+         return Objects.requireNonNull(this.notificationManager.server());
+@@ -28,10 +_,10 @@
      public <T> GameRulesService.GameRuleUpdate<T> updateGameRule(final GameRulesService.GameRuleUpdate<T> update, final ClientInfo clientInfo) {
          GameRule<T> gameRule = update.gameRule();
--        T oldValue = this.gameRules.get(gameRule);
-+        T oldValue = this.getGameRules().get(gameRule); // Paper - per-world game rules
+         MinecraftServer server = this.server();
+-        GameRules gameRules = server.getGameRules();
++        GameRules gameRules = this.getGameRules(); // Paper - per-world game rules
+         T oldValue = gameRules.get(gameRule);
          T newValue = update.value();
--        this.gameRules.set(gameRule, newValue, this.server);
-+        this.getGameRules().set(gameRule, newValue, this.server.overworld()); // Paper - per-world game rules - use overworld for vanilla protocol
+-        gameRules.set(gameRule, newValue, server);
++        gameRules.set(gameRule, newValue, this.server().overworld()); // Paper - per-world game rules - use overworld for vanilla protocol
          this.jsonrpcLogger
              .log(clientInfo, "Game rule '{}' updated from '{}' to '{}'", gameRule.id(), gameRule.serialize(oldValue), gameRule.serialize(newValue));
          return update;
-@@ -37,11 +_,11 @@
+@@ -44,11 +_,11 @@
  
      @Override
      public Stream<GameRule<?>> getAvailableGameRules() {
--        return this.gameRules.availableRules();
+-        return this.server().getGameRules().availableRules();
 +        return this.getGameRules().availableRules(); // Paper - per-world game rules
      }
  
      @Override
      public <T> T getRuleValue(final GameRule<T> gameRule) {
--        return this.gameRules.get(gameRule);
+-        return this.server().getGameRules().get(gameRule);
 +        return this.getGameRules().get(gameRule); // Paper - per-world game rules
      }
  }

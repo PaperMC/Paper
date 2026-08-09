@@ -13,42 +13,32 @@
              int receiverPos = 0;
              BlockState[] wireStates = new BlockState[42];
  
-@@ -158,8 +_,20 @@
+@@ -158,8 +_,15 @@
              attached &= receiverPos > 1;
              powered &= attached;
              BlockState newState = block.defaultBlockState().trySetValue(ATTACHED, attached).trySetValue(POWERED, powered);
 +            boolean cancelledEmitterHook = false, cancelledReceiverHook = false; // Paper - Call BlockRedstoneEvent
              if (receiverPos > 0) {
-                 BlockPos testPosx = pos.relative(direction, receiverPos);
+                 BlockPos testPos = pos.relative(direction, receiverPos);
 +                // Paper start - Call BlockRedstoneEvent
 +                if (wasPowered != powered) {
-+                    int newCurrent = powered ? 15 : 0;
-+                    org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(
-+                        org.bukkit.craftbukkit.block.CraftBlock.at(level, testPosx), wasPowered ? 15 : 0, newCurrent
-+                    );
-+                    event.callEvent();
-+                    cancelledReceiverHook = event.getNewCurrent() != newCurrent;
++                    cancelledReceiverHook = !org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, testPos, powered);
 +                }
 +                if (!cancelledReceiverHook) { // always trigger two events even when the first hook current change is cancelled
 +                // Paper end - Call BlockRedstoneEvent
                  Direction opposite = direction.getOpposite();
-                 level.setBlock(testPosx, newState.setValue(FACING, opposite), Block.UPDATE_ALL);
-                 notifyNeighbors(block, level, testPosx, opposite);
-@@ -169,15 +_,29 @@
+                 level.setBlock(testPos, newState.setValue(FACING, opposite), Block.UPDATE_ALL);
+                 notifyNeighbors(block, level, testPos, opposite);
+@@ -169,15 +_,24 @@
                  }
  
-                 emitState(level, testPosx, attached, powered, wasAttached, wasPowered);
+                 emitState(level, testPos, attached, powered, wasAttached, wasPowered);
 -            }
 +                } // Paper - Call BlockRedstoneEvent
 +            }
 +            // Paper start - Call BlockRedstoneEvent
 +            if (wasPowered != powered) {
-+                int newCurrent = powered ? 15 : 0;
-+                org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(
-+                    org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), wasPowered ? 15 : 0, newCurrent
-+                );
-+                event.callEvent();
-+                cancelledEmitterHook = event.getNewCurrent() != newCurrent;
++                cancelledEmitterHook = !org.bukkit.craftbukkit.event.CraftEventFactory.callBinaryRedstoneChange(level, pos, powered);
 +            }
 +            // Paper end - Call BlockRedstoneEvent
  
@@ -67,10 +57,10 @@
                  for (int i = 1; i < receiverPos; i++) {
 @@ -186,7 +_,7 @@
                      if (wireData != null) {
-                         BlockState testPosState = level.getBlockState(testPosx);
+                         BlockState testPosState = level.getBlockState(testPos);
                          if (testPosState.is(Blocks.TRIPWIRE) || testPosState.is(Blocks.TRIPWIRE_HOOK)) {
--                            level.setBlock(testPosx, wireData.trySetValue(ATTACHED, attached), Block.UPDATE_ALL);
-+                            if (!io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates || !testPosState.is(Blocks.TRIPWIRE)) level.setBlock(testPosx, wireData.trySetValue(ATTACHED, attached), Block.UPDATE_ALL); // Paper - prevent tripwire from updating
+-                            level.setBlock(testPos, wireData.trySetValue(ATTACHED, attached), Block.UPDATE_ALL);
++                            if (!io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates || !testPosState.is(Blocks.TRIPWIRE)) level.setBlock(testPos, wireData.trySetValue(ATTACHED, attached), Block.UPDATE_ALL); // Paper - prevent tripwire from updating
                          }
                      }
                  }

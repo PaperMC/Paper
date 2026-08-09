@@ -11,7 +11,6 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link DamageType} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface DamageTypeRegistryEntry {
 
@@ -63,14 +62,13 @@ public interface DamageTypeRegistryEntry {
      *     <li>{@link #damageScaling(DamageScaling)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DamageTypeRegistryEntry, RegistryBuilder<DamageType> {
 
         /**
          * Sets part of the death message translation key.
          *
-         * @return this builder instance.
+         * @return this builder instance
          * @see DamageTypeRegistryEntry#messageId()
          * @see DamageType#getTranslationKey()
          */
@@ -80,7 +78,7 @@ public interface DamageTypeRegistryEntry {
         /**
          * Sets the amount of hunger exhaustion caused by this damage type.
          *
-         * @return this builder instance.
+         * @return this builder instance
          * @see DamageTypeRegistryEntry#exhaustion()
          * @see DamageType#getExhaustion()
          */
@@ -90,7 +88,7 @@ public interface DamageTypeRegistryEntry {
         /**
          * Sets the {@link DamageScaling} for this damage type.
          *
-         * @return this builder instance.
+         * @return this builder instance
          * @see DamageTypeRegistryEntry#damageScaling()
          * @see DamageType#getDamageScaling()
          */
@@ -100,7 +98,7 @@ public interface DamageTypeRegistryEntry {
         /**
          * Sets the {@link DamageEffect} for this damage type.
          *
-         * @return this builder instance.
+         * @return this builder instance
          * @see DamageTypeRegistryEntry#damageEffect()
          * @see DamageType#getDamageEffect()
          */
@@ -110,7 +108,7 @@ public interface DamageTypeRegistryEntry {
         /**
          * Sets the {@link DeathMessageType} for this damage type.
          *
-         * @return this builder instance.
+         * @return this builder instance
          * @see DamageTypeRegistryEntry#deathMessageType()
          * @see DamageType#getDeathMessageType()
          */

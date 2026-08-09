@@ -198,7 +198,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see MenuType
      */
-    @ApiStatus.Experimental
     Registry<MenuType> MENU = registryFor(RegistryKey.MENU);
     /**
      * Server mob effects.
@@ -511,7 +510,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see #hasTag(TagKey)
      * @see #getTagValues(TagKey)
      */
-    @ApiStatus.Experimental
     Tag<T> getTag(TagKey<T> key);
 
     /**
@@ -524,7 +522,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see #getTag(TagKey)
      * @see Tag#resolve(Registry)
      */
-    @ApiStatus.Experimental
     default Collection<T> getTagValues(final TagKey<T> key) {
         Tag<T> tag = this.getTag(key);
         return tag.resolve(this);
@@ -536,7 +533,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @return a stream of all tags in this registry
      * @throws UnsupportedOperationException if this registry doesn't have or support tags
      */
-    @ApiStatus.Experimental
     Collection<Tag<T>> getTags();
     // Paper end - RegistrySet API
 

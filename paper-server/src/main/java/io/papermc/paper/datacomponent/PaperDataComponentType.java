@@ -36,6 +36,7 @@ import io.papermc.paper.datacomponent.item.PaperPotionContents;
 import io.papermc.paper.datacomponent.item.PaperRepairable;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.PaperSeededContainerLoot;
+import io.papermc.paper.datacomponent.item.PaperSulfurCubeContent;
 import io.papermc.paper.datacomponent.item.PaperSuspiciousStewEffects;
 import io.papermc.paper.datacomponent.item.PaperSwingAnimation;
 import io.papermc.paper.datacomponent.item.PaperTooltipDisplay;
@@ -59,7 +60,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -178,6 +179,7 @@ public abstract class PaperDataComponentType<A, M> extends HolderableBase<net.mi
             collector.register(DataComponents.CONTAINER, wrapper(PaperItemContainerContents::new));
             collector.register(DataComponents.BLOCK_STATE, wrapper(PaperBlockItemDataProperties::new));
             // bees
+            collector.register(DataComponents.SULFUR_CUBE_CONTENT, wrapper(PaperSulfurCubeContent::new));
             // register(DataComponents.LOCK, wrapper(PaperLockCode::new));
             collector.register(DataComponents.CONTAINER_LOOT, wrapper(PaperSeededContainerLoot::new));
             collector.register(DataComponents.BREAK_SOUND, sound -> PaperAdventure.asAdventure(sound.value().location()), PaperAdventure::resolveSound);
@@ -236,8 +238,8 @@ public abstract class PaperDataComponentType<A, M> extends HolderableBase<net.mi
         return Collections.unmodifiableSet(result);
     }
 
-    public static <B, M> @Nullable B convertDataComponentValue(final DataComponentMap map, final PaperDataComponentType.ValuedImpl<B, M> type) {
-        final M value = map.get(bukkitToMinecraft(type));
+    public static <B, M> @Nullable B convertDataComponentValue(final DataComponentGetter getter, final PaperDataComponentType.ValuedImpl<B, M> type) {
+        final M value = getter.get(bukkitToMinecraft(type));
         if (value == null) {
             return null;
         }

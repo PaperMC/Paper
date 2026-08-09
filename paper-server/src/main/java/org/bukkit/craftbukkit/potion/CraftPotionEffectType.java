@@ -116,7 +116,7 @@ public class CraftPotionEffectType extends PotionEffectType implements Holderabl
 
     @Override
     public boolean isInstant() {
-        return this.getHandle().isInstantenous();
+        return this.getHandle().isInstantaneous();
     }
 
     @Override

@@ -14,7 +14,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#FIREWORKS
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface Fireworks {
 
@@ -47,7 +46,6 @@ public interface Fireworks {
     /**
      * Builder for {@link Fireworks}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<Fireworks> {
 

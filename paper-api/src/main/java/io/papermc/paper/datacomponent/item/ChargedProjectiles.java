@@ -13,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CHARGED_PROJECTILES
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ChargedProjectiles {
 
@@ -38,28 +37,27 @@ public interface ChargedProjectiles {
     /**
      * Builder for {@link ChargedProjectiles}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ChargedProjectiles> {
 
         /**
          * Adds a projectile to be loaded in this builder.
          *
-         * @param stack projectile
+         * @param item projectile
          * @return the builder for chaining
          * @see #projectiles()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder add(ItemStack stack);
+        Builder add(ItemStack item);
 
         /**
          * Adds projectiles to be loaded in this builder.
          *
-         * @param stacks projectiles
+         * @param items projectiles
          * @return the builder for chaining
          * @see #projectiles()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder addAll(List<ItemStack> stacks);
+        Builder addAll(List<ItemStack> items);
     }
 }

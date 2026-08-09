@@ -120,11 +120,11 @@ public interface Zombie extends Monster, Ageable {
     /**
      * Make zombie start drowning
      *
-     * @param drownedConversionTime Amount of time until zombie converts from drowning
+     * @param time Amount of time until zombie converts from drowning
      * @deprecated See {@link #setConversionTime(int)}
      */
     @Deprecated
-    void startDrowning(int drownedConversionTime);
+    void startDrowning(int time);
 
     /**
      * Stop a zombie from starting the drowning conversion process

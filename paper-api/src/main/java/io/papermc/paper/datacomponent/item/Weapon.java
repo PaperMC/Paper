@@ -6,7 +6,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface Weapon {
 
@@ -36,7 +35,6 @@ public interface Weapon {
     /**
      * Builder for {@link Weapon}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<Weapon> {
 

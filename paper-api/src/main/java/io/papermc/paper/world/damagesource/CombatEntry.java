@@ -12,7 +12,6 @@ import org.jspecify.annotations.Nullable;
  * Represents a combat entry
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface CombatEntry {
 

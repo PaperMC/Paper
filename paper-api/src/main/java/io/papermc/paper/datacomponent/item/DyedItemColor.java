@@ -11,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#DYED_COLOR
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface DyedItemColor {
 
@@ -36,7 +35,6 @@ public interface DyedItemColor {
     /**
      * Builder for {@link DyedItemColor}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<DyedItemColor> {
 

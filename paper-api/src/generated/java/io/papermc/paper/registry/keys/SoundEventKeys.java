@@ -1377,6 +1377,41 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> BLOCK_CHORUS_FLOWER_GROW = create(key("block.chorus_flower.grow"));
 
     /**
+     * {@code minecraft:block.cinnabar.break}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_CINNABAR_BREAK = create(key("block.cinnabar.break"));
+
+    /**
+     * {@code minecraft:block.cinnabar.fall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_CINNABAR_FALL = create(key("block.cinnabar.fall"));
+
+    /**
+     * {@code minecraft:block.cinnabar.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_CINNABAR_HIT = create(key("block.cinnabar.hit"));
+
+    /**
+     * {@code minecraft:block.cinnabar.place}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_CINNABAR_PLACE = create(key("block.cinnabar.place"));
+
+    /**
+     * {@code minecraft:block.cinnabar.step}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_CINNABAR_STEP = create(key("block.cinnabar.step"));
+
+    /**
      * {@code minecraft:block.cobweb.break}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -4030,6 +4065,76 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> BLOCK_PORTAL_TRIGGER = create(key("block.portal.trigger"));
 
     /**
+     * {@code minecraft:block.potent_sulfur.break}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POTENT_SULFUR_BREAK = create(key("block.potent_sulfur.break"));
+
+    /**
+     * {@code minecraft:block.potent_sulfur.fall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POTENT_SULFUR_FALL = create(key("block.potent_sulfur.fall"));
+
+    /**
+     * {@code minecraft:block.potent_sulfur.geyser_continuous_eruption}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POTENT_SULFUR_GEYSER_CONTINUOUS_ERUPTION = create(key("block.potent_sulfur.geyser_continuous_eruption"));
+
+    /**
+     * {@code minecraft:block.potent_sulfur.geyser_continuous_eruption_active}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POTENT_SULFUR_GEYSER_CONTINUOUS_ERUPTION_ACTIVE = create(key("block.potent_sulfur.geyser_continuous_eruption_active"));
+
+    /**
+     * {@code minecraft:block.potent_sulfur.geyser_eruption}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POTENT_SULFUR_GEYSER_ERUPTION = create(key("block.potent_sulfur.geyser_eruption"));
+
+    /**
+     * {@code minecraft:block.potent_sulfur.geyser_eruption_active}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POTENT_SULFUR_GEYSER_ERUPTION_ACTIVE = create(key("block.potent_sulfur.geyser_eruption_active"));
+
+    /**
+     * {@code minecraft:block.potent_sulfur.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POTENT_SULFUR_HIT = create(key("block.potent_sulfur.hit"));
+
+    /**
+     * {@code minecraft:block.potent_sulfur.noxious_gas}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POTENT_SULFUR_NOXIOUS_GAS = create(key("block.potent_sulfur.noxious_gas"));
+
+    /**
+     * {@code minecraft:block.potent_sulfur.place}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POTENT_SULFUR_PLACE = create(key("block.potent_sulfur.place"));
+
+    /**
+     * {@code minecraft:block.potent_sulfur.step}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_POTENT_SULFUR_STEP = create(key("block.potent_sulfur.step"));
+
+    /**
      * {@code minecraft:block.powder_snow.break}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5099,6 +5204,83 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> BLOCK_STONE_PRESSURE_PLATE_CLICK_ON = create(key("block.stone_pressure_plate.click_on"));
+
+    /**
+     * {@code minecraft:block.sulfur.break}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SULFUR_BREAK = create(key("block.sulfur.break"));
+
+    /**
+     * {@code minecraft:block.sulfur.fall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SULFUR_FALL = create(key("block.sulfur.fall"));
+
+    /**
+     * {@code minecraft:block.sulfur.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SULFUR_HIT = create(key("block.sulfur.hit"));
+
+    /**
+     * {@code minecraft:block.sulfur.place}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SULFUR_PLACE = create(key("block.sulfur.place"));
+
+    /**
+     * {@code minecraft:block.sulfur.step}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SULFUR_STEP = create(key("block.sulfur.step"));
+
+    /**
+     * {@code minecraft:block.sulfur_spike.break}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SULFUR_SPIKE_BREAK = create(key("block.sulfur_spike.break"));
+
+    /**
+     * {@code minecraft:block.sulfur_spike.fall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SULFUR_SPIKE_FALL = create(key("block.sulfur_spike.fall"));
+
+    /**
+     * {@code minecraft:block.sulfur_spike.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SULFUR_SPIKE_HIT = create(key("block.sulfur_spike.hit"));
+
+    /**
+     * {@code minecraft:block.sulfur_spike.land}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SULFUR_SPIKE_LAND = create(key("block.sulfur_spike.land"));
+
+    /**
+     * {@code minecraft:block.sulfur_spike.place}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SULFUR_SPIKE_PLACE = create(key("block.sulfur_spike.place"));
+
+    /**
+     * {@code minecraft:block.sulfur_spike.step}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_SULFUR_SPIKE_STEP = create(key("block.sulfur_spike.step"));
 
     /**
      * {@code minecraft:block.suspicious_gravel.break}
@@ -10463,6 +10645,41 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> ENTITY_SLIME_SQUISH_SMALL = create(key("entity.slime.squish_small"));
 
     /**
+     * {@code minecraft:entity.small_sulfur_cube.death}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SMALL_SULFUR_CUBE_DEATH = create(key("entity.small_sulfur_cube.death"));
+
+    /**
+     * {@code minecraft:entity.small_sulfur_cube.eat}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SMALL_SULFUR_CUBE_EAT = create(key("entity.small_sulfur_cube.eat"));
+
+    /**
+     * {@code minecraft:entity.small_sulfur_cube.hurt}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SMALL_SULFUR_CUBE_HURT = create(key("entity.small_sulfur_cube.hurt"));
+
+    /**
+     * {@code minecraft:entity.small_sulfur_cube.jump}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SMALL_SULFUR_CUBE_JUMP = create(key("entity.small_sulfur_cube.jump"));
+
+    /**
+     * {@code minecraft:entity.small_sulfur_cube.squish}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SMALL_SULFUR_CUBE_SQUISH = create(key("entity.small_sulfur_cube.squish"));
+
+    /**
      * {@code minecraft:entity.sniffer.death}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -10748,6 +10965,223 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> ENTITY_STRIDER_STEP_LAVA = create(key("entity.strider.step_lava"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.absorb}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_ABSORB = create(key("entity.sulfur_cube.absorb"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.bounce}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_BOUNCE = create(key("entity.sulfur_cube.bounce"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.bouncy.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_BOUNCY_HIT = create(key("entity.sulfur_cube.bouncy.hit"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.bouncy.push}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_BOUNCY_PUSH = create(key("entity.sulfur_cube.bouncy.push"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.death}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_DEATH = create(key("entity.sulfur_cube.death"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.eject}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_EJECT = create(key("entity.sulfur_cube.eject"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.explosive.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_EXPLOSIVE_HIT = create(key("entity.sulfur_cube.explosive.hit"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.explosive.push}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_EXPLOSIVE_PUSH = create(key("entity.sulfur_cube.explosive.push"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.fast_flat.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_FAST_FLAT_HIT = create(key("entity.sulfur_cube.fast_flat.hit"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.fast_flat.push}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_FAST_FLAT_PUSH = create(key("entity.sulfur_cube.fast_flat.push"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.fast_sliding.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_FAST_SLIDING_HIT = create(key("entity.sulfur_cube.fast_sliding.hit"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.fast_sliding.push}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_FAST_SLIDING_PUSH = create(key("entity.sulfur_cube.fast_sliding.push"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.high_resistance.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_HIGH_RESISTANCE_HIT = create(key("entity.sulfur_cube.high_resistance.hit"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.high_resistance.push}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_HIGH_RESISTANCE_PUSH = create(key("entity.sulfur_cube.high_resistance.push"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.hot.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_HOT_HIT = create(key("entity.sulfur_cube.hot.hit"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.hot.push}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_HOT_PUSH = create(key("entity.sulfur_cube.hot.push"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.hurt}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_HURT = create(key("entity.sulfur_cube.hurt"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.jump}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_JUMP = create(key("entity.sulfur_cube.jump"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.light.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_LIGHT_HIT = create(key("entity.sulfur_cube.light.hit"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.light.push}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_LIGHT_PUSH = create(key("entity.sulfur_cube.light.push"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.regular.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_REGULAR_HIT = create(key("entity.sulfur_cube.regular.hit"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.regular.push}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_REGULAR_PUSH = create(key("entity.sulfur_cube.regular.push"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.slow_bouncy.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_SLOW_BOUNCY_HIT = create(key("entity.sulfur_cube.slow_bouncy.hit"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.slow_bouncy.push}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_SLOW_BOUNCY_PUSH = create(key("entity.sulfur_cube.slow_bouncy.push"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.slow_flat.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_SLOW_FLAT_HIT = create(key("entity.sulfur_cube.slow_flat.hit"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.slow_flat.push}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_SLOW_FLAT_PUSH = create(key("entity.sulfur_cube.slow_flat.push"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.slow_sliding.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_SLOW_SLIDING_HIT = create(key("entity.sulfur_cube.slow_sliding.hit"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.slow_sliding.push}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_SLOW_SLIDING_PUSH = create(key("entity.sulfur_cube.slow_sliding.push"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.squish}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_SQUISH = create(key("entity.sulfur_cube.squish"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.sticky.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_STICKY_HIT = create(key("entity.sulfur_cube.sticky.hit"));
+
+    /**
+     * {@code minecraft:entity.sulfur_cube.sticky.push}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_SULFUR_CUBE_STICKY_PUSH = create(key("entity.sulfur_cube.sticky.push"));
 
     /**
      * {@code minecraft:entity.tadpole.death}
@@ -12304,6 +12738,13 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> ITEM_BUCKET_EMPTY_POWDER_SNOW = create(key("item.bucket.empty_powder_snow"));
 
     /**
+     * {@code minecraft:item.bucket.empty_sulfur_cube}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ITEM_BUCKET_EMPTY_SULFUR_CUBE = create(key("item.bucket.empty_sulfur_cube"));
+
+    /**
      * {@code minecraft:item.bucket.empty_tadpole}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -12344,6 +12785,13 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> ITEM_BUCKET_FILL_POWDER_SNOW = create(key("item.bucket.fill_powder_snow"));
+
+    /**
+     * {@code minecraft:item.bucket.fill_sulfur_cube}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ITEM_BUCKET_FILL_SULFUR_CUBE = create(key("item.bucket.fill_sulfur_cube"));
 
     /**
      * {@code minecraft:item.bucket.fill_tadpole}
@@ -13081,6 +13529,13 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> MUSIC_OVERWORLD_STONY_PEAKS = create(key("music.overworld.stony_peaks"));
 
     /**
+     * {@code minecraft:music.overworld.sulfur_caves}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> MUSIC_OVERWORLD_SULFUR_CAVES = create(key("music.overworld.sulfur_caves"));
+
+    /**
      * {@code minecraft:music.overworld.swamp}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -13121,6 +13576,13 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> MUSIC_DISC_BLOCKS = create(key("music_disc.blocks"));
+
+    /**
+     * {@code minecraft:music_disc.bounce}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> MUSIC_DISC_BOUNCE = create(key("music_disc.bounce"));
 
     /**
      * {@code minecraft:music_disc.cat}

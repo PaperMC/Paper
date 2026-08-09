@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface SwingAnimation {
 
@@ -33,7 +32,6 @@ public interface SwingAnimation {
     /**
      * Builder for {@link SwingAnimation}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<SwingAnimation> {
 

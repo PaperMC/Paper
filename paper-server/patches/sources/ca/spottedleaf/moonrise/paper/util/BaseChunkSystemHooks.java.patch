@@ -43,7 +43,7 @@
 +
 +    @Override
 +    public void scheduleChunkTask(final ServerLevel level, final int chunkX, final int chunkZ, final Runnable run, final Priority priority) {
-+        level.chunkSource.mainThreadProcessor.execute(run);
++        level.getChunkSource().mainThreadProcessor.execute(run);
 +    }
 +
 +    @Override
@@ -85,9 +85,9 @@
 +        final ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
 +
 +        if (addTicket) {
-+            level.chunkSource.addTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel);
++            level.getChunkSource().addTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel);
 +        }
-+        level.chunkSource.runDistanceManagerUpdates();
++        level.getChunkSource().runDistanceManagerUpdates();
 +
 +        final Consumer<ChunkAccess> loadCallback = (final ChunkAccess chunk) -> {
 +            try {
@@ -99,20 +99,20 @@
 +                com.destroystokyo.paper.util.SneakyThrow.sneaky(thr);
 +            } finally {
 +                if (addTicket) {
-+                    level.chunkSource.addTicketAtLevel(net.minecraft.server.level.TicketType.UNKNOWN, chunkPos, minLevel);
-+                    level.chunkSource.removeTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel);
++                    level.getChunkSource().addTicketAtLevel(net.minecraft.server.level.TicketType.UNKNOWN, chunkPos, minLevel);
++                    level.getChunkSource().removeTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel);
 +                }
 +            }
 +        };
 +
-+        final ChunkHolder holder = level.chunkSource.chunkMap.updatingChunkMap.get(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
++        final ChunkHolder holder = level.getChunkSource().chunkMap.updatingChunkMap.get(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
 +
 +        if (holder == null || holder.getTicketLevel() > minLevel) {
 +            loadCallback.accept(null);
 +            return;
 +        }
 +
-+        final CompletableFuture<ChunkResult<ChunkAccess>> loadFuture = holder.scheduleChunkGenerationTask(toStatus, level.chunkSource.chunkMap);
++        final CompletableFuture<ChunkResult<ChunkAccess>> loadFuture = holder.scheduleChunkGenerationTask(toStatus, level.getChunkSource().chunkMap);
 +
 +        if (loadFuture.isDone()) {
 +            loadCallback.accept(loadFuture.join().orElse(null));
@@ -151,9 +151,9 @@
 +        final ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
 +
 +        if (addTicket) {
-+            level.chunkSource.addTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel);
++            level.getChunkSource().addTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel);
 +        }
-+        level.chunkSource.runDistanceManagerUpdates();
++        level.getChunkSource().runDistanceManagerUpdates();
 +
 +        final Consumer<LevelChunk> loadCallback = (final LevelChunk chunk) -> {
 +            try {
@@ -165,13 +165,13 @@
 +                com.destroystokyo.paper.util.SneakyThrow.sneaky(thr);
 +            } finally {
 +                if (addTicket) {
-+                    level.chunkSource.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, minLevel);
-+                    level.chunkSource.removeTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel);
++                    level.getChunkSource().addTicketAtLevel(TicketType.UNKNOWN, chunkPos, minLevel);
++                    level.getChunkSource().removeTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel);
 +                }
 +            }
 +        };
 +
-+        final ChunkHolder holder = level.chunkSource.chunkMap.updatingChunkMap.get(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
++        final ChunkHolder holder = level.getChunkSource().chunkMap.updatingChunkMap.get(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
 +
 +        if (holder == null || holder.getTicketLevel() > minLevel) {
 +            loadCallback.accept(null);
@@ -215,22 +215,22 @@
 +
 +    @Override
 +    public List<ChunkHolder> getVisibleChunkHolders(final ServerLevel level) {
-+        return new ArrayList<>(level.chunkSource.chunkMap.visibleChunkMap.values());
++        return new ArrayList<>(level.getChunkSource().chunkMap.visibleChunkMap.values());
 +    }
 +
 +    @Override
 +    public List<ChunkHolder> getUpdatingChunkHolders(final ServerLevel level) {
-+        return new ArrayList<>(level.chunkSource.chunkMap.updatingChunkMap.values());
++        return new ArrayList<>(level.getChunkSource().chunkMap.updatingChunkMap.values());
 +    }
 +
 +    @Override
 +    public int getVisibleChunkHolderCount(final ServerLevel level) {
-+        return level.chunkSource.chunkMap.visibleChunkMap.size();
++        return level.getChunkSource().chunkMap.visibleChunkMap.size();
 +    }
 +
 +    @Override
 +    public int getUpdatingChunkHolderCount(final ServerLevel level) {
-+        return level.chunkSource.chunkMap.updatingChunkMap.size();
++        return level.getChunkSource().chunkMap.updatingChunkMap.size();
 +    }
 +
 +    @Override
@@ -290,7 +290,7 @@
 +
 +    @Override
 +    public ChunkHolder getUnloadingChunkHolder(final ServerLevel level, final int chunkX, final int chunkZ) {
-+        return level.chunkSource.chunkMap.getUnloadingChunkHolder(chunkX, chunkZ);
++        return level.getChunkSource().chunkMap.getUnloadingChunkHolder(chunkX, chunkZ);
 +    }
 +
 +    @Override
@@ -304,7 +304,7 @@
 +        if (level == null) {
 +            return Bukkit.getViewDistance();
 +        }
-+        return level.chunkSource.chunkMap.serverViewDistance;
++        return level.getChunkSource().chunkMap.serverViewDistance;
 +    }
 +
 +    @Override
@@ -313,7 +313,7 @@
 +        if (level == null) {
 +            return Bukkit.getSimulationDistance();
 +        }
-+        return level.chunkSource.chunkMap.distanceManager.simulationDistance;
++        return level.getChunkSource().chunkMap.getDistanceManager().simulationDistance;
 +    }
 +
 +    @Override

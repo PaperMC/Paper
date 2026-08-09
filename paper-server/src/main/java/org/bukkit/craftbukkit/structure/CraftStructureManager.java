@@ -65,7 +65,6 @@ public class CraftStructureManager implements StructureManager {
         if (register) {
             this.structureManager.structureRepository.put(id, structure);
         }
-
         return structure.map((template) -> new CraftStructure(template, this.registry)).orElse(null);
     }
 
@@ -119,7 +118,7 @@ public class CraftStructureManager implements StructureManager {
         Identifier id = CraftNamespacedKey.toMinecraft(structureKey);
 
         if (unregister) {
-            this.structureManager.structureRepository.remove(id);
+            this.structureManager.remove(id);
         }
         Path path = this.structureManager.worldTemplates().createAndValidatePathToStructure(id, StructureTemplateManager.WORLD_STRUCTURE_LISTER);
         Files.deleteIfExists(path);

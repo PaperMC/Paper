@@ -3,6 +3,7 @@ package io.papermc.paper.datacomponent.item;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.text.Filtered;
 import java.util.List;
+import net.kyori.adventure.inventory.BookLike;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
@@ -13,9 +14,8 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#WRITABLE_BOOK_CONTENT
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface WritableBookContent {
+public interface WritableBookContent extends BookLike {
 
     @Contract(value = "-> new", pure = true)
     static WritableBookContent.Builder writeableBookContent() {
@@ -33,7 +33,6 @@ public interface WritableBookContent {
     /**
      * Builder for {@link WritableBookContent}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<WritableBookContent> {
 

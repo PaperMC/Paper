@@ -10,7 +10,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#OMINOUS_BOTTLE_AMPLIFIER
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface OminousBottleAmplifier {
 

@@ -1,5 +1,6 @@
 package org.bukkit.tag;
 
+import io.papermc.paper.annotation.MinecraftVersionDependent;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Vanilla {@link DamageType} {@link Tag tags}.
  */
-@ApiStatus.Experimental
+@MinecraftVersionDependent
 public final class DamageTypeTags {
 
     // Start generate - DamageTypeTags
@@ -75,6 +76,8 @@ public final class DamageTypeTags {
     public static final Tag<DamageType> PANIC_CAUSES = getTag("panic_causes");
 
     public static final Tag<DamageType> PANIC_ENVIRONMENTAL_CAUSES = getTag("panic_environmental_causes");
+
+    public static final Tag<DamageType> SULFUR_CUBE_WITH_BLOCK_IMMUNE_TO = getTag("sulfur_cube_with_block_immune_to");
 
     public static final Tag<DamageType> WITCH_RESISTANT_TO = getTag("witch_resistant_to");
 

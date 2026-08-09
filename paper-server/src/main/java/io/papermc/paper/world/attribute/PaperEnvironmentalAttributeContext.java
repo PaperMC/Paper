@@ -15,15 +15,15 @@ public record PaperEnvironmentalAttributeContext(
     public static final PaperEnvironmentalAttributeContext EMPTY = new PaperEnvironmentalAttributeContext(null, null, null, null);
     public static final ThreadLocal<PaperEnvironmentalAttributeContext> CURRENT_CONTEXT = ThreadLocal.withInitial(() -> PaperEnvironmentalAttributeContext.EMPTY);
 
-    public long time(LongSupplier fallbackSupplier) {
+    public long time(final LongSupplier fallbackSupplier) {
         return this.time != null ? this.time : fallbackSupplier.getAsLong();
     }
 
-    public float rainLevel(FloatSupplier fallbackSupplier) {
+    public float rainLevel(final FloatSupplier fallbackSupplier) {
         return this.rainLevel != null ? this.rainLevel : fallbackSupplier.getAsFloat();
     }
 
-    public float thunderLevel(FloatSupplier fallbackSupplier) {
+    public float thunderLevel(final FloatSupplier fallbackSupplier) {
         return this.thunderLevel != null ? this.thunderLevel : fallbackSupplier.getAsFloat();
     }
 
