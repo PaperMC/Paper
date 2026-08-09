@@ -10,13 +10,10 @@ import java.util.function.Supplier;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.level.block.ComposterBlock;
-import net.minecraft.world.level.block.entity.FuelValues;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.World;
@@ -162,7 +159,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public boolean isFuel() {
-        return MinecraftServer.getServer().fuelValues().isFuel(new net.minecraft.world.item.ItemStack(this.getHandle()));
+        return new net.minecraft.world.item.ItemStack(this.getHandle()).has(DataComponents.COOKING_FUEL);
     }
 
     @Override
@@ -179,7 +176,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public boolean isCompostable() {
-        return ComposterBlock.COMPOSTABLES.containsKey(this.getHandle());
+        return new net.minecraft.world.item.ItemStack(this.getHandle()).has(DataComponents.COMPOSTABLE);
     }
 
     @Override
