@@ -24,7 +24,7 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.level.levelgen.feature.Feature;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.RegionAccessor;
@@ -165,7 +165,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     public boolean generateTree(WorldGenLevel access, ChunkGenerator chunkGenerator, BlockPos pos, RandomSource random, TreeType treeType) {
-        ResourceKey<ConfiguredFeature<?, ?>> gen;
+        ResourceKey<Feature> gen;
         switch (treeType) {
             case BIG_TREE:
                 gen = TreeFeatures.FANCY_OAK;
@@ -248,7 +248,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 break;
         }
 
-        Holder<ConfiguredFeature<?, ?>> holder = access.registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE).get(gen).orElse(null);
+        Holder<Feature> holder = access.registryAccess().lookupOrThrow(Registries.FEATURE).get(gen).orElse(null);
         return holder != null && holder.value().place(access, chunkGenerator, random, pos);
     }
 
