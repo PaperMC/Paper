@@ -28,7 +28,7 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf, sandtechnology
 
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index cc91fceced12698146766a6b09a8dce8f573f39e..3f10ea62d2ef70e7e4f01c83942cd9051249954c 100644
+index 709f2c6b47f78920cd9432da4c75e0d1ab2bffbc..3f10ea62d2ef70e7e4f01c83942cd9051249954c 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
 @@ -65,7 +65,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -102,6 +102,15 @@ index cc91fceced12698146766a6b09a8dce8f573f39e..3f10ea62d2ef70e7e4f01c83942cd905
          }
      }
  
+@@ -428,7 +459,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         if (connected && this.pendingActions.isEmpty()) {
+             this.channel.eventLoop().execute(task);
+         } else {
+-            this.pendingActions.add(connection -> connection.channel.eventLoop().execute(task));
++            this.pendingActions.add(new WrappedConsumer(connection -> connection.channel.eventLoop().execute(task)));
+             this.flushQueue();
+         }
+     }
 @@ -444,21 +475,42 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
@@ -372,7 +381,7 @@ index 1480d0db90f5797e3dee19503e52d1e783493ac3..bd76e55ea56dd7c1e232806d1d13a747
 +    // Paper end
  }
 diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
-index b7476ff3f5570b92e9e4ca8fc756f3a8098b1385..1a60071f32a0c92c69f60c75035e5324aa144fb4 100644
+index 5c49b47d2d0b2aeab79d5d9de074ea1d74b4d1cf..fa2467ff885e039f861bb9b1ae076a5a64b891ed 100644
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
 @@ -55,11 +55,13 @@ public class ServerConnectionListener {
