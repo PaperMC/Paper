@@ -18,7 +18,7 @@ public record PaperBundleContents(
 
     @Override
     public List<ItemStack> contents() {
-        return this.impl.itemCopyStream().map(CraftItemStack::asBukkitCopy).toList();
+        return this.impl.itemCopies().map(CraftItemStack::asBukkitCopy).toList();
     }
 
     static final class BuilderImpl implements BundleContents.Builder {

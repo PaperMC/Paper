@@ -1,7 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
 import com.google.common.base.Preconditions;
-import io.papermc.paper.util.MCUtil;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -19,7 +18,7 @@ public record PaperChargedProjectiles(
 
     @Override
     public List<ItemStack> projectiles() {
-        return MCUtil.transformUnmodifiable(this.impl.itemCopies(), CraftItemStack::asCraftMirror);
+        return this.impl.itemCopies().map(CraftItemStack::asBukkitCopy).toList();
     }
 
     static final class BuilderImpl implements ChargedProjectiles.Builder {
