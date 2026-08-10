@@ -4,7 +4,6 @@ import io.papermc.asm.AbstractRewriteRuleVisitorFactory;
 import io.papermc.asm.ClassInfoProvider;
 import io.papermc.asm.rules.builder.RuleFactoryConfiguration;
 import io.papermc.paper.plugin.configuration.PluginMeta;
-import io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 

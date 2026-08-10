@@ -11,7 +11,6 @@ import org.bukkit.Keyed;
 import org.bukkit.Particle;
 import org.bukkit.Registry;
 import org.bukkit.entity.EntityType;
-import org.bukkit.potion.PotionType;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -23,10 +22,6 @@ public class PaperSimpleRegistry<T extends Enum<T> & Keyed, M> extends Registry.
 
     static Registry<Particle> particleType() {
         return new PaperSimpleRegistry<>(Particle.class, BuiltInRegistries.PARTICLE_TYPE);
-    }
-
-    static Registry<PotionType> potion() {
-        return new PaperSimpleRegistry<>(PotionType.class, BuiltInRegistries.POTION);
     }
 
     private final net.minecraft.core.Registry<M> nmsRegistry;

@@ -14,7 +14,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.potion.PotionType;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -113,16 +112,6 @@ public interface UnsafeValues {
      * @return true if a file matching this key was found and deleted
      */
     boolean removeAdvancement(NamespacedKey key);
-
-    /**
-     * Do not use, method will get removed, and the plugin won't run
-     *
-     * @param key of the potion type
-     * @return an internal potion data
-     */
-    @ApiStatus.Internal
-    @Deprecated(since = "1.20.2", forRemoval = true)
-    PotionType.InternalPotionData getInternalPotionData(NamespacedKey key);
 
     @ApiStatus.Internal
     String get(Class<?> elementClass, String value);

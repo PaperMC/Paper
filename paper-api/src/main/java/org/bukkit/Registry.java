@@ -215,7 +215,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see PotionType
      */
-    Registry<PotionType> POTION = registryFor(RegistryKey.POTION); // Paper
+    Registry<PotionType> POTION = registryFor(RegistryKey.POTION);
     /**
      * Server statistics.
      *

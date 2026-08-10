@@ -20,7 +20,7 @@ import io.papermc.paper.datapack.DynamicBuiltinPack;
 import io.papermc.paper.datapack.DynamicBuiltinPacks;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import io.papermc.paper.plugin.ApiVersion;
-import io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier;
+import io.papermc.paper.plugin.entrypoint.classloader.bytecode.ClassloaderBytecodeModifier;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.MCUtil;
 import java.io.IOException;
@@ -70,7 +70,6 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntitySpawnRequest;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.TagValueInput;
@@ -91,13 +90,11 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.legacy.CraftLegacy;
 import org.bukkit.craftbukkit.legacy.FieldRename;
-import org.bukkit.craftbukkit.potion.CraftPotionType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.potion.PotionType;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -438,14 +435,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
         final ApiVersion minimumVersion = MinecraftServer.getServer().server.minimumAPI;
 
         return !toCheck.isNewerThan(ApiVersion.CURRENT) && !toCheck.isOlderThan(minimumVersion);
-    }
-
-    @Override
-    public PotionType.InternalPotionData getInternalPotionData(NamespacedKey namespacedKey) {
-        Potion potionRegistry = CraftRegistry.getMinecraftRegistry(Registries.POTION)
-                .getOptional(CraftNamespacedKey.toMinecraft(namespacedKey)).orElseThrow();
-
-        return new CraftPotionType(namespacedKey, potionRegistry);
     }
 
     @Override
