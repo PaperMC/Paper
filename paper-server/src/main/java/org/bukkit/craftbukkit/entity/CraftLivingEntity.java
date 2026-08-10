@@ -41,6 +41,7 @@ import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnder
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownExperienceBottle;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Consumable;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.waypoints.WaypointStyleAsset;
 import net.minecraft.world.waypoints.WaypointStyleAssets;
@@ -467,12 +468,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public int getNoDamageTicks() {
-        return this.getHandle().invulnerableTime;
+        return this.getHandle().damageCooldownTime;
     }
 
     @Override
     public void setNoDamageTicks(int ticks) {
-        this.getHandle().invulnerableTime = ticks;
+        this.getHandle().damageCooldownTime = ticks;
     }
 
     @Override
@@ -819,14 +820,14 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void swingMainHand() {
         Preconditions.checkState(!this.getHandle().generation, "Cannot swing hand during world generation");
 
-        this.getHandle().swing(InteractionHand.MAIN_HAND, true);
+        this.getHandle().swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, true);
     }
 
     @Override
     public void swingOffHand() {
         Preconditions.checkState(!this.getHandle().generation, "Cannot swing hand during world generation");
 
-        this.getHandle().swing(InteractionHand.OFF_HAND, true);
+        this.getHandle().swing(InteractionHand.OFF_HAND, SwingAnimation.DEFAULT, true);
     }
 
     @Override
