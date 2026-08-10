@@ -19,8 +19,8 @@ public sealed interface SpawnCondition permits SpawnCondition.BiomeCheck, SpawnC
     /**
      * A condition that checks if the position matches a biome.
      *
-     * @param requiredBiomes The biomes that the position must match
-     * @return The biome check condition
+     * @param requiredBiomes the biomes that the position must match
+     * @return the biome check condition
      */
     @SafeVarargs
     @Contract(pure = true, value = "_ -> new")
@@ -31,8 +31,8 @@ public sealed interface SpawnCondition permits SpawnCondition.BiomeCheck, SpawnC
     /**
      * A condition that checks if the position matches a biome.
      *
-     * @param requiredBiomes The biomes that the position must match
-     * @return The biome check condition
+     * @param requiredBiomes the biomes that the position must match
+     * @return the biome check condition
      */
     @Contract(pure = true, value = "_ -> new")
     static SpawnCondition biomeCheck(final RegistryKeySet<Biome> requiredBiomes) {
@@ -42,8 +42,8 @@ public sealed interface SpawnCondition permits SpawnCondition.BiomeCheck, SpawnC
     /**
      * A condition that checks if the moon brightness is within a certain range.
      *
-     * @param range The range of the moon brightness (must be closed range)
-     * @return The moon brightness check condition
+     * @param range the range of the moon brightness (must be a closed range)
+     * @return the moon brightness check condition
      */
     @Contract(pure = true, value = "_ -> new")
     static SpawnCondition moonBrightnessCheck(final Range<Double> range) {
@@ -55,8 +55,8 @@ public sealed interface SpawnCondition permits SpawnCondition.BiomeCheck, SpawnC
     /**
      * A condition that checks if the position is within a certain structure.
      *
-     * @param requiredStructures The structures that the position must be within
-     * @return The structure check condition
+     * @param requiredStructures the structures that the position must be within
+     * @return the structure check condition
      */
     @SafeVarargs
     @Contract(pure = true, value = "_ -> new")
@@ -67,8 +67,8 @@ public sealed interface SpawnCondition permits SpawnCondition.BiomeCheck, SpawnC
     /**
      * A condition that checks if the position is within a certain structure.
      *
-     * @param requiredStructures The structures that the position must be within
-     * @return The structure check condition
+     * @param requiredStructures the structures that the position must be within
+     * @return the structure check condition
      */
     @Contract(pure = true, value = "_ -> new")
     static SpawnCondition structureCheck(final RegistryKeySet<Structure> requiredStructures) {
@@ -83,7 +83,7 @@ public sealed interface SpawnCondition permits SpawnCondition.BiomeCheck, SpawnC
         /**
          * The biomes that the position must match.
          *
-         * @return The required biomes
+         * @return the required biomes
          */
         @Contract(pure = true)
         RegistryKeySet<Biome> requiredBiomes();
@@ -97,7 +97,7 @@ public sealed interface SpawnCondition permits SpawnCondition.BiomeCheck, SpawnC
         /**
          * The range of moon brightness that the position must match.
          *
-         * @return The required moon brightness range
+         * @return the required moon brightness range
          */
         @Contract(pure = true)
         Range<Double> range();
@@ -111,7 +111,7 @@ public sealed interface SpawnCondition permits SpawnCondition.BiomeCheck, SpawnC
         /**
          * The structures that the position must be within.
          *
-         * @return The required structures
+         * @return the required structures
          */
         @Contract(pure = true)
         RegistryKeySet<Structure> requiredStructures();

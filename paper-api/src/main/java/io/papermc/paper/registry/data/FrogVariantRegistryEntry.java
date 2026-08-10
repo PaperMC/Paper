@@ -26,7 +26,7 @@ public interface FrogVariantRegistryEntry {
      * Provides the spawn conditions of the frog variant, which is a list of {@link SpawnConditionPriority} that
      * determine the priority of the spawn conditions for this variant.
      *
-     * @return the list of spawn condition priorities.
+     * @return the list of spawn condition priorities
      */
     @Unmodifiable List<SpawnConditionPriority> spawnConditions();
 
@@ -55,8 +55,8 @@ public interface FrogVariantRegistryEntry {
          * Sets the spawn conditions of the frog variant, which is a list of {@link SpawnConditionPriority} that
          * determine the priority of the spawn conditions for this variant.
          *
-         * @param spawnConditions the list of spawn condition priorities.
-         * @return this builder instance.
+         * @param spawnConditions the list of spawn condition priorities
+         * @return this builder instance
          * @see FrogVariantRegistryEntry#spawnConditions()
          */
         @Contract(value = "_ -> this", mutates = "this")

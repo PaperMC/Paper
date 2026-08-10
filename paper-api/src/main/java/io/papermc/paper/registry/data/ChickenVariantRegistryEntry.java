@@ -55,7 +55,7 @@ public interface ChickenVariantRegistryEntry {
      * Provides the spawn conditions of the chicken variant, which is a list of {@link SpawnConditionPriority} that
      * determine the priority of the spawn conditions for this variant.
      *
-     * @return the list of spawn condition priorities.
+     * @return the list of spawn condition priorities
      */
     @Unmodifiable List<SpawnConditionPriority> spawnConditions();
 
@@ -106,8 +106,8 @@ public interface ChickenVariantRegistryEntry {
          * Sets the spawn conditions of the chicken variant, which is a list of {@link SpawnConditionPriority} that
          * determine the priority of the spawn conditions for this variant.
          *
-         * @param spawnConditions the list of spawn condition priorities.
-         * @return this builder instance.
+         * @param spawnConditions the list of spawn condition priorities
+         * @return this builder instance
          * @see ChickenVariantRegistryEntry#spawnConditions()
          */
         @Contract(value = "_ -> this", mutates = "this")
