@@ -2,7 +2,7 @@ version = "1.0.0-SNAPSHOT"
 
 dependencies {
     // compileOnly(project(":paper-api"))
-    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    compileOnly("io.papermc.paper:paper-api:26.2.build.+")
 }
 
 tasks.processResources {
