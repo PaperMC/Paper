@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import org.bukkit.GameMode;
@@ -61,7 +62,7 @@ public class CraftInventoryView<T extends AbstractContainerMenu, I extends Inven
         if (slot >= 0) {
             this.container.getSlot(slot).set(stack);
         } else {
-            this.player.getHandle().drop(stack, false);
+            this.player.getHandle().drop(stack, false, Prediction.PREDICTED);
         }
     }
 

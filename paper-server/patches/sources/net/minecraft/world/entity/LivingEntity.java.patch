@@ -32,7 +32,7 @@
 +    public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitLivingEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
 +    public boolean silentDeath = true; // Paper - mark entity as dying silently for cancellable death event
 +    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
-+    public int invulnerableDuration = LivingEntity.INVULNERABLE_DURATION; // Paper - configurable invulnerable duration
++    public int invulnerableDuration = LivingEntity.DAMAGE_COOLDOWN_DURATION; // Paper - configurable invulnerable duration
 +    // CraftBukkit end
  
      protected LivingEntity(final EntityType<? extends LivingEntity> type, final Level level) {
@@ -127,7 +127,7 @@
          output.putFloat("Health", this.getHealth());
          output.putShort("HurtTime", (short)this.hurtTime);
          output.putShort("DeathTime", (short)this.deathTime);
-@@ -781,7 +_,13 @@
+@@ -781,7 +_,17 @@
          }
      }
  
@@ -138,13 +138,20 @@
 +    }
 +
 +    public @Nullable ItemEntity drop(final ItemStack itemStack, final boolean thrownFromHand, final Prediction prediction, final boolean callEvent, final java.util.function.@Nullable Consumer<org.bukkit.entity.Item> entityOperation) {
++        return this.drop(itemStack, thrownFromHand, prediction, false, callEvent, entityOperation);
++    }
++
++    public @Nullable ItemEntity drop(final ItemStack itemStack, final boolean thrownFromHand, final Prediction prediction, final boolean randomly, final boolean callEvent, final java.util.function.@Nullable Consumer<org.bukkit.entity.Item> entityOperation) {
 +        // Paper end - Extend dropItem API
          if (itemStack.isEmpty()) {
              return null;
          }
-@@ -793,6 +_,31 @@
+@@ -791,8 +_,33 @@
+             return null;
+         }
  
-         ItemEntity entity = this.createItemStackToDrop(itemStack, false, thrownFromHand);
+-        ItemEntity entity = this.createItemStackToDrop(itemStack, false, thrownFromHand);
++        ItemEntity entity = this.createItemStackToDrop(itemStack, randomly, thrownFromHand); // Paper - Extend dropItem API (allow change randomly)
          if (entity != null) {
 +            // CraftBukkit start - fire PlayerDropItemEvent
 +            if (entityOperation != null) entityOperation.accept((org.bukkit.entity.Item) entity.getBukkitEntity());

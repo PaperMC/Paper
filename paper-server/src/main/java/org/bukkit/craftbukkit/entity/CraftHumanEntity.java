@@ -17,9 +17,9 @@ import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.attribute.BedRule;
-import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
@@ -800,21 +800,19 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return internalDropItemFromInventory(this.inventory.getItem(slot), amount, throwRandomly, entityOperation);
     }
 
-    @Nullable
-    private Item internalDropItemFromInventory(final ItemStack originalItemStack, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
+    private @Nullable Item internalDropItemFromInventory(final ItemStack originalItemStack, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
         if (originalItemStack == null || originalItemStack.isEmpty() || amount <= 0) return null;
 
         final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.unwrap(originalItemStack);
         final net.minecraft.world.item.ItemStack dropContent = nmsItemStack.split(amount);
 
         // This will return the itemstack back to its original amount in case events fail
-        final ItemEntity droppedEntity = this.getHandle().drop(dropContent, throwRandomly, true, true, entityOperation);
+        final ItemEntity droppedEntity = this.getHandle().drop(dropContent, true, Prediction.PREDICTED, throwRandomly, true, entityOperation);
         return droppedEntity == null ? null : (Item) droppedEntity.getBukkitEntity();
     }
 
     @Override
-    @Nullable
-    public Item dropItem(final ItemStack itemStack, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
+    public @Nullable Item dropItem(final ItemStack itemStack, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
         // This method implementation differs from the previous dropItem implementations, as it does not source
         // its itemstack from the players inventory. As such, we cannot reuse #internalDropItemFromInventory.
         Preconditions.checkArgument(itemStack != null, "Cannot drop a null itemstack");
@@ -823,7 +821,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
 
         // Do *not* call the event here, the item is not in the player inventory, they are not dropping it / do not need recovering logic (which would be a dupe).
-        final ItemEntity droppedEntity = this.getHandle().drop(nmsItemStack, throwRandomly, true, false, entityOperation);
+        final ItemEntity droppedEntity = this.getHandle().drop(nmsItemStack, true, Prediction.PREDICTED, throwRandomly, false, entityOperation);
         return droppedEntity == null ? null : (Item) droppedEntity.getBukkitEntity();
     }
 
