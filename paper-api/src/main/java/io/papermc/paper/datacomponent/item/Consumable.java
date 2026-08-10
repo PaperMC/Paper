@@ -17,7 +17,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CONSUMABLE
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface Consumable extends BuildableDataComponent<Consumable, Consumable.Builder> {
 
@@ -44,7 +43,6 @@ public interface Consumable extends BuildableDataComponent<Consumable, Consumabl
     /**
      * Builder for {@link Consumable}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<Consumable> {
 

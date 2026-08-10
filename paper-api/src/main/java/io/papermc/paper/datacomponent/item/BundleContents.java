@@ -13,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BUNDLE_CONTENTS
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface BundleContents {
 
@@ -38,7 +37,6 @@ public interface BundleContents {
     /**
      * Builder for {@link BundleContents}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BundleContents> {
 

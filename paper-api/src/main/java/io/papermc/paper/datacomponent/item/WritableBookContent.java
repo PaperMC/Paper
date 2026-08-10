@@ -14,7 +14,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#WRITABLE_BOOK_CONTENT
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface WritableBookContent extends BookLike {
 
@@ -34,7 +33,6 @@ public interface WritableBookContent extends BookLike {
     /**
      * Builder for {@link WritableBookContent}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<WritableBookContent> {
 

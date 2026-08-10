@@ -14,7 +14,6 @@ import org.jetbrains.annotations.Unmodifiable;
 /**
  * A data-centric version-specific registry entry for the {@link org.bukkit.inventory.meta.trim.TrimMaterial} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface TrimMaterialRegistryEntry {
 
@@ -54,7 +53,6 @@ public interface TrimMaterialRegistryEntry {
      *     <li>{@link #description(Component)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends TrimMaterialRegistryEntry, RegistryBuilder<TrimMaterial> {
 

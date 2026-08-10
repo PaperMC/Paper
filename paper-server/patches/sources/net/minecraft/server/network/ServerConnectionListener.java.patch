@@ -100,6 +100,34 @@
      public SocketAddress startMemoryChannel() {
          ChannelFuture newChannel;
          synchronized (this.channels) {
+@@ -157,9 +_,26 @@
+     public void stop() {
+         this.running = false;
+ 
++        // Paper start - Add maximum time to wait for channels to close
++        for (final ChannelFuture channel : this.channels) {
++            channel.channel().close();
++        }
++
++        final long startTime = System.nanoTime();
++        // Paper end - Add maximum time to wait for channels to close
+         for (ChannelFuture channel : this.channels) {
+             try {
+-                channel.channel().close().sync();
++                // Paper start - Add maximum time to wait for channels to close
++                final ChannelFuture closeFuture = channel.channel().closeFuture();
++                if (!closeFuture.await(TimeUnit.SECONDS.toNanos(30) - (System.nanoTime() - startTime), TimeUnit.NANOSECONDS)) {
++                    LOGGER.error("Timed out whilst waiting for channel to close");
++                }
++
++                // Need to manually throw to match how ChannelFuture#sync throws
++                if (closeFuture.state() == ChannelFuture.State.FAILED) {
++                    com.destroystokyo.paper.util.SneakyThrow.sneaky(closeFuture.exceptionNow());
++                }
++                // Paper end - Add maximum time to wait for channels to close
+             } catch (InterruptedException ignored) {
+                 LOGGER.error("Interrupted whilst closing channel");
+             }
 @@ -187,12 +_,26 @@
  
      public void tick() {
@@ -135,17 +163,29 @@
                          iterator.remove();
                          connection.handleDisconnection();
                      }
-@@ -219,6 +_,16 @@
+@@ -219,6 +_,28 @@
              }
          }
      }
 +    // Paper start
 +    public void handleAllDisconnections() {
 +        synchronized (this.connections) {
++            // Paper start - Add maximum time to wait for channels to close
 +            for (final Connection connection : this.connections) {
-+                connection.channel.close().awaitUninterruptibly();
-+                connection.handleDisconnection();
++                connection.channel.close();
 +            }
++
++            final long startTime = System.nanoTime();
++            for (final Connection connection : this.connections) {
++                final ChannelFuture closeFuture = connection.channel.closeFuture();
++
++                if (closeFuture.awaitUninterruptibly(TimeUnit.SECONDS.toNanos(30) - (System.nanoTime() - startTime), TimeUnit.NANOSECONDS)) {
++                    connection.handleDisconnection();
++                } else {
++                    LOGGER.error("Timed out whilst waiting for player connection channel to close");
++                }
++            }
++            // Paper end - Add maximum time to wait for channels to close
 +        }
 +    }
 +    // Paper end

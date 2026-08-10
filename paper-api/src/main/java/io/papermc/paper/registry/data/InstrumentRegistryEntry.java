@@ -15,7 +15,6 @@ import java.util.function.Consumer;
 /**
  * A data-centric version-specific registry entry for the {@link org.bukkit.MusicInstrument} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface InstrumentRegistryEntry {
 
@@ -68,7 +67,6 @@ public interface InstrumentRegistryEntry {
      *     <li>{@link #description(Component)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends InstrumentRegistryEntry, RegistryBuilder<MusicInstrument> {
 

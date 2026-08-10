@@ -2469,6 +2469,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
     // Paper end - flying fall damage
 
+
+    @Override
+    public void resetFlyingTicks() {
+        if (getHandle().connection == null) {
+            return;
+        }
+
+        getHandle().connection.resetFlyingTicks();
+    }
+
     @Override
     public void setFlySpeed(float value) {
         this.validateSpeed(value);
@@ -3371,5 +3381,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void knockback(final double strength, final double directionX, final double directionZ) {
         super.knockback(strength, directionX, directionZ);
         this.entity.hurtMarked = true;
+    }
+
+    @Override
+    public void unsetFixedPose() {
+        this.getHandle().fixedPose = false;
+        this.getHandle().updatePlayerPose();
     }
 }

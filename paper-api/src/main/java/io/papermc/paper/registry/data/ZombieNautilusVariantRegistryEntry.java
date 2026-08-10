@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Contract;
 /**
  * A data-centric version-specific registry entry for the {@link org.bukkit.entity.ZombieNautilus.Variant} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ZombieNautilusVariantRegistryEntry {
 
@@ -51,7 +50,6 @@ public interface ZombieNautilusVariantRegistryEntry {
      *     <li>{@link #model(Model)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends ZombieNautilusVariantRegistryEntry, RegistryBuilder<ZombieNautilus.Variant> {
 

@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 import javax.annotation.Nullable;
@@ -69,7 +70,7 @@ public final class CraftBlockStates {
         }
     }
 
-    private static final Map<Material, BlockStateFactory<?>> FACTORIES = new HashMap<>();
+    private static final Map<Material, BlockStateFactory<?>> FACTORIES = new IdentityHashMap<>();
     private static final BlockStateFactory<?> DEFAULT_FACTORY = new BlockStateFactory<>(CraftBlockState.class) {
         @Override
         public CraftBlockState createBlockState(World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, BlockEntity blockEntity) {

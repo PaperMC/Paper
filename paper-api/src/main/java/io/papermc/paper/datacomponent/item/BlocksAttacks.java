@@ -19,7 +19,6 @@ import org.jspecify.annotations.Nullable;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BLOCKS_ATTACKS
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface BlocksAttacks {
 
@@ -89,7 +88,6 @@ public interface BlocksAttacks {
     /**
      * Builder for {@link BlocksAttacks}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BlocksAttacks> {
 
