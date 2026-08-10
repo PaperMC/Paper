@@ -73,7 +73,7 @@ Paper をコンパイルするには JDK 25 とインターネット接続が必
 
 GitHub Releases からのダウンロード
 ------
-`v*` タグが付けられると、自動的に GitHub Actions がビルドを実行し、GitHub Releases に Paperclip jar を公開します。リリースページからダウンロードできます。
+`v*` タグが付けられると、自動的に GitHub Actions がビルドを実行し、GitHub Releases に Paperclip の `.jar` ファイルを公開します。公開されたリリースページのアセットとして `.jar` を直接ダウンロードできます。
 
 プルリクエストの作成方法
 ------
