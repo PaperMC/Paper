@@ -5,6 +5,7 @@ import com.google.common.net.InetAddresses;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
+import io.netty.buffer.ByteBuf;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import java.net.InetAddress;
 import java.security.InvalidKeyException;
@@ -79,8 +80,8 @@ public class VelocityProxy {
         return new PropertyMap(propertiesMap);
     }
 
-    public static ProfilePublicKey.Data readForwardedKey(FriendlyByteBuf buf) {
-        return new ProfilePublicKey.Data(buf);
+    public static ProfilePublicKey.Data readForwardedKey(ByteBuf buf) { // TODO - snapshot - is even used?
+        return ProfilePublicKey.Data.STREAM_CODEC.decode(buf);
     }
 
     public static UUID readSignerUuidOrElse(FriendlyByteBuf buf, UUID orElse) {
