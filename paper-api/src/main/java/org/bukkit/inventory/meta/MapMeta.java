@@ -129,7 +129,9 @@ public interface MapMeta extends ItemMeta {
      * Checks for existence of a map color.
      *
      * @return true if this has a custom map color
+     * @deprecated maps no longer have a color
      */
+    @Deprecated(since = "26.3")
     boolean hasColor();
 
     /**
@@ -140,16 +142,19 @@ public interface MapMeta extends ItemMeta {
      * calling this method.
      *
      * @return the map color that is set
+     * @deprecated maps no longer have a color
      */
-    @Nullable
-    Color getColor();
+    @Deprecated(since = "26.3")
+    @Nullable Color getColor();
 
     /**
      * Sets the map color. A custom map color will alter the display of the map
      * in an inventory slot.
      *
      * @param color the color to set
+     * @deprecated maps no longer have a color
      */
+    @Deprecated(since = "26.3")
     void setColor(@Nullable Color color);
 
     @Override

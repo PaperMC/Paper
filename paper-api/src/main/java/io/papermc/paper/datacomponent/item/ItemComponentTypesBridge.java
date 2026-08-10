@@ -50,8 +50,6 @@ interface ItemComponentTypesBridge {
 
     SuspiciousStewEffects.Builder suspiciousStewEffects();
 
-    MapItemColor.Builder mapItemColor();
-
     MapDecorations.Builder mapDecorations();
 
     MapDecorations.DecorationEntry decorationEntry(MapCursor.Type type, double x, double z, float rotation);

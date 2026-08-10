@@ -78,11 +78,6 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
-    public MapItemColor.Builder mapItemColor() {
-        return new PaperMapItemColor.BuilderImpl();
-    }
-
-    @Override
     public MapDecorations.Builder mapDecorations() {
         return new PaperMapDecorations.BuilderImpl();
     }

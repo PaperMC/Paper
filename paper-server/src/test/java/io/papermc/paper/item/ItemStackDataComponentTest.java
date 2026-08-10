@@ -13,7 +13,6 @@ import io.papermc.paper.datacomponent.item.ItemEnchantments;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.datacomponent.item.JukeboxPlayable;
 import io.papermc.paper.datacomponent.item.MapId;
-import io.papermc.paper.datacomponent.item.MapItemColor;
 import io.papermc.paper.datacomponent.item.PotDecorations;
 import io.papermc.paper.datacomponent.item.Tool;
 import io.papermc.paper.datacomponent.item.TooltipDisplay;
@@ -279,11 +278,6 @@ class ItemStackDataComponentTest {
         Assertions.assertEquals(color, ((LeatherArmorMeta) stack.getItemMeta()).getColor());
         stack.unsetData(DataComponentTypes.DYED_COLOR);
         Assertions.assertFalse(((LeatherArmorMeta) stack.getItemMeta()).isDyed());
-    }
-
-    @Test
-    void testMapColor() {
-        testWithMeta(new ItemStack(Material.FILLED_MAP), DataComponentTypes.MAP_COLOR, MapItemColor.mapItemColor().color(Color.BLUE).build(), MapItemColor::color, MapMeta.class, MapMeta::getColor, MapMeta::setColor);
     }
 
     @Test

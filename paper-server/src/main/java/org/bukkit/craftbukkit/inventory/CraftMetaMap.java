@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Objects;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.item.component.MapItemColor;
 import net.minecraft.world.item.component.MapPostProcessing;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import org.bukkit.Bukkit;
@@ -23,7 +22,6 @@ public class CraftMetaMap extends CraftMetaItem implements MapMeta {
     static final ItemMetaKey MAP_SCALING = new ItemMetaKey("scaling");
     @Deprecated // SPIGOT-6308
     static final ItemMetaKey MAP_LOC_NAME = new ItemMetaKey("display-loc-name");
-    static final ItemMetaKeyType<MapItemColor> MAP_COLOR = new ItemMetaKeyType<>(DataComponents.MAP_COLOR, "display-map-color");
     static final ItemMetaKeyType<MapId> MAP_ID = new ItemMetaKeyType<>(DataComponents.MAP_ID, "map-id");
 
     static final byte SCALING_EMPTY = (byte) 0;
@@ -32,7 +30,6 @@ public class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
     private Integer mapId;
     private byte scaling = CraftMetaMap.SCALING_EMPTY;
-    private Integer color; // Paper - keep color component consistent with vanilla (top byte is ignored)
 
     CraftMetaMap(CraftMetaItem meta) {
         super(meta);
@@ -43,7 +40,6 @@ public class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
         this.mapId = mapMeta.mapId;
         this.scaling = mapMeta.scaling;
-        this.color = mapMeta.color;
     }
 
     CraftMetaMap(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
@@ -55,14 +51,6 @@ public class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
         getOrEmpty(patch, CraftMetaMap.MAP_POST_PROCESSING).ifPresent((mapPostProcessing) -> {
             this.scaling = (mapPostProcessing == MapPostProcessing.SCALE) ? CraftMetaMap.SCALING_TRUE : CraftMetaMap.SCALING_FALSE;
-        });
-
-        getOrEmpty(patch, CraftMetaMap.MAP_COLOR).ifPresent((color) -> {
-            try {
-                this.color = color.rgb();
-            } catch (IllegalArgumentException ex) {
-                // Invalid colour
-            }
         });
     }
 
@@ -83,11 +71,6 @@ public class CraftMetaMap extends CraftMetaItem implements MapMeta {
         if (locName != null) {
             this.setLocationName(locName);
         }
-
-        Color color = SerializableMeta.getObject(Color.class, map, CraftMetaMap.MAP_COLOR.BUKKIT, true);
-        if (color != null) {
-            this.setColor(color);
-        }
     }
 
     @Override
@@ -100,10 +83,6 @@ public class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
         if (this.hasScaling()) {
             tag.put(CraftMetaMap.MAP_POST_PROCESSING, (this.isScaling()) ? MapPostProcessing.SCALE : MapPostProcessing.LOCK);
-        }
-
-        if (this.hasColor()) {
-            tag.put(CraftMetaMap.MAP_COLOR, new MapItemColor(this.color));
         }
     }
 
@@ -179,17 +158,16 @@ public class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
     @Override
     public boolean hasColor() {
-        return this.color != null;
+        return false;
     }
 
     @Override
     public Color getColor() {
-        return this.color == null ? null : Color.fromRGB(this.color & 0x00FFFFFF);
+        return null;
     }
 
     @Override
     public void setColor(Color color) {
-        this.color = color == null ? null : color.asRGB();
     }
 
     @Override
@@ -199,8 +177,7 @@ public class CraftMetaMap extends CraftMetaItem implements MapMeta {
         }
         if (meta instanceof final CraftMetaMap other) {
             return this.scaling == other.scaling
-                    && Objects.equals(this.mapId, other.mapId)
-                    && Objects.equals(this.color, other.color);
+                    && Objects.equals(this.mapId, other.mapId);
         }
         return true;
     }
@@ -220,9 +197,6 @@ public class CraftMetaMap extends CraftMetaItem implements MapMeta {
         }
         if (this.hasScaling()) {
             hash ^= 0x22222222 << (this.isScaling() ? 1 : -1);
-        }
-        if (this.hasColor()) {
-            hash = 61 * hash + this.color.hashCode();
         }
 
         return original != hash ? CraftMetaMap.class.hashCode() ^ hash : hash;
@@ -244,10 +218,6 @@ public class CraftMetaMap extends CraftMetaItem implements MapMeta {
 
         if (this.hasScaling()) {
             builder.put(CraftMetaMap.MAP_SCALING.BUKKIT, this.isScaling());
-        }
-
-        if (this.hasColor()) {
-            builder.put(CraftMetaMap.MAP_COLOR.BUKKIT, this.getColor());
         }
 
         return builder;
