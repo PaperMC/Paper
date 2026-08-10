@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BoneMealItem;
@@ -438,7 +439,8 @@ public class CraftBlock implements Block {
 
     @Override
     public boolean isSolid() {
-        return this.getBlockState().blocksMotion();
+        // TODO - snapshot - if datapacks can change this maybe consider deprecate this or improvement the javadocs
+        return this.getBlockState().is(BlockTags.BLOCKS_MOTION);
     }
 
     @Override
