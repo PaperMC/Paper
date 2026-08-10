@@ -1,6 +1,7 @@
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -222,6 +_,37 @@
+@@ -222,6 +_,38 @@
+ import java.util.Locale;
  import org.jspecify.annotations.Nullable;
  import org.slf4j.Logger;
  
@@ -155,6 +156,16 @@
 +        // Paper end - Prevent causing expired keys from impacting new joins
          return false;
      }
++
++    private boolean isBedrockClient() {
++        String brand = this.player.getBukkitEntity().getClientBrandName();
++        if (brand != null && brand.toLowerCase(Locale.ROOT).contains("geyser")) {
++            return true;
++        }
++
++        java.util.Set<String> channels = this.player.getBukkitEntity().getListeningPluginChannels();
++        return channels.contains("geyser") || channels.contains("floodgate") || channels.contains("floodgate:brand");
++    }
  
 @@ -420,11 +_,37 @@
      @Override
@@ -2000,16 +2011,17 @@
 +
 +                    switch (packet.containerInput()) {
 +                        case PICKUP:
-+                            if (packet.buttonNum() == 0) {
++                            int pickupButton = io.papermc.paper.connection.BedrockClientUtils.remapBedrockContainerButton(packet.containerInput(), packet.buttonNum(), this.player.getBukkitEntity());
++                            if (pickupButton == 0) {
 +                                click = ClickType.LEFT;
-+                            } else if (packet.buttonNum() == 1) {
++                            } else if (pickupButton == 1) {
 +                                click = ClickType.RIGHT;
 +                            }
-+                            if (packet.buttonNum() == 0 || packet.buttonNum() == 1) {
++                            if (pickupButton == 0 || pickupButton == 1) {
 +                                action = InventoryAction.NOTHING; // Don't want to repeat ourselves
 +                                if (slotIndex == net.minecraft.world.inventory.AbstractContainerMenu.SLOT_CLICKED_OUTSIDE) {
 +                                    if (!this.player.containerMenu.getCarried().isEmpty()) {
-+                                        action = packet.buttonNum() == 0 ? InventoryAction.DROP_ALL_CURSOR : InventoryAction.DROP_ONE_CURSOR;
++                                        action = pickupButton == 0 ? InventoryAction.DROP_ALL_CURSOR : InventoryAction.DROP_ONE_CURSOR;
 +                                    }
 +                                } else if (slotIndex < 0) {
 +                                    action = InventoryAction.NOTHING;
@@ -2020,22 +2032,22 @@
 +                                        ItemStack cursor = this.player.containerMenu.getCarried();
 +                                        if (clickedItem.isEmpty()) {
 +                                            if (!cursor.isEmpty()) {
-+                                                if (cursor.getItem() instanceof net.minecraft.world.item.BundleItem && cursor.has(DataComponents.BUNDLE_CONTENTS) && packet.buttonNum() != 0) {
++                                                if (cursor.getItem() instanceof net.minecraft.world.item.BundleItem && cursor.has(DataComponents.BUNDLE_CONTENTS) && pickupButton != 0) {
 +                                                    action = cursor.get(DataComponents.BUNDLE_CONTENTS).isEmpty() ? InventoryAction.NOTHING : InventoryAction.PLACE_FROM_BUNDLE;
 +                                                } else {
-+                                                    action = packet.buttonNum() == 0 ? InventoryAction.PLACE_ALL : InventoryAction.PLACE_ONE;
++                                                    action = pickupButton == 0 ? InventoryAction.PLACE_ALL : InventoryAction.PLACE_ONE;
 +                                                }
 +                                            }
 +                                        } else if (slot.mayPickup(this.player)) {
 +                                            if (cursor.isEmpty()) {
-+                                                if (slot.getItem().getItem() instanceof net.minecraft.world.item.BundleItem && slot.getItem().has(DataComponents.BUNDLE_CONTENTS) && packet.buttonNum() != 0) {
++                                                if (slot.getItem().getItem() instanceof net.minecraft.world.item.BundleItem && slot.getItem().has(DataComponents.BUNDLE_CONTENTS) && pickupButton != 0) {
 +                                                    action = slot.getItem().get(DataComponents.BUNDLE_CONTENTS).isEmpty() ? InventoryAction.NOTHING : InventoryAction.PICKUP_FROM_BUNDLE;
 +                                                } else {
-+                                                    action = packet.buttonNum() == 0 ? InventoryAction.PICKUP_ALL : InventoryAction.PICKUP_HALF;
++                                                    action = pickupButton == 0 ? InventoryAction.PICKUP_ALL : InventoryAction.PICKUP_HALF;
 +                                                }
 +                                            } else if (slot.mayPlace(cursor)) {
 +                                                if (ItemStack.isSameItemSameComponents(clickedItem, cursor)) {
-+                                                    int toPlace = packet.buttonNum() == 0 ? cursor.getCount() : 1;
++                                                    int toPlace = pickupButton == 0 ? cursor.getCount() : 1;
 +                                                    toPlace = Math.min(toPlace, clickedItem.getMaxStackSize() - clickedItem.getCount());
 +                                                    toPlace = Math.min(toPlace, slot.container.getMaxStackSize() - clickedItem.getCount());
 +                                                    if (toPlace == 1) {
@@ -2048,7 +2060,7 @@
 +                                                        action = InventoryAction.PLACE_SOME;
 +                                                    }
 +                                                } else if (cursor.getCount() <= slot.getMaxStackSize()) {
-+                                                    if (cursor.getItem() instanceof net.minecraft.world.item.BundleItem && cursor.has(DataComponents.BUNDLE_CONTENTS) && packet.buttonNum() == 0) {
++                                                    if (cursor.getItem() instanceof net.minecraft.world.item.BundleItem && cursor.has(DataComponents.BUNDLE_CONTENTS) && pickupButton == 0) {
 +                                                        int toPickup = cursor.get(DataComponents.BUNDLE_CONTENTS).getMaxAmountToAdd(slot.getItem());
 +                                                        if (toPickup >= slot.getItem().getCount()) {
 +                                                            action = InventoryAction.PICKUP_ALL_INTO_BUNDLE;
@@ -2057,7 +2069,7 @@
 +                                                        } else {
 +                                                            action = InventoryAction.PICKUP_SOME_INTO_BUNDLE;
 +                                                        }
-+                                                    } else if (slot.getItem().getItem() instanceof net.minecraft.world.item.BundleItem && slot.getItem().has(DataComponents.BUNDLE_CONTENTS) && packet.buttonNum() == 0) {
++                                                    } else if (slot.getItem().getItem() instanceof net.minecraft.world.item.BundleItem && slot.getItem().has(DataComponents.BUNDLE_CONTENTS) && pickupButton == 0) {
 +                                                        int toPickup = slot.getItem().get(DataComponents.BUNDLE_CONTENTS).getMaxAmountToAdd(cursor);
 +                                                        if (toPickup >= cursor.getCount()) {
 +                                                            action = InventoryAction.PLACE_ALL_INTO_BUNDLE;
@@ -2085,12 +2097,13 @@
 +                            break;
 +                        // TODO check on updates
 +                        case QUICK_MOVE:
-+                            if (packet.buttonNum() == 0) {
++                            int quickMoveButton = io.papermc.paper.connection.BedrockClientUtils.remapBedrockContainerButton(packet.containerInput(), packet.buttonNum(), this.player.getBukkitEntity());
++                            if (quickMoveButton == 0) {
 +                                click = ClickType.SHIFT_LEFT;
-+                            } else if (packet.buttonNum() == 1) {
++                            } else if (quickMoveButton == 1) {
 +                                click = ClickType.SHIFT_RIGHT;
 +                            }
-+                            if (packet.buttonNum() == 0 || packet.buttonNum() == 1) {
++                            if (quickMoveButton == 0 || quickMoveButton == 1) {
 +                                if (slotIndex < 0) {
 +                                    action = InventoryAction.NOTHING;
 +                                } else {
@@ -2144,8 +2157,9 @@
 +                            }
 +                            break;
 +                        case THROW:
++                            int throwButton = io.papermc.paper.connection.BedrockClientUtils.remapBedrockContainerButton(packet.containerInput(), packet.buttonNum(), this.player.getBukkitEntity());
 +                            if (slotIndex >= 0) {
-+                                if (packet.buttonNum() == 0) {
++                                if (throwButton == 0) {
 +                                    click = ClickType.DROP;
 +                                    Slot slot = this.player.containerMenu.getSlot(slotIndex);
 +                                    if (slot != null && slot.hasItem() && slot.mayPickup(this.player) && !slot.getItem().isEmpty() && slot.getItem().getItem() != Items.AIR) {
@@ -2153,7 +2167,7 @@
 +                                    } else {
 +                                        action = InventoryAction.NOTHING;
 +                                    }
-+                                } else if (packet.buttonNum() == 1) {
++                                } else if (throwButton == 1) {
 +                                    click = ClickType.CONTROL_DROP;
 +                                    Slot slot = this.player.containerMenu.getSlot(slotIndex);
 +                                    if (slot != null && slot.hasItem() && slot.mayPickup(this.player) && !slot.getItem().isEmpty() && slot.getItem().getItem() != Items.AIR) {
@@ -2165,7 +2179,7 @@
 +                            } else {
 +                                // Sane default (because this happens when they are holding nothing. Don't ask why.)
 +                                click = ClickType.LEFT;
-+                                if (packet.buttonNum() == 1) {
++                                if (throwButton == 1) {
 +                                    click = ClickType.RIGHT;
 +                                }
 +                                action = InventoryAction.NOTHING;
@@ -2268,7 +2282,8 @@
 +                        }
 +
 +                        if (event.getResult() != org.bukkit.event.Event.Result.DENY) { // if denied, synchronizing is fully handled by broadcastChanges at the end
-+                            this.player.containerMenu.clicked(slotIndex, packet.buttonNum(), packet.containerInput(), this.player);
++                            int clickedButton = io.papermc.paper.connection.BedrockClientUtils.remapBedrockContainerButton(packet.containerInput(), packet.buttonNum(), this.player.getBukkitEntity());
++                            this.player.containerMenu.clicked(slotIndex, clickedButton, packet.containerInput(), this.player);
 +                        }
 +
 +                        if (event instanceof CraftItemEvent || event instanceof SmithItemEvent) {
@@ -2486,7 +2501,7 @@
 +        // Paper end - do not accept invalid information
          boolean wasHatShown = this.player.isModelPartShown(PlayerModelPart.HAT);
          this.player.updateOptions(packet.information());
-+        this.connection.channel.attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).set(net.kyori.adventure.translation.Translator.parseLocale(packet.information().language())); // Paper
++        this.connection.channel.attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).set(io.papermc.paper.connection.BedrockClientUtils.parsePlayerLocale(packet.information().language())); // Paper
          if (this.player.isModelPartShown(PlayerModelPart.HAT) != wasHatShown) {
              this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_HAT, this.player));
          }

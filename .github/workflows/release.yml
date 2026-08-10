@@ -1,0 +1,41 @@
+name: Release Paper
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: 25
+          distribution: 'zulu'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Apply patches
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          ./gradlew applyPatches --stacktrace
+
+      - name: Build paperclip jar
+        run: ./gradlew createPaperclipJar --stacktrace
+
+      - name: Upload release artifact
+        uses: softprops/action-gh-release@v1
+        with:
+          files: paper-server/build/libs/paper-paperclip-*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

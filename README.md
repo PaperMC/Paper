@@ -1,35 +1,34 @@
-Paper [![Version](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fartifactory.papermc.io%2Fartifactory%2Funiverse%2Fio%2Fpapermc%2Fpaper%2Fpaper-api%2Fmaven-metadata.xml&strategy=highestVersion&filter=26.2*&label=version&color=%23344ceb
-)](https://papermc.io/downloads/paper)
+Paper
+[![Version](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fartifactory.papermc.io%2Fartifactory%2Funiverse%2Fio%2Fpapermc%2Fpaper%2Fpaper-api%2Fmaven-metadata.xml&strategy=highestVersion&filter=26.2*&label=version&color=%23344ceb)](https://papermc.io/downloads/paper)
 [![Paper Build Status](https://img.shields.io/github/actions/workflow/status/PaperMC/Paper/build.yml?branch=main)](https://github.com/PaperMC/Paper/actions)
 [![Discord](https://img.shields.io/discord/289587909051416579.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/papermc)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/papermc?label=GitHub%20Sponsors)](https://github.com/sponsors/PaperMC)
 [![Open Collective](https://img.shields.io/opencollective/all/papermc?label=OpenCollective%20Sponsors)](https://opencollective.com/papermc)
 ===========
 
-The most widely used, high-performance Minecraft server that aims to fix gameplay and mechanics inconsistencies.
+最も広く使われている高性能なMinecraftサーバーで、ゲームプレイやメカニクスの不整合を修正することを目標としています。
 
+**サポートとプロジェクトの議論:**
+- [フォーラム](https://forums.papermc.io/) または [Discord](https://discord.gg/papermc)
 
-**Support and Project Discussion:**
-- [Our forums](https://forums.papermc.io/) or [Discord](https://discord.gg/papermc)
-
-How To (Server Admins)
+サーバー管理者向け
 ------
-Paperclip is a jar file that you can download and run just like a normal jar file.
+Paperclip は通常の jar ファイルと同様にダウンロードして実行できる jar です。
 
-Download Paper from our [downloads page](https://papermc.io/downloads/paper).
+Paper は [ダウンロードページ](https://papermc.io/downloads/paper) から入手できます。
 
-Run the Paperclip jar directly from your server. Just like old times.
+サーバーで直接 Paperclip jar を実行してください。
 
-* Documentation on using Paper: [docs.papermc.io](https://docs.papermc.io)
-* For a sneak peek at upcoming features, [see here](https://github.com/PaperMC/Paper/projects)
+* Paper の利用方法ドキュメント: [docs.papermc.io](https://docs.papermc.io)
+* 今後の機能を確認: [GitHub Projects](https://github.com/PaperMC/Paper/projects)
 
-How To (Plugin Developers)
+プラグイン開発者向け
 ------
-* See our API [here](paper-api)
-* See upcoming, pending, and recently added API [here](https://github.com/orgs/PaperMC/projects/2/views/4)
-* Paper API javadocs here: [papermc.io/javadocs](https://papermc.io/javadocs/)
-#### Repository (for paper-api)
-See [the docs](https://docs.papermc.io/paper/dev/project-setup/#adding-paper-as-a-dependency) for more details.
+* API は [ここ](paper-api) を参照してください
+* 今後追加予定の API や最近追加された API は [こちら](https://github.com/orgs/PaperMC/projects/2/views/4)
+* Paper API javadocs: [papermc.io/javadocs](https://papermc.io/javadocs/)
+#### paper-api のリポジトリ
+詳細は [ドキュメント](https://docs.papermc.io/paper/dev/project-setup/#adding-paper-as-a-dependency) を参照してください。
 ##### Gradle
 ```kotlin
 repositories {
@@ -64,36 +63,43 @@ java {
 </dependency>
 ```
 
-How To (Compiling Jar From Source)
+ソースから Jar をビルドする方法
 ------
-To compile Paper, you need JDK 25 and an internet connection.
+Paper をコンパイルするには JDK 25 とインターネット接続が必要です。
 
-Clone this repo, run `./gradlew applyPatches`, then `./gradlew createPaperclipJar` from your terminal. You can find the compiled jar in the `paper-server/build/libs` directory.
+このリポジトリをクローンし、ターミナルで `./gradlew applyPatches` を実行した後、`./gradlew createPaperclipJar` を実行します。生成された jar は `paper-server/build/libs` に出力されます。
 
-To get a full list of tasks, run `./gradlew tasks`.
+すべてのタスクを確認するには `./gradlew tasks` を実行してください。
 
-How To (Pull Request)
+GitHub Releases からのダウンロード
 ------
-See [Contributing](CONTRIBUTING.md)
+`v*` タグが付けられると、自動的に GitHub Actions がビルドを実行し、GitHub Releases に Paperclip jar を公開します。リリースページからダウンロードできます。
 
-Old Versions (1.21.3 and below)
+プルリクエストの作成方法
 ------
-For branches of versions 1.8-1.21.3, please see our [archive repository](https://github.com/PaperMC/Paper-archive).
+[CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
-Support Us
+古いバージョン (1.21.3 以前)
 ------
-First of all, thank you for considering helping out, we really appreciate that!
+バージョン 1.8 〜 1.21.3 のブランチについては、[Paper-archive](https://github.com/PaperMC/Paper-archive) を参照してください。
 
-PaperMC has various recurring expenses, mostly related to infrastructure. Paper uses [Open Collective](https://opencollective.com/) via the [Open Source Collective fiscal host](https://opencollective.com/opensource) to manage expenses. Open Collective allows us to be extremely transparent, so you can always see how your donations are used. You can read more about financially supporting PaperMC [on our website](https://papermc.io/sponsors).
+サポートについて
+------
+まず、貢献を検討していただきありがとうございます。
 
-You can find our collective [here](https://opencollective.com/papermc), or you can donate via GitHub Sponsors [here](https://github.com/sponsors/PaperMC), which will also go towards the collective.
+PaperMC は主にインフラ費用などの定期的な支出があります。Paper は [Open Collective](https://opencollective.com/) を通じて運営されています。より詳細は [公式サイト](https://papermc.io/sponsors) をご覧ください。
+
+以下のリンクから支援できます。
+
+* [Open Collective](https://opencollective.com/papermc)
+* [GitHub Sponsors](https://github.com/sponsors/PaperMC)
 
 Special Thanks To:
 -------------
 
 [![YourKit-Logo](https://www.yourkit.com/images/yklogo.png)](https://www.yourkit.com/)
 
-[YourKit](https://www.yourkit.com/), makers of the outstanding java profiler, support open source projects of all kinds with their full featured [Java](https://www.yourkit.com/java/profiler) and [.NET](https://www.yourkit.com/.net/profiler) application profilers. We thank them for granting Paper an OSS license so that we can make our software the best it can be.
+[YourKit](https://www.yourkit.com/)、高機能な Java および .NET プロファイラを提供する企業です。PaperMC が OSS ライセンスを利用できるよう支援してくれたことに感謝します。
 
-All our sponsors!  
+すべてのスポンサーに感謝します。  
 [![Sponsor Image](https://raw.githubusercontent.com/PaperMC/papermc.io/data/sponsors.png)](https://papermc.io/sponsors)
