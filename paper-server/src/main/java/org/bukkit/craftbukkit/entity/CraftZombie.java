@@ -95,7 +95,7 @@ public class CraftZombie extends CraftMonster implements Zombie {
 
     @Override
     public void stopDrowning() {
-        this.getHandle().stopDrowning();
+        this.setConversionTime(-1);
     }
 
     @Override
