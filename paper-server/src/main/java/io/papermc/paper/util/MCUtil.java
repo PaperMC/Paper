@@ -245,7 +245,7 @@ public final class MCUtil {
             return false;
         }
 
-        if (state.is(BlockTags.CONVERTABLE_TO_MUD) && stack.getItem() instanceof PotionItem
+        if (state.is(BlockTags.CONVERTIBLE_TO_MUD) && stack.getItem() instanceof PotionItem
             && stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY).is(Potions.WATER)) {
             return true;
         }
