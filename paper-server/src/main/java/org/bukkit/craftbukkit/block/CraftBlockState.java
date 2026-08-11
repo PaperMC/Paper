@@ -226,14 +226,6 @@ public class CraftBlockState implements BlockState {
     }
 
     // used when the flags matter for non API usage
-    public boolean placeAndUpdate() {
-        if (!this.isPlaced()) {
-            return false;
-        }
-
-        return this.getWorldHandle().setBlockAndUpdate(this.position, this.block);
-    }
-
     public boolean place(@net.minecraft.world.level.block.Block.UpdateFlags int flags) {
         if (!this.isPlaced()) {
             return false;
