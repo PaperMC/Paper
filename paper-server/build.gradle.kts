@@ -1,5 +1,6 @@
 import io.papermc.fill.model.BuildChannel
 import io.papermc.paperweight.attribute.DevBundleOutput
+import io.papermc.paperweight.tasks.mache.DecompileJar
 import io.papermc.paperweight.util.*
 import java.time.Instant
 
@@ -207,6 +208,12 @@ tasks.named<JavaCompile>(log4jPlugins.compileJavaTaskName) {
 // Bump compile tasks to 1GB memory to avoid OOMs
 tasks.withType<JavaCompile>().configureEach {
     options.forkOptions.memoryMaximumSize = "1G"
+}
+
+tasks.withType<DecompileJar>().configureEach {
+    // The default decompiler heap is too small for newer Minecraft versions,
+    // causing the Paperweight decompile task to fail with exit code 143.
+    memory.set("4G")
 }
 
 val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
