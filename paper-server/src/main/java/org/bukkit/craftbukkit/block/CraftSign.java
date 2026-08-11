@@ -151,8 +151,8 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
 
     @Override
     public void applyTo(T blockEntity) {
-        this.getSnapshot().setText(this.front.applyLegacyStringToSignSide(), true);
-        this.getSnapshot().setText(this.back.applyLegacyStringToSignSide(), false);
+        this.getSnapshot().setText(this.front.applyLegacyStringToSignSide(), SignTextSlot.FRONT);
+        this.getSnapshot().setText(this.back.applyLegacyStringToSignSide(), SignTextSlot.BACK);
 
         super.applyTo(blockEntity);
     }
