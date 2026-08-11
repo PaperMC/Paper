@@ -143,7 +143,7 @@
              }
          }
      }
-@@ -139,21 +_,23 @@
+@@ -139,21 +_,25 @@
  
      private void verifyLoginAndFinishConnectionSetup(final GameProfile profile) {
          PlayerList playerList = this.server.getPlayerList();
@@ -164,10 +164,12 @@
 -                    );
 +                // Paper start - Keep compression packet write and setup in the same Netty task
 +                final int compressionThreshold = this.server.getCompressionThreshold();
-+                this.connection.scheduleNettyTask(() -> {
-+                    this.connection.send(new ClientboundLoginCompressionPacket(compressionThreshold));
-+                    this.connection.setupCompression(compressionThreshold, true);
-+                });
++                this.connection.sendPacketAndScheduleNettyTask(
++                    new ClientboundLoginCompressionPacket(compressionThreshold), true,
++                    () -> {
++                        this.connection.setupCompression(compressionThreshold, true);
++                    }
++                );
 +                // Paper end - Keep compression packet write and setup in the same Netty task
              }
  
