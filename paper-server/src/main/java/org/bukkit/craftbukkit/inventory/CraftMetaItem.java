@@ -2487,7 +2487,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
                 map.put(CraftMetaFirework.class, Set.of(CraftMetaFirework.FIREWORKS.TYPE));
                 map.put(CraftMetaKnowledgeBook.class, Set.of(CraftMetaKnowledgeBook.BOOK_RECIPES.TYPE));
                 map.put(CraftMetaLeatherArmor.class, Set.of(CraftMetaLeatherArmor.COLOR.TYPE));
-                map.put(CraftMetaMap.class, Set.of(CraftMetaMap.MAP_COLOR.TYPE, CraftMetaMap.MAP_POST_PROCESSING.TYPE, CraftMetaMap.MAP_ID.TYPE));
+                map.put(CraftMetaMap.class, Set.of(CraftMetaMap.MAP_POST_PROCESSING.TYPE, CraftMetaMap.MAP_ID.TYPE));
                 map.put(CraftMetaMusicInstrument.class, Set.of(CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.TYPE));
                 map.put(CraftMetaOminousBottle.class, Set.of(CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.TYPE));
                 map.put(CraftMetaPotion.class, Set.of(CraftMetaPotion.POTION_CONTENTS.TYPE));
