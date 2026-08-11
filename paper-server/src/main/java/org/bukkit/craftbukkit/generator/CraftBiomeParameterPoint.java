@@ -34,12 +34,12 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
 
     @Override
     public double getMaxTemperature() {
-        return this.sampler.temperature().maxValue();
+        return this.sampler.temperature().range().max();
     }
 
     @Override
     public double getMinTemperature() {
-        return this.sampler.temperature().minValue();
+        return this.sampler.temperature().range().min();
     }
 
     @Override
@@ -49,12 +49,12 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
 
     @Override
     public double getMaxHumidity() {
-        return this.sampler.humidity().maxValue();
+        return this.sampler.humidity().range().max();
     }
 
     @Override
     public double getMinHumidity() {
-        return this.sampler.humidity().minValue();
+        return this.sampler.humidity().range().min();
     }
 
     @Override
@@ -64,12 +64,12 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
 
     @Override
     public double getMaxContinentalness() {
-        return this.sampler.continentalness().maxValue();
+        return this.sampler.continentalness().range().max();
     }
 
     @Override
     public double getMinContinentalness() {
-        return this.sampler.continentalness().minValue();
+        return this.sampler.continentalness().range().min();
     }
 
     @Override
@@ -79,12 +79,12 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
 
     @Override
     public double getMaxErosion() {
-        return this.sampler.erosion().maxValue();
+        return this.sampler.erosion().range().max();
     }
 
     @Override
     public double getMinErosion() {
-        return this.sampler.erosion().minValue();
+        return this.sampler.erosion().range().min();
     }
 
     @Override
@@ -94,12 +94,12 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
 
     @Override
     public double getMaxDepth() {
-        return this.sampler.depth().maxValue();
+        return this.sampler.depth().range().max();
     }
 
     @Override
     public double getMinDepth() {
-        return this.sampler.depth().minValue();
+        return this.sampler.depth().range().min();
     }
 
     @Override
@@ -109,11 +109,11 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
 
     @Override
     public double getMaxWeirdness() {
-        return this.sampler.weirdness().maxValue();
+        return this.sampler.weirdness().range().max();
     }
 
     @Override
     public double getMinWeirdness() {
-        return this.sampler.weirdness().minValue();
+        return this.sampler.weirdness().range().min();
     }
 }
