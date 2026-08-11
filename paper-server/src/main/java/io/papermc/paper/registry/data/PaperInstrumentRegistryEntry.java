@@ -15,11 +15,13 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.Instrument;
 import org.bukkit.MusicInstrument;
 import org.bukkit.Sound;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 import static io.papermc.paper.util.BoundChecker.requirePositive;
 
 public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
@@ -28,6 +30,7 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
     protected @Nullable Holder<SoundEvent> soundEvent;
     protected @Nullable Float useDuration;
     protected @Nullable Float range;
+    protected @Nullable Integer durabilityDamage = 0;
     protected @Nullable Component description;
 
     public PaperInstrumentRegistryEntry(final Conversions conversions, final @Nullable Instrument internal) {
@@ -39,6 +42,7 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
         this.soundEvent = internal.soundEvent();
         this.useDuration = internal.useDuration();
         this.range = internal.range();
+        this.durabilityDamage = internal.durabilityDamage();
         this.description = internal.description();
     }
 
@@ -49,13 +53,18 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
     }
 
     @Override
-    public @Positive float duration() {
+    public @NonNegative float duration() {
         return asConfigured(this.useDuration, "useDuration");
     }
 
     @Override
     public @Positive float range() {
         return asConfigured(this.range, "range");
+    }
+
+    @Override
+    public @NonNegative int durabilityDamage() {
+        return asConfigured(this.durabilityDamage, "durabilityDamage");
     }
 
     @Override
@@ -88,14 +97,20 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
         }
 
         @Override
-        public Builder duration(final @Positive float duration) {
-            this.useDuration = requirePositive(duration, "useDuration");
+        public Builder duration(final @NonNegative float duration) {
+            this.useDuration = requireNonNegative(duration, "useDuration");
             return this;
         }
 
         @Override
         public Builder range(final @Positive float range) {
             this.range = requirePositive(range, "range");
+            return this;
+        }
+
+        @Override
+        public Builder durabilityDamage(final @NonNegative int durabilityDamage) {
+            this.durabilityDamage = requireNonNegative(durabilityDamage, "durabilityDamage");
             return this;
         }
 
@@ -111,6 +126,7 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
                 asConfigured(this.soundEvent, "soundEvent"),
                 this.duration(),
                 this.range(),
+                this.durabilityDamage(),
                 asConfigured(this.description, "description")
             );
         }
