@@ -213,7 +213,8 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.withType<DecompileJar>().configureEach {
     // The default decompiler heap is too small for newer Minecraft versions,
     // causing the Paperweight decompile task to fail with exit code 143.
-    memory.set("4G")
+    // Keep this lower in constrained container environments.
+    memory.set("2G")
 }
 
 val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
