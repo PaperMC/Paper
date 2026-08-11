@@ -28,7 +28,7 @@ and then catch exceptions and close if they fire.
 Part of this commit was authored by: Spottedleaf, sandtechnology
 
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index cc91fceced12698146766a6b09a8dce8f573f39e..3f10ea62d2ef70e7e4f01c83942cd9051249954c 100644
+index f46c55fd212ea68386342bc9ce71c04108758a8e..0b65c06e43fd22b2c30d9b8c5ef5b5e99301cec1 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
 @@ -65,7 +65,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -102,7 +102,16 @@ index cc91fceced12698146766a6b09a8dce8f573f39e..3f10ea62d2ef70e7e4f01c83942cd905
          }
      }
  
-@@ -444,21 +475,42 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -428,7 +459,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         if (connected && this.pendingActions.isEmpty()) {
+             this.channel.eventLoop().execute(task);
+         } else {
+-            this.pendingActions.add(connection -> connection.channel.eventLoop().execute(task));
++            this.pendingActions.add(new WrappedConsumer(connection -> connection.channel.eventLoop().execute(task)));
+             this.flushQueue();
+         }
+     }
+@@ -461,21 +492,42 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      private void doSendPacket(final Packet<?> packet, final @Nullable ChannelFutureListener listener, final boolean flush) {
@@ -149,7 +158,7 @@ index cc91fceced12698146766a6b09a8dce8f573f39e..3f10ea62d2ef70e7e4f01c83942cd905
          }
      }
  
-@@ -470,16 +522,57 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -487,16 +539,57 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          }
      }
  
@@ -212,7 +221,7 @@ index cc91fceced12698146766a6b09a8dce8f573f39e..3f10ea62d2ef70e7e4f01c83942cd905
  
      private static final int MAX_PER_TICK = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxJoinsPerTick; // Paper - Buffer joins to world
      private static int joinAttemptsThisTick; // Paper - Buffer joins to world
-@@ -549,6 +642,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -566,6 +659,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
      public void disconnect(final DisconnectionDetails details) {
          this.preparing = false; // Spigot
@@ -220,7 +229,7 @@ index cc91fceced12698146766a6b09a8dce8f573f39e..3f10ea62d2ef70e7e4f01c83942cd905
          if (this.channel == null) {
              this.delayedDisconnect = details;
          }
-@@ -738,7 +832,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -755,7 +849,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public void handleDisconnection() {
          if (this.channel != null && !this.channel.isOpen()) {
              if (this.disconnectionHandled) {
@@ -229,7 +238,7 @@ index cc91fceced12698146766a6b09a8dce8f573f39e..3f10ea62d2ef70e7e4f01c83942cd905
              } else {
                  this.disconnectionHandled = true;
                  PacketListener packetListener = this.getPacketListener();
-@@ -749,7 +843,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -766,7 +860,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                      );
                      disconnectListener.onDisconnect(details);
                  }
@@ -238,7 +247,7 @@ index cc91fceced12698146766a6b09a8dce8f573f39e..3f10ea62d2ef70e7e4f01c83942cd905
                  // Paper start - Add PlayerConnectionCloseEvent
                  if (packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl commonPacketListener) {
                      /* Player was logged in, either game listener or configuration listener */
-@@ -792,4 +886,96 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -809,4 +903,96 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public @Nullable UUID getIntendedProfileId() {
          return this.intendedProfileId;
      }
@@ -372,7 +381,7 @@ index 1480d0db90f5797e3dee19503e52d1e783493ac3..bd76e55ea56dd7c1e232806d1d13a747
 +    // Paper end
  }
 diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
-index b7476ff3f5570b92e9e4ca8fc756f3a8098b1385..1a60071f32a0c92c69f60c75035e5324aa144fb4 100644
+index 5c49b47d2d0b2aeab79d5d9de074ea1d74b4d1cf..fa2467ff885e039f861bb9b1ae076a5a64b891ed 100644
 --- a/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/net/minecraft/server/network/ServerConnectionListener.java
 @@ -55,11 +55,13 @@ public class ServerConnectionListener {
