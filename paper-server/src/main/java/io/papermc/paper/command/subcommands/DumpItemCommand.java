@@ -18,6 +18,7 @@ import net.kyori.adventure.text.TextComponent;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.Removed;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.NbtUtils;
@@ -68,7 +69,7 @@ public final class DumpItemCommand implements PaperSubcommand {
 
         final Set<DataComponentType<?>> remainingComponents = Collections.newSetFromMap(new IdentityHashMap<>());
         final DataComponentPatch patch = item.getComponentsPatch();
-        remainingComponents.addAll(patch.entrySet().stream().map(Map.Entry::getKey).toList());
+        remainingComponents.addAll(patch.map.keySet().stream().toList());
         final DataComponentMap prototype = item.getPrototype();
         if (includeAllComponents) {
             remainingComponents.addAll(prototype.keySet());
@@ -78,16 +79,16 @@ public final class DumpItemCommand implements PaperSubcommand {
         final RegistryOps<Tag> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE);
         final List<ComponentLike> writtenComponents = new ArrayList<>();
         final List<String> componentsToCopy = new ArrayList<>();
-        for (final Map.Entry<DataComponentType<?>, Optional<?>> entry : patch.entrySet()) { // patch
+        for (final Map.Entry<DataComponentType<?>, Object> entry : patch.map.entrySet()) { // patch
             final DataComponentType<?> type = entry.getKey();
             if (remainingComponents.remove(type)) {
                 final String path = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type)).getPath();
-                final Optional<?> patchedValue = entry.getValue();
-                if (patchedValue.isEmpty()) {
+                final Object patchedValue = entry.getValue();
+                if (Removed.isRemoved(patchedValue)) {
                     writtenComponents.add(text().append(text('!', RED), text(path, AQUA)));
                     componentsToCopy.add("!" + path);
                 } else {
-                    final Tag serialized = (Tag) ((DataComponentType) type).codecOrThrow().encodeStart(ops, patchedValue.get()).getOrThrow();
+                    final Tag serialized = (Tag) ((DataComponentType) type).codecOrThrow().encodeStart(ops, patchedValue).getOrThrow();
                     writeComponentValue(writtenComponents::add, componentsToCopy::add, path, serialized);
                 }
             }

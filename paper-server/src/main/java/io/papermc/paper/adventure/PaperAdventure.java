@@ -36,6 +36,7 @@ import net.kyori.adventure.util.Codec;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.Removed;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.locale.Language;
 import net.minecraft.nbt.CompoundTag;
@@ -361,13 +362,14 @@ public final class PaperAdventure {
             return Collections.emptyMap();
         }
         final Map<Key, DataComponentValue> map = new HashMap<>();
-        for (final Map.Entry<DataComponentType<?>, Optional<?>> entry : patch.entrySet()) {
+        for (final Map.Entry<DataComponentType<?>, Object> entry : patch.map.entrySet()) {
             if (entry.getKey().isTransient()) continue;
             @Subst("key:value") final String typeKey = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(entry.getKey())).toString();
-            if (entry.getValue().isEmpty()) {
+            final Object entryValue = entry.getValue();
+            if (Removed.isRemoved(entryValue)) {
                    map.put(Key.key(typeKey), DataComponentValue.removed());
             } else {
-                map.put(Key.key(typeKey), new DataComponentValueImpl(entry.getKey().codec(), entry.getValue().get()));
+                map.put(Key.key(typeKey), new DataComponentValueImpl(entry.getKey().codec(), entryValue));
             }
         }
         return map;
