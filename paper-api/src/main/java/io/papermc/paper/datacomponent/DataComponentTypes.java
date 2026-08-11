@@ -222,7 +222,8 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<PiercingWeapon> PIERCING_WEAPON = valued("piercing_weapon");
     public static final DataComponentType.Valued<KineticWeapon> KINETIC_WEAPON = valued("kinetic_weapon");
     public static final DataComponentType.Valued<AttackRange> ATTACK_RANGE = valued("attack_range");
-    public static final DataComponentType.Valued<SwingAnimation> SWING_ANIMATION = valued("swing_animation");
+    public static final DataComponentType.Valued<SwingAnimation> ATTACK_ANIMATION = valued("attack_animation");
+    public static final DataComponentType.Valued<SwingAnimation> INTERACT_ANIMATION = valued("interact_animation");
     /**
      * Stores list of enchantments and their levels for an Enchanted Book.
      * Unlike {@link #ENCHANTMENTS}, the effects provided by enchantments
