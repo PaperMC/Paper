@@ -12,6 +12,7 @@ import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -174,7 +175,8 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
 
     @Override
     public boolean isSolid() {
-        return this.getHandle().defaultBlockState().blocksMotion();
+        // TODO - snapshot - if datapacks can change this maybe consider deprecate this or improvement the javadocs
+        return this.getHandle().defaultBlockState().is(BlockTags.BLOCKS_MOTION);
     }
 
     @Override
