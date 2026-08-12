@@ -33,19 +33,19 @@ public final class ExperimentalCollector {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> VANILLA_REGISTRY_ENTRIES = VanillaRegistries.BUILDER.entries.stream()
+    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> VANILLA_REGISTRY_ENTRIES = VanillaRegistries.WORLD_BUILDER.entries.stream()
         .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap));
 
     private static final Map<RegistrySetBuilder, SingleFlagHolder> EXPERIMENTAL_REGISTRY_FLAGS = Map.of(
         // Update for Experimental API
-        TradeRebalanceRegistries.BUILDER, FlagHolders.TRADE_REBALANCE
+        TradeRebalanceRegistries.WORLD_BUILDER, FlagHolders.TRADE_REBALANCE
     );
 
     private static final Multimap<ResourceKey<? extends Registry<?>>, Map.Entry<SingleFlagHolder, RegistrySetBuilder.RegistryBootstrap<?>>> EXPERIMENTAL_REGISTRY_ENTRIES;
     static {
         EXPERIMENTAL_REGISTRY_ENTRIES = HashMultimap.create();
         for (Map.Entry<RegistrySetBuilder, SingleFlagHolder> entry : EXPERIMENTAL_REGISTRY_FLAGS.entrySet()) {
-            for (RegistrySetBuilder.RegistryStub<?> stub : entry.getKey().entries) {
+            for (RegistrySetBuilder.RegistryStub stub : entry.getKey().entries) {
                 EXPERIMENTAL_REGISTRY_ENTRIES.put(stub.key(), Map.entry(entry.getValue(), stub.bootstrap()));
             }
         }
