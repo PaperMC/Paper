@@ -72,6 +72,11 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
     }
 
     @Override
+    public float getDurabilityDamage() {
+        return this.getHandle().durabilityDamage();
+    }
+
+    @Override
     public Component description() {
         return PaperAdventure.asAdventure(this.getHandle().description());
     }
