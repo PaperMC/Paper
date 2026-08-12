@@ -9,7 +9,6 @@ import org.bukkit.World;
 import org.bukkit.block.Jigsaw;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.jetbrains.annotations.NotNull;
-import java.util.Objects;
 
 import static net.minecraft.core.registries.Registries.TEMPLATE_POOL;
 
