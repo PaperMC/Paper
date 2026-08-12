@@ -9,9 +9,11 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Furnace;
 import org.bukkit.craftbukkit.inventory.CraftInventoryFurnace;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.CookingRecipe;
 import org.bukkit.inventory.FurnaceInventory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 
 public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends CraftContainer<T> implements Furnace {
@@ -89,18 +91,23 @@ public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends
     @Override
     public abstract CraftFurnace<T> copy(Location location);
 
-    // Paper start - cook speed multiplier API
+    @Override
+    public double getCookSpeedMultiplier(ItemStack fuel) {
+        final net.minecraft.server.level.ServerLevel world = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorlds().getFirst()).getHandle();
+        return this.getSnapshot().getSpeedMultiplier(world, CraftItemStack.asNMSCopy(fuel));
+    }
+
     @Override
     public double getCookSpeedMultiplier() {
-        return this.getSnapshot().cookSpeedMultiplier;
+        return 0;
     }
 
     @Override
     public void setCookSpeedMultiplier(double multiplier) {
+        // TODO - snapshot - maybe better remove all this
         com.google.common.base.Preconditions.checkArgument(multiplier >= 0, "Furnace speed multiplier cannot be negative");
         com.google.common.base.Preconditions.checkArgument(multiplier <= 200, "Furnace speed multiplier cannot more than 200");
         T snapshot = this.getSnapshot();
-        snapshot.cookSpeedMultiplier = multiplier;
         snapshot.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.isPlaced() ? this.world.getHandle() : null, snapshot); // Update the snapshot's current total cook time to scale with the newly set multiplier
     }
 
@@ -135,5 +142,4 @@ public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends
             }
         });
     }
-    // Paper end
 }
