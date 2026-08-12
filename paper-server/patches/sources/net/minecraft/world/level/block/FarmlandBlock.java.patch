@@ -1,14 +1,6 @@
-From 179ab835a6f89cf3e5fd8347dd8510fe84b28cac Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 15:37:42 +0200
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/block/FarmlandBlock.java b/net/minecraft/world/level/block/FarmlandBlock.java
-index 45b72b8e71e9fb9d5ac81dea405286f42d26f5e9..763f9810801e52a8467420fbc1349992812b80dc 100644
 --- a/net/minecraft/world/level/block/FarmlandBlock.java
 +++ b/net/minecraft/world/level/block/FarmlandBlock.java
-@@ -89,19 +89,22 @@ public class FarmlandBlock extends Block {
+@@ -89,32 +_,60 @@
      @Override
      protected void randomTick(final BlockState state, final ServerLevel level, final BlockPos pos, final RandomSource random) {
          int moisture = state.getValue(MOISTURE);
@@ -31,12 +23,10 @@ index 45b72b8e71e9fb9d5ac81dea405286f42d26f5e9..763f9810801e52a8467420fbc1349992
      public void fallOn(final Level level, final BlockState state, final BlockPos pos, final Entity entity, final double fallDistance) {
 +        super.fallOn(level, state, pos, entity, fallDistance); // CraftBukkit - moved here as game rules / events shouldn't affect fall damage.
          if (level instanceof ServerLevel serverLevel && level.getRandom().nextFloat() < fallDistance - 0.5 && entity instanceof LivingEntity) {
-             if (entity instanceof Player player) {
-                 if (level.getServer().isUnderSpawnProtection(serverLevel, pos, player)) {
-@@ -112,14 +115,39 @@ public class FarmlandBlock extends Block {
-             }
- 
-             if (entity.getBbWidth() * entity.getBbWidth() * entity.getBbHeight() > 0.512F) {
+             boolean canTrample = entity instanceof Player player
+                 ? !level.getServer().isUnderSpawnProtection(serverLevel, pos, player)
+                 : serverLevel.getGameRules().get(GameRules.MOB_GRIEFING);
+             if (canTrample && entity.getBbWidth() * entity.getBbWidth() * entity.getBbHeight() > 0.512F) {
 +            // CraftBukkit start - Interact soil
 +            org.bukkit.event.Cancellable cancellable;
 +            if (entity instanceof Player) {
@@ -74,7 +64,7 @@ index 45b72b8e71e9fb9d5ac81dea405286f42d26f5e9..763f9810801e52a8467420fbc1349992
          BlockState newState = pushEntitiesUp(state, this.baseBlock.defaultBlockState(), level, pos);
          level.setBlockAndUpdate(pos, newState);
          level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(sourceEntity, newState));
-@@ -130,7 +158,27 @@ public class FarmlandBlock extends Block {
+@@ -125,7 +_,27 @@
      }
  
      private static boolean isNearWater(final LevelReader level, final BlockPos pos) {
