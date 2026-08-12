@@ -264,16 +264,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (biomeSource instanceof org.bukkit.craftbukkit.generator.CustomWorldChunkManager customBiomeSource) {
             biomeSource = customBiomeSource.vanillaBiomeSource;
         }
-        final net.minecraft.world.level.biome.BiomeSource finalBiomeSource = biomeSource;
         final net.minecraft.world.level.biome.Climate.Sampler sampler = serverCache.randomState().sampler();
+        final net.minecraft.world.level.biome.BiomeResolver resolver = biomeSource.createResolver(sampler);
 
-        final List<Biome> possibleBiomes = finalBiomeSource.possibleBiomes().stream()
+        final List<Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
             .map(CraftBiome::minecraftHolderToBukkit)
             .toList();
         return new BiomeProvider() {
             @Override
             public Biome getBiome(final org.bukkit.generator.WorldInfo worldInfo, final int x, final int y, final int z) {
-                return CraftBiome.minecraftHolderToBukkit(finalBiomeSource.getNoiseBiome(x >> 2, y >> 2, z >> 2, sampler));
+                return CraftBiome.minecraftHolderToBukkit(resolver.getNoiseBiome(x >> 2, y >> 2, z >> 2));
             }
 
             @Override
