@@ -9,47 +9,47 @@ import org.jetbrains.annotations.NotNull;
 public interface Jigsaw extends TileState {
 
     /**
-     * Gets the Target Pool Structure key
+     * Gets the target pool structure key.
      *
-     * @return The NamespacedKey of the Jigsaw's Target Pool
+     * @return the {@link NamespacedKey} of the jigsaw's target pool.
      */
     @NotNull
     NamespacedKey getTargetPool();
 
     /**
-     * Sets the Target Pool Structure key
+     * Sets the target pool structure key.
      *
-     * @param targetPool the key of target Pool
+     * @param targetPool the key of target pool
      */
     void setTargetPool(@NotNull NamespacedKey targetPool);
 
     /**
-     * Gets the Name of the Jigsaw Block
+     * Gets the name of the jigsaw block.
      *
-     * @return The NamespacedKey of the Jigsaw Block
+     * @return The NamespacedKey of the jigsaw block
      */
     @NotNull
     NamespacedKey getName();
 
     /**
-     * Sets the Name of the Jigsaw Block
+     * Sets the name of the jigsaw block.
      *
-     * @param name the name of the Jigsaw Block
+     * @param name the name of the jigsaw block
      */
     void setName(@NotNull NamespacedKey name);
 
     /**
-     * Gets the Target Name of the Jigsaw Block
+     * Gets the target name of the jigsaw block.
      *
-     * @return The NamespacedKey of the Jigsaw's Target Name
+     * @return The NamespacedKey of the jigsaw's target name
      */
     @NotNull
     NamespacedKey getTargetName();
 
     /**
-     * Sets the Target Name of the Jigsaw Block
+     * Sets the target name of the jigsaw block.
      *
-     * @param targetName the target name of the Jigsaw Block
+     * @param targetName the target name of the jigsaw block
      */
     void setTargetName(@NotNull NamespacedKey targetName);
 

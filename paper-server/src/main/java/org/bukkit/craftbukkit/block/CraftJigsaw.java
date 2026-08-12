@@ -32,33 +32,33 @@ public class CraftJigsaw extends CraftBlockEntityState<JigsawBlockEntity> implem
 
     @Override
     public void setTargetPool(final @NotNull NamespacedKey targetPool) {
-        Preconditions.checkArgument(Objects.nonNull(targetPool), "targetPool cannot be null");
+        Preconditions.checkArgument(targetPool != null, "targetPool cannot be null");
         getSnapshot().setPool(CraftNamespacedKey.toResourceKey(TEMPLATE_POOL, targetPool));
     }
 
     @Override
     @NotNull
     public NamespacedKey getName() {
-        final Identifier targetPoolKey = this.getSnapshot().getName();
-        return CraftNamespacedKey.fromMinecraft(targetPoolKey);
+        final Identifier nameKey = this.getSnapshot().getName();
+        return CraftNamespacedKey.fromMinecraft(nameKey);
     }
 
     @Override
     public void setName(final @NotNull NamespacedKey name) {
-        Preconditions.checkArgument(Objects.nonNull(name), "name cannot be null");
+        Preconditions.checkArgument(name != null, "name cannot be null");
         getSnapshot().setName(CraftNamespacedKey.toMinecraft(name));
     }
 
     @Override
     @NotNull
     public NamespacedKey getTargetName() {
-        final Identifier targetPoolKey = this.getSnapshot().getTarget();
-        return CraftNamespacedKey.fromMinecraft(targetPoolKey);
+        final Identifier targetNameKey = this.getSnapshot().getTarget();
+        return CraftNamespacedKey.fromMinecraft(targetNameKey);
     }
 
     @Override
     public void setTargetName(final @NotNull NamespacedKey targetName) {
-        Preconditions.checkArgument(Objects.nonNull(targetName), "targetName cannot be null");
+        Preconditions.checkArgument(targetName != null, "targetName cannot be null");
         getSnapshot().setTarget(CraftNamespacedKey.toMinecraft(targetName));
     }
 
