@@ -22,7 +22,7 @@ import org.checkerframework.framework.qual.DefaultQualifier;
 public record OptionallyFlatBedrockConditionSource(Identifier randomName, VerticalAnchor trueAtAndBelow, VerticalAnchor falseAtAndAbove, boolean isRoof) implements SurfaceRules.ConditionSource {
 
     private static final ResourceKey<MapCodec<? extends SurfaceRules.ConditionSource>> CODEC_RESOURCE_KEY = ResourceKey.create(
-        Registries.MATERIAL_CONDITION,
+        Registries.MATERIAL_CONDITION_TYPE,
         Identifier.fromNamespaceAndPath(Identifier.PAPER_NAMESPACE, "optionally_flat_bedrock_condition_source")
     );
     private static final MapCodec<OptionallyFlatBedrockConditionSource> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
@@ -33,7 +33,7 @@ public record OptionallyFlatBedrockConditionSource(Identifier randomName, Vertic
     ).apply(i, OptionallyFlatBedrockConditionSource::new));
 
     public static void bootstrap() {
-        Registry.register(BuiltInRegistries.MATERIAL_CONDITION, CODEC_RESOURCE_KEY, CODEC);
+        Registry.register(BuiltInRegistries.MATERIAL_CONDITION_TYPE, CODEC_RESOURCE_KEY, CODEC);
     }
 
     @Override
