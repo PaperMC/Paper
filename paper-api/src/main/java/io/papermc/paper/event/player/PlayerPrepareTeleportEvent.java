@@ -1,6 +1,7 @@
 package io.papermc.paper.event.player;
 
 import io.papermc.paper.entity.TeleportFlag;
+import java.util.Collections;
 import java.util.Set;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -24,6 +25,22 @@ public class PlayerPrepareTeleportEvent extends PlayerEvent {
     private final Location to;
     private final PlayerTeleportEvent.TeleportCause cause;
     private final Set<TeleportFlag> teleportFlags;
+
+    @ApiStatus.Internal
+    public PlayerPrepareTeleportEvent(final Player player, Location to) {
+        super(player);
+        this.to = to;
+        this.cause = PlayerTeleportEvent.TeleportCause.PLUGIN;
+        this.teleportFlags = Collections.emptySet();
+    }
+
+    @ApiStatus.Internal
+    public PlayerPrepareTeleportEvent(final Player player, Location to, PlayerTeleportEvent.TeleportCause cause) {
+        super(player);
+        this.to = to;
+        this.cause = cause;
+        this.teleportFlags = Collections.emptySet();
+    }
 
     @ApiStatus.Internal
     public PlayerPrepareTeleportEvent(final Player player, Location to, PlayerTeleportEvent.TeleportCause cause, Set<TeleportFlag> teleportFlags) {
