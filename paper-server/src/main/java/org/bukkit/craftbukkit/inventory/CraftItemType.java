@@ -5,15 +5,24 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import io.papermc.paper.registry.HolderableBase;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.component.Compostable;
+import net.minecraft.world.item.component.CookingFuel;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.providers.number.ResolvableNumber;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.World;
@@ -164,14 +173,18 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public int getBurnDuration() {
-        FuelValues fuelValues = MinecraftServer.getServer().fuelValues();
-        net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.getHandle());
-
-        if (!fuelValues.isFuel(stack)) {
+        final net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.getHandle());
+        if (!stack.has(DataComponents.COOKING_FUEL)) {
             return 0;
         }
 
-        return fuelValues.burnDuration(stack);
+        final ServerLevel serverLevel = ((CraftWorld) Bukkit.getWorlds().getFirst()).getHandle();
+        final LootContext lootContext = new LootContext.Builder(
+            new LootParams.Builder(serverLevel).create(LootContextParamSets.EMPTY)
+        ).create(Optional.empty());
+
+        // TODO - snapshot - this in theory return the negative case (block is not blast furnace or smoker) because need pass a block in the LootContext
+        return ResolvableNumber.getIntFromItem(stack, DataComponents.COOKING_FUEL, CookingFuel::burnTime, lootContext, 0);
     }
 
     @Override
