@@ -2431,6 +2431,17 @@ public final class Bukkit {
         return server.getEntity(uuid);
     }
 
+    /**
+     * Gets an entity on the server by its entity id
+     *
+     * @param id the id of the entity
+     * @return the entity with the given id, or null if it isn't found
+     */
+    @Nullable
+    public static Entity getEntity(int id) {
+        return server.getEntity(id);
+    }
+
     // Paper start
     /**
      * Gets the current server TPS

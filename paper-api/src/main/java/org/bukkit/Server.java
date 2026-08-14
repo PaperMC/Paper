@@ -2179,6 +2179,15 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     @Nullable
     Entity getEntity(@NotNull UUID uuid);
 
+    /**
+     * Gets an entity on the server by its entity id
+     *
+     * @param id the id of the entity
+     * @return the entity with the given id, or null if it isn't found
+     */
+    @Nullable
+    Entity getEntity(int id);
+
     // Paper start
     /**
      * Gets the current server TPS

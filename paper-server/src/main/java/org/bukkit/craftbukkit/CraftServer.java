@@ -2496,6 +2496,18 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public @Nullable Entity getEntity(int id) {
+        for (ServerLevel world : this.getServer().getAllLevels()) {
+            net.minecraft.world.entity.Entity entity = world.getEntity(id);
+            if (entity != null) {
+                return entity.getBukkitEntity();
+            }
+        }
+
+        return null;
+    }
+
+    @Override
     public org.bukkit.advancement.Advancement getAdvancement(NamespacedKey key) {
         Preconditions.checkArgument(key != null, "key cannot be null");
 
