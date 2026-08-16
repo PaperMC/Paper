@@ -591,44 +591,4 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
     default void applySkinToPlayerHeadContents(final PlayerHeadObjectContents.Builder builder) {
         builder.skin(this.getPlayerProfile());
     }
-
-    /**
-     * Checks if this player bypasses the server player limit when connecting.
-     * <p>
-     * Note: A player must be an operator for this privilege to take effect.
-     * </p>
-     *
-     * @return true if the player bypasses the player limit, false otherwise
-     */
-    boolean bypassesPlayerLimit();
-
-    /**
-     * Sets whether this player bypasses the server player limit when connecting.
-     * <p>
-     * Note: The player must already be an operator for this to update their entry in ops.json.
-     * </p>
-     *
-     * @param bypass true if the player should bypass the player limit
-     * @return true if the status was successfully updated, false if the player is not an operator
-     */
-    boolean setBypassesPlayerLimit(boolean bypass);
-
-    /**
-     * Gets the operator permission level for this player (0 through 4).
-     *
-     * @return the permission level, or 0 if the player is not an operator or entry is missing
-     */
-    int getOpLevel();
-
-    /**
-     * Sets the operator permission level for this player.
-     * <p>
-     * If setting a level greater than 0, the player will be added to ops.json if not present.
-     * If set to 0, the player's level will be cleared (or removed from ops depending on server logic).
-     * </p>
-     *
-     * @param level the level to set (must be between 0 and 4)
-     * @throws IllegalArgumentException if level is outside the 0–4 range
-     */
-    void setOpLevel(int level);
 }
