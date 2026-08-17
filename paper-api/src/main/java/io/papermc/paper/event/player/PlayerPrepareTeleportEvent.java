@@ -1,5 +1,6 @@
 package io.papermc.paper.event.player;
 
+import com.google.common.collect.ImmutableSet;
 import io.papermc.paper.entity.TeleportFlag;
 import java.util.Collections;
 import java.util.Set;
@@ -47,7 +48,7 @@ public class PlayerPrepareTeleportEvent extends PlayerEvent {
         super(player);
         this.to = to;
         this.cause = cause;
-        this.teleportFlags = teleportFlags;
+        this.teleportFlags = ImmutableSet.copyOf(teleportFlags);
     }
 
     /**
