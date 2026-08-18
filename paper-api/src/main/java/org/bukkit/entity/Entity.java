@@ -911,6 +911,27 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     void setGravity(boolean gravity);
 
     /**
+     * Returns the default acceleration due to gravity (in blocks per tick). Ignores {@link Entity#hasGravity()}.
+     *
+     * @return the default acceleration due to gravity
+     */
+    double getDefaultGravity();
+
+    /**
+     * Returns the acceleration due to gravity (in blocks per tick). If {@link Entity#hasGravity()} is true, returns 0.
+     *
+     * @return the acceleration due to gravity
+     */
+    double getGravity();
+
+    /**
+     * Returns the air drag factor applied to this entity.
+     *
+     * @return the air drag factor
+     */
+    float getAirDrag();
+
+    /**
      * Gets the period of time (in ticks) before this entity can use a portal.
      *
      * @return portal cooldown ticks
