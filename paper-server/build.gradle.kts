@@ -23,7 +23,7 @@ paperweight {
     gitFilePatches = false
 
     updatingMinecraft {
-        oldPaperCommit = "1cd6d5799c9b6548be562ca6963d8d1367e9bf7f"
+        oldPaperCommit = "c9e894d3cc03f21f80de4f4061a795e11941e89a"
     }
 }
 
