@@ -1,5 +1,5 @@
---- a/net/minecraft/world/entity/monster/EnderMan.java
-+++ b/net/minecraft/world/entity/monster/EnderMan.java
+--- a/net/minecraft/world/entity/monster/Enderman.java
++++ b/net/minecraft/world/entity/monster/Enderman.java
 @@ -119,9 +_,20 @@
              .add(Attributes.STEP_HEIGHT, 1.0);
      }
@@ -56,12 +56,17 @@
                  this.setTarget(null);
                  this.teleport();
              }
-@@ -355,21 +_,25 @@
+@@ -366,20 +_,22 @@
          }
  
          AbstractThrownPotion thrownPotion = source.getDirectEntity() instanceof AbstractThrownPotion potion ? potion : null;
--        if (!source.is(DamageTypeTags.IS_PROJECTILE) && thrownPotion == null) {
-+        if (!source.is(DamageTypeTags.IS_PROJECTILE) && thrownPotion == null) { // Paper - EndermanEscapeEvent - diff on change - below logic relies on this path covering non-projectile damage.
+-        if (source.is(DamageTypeTags.IS_PROJECTILE) && !this.isPassenger()) {
+-            return this.repeatedlyTryToTeleport();
++        if (source.is(DamageTypeTags.IS_PROJECTILE) && !this.isPassenger()) { // Paper - diff on change - below line relies on this matching projectiles
++            return this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.INDIRECT) && this.repeatedlyTryToTeleport(); // Paper - EndermanEscapeEvent
+         }
+ 
+         if (thrownPotion == null) {
              boolean result = super.hurtServer(level, source, damage);
              if (!(source.getEntity() instanceof LivingEntity) && this.random.nextInt(10) != 0) {
 +                if (this.tryEscape(source.is(DamageTypeTags.IS_DROWNING) ? com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.DROWN : com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.CRITICAL_HIT)) { // Paper - EndermanEscapeEvent
@@ -71,19 +76,13 @@
  
              return result;
          } else {
-             boolean hurtWithCleanWater = thrownPotion != null && this.hurtWithCleanWater(level, source, thrownPotion, damage);
- 
-+            if (this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.INDIRECT)) { // Paper - EndermanEscapeEvent
-             for (int i = 0; i < 64; i++) {
-                 if (this.teleport()) {
-                     return true;
-                 }
-             }
-+            } // Paper - EndermanEscapeEvent
- 
-             return hurtWithCleanWater;
+             boolean hurtWithCleanWater = this.hurtWithCleanWater(level, source, thrownPotion, damage);
+-            return this.repeatedlyTryToTeleport() || hurtWithCleanWater;
++            return (this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.INDIRECT) && this.repeatedlyTryToTeleport()) || hurtWithCleanWater; // Paper - EndermanEscapeEvent
          }
-@@ -393,6 +_,16 @@
+     }
+ 
+@@ -401,6 +_,16 @@
          this.entityData.set(DATA_STARED_AT, true);
      }
  
@@ -100,7 +99,7 @@
      @Override
      public boolean requiresCustomPersistence() {
          return super.requiresCustomPersistence() || this.getCarriedBlock() != null;
-@@ -451,16 +_,19 @@
+@@ -459,16 +_,19 @@
              int yt = Mth.floor(this.enderman.getY() + random.nextDouble() * 2.0);
              int zt = Mth.floor(this.enderman.getZ() - 1.0 + random.nextDouble() * 2.0);
              BlockPos pos = new BlockPos(xt, yt, zt);
@@ -121,7 +120,7 @@
                  }
              }
          }
-@@ -552,7 +_,7 @@
+@@ -560,7 +_,7 @@
              } else {
                  if (this.target != null && !this.enderman.isPassenger()) {
                      if (this.enderman.isBeingStaredBy((Player)this.target)) {
@@ -130,7 +129,7 @@
                              this.enderman.teleport();
                          }
  
-@@ -591,15 +_,18 @@
+@@ -599,15 +_,18 @@
              int yt = Mth.floor(this.enderman.getY() + random.nextDouble() * 3.0);
              int zt = Mth.floor(this.enderman.getZ() - 2.0 + random.nextDouble() * 4.0);
              BlockPos pos = new BlockPos(xt, yt, zt);

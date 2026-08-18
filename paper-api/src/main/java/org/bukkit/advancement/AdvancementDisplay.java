@@ -66,14 +66,18 @@ public interface AdvancementDisplay {
      *
      * @return the X coordinate as float
      */
-    float getX();
+    default float getX() {
+        throw new UnsupportedOperationException("AdvancementDisplay no longer holds onto the location");
+    }
 
     /**
      * The Y position of the advancement in the advancement screen.
      *
      * @return the Y coordinate as float
      */
-    float getY();
+    default float getY() {
+        throw new UnsupportedOperationException("AdvancementDisplay no longer holds onto the location");
+    }
 
     /**
      * The display type of this advancement.

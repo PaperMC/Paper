@@ -1,18 +1,18 @@
 --- a/net/minecraft/network/protocol/game/ServerboundUseItemPacket.java
 +++ b/net/minecraft/network/protocol/game/ServerboundUseItemPacket.java
-@@ -14,6 +_,7 @@
-     private final int sequence;
-     private final float yRot;
-     private final float xRot;
-+    public long timestamp; // Spigot
+@@ -7,8 +_,13 @@
+ import net.minecraft.network.protocol.PacketType;
+ import net.minecraft.world.InteractionHand;
  
-     public ServerboundUseItemPacket(final InteractionHand hand, final int sequence, final float yRot, final float xRot) {
-         this.hand = hand;
-@@ -23,6 +_,7 @@
-     }
- 
-     private ServerboundUseItemPacket(final FriendlyByteBuf input) {
-+        this.timestamp = System.currentTimeMillis(); // Spigot
-         this.hand = input.readEnum(InteractionHand.class);
-         this.sequence = input.readVarInt();
-         this.yRot = input.readFloat();
+-public record ServerboundUseItemPacket(InteractionHand hand, int sequence, float yRot, float xRot) implements Packet<ServerGamePacketListener> {
+-    public static final StreamCodec<FriendlyByteBuf, ServerboundUseItemPacket> STREAM_CODEC = StreamCodec.composite(
++// Paper start - timestamp of use item packet
++public record ServerboundUseItemPacket(InteractionHand hand, int sequence, float yRot, float xRot, long timestamp) implements Packet<ServerGamePacketListener> {
++    public ServerboundUseItemPacket(final InteractionHand hand, final int sequence, final float yRot, final float xRot) {
++        this(hand, sequence, yRot, xRot, System.currentTimeMillis());
++    }
++// Paper end - timestamp of use item packet
++        public static final StreamCodec<FriendlyByteBuf, ServerboundUseItemPacket> STREAM_CODEC = StreamCodec.composite(
+         InteractionHand.STREAM_CODEC,
+         ServerboundUseItemPacket::hand,
+         ByteBufCodecs.VAR_INT,

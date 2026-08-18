@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/PlayerAdvancements.java
 +++ b/net/minecraft/server/PlayerAdvancements.java
-@@ -47,7 +_,7 @@
+@@ -48,7 +_,7 @@
  
  public class PlayerAdvancements {
      private static final Logger LOGGER = LogUtils.getLogger();
@@ -9,7 +9,7 @@
      private final PlayerList playerList;
      private final Path playerSavePath;
      private AdvancementTree tree;
-@@ -127,6 +_,7 @@
+@@ -128,6 +_,7 @@
      }
  
      public void save() {
@@ -17,7 +17,7 @@
          JsonElement json = this.codec.encodeStart(JsonOps.INSTANCE, this.asData()).getOrThrow();
  
          try {
-@@ -144,6 +_,7 @@
+@@ -145,6 +_,7 @@
          data.forEach((id, progress) -> {
              AdvancementHolder advancement = manager.get(id);
              if (advancement == null) {
@@ -25,7 +25,7 @@
                  LOGGER.warn("Ignored advancement '{}' in progress file {} - it doesn't exist anymore?", id, this.playerSavePath);
              } else {
                  this.startProgress(advancement, progress);
-@@ -168,14 +_,31 @@
+@@ -169,14 +_,31 @@
          AdvancementProgress progress = this.getOrStartProgress(holder);
          boolean wasDone = progress.isDone();
          if (progress.grantProgress(criterion)) {
@@ -42,7 +42,7 @@
 +                // Paper start - Add Adventure message to PlayerAdvancementDoneEvent
 +                final net.kyori.adventure.text.Component message = holder.value().display().flatMap(info -> {
 +                    return java.util.Optional.ofNullable(
-+                        info.shouldAnnounceChat() ? io.papermc.paper.adventure.PaperAdventure.asAdventure(info.getType().createAnnouncement(holder, this.player)) : null
++                        info.announceToChat() ? io.papermc.paper.adventure.PaperAdventure.asAdventure(info.type().createAnnouncement(holder, this.player)) : null
 +                    );
 +                }).orElse(null);
 +                final org.bukkit.event.player.PlayerAdvancementDoneEvent event = new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), holder.toBukkit(), message);
@@ -50,8 +50,8 @@
 +                // Paper end
                  holder.value().rewards().grant(this.player);
                  holder.value().display().ifPresent(display -> {
--                    if (display.shouldAnnounceChat() && this.player.level().getGameRules().get(GameRules.SHOW_ADVANCEMENT_MESSAGES)) {
--                        this.playerList.broadcastSystemMessage(display.getType().createAnnouncement(holder, this.player), false);
+-                    if (display.announceToChat() && this.player.level().getGameRules().get(GameRules.SHOW_ADVANCEMENT_MESSAGES)) {
+-                        this.playerList.broadcastSystemMessage(display.type().createAnnouncement(holder, this.player), false);
 +                    // Paper start - Add Adventure message to PlayerAdvancementDoneEvent
 +                    if (event.message() != null && this.player.level().getGameRules().get(GameRules.SHOW_ADVANCEMENT_MESSAGES)) {
 +                        this.playerList.broadcastSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.message()), false);
@@ -59,12 +59,12 @@
                      }
                  });
              }
-@@ -238,7 +_,7 @@
+@@ -239,7 +_,7 @@
      public void flushDirty(final ServerPlayer player, final boolean showAdvancements) {
          if (this.isFirstPacket || !this.rootsToUpdate.isEmpty() || !this.progressChanged.isEmpty()) {
              Map<Identifier, AdvancementProgress> progress = new HashMap<>();
--            Set<AdvancementHolder> added = new HashSet<>();
-+            Set<AdvancementHolder> added = new java.util.TreeSet<>(java.util.Comparator.comparing(adv -> adv.id().toString())); // Paper - Changed from HashSet to TreeSet ordered alphabetically.
+-            Set<AdvancementNode> added = new HashSet<>();
++            Set<AdvancementNode> added = new java.util.TreeSet<>(java.util.Comparator.comparing(adv -> adv.holder().id().toString())); // Paper - Changed from HashSet to TreeSet ordered alphabetically.
              Set<Identifier> removed = new HashSet<>();
  
              for (AdvancementNode root : this.rootsToUpdate) {

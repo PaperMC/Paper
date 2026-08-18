@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -141,6 +_,17 @@
+@@ -143,6 +_,17 @@
  import org.jspecify.annotations.Nullable;
  import org.slf4j.Logger;
  
@@ -18,7 +18,7 @@
  public abstract class LivingEntity extends Entity implements Attackable, WaypointTransmitter {
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final String TAG_ACTIVE_EFFECTS = "active_effects";
-@@ -281,11 +_,25 @@
+@@ -283,11 +_,25 @@
      protected final EntityEquipment equipment;
      private Waypoint.Icon locatorBarIcon = new Waypoint.Icon();
      public @Nullable Vec3 currentImpulseImpactPos;
@@ -45,7 +45,7 @@
          this.equipment = this.createEquipment();
          this.blocksBuilding = true;
          this.reapplyPosition();
-@@ -382,7 +_,13 @@
+@@ -384,7 +_,13 @@
  
                  double scale = Math.min(0.2F + power / 15.0, 2.5);
                  int particles = (int)(150.0 * scale);
@@ -1792,68 +1792,113 @@
      public boolean isSuppressingSlidingDownLadder() {
          return this.isShiftKeyDown();
      }
-@@ -3652,6 +_,12 @@
+@@ -3652,10 +_,30 @@
      }
  
-     public boolean randomTeleport(final double xx, final double yy, final double zz, final boolean showParticles) {
-+        // CraftBukkit start
-+        return this.randomTeleport(xx, yy, zz, showParticles, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN).orElse(false);
+     public boolean randomTeleport(final double xx, final double yy, final double zz, final boolean showParticles, final TagKey<Block> avoidanceTag) {
+-        return this.randomTeleport(xx, yy, zz, showParticles, state -> state.is(avoidanceTag));
++        // Paper start - teleport cause API
++        return randomTeleport(xx, yy, zz, showParticles, avoidanceTag, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN).toBoolean();
 +    }
++    public enum RandomTeleportResult {
++        SUCCESS,
++        FAILURE,
++        EVENT_CANCELLED,
++        ;
 +
-+    public Optional<Boolean> randomTeleport(final double xx, final double yy, final double zz, final boolean showParticles, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
-+        // CraftBukkit end
-         double xo = this.getX();
-         double yo = this.getY();
-         double zo = this.getZ();
-@@ -3674,16 +_,39 @@
++        public boolean toBoolean() {
++            return this == SUCCESS;
++        }
++    }
++    public RandomTeleportResult randomTeleport(final double xx, final double yy, final double zz, final boolean showParticles, final TagKey<Block> avoidanceTag, final org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
++        // Paper end - teleport cause API
++        return this.randomTeleport(xx, yy, zz, showParticles, state -> state.is(avoidanceTag), cause); // Paper - teleport cause API
+     }
+ 
+     public boolean randomTeleport(final double xx, final double yy, final double zz, final boolean showParticles, final Predicate<BlockState> isInvalidPosition) {
++        // Paper start - teleport cause API
++        return this.randomTeleport(xx, yy, zz, showParticles, isInvalidPosition, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN).toBoolean();
++    }
++    public RandomTeleportResult randomTeleport(final double xx, final double yy, final double zz, final boolean showParticles, final Predicate<BlockState> isInvalidPosition, final org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
++        // Paper end - teleport cause API
+         double y = yy;
+         Level level = this.level();
+         WorldBorder worldBorder = level.getWorldBorder();
+@@ -3666,17 +_,17 @@
+                 pos.move(Direction.DOWN);
+                 BlockState state = level.getBlockState(pos);
+                 if (state.is(BlockTags.ENTITIES_CAN_TELEPORT_TO)) {
+-                    return this.checkPositionAndTeleport(clamped.x, y, clamped.z, showParticles, isInvalidPosition, state, level);
++                    return this.checkPositionAndTeleport(clamped.x, y, clamped.z, showParticles, isInvalidPosition, state, level, cause); // Paper - teleport cause API
+                 }
+ 
+                 y--;
+             }
+         }
+ 
+-        return false;
++        return RandomTeleportResult.FAILURE; // Paper - teleport event
+     }
+ 
+-    private boolean checkPositionAndTeleport(
++    private RandomTeleportResult checkPositionAndTeleport( // Paper - teleport event
+         final double xx,
+         final double y,
+         final double zz,
+@@ -3684,20 +_,37 @@
+         final Predicate<BlockState> isInvalidPosition,
+         final BlockState state,
+         final Level level
++        , final org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause // Paper - teleport cause API
+     ) {
+         if (isInvalidPosition.test(state)) {
+-            return false;
++            return RandomTeleportResult.FAILURE; // Paper - teleport event
+         }
+ 
+         AABB aabb = this.makeBoundingBox(new Vec3(xx, y, zz));
+         if (level.noCollision(aabb) && !level.containsAnyLiquid(aabb)) {
+             boolean hasInvalidPosition = level.findBlocksIn(aabb).filterState(isInvalidPosition).anyMatched();
+             if (hasInvalidPosition) {
+-                return false;
++                return RandomTeleportResult.FAILURE; // Paper - teleport event
              }
  
-             if (landed) {
+             if (this.canRandomlyTeleportTo(xx, y, zz)) {
 -                this.teleportTo(xx, y, zz);
-+                // CraftBukkit start - Teleport event
-+                // first set position, to check if the place to teleport is valid
-+                this.setPos(xx, y, zz);
-                 if (level.noCollision(this) && !level.containsAnyLiquid(this.getBoundingBox())) {
-                     ok = true;
-                 }
-+                // now revert and call event if the teleport place is valid
-+                this.setPos(xo, yo, zo);
-+
-+                if (ok) {
-+                    if (!(this instanceof ServerPlayer)) {
-+                        org.bukkit.event.entity.EntityTeleportEvent teleport = new org.bukkit.event.entity.EntityTeleportEvent(this.getBukkitEntity(), new Location(this.level().getWorld(), xo, yo, zo), new Location(this.level().getWorld(), xx, y, zz));
-+                        this.level().getCraftServer().getPluginManager().callEvent(teleport);
-+                        if (!teleport.isCancelled() && teleport.getTo() != null) { // Paper
-+                            Location to = teleport.getTo();
-+                            this.teleportTo(to.getX(), to.getY(), to.getZ());
-+                        } else {
-+                            return Optional.empty();
-+                        }
++                // Paper start - teleport event
++                if (!(this instanceof ServerPlayer)) {
++                    org.bukkit.event.entity.EntityTeleportEvent teleport = new org.bukkit.event.entity.EntityTeleportEvent(this.getBukkitEntity(), new Location(this.level().getWorld(), xo, yo, zo), new Location(this.level().getWorld(), xx, y, zz));
++                    this.level().getCraftServer().getPluginManager().callEvent(teleport);
++                    if (!teleport.isCancelled() && teleport.getTo() != null) { // Paper
++                        Location to = teleport.getTo();
++                        this.teleportTo(to.getX(), to.getY(), to.getZ());
 +                    } else {
-+                        // player teleport event is called in the underlining code
-+                        if (!((ServerPlayer) this).connection.teleport(xx, y, zz, this.getYRot(), this.getXRot(), cause)) {
-+                            return Optional.empty();
-+                        }
++                        return RandomTeleportResult.EVENT_CANCELLED;
++                    }
++                } else {
++                    // player teleport event is called in the underlining code
++                    if (!((ServerPlayer) this).connection.teleport(xx, y, zz, this.getYRot(), this.getXRot(), cause)) {
++                        return RandomTeleportResult.EVENT_CANCELLED;
 +                    }
 +                }
-+                // CraftBukkit end
++                // Paper end - teleport event
+                 if (showParticles) {
+                     level.broadcastEntityEvent(this, EntityEvent.TELEPORT);
+                 }
+@@ -3706,12 +_,12 @@
+                     pathfinderMob.getNavigation().stop();
+                 }
+ 
+-                return true;
++                return RandomTeleportResult.SUCCESS; // Paper - teleport event
+             } else {
+-                return false;
++                return RandomTeleportResult.FAILURE; // Paper - teleport event
              }
-         }
- 
-         if (!ok) {
--            this.teleportTo(xo, yo, zo);
+         } else {
 -            return false;
-+            // this.teleportTo(xo, yo, zo); // CraftBukkit - already set the location back
-+            return Optional.of(false); // CraftBukkit
++            return RandomTeleportResult.FAILURE; // Paper - teleport event
          }
- 
-         if (showParticles) {
-@@ -3694,7 +_,7 @@
-             pathfinderMob.getNavigation().stop();
-         }
- 
--        return true;
-+        return Optional.of(true); // CraftBukkit
      }
  
-     public boolean isAffectedByPotions() {
