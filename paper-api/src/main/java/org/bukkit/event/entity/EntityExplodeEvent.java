@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when an entity explodes interacting with blocks.
  * <p>
- * Explosions caused by mobs do no tinteract with blocks
+ * Explosions caused by mobs do not interact with blocks
  * while {@link org.bukkit.GameRules#MOB_GRIEFING} is disabled
  * as no block interaction will occur. That game rule does not
  * affect other explosions. For example, a wind charge still calls this event
