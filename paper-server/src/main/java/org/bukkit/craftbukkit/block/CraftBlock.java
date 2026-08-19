@@ -20,7 +20,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.SignalGetter;
 import net.minecraft.world.level.block.LevelEvent;
-import net.minecraft.world.level.block.RedStoneWireBlock;
+import net.minecraft.world.level.block.RedstoneWireBlock;
 import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.pattern.BlockInWorld;
@@ -369,8 +369,8 @@ public class CraftBlock implements Block {
         }
 
         BlockState neighborState = this.level.getBlockState(this.position.relative(direction));
-        if (neighborState.hasProperty(RedStoneWireBlock.POWER)) {
-            return neighborState.getValue(RedStoneWireBlock.POWER) > Redstone.SIGNAL_MIN;
+        if (neighborState.hasProperty(RedstoneWireBlock.POWER)) {
+            return neighborState.getValue(RedstoneWireBlock.POWER) > Redstone.SIGNAL_MIN;
         }
 
         return false;
@@ -393,8 +393,8 @@ public class CraftBlock implements Block {
             BlockPos neighborPos = this.position.relative(direction);
             if (level.hasSignal(neighborPos, direction)) {
                 BlockState state = level.getBlockState(neighborPos);
-                if (state.hasProperty(RedStoneWireBlock.POWER)) {
-                    power = Math.max(state.getValue(RedStoneWireBlock.POWER), power);
+                if (state.hasProperty(RedstoneWireBlock.POWER)) {
+                    power = Math.max(state.getValue(RedstoneWireBlock.POWER), power);
                     if (power == Redstone.SIGNAL_MAX) {
                         return power;
                     }
