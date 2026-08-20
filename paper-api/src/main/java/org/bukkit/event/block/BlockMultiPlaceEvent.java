@@ -1,13 +1,7 @@
 package org.bukkit.event.block;
 
-import com.google.common.collect.ImmutableList;
 import java.util.List;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Fired when a single block placement action of a player triggers the
@@ -16,31 +10,14 @@ import org.jetbrains.annotations.NotNull;
  * the placed block would exist if the placement only affected a single
  * block.
  */
-public class BlockMultiPlaceEvent extends BlockPlaceEvent {
-
-    private final List<BlockState> replacedStates;
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public BlockMultiPlaceEvent(@NotNull List<BlockState> replacedStates, @NotNull Block clicked, @NotNull ItemStack itemInHand, @NotNull Player thePlayer, boolean canBuild) {
-        this(replacedStates, clicked, itemInHand, thePlayer, canBuild, org.bukkit.inventory.EquipmentSlot.HAND);
-    }
-
-    @ApiStatus.Internal
-    public BlockMultiPlaceEvent(@NotNull List<BlockState> replacedStates, @NotNull Block clicked, @NotNull ItemStack itemInHand, @NotNull Player thePlayer, boolean canBuild, @NotNull org.bukkit.inventory.EquipmentSlot hand) {
-        super(replacedStates.getFirst().getBlock(), replacedStates.getFirst(), clicked, itemInHand, thePlayer, canBuild, hand);
-        this.replacedStates = ImmutableList.copyOf(replacedStates);
-    }
+public interface BlockMultiPlaceEvent extends BlockPlaceEvent {
 
     /**
-     * Gets a list of blockstates for all blocks which were replaced by the
+     * Gets a list of block states for all blocks which were replaced by the
      * placement of the new blocks. Most of these blocks will just have a
      * Material type of AIR.
      *
      * @return immutable list of replaced BlockStates
      */
-    @NotNull
-    public List<BlockState> getReplacedBlockStates() {
-        return this.replacedStates;
-    }
+    List<BlockState> getReplacedBlockStates();
 }
