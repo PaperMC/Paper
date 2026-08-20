@@ -8,6 +8,7 @@ import org.bukkit.plugin.PluginManager;
  * <br>
  * All events require a static method named getHandlerList() which returns the same {@link HandlerList} as {@link #getHandlers()}.
  *
+ * @see PluginManager#callEvent(Event)
  * @see PluginManager#registerEvents(Listener,Plugin)
  */
 public interface Event {
