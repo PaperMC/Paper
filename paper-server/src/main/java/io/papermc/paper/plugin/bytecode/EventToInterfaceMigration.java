@@ -223,7 +223,8 @@ public final class EventToInterfaceMigration {
                 NotePlayEvent.class,
                 SculkBloomEvent.class,
                 SignChangeEvent.class,
-                SpongeAbsorbEvent.class
+                SpongeAbsorbEvent.class,
+                org.bukkit.event.block.TNTPrimeEvent.class
                 //</editor-fold>
             );
 
