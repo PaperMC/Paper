@@ -207,7 +207,8 @@ public final class EventToInterfaceMigration {
                 BlockPhysicsEvent.class,
                 BlockPistonEvent.class,
                 BlockPistonExtendEvent.class,
-                BlockPistonRetractEvent.class
+                BlockPistonRetractEvent.class,
+                BlockReceiveGameEvent.class
                 //</editor-fold>
             );
 
