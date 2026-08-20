@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when the moisture level of a soil block changes.
  */
-public interface MoistureChangeEvent extends BlockEventNew, Cancellable {
+public interface MoistureChangeEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the new state of the affected block.

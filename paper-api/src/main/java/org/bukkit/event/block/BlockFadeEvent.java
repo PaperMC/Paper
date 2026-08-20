@@ -19,7 +19,7 @@ import org.bukkit.event.HandlerList;
  * If this event is cancelled, the block will not fade, melt or
  * disappear.
  */
-public interface BlockFadeEvent extends BlockEventNew, Cancellable {
+public interface BlockFadeEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the state of the new block that will replace the block

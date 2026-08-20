@@ -12,7 +12,7 @@ import org.checkerframework.common.value.qual.IntRange;
  * a current of 15 and a low state as 0. Setting the new current to a different
  * value will prevent most action in this case.
  */
-public interface BlockRedstoneEvent extends BlockEventNew {
+public interface BlockRedstoneEvent extends BlockEvent {
 
     /**
      * Gets the old current of this block.

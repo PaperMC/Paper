@@ -8,7 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
  * Called when a piston block is triggered
  */
 @ApiStatus.NonExtendable
-public interface BlockPistonEvent extends BlockEventNew, Cancellable {
+public interface BlockPistonEvent extends BlockEvent, Cancellable {
 
     /**
      * Returns {@code true} if the Piston in the event is sticky.

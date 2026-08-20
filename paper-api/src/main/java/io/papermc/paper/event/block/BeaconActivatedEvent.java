@@ -2,13 +2,13 @@ package io.papermc.paper.event.block;
 
 import org.bukkit.block.Beacon;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEventNew;
+import org.bukkit.event.block.BlockEvent;
 
 /**
  * Called when a beacon is activated.
  * Activation occurs when the beacon beam becomes visible.
  */
-public interface BeaconActivatedEvent extends BlockEventNew {
+public interface BeaconActivatedEvent extends BlockEvent {
 
     /**
      * Returns the beacon that was activated.

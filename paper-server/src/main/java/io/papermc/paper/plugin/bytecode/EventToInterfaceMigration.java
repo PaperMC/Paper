@@ -231,7 +231,8 @@ public final class EventToInterfaceMigration {
                 FurnaceBurnEvent.class,
                 BeaconEffectEvent.class,
                 com.destroystokyo.paper.event.block.TNTPrimeEvent.class,
-                HopperInventorySearchEvent.class
+                HopperInventorySearchEvent.class,
+                BlockEvent.class
                 //</editor-fold>
             );
 

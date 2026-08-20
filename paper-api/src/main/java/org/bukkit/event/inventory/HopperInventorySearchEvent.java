@@ -2,7 +2,7 @@ package org.bukkit.event.inventory;
 
 import org.bukkit.block.Block;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEventNew;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.Inventory;
 import org.jspecify.annotations.Nullable;
 
@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
  * Event that gets called each time a Hopper attempts to find its
  * source/attached containers.
  */
-public interface HopperInventorySearchEvent extends BlockEventNew {
+public interface HopperInventorySearchEvent extends BlockEvent {
 
     /**
      * Gets the {@link Inventory} that the Hopper will use for its

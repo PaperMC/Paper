@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
  * Will be called cancelled if the block's default behavior is to ignore the
  * event.
  */
-public interface BlockReceiveGameEvent extends BlockEventNew, Cancellable {
+public interface BlockReceiveGameEvent extends BlockEvent, Cancellable {
 
     /**
      * Get the underlying game event.

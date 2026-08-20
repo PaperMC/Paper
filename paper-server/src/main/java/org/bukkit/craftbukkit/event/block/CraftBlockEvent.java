@@ -2,9 +2,9 @@ package org.bukkit.craftbukkit.event.block;
 
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.event.CraftEvent;
-import org.bukkit.event.block.BlockEventNew;
+import org.bukkit.event.block.BlockEvent;
 
-public abstract class CraftBlockEvent extends CraftEvent implements BlockEventNew {
+public abstract class CraftBlockEvent extends CraftEvent implements BlockEvent {
 
     protected Block block;
 

@@ -5,7 +5,7 @@ import org.bukkit.event.HandlerList;
 /**
  * An event that's called when a block yields experience.
  */
-public interface BlockExpEvent extends BlockEventNew {
+public interface BlockExpEvent extends BlockEvent {
 
     /**
      * Get the experience dropped by the block after the event has processed

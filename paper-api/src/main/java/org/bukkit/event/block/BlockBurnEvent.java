@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
  * If this event is cancelled, the block will not be destroyed as a
  * result of being burnt by fire.
  */
-public interface BlockBurnEvent extends BlockEventNew, Cancellable {
+public interface BlockBurnEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the block which ignited this block.
