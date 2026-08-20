@@ -1,16 +1,14 @@
 package io.papermc.paper.event.entity;
 
-import java.util.Collections;
 import java.util.Map;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEvent;
+import org.bukkit.event.entity.EntityEventNew;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called whenever a change to an entity's equipment has been detected. This event is called after effects from
@@ -27,48 +25,30 @@ import org.jspecify.annotations.NullMarked;
  *     <li>A player changes their currently held item.</li>
  * </ul>
  */
-@NullMarked
-public class EntityEquipmentChangedEvent extends EntityEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Map<EquipmentSlot, EquipmentChange> equipmentChanges;
-
-    @ApiStatus.Internal
-    public EntityEquipmentChangedEvent(final LivingEntity entity, final Map<EquipmentSlot, EquipmentChange> equipmentChanges) {
-        super(entity);
-
-        this.equipmentChanges = equipmentChanges;
-    }
+public interface EntityEquipmentChangedEvent extends EntityEventNew {
 
     @Override
-    public LivingEntity getEntity() {
-        return (LivingEntity) this.entity;
-    }
+    LivingEntity getEntity();
 
     /**
      * Gets a map of changed slots to their respective equipment changes.
      *
      * @return the equipment changes map
      */
-    public @Unmodifiable Map<EquipmentSlot, EquipmentChange> getEquipmentChanges() {
-        return Collections.unmodifiableMap(this.equipmentChanges);
-    }
+    @Unmodifiable Map<EquipmentSlot, EquipmentChange> getEquipmentChanges();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
      * Represents a change in equipment for a single equipment slot.
      */
     @ApiStatus.NonExtendable
-    public interface EquipmentChange {
+    interface EquipmentChange {
 
         /**
          * Gets the existing item that is being replaced.
