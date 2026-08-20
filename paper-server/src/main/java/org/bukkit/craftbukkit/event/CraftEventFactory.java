@@ -15,6 +15,7 @@ import io.papermc.paper.event.entity.EntityIgniteEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.entity.PaperItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PaperPlayerBedFailEnterEvent;
+import io.papermc.paper.event.player.PaperPlayerToggleEntityAgeLockEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
 import java.util.ArrayList;
@@ -2421,7 +2422,7 @@ public class CraftEventFactory {
     }
 
     public static boolean callPlayerToggleEntityAgeLockEvent(net.minecraft.world.entity.player.Player player, Mob target, ItemStack itemUsed, InteractionHand hand, boolean ageLocked, @Nullable EntityDataAccessor<?> accessorToResync) {
-        PlayerToggleEntityAgeLockEvent event = new PlayerToggleEntityAgeLockEvent(
+        PlayerToggleEntityAgeLockEvent event = new PaperPlayerToggleEntityAgeLockEvent(
             (org.bukkit.entity.Player) player.getBukkitEntity(),
             (LivingEntity) target.getBukkitEntity(),
             itemUsed.asBukkitCopy(),
