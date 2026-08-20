@@ -227,7 +227,8 @@ public final class EventToInterfaceMigration {
                 org.bukkit.event.block.TNTPrimeEvent.class,
                 VaultDisplayItemEvent.class,
                 BrewEvent.class,
-                BrewingStandFuelEvent.class
+                BrewingStandFuelEvent.class,
+                FurnaceBurnEvent.class
                 //</editor-fold>
             );
 
