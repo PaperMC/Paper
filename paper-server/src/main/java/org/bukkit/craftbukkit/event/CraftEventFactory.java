@@ -122,6 +122,7 @@ import org.bukkit.craftbukkit.event.block.CraftBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockGrowEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockIgniteEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockMultiPlaceEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockPhysicsEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockPlaceEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
 import org.bukkit.craftbukkit.event.block.CraftEntityBlockFormEvent;
@@ -1895,7 +1896,7 @@ public class CraftEventFactory {
 
     public static BlockPhysicsEvent callBlockPhysicsEvent(LevelAccessor level, BlockPos pos) {
         org.bukkit.block.Block block = CraftBlock.at(level, pos);
-        BlockPhysicsEvent event = new BlockPhysicsEvent(block, block.getBlockData());
+        BlockPhysicsEvent event = new CraftBlockPhysicsEvent(block, block.getBlockData());
         // Suppress during worldgen
         if (level instanceof Level) {
             event.callEvent();
