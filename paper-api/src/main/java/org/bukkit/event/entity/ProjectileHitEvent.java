@@ -6,80 +6,24 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a projectile hits an object
  */
-public class ProjectileHitEvent extends EntityEvent implements Cancellable {
+public interface ProjectileHitEvent extends EntityEventNew, Cancellable {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Entity hitEntity;
-    private final Block hitBlock;
-    private final BlockFace hitFace;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public ProjectileHitEvent(@NotNull final Projectile projectile) {
-        this(projectile, null, null, null);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity) {
-        this(projectile, hitEntity, null, null);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Block hitBlock) {
-        this(projectile, null, hitBlock, null);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity, @Nullable Block hitBlock) {
-        this(projectile, hitEntity, hitBlock, null);
-    }
-
-    @ApiStatus.Internal
-    public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity, @Nullable Block hitBlock, @Nullable BlockFace hitFace) {
-        super(projectile);
-        this.hitEntity = hitEntity;
-        this.hitBlock = hitBlock;
-        this.hitFace = hitFace;
-    }
-
-    @NotNull
     @Override
-    public Projectile getEntity() {
-        return (Projectile) this.entity;
-    }
+    Projectile getEntity();
 
-    /**
-     * Gets the entity that was hit, if it was an entity that was hit.
-     *
-     * @return hit entity or else {@code null}
-     */
-    @Nullable
-    public Entity getHitEntity() {
-        return this.hitEntity;
-    }
+    @Nullable Entity getHitEntity();
 
     /**
      * Gets the block that was hit, if it was a block that was hit.
      *
      * @return hit block or else {@code null}
      */
-    @Nullable
-    public Block getHitBlock() {
-        return this.hitBlock;
-    }
+    @Nullable Block getHitBlock();
 
     /**
      * Gets the block face that was hit, if it was a block that was hit and the
@@ -87,15 +31,7 @@ public class ProjectileHitEvent extends EntityEvent implements Cancellable {
      *
      * @return hit face or else {@code null}
      */
-    @Nullable
-    public BlockFace getHitBlockFace() {
-        return this.hitFace;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    @Nullable BlockFace getHitBlockFace();
 
     /**
      * Whether to cancel the action that occurs when the projectile hits.
@@ -110,18 +46,12 @@ public class ProjectileHitEvent extends EntityEvent implements Cancellable {
      * unless their respective events are cancelled.
      */
     @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
