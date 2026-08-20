@@ -1,11 +1,7 @@
 package org.bukkit.event.block;
 
-import com.google.common.base.Preconditions;
-import org.bukkit.block.Block;
 import org.bukkit.event.HandlerList;
 import org.checkerframework.common.value.qual.IntRange;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a redstone current changes.
@@ -16,55 +12,33 @@ import org.jspecify.annotations.NullMarked;
  * a current of 15 and a low state as 0. Setting the new current to a different
  * value will prevent most action in this case.
  */
-@NullMarked
-public class BlockRedstoneEvent extends BlockEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final int oldCurrent;
-    private int newCurrent;
-
-    @ApiStatus.Internal
-    public BlockRedstoneEvent(final Block block, final int oldCurrent, final int newCurrent) {
-        super(block);
-        this.oldCurrent = oldCurrent;
-        this.newCurrent = newCurrent;
-    }
+public interface BlockRedstoneEvent extends BlockEventNew {
 
     /**
      * Gets the old current of this block.
      *
      * @return the previous current
      */
-    public @IntRange(from = 0, to = 15) int getOldCurrent() {
-        return this.oldCurrent;
-    }
+    @IntRange(from = 0, to = 15) int getOldCurrent();
 
     /**
      * Gets the new current of this block.
      *
      * @return the new current
      */
-    public @IntRange(from = 0, to = 15) int getNewCurrent() {
-        return this.newCurrent;
-    }
+    @IntRange(from = 0, to = 15) int getNewCurrent();
 
     /**
      * Sets the new current of this block.
      *
      * @param newCurrent the new current to set
      */
-    public void setNewCurrent(@IntRange(from = 0, to = 15) int newCurrent) {
-        Preconditions.checkArgument(newCurrent >= 0 && newCurrent <= 15, "New current must be a redstone signal between 0 and 15 (was %s)", newCurrent);
-        this.newCurrent = newCurrent;
-    }
+    void setNewCurrent(@IntRange(from = 0, to = 15) int newCurrent);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
