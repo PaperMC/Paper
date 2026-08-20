@@ -5,6 +5,7 @@ import io.papermc.paper.persistence.PersistentDataContainerView;
 import net.kyori.adventure.key.Key;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -23,7 +24,7 @@ import org.jspecify.annotations.NullMarked;
  * Schedule large amount of work into separate thread pools.
  */
 @NullMarked
-public class AsyncServerDataFixerRemoveBlockEntityEvent extends Event {
+public class AsyncServerDataFixerRemoveBlockEntityEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

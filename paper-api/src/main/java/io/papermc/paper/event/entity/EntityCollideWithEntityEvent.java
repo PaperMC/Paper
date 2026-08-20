@@ -3,6 +3,7 @@ package io.papermc.paper.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +16,7 @@ import java.util.List;
  * Note that even if cancelled, the client may still run its own collision unless
  * disabled via player teams.
  */
-public class EntityCollideWithEntityEvent extends Event implements Cancellable {
+public class EntityCollideWithEntityEvent extends EventTmp implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
     private boolean cancelled;

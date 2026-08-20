@@ -19,7 +19,6 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datapack.DynamicBuiltinPack;
 import io.papermc.paper.datapack.DynamicBuiltinPacks;
 import io.papermc.paper.entity.EntitySerializationFlag;
-import io.papermc.paper.pluginremap.reflect.ReflectionRemapper;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.MCUtil;
 import java.io.IOException;
