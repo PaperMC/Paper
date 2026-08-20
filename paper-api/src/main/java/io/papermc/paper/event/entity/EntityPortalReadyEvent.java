@@ -2,13 +2,11 @@ package io.papermc.paper.event.entity;
 
 import org.bukkit.PortalType;
 import org.bukkit.World;
-import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEvent;
+import org.bukkit.event.entity.EntityEventNew;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -21,21 +19,7 @@ import org.jspecify.annotations.Nullable;
  * regarding the current portal.
  */
 @NullMarked
-public class EntityPortalReadyEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final PortalType portalType;
-    private @Nullable World targetWorld;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public EntityPortalReadyEvent(final Entity entity, final @Nullable World targetWorld, final PortalType portalType) {
-        super(entity);
-        this.targetWorld = targetWorld;
-        this.portalType = portalType;
-    }
+public interface EntityPortalReadyEvent extends EntityEventNew, Cancellable {
 
     /**
      * Gets the world this portal will teleport to.
@@ -47,9 +31,7 @@ public class EntityPortalReadyEvent extends EntityEvent implements Cancellable {
      *
      * @return the world the portal will teleport the entity to.
      */
-    public @Nullable World getTargetWorld() {
-        return this.targetWorld;
-    }
+    @Nullable World getTargetWorld();
 
     /**
      * Sets the world this portal will teleport to. A {@code null} value
@@ -61,35 +43,19 @@ public class EntityPortalReadyEvent extends EntityEvent implements Cancellable {
      *
      * @param targetWorld the world
      */
-    public void setTargetWorld(final @Nullable World targetWorld) {
-        this.targetWorld = targetWorld;
-    }
+    void setTargetWorld(@Nullable World targetWorld);
 
     /**
      * Gets the portal type for this event.
      *
      * @return the portal type
      */
-    public PortalType getPortalType() {
-        return this.portalType;
-    }
+    PortalType getPortalType();
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
