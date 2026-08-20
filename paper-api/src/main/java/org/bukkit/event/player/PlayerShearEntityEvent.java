@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Unmodifiable;
 /**
  * Called when a player shears an entity
  */
-public interface PlayerShearEntityEvent extends PlayerEventNew, Cancellable {
+public interface PlayerShearEntityEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the entity the player is shearing.

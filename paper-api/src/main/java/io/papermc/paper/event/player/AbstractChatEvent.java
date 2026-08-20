@@ -6,11 +6,11 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.chat.SignedMessage;
 import net.kyori.adventure.text.Component;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.NonExtendable
-public interface AbstractChatEvent extends PlayerEventNew, Cancellable {
+public interface AbstractChatEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets a set of {@link Audience audiences} that this chat message will be displayed to.

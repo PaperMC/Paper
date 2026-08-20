@@ -2,12 +2,12 @@ package io.papermc.paper.event.player;
 
 import org.bukkit.Location;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Runs when a player attempts to move, but is prevented from doing so by the server
  */
-public interface PlayerFailMoveEvent extends PlayerEventNew {
+public interface PlayerFailMoveEvent extends PlayerEvent {
 
     /**
      * Gets the reason this movement was prevented by the server

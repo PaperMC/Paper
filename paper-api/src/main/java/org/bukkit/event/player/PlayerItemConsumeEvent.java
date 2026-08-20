@@ -16,7 +16,7 @@ import org.jspecify.annotations.Nullable;
  * If the event is cancelled the effect will not be applied and the item will
  * not be removed from the player's inventory.
  */
-public interface PlayerItemConsumeEvent extends PlayerEventNew, Cancellable {
+public interface PlayerItemConsumeEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the item that is being consumed. Modifying the returned item will

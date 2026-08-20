@@ -5,11 +5,11 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
-public interface PlayerBedFailEnterEvent extends PlayerEventNew, Cancellable { // todo javadocs?
+public interface PlayerBedFailEnterEvent extends PlayerEvent, Cancellable { // todo javadocs?
 
     /**
      * @deprecated This enum has been replaced with a system that better

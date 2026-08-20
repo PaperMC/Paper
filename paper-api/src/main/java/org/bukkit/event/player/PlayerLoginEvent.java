@@ -22,7 +22,7 @@ import org.bukkit.event.HandlerList;
  */
 @Warning(reason = "Listening to this event causes the player to be created early.")
 @Deprecated(since = "1.21.6")
-public interface PlayerLoginEvent extends PlayerEventNew {
+public interface PlayerLoginEvent extends PlayerEvent {
 
     /**
      * Gets the hostname that the player used to connect to the server, or

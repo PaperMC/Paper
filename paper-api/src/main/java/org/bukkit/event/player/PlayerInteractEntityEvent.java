@@ -13,7 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
  * recommended to listen to that event instead which hold more informations.
  */
 @ApiStatus.Obsolete
-public interface PlayerInteractEntityEvent extends PlayerEventNew, Cancellable {
+public interface PlayerInteractEntityEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the entity that was right-clicked by the player.

@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Thrown when a player attempts to pick an item up from the ground
  */
-public interface PlayerAttemptPickupItemEvent extends PlayerEventNew, Cancellable {
+public interface PlayerAttemptPickupItemEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the Item attempted by the player.

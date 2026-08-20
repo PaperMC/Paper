@@ -17,7 +17,7 @@ import org.bukkit.inventory.ItemStack;
  * for {@link org.bukkit.event.block.BlockBreakEvent} and
  * {@link org.bukkit.event.block.BlockDropItemEvent}.
  */
-public interface PlayerHarvestBlockEvent extends PlayerEventNew, Cancellable {
+public interface PlayerHarvestBlockEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the block that is being harvested.

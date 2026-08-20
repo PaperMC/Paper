@@ -4,13 +4,13 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Called after a player is granted a criteria in an advancement.
  * If cancelled the criteria will be revoked.
  */
-public interface PlayerAdvancementCriterionGrantEvent extends PlayerEventNew, Cancellable {
+public interface PlayerAdvancementCriterionGrantEvent extends PlayerEvent, Cancellable {
 
     /**
      * Get the advancement which has been affected.

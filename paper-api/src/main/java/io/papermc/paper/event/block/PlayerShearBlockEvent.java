@@ -4,7 +4,7 @@ import java.util.List;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
@@ -18,7 +18,7 @@ import org.jspecify.annotations.NullMarked;
  * Examples include shearing a pumpkin to turn it into a carved pumpkin or shearing a beehive to get honeycomb.
  */
 @NullMarked
-public interface PlayerShearBlockEvent extends PlayerEventNew, Cancellable {
+public interface PlayerShearBlockEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the block being sheared in this event.

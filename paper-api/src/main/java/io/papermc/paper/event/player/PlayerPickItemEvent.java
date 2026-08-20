@@ -2,7 +2,7 @@ package io.papermc.paper.event.player;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Range;
 
@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Range;
  * @see PlayerPickEntityEvent
  * @see PlayerPickBlockEvent
  */
-public interface PlayerPickItemEvent extends PlayerEventNew, Cancellable {
+public interface PlayerPickItemEvent extends PlayerEvent, Cancellable {
 
     /**
      * Returns the item that is being picked.

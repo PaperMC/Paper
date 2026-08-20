@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player toggles their flying state
  */
-public interface PlayerToggleFlightEvent extends PlayerEventNew, Cancellable {
+public interface PlayerToggleFlightEvent extends PlayerEvent, Cancellable {
 
     /**
      * Returns whether the player is trying to start or stop flying.

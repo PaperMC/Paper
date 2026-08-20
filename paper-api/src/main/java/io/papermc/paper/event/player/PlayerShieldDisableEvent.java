@@ -3,7 +3,7 @@ package io.papermc.paper.event.player;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.checkerframework.checker.index.qual.NonNegative;
 
 /**
@@ -15,7 +15,7 @@ import org.checkerframework.checker.index.qual.NonNegative;
  * It follows that, if this event is cancelled, no {@link PlayerItemCooldownEvent} is called as the shield is never
  * disabled in the first place.
  */
-public interface PlayerShieldDisableEvent extends PlayerEventNew, Cancellable {
+public interface PlayerShieldDisableEvent extends PlayerEvent, Cancellable {
 
     /**
      * Provides the damager that disabled the shield.

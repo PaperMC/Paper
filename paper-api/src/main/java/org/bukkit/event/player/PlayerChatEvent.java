@@ -13,7 +13,7 @@ import org.bukkit.event.HandlerList;
  */
 @Deprecated(since = "1.3.1")
 @Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")
-public interface PlayerChatEvent extends PlayerEventNew, Cancellable {
+public interface PlayerChatEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the message that the player is attempting to send

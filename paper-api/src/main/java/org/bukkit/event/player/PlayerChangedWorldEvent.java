@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player switches to another world.
  */
-public interface PlayerChangedWorldEvent extends PlayerEventNew {
+public interface PlayerChangedWorldEvent extends PlayerEvent {
 
     /**
      * Gets the world the player is switching from.

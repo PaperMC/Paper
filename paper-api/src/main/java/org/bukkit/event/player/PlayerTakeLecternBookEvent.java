@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
  * This event is called when a player clicks the button to take a book of a
  * Lectern. If this event is cancelled the book remains on the lectern.
  */
-public interface PlayerTakeLecternBookEvent extends PlayerEventNew, Cancellable {
+public interface PlayerTakeLecternBookEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the lectern involved.

@@ -1,7 +1,7 @@
 package io.papermc.paper.event.player;
 
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Called when a player is marked as loaded.
@@ -9,7 +9,7 @@ import org.bukkit.event.player.PlayerEventNew;
  * This either happens when the player notifies the server after loading the world (closing the downloading terrain screen)
  * or when the player has not done so for 60 ticks after joining the server or respawning.
  */
-public interface PlayerClientLoadedWorldEvent extends PlayerEventNew {
+public interface PlayerClientLoadedWorldEvent extends PlayerEvent {
 
     /**
      * True if the event was triggered because the server has not been notified by the player

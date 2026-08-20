@@ -9,7 +9,7 @@ import org.bukkit.event.HandlerList;
  *
  * @see Player#getCurrentInput()
  */
-public interface PlayerInputEvent extends PlayerEventNew {
+public interface PlayerInputEvent extends PlayerEvent {
 
     /**
      * Gets the new input received from this player.

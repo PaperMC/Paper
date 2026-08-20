@@ -8,7 +8,7 @@ import org.bukkit.inventory.ItemStack;
  * Called when an item used by the player takes durability damage as a result of
  * being used.
  */
-public interface PlayerItemDamageEvent extends PlayerEventNew, Cancellable {
+public interface PlayerItemDamageEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the item being damaged.

@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a player interacts with a Bucket
  */
-public interface PlayerBucketEvent extends PlayerEventNew, Cancellable {
+public interface PlayerBucketEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the block involved in this event.

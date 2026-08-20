@@ -10,7 +10,7 @@ import org.bukkit.inventory.ItemStack;
 /**
  * This event is called whenever a player captures an entity in a bucket.
  */
-public interface PlayerBucketEntityEvent extends PlayerEventNew, Cancellable {
+public interface PlayerBucketEntityEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the {@link Entity} being put into the bucket.

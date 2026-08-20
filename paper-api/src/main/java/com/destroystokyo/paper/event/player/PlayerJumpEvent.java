@@ -3,7 +3,7 @@ package com.destroystokyo.paper.event.player;
 import org.bukkit.Location;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
@@ -13,7 +13,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
  * when checking for jumps via {@link PlayerMoveEvent}, this event is fired whenever
  * the server detects that the player is jumping.
  */
-public interface PlayerJumpEvent extends PlayerEventNew, Cancellable {
+public interface PlayerJumpEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the location this player jumped from

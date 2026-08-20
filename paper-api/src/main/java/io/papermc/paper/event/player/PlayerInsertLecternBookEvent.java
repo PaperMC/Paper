@@ -4,14 +4,14 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Lectern;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
  * This event is called when a player clicks on a lectern to insert a book.
  * If this event is cancelled the player will keep the book and the lectern will remain empty.
  */
-public interface PlayerInsertLecternBookEvent extends PlayerEventNew, Cancellable {
+public interface PlayerInsertLecternBookEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the block of the lectern involved in this event.

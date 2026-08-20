@@ -2,9 +2,9 @@ package org.bukkit.craftbukkit.event.player;
 
 import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 
-public abstract class CraftPlayerEvent extends CraftEvent implements PlayerEventNew {
+public abstract class CraftPlayerEvent extends CraftEvent implements PlayerEvent {
 
     protected final Player player;
 
