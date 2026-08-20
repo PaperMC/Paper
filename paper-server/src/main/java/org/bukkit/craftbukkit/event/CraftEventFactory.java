@@ -139,6 +139,7 @@ import org.bukkit.craftbukkit.event.block.CraftTNTPrimeEvent;
 import org.bukkit.craftbukkit.event.block.CraftVaultDisplayItemEvent;
 import org.bukkit.craftbukkit.event.entity.CraftAreaEffectCloudApplyEvent;
 import org.bukkit.craftbukkit.event.entity.CraftArrowBodyCountChangeEvent;
+import org.bukkit.craftbukkit.event.entity.CraftBatToggleSleepEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPotionSplashEvent;
@@ -1973,7 +1974,7 @@ public class CraftEventFactory {
     }
 
     public static boolean handleBatToggleSleepEvent(Entity bat, boolean awake) {
-        BatToggleSleepEvent event = new BatToggleSleepEvent((Bat) bat.getBukkitEntity(), awake);
+        BatToggleSleepEvent event = new CraftBatToggleSleepEvent((Bat) bat.getBukkitEntity(), awake);
         Bukkit.getPluginManager().callEvent(event);
         return !event.isCancelled();
     }

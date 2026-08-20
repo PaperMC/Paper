@@ -305,7 +305,8 @@ public final class ClassToInterfaceRules {
             WaterBottleSplashEvent.class,
             TargetHitEvent.class,
             AreaEffectCloudApplyEvent.class,
-            ArrowBodyCountChangeEvent.class
+            ArrowBodyCountChangeEvent.class,
+            BatToggleSleepEvent.class
             //</editor-fold>
         );
     }
