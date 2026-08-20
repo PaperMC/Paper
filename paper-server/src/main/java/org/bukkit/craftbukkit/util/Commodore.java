@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.util;
 import com.google.common.base.Predicates;
 import com.google.common.io.ByteStreams;
 import io.papermc.paper.plugin.entrypoint.classloader.bytecode.ClassToInterfaceRules;
-import io.papermc.paper.pluginremap.reflect.ReflectionRemapper;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;

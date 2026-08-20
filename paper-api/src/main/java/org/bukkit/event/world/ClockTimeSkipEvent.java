@@ -2,6 +2,7 @@ package org.bukkit.event.world;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -14,7 +15,7 @@ import org.jspecify.annotations.NullMarked;
 // TODO - snapshot - 26.1 clock
 @ApiStatus.Experimental
 @NullMarked
-public class ClockTimeSkipEvent extends Event implements Cancellable {
+public class ClockTimeSkipEvent extends EventTmp implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
