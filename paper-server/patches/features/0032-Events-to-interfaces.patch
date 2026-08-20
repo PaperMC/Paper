@@ -68,6 +68,46 @@ index bcd1a5dcbb43c604430001e27e8d711b41c8bab0..6224feb5de34b3fbc7fc68941ad84c9e
          event.callEvent();
          return event;
      }
+diff --git a/net/minecraft/server/network/config/PrepareSpawnTask.java b/net/minecraft/server/network/config/PrepareSpawnTask.java
+index 5014840bf5d7ef53a4fea8aa6f3b25eb4033ff96..74f0046f8c6cf5ba2e35437cc310b437b14d6f9e 100644
+--- a/net/minecraft/server/network/config/PrepareSpawnTask.java
++++ b/net/minecraft/server/network/config/PrepareSpawnTask.java
+@@ -194,27 +194,27 @@ public class PrepareSpawnTask implements ConfigurationTask {
+                                 PrepareSpawnTask.this.server, PrepareSpawnTask.this.server.overworld(), PrepareSpawnTask.this.profile, net.minecraft.server.level.ClientInformation.createDefault());
+                             PrepareSpawnTask.this.listener.connection.savedPlayerForLegacyEvents = serverPlayer;
+                         }
+-                        org.spigotmc.event.player.PlayerSpawnLocationEvent ev = new org.spigotmc.event.player.PlayerSpawnLocationEvent(
++                        org.spigotmc.event.player.PlayerSpawnLocationEvent event = new org.spigotmc.event.player.PlayerSpawnLocationEvent(
+                             serverPlayer.getBukkitEntity(),
+                             org.bukkit.craftbukkit.util.CraftLocation.toBukkit(vec3, this.spawnLevel, this.spawnAngle.x, this.spawnAngle.y)
+                         );
+-                        ev.callEvent();
+-                        vec3 = io.papermc.paper.util.MCUtil.toVec3(ev.getSpawnLocation());
+-                        this.spawnLevel = ((org.bukkit.craftbukkit.CraftWorld) ev.getSpawnLocation().getWorld()).getHandle();
++                        event.callEvent();
++                        vec3 = io.papermc.paper.util.MCUtil.toVec3(event.getSpawnLocation());
++                        this.spawnLevel = ((org.bukkit.craftbukkit.CraftWorld) event.getSpawnLocation().getWorld()).getHandle();
+                         this.spawnPosition = CompletableFuture.completedFuture(vec3);
+-                        this.spawnAngle = new Vec2(ev.getSpawnLocation().getYaw(), ev.getSpawnLocation().getPitch());
++                        this.spawnAngle = new Vec2(event.getSpawnLocation().getYaw(), event.getSpawnLocation().getPitch());
+                     }
+ 
+                     if (this.eventFuture == null && io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent.getHandlerList().getRegisteredListeners().length != 0) {
+                         final Vec3 vec3final = vec3;
+                         this.eventFuture = CompletableFuture.supplyAsync(() -> {
+-                            io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent ev = new io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent(
++                            io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent event = new io.papermc.paper.event.player.PaperAsyncPlayerSpawnLocationEvent(
+                                 PrepareSpawnTask.this.listener.paperConnection,
+                                 org.bukkit.craftbukkit.util.CraftLocation.toBukkit(vec3final, this.spawnLevel, this.spawnAngle.x, this.spawnAngle.y),
+                                 PrepareSpawnTask.this.newPlayer
+                             );
+-                            ev.callEvent();
+-                            return ev.getSpawnLocation();
++                            event.callEvent();
++                            return event.getSpawnLocation();
+                         }, io.papermc.paper.connection.PaperConfigurationTask.CONFIGURATION_POOL);
+                     }
+                     if (this.eventFuture != null) {
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
 index 989ac565c47a70c7947cb7315d0f5c2cfecd0363..308792f28e904312f44b2f28a323083a9369ad34 100644
 --- a/net/minecraft/server/players/PlayerList.java
