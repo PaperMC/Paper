@@ -115,6 +115,7 @@ import org.bukkit.craftbukkit.event.block.CraftBellResonateEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockDamageAbortEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockDamageEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockDispenseLootEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockDropItemEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockGrowEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
@@ -566,7 +567,7 @@ public class CraftEventFactory {
             list.add((Item) item.getBukkitEntity());
         }
 
-        BlockDropItemEvent event = new BlockDropItemEvent(block, state, player.getBukkitEntity(), list);
+        BlockDropItemEvent event = new CraftBlockDropItemEvent(block, state, player.getBukkitEntity(), list);
         Bukkit.getPluginManager().callEvent(event);
 
         if (!event.isCancelled()) {
