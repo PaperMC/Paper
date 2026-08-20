@@ -112,6 +112,7 @@ import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.entity.CraftSpellcaster;
 import org.bukkit.craftbukkit.event.block.CraftBellResonateEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockDamageAbortEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockGrowEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
@@ -722,7 +723,7 @@ public class CraftEventFactory {
         CraftItemStack itemInHand = CraftItemStack.asCraftMirror(item);
         Block clickedBlock = CraftBlock.at(player.level(), pos);
 
-        BlockDamageAbortEvent event = new BlockDamageAbortEvent(player.getBukkitEntity(), clickedBlock, itemInHand);
+        BlockDamageAbortEvent event = new CraftBlockDamageAbortEvent(player.getBukkitEntity(), clickedBlock, itemInHand);
         event.callEvent();
 
         return event;
