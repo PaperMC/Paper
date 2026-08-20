@@ -44,7 +44,7 @@ public interface PlayerFailMoveEvent extends PlayerEventNew {
      *
      * @param allowed whether to bypass the check
      */
-    void setAllowed(final boolean allowed);
+    void setAllowed(boolean allowed);
 
     /**
      * Gets if warnings will be printed to console. e.g. "Player123 moved too quickly!"
@@ -58,7 +58,7 @@ public interface PlayerFailMoveEvent extends PlayerEventNew {
      *
      * @param logWarning whether to log warnings
      */
-    void setLogWarning(final boolean logWarning);
+    void setLogWarning(boolean logWarning);
 
     static HandlerList getHandlerList() {
         final class Holder {
