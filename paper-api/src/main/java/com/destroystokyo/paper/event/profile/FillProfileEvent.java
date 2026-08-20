@@ -27,6 +27,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import java.util.Set;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -35,7 +36,7 @@ import org.jspecify.annotations.NullMarked;
  * Fired once a profiles additional properties (such as textures) has been filled
  */
 @NullMarked
-public class FillProfileEvent extends Event {
+public class FillProfileEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

@@ -3,6 +3,7 @@ package org.bukkit.event.inventory;
 import com.google.common.base.Preconditions;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -25,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
  * has not been modified, the source inventory slot will be restored to its
  * former state. Otherwise any additional items will be discarded.
  */
-public class InventoryMoveItemEvent extends Event implements Cancellable {
+public class InventoryMoveItemEvent extends EventTmp implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

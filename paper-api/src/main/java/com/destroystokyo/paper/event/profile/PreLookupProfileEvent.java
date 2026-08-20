@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -22,7 +23,7 @@ import org.jspecify.annotations.Nullable;
  * {@link Event#isAsynchronous()}
  */
 @NullMarked
-public class PreLookupProfileEvent extends Event {
+public class PreLookupProfileEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

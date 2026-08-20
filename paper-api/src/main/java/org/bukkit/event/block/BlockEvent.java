@@ -2,12 +2,13 @@ package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a block related event.
  */
-public abstract class BlockEvent extends Event {
+public abstract class BlockEvent extends EventTmp {
 
     protected Block block;
 

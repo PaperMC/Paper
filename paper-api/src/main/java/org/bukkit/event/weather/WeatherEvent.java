@@ -2,12 +2,13 @@ package org.bukkit.event.weather;
 
 import org.bukkit.World;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Weather-related event
  */
-public abstract class WeatherEvent extends Event {
+public abstract class WeatherEvent extends EventTmp {
 
     protected World world;
 

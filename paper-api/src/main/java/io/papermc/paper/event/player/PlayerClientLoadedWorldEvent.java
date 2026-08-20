@@ -1,9 +1,7 @@
 package io.papermc.paper.event.player;
 
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
-import org.jetbrains.annotations.ApiStatus;
+import org.bukkit.event.player.PlayerEventNew;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -13,17 +11,7 @@ import org.jspecify.annotations.NullMarked;
  * or when the player has not done so for 60 ticks after joining the server or respawning.
  */
 @NullMarked
-public class PlayerClientLoadedWorldEvent extends PlayerEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final boolean timeout;
-
-    @ApiStatus.Internal
-    public PlayerClientLoadedWorldEvent(final Player player, final boolean timeout) {
-        super(player);
-        this.timeout = timeout;
-    }
+public interface PlayerClientLoadedWorldEvent extends PlayerEventNew {
 
     /**
      * True if the event was triggered because the server has not been notified by the player
@@ -31,16 +19,14 @@ public class PlayerClientLoadedWorldEvent extends PlayerEvent {
      *
      * @return true if the event was triggered because of a timeout
      */
-    public boolean isTimeout() {
-        return timeout;
-    }
+    boolean isTimeout();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
+    HandlerList getHandlers();
 
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

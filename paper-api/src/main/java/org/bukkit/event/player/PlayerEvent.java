@@ -1,13 +1,13 @@
 package org.bukkit.event.player;
 
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a player related event
  */
-public abstract class PlayerEvent extends Event {
+public abstract class PlayerEvent extends EventTmp implements PlayerEventNew {
 
     protected Player player;
 

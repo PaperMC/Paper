@@ -1,9 +1,10 @@
 package io.papermc.paper.plugin;
 
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 
-public class TestEvent extends Event {
+public class TestEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
