@@ -6,10 +6,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityBreedEvent;
-import org.bukkit.event.entity.EntityEvent;
+import org.bukkit.event.entity.EntityEventNew;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -26,31 +24,10 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * The event hence only exposes the two parent entities in the fertilization process and cannot provide the child entity, as it will only exist at a later point in time.
  */
-@NullMarked
-public class EntityFertilizeEggEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final LivingEntity father;
-    private final @Nullable Player breeder;
-    private final @Nullable ItemStack bredWith;
-    private int experience;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public EntityFertilizeEggEvent(final LivingEntity mother, final LivingEntity father, final @Nullable Player breeder, final @Nullable ItemStack bredWith, final int experience) {
-        super(mother);
-        this.father = father;
-        this.breeder = breeder;
-        this.bredWith = bredWith;
-        this.experience = experience;
-    }
+public interface EntityFertilizeEggEvent extends EntityEventNew, Cancellable {
 
     @Override
-    public LivingEntity getEntity() {
-        return (LivingEntity) super.getEntity();
-    }
+    LivingEntity getEntity();
 
     /**
      * Provides the entity in the fertilization process that will eventually be responsible for "creating" offspring,
@@ -58,9 +35,7 @@ public class EntityFertilizeEggEvent extends EntityEvent implements Cancellable 
      *
      * @return The "mother" entity.
      */
-    public LivingEntity getMother() {
-        return this.getEntity();
-    }
+    LivingEntity getMother();
 
     /**
      * Provides the "father" entity in the fertilization process that is not responsible for initiating the offspring
@@ -68,9 +43,7 @@ public class EntityFertilizeEggEvent extends EntityEvent implements Cancellable 
      *
      * @return the other parent
      */
-    public LivingEntity getFather() {
-        return this.father;
-    }
+    LivingEntity getFather();
 
     /**
      * Gets the Entity responsible for fertilization. Breeder is {@code null} for spontaneous
@@ -78,27 +51,21 @@ public class EntityFertilizeEggEvent extends EntityEvent implements Cancellable 
      *
      * @return The Entity who initiated fertilization.
      */
-    public @Nullable Player getBreeder() {
-        return this.breeder;
-    }
+    @Nullable Player getBreeder();
 
     /**
      * The ItemStack that was used to initiate fertilization, if present.
      *
      * @return ItemStack used to initiate fertilization.
      */
-    public @Nullable ItemStack getBredWith() {
-        return this.bredWith;
-    }
+    @Nullable ItemStack getBredWith();
 
     /**
      * Get the amount of experience granted by fertilization.
      *
      * @return experience amount
      */
-    public int getExperience() {
-        return this.experience;
-    }
+    int getExperience();
 
     /**
      * Set the amount of experience granted by fertilization.
@@ -106,26 +73,12 @@ public class EntityFertilizeEggEvent extends EntityEvent implements Cancellable 
      *
      * @param experience experience amount
      */
-    public void setExperience(final int experience) {
-        this.experience = experience;
-    }
+    void setExperience(int experience);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
