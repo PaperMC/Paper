@@ -18,7 +18,7 @@ public class CraftPlayerRespawnEvent extends PaperAbstractRespawnEvent implement
     }
 
     @Override
-    public void setRespawnLocation(Location respawnLocation) {
+    public void setRespawnLocation(final Location respawnLocation) {
         Preconditions.checkArgument(respawnLocation != null, "Respawn location can not be null");
         Preconditions.checkArgument(respawnLocation.getWorld() != null, "Respawn world can not be null");
 
