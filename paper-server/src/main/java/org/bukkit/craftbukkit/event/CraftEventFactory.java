@@ -130,6 +130,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookClickEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookSettingsChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeDiscoverEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRiptideEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerShearEntityEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -1703,7 +1704,7 @@ public class CraftEventFactory {
     }
 
     public static PlayerShearEntityEvent handlePlayerShearEntityEvent(net.minecraft.world.entity.player.Player player, Entity sheared, ItemStack shears, InteractionHand hand, List<ItemStack> drops) {
-        PlayerShearEntityEvent event = new PlayerShearEntityEvent(((ServerPlayer) player).getBukkitEntity(), sheared.getBukkitEntity(), CraftItemStack.asCraftMirror(shears), CraftEquipmentSlot.getHand(hand), Lists.transform(drops, CraftItemStack::asCraftMirror));
+        PlayerShearEntityEvent event = new CraftPlayerShearEntityEvent(((ServerPlayer) player).getBukkitEntity(), sheared.getBukkitEntity(), CraftItemStack.asCraftMirror(shears), CraftEquipmentSlot.getHand(hand), Lists.transform(drops, CraftItemStack::asCraftMirror));
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }

@@ -114,7 +114,8 @@ public final class EventToInterfaceMigration {
                 PlayerRecipeBookSettingsChangeEvent.class,
                 PlayerRecipeDiscoverEvent.class,
                 PlayerResourcePackStatusEvent.class,
-                PlayerRiptideEvent.class
+                PlayerRiptideEvent.class,
+                PlayerShearEntityEvent.class
                 //</editor-fold>
             );
 
