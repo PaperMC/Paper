@@ -128,7 +128,8 @@ public final class EventToInterfaceMigration {
                 PlayerVelocityEvent.class,
                 AsyncPlayerChatEvent.class,
                 AsyncPlayerChatPreviewEvent.class,
-                IllegalPacketEvent.class
+                IllegalPacketEvent.class,
+                PlayerAdvancementCriterionGrantEvent.class
                 //</editor-fold>
             );
 
