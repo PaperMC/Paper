@@ -40,7 +40,8 @@ public final class EventToInterfaceMigration {
                 PlayerPickBlockEvent.class,
                 PlayerPickEntityEvent.class,
                 PlayerStopUsingItemEvent.class,
-                PlayerTrackEntityEvent.class
+                PlayerTrackEntityEvent.class,
+                PlayerUntrackEntityEvent.class
                 //</editor-fold>
             );
 
