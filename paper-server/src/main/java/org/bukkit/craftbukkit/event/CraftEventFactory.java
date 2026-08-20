@@ -141,6 +141,7 @@ import org.bukkit.craftbukkit.event.entity.CraftAreaEffectCloudApplyEvent;
 import org.bukkit.craftbukkit.event.entity.CraftArrowBodyCountChangeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftBatToggleSleepEvent;
 import org.bukkit.craftbukkit.event.entity.CraftCreatureSpawnEvent;
+import org.bukkit.craftbukkit.event.entity.CraftCreeperPowerEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
@@ -1396,7 +1397,7 @@ public class CraftEventFactory {
     }
 
     public static CreeperPowerEvent callCreeperPowerEvent(Entity creeper, Entity lightning, CreeperPowerEvent.PowerCause cause) {
-        CreeperPowerEvent event = new CreeperPowerEvent((Creeper) creeper.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), cause);
+        CreeperPowerEvent event = new CraftCreeperPowerEvent((Creeper) creeper.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), cause);
         creeper.getBukkitEntity().getServer().getPluginManager().callEvent(event);
         return event;
     }

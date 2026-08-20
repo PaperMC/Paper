@@ -312,7 +312,8 @@ public final class ClassToInterfaceRules {
             ItemSpawnEvent.class,
             ProjectileLaunchEvent.class,
             SpawnerSpawnEvent.class,
-            TrialSpawnerSpawnEvent.class
+            TrialSpawnerSpawnEvent.class,
+            CreeperPowerEvent.class
             //</editor-fold>
         );
     }
