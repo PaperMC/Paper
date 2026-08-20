@@ -5,12 +5,10 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Fires when computing if a server is currently considered full for a player.
  */
-@NullMarked
 public interface PlayerServerFullCheckEvent extends Event {
 
     /**

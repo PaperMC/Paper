@@ -4,12 +4,10 @@ import io.papermc.paper.event.player.AbstractRespawnEvent;
 import org.bukkit.Location;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired after a player has respawned
  */
-@NullMarked
 public interface PlayerPostRespawnEvent extends AbstractRespawnEvent {
 
     /**

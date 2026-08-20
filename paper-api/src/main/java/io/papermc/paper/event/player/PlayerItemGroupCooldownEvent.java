@@ -6,14 +6,12 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.checkerframework.checker.index.qual.NonNegative;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when a player receives an item cooldown.
  *
  * @see PlayerItemCooldownEvent for a more specific event when applied to a specific item.
  */
-@NullMarked
 public interface PlayerItemGroupCooldownEvent extends PlayerEventNew, Cancellable {
 
     /**

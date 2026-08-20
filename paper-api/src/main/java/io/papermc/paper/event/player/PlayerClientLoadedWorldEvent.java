@@ -2,7 +2,6 @@ package io.papermc.paper.event.player;
 
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player is marked as loaded.
@@ -10,7 +9,6 @@ import org.jspecify.annotations.NullMarked;
  * This either happens when the player notifies the server after loading the world (closing the downloading terrain screen)
  * or when the player has not done so for 60 ticks after joining the server or respawning.
  */
-@NullMarked
 public interface PlayerClientLoadedWorldEvent extends PlayerEventNew {
 
     /**

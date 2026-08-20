@@ -4,7 +4,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Is called when a {@link Player} untracks an {@link Entity}.
@@ -12,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * Adding or removing entities from the world at the point in time this event is called is completely
  * unsupported and should be avoided.
  */
-@NullMarked
 public interface PlayerUntrackEntityEvent extends PlayerEventNew {
 
     /**

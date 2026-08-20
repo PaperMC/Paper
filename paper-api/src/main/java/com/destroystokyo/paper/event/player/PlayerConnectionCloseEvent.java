@@ -6,7 +6,6 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * This event is invoked when a player has disconnected. It is guaranteed that,
@@ -32,7 +31,6 @@ import org.jspecify.annotations.NullMarked;
  * The event may be invoked asynchronously or synchronously. Plugins should check
  * {@link Event#isAsynchronous()} and handle accordingly.
  */
-@NullMarked
 public interface PlayerConnectionCloseEvent extends Event {
 
     /**

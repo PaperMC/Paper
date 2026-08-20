@@ -3,12 +3,10 @@ package io.papermc.paper.event.player;
 import org.bukkit.Location;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Runs when a player attempts to move, but is prevented from doing so by the server
  */
-@NullMarked
 public interface PlayerFailMoveEvent extends PlayerEventNew {
 
     /**

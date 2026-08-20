@@ -5,12 +5,10 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player places an item in or takes an item out of a flowerpot.
  */
-@NullMarked
 public interface PlayerFlowerPotManipulateEvent extends PlayerEventNew, Cancellable {
 
     /**

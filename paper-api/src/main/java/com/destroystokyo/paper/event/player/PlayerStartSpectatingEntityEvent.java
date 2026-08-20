@@ -4,12 +4,10 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Triggered when a player starts spectating an entity in spectator mode.
  */
-@NullMarked
 public interface PlayerStartSpectatingEntityEvent extends PlayerEventNew, Cancellable {
 
     /**

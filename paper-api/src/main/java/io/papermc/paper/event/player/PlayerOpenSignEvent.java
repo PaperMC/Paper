@@ -6,14 +6,12 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player begins editing a sign's text.
  * <p>
  * Cancelling this event stops the sign editing menu from opening.
  */
-@NullMarked
 public interface PlayerOpenSignEvent extends PlayerEventNew, Cancellable {
 
     /**
