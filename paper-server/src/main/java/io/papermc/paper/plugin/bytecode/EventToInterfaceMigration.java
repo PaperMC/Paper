@@ -21,7 +21,8 @@ public final class EventToInterfaceMigration {
                 PlayerClientLoadedWorldEvent.class,
                 PlayerCustomClickEvent.class,
                 PlayerDeepSleepEvent.class,
-                PlayerFailMoveEvent.class
+                PlayerFailMoveEvent.class,
+                PlayerFlowerPotManipulateEvent.class
                 //</editor-fold>
             );
 
