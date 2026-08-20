@@ -3,12 +3,7 @@ package io.papermc.paper.plugin.bytecode;
 import io.papermc.asm.ClassInfoProvider;
 import io.papermc.asm.RewriteRuleVisitorFactory;
 import io.papermc.asm.rules.classes.ClassToInterfaceRule;
-import io.papermc.paper.event.player.PlayerClientLoadedWorldEvent;
-import io.papermc.paper.event.player.PlayerCustomClickEvent;
-import io.papermc.paper.event.player.PlayerDeepSleepEvent;
-import io.papermc.paper.event.player.PlayerFailMoveEvent;
-import io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent;
-import io.papermc.paper.event.player.PlayerInsertLecternBookEvent;
+import io.papermc.paper.event.player.*;
 import java.util.Set;
 import org.bukkit.event.Event;
 import org.objectweb.asm.ClassReader;
@@ -28,7 +23,8 @@ public final class EventToInterfaceMigration {
                 PlayerDeepSleepEvent.class,
                 PlayerFailMoveEvent.class,
                 PlayerFlowerPotManipulateEvent.class,
-                PlayerInsertLecternBookEvent.class
+                PlayerInsertLecternBookEvent.class,
+                PlayerInventorySlotChangeEvent.class
                 //</editor-fold>
             );
 
