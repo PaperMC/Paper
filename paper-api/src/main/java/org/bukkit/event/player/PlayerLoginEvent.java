@@ -1,14 +1,10 @@
 package org.bukkit.event.player;
 
-import java.net.InetAddress;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
-import org.bukkit.Warning;
+import java.net.InetAddress;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.bukkit.entity.Player;
+import org.bukkit.Warning;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Stores details for players attempting to log in.
@@ -26,43 +22,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @Warning(reason = "Listening to this event causes the player to be created early.")
 @Deprecated(since = "1.21.6")
-public class PlayerLoginEvent extends PlayerEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final String hostname;
-    private final InetAddress address;
-    private final InetAddress realAddress;
-    private Result result = Result.ALLOWED;
-    private Component message = Component.empty();
-
-    @ApiStatus.Internal
-    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address, final @NotNull InetAddress realAddress) {
-        super(player);
-        this.hostname = hostname;
-        this.address = address;
-        this.realAddress = realAddress;
-    }
-
-    @ApiStatus.Internal
-    public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address) {
-        this(player, hostname, address, address);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final String message, @NotNull final InetAddress realAddress) {
-        this(player, hostname, address, realAddress);
-        this.result = result;
-        this.message = LegacyComponentSerializer.legacySection().deserialize(message);
-    }
-
-    @ApiStatus.Internal
-    public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message, @NotNull final InetAddress realAddress) {
-        this(player, hostname, address, realAddress);
-        this.result = result;
-        this.message = message;
-    }
+public interface PlayerLoginEvent extends PlayerEventNew {
 
     /**
      * Gets the hostname that the player used to connect to the server, or
@@ -70,10 +30,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      *
      * @return The hostname
      */
-    @NotNull
-    public String getHostname() {
-        return this.hostname;
-    }
+    String getHostname();
 
     /**
      * Gets the {@link InetAddress} for the Player associated with this event.
@@ -83,10 +40,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      * @return The address for this player. For legacy compatibility, this may
      *     be {@code null}.
      */
-    @NotNull
-    public InetAddress getAddress() {
-        return this.address;
-    }
+    InetAddress getAddress();
 
     /**
      * Gets the connection address of this player, regardless of whether it has
@@ -95,47 +49,35 @@ public class PlayerLoginEvent extends PlayerEvent {
      * @return the player's connection address
      * @see #getAddress()
      */
-    @NotNull
-    public InetAddress getRealAddress() {
-        return this.realAddress;
-    }
+    InetAddress getRealAddress();
 
     /**
      * Gets the current result of the login, as an enum
      *
      * @return Current Result of the login
      */
-    @NotNull
-    public Result getResult() {
-        return this.result;
-    }
+    Result getResult();
 
     /**
      * Sets the new result of the login, as an enum
      *
      * @param result New result to set
      */
-    public void setResult(@NotNull final Result result) {
-        this.result = result;
-    }
+    void setResult(Result result);
 
     /**
      * Gets the current kick message that will be used when the outcome is not allowed
      *
      * @return Current kick message
      */
-    public @NotNull Component kickMessage() {
-        return this.message;
-    }
+    Component kickMessage();
 
     /**
      * Sets the kick message to display when the outcome is not allowed
      *
      * @param message New kick message
      */
-    public void kickMessage(@NotNull Component message) {
-        this.message = message;
-    }
+    void kickMessage(Component message);
 
     /**
      * Gets the current kick message that will be used when the outcome is not allowed
@@ -143,11 +85,8 @@ public class PlayerLoginEvent extends PlayerEvent {
      * @return Current kick message
      * @deprecated in favour of {@link #kickMessage()}
      */
-    @NotNull
     @Deprecated // Paper
-    public String getKickMessage() {
-        return LegacyComponentSerializer.legacySection().serialize(this.message);
-    }
+    String getKickMessage();
 
     /**
      * Sets the kick message to display when the outcome is not allowed
@@ -156,17 +95,12 @@ public class PlayerLoginEvent extends PlayerEvent {
      * @deprecated in favour of {@link #kickMessage(Component)}
      */
     @Deprecated
-    public void setKickMessage(@NotNull final String message) {
-        this.message = LegacyComponentSerializer.legacySection().deserialize(message);
-    }
+    void setKickMessage(String message);
 
     /**
      * Allows the player to log in
      */
-    public void allow() {
-        this.result = Result.ALLOWED;
-        this.message = Component.empty();
-    }
+    void allow();
 
     /**
      * Disallows the player from logging in, with the given reason
@@ -176,10 +110,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      * @deprecated in favour of {@link #disallow(Result, Component)}
      */
     @Deprecated
-    public void disallow(@NotNull final Result result, @NotNull final String message) {
-        this.result = result;
-        this.message = LegacyComponentSerializer.legacySection().deserialize(message);
-    }
+    void disallow(Result result, String message);
 
     /**
      * Disallows the player from logging in, with the given reason
@@ -187,26 +118,19 @@ public class PlayerLoginEvent extends PlayerEvent {
      * @param result New result for disallowing the player
      * @param message Kick message to display to the user
      */
-    public void disallow(@NotNull final Result result, @NotNull final Component message) {
-        this.result = result;
-        this.message = message;
-    }
+    void disallow(Result result, Component message);
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
      * Basic kick reasons for communicating to plugins
      */
-    public enum Result {
+    enum Result {
 
         /**
          * The player is allowed to log in
