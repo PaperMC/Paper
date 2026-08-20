@@ -3,12 +3,10 @@ package io.papermc.paper.event.block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when the progress of a block break is updated.
  */
-@NullMarked
 public interface BlockBreakProgressUpdateEvent extends BlockEventNew {
 
     /**

@@ -8,7 +8,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a Target Block is hit by a projectile.
@@ -17,7 +16,6 @@ import org.jspecify.annotations.NullMarked;
  * and in the case that the shooter is a player, will stop them from receiving
  * advancement criteria.
  */
-@NullMarked
 public class TargetHitEvent extends ProjectileHitEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

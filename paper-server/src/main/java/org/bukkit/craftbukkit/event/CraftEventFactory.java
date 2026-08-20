@@ -111,6 +111,10 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.entity.CraftSpellcaster;
+import org.bukkit.craftbukkit.event.block.CraftBlockFormEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockGrowEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
+import org.bukkit.craftbukkit.event.block.CraftEntityBlockFormEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEntityEvent;
@@ -953,7 +957,7 @@ public class CraftEventFactory {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(level, target);
         snapshot.setBlock(state);
 
-        BlockSpreadEvent event = new BlockSpreadEvent(snapshot.getBlock(), CraftBlock.at(level, CraftEventFactory.sourceBlockOverride != null ? CraftEventFactory.sourceBlockOverride : source), snapshot);
+        BlockSpreadEvent event = new CraftBlockSpreadEvent(snapshot.getBlock(), CraftBlock.at(level, CraftEventFactory.sourceBlockOverride != null ? CraftEventFactory.sourceBlockOverride : source), snapshot);
         if (event.callEvent()) {
             boolean result = snapshot.place(flags);
             return !checkSetResult || result;
@@ -1283,7 +1287,7 @@ public class CraftEventFactory {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(level, pos);
         snapshot.setBlock(state);
 
-        BlockGrowEvent event = new BlockGrowEvent(snapshot.getBlock(), snapshot);
+        BlockGrowEvent event = new CraftBlockGrowEvent(snapshot.getBlock(), snapshot);
         if (event.callEvent()) {
             snapshot.place(flags);
             return true;
@@ -1932,7 +1936,7 @@ public class CraftEventFactory {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(level, pos);
         snapshot.setBlock(state);
 
-        BlockFormEvent event = (entity == null) ? new BlockFormEvent(snapshot.getBlock(), snapshot) : new EntityBlockFormEvent(entity.getBukkitEntity(), snapshot.getBlock(), snapshot);
+        BlockFormEvent event = (entity == null) ? new CraftBlockFormEvent(snapshot.getBlock(), snapshot) : new CraftEntityBlockFormEvent(entity.getBukkitEntity(), snapshot.getBlock(), snapshot);
         if (event.callEvent()) {
             boolean result = snapshot.place(flags);
             return !checkSetResult || result;
