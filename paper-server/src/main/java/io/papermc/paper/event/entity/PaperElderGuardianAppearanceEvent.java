@@ -22,7 +22,7 @@ public class PaperElderGuardianAppearanceEvent extends CraftEntityEvent implemen
 
     @Override
     public ElderGuardian getEntity() {
-        return (ElderGuardian) super.getEntity();
+        return (ElderGuardian) this.entity;
     }
 
     @Override
