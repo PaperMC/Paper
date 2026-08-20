@@ -137,6 +137,7 @@ import org.bukkit.craftbukkit.event.block.CraftMoistureChangeEvent;
 import org.bukkit.craftbukkit.event.block.CraftNotePlayEvent;
 import org.bukkit.craftbukkit.event.block.CraftTNTPrimeEvent;
 import org.bukkit.craftbukkit.event.block.CraftVaultDisplayItemEvent;
+import org.bukkit.craftbukkit.event.entity.CraftAreaEffectCloudApplyEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPotionSplashEvent;
@@ -1888,7 +1889,7 @@ public class CraftEventFactory {
     }
 
     public static AreaEffectCloudApplyEvent callAreaEffectCloudApplyEvent(net.minecraft.world.entity.AreaEffectCloud cloud, List<LivingEntity> entities) {
-        AreaEffectCloudApplyEvent event = new AreaEffectCloudApplyEvent((AreaEffectCloud) cloud.getBukkitEntity(), entities);
+        AreaEffectCloudApplyEvent event = new CraftAreaEffectCloudApplyEvent((AreaEffectCloud) cloud.getBukkitEntity(), entities);
         cloud.level().getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
