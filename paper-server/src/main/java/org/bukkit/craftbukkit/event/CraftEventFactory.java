@@ -128,6 +128,7 @@ import org.bukkit.craftbukkit.event.block.CraftBlockRedstoneEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockShearEntityEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
 import org.bukkit.craftbukkit.event.block.CraftCauldronLevelChangeEvent;
+import org.bukkit.craftbukkit.event.block.CraftCrafterCraftEvent;
 import org.bukkit.craftbukkit.event.block.CraftEntityBlockFormEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
@@ -1459,7 +1460,7 @@ public class CraftEventFactory {
         CraftItemStack itemStack = CraftItemStack.asCraftMirror(result);
         CraftingRecipe craftingRecipe = (CraftingRecipe) holder.toBukkitRecipe();
 
-        CrafterCraftEvent crafterCraftEvent = new CrafterCraftEvent(block, craftingRecipe, itemStack);
+        CrafterCraftEvent crafterCraftEvent = new CraftCrafterCraftEvent(block, craftingRecipe, itemStack);
         Bukkit.getPluginManager().callEvent(crafterCraftEvent);
         return crafterCraftEvent;
     }
