@@ -3,36 +3,24 @@ package org.bukkit.event.player;
 import org.bukkit.Material;
 import org.bukkit.Warning;
 import org.bukkit.entity.Fish;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called whenever a player attempts to put a fish in a bucket.
  *
  * @deprecated Use the more generic {@link PlayerBucketEntityEvent}
  */
-@Deprecated(since = "1.16.5")
 @Warning
-public class PlayerBucketFishEvent extends PlayerBucketEntityEvent {
-
-    @ApiStatus.Internal
-    public PlayerBucketFishEvent(@NotNull Player player, @NotNull Fish fish, @NotNull ItemStack waterBucket, @NotNull ItemStack fishBucket, @NotNull EquipmentSlot hand) {
-        super(player, fish, waterBucket, fishBucket, hand);
-    }
+@Deprecated(since = "1.16.5")
+public interface PlayerBucketFishEvent extends PlayerBucketEntityEvent {
 
     /**
      * Gets the fish involved with this event.
      *
      * @return The fish involved with this event
      */
-    @NotNull
     @Override
-    public Fish getEntity() {
-        return (Fish) this.entity;
-    }
+    Fish getEntity();
 
     /**
      * Gets the bucket used.
@@ -42,9 +30,8 @@ public class PlayerBucketFishEvent extends PlayerBucketEntityEvent {
      * @return The used bucket
      * @deprecated Use {@link #getOriginalBucket()}
      */
-    @NotNull
     @Deprecated(since = "1.16.5")
-    public ItemStack getWaterBucket() {
+    default ItemStack getWaterBucket() {
         return this.getOriginalBucket();
     }
 
@@ -57,9 +44,8 @@ public class PlayerBucketFishEvent extends PlayerBucketEntityEvent {
      * @return The bucket that the fish will be put into
      * @deprecated Use {@link #getEntityBucket()}
      */
-    @NotNull
     @Deprecated(since = "1.16.5")
-    public ItemStack getFishBucket() {
+    default ItemStack getFishBucket() {
         return this.getEntityBucket();
     }
 }
