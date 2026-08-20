@@ -138,6 +138,7 @@ import org.bukkit.craftbukkit.event.block.CraftNotePlayEvent;
 import org.bukkit.craftbukkit.event.block.CraftTNTPrimeEvent;
 import org.bukkit.craftbukkit.event.block.CraftVaultDisplayItemEvent;
 import org.bukkit.craftbukkit.event.entity.CraftAreaEffectCloudApplyEvent;
+import org.bukkit.craftbukkit.event.entity.CraftArrowBodyCountChangeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPotionSplashEvent;
@@ -2051,7 +2052,7 @@ public class CraftEventFactory {
     public static ArrowBodyCountChangeEvent callArrowBodyCountChangeEvent(net.minecraft.world.entity.LivingEntity entity, int oldAmount, int newAmount, boolean isReset) {
         org.bukkit.entity.LivingEntity bukkitEntity = (LivingEntity) entity.getBukkitEntity();
 
-        ArrowBodyCountChangeEvent event = new ArrowBodyCountChangeEvent(bukkitEntity, oldAmount, newAmount, isReset);
+        ArrowBodyCountChangeEvent event = new CraftArrowBodyCountChangeEvent(bukkitEntity, oldAmount, newAmount, isReset);
         Bukkit.getPluginManager().callEvent(event);
 
         return event;

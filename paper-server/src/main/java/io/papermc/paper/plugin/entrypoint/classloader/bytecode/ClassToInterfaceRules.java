@@ -304,7 +304,8 @@ public final class ClassToInterfaceRules {
             PotionSplashEvent.class,
             WaterBottleSplashEvent.class,
             TargetHitEvent.class,
-            AreaEffectCloudApplyEvent.class
+            AreaEffectCloudApplyEvent.class,
+            ArrowBodyCountChangeEvent.class
             //</editor-fold>
         );
     }
