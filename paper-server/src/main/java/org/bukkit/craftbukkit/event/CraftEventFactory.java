@@ -116,6 +116,7 @@ import org.bukkit.craftbukkit.event.block.CraftBlockDamageAbortEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockDamageEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockDispenseLootEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockDropItemEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockExplodeEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockGrowEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
@@ -2170,7 +2171,7 @@ public class CraftEventFactory {
     }
 
     public static BlockExplodeEvent callBlockExplodeEvent(Block block, BlockState state, List<Block> blocks, float yield, Explosion.BlockInteraction effect) {
-        BlockExplodeEvent event = new BlockExplodeEvent(block, state, blocks, yield, CraftExplosionResult.toExplosionResult(effect));
+        BlockExplodeEvent event = new CraftBlockExplodeEvent(block, state, blocks, yield, CraftExplosionResult.toExplosionResult(effect));
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
