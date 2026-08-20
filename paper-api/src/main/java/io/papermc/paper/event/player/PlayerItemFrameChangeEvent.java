@@ -5,13 +5,11 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Called when an {@link ItemFrame} is having an item rotated, added, or removed from it.
  */
-@NullMarked
 public interface PlayerItemFrameChangeEvent extends PlayerEventNew, Cancellable {
 
     /**

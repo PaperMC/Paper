@@ -6,7 +6,6 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.server.ServerEvent;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -19,7 +18,6 @@ import org.jspecify.annotations.Nullable;
  * See {@link AsyncChatCommandDecorateEvent} for the decoration of messages sent via commands
  */
 @ApiStatus.Experimental
-@NullMarked
 public class AsyncChatDecorateEvent extends ServerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

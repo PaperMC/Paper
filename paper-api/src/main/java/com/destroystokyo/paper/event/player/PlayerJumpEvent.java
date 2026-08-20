@@ -5,7 +5,6 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when the server detects the player is jumping.
@@ -14,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
  * when checking for jumps via {@link PlayerMoveEvent}, this event is fired whenever
  * the server detects that the player is jumping.
  */
-@NullMarked
 public interface PlayerJumpEvent extends PlayerEventNew, Cancellable {
 
     /**

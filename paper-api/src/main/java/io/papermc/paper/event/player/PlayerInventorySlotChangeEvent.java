@@ -4,12 +4,10 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a slot contents change in a player's inventory.
  */
-@NullMarked
 public interface PlayerInventorySlotChangeEvent extends PlayerEventNew {
 
     /**

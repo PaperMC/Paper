@@ -5,12 +5,10 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.MerchantRecipe;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player trades with a standalone merchant GUI.
  */
-@NullMarked
 public interface PlayerPurchaseEvent extends PlayerEventNew, Cancellable {
 
     /**

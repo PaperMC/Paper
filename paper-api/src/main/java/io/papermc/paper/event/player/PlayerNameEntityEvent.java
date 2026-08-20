@@ -5,13 +5,11 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Called when the player is attempting to rename a mob
  */
-@NullMarked
 public interface PlayerNameEntityEvent extends PlayerEventNew, Cancellable {
 
     /**

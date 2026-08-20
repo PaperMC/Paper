@@ -7,10 +7,46 @@ import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-import static org.bukkit.Material.*;
+import static org.bukkit.Material.CARVED_PUMPKIN;
+import static org.bukkit.Material.CHAINMAIL_BOOTS;
+import static org.bukkit.Material.CHAINMAIL_CHESTPLATE;
+import static org.bukkit.Material.CHAINMAIL_HELMET;
+import static org.bukkit.Material.CHAINMAIL_LEGGINGS;
+import static org.bukkit.Material.COPPER_BOOTS;
+import static org.bukkit.Material.COPPER_CHESTPLATE;
+import static org.bukkit.Material.COPPER_HELMET;
+import static org.bukkit.Material.COPPER_LEGGINGS;
+import static org.bukkit.Material.CREEPER_HEAD;
+import static org.bukkit.Material.DIAMOND_BOOTS;
+import static org.bukkit.Material.DIAMOND_CHESTPLATE;
+import static org.bukkit.Material.DIAMOND_HELMET;
+import static org.bukkit.Material.DIAMOND_LEGGINGS;
+import static org.bukkit.Material.DRAGON_HEAD;
+import static org.bukkit.Material.ELYTRA;
+import static org.bukkit.Material.GOLDEN_BOOTS;
+import static org.bukkit.Material.GOLDEN_CHESTPLATE;
+import static org.bukkit.Material.GOLDEN_HELMET;
+import static org.bukkit.Material.GOLDEN_LEGGINGS;
+import static org.bukkit.Material.IRON_BOOTS;
+import static org.bukkit.Material.IRON_CHESTPLATE;
+import static org.bukkit.Material.IRON_HELMET;
+import static org.bukkit.Material.IRON_LEGGINGS;
+import static org.bukkit.Material.LEATHER_BOOTS;
+import static org.bukkit.Material.LEATHER_CHESTPLATE;
+import static org.bukkit.Material.LEATHER_HELMET;
+import static org.bukkit.Material.LEATHER_LEGGINGS;
+import static org.bukkit.Material.NETHERITE_BOOTS;
+import static org.bukkit.Material.NETHERITE_CHESTPLATE;
+import static org.bukkit.Material.NETHERITE_HELMET;
+import static org.bukkit.Material.NETHERITE_LEGGINGS;
+import static org.bukkit.Material.PIGLIN_HEAD;
+import static org.bukkit.Material.PLAYER_HEAD;
+import static org.bukkit.Material.SKELETON_SKULL;
+import static org.bukkit.Material.TURTLE_HELMET;
+import static org.bukkit.Material.WITHER_SKELETON_SKULL;
+import static org.bukkit.Material.ZOMBIE_HEAD;
 
 /**
  * Called when the player themselves change their armor items
@@ -18,7 +54,6 @@ import static org.bukkit.Material.*;
  * Not currently called for environmental factors though it <strong>MAY BE IN THE FUTURE</strong>
  * @apiNote Use {@link io.papermc.paper.event.entity.EntityEquipmentChangedEvent} for all entity equipment changes
  */
-@NullMarked
 @ApiStatus.Obsolete(since = "1.21.4")
 public interface PlayerArmorChangeEvent extends PlayerEventNew {
 

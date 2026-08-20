@@ -17,6 +17,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
 public final class EventToInterfaceMigration {
 
@@ -156,7 +157,8 @@ public final class EventToInterfaceMigration {
                 PlayerShearBlockEvent.class,
                 PlayerNaturallySpawnCreaturesEvent.class,
                 LootableInventoryReplenishEvent.class,
-                UncheckedSignChangeEvent.class
+                UncheckedSignChangeEvent.class,
+                PlayerSpawnLocationEvent.class
                 //</editor-fold>
             );
 

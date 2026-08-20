@@ -5,7 +5,6 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -16,7 +15,6 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>WARNING: TAMPERING WITH THIS EVENT CAN BE DANGEROUS</p>
  */
-@NullMarked
 public interface PlayerHandshakeEvent extends Event, Cancellable {
 
     /**

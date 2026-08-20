@@ -1,7 +1,6 @@
 package io.papermc.paper.event.player;
 
 import org.bukkit.entity.Entity;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Event that is fired when a player uses the pick item functionality on an entity
@@ -9,7 +8,6 @@ import org.jspecify.annotations.NullMarked;
  * After the handling of this event, the contents of the source and the target slot will be swapped,
  * and the currently selected hotbar slot of the player will be set to the target slot.
  */
-@NullMarked
 public interface PlayerPickEntityEvent extends PlayerPickItemEvent {
 
     /**

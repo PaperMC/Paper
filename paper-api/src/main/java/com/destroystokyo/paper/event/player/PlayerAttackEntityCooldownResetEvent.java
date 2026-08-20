@@ -4,7 +4,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when processing a player's attack on an entity when the player's attack strength cooldown is reset.
@@ -15,7 +14,6 @@ import org.jspecify.annotations.NullMarked;
  * Additionally, the cancellation of event is misleading as the client will reset the cooldown manually.
  * So there is no way for the server to control this.
  */
-@NullMarked
 @Deprecated(since = "26.1", forRemoval = true)
 public interface PlayerAttackEntityCooldownResetEvent extends PlayerEventNew, Cancellable {
 

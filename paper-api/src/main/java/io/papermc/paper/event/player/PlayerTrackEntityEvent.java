@@ -5,7 +5,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Is called when a {@link Player} tracks an {@link Entity}.
@@ -15,7 +14,6 @@ import org.jspecify.annotations.NullMarked;
  * Adding or removing entities from the world at the point in time this event is called is completely
  * unsupported and should be avoided.
  */
-@NullMarked
 public interface PlayerTrackEntityEvent extends PlayerEventNew, Cancellable {
 
     /**

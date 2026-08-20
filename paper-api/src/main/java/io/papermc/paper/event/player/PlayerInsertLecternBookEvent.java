@@ -6,13 +6,11 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.ItemStack;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * This event is called when a player clicks on a lectern to insert a book.
  * If this event is cancelled the player will keep the book and the lectern will remain empty.
  */
-@NullMarked
 public interface PlayerInsertLecternBookEvent extends PlayerEventNew, Cancellable {
 
     /**

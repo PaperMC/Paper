@@ -5,13 +5,11 @@ import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEventNew;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called after a player is granted a criteria in an advancement.
  * If cancelled the criteria will be revoked.
  */
-@NullMarked
 public interface PlayerAdvancementCriterionGrantEvent extends PlayerEventNew, Cancellable {
 
     /**
