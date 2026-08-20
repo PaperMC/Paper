@@ -94,7 +94,8 @@ public final class EventToInterfaceMigration {
                 PlayerItemBreakEvent.class,
                 PlayerItemConsumeEvent.class,
                 PlayerItemDamageEvent.class,
-                PlayerItemHeldEvent.class
+                PlayerItemHeldEvent.class,
+                PlayerItemMendEvent.class
                 //</editor-fold>
             );
 
