@@ -1,6 +1,7 @@
 package io.papermc.paper.plugin.entrypoint.classloader;
 
 import io.papermc.paper.plugin.configuration.PluginMeta;
+import io.papermc.paper.plugin.entrypoint.classloader.bytecode.ClassloaderBytecodeModifier;
 import io.papermc.paper.plugin.util.NamespaceChecker;
 import org.jetbrains.annotations.ApiStatus;
 

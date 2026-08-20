@@ -1,0 +1,302 @@
+package io.papermc.paper.plugin.entrypoint.classloader.bytecode;
+
+import com.destroystokyo.paper.event.block.*;
+import com.destroystokyo.paper.event.brigadier.*;
+import com.destroystokyo.paper.event.entity.*;
+import com.destroystokyo.paper.event.player.*;
+import com.destroystokyo.paper.loottable.*;
+import io.papermc.asm.ClassInfoProvider;
+import io.papermc.asm.RewriteRuleVisitorFactory;
+import io.papermc.asm.rules.classes.ClassToInterfaceRule;
+import io.papermc.paper.event.block.*;
+import io.papermc.paper.event.entity.*;
+import io.papermc.paper.event.packet.*;
+import io.papermc.paper.event.player.*;
+import java.util.Map;
+import java.util.Set;
+import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.event.block.*;
+import org.bukkit.event.entity.*;
+import org.bukkit.event.inventory.*;
+import org.bukkit.event.player.*;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
+import org.spigotmc.event.player.PlayerSpawnLocationEvent;
+
+public final class ClassToInterfaceRules {
+
+    private static final RewriteRuleVisitorFactory VISITOR_FACTORY = RewriteRuleVisitorFactory.create(
+        Opcodes.ASM9,
+        chain -> {
+            for (final Class<?> klass : classes()) {
+                chain.then(new ClassToInterfaceRule(klass.describeConstable().orElseThrow(), null));
+            }
+
+            for (final Map.Entry<Class<?>, Class<?>> classes : classesWithRedirections().entrySet()) {
+                chain.then(new ClassToInterfaceRule(
+                    classes.getKey().describeConstable().orElseThrow(),
+                    classes.getValue().describeConstable().orElseThrow()
+                ));
+            }
+        },
+        ClassInfoProvider.basic()
+    );
+
+    private ClassToInterfaceRules() {
+    }
+
+    public static ClassVisitor visitor(final ClassVisitor parent) {
+        return VISITOR_FACTORY.createVisitor(parent);
+    }
+
+    public static byte[] processClass(final byte[] bytes) {
+        final ClassReader classReader = new ClassReader(bytes);
+        final ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        classReader.accept(visitor(classWriter), 0);
+        return classWriter.toByteArray();
+    }
+
+    private static Map<Class<?>, Class<?>> classesWithRedirections() {
+        return Map.of(
+            //<editor-fold desc="event classes" defaultstate="collapsed">
+            //Event.class, CraftEvent.class,
+            PlayerEvent.class, CraftPlayerEvent.class,
+            BlockEvent.class, CraftBlockEvent.class
+            //</editor-fold>
+        );
+    }
+
+    private static Set<Class<?>> classes() {
+        return Set.of(
+            //<editor-fold desc="event classes" defaultstate="collapsed">
+            PlayerClientLoadedWorldEvent.class,
+            PlayerCustomClickEvent.class,
+            PlayerDeepSleepEvent.class,
+            PlayerFailMoveEvent.class,
+            PlayerFlowerPotManipulateEvent.class,
+            PlayerInsertLecternBookEvent.class,
+            PlayerInventorySlotChangeEvent.class,
+            PlayerChangeBeaconEffectEvent.class,
+            PlayerBedFailEnterEvent.class,
+            PlayerItemFrameChangeEvent.class,
+            PlayerLecternPageChangeEvent.class,
+            PlayerLoomPatternSelectEvent.class,
+            PlayerMapFilledEvent.class,
+            PlayerNameEntityEvent.class,
+            PlayerOpenSignEvent.class,
+            PlayerServerFullCheckEvent.class,
+            PlayerShieldDisableEvent.class,
+            PlayerStonecutterRecipeSelectEvent.class,
+            PlayerPickItemEvent.class,
+            PlayerPickBlockEvent.class,
+            PlayerPickEntityEvent.class,
+            PlayerStopUsingItemEvent.class,
+            PlayerTrackEntityEvent.class,
+            PlayerUntrackEntityEvent.class,
+            PrePlayerAttackEntityEvent.class,
+            PlayerPurchaseEvent.class,
+            PlayerTradeEvent.class,
+            PlayerItemGroupCooldownEvent.class,
+            PlayerItemCooldownEvent.class,
+            AsyncPlayerSpawnLocationEvent.class,
+            AbstractChatEvent.class,
+            AsyncChatEvent.class,
+            ChatEvent.class,
+            PlayerCommandPreprocessEvent.class,
+            PlayerSignCommandPreprocessEvent.class,
+            AbstractRespawnEvent.class,
+            PlayerRespawnEvent.class,
+            PlayerPostRespawnEvent.class,
+            PlayerAnimationEvent.class,
+            PlayerArmSwingEvent.class,
+            PlayerAdvancementDoneEvent.class,
+            PlayerInteractEntityEvent.class,
+            PlayerInteractAtEntityEvent.class,
+            PlayerArmorStandManipulateEvent.class,
+            PlayerAttemptPickupItemEvent.class,
+            PlayerBedEnterEvent.class,
+            PlayerBedLeaveEvent.class,
+            PlayerBucketEvent.class,
+            PlayerBucketFillEvent.class,
+            PlayerBucketEmptyEvent.class,
+            PlayerBucketEntityEvent.class,
+            PlayerBucketFishEvent.class,
+            PlayerChangedMainHandEvent.class,
+            PlayerChangedWorldEvent.class,
+            PlayerChannelEvent.class,
+            PlayerRegisterChannelEvent.class,
+            PlayerUnregisterChannelEvent.class,
+            PlayerChatEvent.class,
+            PlayerChatTabCompleteEvent.class,
+            PlayerCommandSendEvent.class,
+            PlayerDropItemEvent.class,
+            PlayerEditBookEvent.class,
+            PlayerEggThrowEvent.class,
+            PlayerExpChangeEvent.class,
+            PlayerExpCooldownChangeEvent.class,
+            PlayerFishEvent.class,
+            PlayerGameModeChangeEvent.class,
+            PlayerHarvestBlockEvent.class,
+            PlayerHideEntityEvent.class,
+            PlayerInputEvent.class,
+            PlayerInteractEvent.class,
+            PlayerItemBreakEvent.class,
+            PlayerItemConsumeEvent.class,
+            PlayerItemDamageEvent.class,
+            PlayerItemHeldEvent.class,
+            PlayerItemMendEvent.class,
+            PlayerJoinEvent.class,
+            PlayerKickEvent.class,
+            PlayerLevelChangeEvent.class,
+            PlayerLinksSendEvent.class,
+            PlayerLocaleChangeEvent.class,
+            PlayerLoginEvent.class,
+            PlayerMoveEvent.class,
+            PlayerTeleportEvent.class,
+            PlayerTeleportEndGatewayEvent.class,
+            PlayerPortalEvent.class,
+            PlayerPickupItemEvent.class,
+            PlayerPickupArrowEvent.class,
+            PlayerPreLoginEvent.class,
+            PlayerQuitEvent.class,
+            org.bukkit.event.player.PlayerRecipeBookClickEvent.class,
+            PlayerRecipeBookSettingsChangeEvent.class,
+            PlayerRecipeDiscoverEvent.class,
+            PlayerResourcePackStatusEvent.class,
+            PlayerRiptideEvent.class,
+            PlayerShearEntityEvent.class,
+            PlayerShowEntityEvent.class,
+            PlayerSignOpenEvent.class,
+            PlayerSpawnChangeEvent.class,
+            PlayerStatisticIncrementEvent.class,
+            PlayerSwapHandItemsEvent.class,
+            PlayerTakeLecternBookEvent.class,
+            PlayerToggleFlightEvent.class,
+            PlayerToggleSneakEvent.class,
+            PlayerToggleSprintEvent.class,
+            PlayerVelocityEvent.class,
+            AsyncPlayerChatEvent.class,
+            AsyncPlayerChatPreviewEvent.class,
+            IllegalPacketEvent.class,
+            PlayerAdvancementCriterionGrantEvent.class,
+            PlayerArmorChangeEvent.class,
+            PlayerAttackEntityCooldownResetEvent.class,
+            PlayerClientOptionsChangeEvent.class,
+            PlayerConnectionCloseEvent.class,
+            PlayerElytraBoostEvent.class,
+            PlayerHandshakeEvent.class,
+            PlayerJumpEvent.class,
+            PlayerLaunchProjectileEvent.class,
+            PlayerPickupExperienceEvent.class,
+            PlayerReadyArrowEvent.class,
+            com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent.class,
+            PlayerSetSpawnEvent.class,
+            PlayerStartSpectatingEntityEvent.class,
+            PlayerStopSpectatingEntityEvent.class,
+            PlayerUseUnknownEntityEvent.class,
+            AsyncPlayerSendCommandsEvent.class,
+            AsyncPlayerSendSuggestionsEvent.class,
+            ClientTickEndEvent.class,
+            PlayerShearBlockEvent.class,
+            PlayerNaturallySpawnCreaturesEvent.class,
+            LootableInventoryReplenishEvent.class,
+            UncheckedSignChangeEvent.class,
+            PlayerSpawnLocationEvent.class,
+            BeaconActivatedEvent.class,
+            BeaconDeactivatedEvent.class,
+            BellRevealRaiderEvent.class,
+            io.papermc.paper.event.block.BellRingEvent.class,
+            org.bukkit.event.block.BellRingEvent.class,
+            BlockBreakProgressUpdateEvent.class,
+            BlockFailedDispenseEvent.class,
+            BlockLockCheckEvent.class,
+            BlockPreDispenseEvent.class,
+            VaultChangeStateEvent.class,
+            CompostItemEvent.class,
+            EntityCompostItemEvent.class,
+            BlockExpEvent.class,
+            BlockBreakBlockEvent.class,
+            BlockBreakEvent.class,
+            FurnaceExtractEvent.class,
+            BlockDestroyEvent.class,
+            BlockGrowEvent.class,
+            BlockFormEvent.class,
+            DragonEggFormEvent.class,
+            EntityBlockFormEvent.class,
+            BlockSpreadEvent.class,
+            BellResonateEvent.class,
+            BlockBurnEvent.class,
+            BlockCanBuildEvent.class,
+            BlockCookEvent.class,
+            FurnaceSmeltEvent.class,
+            BlockDamageAbortEvent.class,
+            BlockDamageEvent.class,
+            BlockDispenseEvent.class,
+            BlockDispenseArmorEvent.class,
+            BlockDispenseLootEvent.class,
+            BlockDropItemEvent.class,
+            BlockExplodeEvent.class,
+            BlockFadeEvent.class,
+            BlockFertilizeEvent.class,
+            BlockFromToEvent.class,
+            BlockIgniteEvent.class,
+            BlockPlaceEvent.class,
+            BlockMultiPlaceEvent.class,
+            BlockPhysicsEvent.class,
+            BlockPistonEvent.class,
+            BlockPistonExtendEvent.class,
+            BlockPistonRetractEvent.class,
+            BlockReceiveGameEvent.class,
+            BlockRedstoneEvent.class,
+            BlockShearEntityEvent.class,
+            InventoryBlockStartEvent.class,
+            BrewingStartEvent.class,
+            CampfireStartEvent.class,
+            FurnaceStartSmeltEvent.class,
+            CauldronLevelChangeEvent.class,
+            CrafterCraftEvent.class,
+            FluidLevelChangeEvent.class,
+            LeavesDecayEvent.class,
+            MoistureChangeEvent.class,
+            NotePlayEvent.class,
+            SculkBloomEvent.class,
+            SignChangeEvent.class,
+            SpongeAbsorbEvent.class,
+            org.bukkit.event.block.TNTPrimeEvent.class,
+            VaultDisplayItemEvent.class,
+            BrewEvent.class,
+            BrewingStandFuelEvent.class,
+            FurnaceBurnEvent.class,
+            BeaconEffectEvent.class,
+            com.destroystokyo.paper.event.block.TNTPrimeEvent.class,
+            HopperInventorySearchEvent.class,
+            ElderGuardianAppearanceEvent.class,
+            EntityAttemptSmashAttackEvent.class,
+            EntityAttemptSpinAttackEvent.class,
+            EntityDamageItemEvent.class,
+            EntityDyeEvent.class,
+            SheepDyeWoolEvent.class,
+            EntityEffectTickEvent.class,
+            EntityEquipmentChangedEvent.class,
+            EntityFertilizeEggEvent.class,
+            EntityInsideBlockEvent.class,
+            EntityLoadCrossbowEvent.class,
+            io.papermc.paper.event.entity.EntityKnockbackEvent.class,
+            EntityPushedByEntityAttackEvent.class,
+            com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent.class,
+            EntityMoveEvent.class,
+            EntityPortalReadyEvent.class,
+            EntityToggleSitEvent.class,
+            FishHookStateChangeEvent.class,
+            ItemTransportingEntityValidateTargetEvent.class,
+            PufferFishStateChangeEvent.class,
+            ShulkerDuplicateEvent.class,
+            TameableDeathMessageEvent.class,
+            WardenAngerChangeEvent.class
+            //</editor-fold>
+        );
+    }
+}

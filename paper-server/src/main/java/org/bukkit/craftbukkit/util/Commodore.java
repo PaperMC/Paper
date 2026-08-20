@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.util;
 
 import com.google.common.base.Predicates;
 import com.google.common.io.ByteStreams;
-import io.papermc.paper.plugin.bytecode.EventToInterfaceMigration;
+import io.papermc.paper.plugin.entrypoint.classloader.bytecode.ClassToInterfaceRules;
 import io.papermc.paper.pluginremap.reflect.ReflectionRemapper;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -218,7 +218,9 @@ public class Commodore {
         ClassWriter cw = new ClassWriter(cr, 0);
 
         ClassVisitor visitor = cw;
-        visitor = EventToInterfaceMigration.visitor(visitor);
+        if (pluginVersion.isOlderThanOrSameAs(ApiVersion.EVENTS_TO_INTERFACE)) {
+            visitor = ClassToInterfaceRules.visitor(visitor);
+        }
 
         Map<String, String> renames = new HashMap<>(RENAMES);
         if (pluginVersion.isOlderThan(ApiVersion.ABSTRACT_COW)) {
