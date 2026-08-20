@@ -135,7 +135,8 @@ public final class EventToInterfaceMigration {
                 PlayerClientOptionsChangeEvent.class,
                 PlayerConnectionCloseEvent.class,
                 PlayerElytraBoostEvent.class,
-                PlayerHandshakeEvent.class
+                PlayerHandshakeEvent.class,
+                PlayerJumpEvent.class
                 //</editor-fold>
             );
 
