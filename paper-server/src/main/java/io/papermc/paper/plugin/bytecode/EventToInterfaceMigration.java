@@ -99,7 +99,8 @@ public final class EventToInterfaceMigration {
                 PlayerJoinEvent.class,
                 PlayerKickEvent.class,
                 PlayerLevelChangeEvent.class,
-                PlayerLinksSendEvent.class
+                PlayerLinksSendEvent.class,
+                PlayerLocaleChangeEvent.class
                 //</editor-fold>
             );
 
