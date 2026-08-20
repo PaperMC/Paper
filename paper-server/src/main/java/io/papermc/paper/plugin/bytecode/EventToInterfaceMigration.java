@@ -46,7 +46,8 @@ public final class EventToInterfaceMigration {
                 PlayerPurchaseEvent.class,
                 PlayerTradeEvent.class,
                 PlayerItemGroupCooldownEvent.class,
-                PlayerItemCooldownEvent.class
+                PlayerItemCooldownEvent.class,
+                AsyncPlayerSpawnLocationEvent.class
                 //</editor-fold>
             );
 
