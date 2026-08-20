@@ -125,7 +125,9 @@ public final class EventToInterfaceMigration {
                 PlayerToggleFlightEvent.class,
                 PlayerToggleSneakEvent.class,
                 PlayerToggleSprintEvent.class,
-                PlayerVelocityEvent.class
+                PlayerVelocityEvent.class,
+                AsyncPlayerChatEvent.class,
+                AsyncPlayerChatPreviewEvent.class
                 //</editor-fold>
             );
 
