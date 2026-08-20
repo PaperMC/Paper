@@ -67,7 +67,7 @@ index 79c804245c7f41a5a7f062e1c5e01760adde7d84..04fd492337cf3ec97b57a556561fffdb
              location,
              isBedSpawn,
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index bcd1a5dcbb43c604430001e27e8d711b41c8bab0..a0bc4df77be5b8be6ffa1e160f616669487f304f 100644
+index bcd1a5dcbb43c604430001e27e8d711b41c8bab0..9385fdd352409fb73918b7e9136452c453b96aca 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1077,8 +1077,8 @@ public class ServerGamePacketListenerImpl
@@ -108,6 +108,22 @@ index bcd1a5dcbb43c604430001e27e8d711b41c8bab0..a0bc4df77be5b8be6ffa1e160f616669
          this.cserver.getPluginManager().callEvent(event);
  
          if (event.isCancelled()) return;
+@@ -2887,13 +2887,13 @@ public class ServerGamePacketListenerImpl
+ 
+                             @Override
+                             public void onInteraction(InteractionHand hand) {
+-                                this.performInteraction(hand, Player::interactOn, new PlayerInteractEntityEvent(ServerGamePacketListenerImpl.this.getCraftPlayer(), target.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand))); // CraftBukkit
++                                this.performInteraction(hand, Player::interactOn, new org.bukkit.craftbukkit.event.player.CraftPlayerInteractEntityEvent(ServerGamePacketListenerImpl.this.getCraftPlayer(), target.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand))); // CraftBukkit
+                             }
+ 
+                             @Override
+                             public void onInteraction(InteractionHand hand, Vec3 interactionLocation) {
+                                 this.performInteraction(
+-                                    hand, (player, entity, interactionHand) -> entity.interactAt(player, interactionLocation, interactionHand), new PlayerInteractAtEntityEvent(ServerGamePacketListenerImpl.this.getCraftPlayer(), target.getBukkitEntity(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(interactionLocation), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand)) // CraftBukkit
++                                    hand, (player, entity, interactionHand) -> entity.interactAt(player, interactionLocation, interactionHand), new org.bukkit.craftbukkit.event.player.CraftPlayerInteractAtEntityEvent(ServerGamePacketListenerImpl.this.getCraftPlayer(), target.getBukkitEntity(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(interactionLocation), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand)) // CraftBukkit
+                                 );
+                             }
+ 
 @@ -3719,8 +3719,7 @@ public class ServerGamePacketListenerImpl
      private void markClientLoaded() {
          // Paper start - Add PlayerLoadedWorldEvent
@@ -222,6 +238,19 @@ index 6f49b5e5888a6296b929e465a5ef87dc49bd4516..ff6996f642ac5e4cc9abc79702add27b
              this.useItem.releaseUsing(this.level(), this, this.getUseItemRemainingTicks());
              if (this.useItem.useOnRelease()) {
                  this.updatingUsingItem();
+diff --git a/net/minecraft/world/entity/decoration/ArmorStand.java b/net/minecraft/world/entity/decoration/ArmorStand.java
+index 79ae039d1908830e81912d230b3540a4920e2017..2f0c452c038df3bda527b4bc24a0ef765614d806 100644
+--- a/net/minecraft/world/entity/decoration/ArmorStand.java
++++ b/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -286,7 +286,7 @@ public class ArmorStand extends LivingEntity {
+ 
+             org.bukkit.inventory.EquipmentSlot slot1 = org.bukkit.craftbukkit.CraftEquipmentSlot.getSlot(slot);
+             org.bukkit.inventory.EquipmentSlot hand1 = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand);
+-            org.bukkit.event.player.PlayerArmorStandManipulateEvent armorStandManipulateEvent = new org.bukkit.event.player.PlayerArmorStandManipulateEvent(player1, self, playerHeldItem, armorStandItem, slot1, hand1);
++            org.bukkit.event.player.PlayerArmorStandManipulateEvent armorStandManipulateEvent = new org.bukkit.craftbukkit.event.player.CraftPlayerArmorStandManipulateEvent(player1, self, playerHeldItem, armorStandItem, slot1, hand1);
+             this.level().getCraftServer().getPluginManager().callEvent(armorStandManipulateEvent);
+ 
+             if (armorStandManipulateEvent.isCancelled()) {
 diff --git a/net/minecraft/world/entity/decoration/ItemFrame.java b/net/minecraft/world/entity/decoration/ItemFrame.java
 index 462ad83bc08d6d6ae55ee852489439ff6e1dc845..f91cb6d32dc3b1f66c735120600536babc7fa907 100644
 --- a/net/minecraft/world/entity/decoration/ItemFrame.java
