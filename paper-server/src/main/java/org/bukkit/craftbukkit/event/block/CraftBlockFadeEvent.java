@@ -1,0 +1,37 @@
+package org.bukkit.craftbukkit.event.block;
+
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockFadeEvent;
+
+public class CraftBlockFadeEvent extends CraftBlockEvent implements BlockFadeEvent {
+
+    private final BlockState newState;
+    private boolean cancelled;
+
+    public CraftBlockFadeEvent(final Block block, final BlockState newState) {
+        super(block);
+        this.newState = newState;
+    }
+
+    @Override
+    public BlockState getNewState() {
+        return this.newState;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(final boolean cancel) {
+        this.cancelled = cancel;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return BlockFadeEvent.getHandlerList();
+    }
+}

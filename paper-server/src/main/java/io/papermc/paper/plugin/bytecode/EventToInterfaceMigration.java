@@ -197,7 +197,8 @@ public final class EventToInterfaceMigration {
                 BlockDispenseArmorEvent.class,
                 BlockDispenseLootEvent.class,
                 BlockDropItemEvent.class,
-                BlockExplodeEvent.class
+                BlockExplodeEvent.class,
+                BlockFadeEvent.class
                 //</editor-fold>
             );
 
