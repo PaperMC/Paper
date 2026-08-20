@@ -1,10 +1,6 @@
 package org.bukkit.event.block;
 
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a block is formed or spreads based on world conditions.
@@ -16,31 +12,20 @@ import org.jetbrains.annotations.NotNull;
  * <ul>
  * <li>Snow forming due to a snow storm.
  * <li>Ice forming in a snowy Biome like Taiga or Tundra.
- * <li> Obsidian / Cobblestone forming due to contact with water.
- * <li> Concrete forming due to mixing of concrete powder and water.
+ * <li>Obsidian / Cobblestone forming due to contact with water.
+ * <li>Concrete forming due to mixing of concrete powder and water.
  * </ul>
  * <p>
  * If this event is cancelled, the block will not be formed.
  *
  * @see BlockSpreadEvent
  */
-public class BlockFormEvent extends BlockGrowEvent {
+public interface BlockFormEvent extends BlockGrowEvent {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    @ApiStatus.Internal
-    public BlockFormEvent(@NotNull final Block block, @NotNull final BlockState newState) {
-        super(block, newState);
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

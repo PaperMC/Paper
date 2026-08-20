@@ -180,7 +180,12 @@ public final class EventToInterfaceMigration {
                 BlockBreakBlockEvent.class,
                 BlockBreakEvent.class,
                 FurnaceExtractEvent.class,
-                BlockDestroyEvent.class
+                BlockDestroyEvent.class,
+                BlockGrowEvent.class,
+                BlockFormEvent.class,
+                DragonEggFormEvent.class,
+                EntityBlockFormEvent.class,
+                BlockSpreadEvent.class
                 //</editor-fold>
             );
 

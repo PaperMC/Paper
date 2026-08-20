@@ -5,13 +5,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEventNew;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a vault block changes state.
  */
-@NullMarked
 public interface VaultChangeStateEvent extends BlockEventNew, Cancellable {
 
     /**

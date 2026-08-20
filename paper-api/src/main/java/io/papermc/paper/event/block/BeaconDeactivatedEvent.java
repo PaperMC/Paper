@@ -3,13 +3,11 @@ package io.papermc.paper.event.block;
 import org.bukkit.block.Beacon;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEventNew;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a beacon is deactivated, either because its base block(s) or itself were destroyed.
  */
-@NullMarked
 public interface BeaconDeactivatedEvent extends BlockEventNew {
 
     /**
