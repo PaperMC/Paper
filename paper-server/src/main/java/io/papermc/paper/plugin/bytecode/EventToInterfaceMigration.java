@@ -244,7 +244,10 @@ public final class EventToInterfaceMigration {
                 EntityEquipmentChangedEvent.class,
                 EntityFertilizeEggEvent.class,
                 EntityInsideBlockEvent.class,
-                EntityLoadCrossbowEvent.class
+                EntityLoadCrossbowEvent.class,
+                io.papermc.paper.event.entity.EntityKnockbackEvent.class,
+                EntityPushedByEntityAttackEvent.class,
+                com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent.class
                 //</editor-fold>
             );
 
