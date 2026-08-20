@@ -38,7 +38,8 @@ public final class EventToInterfaceMigration {
                 PlayerStonecutterRecipeSelectEvent.class,
                 PlayerPickItemEvent.class,
                 PlayerPickBlockEvent.class,
-                PlayerPickEntityEvent.class
+                PlayerPickEntityEvent.class,
+                PlayerStopUsingItemEvent.class
                 //</editor-fold>
             );
 
