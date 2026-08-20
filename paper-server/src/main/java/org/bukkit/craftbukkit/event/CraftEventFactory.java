@@ -140,10 +140,16 @@ import org.bukkit.craftbukkit.event.block.CraftVaultDisplayItemEvent;
 import org.bukkit.craftbukkit.event.entity.CraftAreaEffectCloudApplyEvent;
 import org.bukkit.craftbukkit.event.entity.CraftArrowBodyCountChangeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftBatToggleSleepEvent;
+import org.bukkit.craftbukkit.event.entity.CraftCreatureSpawnEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
+import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftProjectileHitEvent;
+import org.bukkit.craftbukkit.event.entity.CraftProjectileLaunchEvent;
+import org.bukkit.craftbukkit.event.entity.CraftSpawnerSpawnEvent;
+import org.bukkit.craftbukkit.event.entity.CraftTrialSpawnerSpawnEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEntityEvent;
@@ -835,13 +841,13 @@ public class CraftEventFactory {
     public static EntitySpawnEvent callEntitySpawnEvent(Entity entity) {
         org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
 
-        EntitySpawnEvent event = new EntitySpawnEvent(bukkitEntity);
+        EntitySpawnEvent event = new CraftEntitySpawnEvent(bukkitEntity);
         bukkitEntity.getServer().getPluginManager().callEvent(event);
         return event;
     }
 
     public static CreatureSpawnEvent callCreatureSpawnEvent(net.minecraft.world.entity.LivingEntity entity, SpawnReason spawnReason) {
-        CreatureSpawnEvent event = new CreatureSpawnEvent((LivingEntity) entity.getBukkitEntity(), spawnReason);
+        CreatureSpawnEvent event = new CraftCreatureSpawnEvent((LivingEntity) entity.getBukkitEntity(), spawnReason);
         event.callEvent();
         return event;
     }
@@ -856,7 +862,7 @@ public class CraftEventFactory {
         org.bukkit.entity.Item entity = (org.bukkit.entity.Item) item.getBukkitEntity();
         CraftServer craftServer = (CraftServer) entity.getServer();
 
-        ItemSpawnEvent event = new ItemSpawnEvent(entity);
+        ItemSpawnEvent event = new CraftItemSpawnEvent(entity);
         craftServer.getPluginManager().callEvent(event);
         return event;
     }
@@ -1500,7 +1506,7 @@ public class CraftEventFactory {
 
     public static ProjectileLaunchEvent callProjectileLaunchEvent(Entity entity) {
         Projectile bukkitEntity = (Projectile) entity.getBukkitEntity();
-        ProjectileLaunchEvent event = new ProjectileLaunchEvent(bukkitEntity);
+        ProjectileLaunchEvent event = new CraftProjectileLaunchEvent(bukkitEntity);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
@@ -1847,7 +1853,7 @@ public class CraftEventFactory {
             state = null;
         }
 
-        SpawnerSpawnEvent event = new SpawnerSpawnEvent(entity, (org.bukkit.block.CreatureSpawner) state);
+        SpawnerSpawnEvent event = new CraftSpawnerSpawnEvent(entity, (org.bukkit.block.CreatureSpawner) state);
         entity.getServer().getPluginManager().callEvent(event);
         return event;
     }
@@ -1859,7 +1865,7 @@ public class CraftEventFactory {
             state = null;
         }
 
-        TrialSpawnerSpawnEvent event = new TrialSpawnerSpawnEvent(entity, (org.bukkit.block.TrialSpawner) state);
+        TrialSpawnerSpawnEvent event = new CraftTrialSpawnerSpawnEvent(entity, (org.bukkit.block.TrialSpawner) state);
         entity.getServer().getPluginManager().callEvent(event);
         return event;
     }
