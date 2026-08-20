@@ -5,6 +5,7 @@ import com.destroystokyo.paper.event.player.*;
 import io.papermc.asm.ClassInfoProvider;
 import io.papermc.asm.RewriteRuleVisitorFactory;
 import io.papermc.asm.rules.classes.ClassToInterfaceRule;
+import io.papermc.paper.event.block.PlayerShearBlockEvent;
 import io.papermc.paper.event.packet.*;
 import io.papermc.paper.event.player.*;
 import java.util.Set;
@@ -149,7 +150,8 @@ public final class EventToInterfaceMigration {
                 PlayerUseUnknownEntityEvent.class,
                 AsyncPlayerSendCommandsEvent.class,
                 AsyncPlayerSendSuggestionsEvent.class,
-                ClientTickEndEvent.class
+                ClientTickEndEvent.class,
+                PlayerShearBlockEvent.class
                 //</editor-fold>
             );
 
