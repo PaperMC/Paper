@@ -129,7 +129,8 @@ public final class EventToInterfaceMigration {
                 AsyncPlayerChatEvent.class,
                 AsyncPlayerChatPreviewEvent.class,
                 IllegalPacketEvent.class,
-                PlayerAdvancementCriterionGrantEvent.class
+                PlayerAdvancementCriterionGrantEvent.class,
+                PlayerArmorChangeEvent.class
                 //</editor-fold>
             );
 

@@ -2,9 +2,8 @@ package com.destroystokyo.paper.event.player;
 
 import java.util.Set;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
@@ -21,21 +20,7 @@ import static org.bukkit.Material.*;
  */
 @NullMarked
 @ApiStatus.Obsolete(since = "1.21.4")
-public class PlayerArmorChangeEvent extends PlayerEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final SlotType slotType;
-    private final ItemStack oldItem;
-    private final ItemStack newItem;
-
-    @ApiStatus.Internal
-    public PlayerArmorChangeEvent(final Player player, final SlotType slotType, final ItemStack oldItem, final ItemStack newItem) {
-        super(player);
-        this.slotType = slotType;
-        this.oldItem = oldItem;
-        this.newItem = newItem;
-    }
+public interface PlayerArmorChangeEvent extends PlayerEventNew {
 
     /**
      * Gets the type of slot being altered.
@@ -44,56 +29,41 @@ public class PlayerArmorChangeEvent extends PlayerEvent {
      * @deprecated {@link SlotType} does not accurately represent what item types are valid in each slot. Use {@link #getSlot()} instead.
      */
     @Deprecated(since = "1.21.4")
-    public SlotType getSlotType() {
-        return this.slotType;
-    }
+    SlotType getSlotType();
 
     /**
      * Gets the slot being altered.
      *
      * @return slot being altered
      */
-    public EquipmentSlot getSlot() {
-        return switch (this.slotType) {
-            case HEAD -> EquipmentSlot.HEAD;
-            case CHEST -> EquipmentSlot.CHEST;
-            case LEGS -> EquipmentSlot.LEGS;
-            case FEET -> EquipmentSlot.FEET;
-        };
-    }
+    EquipmentSlot getSlot();
 
     /**
      * Gets the existing item that's being replaced
      *
      * @return old item
      */
-    public ItemStack getOldItem() {
-        return this.oldItem;
-    }
+    ItemStack getOldItem();
 
     /**
      * Gets the new item that's replacing the old
      *
      * @return new item
      */
-    public ItemStack getNewItem() {
-        return this.newItem;
-    }
+    ItemStack getNewItem();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
      * @deprecated {@link SlotType} does not accurately represent what item types are valid in each slot.
      */
     @Deprecated(since = "1.21.4")
-    public enum SlotType {
+    enum SlotType {
         HEAD(COPPER_HELMET, NETHERITE_HELMET, DIAMOND_HELMET, GOLDEN_HELMET, IRON_HELMET, CHAINMAIL_HELMET, LEATHER_HELMET, CARVED_PUMPKIN, PLAYER_HEAD, SKELETON_SKULL, ZOMBIE_HEAD, CREEPER_HEAD, WITHER_SKELETON_SKULL, TURTLE_HELMET, DRAGON_HEAD, PIGLIN_HEAD),
         CHEST(COPPER_CHESTPLATE, NETHERITE_CHESTPLATE, DIAMOND_CHESTPLATE, GOLDEN_CHESTPLATE, IRON_CHESTPLATE, CHAINMAIL_CHESTPLATE, LEATHER_CHESTPLATE, ELYTRA),
         LEGS(COPPER_LEGGINGS, NETHERITE_LEGGINGS, DIAMOND_LEGGINGS, GOLDEN_LEGGINGS, IRON_LEGGINGS, CHAINMAIL_LEGGINGS, LEATHER_LEGGINGS),
