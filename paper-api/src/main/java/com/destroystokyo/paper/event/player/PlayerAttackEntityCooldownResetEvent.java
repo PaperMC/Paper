@@ -1,11 +1,9 @@
 package com.destroystokyo.paper.event.player;
 
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
-import org.jetbrains.annotations.ApiStatus;
+import org.bukkit.event.player.PlayerEventNew;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -19,39 +17,21 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @Deprecated(since = "26.1", forRemoval = true)
-public class PlayerAttackEntityCooldownResetEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Entity attackedEntity;
-    private final float cooledAttackStrength;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public PlayerAttackEntityCooldownResetEvent(final Player player, final Entity attackedEntity, final float cooledAttackStrength) {
-        super(player);
-        this.attackedEntity = attackedEntity;
-        this.cooledAttackStrength = cooledAttackStrength;
-    }
-
-    /**
-     * Get the value of the players cooldown attack strength when they initiated the attack
-     *
-     * @return returns the original player cooldown value
-     */
-    public float getCooledAttackStrength() {
-        return this.cooledAttackStrength;
-    }
+public interface PlayerAttackEntityCooldownResetEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Returns the entity attacked by the player
      *
      * @return the entity attacked by the player
      */
-    public Entity getAttackedEntity() {
-        return this.attackedEntity;
-    }
+    Entity getAttackedEntity();
+
+    /**
+     * Get the value of the players cooldown attack strength when they initiated the attack
+     *
+     * @return returns the original player cooldown value
+     */
+    float getCooledAttackStrength();
 
     /**
      * {@inheritDoc}
@@ -59,9 +39,7 @@ public class PlayerAttackEntityCooldownResetEvent extends PlayerEvent implements
      * If an attack cooldown event is cancelled, the players attack strength will remain at the same value instead of being reset.
      */
     @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    boolean isCancelled();
 
     /**
      * {@inheritDoc}
@@ -69,16 +47,12 @@ public class PlayerAttackEntityCooldownResetEvent extends PlayerEvent implements
      * Cancelling this event will prevent the target player from having their cooldown reset from attacking this entity
      */
     @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
