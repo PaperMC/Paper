@@ -35,15 +35,15 @@ public class CraftPlayerEditBookEvent extends CraftPlayerEvent implements Player
     }
 
     @Override
-    public int getSlot() {
-        return this.slot;
-    }
-
-    @Override
     public void setNewBookMeta(final BookMeta newBookMeta) {
         Preconditions.checkArgument(newBookMeta != null, "New book meta must not be null");
         Bukkit.getItemFactory().equals(newBookMeta, null);
         this.newBookMeta = newBookMeta.clone();
+    }
+
+    @Override
+    public int getSlot() {
+        return this.slot;
     }
 
     @Override

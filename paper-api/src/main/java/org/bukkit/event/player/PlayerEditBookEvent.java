@@ -24,13 +24,20 @@ public interface PlayerEditBookEvent extends PlayerEventNew, Cancellable {
     /**
      * Gets the book meta that the player is attempting to add to the book.
      * <p>
-     * Note: this is a copy of the proposed new book meta. Use {@link
-     * #setNewBookMeta(BookMeta)} to change what will actually be added to the
+     * Note: this is a copy of the proposed new book meta. Use {@link #setNewBookMeta(BookMeta)}
+     * to change what will actually be added to the
      * book.
      *
      * @return the book meta that the player is attempting to add
      */
     BookMeta getNewBookMeta();
+
+    /**
+     * Sets the book meta that will actually be added to the book.
+     *
+     * @param newBookMeta new book meta
+     */
+    void setNewBookMeta(BookMeta newBookMeta);
 
     /**
      * Gets the inventory slot number for the book item that triggered this
@@ -46,15 +53,8 @@ public interface PlayerEditBookEvent extends PlayerEventNew, Cancellable {
     @Range(from = -1, to = 8) int getSlot();
 
     /**
-     * Sets the book meta that will actually be added to the book.
-     *
-     * @param newBookMeta new book meta
-     */
-    void setNewBookMeta(BookMeta newBookMeta);
-
-    /**
      * Gets whether the book is being signed. If a book is signed the
-     * Material changes from BOOK_AND_QUILL to WRITTEN_BOOK.
+     * item changes from writable_book to written_book.
      *
      * @return {@code true} if the book is being signed
      */
@@ -62,7 +62,7 @@ public interface PlayerEditBookEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Sets whether the book is being signed. If a book is signed the
-     * Material changes from BOOK_AND_QUILL to WRITTEN_BOOK.
+     * item changes from writable_book to written_book.
      *
      * @param signing whether the book is being signed.
      */
