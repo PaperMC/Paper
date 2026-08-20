@@ -220,7 +220,8 @@ public final class EventToInterfaceMigration {
                 FluidLevelChangeEvent.class,
                 LeavesDecayEvent.class,
                 MoistureChangeEvent.class,
-                NotePlayEvent.class
+                NotePlayEvent.class,
+                SculkBloomEvent.class
                 //</editor-fold>
             );
 
