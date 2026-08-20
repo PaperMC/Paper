@@ -161,7 +161,8 @@ public final class EventToInterfaceMigration {
                 PlayerSpawnLocationEvent.class,
                 PlayerEvent.class,
                 BeaconActivatedEvent.class,
-                BeaconDeactivatedEvent.class
+                BeaconDeactivatedEvent.class,
+                BellRevealRaiderEvent.class
                 //</editor-fold>
             );
 
