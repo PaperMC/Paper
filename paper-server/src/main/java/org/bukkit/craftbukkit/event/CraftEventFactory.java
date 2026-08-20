@@ -136,6 +136,10 @@ import org.bukkit.craftbukkit.event.block.CraftMoistureChangeEvent;
 import org.bukkit.craftbukkit.event.block.CraftNotePlayEvent;
 import org.bukkit.craftbukkit.event.block.CraftTNTPrimeEvent;
 import org.bukkit.craftbukkit.event.block.CraftVaultDisplayItemEvent;
+import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
+import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
+import org.bukkit.craftbukkit.event.entity.CraftPotionSplashEvent;
+import org.bukkit.craftbukkit.event.entity.CraftProjectileHitEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEntityEvent;
@@ -887,7 +891,7 @@ public class CraftEventFactory {
             hitEntity = ((EntityHitResult) position).getEntity().getBukkitEntity();
         }
 
-        PotionSplashEvent event = new PotionSplashEvent(thrownPotion, hitEntity, hitBlock, hitFace, affectedEntities);
+        PotionSplashEvent event = new CraftPotionSplashEvent(thrownPotion, hitEntity, hitBlock, hitFace, affectedEntities);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
@@ -909,7 +913,7 @@ public class CraftEventFactory {
             hitEntity = ((EntityHitResult) position).getEntity().getBukkitEntity();
         }
 
-        LingeringPotionSplashEvent event = new LingeringPotionSplashEvent(thrownPotion, hitEntity, hitBlock, hitFace, effectCloud);
+        LingeringPotionSplashEvent event = new CraftLingeringPotionSplashEvent(thrownPotion, hitEntity, hitBlock, hitFace, effectCloud);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
@@ -932,7 +936,7 @@ public class CraftEventFactory {
             }
         }
 
-        io.papermc.paper.event.entity.WaterBottleSplashEvent event = new io.papermc.paper.event.entity.WaterBottleSplashEvent(
+        io.papermc.paper.event.entity.WaterBottleSplashEvent event = new io.papermc.paper.event.entity.PaperWaterBottleSplashEvent(
             thrownPotion, hitEntity, hitBlock, hitFace, affectedEntities, rehydrate, extinguish
         );
         event.callEvent();
@@ -1521,7 +1525,7 @@ public class CraftEventFactory {
         }
         // Paper end
 
-        ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity(), hitEntity, hitBlock, hitFace);
+        ProjectileHitEvent event = new CraftProjectileHitEvent((Projectile) entity.getBukkitEntity(), hitEntity, hitBlock, hitFace);
         event.setCancelled(cancelled); // Paper - propagate legacy event cancellation to modern event
         entity.level().getCraftServer().getPluginManager().callEvent(event);
         return event;
@@ -1543,7 +1547,7 @@ public class CraftEventFactory {
             hitEntity = ((EntityHitResult) hitResult).getEntity().getBukkitEntity();
         }
 
-        ExpBottleEvent event = new ExpBottleEvent(bottle, hitEntity, hitBlock, hitFace, exp);
+        ExpBottleEvent event = new CraftExpBottleEvent(bottle, hitEntity, hitBlock, hitFace, exp);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }

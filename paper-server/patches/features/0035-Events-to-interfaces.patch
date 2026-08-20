@@ -1815,7 +1815,7 @@ index 8e9db734d19b2082437eaa424f33df2b3321c2cf..1ece773f4943760af95f609b8a99f8bb
                  player.getCooldowns().addCooldown(stack, shieldDisableEvent.getCooldown());
                  // Paper end
 diff --git a/net/minecraft/world/item/equipment/Equippable.java b/net/minecraft/world/item/equipment/Equippable.java
-index fe24aff29f04027449abd68b9d0630c2b106877f..5617091793e8d68f5e388e27d37c33b33819f86c 100644
+index fe24aff29f04027449abd68b9d0630c2b106877f..c685f2e4065d37154eb6e1d6ae5ab8f2c7dd9d7d 100644
 --- a/net/minecraft/world/item/equipment/Equippable.java
 +++ b/net/minecraft/world/item/equipment/Equippable.java
 @@ -130,7 +130,7 @@ public record Equippable(
@@ -1827,14 +1827,16 @@ index fe24aff29f04027449abd68b9d0630c2b106877f..5617091793e8d68f5e388e27d37c33b3
                      (org.bukkit.entity.Player) player.getBukkitEntity(),
                      org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(stack),
                      org.bukkit.craftbukkit.CraftEquipmentSlot.getSlot(this.slot),
-@@ -138,7 +138,9 @@ public record Equippable(
+@@ -138,7 +138,11 @@ public record Equippable(
                  );
                  event.callEvent();
                  if (event.isCancelled()) {
 -                    ((org.bukkit.entity.Player) player.getBukkitEntity()).updateInventory();
 +                    player.containerMenu.forceHeldSlot(net.minecraft.world.InteractionHand.MAIN_HAND);
 +                    player.containerMenu.forceHeldSlot(net.minecraft.world.InteractionHand.OFF_HAND);
-+                    player.containerMenu.forceSlot(player.getInventory(), this.slot.getIndex(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE));
++                    if (this.slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
++                        player.containerMenu.forceSlot(player.getInventory(), this.slot.getIndex(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE));
++                    }
                      return InteractionResult.FAIL;
                  }
                  // Paper end
@@ -2495,6 +2497,19 @@ index 3d2bd187cb9f83f9369d11b21c484c21ceba0569..74d1d452ab1aa5688538c184814e315b
          if (entity instanceof LivingEntity && entity.getType() != EntityType.FOX && entity.getType() != EntityType.BEE) {
              entity.makeStuckInBlock(state, new Vec3(0.8F, 0.75, 0.8F));
              if (level instanceof ServerLevel serverLevel && state.getValue(AGE) != 0) {
+diff --git a/net/minecraft/world/level/block/TargetBlock.java b/net/minecraft/world/level/block/TargetBlock.java
+index 8085b328095a345e75960e456c54c189c7a4341d..a71cb53f377c881aff57d7a5e293ec4a46d3c7a2 100644
+--- a/net/minecraft/world/level/block/TargetBlock.java
++++ b/net/minecraft/world/level/block/TargetBlock.java
+@@ -60,7 +60,7 @@ public class TargetBlock extends Block {
+         if (projectile instanceof Projectile) {
+             final org.bukkit.craftbukkit.block.CraftBlock craftBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, hit.getBlockPos());
+             final org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(hit.getDirection());
+-            final io.papermc.paper.event.block.TargetHitEvent targetHitEvent = new io.papermc.paper.event.block.TargetHitEvent((org.bukkit.entity.Projectile) projectile.getBukkitEntity(), craftBlock, blockFace, redstoneStrength);
++            final io.papermc.paper.event.block.TargetHitEvent targetHitEvent = new io.papermc.paper.event.entity.PaperTargetHitEvent((org.bukkit.entity.Projectile) projectile.getBukkitEntity(), craftBlock, blockFace, redstoneStrength);
+             if (targetHitEvent.callEvent()) {
+                 redstoneStrength = targetHitEvent.getSignalStrength();
+                 shouldAward = true;
 diff --git a/net/minecraft/world/level/block/TrapDoorBlock.java b/net/minecraft/world/level/block/TrapDoorBlock.java
 index b45ae50db32c4156b8f8008335673d20c570c72d..0de34babccd607b0cc724c3b74beace03f651218 100644
 --- a/net/minecraft/world/level/block/TrapDoorBlock.java

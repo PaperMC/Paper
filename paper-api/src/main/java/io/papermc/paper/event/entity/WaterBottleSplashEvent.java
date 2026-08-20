@@ -1,44 +1,15 @@
 package io.papermc.paper.event.entity;
 
 import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.entity.PotionSplashEvent;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a splash water potion "splashes" and affects
  * different entities in different ways.
  */
-@NullMarked
-public class WaterBottleSplashEvent extends PotionSplashEvent {
-
-    private final Set<LivingEntity> rehydrate;
-    private final Set<LivingEntity> extinguish;
-
-    @ApiStatus.Internal
-    public WaterBottleSplashEvent(
-        final ThrownPotion potion,
-        final @Nullable Entity hitEntity,
-        final @Nullable Block hitBlock,
-        final @Nullable BlockFace hitFace,
-        final Map<LivingEntity, Double> affectedEntities,
-        final Set<LivingEntity> rehydrate,
-        final Set<LivingEntity> extinguish
-    ) {
-        super(potion, hitEntity, hitBlock, hitFace, affectedEntities);
-        this.rehydrate = rehydrate;
-        this.extinguish = extinguish;
-    }
+public interface WaterBottleSplashEvent extends PotionSplashEvent {
 
     /**
      * Gets an immutable collection of entities that
@@ -50,9 +21,7 @@ public class WaterBottleSplashEvent extends PotionSplashEvent {
      * @see #doNotDamageAsWaterSensitive(LivingEntity)
      * @see #damageAsWaterSensitive(LivingEntity)
      */
-    public @Unmodifiable Collection<LivingEntity> getToDamage() {
-        return this.affectedEntities.entrySet().stream().filter(entry -> entry.getValue() > 0).map(Map.Entry::getKey).collect(Collectors.toUnmodifiableSet());
-    }
+    @Unmodifiable Collection<LivingEntity> getToDamage();
 
     /**
      * Removes this entity from the group that
@@ -60,9 +29,7 @@ public class WaterBottleSplashEvent extends PotionSplashEvent {
      *
      * @param entity entity to remove
      */
-    public void doNotDamageAsWaterSensitive(final LivingEntity entity) {
-        this.affectedEntities.remove(entity);
-    }
+    void doNotDamageAsWaterSensitive(LivingEntity entity);
 
     /**
      * Adds this entity to the group that
@@ -70,9 +37,7 @@ public class WaterBottleSplashEvent extends PotionSplashEvent {
      *
      * @param entity entity to add
      */
-    public void damageAsWaterSensitive(final LivingEntity entity) {
-        this.affectedEntities.put(entity, 1.0);
-    }
+    void damageAsWaterSensitive(LivingEntity entity);
 
     /**
      * Get a mutable collection of entities
@@ -84,9 +49,7 @@ public class WaterBottleSplashEvent extends PotionSplashEvent {
      *
      * @return the entities
      */
-    public Collection<LivingEntity> getToRehydrate() {
-        return this.rehydrate;
-    }
+    Collection<LivingEntity> getToRehydrate();
 
     /**
      * Get a mutable collection of entities that will
@@ -94,9 +57,7 @@ public class WaterBottleSplashEvent extends PotionSplashEvent {
      *
      * @return entities to be extinguished
      */
-    public Collection<LivingEntity> getToExtinguish() {
-        return this.extinguish;
-    }
+    Collection<LivingEntity> getToExtinguish();
 
     /**
      * @return a confusing collection, don't use it
@@ -104,9 +65,7 @@ public class WaterBottleSplashEvent extends PotionSplashEvent {
      */
     @Deprecated(since = "1.19.3")
     @Override
-    public Collection<LivingEntity> getAffectedEntities() {
-        return super.getAffectedEntities();
-    }
+    Collection<LivingEntity> getAffectedEntities();
 
     /**
      * Doesn't make sense for this event as intensity doesn't vary.
@@ -116,9 +75,7 @@ public class WaterBottleSplashEvent extends PotionSplashEvent {
      */
     @Deprecated(since = "1.19.3")
     @Override
-    public double getIntensity(final LivingEntity entity) {
-        return super.getIntensity(entity);
-    }
+    double getIntensity(LivingEntity entity);
 
     /**
      * Doesn't make sense for this event as intensity doesn't vary.
@@ -129,7 +86,5 @@ public class WaterBottleSplashEvent extends PotionSplashEvent {
      */
     @Deprecated(since = "1.19.3")
     @Override
-    public void setIntensity(final LivingEntity entity, final double intensity) {
-        super.setIntensity(entity, intensity);
-    }
+    void setIntensity(LivingEntity entity, double intensity) ;
 }

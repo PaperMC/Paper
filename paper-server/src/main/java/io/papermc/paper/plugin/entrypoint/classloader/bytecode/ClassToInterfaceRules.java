@@ -296,7 +296,13 @@ public final class ClassToInterfaceRules {
             PufferFishStateChangeEvent.class,
             ShulkerDuplicateEvent.class,
             TameableDeathMessageEvent.class,
-            WardenAngerChangeEvent.class
+            WardenAngerChangeEvent.class,
+            ProjectileHitEvent.class,
+            ExpBottleEvent.class,
+            LingeringPotionSplashEvent.class,
+            PotionSplashEvent.class,
+            WaterBottleSplashEvent.class,
+            TargetHitEvent.class
             //</editor-fold>
         );
     }
