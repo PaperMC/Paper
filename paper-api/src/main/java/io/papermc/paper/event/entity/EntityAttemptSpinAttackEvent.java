@@ -3,33 +3,16 @@ package io.papermc.paper.event.entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEvent;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
+import org.bukkit.event.entity.EntityEventNew;
 
 /**
  * Called when a {@link LivingEntity} attempts to perform an automatic spin attack
  * against a target entity.
  */
-@NullMarked
-public class EntityAttemptSpinAttackEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final LivingEntity target;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public EntityAttemptSpinAttackEvent(final LivingEntity entity, final LivingEntity target) {
-        super(entity);
-        this.target = target;
-    }
+public interface EntityAttemptSpinAttackEvent extends EntityEventNew, Cancellable {
 
     @Override
-    public LivingEntity getEntity() {
-        return (LivingEntity) this.entity;
-    }
+    LivingEntity getEntity();
 
     /**
      * Returns the entity that is being attacked
@@ -37,9 +20,7 @@ public class EntityAttemptSpinAttackEvent extends EntityEvent implements Cancell
      *
      * @return the entity being attacked
      */
-    public LivingEntity getTarget() {
-        return this.target;
-    }
+    LivingEntity getTarget();
 
     /**
      * {@inheritDoc}
@@ -50,21 +31,12 @@ public class EntityAttemptSpinAttackEvent extends EntityEvent implements Cancell
      * and bounce away.
      */
     @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
