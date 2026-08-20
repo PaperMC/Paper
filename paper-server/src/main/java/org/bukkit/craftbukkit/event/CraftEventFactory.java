@@ -125,6 +125,7 @@ import org.bukkit.craftbukkit.event.block.CraftBlockMultiPlaceEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockPhysicsEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockPlaceEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockRedstoneEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockShearEntityEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
 import org.bukkit.craftbukkit.event.block.CraftEntityBlockFormEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
@@ -1714,7 +1715,7 @@ public class CraftEventFactory {
     }
 
     public static BlockShearEntityEvent callBlockShearEntityEvent(Entity animal, org.bukkit.block.Block dispenser, CraftItemStack is, List<ItemStack> drops) {
-        BlockShearEntityEvent event = new BlockShearEntityEvent(dispenser, animal.getBukkitEntity(), is, Lists.transform(drops, CraftItemStack::asCraftMirror));
+        BlockShearEntityEvent event = new CraftBlockShearEntityEvent(dispenser, animal.getBukkitEntity(), is, Lists.transform(drops, CraftItemStack::asCraftMirror));
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
