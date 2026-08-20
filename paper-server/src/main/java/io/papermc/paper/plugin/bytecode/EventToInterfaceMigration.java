@@ -165,7 +165,8 @@ public final class EventToInterfaceMigration {
                 BellRevealRaiderEvent.class,
                 io.papermc.paper.event.block.BellRingEvent.class,
                 org.bukkit.event.block.BellRingEvent.class,
-                BlockBreakProgressUpdateEvent.class
+                BlockBreakProgressUpdateEvent.class,
+                BlockFailedDispenseEvent.class
                 //</editor-fold>
             );
 
