@@ -132,7 +132,8 @@ public final class EventToInterfaceMigration {
                 PlayerAdvancementCriterionGrantEvent.class,
                 PlayerArmorChangeEvent.class,
                 PlayerAttackEntityCooldownResetEvent.class,
-                PlayerClientOptionsChangeEvent.class
+                PlayerClientOptionsChangeEvent.class,
+                PlayerConnectionCloseEvent.class
                 //</editor-fold>
             );
 
