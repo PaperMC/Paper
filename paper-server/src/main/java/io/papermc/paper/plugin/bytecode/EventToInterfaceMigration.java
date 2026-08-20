@@ -146,7 +146,8 @@ public final class EventToInterfaceMigration {
                 PlayerStartSpectatingEntityEvent.class,
                 PlayerStopSpectatingEntityEvent.class,
                 PlayerUseUnknownEntityEvent.class,
-                AsyncPlayerSendCommandsEvent.class
+                AsyncPlayerSendCommandsEvent.class,
+                AsyncPlayerSendSuggestionsEvent.class
                 //</editor-fold>
             );
 
