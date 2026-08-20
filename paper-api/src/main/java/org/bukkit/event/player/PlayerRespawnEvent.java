@@ -1,14 +1,9 @@
 package org.bukkit.event.player;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.event.player.AbstractRespawnEvent;
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Unmodifiable;
-import java.util.Set;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player respawns.
@@ -16,54 +11,27 @@ import java.util.Set;
  * If changing player state, see {@link com.destroystokyo.paper.event.player.PlayerPostRespawnEvent}
  * because the player is "reset" between this event and that event and some changes won't persist.
  */
-public class PlayerRespawnEvent extends AbstractRespawnEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.16.1", forRemoval = true)
-    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn) {
-        this(respawnPlayer, respawnLocation, isBedSpawn, false);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.19.4", forRemoval = true)
-    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn) {
-        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, false, RespawnReason.PLUGIN);
-    }
-
-    @ApiStatus.Internal
-    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, final boolean missingRespawnBlock, @NotNull final RespawnReason respawnReason) {
-        super(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, missingRespawnBlock, respawnReason);
-    }
+@NullMarked
+public interface PlayerRespawnEvent extends AbstractRespawnEvent {
 
     /**
      * Sets the new respawn location.
      *
      * @param respawnLocation new location for the respawn
      */
-    public void setRespawnLocation(@NotNull Location respawnLocation) {
-        Preconditions.checkArgument(respawnLocation != null, "Respawn location can not be null");
-        Preconditions.checkArgument(respawnLocation.getWorld() != null, "Respawn world can not be null");
+    void setRespawnLocation(Location respawnLocation);
 
-        this.respawnLocation = respawnLocation.clone();
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
      * An enum to specify the reason a respawn event was called.
      */
-    public enum RespawnReason {
+    enum RespawnReason {
 
         /**
          * When the player dies and presses the respawn button.
@@ -79,7 +47,8 @@ public class PlayerRespawnEvent extends AbstractRespawnEvent {
         PLUGIN
     }
 
-    public enum RespawnFlag {
+    @Deprecated
+    enum RespawnFlag {
         /**
          * Will use the bed spawn location
          */
