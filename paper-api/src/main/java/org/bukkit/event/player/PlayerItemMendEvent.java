@@ -1,14 +1,12 @@
 package org.bukkit.event.player;
 
+import java.util.function.IntUnaryOperator;
 import org.bukkit.entity.ExperienceOrb;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents when a player has an item repaired via the Mending enchantment.
@@ -16,38 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * This event is fired directly before the {@link PlayerExpChangeEvent}, and the
  * results of this event directly affect the {@link PlayerExpChangeEvent}.
  */
-public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final ItemStack item;
-    private final EquipmentSlot slot;
-    private final ExperienceOrb experienceOrb;
-    private final int consumedExperience;
-    private int repairAmount;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
-        this(player, item, slot, experienceOrb, repairAmount, repairAmount / 2);
-    }
-
-    @ApiStatus.Internal
-    public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount, int consumedExperience) {
-        super(player);
-        this.item = item;
-        this.slot = slot;
-        this.experienceOrb = experienceOrb;
-        this.repairAmount = repairAmount;
-        this.consumedExperience = consumedExperience;
-    }
-
-    @Deprecated(since = "1.19.2", forRemoval = true)
-    public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
-        this(player, item, null, experienceOrb, repairAmount);
-    }
+public interface PlayerItemMendEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Get the {@link ItemStack} to be repaired.
@@ -56,10 +23,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      *
      * @return the item to be repaired
      */
-    @NotNull
-    public ItemStack getItem() {
-        return this.item;
-    }
+    ItemStack getItem();
 
     /**
      * Get the {@link EquipmentSlot} in which the repaired {@link ItemStack}
@@ -67,20 +31,14 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      *
      * @return the repaired slot
      */
-    @NotNull
-    public EquipmentSlot getSlot() {
-        return this.slot;
-    }
+    EquipmentSlot getSlot();
 
     /**
      * Get the experience orb triggering the event.
      *
      * @return the experience orb
      */
-    @NotNull
-    public ExperienceOrb getExperienceOrb() {
-        return this.experienceOrb;
-    }
+    ExperienceOrb getExperienceOrb();
 
     /**
      * Get the amount the item is to be repaired.
@@ -90,9 +48,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      *
      * @return how much damage will be repaired by the experience orb
      */
-    public int getRepairAmount() {
-        return this.repairAmount;
-    }
+    int getRepairAmount();
 
     /**
      * Set the amount the item will be repaired.
@@ -101,9 +57,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      *
      * @param amount how much damage will be repaired on the item
      */
-    public void setRepairAmount(int amount) {
-        this.repairAmount = amount;
-    }
+    void setRepairAmount(int amount);
 
     /**
      * Helper method to get the amount of experience that will be consumed.
@@ -112,9 +66,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      *
      * @return the amount of xp that will be consumed
      */
-    public int getConsumedExperience() {
-        return this.consumedExperience;
-    }
+    int getConsumedExperience();
 
     /**
      * Get the operation used to calculate xp used based on
@@ -127,7 +79,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      */
     @Contract("-> fail")
     @Deprecated(forRemoval = true, since = "1.21")
-    public @NotNull java.util.function.IntUnaryOperator getDurabilityToXpOperation() {
+    default IntUnaryOperator getDurabilityToXpOperation() {
         throw new UnsupportedOperationException("Enchantments use effects to compute xp to durability since 1.21.");
     }
 
@@ -142,28 +94,14 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      */
     @Contract("_ -> fail")
     @Deprecated(forRemoval = true, since = "1.21")
-    public void setDurabilityToXpOperation(@NotNull java.util.function.IntUnaryOperator durabilityToXpOp) {
+    default void setDurabilityToXpOperation(IntUnaryOperator durabilityToXpOp) {
         throw new UnsupportedOperationException("Enchantments use effects to compute xp to durability since 1.21.");
     }
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancelled) {
-        this.cancelled = cancelled;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
