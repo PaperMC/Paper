@@ -127,6 +127,7 @@ import org.bukkit.craftbukkit.event.block.CraftBlockPlaceEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockRedstoneEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockShearEntityEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockSpreadEvent;
+import org.bukkit.craftbukkit.event.block.CraftCauldronLevelChangeEvent;
 import org.bukkit.craftbukkit.event.block.CraftEntityBlockFormEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
@@ -1312,7 +1313,7 @@ public class CraftEventFactory {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(level, pos);
         snapshot.setBlock(newState);
 
-        CauldronLevelChangeEvent event = new CauldronLevelChangeEvent(
+        CauldronLevelChangeEvent event = new CraftCauldronLevelChangeEvent(
             CraftBlock.at(level, pos),
             (entity == null) ? null : entity.getBukkitEntity(), reason, snapshot
         );

@@ -214,7 +214,8 @@ public final class EventToInterfaceMigration {
                 InventoryBlockStartEvent.class,
                 BrewingStartEvent.class,
                 CampfireStartEvent.class,
-                FurnaceStartSmeltEvent.class
+                FurnaceStartSmeltEvent.class,
+                CauldronLevelChangeEvent.class
                 //</editor-fold>
             );
 
