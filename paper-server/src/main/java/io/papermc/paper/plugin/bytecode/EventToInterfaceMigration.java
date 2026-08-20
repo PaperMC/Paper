@@ -168,7 +168,8 @@ public final class EventToInterfaceMigration {
                 BlockBreakProgressUpdateEvent.class,
                 BlockFailedDispenseEvent.class,
                 BlockLockCheckEvent.class,
-                BlockPreDispenseEvent.class
+                BlockPreDispenseEvent.class,
+                VaultChangeStateEvent.class
                 //</editor-fold>
             );
 
