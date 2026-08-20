@@ -27,7 +27,7 @@ public interface PlayerTrackEntityEvent extends PlayerEventNew, Cancellable {
 
     /**
      * {@inheritDoc}
-     * <br>
+     * <p>
      * If cancelled, entity is not shown to the player and interaction in both directions is not possible.
      */
     @Override
