@@ -3,68 +3,34 @@ package org.bukkit.event.player;
 import io.papermc.paper.event.entity.FishHookStateChangeEvent;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FishHook;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Thrown when a player is fishing
  *
  * <p>If you want to monitor a fishhooks state transition, you can use {@link FishHookStateChangeEvent}.</p>
  */
-public class PlayerFishEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Entity entity;
-    private final FishHook hookEntity;
-    private final EquipmentSlot hand;
-    private final State state;
-    private int exp;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public PlayerFishEvent(@NotNull final Player player, @Nullable final Entity entity, @NotNull final FishHook hookEntity, @Nullable EquipmentSlot hand, @NotNull final State state) {
-        super(player);
-        this.entity = entity;
-        this.hookEntity = hookEntity;
-        this.hand = hand;
-        this.state = state;
-    }
-
-    @ApiStatus.Internal
-    public PlayerFishEvent(@NotNull final Player player, @Nullable final Entity entity, @NotNull final FishHook hookEntity, @NotNull final State state) {
-        this(player, entity, hookEntity, null, state);
-    }
+public interface PlayerFishEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Gets the entity caught by the player.
      * <p>
-     * If player has fished successfully, the result may be cast to {@link
-     * org.bukkit.entity.Item}.
+     * If player has fished successfully, the result may be cast to {@link org.bukkit.entity.Item}.
      *
      * @return Entity caught by the player, Entity if fishing, and {@code null} if
      *     bobber has gotten stuck in the ground or nothing has been caught
      */
-    @Nullable
-    public Entity getCaught() {
-        return this.entity;
-    }
+    @Nullable Entity getCaught();
 
     /**
      * Gets the fishing hook.
      *
      * @return the entity representing the fishing hook/bobber.
      */
-    @NotNull
-    public FishHook getHook() {
-        return this.hookEntity;
-    }
+    FishHook getHook();
 
     /**
      * Get the hand that was used in this event.
@@ -75,20 +41,14 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      *
      * @return the hand
      */
-    @Nullable
-    public EquipmentSlot getHand() {
-        return this.hand;
-    }
+    @Nullable EquipmentSlot getHand();
 
     /**
      * Gets the state of the fishing
      *
      * @return A State detailing the state of the fishing
      */
-    @NotNull
-    public State getState() {
-        return this.state;
-    }
+    State getState();
 
     /**
      * Gets the amount of experience received when fishing.
@@ -98,9 +58,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      *
      * @return the amount of experience to drop
      */
-    public int getExpToDrop() {
-        return this.exp;
-    }
+    int getExpToDrop();
 
     /**
      * Sets the amount of experience received when fishing.
@@ -110,35 +68,19 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      *
      * @param amount the amount of experience to drop
      */
-    public void setExpToDrop(int amount) {
-        this.exp = amount;
-    }
+    void setExpToDrop(int amount);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
      * An enum to specify the state of the fishing
      */
-    public enum State {
+    enum State {
 
         /**
          * When a player is fishing, ie casting the line out.
