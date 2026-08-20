@@ -191,7 +191,8 @@ public final class EventToInterfaceMigration {
                 BlockCanBuildEvent.class,
                 BlockCookEvent.class,
                 FurnaceSmeltEvent.class,
-                BlockDamageAbortEvent.class
+                BlockDamageAbortEvent.class,
+                BlockDamageEvent.class
                 //</editor-fold>
             );
 
