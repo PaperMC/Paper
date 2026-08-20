@@ -1,36 +1,17 @@
 package org.bukkit.event.inventory;
 
 import java.util.List;
-import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEvent;
+import org.bukkit.event.block.BlockEventNew;
 import org.bukkit.inventory.BrewerInventory;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when the brewing of the contents inside the Brewing Stand is
  * complete.
  */
-public class BrewEvent extends BlockEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final BrewerInventory contents;
-    private final List<ItemStack> results;
-    private final int fuelLevel;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public BrewEvent(@NotNull Block brewer, @NotNull BrewerInventory contents, @NotNull List<ItemStack> results, int fuelLevel) {
-        super(brewer);
-        this.contents = contents;
-        this.results = results;
-        this.fuelLevel = fuelLevel;
-    }
+public interface BrewEvent extends BlockEventNew, Cancellable {
 
     /**
      * Gets the contents of the Brewing Stand.
@@ -39,10 +20,7 @@ public class BrewEvent extends BlockEvent implements Cancellable {
      * @apiNote The brewer inventory still holds the items found prior to
      * the finalization of the brewing process, e.g. the plain water bottles.
      */
-    @NotNull
-    public BrewerInventory getContents() {
-        return this.contents;
-    }
+    BrewerInventory getContents();
 
     /**
      * Gets the resulting items in the Brewing Stand.
@@ -54,38 +32,19 @@ public class BrewEvent extends BlockEvent implements Cancellable {
      *
      * @return List of {@link ItemStack} resulting for this operation
      */
-    @NotNull
-    public List<ItemStack> getResults() {
-        return this.results;
-    }
+    List<ItemStack> getResults();
 
     /**
      * Gets the remaining fuel level.
      *
      * @return the remaining fuel
      */
-    public int getFuelLevel() {
-        return this.fuelLevel;
-    }
+    int getFuelLevel();
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
