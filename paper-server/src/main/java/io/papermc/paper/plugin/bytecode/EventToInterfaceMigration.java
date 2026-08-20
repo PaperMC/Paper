@@ -1,5 +1,6 @@
 package io.papermc.paper.plugin.bytecode;
 
+import com.destroystokyo.paper.event.block.*;
 import com.destroystokyo.paper.event.brigadier.*;
 import com.destroystokyo.paper.event.entity.*;
 import com.destroystokyo.paper.event.player.*;
@@ -13,6 +14,8 @@ import io.papermc.paper.event.packet.*;
 import io.papermc.paper.event.player.*;
 import java.util.Set;
 import org.bukkit.event.Event;
+import org.bukkit.event.block.*;
+import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -172,7 +175,12 @@ public final class EventToInterfaceMigration {
                 BlockPreDispenseEvent.class,
                 VaultChangeStateEvent.class,
                 CompostItemEvent.class,
-                EntityCompostItemEvent.class
+                EntityCompostItemEvent.class,
+                BlockExpEvent.class,
+                BlockBreakBlockEvent.class,
+                BlockBreakEvent.class,
+                FurnaceExtractEvent.class,
+                BlockDestroyEvent.class
                 //</editor-fold>
             );
 
