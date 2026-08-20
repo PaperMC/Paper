@@ -160,7 +160,8 @@ public final class EventToInterfaceMigration {
                 UncheckedSignChangeEvent.class,
                 PlayerSpawnLocationEvent.class,
                 PlayerEvent.class,
-                BeaconActivatedEvent.class
+                BeaconActivatedEvent.class,
+                BeaconDeactivatedEvent.class
                 //</editor-fold>
             );
 
