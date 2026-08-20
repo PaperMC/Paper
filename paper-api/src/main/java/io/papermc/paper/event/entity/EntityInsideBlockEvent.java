@@ -1,12 +1,9 @@
 package io.papermc.paper.event.entity;
 
 import org.bukkit.block.Block;
-import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEvent;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
+import org.bukkit.event.entity.EntityEventNew;
 
 /**
  * Called when an entity enters the hitbox of a block.
@@ -42,45 +39,19 @@ import org.jspecify.annotations.NullMarked;
  *     <li>Wither rose</li>
  * </ul>
  */
-@NullMarked
-public class EntityInsideBlockEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Block block;
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public EntityInsideBlockEvent(final Entity entity, final Block block) {
-        super(entity);
-        this.block = block;
-    }
+public interface EntityInsideBlockEvent extends EntityEventNew, Cancellable {
 
     /**
      * Gets the block.
      *
      * @return the block
      */
-    public Block getBlock() {
-        return this.block;
-    }
+    Block getBlock();
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
