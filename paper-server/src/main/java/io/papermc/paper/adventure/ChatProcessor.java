@@ -36,6 +36,7 @@ import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.event.player.CraftPlayerChatEvent;
 import org.bukkit.craftbukkit.util.LazyPlayerSet;
 import org.bukkit.craftbukkit.util.Waitable;
 import org.bukkit.entity.Player;
@@ -86,7 +87,7 @@ public final class ChatProcessor {
             final AsyncPlayerChatEvent asyncChatEvent = new AsyncPlayerChatEvent(this.async, player, this.craftbukkit$originalMessage, new LazyPlayerSet(this.server));
             this.post(asyncChatEvent);
             if (listenersOnSyncEvent) {
-                final PlayerChatEvent chatEvent = new PlayerChatEvent(player, asyncChatEvent.getMessage(), asyncChatEvent.getFormat(), asyncChatEvent.getRecipients());
+                final PlayerChatEvent chatEvent = new CraftPlayerChatEvent(player, asyncChatEvent.getMessage(), asyncChatEvent.getFormat(), asyncChatEvent.getRecipients());
                 chatEvent.setCancelled(asyncChatEvent.isCancelled()); // propagate cancelled state
                 this.queueIfAsyncOrRunImmediately(new Waitable<>() {
                     @Override

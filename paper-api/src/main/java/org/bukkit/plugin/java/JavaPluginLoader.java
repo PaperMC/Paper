@@ -287,17 +287,17 @@ public final class JavaPluginLoader implements PluginLoader {
 
     private void searchDeprecatedUsages(final Class<? extends Event> inClass, final Plugin plugin, final Method method) {
         if (inClass.isInterface()) { // new path
+            if (inClass.isAnnotationPresent(Deprecated.class)) {
+                warnOnDeprecatedUsage(inClass, plugin, method);
+                return;
+            }
+
             for (Class<?> currentClass : inClass.getInterfaces()) {
                 if (!Event.class.isAssignableFrom(currentClass)) {
                     continue;
                 }
 
                 Class<? extends Event> eventClass = currentClass.asSubclass(Event.class);
-                if (eventClass.isAnnotationPresent(Deprecated.class)) {
-                    warnOnDeprecatedUsage(eventClass, plugin, method);
-                    break;
-                }
-
                 searchDeprecatedUsages(eventClass, plugin, method);
             }
         } else {

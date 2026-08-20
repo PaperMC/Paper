@@ -3,6 +3,14 @@ package io.papermc.paper.plugin.manager;
 import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 import com.destroystokyo.paper.exception.ServerEventException;
 import com.google.common.collect.Sets;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.logging.Level;
 import org.bukkit.Server;
 import org.bukkit.Warning;
 import org.bukkit.event.Event;
@@ -16,15 +24,6 @@ import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 import org.jetbrains.annotations.NotNull;
-
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.logging.Level;
 
 class PaperEventManager {
 
@@ -182,17 +181,17 @@ class PaperEventManager {
 
     private void searchDeprecatedUsages(final Class<? extends Event> inClass, final Plugin plugin, final Method method) {
         if (inClass.isInterface()) { // new path
+            if (inClass.isAnnotationPresent(Deprecated.class)) {
+                warnOnDeprecatedUsage(inClass, plugin, method);
+                return;
+            }
+
             for (Class<?> currentClass : inClass.getInterfaces()) {
                 if (!Event.class.isAssignableFrom(currentClass)) {
                     continue;
                 }
 
                 Class<? extends Event> eventClass = currentClass.asSubclass(Event.class);
-                if (eventClass.isAnnotationPresent(Deprecated.class)) {
-                    warnOnDeprecatedUsage(eventClass, plugin, method);
-                    break;
-                }
-
                 searchDeprecatedUsages(eventClass, plugin, method);
             }
         } else {
