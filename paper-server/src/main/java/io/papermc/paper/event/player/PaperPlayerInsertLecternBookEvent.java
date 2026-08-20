@@ -4,12 +4,12 @@ import com.google.common.base.Preconditions;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Lectern;
+import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 
-public class PaperPlayerInsertLecternBookEvent extends PlayerEvent implements PlayerInsertLecternBookEvent {
+public class PaperPlayerInsertLecternBookEvent extends CraftPlayerEvent implements PlayerInsertLecternBookEvent {
 
     private final Block block;
     private ItemStack book;

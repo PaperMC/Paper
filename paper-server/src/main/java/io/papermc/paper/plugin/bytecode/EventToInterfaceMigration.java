@@ -44,7 +44,9 @@ public final class EventToInterfaceMigration {
                 PlayerUntrackEntityEvent.class,
                 PrePlayerAttackEntityEvent.class,
                 PlayerPurchaseEvent.class,
-                PlayerTradeEvent.class
+                PlayerTradeEvent.class,
+                PlayerItemGroupCooldownEvent.class,
+                PlayerItemCooldownEvent.class
                 //</editor-fold>
             );
 
