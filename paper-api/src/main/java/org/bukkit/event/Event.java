@@ -13,6 +13,11 @@ import org.bukkit.plugin.PluginManager;
  */
 public interface Event {
 
+    /**
+     * Calls the event and tests if cancelled.
+     *
+     * @return {@code false} if event was cancelled, if cancellable. otherwise {@code true}.
+     */
     boolean callEvent();
 
     /**
