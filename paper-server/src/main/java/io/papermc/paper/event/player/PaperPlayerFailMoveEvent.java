@@ -4,10 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class PaperPlayerFailMoveEvent extends CraftPlayerEvent implements PlayerFailMoveEvent {
 
     private final FailReason failReason;
@@ -16,7 +13,6 @@ public class PaperPlayerFailMoveEvent extends CraftPlayerEvent implements Player
     private boolean allowed;
     private boolean logWarning;
 
-    @ApiStatus.Internal
     public PaperPlayerFailMoveEvent(final Player player, final FailReason failReason, final boolean allowed, final boolean logWarning, final Location from, final Location to) {
         super(player);
         this.failReason = failReason;

@@ -5,10 +5,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class PaperPlayerFlowerPotManipulateEvent extends CraftPlayerEvent implements PlayerFlowerPotManipulateEvent {
 
     private final Block flowerpot;
@@ -17,7 +14,6 @@ public class PaperPlayerFlowerPotManipulateEvent extends CraftPlayerEvent implem
 
     private boolean cancelled;
 
-    @ApiStatus.Internal
     public PaperPlayerFlowerPotManipulateEvent(final Player player, final Block flowerpot, final ItemStack item, final boolean placing) {
         super(player);
         this.flowerpot = flowerpot;
