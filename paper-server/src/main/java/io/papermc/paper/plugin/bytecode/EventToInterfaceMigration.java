@@ -225,7 +225,8 @@ public final class EventToInterfaceMigration {
                 SignChangeEvent.class,
                 SpongeAbsorbEvent.class,
                 org.bukkit.event.block.TNTPrimeEvent.class,
-                VaultDisplayItemEvent.class
+                VaultDisplayItemEvent.class,
+                BrewEvent.class
                 //</editor-fold>
             );
 
