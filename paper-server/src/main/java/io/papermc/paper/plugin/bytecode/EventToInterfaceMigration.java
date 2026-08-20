@@ -166,7 +166,8 @@ public final class EventToInterfaceMigration {
                 io.papermc.paper.event.block.BellRingEvent.class,
                 org.bukkit.event.block.BellRingEvent.class,
                 BlockBreakProgressUpdateEvent.class,
-                BlockFailedDispenseEvent.class
+                BlockFailedDispenseEvent.class,
+                BlockLockCheckEvent.class
                 //</editor-fold>
             );
 
