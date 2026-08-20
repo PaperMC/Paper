@@ -12,7 +12,7 @@ import org.bukkit.event.HandlerList;
  * If this event is cancelled, the block will not move (the liquid
  * will not flow).
  */
-public interface BlockFromToEvent extends BlockEventNew, Cancellable {
+public interface BlockFromToEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the BlockFace that the block is moving to.

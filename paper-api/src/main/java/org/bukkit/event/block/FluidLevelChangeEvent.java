@@ -8,7 +8,7 @@ import org.bukkit.event.HandlerList;
  * Called when the fluid level of a block changes due to changes in adjacent
  * blocks.
  */
-public interface FluidLevelChangeEvent extends BlockEventNew, Cancellable {
+public interface FluidLevelChangeEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the new data of the changed block.

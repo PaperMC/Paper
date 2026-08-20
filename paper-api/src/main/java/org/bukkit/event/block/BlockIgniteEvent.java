@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * If this event is cancelled, the block will not be ignited.
  */
-public interface BlockIgniteEvent extends BlockEventNew, Cancellable {
+public interface BlockIgniteEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the cause of block ignite.

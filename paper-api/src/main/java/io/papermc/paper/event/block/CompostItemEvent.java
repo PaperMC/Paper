@@ -1,7 +1,7 @@
 package io.papermc.paper.event.block;
 
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEventNew;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -9,7 +9,7 @@ import org.bukkit.inventory.ItemStack;
  * Called when an item is about to be composted by a hopper.
  * To prevent hoppers from moving items into composters, cancel the {@link InventoryMoveItemEvent}.
  */
-public interface CompostItemEvent extends BlockEventNew {
+public interface CompostItemEvent extends BlockEvent {
 
     /**
      * Gets the item that was used on the composter.

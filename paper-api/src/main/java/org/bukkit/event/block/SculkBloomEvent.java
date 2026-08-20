@@ -24,7 +24,7 @@ import org.checkerframework.common.value.qual.IntRange;
  *
  * The result of {@link #getBlock()} is the location that the cursor is spawning at.
  */
-public interface SculkBloomEvent extends BlockEventNew, Cancellable {
+public interface SculkBloomEvent extends BlockEvent, Cancellable {
 
     /**
      * Returns the charge of the cursor, &lt; 1000 by default.

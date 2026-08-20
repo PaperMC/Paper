@@ -3,7 +3,7 @@ package org.bukkit.event.inventory;
 import java.util.List;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEventNew;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.BrewerInventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -11,7 +11,7 @@ import org.bukkit.inventory.ItemStack;
  * Called when the brewing of the contents inside the Brewing Stand is
  * complete.
  */
-public interface BrewEvent extends BlockEventNew, Cancellable {
+public interface BrewEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the contents of the Brewing Stand.

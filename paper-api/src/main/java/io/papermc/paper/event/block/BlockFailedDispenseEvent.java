@@ -1,12 +1,12 @@
 package io.papermc.paper.event.block;
 
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.block.BlockEventNew;
+import org.bukkit.event.block.BlockEvent;
 
 /**
  * Called when a block tries to dispense an item, but its inventory is empty.
  */
-public interface BlockFailedDispenseEvent extends BlockEventNew {
+public interface BlockFailedDispenseEvent extends BlockEvent {
 
     /**
      * @return if the effect should be played

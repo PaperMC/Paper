@@ -8,7 +8,7 @@ import org.bukkit.event.HandlerList;
  * Called when a bell resonated after being rung and highlights nearby raiders.
  * A bell will only resonate if raiders are in the vicinity of the bell.
  */
-public interface BellResonateEvent extends BlockEventNew {
+public interface BellResonateEvent extends BlockEvent {
 
     /**
      * Get a mutable list of all {@link LivingEntity entities} to be

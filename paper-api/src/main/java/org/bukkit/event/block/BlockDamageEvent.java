@@ -13,7 +13,7 @@ import org.bukkit.inventory.ItemStack;
  *
  * @see BlockDamageAbortEvent
  */
-public interface BlockDamageEvent extends BlockEventNew, Cancellable {
+public interface BlockDamageEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the player damaging the block involved in this event.

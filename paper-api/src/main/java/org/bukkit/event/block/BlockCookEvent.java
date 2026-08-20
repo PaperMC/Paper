@@ -9,7 +9,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when an item is successfully cooked in a block.
  */
-public interface BlockCookEvent extends BlockEventNew, Cancellable {
+public interface BlockCookEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the smelted item for this event

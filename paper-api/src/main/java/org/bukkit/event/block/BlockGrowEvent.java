@@ -19,7 +19,7 @@ import org.bukkit.event.HandlerList;
  * <p>
  * If this event is cancelled, the block will not grow.
  */
-public interface BlockGrowEvent extends BlockEventNew, Cancellable {
+public interface BlockGrowEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the state of the block where it will form or spread to.

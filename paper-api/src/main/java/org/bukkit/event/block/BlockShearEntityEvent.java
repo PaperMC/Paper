@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Unmodifiable;
 /**
  * Event fired when a dispenser shears a nearby entity.
  */
-public interface BlockShearEntityEvent extends BlockEventNew, Cancellable {
+public interface BlockShearEntityEvent extends BlockEvent, Cancellable {
 
     /**
      * Gets the entity that was sheared.

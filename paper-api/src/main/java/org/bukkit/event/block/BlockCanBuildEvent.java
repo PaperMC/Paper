@@ -18,7 +18,7 @@ import org.jspecify.annotations.Nullable;
  *     #getMaterial()} instead.
  * </ul>
  */
-public interface BlockCanBuildEvent extends BlockEventNew {
+public interface BlockCanBuildEvent extends BlockEvent {
 
     /**
      * Gets the player who placed the block involved in this event.
