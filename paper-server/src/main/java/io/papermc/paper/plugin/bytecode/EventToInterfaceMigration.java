@@ -243,7 +243,8 @@ public final class EventToInterfaceMigration {
                 EntityEffectTickEvent.class,
                 EntityEquipmentChangedEvent.class,
                 EntityFertilizeEggEvent.class,
-                EntityInsideBlockEvent.class
+                EntityInsideBlockEvent.class,
+                EntityLoadCrossbowEvent.class
                 //</editor-fold>
             );
 
