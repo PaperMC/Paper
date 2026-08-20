@@ -1,5 +1,6 @@
 package io.papermc.paper.plugin.bytecode;
 
+import com.destroystokyo.paper.event.brigadier.*;
 import com.destroystokyo.paper.event.player.*;
 import io.papermc.asm.ClassInfoProvider;
 import io.papermc.asm.RewriteRuleVisitorFactory;
@@ -144,7 +145,8 @@ public final class EventToInterfaceMigration {
                 PlayerSetSpawnEvent.class,
                 PlayerStartSpectatingEntityEvent.class,
                 PlayerStopSpectatingEntityEvent.class,
-                PlayerUseUnknownEntityEvent.class
+                PlayerUseUnknownEntityEvent.class,
+                AsyncPlayerSendCommandsEvent.class
                 //</editor-fold>
             );
 
