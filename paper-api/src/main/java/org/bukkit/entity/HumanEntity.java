@@ -22,6 +22,7 @@ import org.bukkit.inventory.MainHand;
 import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.PlayerInventory;
+import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -387,7 +388,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param ticks the amount of ticks to set or 0 to remove
      * @throws IllegalArgumentException if the material is not an item
      */
-    default void setCooldown(Material material, int ticks) {
+    default void setCooldown(Material material, @NonNegative int ticks) {
         this.setCooldown(ItemStack.of(material), ticks);
     }
 
@@ -420,7 +421,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param item the item to check
      * @return the remaining cooldown time in ticks
      */
-    public int getCooldown(ItemStack item);
+    public @NonNegative int getCooldown(ItemStack item);
 
     /**
      * Set a cooldown on the specified item for a certain amount of ticks.
@@ -435,7 +436,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param item the item to set the cooldown for
      * @param ticks the amount of ticks to set or 0 to remove
      */
-    public void setCooldown(ItemStack item, int ticks);
+    public void setCooldown(ItemStack item, @NonNegative int ticks);
 
     /**
      * Get the cooldown time in ticks remaining for the specified cooldown group.
@@ -444,7 +445,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return the remaining cooldown time in ticks
      * @see UseCooldown#cooldownGroup()
      */
-    public int getCooldown(Key cooldownGroup);
+    public @NonNegative int getCooldown(Key cooldownGroup);
 
     /**
      * Set a cooldown on items with the specified cooldown group for a certain amount of ticks.
@@ -460,7 +461,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param ticks the amount of ticks to set or 0 to remove
      * @see UseCooldown#cooldownGroup()
      */
-    public void setCooldown(Key cooldownGroup, int ticks);
+    public void setCooldown(Key cooldownGroup, @NonNegative int ticks);
 
     /**
      * Get the sleep ticks of the player. This value may be capped.
@@ -468,7 +469,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return slumber ticks
      */
     public int getSleepTicks();
-
 
     /**
      * Gets the Location of the player's bed, null if they have not slept

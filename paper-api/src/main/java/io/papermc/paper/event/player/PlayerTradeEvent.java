@@ -19,7 +19,7 @@ public interface PlayerTradeEvent extends PlayerPurchaseEvent {
      * @return the villager or wandering trader
      * @see #getMerchant()
      */
-    @ApiStatus.Obsolete
+    @ApiStatus.Obsolete(since = "1.21.11")
     AbstractVillager getVillager();
 
 }
