@@ -3,12 +3,12 @@ package com.destroystokyo.paper.event.player;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Triggered when a player stops spectating an entity in spectator mode.
  */
-public interface PlayerStopSpectatingEntityEvent extends PlayerEventNew, Cancellable {
+public interface PlayerStopSpectatingEntityEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the entity that the player is spectating

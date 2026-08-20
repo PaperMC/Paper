@@ -2,14 +2,14 @@ package io.papermc.paper.event.player;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.MerchantRecipe;
 
 /**
  * Called when a player trades with a standalone merchant GUI.
  */
-public interface PlayerPurchaseEvent extends PlayerEventNew, Cancellable {
+public interface PlayerPurchaseEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the merchant that the player is trading with

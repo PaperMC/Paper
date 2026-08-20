@@ -7,7 +7,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a player leaves a server
  */
-public interface PlayerQuitEvent extends PlayerEventNew {
+public interface PlayerQuitEvent extends PlayerEvent {
 
     /**
      * Gets the quit message to send to all online players

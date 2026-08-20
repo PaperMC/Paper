@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
  * @see Player#sendResourcePacks(ResourcePackRequest)
  * @see Player#addResourcePack(UUID, String, byte[], String, boolean)
  */
-public interface PlayerResourcePackStatusEvent extends PlayerEventNew {
+public interface PlayerResourcePackStatusEvent extends PlayerEvent {
 
     /**
      * Gets the unique ID of this pack.

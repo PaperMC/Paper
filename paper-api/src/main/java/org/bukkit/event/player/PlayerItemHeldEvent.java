@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Fired when a player changes their currently held item
  */
-public interface PlayerItemHeldEvent extends PlayerEventNew, Cancellable {
+public interface PlayerItemHeldEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the previous held slot index

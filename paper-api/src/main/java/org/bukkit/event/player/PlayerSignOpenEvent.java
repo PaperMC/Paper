@@ -13,7 +13,7 @@ import org.bukkit.event.HandlerList;
  */
 @Warning
 @Deprecated(forRemoval = true)
-public interface PlayerSignOpenEvent extends PlayerEventNew, Cancellable {
+public interface PlayerSignOpenEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the sign that was opened.

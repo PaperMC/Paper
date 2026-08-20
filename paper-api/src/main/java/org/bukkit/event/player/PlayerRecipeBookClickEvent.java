@@ -12,7 +12,7 @@ import org.bukkit.inventory.Recipe;
  */
 @Warning
 @Deprecated(forRemoval = true)
-public interface PlayerRecipeBookClickEvent extends PlayerEventNew {
+public interface PlayerRecipeBookClickEvent extends PlayerEvent {
 
     /**
      * Gets the original recipe the player was trying to craft.

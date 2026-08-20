@@ -25,13 +25,13 @@ package com.destroystokyo.paper.event.player;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
  * Called when a player is firing a bow and the server is choosing an arrow to use.
  */
-public interface PlayerReadyArrowEvent extends PlayerEventNew, Cancellable {
+public interface PlayerReadyArrowEvent extends PlayerEvent, Cancellable {
 
     /**
      * @return the player is using to fire the arrow

@@ -7,7 +7,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a players experience changes naturally
  */
-public interface PlayerExpChangeEvent extends PlayerEventNew {
+public interface PlayerExpChangeEvent extends PlayerEvent {
 
     /**
      * Get the source that provided the experience.

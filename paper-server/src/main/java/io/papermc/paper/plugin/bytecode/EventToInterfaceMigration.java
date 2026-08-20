@@ -158,7 +158,8 @@ public final class EventToInterfaceMigration {
                 PlayerNaturallySpawnCreaturesEvent.class,
                 LootableInventoryReplenishEvent.class,
                 UncheckedSignChangeEvent.class,
-                PlayerSpawnLocationEvent.class
+                PlayerSpawnLocationEvent.class,
+                PlayerEvent.class
                 //</editor-fold>
             );
 

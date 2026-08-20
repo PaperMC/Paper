@@ -12,7 +12,7 @@ import org.bukkit.util.Vector;
  * N.B. the riptide action is currently performed client side, so manipulating
  * the player in this event may have undesired effects.
  */
-public interface PlayerRiptideEvent extends PlayerEventNew, Cancellable {
+public interface PlayerRiptideEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the item containing the used enchantment.

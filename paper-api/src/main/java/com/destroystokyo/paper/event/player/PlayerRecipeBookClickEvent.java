@@ -3,12 +3,12 @@ package com.destroystokyo.paper.event.player;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Called when a player clicks a recipe in the recipe book
  */
-public interface PlayerRecipeBookClickEvent extends PlayerEventNew, Cancellable {
+public interface PlayerRecipeBookClickEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the namespaced key of the recipe that was clicked by the player

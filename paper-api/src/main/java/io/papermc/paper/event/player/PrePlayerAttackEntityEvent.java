@@ -3,7 +3,7 @@ package io.papermc.paper.event.player;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Called when the player tries to attack an entity.
@@ -16,7 +16,7 @@ import org.bukkit.event.player.PlayerEventNew;
  * <p>
  * Note: there may be other factors (invulnerability, etc.) that will prevent this entity from being attacked that this event will not cover
  */
-public interface PrePlayerAttackEntityEvent extends PlayerEventNew, Cancellable {
+public interface PrePlayerAttackEntityEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the entity that was attacked in this event.

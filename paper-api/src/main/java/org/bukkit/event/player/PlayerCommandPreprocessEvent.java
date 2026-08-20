@@ -42,7 +42,7 @@ import org.bukkit.event.HandlerList;
  * beginning of the message should be preserved. If a slash is added or
  * removed, unexpected behavior may result.
  */
-public interface PlayerCommandPreprocessEvent extends PlayerEventNew, Cancellable {
+public interface PlayerCommandPreprocessEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the command that the player is attempting to send.

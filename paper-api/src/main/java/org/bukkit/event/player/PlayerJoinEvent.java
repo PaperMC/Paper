@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
  * <p>Teleporting the player during this event will result in undefined behavior.
  * Use {@link io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent} to change the spawn location.</p>
  */
-public interface PlayerJoinEvent extends PlayerEventNew {
+public interface PlayerJoinEvent extends PlayerEvent {
 
     /**
      * Gets the join message to send to all online players

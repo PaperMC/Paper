@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
  * the time this event is fired. Plugins should use {@link Player#isOnline()}
  * to check before changing player state.
  */
-public interface PlayerGameModeChangeEvent extends PlayerEventNew, Cancellable {
+public interface PlayerGameModeChangeEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the GameMode the player is switched to.

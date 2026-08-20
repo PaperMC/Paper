@@ -9,7 +9,7 @@ import org.jspecify.annotations.Nullable;
  * Called when a player swap items between main hand and off-hand using the
  * hotkey.
  */
-public interface PlayerSwapHandItemsEvent extends PlayerEventNew, Cancellable {
+public interface PlayerSwapHandItemsEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the item switched to the main hand.

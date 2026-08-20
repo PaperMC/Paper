@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
  * @deprecated use {@link com.destroystokyo.paper.event.player.PlayerSetSpawnEvent}
  */
 @Deprecated(forRemoval = true)
-public interface PlayerSpawnChangeEvent extends PlayerEventNew, Cancellable {
+public interface PlayerSpawnChangeEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the new spawn to be set.

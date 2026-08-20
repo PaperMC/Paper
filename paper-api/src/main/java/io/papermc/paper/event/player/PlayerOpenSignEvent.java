@@ -5,14 +5,14 @@ import org.bukkit.block.sign.Side;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Called when a player begins editing a sign's text.
  * <p>
  * Cancelling this event stops the sign editing menu from opening.
  */
-public interface PlayerOpenSignEvent extends PlayerEventNew, Cancellable {
+public interface PlayerOpenSignEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the sign that was clicked.

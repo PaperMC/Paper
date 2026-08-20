@@ -1,13 +1,12 @@
 package org.bukkit.event.player;
 
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called after a player registers or unregisters a new plugin
  * channel.
  */
-public interface PlayerChannelEvent extends PlayerEventNew {
+public interface PlayerChannelEvent extends PlayerEvent {
 
     String getChannel();
 

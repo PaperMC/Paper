@@ -4,13 +4,13 @@ import com.destroystokyo.paper.ClientOption.ChatVisibility;
 import com.destroystokyo.paper.ClientOption.ParticleVisibility;
 import com.destroystokyo.paper.SkinParts;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.MainHand;
 
 /**
  * Called when the player changes their client settings
  */
-public interface PlayerClientOptionsChangeEvent extends PlayerEventNew { // todo javadocs?
+public interface PlayerClientOptionsChangeEvent extends PlayerEvent { // todo javadocs?
 
     String getLocale();
 

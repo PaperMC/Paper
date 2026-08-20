@@ -1,7 +1,7 @@
 package com.destroystokyo.paper.event.player;
 
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.Vector;
@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  * This event may be called multiple times per interaction with different interaction hands
  * and with or without the clicked position.
  */
-public interface PlayerUseUnknownEntityEvent extends PlayerEventNew {
+public interface PlayerUseUnknownEntityEvent extends PlayerEvent {
 
     /**
      * Returns the entity id of the unknown entity that was interacted with.

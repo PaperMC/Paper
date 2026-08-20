@@ -12,7 +12,7 @@ import org.bukkit.event.HandlerList;
  * removal of commands is required, then the command should be assigned a
  * permission which is not granted to the player.
  */
-public interface PlayerCommandSendEvent extends PlayerEventNew {
+public interface PlayerCommandSendEvent extends PlayerEvent {
 
     /**
      * Returns a mutable collection of all top level commands to be sent.

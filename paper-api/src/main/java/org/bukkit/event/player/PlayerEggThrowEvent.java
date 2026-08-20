@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a player throws an egg and it might hatch
  */
-public interface PlayerEggThrowEvent extends PlayerEventNew {
+public interface PlayerEggThrowEvent extends PlayerEvent {
 
     /**
      * Gets the egg involved in this event.

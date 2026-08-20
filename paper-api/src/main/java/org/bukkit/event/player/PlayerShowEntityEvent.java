@@ -15,7 +15,7 @@ import org.bukkit.event.HandlerList;
  *
  * @see Player#showEntity(org.bukkit.plugin.Plugin, Entity)
  */
-public interface PlayerShowEntityEvent extends PlayerEventNew {
+public interface PlayerShowEntityEvent extends PlayerEvent {
 
     /**
      * Gets the entity which has been shown to the player.

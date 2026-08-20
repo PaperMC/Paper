@@ -4,13 +4,13 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEventNew;
+import org.bukkit.event.player.PlayerEvent;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Called when the player is attempting to rename a mob
  */
-public interface PlayerNameEntityEvent extends PlayerEventNew, Cancellable {
+public interface PlayerNameEntityEvent extends PlayerEvent, Cancellable {
 
     /**
      * Gets the name to be given to the entity.
