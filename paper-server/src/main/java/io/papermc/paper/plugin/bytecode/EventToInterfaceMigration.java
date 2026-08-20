@@ -131,7 +131,8 @@ public final class EventToInterfaceMigration {
                 IllegalPacketEvent.class,
                 PlayerAdvancementCriterionGrantEvent.class,
                 PlayerArmorChangeEvent.class,
-                PlayerAttackEntityCooldownResetEvent.class
+                PlayerAttackEntityCooldownResetEvent.class,
+                PlayerClientOptionsChangeEvent.class
                 //</editor-fold>
             );
 
