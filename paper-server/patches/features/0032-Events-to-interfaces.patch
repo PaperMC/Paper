@@ -60,7 +60,7 @@ index ab8893163ac85971a470e4a4d6fa76bd174e2bae..4a4dbe87952820d0e0b68a53d83119d8
                          if (this.seenBy.size() == 1) {
                              ChunkMap.this.level.debugSynchronizers().registerEntity(this.entity);
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 79c804245c7f41a5a7f062e1c5e01760adde7d84..15b291df8983cc8e19a7542727ff68627611f208 100644
+index 79c804245c7f41a5a7f062e1c5e01760adde7d84..e13854a9229f0b93d455d83b8d3843e54155cfda 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -350,7 +350,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
@@ -90,6 +90,18 @@ index 79c804245c7f41a5a7f062e1c5e01760adde7d84..15b291df8983cc8e19a7542727ff6862
              respawnPlayer,
              location,
              isBedSpawn,
+@@ -1490,9 +1490,9 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+             final org.bukkit.event.player.PlayerTeleportEvent tpEvent;
+             // Paper start - gateway-specific teleport event
+             if (this.portalProcess != null && this.portalProcess.isSamePortal(((net.minecraft.world.level.block.EndGatewayBlock) net.minecraft.world.level.block.Blocks.END_GATEWAY)) && this.level().getBlockEntity(this.portalProcess.getEntryPosition()) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
+-                tpEvent = new com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent(this.getBukkitEntity(), enter, exit.clone(), new org.bukkit.craftbukkit.block.CraftEndGateway(this.level().getWorld(), theEndGatewayBlockEntity));
++                tpEvent = new io.papermc.paper.event.player.PaperPlayerTeleportEndGatewayEvent(this.getBukkitEntity(), enter, exit.clone(), new org.bukkit.craftbukkit.block.CraftEndGateway(this.level().getWorld(), theEndGatewayBlockEntity));
+             } else {
+-                tpEvent = new org.bukkit.event.player.PlayerTeleportEvent(this.getBukkitEntity(), enter, exit.clone(), teleportTransition.cause());
++                tpEvent = new org.bukkit.craftbukkit.event.player.CraftPlayerTeleportEvent(this.getBukkitEntity(), enter, exit.clone(), teleportTransition.cause());
+             }
+             // Paper end - gateway-specific teleport event
+             org.bukkit.Bukkit.getServer().getPluginManager().callEvent(tpEvent);
 @@ -1561,7 +1561,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
                  this.lastSentFood = -1;
                  this.teleportSpectators(teleportTransition, serverLevel);
@@ -165,7 +177,7 @@ index a3645322be006d5501fa7fb8944509a9c6b58e32..deddf9503affc1720b1e4877e4a28e07
              // Paper end
          }
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index bcd1a5dcbb43c604430001e27e8d711b41c8bab0..865e0c61ba4069b1554b0f880f5c4f62bb50756f 100644
+index bcd1a5dcbb43c604430001e27e8d711b41c8bab0..9e48962096ce5586e78d6eca296aa83a6da30b15 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -485,7 +485,7 @@ public class ServerGamePacketListenerImpl
@@ -177,6 +189,15 @@ index bcd1a5dcbb43c604430001e27e8d711b41c8bab0..865e0c61ba4069b1554b0f880f5c4f62
              this.cserver.getPluginManager().callEvent(event);
          }
          // CraftBukkit end
+@@ -683,7 +683,7 @@ public class ServerGamePacketListenerImpl
+                     this.lastPitch = to.getPitch();
+ 
+                     Location oldTo = to.clone();
+-                    PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
++                    PlayerMoveEvent event = new org.bukkit.craftbukkit.event.player.CraftPlayerMoveEvent(player, from, to);
+                     this.cserver.getPluginManager().callEvent(event);
+ 
+                     // If the event is cancelled we move the player back to their old location.
 @@ -1077,8 +1077,8 @@ public class ServerGamePacketListenerImpl
              final int targetSlot = Inventory.isHotbarSlot(sourceSlot) ? sourceSlot : inventory.getSuitableHotbarSlot();
              final org.bukkit.entity.Player bukkitPlayer = this.player.getBukkitEntity();
@@ -188,6 +209,24 @@ index bcd1a5dcbb43c604430001e27e8d711b41c8bab0..865e0c61ba4069b1554b0f880f5c4f62
              if (!event.callEvent()) {
                  return;
              }
+@@ -1669,7 +1669,7 @@ public class ServerGamePacketListenerImpl
+                                         this.lastPitch = to.getPitch();
+ 
+                                         Location oldTo = to.clone();
+-                                        PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
++                                        PlayerMoveEvent event = new org.bukkit.craftbukkit.event.player.CraftPlayerMoveEvent(player, from, to);
+                                         this.cserver.getPluginManager().callEvent(event);
+ 
+                                         // If the event is cancelled we move the player back to their old location.
+@@ -1846,7 +1846,7 @@ public class ServerGamePacketListenerImpl
+             final io.papermc.paper.entity.TeleportFlag.Relative flag = org.bukkit.craftbukkit.entity.CraftEntity.deltaRelativeToAPI(relativeArgument);
+             if (flag != null) relativeFlags.add(flag);
+         }
+-        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause, java.util.Set.copyOf(relativeFlags));
++        PlayerTeleportEvent event = new org.bukkit.craftbukkit.event.player.CraftPlayerTeleportEvent(player, from.clone(), to.clone(), cause, java.util.Set.copyOf(relativeFlags));
+         // Paper end - Teleport API
+         this.cserver.getPluginManager().callEvent(event);
+ 
 @@ -2285,7 +2285,7 @@ public class ServerGamePacketListenerImpl
          if (this.player.isImmobile()) return; // CraftBukkit
          if (packet.getSlot() >= 0 && packet.getSlot() < Inventory.getSelectionSize()) {
