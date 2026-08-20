@@ -12,6 +12,11 @@ public abstract class CraftPlayerEvent extends CraftEvent implements PlayerEvent
         this.player = player;
     }
 
+    protected CraftPlayerEvent(final Player player, boolean async) {
+        super(async);
+        this.player = player;
+    }
+
     @Override
     public Player getPlayer() {
         return this.player;

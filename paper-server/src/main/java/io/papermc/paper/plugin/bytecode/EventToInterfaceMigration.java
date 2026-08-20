@@ -47,7 +47,10 @@ public final class EventToInterfaceMigration {
                 PlayerTradeEvent.class,
                 PlayerItemGroupCooldownEvent.class,
                 PlayerItemCooldownEvent.class,
-                AsyncPlayerSpawnLocationEvent.class
+                AsyncPlayerSpawnLocationEvent.class,
+                AbstractChatEvent.class,
+                AsyncChatEvent.class,
+                ChatEvent.class
                 //</editor-fold>
             );
 
