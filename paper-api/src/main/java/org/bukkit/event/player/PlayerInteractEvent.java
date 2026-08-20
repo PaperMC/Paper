@@ -4,7 +4,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.Action;
@@ -12,9 +11,7 @@ import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents an event that is called when a player interacts with an object or
@@ -28,52 +25,14 @@ import org.jetbrains.annotations.Nullable;
  * rather than when the subsequent interaction activity (e.g. placing a block in
  * an illegal position ({@link BlockCanBuildEvent}) will fail).
  */
-public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Action action;
-    private final ItemStack item;
-    private final Block blockClicked;
-    private final BlockFace blockFace;
-    private final EquipmentSlot hand;
-    private final Vector clickedPosition;
-    private Result useItemInHand;
-    private Result useClickedBlock;
-
-    @ApiStatus.Internal
-    public PlayerInteractEvent(@NotNull final Player player, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace) {
-        this(player, action, item, clickedBlock, clickedFace, EquipmentSlot.HAND);
-    }
-
-    @ApiStatus.Internal
-    public PlayerInteractEvent(@NotNull final Player player, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace, @Nullable final EquipmentSlot hand) {
-        this(player, action, item, clickedBlock, clickedFace, hand, null);
-    }
-
-    @ApiStatus.Internal
-    public PlayerInteractEvent(@NotNull final Player player, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace, @Nullable final EquipmentSlot hand, @Nullable final Vector clickedPosition) {
-        super(player);
-        this.action = action;
-        this.item = item;
-        this.blockClicked = clickedBlock;
-        this.blockFace = clickedFace;
-        this.hand = hand;
-        this.clickedPosition = clickedPosition;
-
-        this.useItemInHand = Result.DEFAULT;
-        this.useClickedBlock = clickedBlock == null ? Result.DENY : Result.ALLOW;
-    }
+public interface PlayerInteractEvent extends PlayerEventNew, Cancellable {
 
     /**
      * Returns the action type
      *
      * @return Action returns the type of interaction
      */
-    @NotNull
-    public Action getAction() {
-        return this.action;
-    }
+    Action getAction();
 
     /**
      * Gets the cancellation state of this event. Set to {@code true} if you want to
@@ -86,11 +45,9 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      * the case of using a firework whilst gliding. Callers should check the
      * relevant methods individually.
      */
-    @Deprecated(since = "1.14")
     @Override
-    public boolean isCancelled() {
-        return this.useInteractedBlock() == Result.DENY;
-    }
+    @Deprecated(since = "1.14")
+    boolean isCancelled();
 
     /**
      * {@inheritDoc}
@@ -100,20 +57,14 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      * lose the ammo)
      */
     @Override
-    public void setCancelled(boolean cancel) {
-        this.setUseInteractedBlock(cancel ? Result.DENY : this.useInteractedBlock() == Result.DENY ? Result.DEFAULT : this.useInteractedBlock());
-        this.setUseItemInHand(cancel ? Result.DENY : this.useItemInHand() == Result.DENY ? Result.DEFAULT : this.useItemInHand());
-    }
+    void setCancelled(boolean cancel);
 
     /**
      * Returns the item in hand represented by this event
      *
      * @return ItemStack the item used
      */
-    @Nullable
-    public ItemStack getItem() {
-        return this.item;
-    }
+    @Nullable ItemStack getItem();
 
     /**
      * Convenience method. Returns the material of the item represented by
@@ -121,32 +72,21 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return Material the material of the item used
      */
-    @NotNull
-    public Material getMaterial() {
-        if (!this.hasItem()) {
-            return Material.AIR;
-        }
-
-        return this.item.getType();
-    }
+    Material getMaterial();
 
     /**
      * Check if this event involved a block
      *
      * @return boolean {@code true} if it did
      */
-    public boolean hasBlock() {
-        return this.blockClicked != null;
-    }
+    boolean hasBlock();
 
     /**
      * Check if this event involved an item
      *
      * @return boolean {@code true} if it did
      */
-    public boolean hasItem() {
-        return this.item != null;
-    }
+    boolean hasItem();
 
     /**
      * Convenience method to inform the user whether this was a block
@@ -154,33 +94,21 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return boolean {@code true} if the item in hand was a block
      */
-    public boolean isBlockInHand() {
-        if (!this.hasItem()) {
-            return false;
-        }
-
-        return this.item.getType().isBlock();
-    }
+    boolean isBlockInHand();
 
     /**
      * Returns the clicked block
      *
      * @return Block returns the block clicked with this item.
      */
-    @Nullable
-    public Block getClickedBlock() {
-        return this.blockClicked;
-    }
+    @Nullable Block getClickedBlock();
 
     /**
      * Returns the face of the block that was clicked
      *
      * @return BlockFace returns the face of the block that was clicked
      */
-    @NotNull
-    public BlockFace getBlockFace() {
-        return this.blockFace;
-    }
+    BlockFace getBlockFace();
 
     /**
      * The hand used to perform this interaction. May be {@code null} in the case of
@@ -188,10 +116,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return the hand used to interact. May be {@code null}.
      */
-    @Nullable
-    public EquipmentSlot getHand() {
-        return this.hand;
-    }
+    @Nullable EquipmentSlot getHand();
 
     /**
      * Gets the exact position on the block the player interacted with, this will
@@ -202,27 +127,15 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      * @deprecated misleading, use {@link #getInteractionPoint()}
      * @return the clicked position. May be {@code null}.
      */
-    @Nullable
     @Deprecated
-    public Vector getClickedPosition() {
-        if (this.clickedPosition == null) {
-            return null;
-        }
-        return this.clickedPosition.clone();
-    }
+    @Nullable Vector getClickedPosition();
 
     /**
      * The exact point at which the interaction occurred. May be {@code null}.
      *
      * @return the exact interaction point. May be {@code null}.
      */
-    @Nullable
-    public Location getInteractionPoint() {
-        if (this.blockClicked == null || this.clickedPosition == null) {
-            return null;
-        }
-        return this.blockClicked.getLocation().add(this.clickedPosition);
-    }
+    @Nullable Location getInteractionPoint();
 
     /**
      * This controls the action to take with the block (if any) that was
@@ -231,17 +144,12 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return the action to take with the interacted block
      */
-    @NotNull
-    public Result useInteractedBlock() {
-        return this.useClickedBlock;
-    }
+    Result useInteractedBlock();
 
     /**
      * @param useInteractedBlock the action to take with the interacted block
      */
-    public void setUseInteractedBlock(@NotNull Result useInteractedBlock) {
-        this.useClickedBlock = useInteractedBlock;
-    }
+    void setUseInteractedBlock(Result useInteractedBlock);
 
     /**
      * This controls the action to take with the item the player is holding.
@@ -251,26 +159,17 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @return the action to take with the item in hand
      */
-    @NotNull
-    public Result useItemInHand() {
-        return this.useItemInHand;
-    }
+    Result useItemInHand();
 
     /**
      * @param useItemInHand the action to take with the item in hand
      */
-    public void setUseItemInHand(@NotNull Result useItemInHand) {
-        this.useItemInHand = useItemInHand;
-    }
+    void setUseItemInHand(Result useItemInHand);
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
