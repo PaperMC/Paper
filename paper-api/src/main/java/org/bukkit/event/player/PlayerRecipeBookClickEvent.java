@@ -1,36 +1,18 @@
 package org.bukkit.event.player;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.Warning;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.CraftingRecipe;
 import org.bukkit.inventory.Recipe;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player clicks a recipe in the recipe book.
  *
  * @deprecated use {@link com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent}
  */
-@Deprecated(forRemoval = true)
 @Warning
-public class PlayerRecipeBookClickEvent extends PlayerEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Recipe originalRecipe;
-    private Recipe recipe;
-    private boolean shiftClick;
-
-    @ApiStatus.Internal
-    public PlayerRecipeBookClickEvent(@NotNull final Player player, @NotNull final Recipe recipe, boolean shiftClick) {
-        super(player);
-        this.originalRecipe = recipe;
-        this.recipe = recipe;
-        this.shiftClick = shiftClick;
-    }
+@Deprecated(forRemoval = true)
+public interface PlayerRecipeBookClickEvent extends PlayerEventNew {
 
     /**
      * Gets the original recipe the player was trying to craft.
@@ -39,10 +21,7 @@ public class PlayerRecipeBookClickEvent extends PlayerEvent {
      *
      * @return the original recipe
      */
-    @NotNull
-    public Recipe getOriginalRecipe() {
-        return this.originalRecipe;
-    }
+    Recipe getOriginalRecipe();
 
     /**
      * Gets the recipe the player is trying to craft.
@@ -51,13 +30,11 @@ public class PlayerRecipeBookClickEvent extends PlayerEvent {
      *
      * @return the recipe
      */
-    @NotNull
-    public Recipe getRecipe() {
-        return this.recipe;
-    }
+    Recipe getRecipe();
 
     /**
-     * Set the recipe that will be used. <br>
+     * Set the recipe that will be used.
+     * <br>
      * The game will attempt to move the ingredients for this recipe into the
      * appropriate slots.
      * <p>
@@ -67,15 +44,7 @@ public class PlayerRecipeBookClickEvent extends PlayerEvent {
      *
      * @param recipe the recipe to be used
      */
-    public void setRecipe(@NotNull Recipe recipe) {
-        Preconditions.checkArgument(recipe != null, "recipe cannot be null");
-        if (this.originalRecipe instanceof CraftingRecipe) { // Any type of crafting recipe is acceptable
-            Preconditions.checkArgument(recipe instanceof CraftingRecipe, "provided recipe must be a crafting recipe");
-        } else { // Other recipes must be the same type
-            Preconditions.checkArgument(this.originalRecipe.getClass() == recipe.getClass(), "provided recipe must be of the same type as original recipe");
-        }
-        this.recipe = recipe;
-    }
+    void setRecipe(Recipe recipe);
 
     /**
      * If {@code true} the game will attempt to move the ingredients for as many copies
@@ -84,9 +53,7 @@ public class PlayerRecipeBookClickEvent extends PlayerEvent {
      *
      * @return whether as many copies as possible should be moved
      */
-    public boolean isShiftClick() {
-        return this.shiftClick;
-    }
+    boolean isShiftClick();
 
     /**
      * Sets if the game will attempt to move the ingredients for as many copies
@@ -94,18 +61,12 @@ public class PlayerRecipeBookClickEvent extends PlayerEvent {
      *
      * @param shiftClick whether as many copies as possible should be moved
      */
-    public void setShiftClick(boolean shiftClick) {
-        this.shiftClick = shiftClick;
-    }
+    void setShiftClick(boolean shiftClick);
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
