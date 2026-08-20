@@ -8,6 +8,7 @@ import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.event.ClickCallback;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -21,7 +22,7 @@ import org.jspecify.annotations.Nullable;
  */
 @ApiStatus.NonExtendable
 @NullMarked
-public abstract class PlayerCustomClickEvent extends Event {
+public abstract class PlayerCustomClickEvent extends EventTmp {
 
     private final Key identifier;
     private final PlayerCommonConnection commonConnection;

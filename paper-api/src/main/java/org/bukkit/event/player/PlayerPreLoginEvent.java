@@ -6,6 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Warning;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @Deprecated(since = "1.3.2")
 @Warning(reason = "This event causes a login thread to synchronize with the main thread")
-public class PlayerPreLoginEvent extends Event {
+public class PlayerPreLoginEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

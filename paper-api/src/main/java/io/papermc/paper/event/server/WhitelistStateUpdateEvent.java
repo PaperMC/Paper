@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -13,7 +14,7 @@ import org.jspecify.annotations.NullMarked;
  * This event gets called when the whitelist status of a player is changed
  */
 @NullMarked
-public class WhitelistStateUpdateEvent extends Event implements Cancellable {
+public class WhitelistStateUpdateEvent extends EventTmp implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

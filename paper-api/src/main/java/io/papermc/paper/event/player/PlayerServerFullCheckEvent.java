@@ -26,6 +26,7 @@ package io.papermc.paper.event.player;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import net.kyori.adventure.text.Component;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -35,7 +36,7 @@ import org.jspecify.annotations.NullMarked;
  * Fires when computing if a server is currently considered full for a player.
  */
 @NullMarked
-public class PlayerServerFullCheckEvent extends Event {
+public class PlayerServerFullCheckEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

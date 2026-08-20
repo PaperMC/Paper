@@ -27,6 +27,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -40,7 +41,7 @@ import org.jspecify.annotations.Nullable;
  * and dynamically change the kick message.
  */
 @NullMarked
-public class ProfileWhitelistVerifyEvent extends Event {
+public class ProfileWhitelistVerifyEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

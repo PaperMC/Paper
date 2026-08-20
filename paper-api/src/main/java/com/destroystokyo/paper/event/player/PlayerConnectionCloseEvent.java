@@ -3,6 +3,7 @@ package com.destroystokyo.paper.event.player;
 import java.net.InetAddress;
 import java.util.UUID;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -35,7 +36,7 @@ import org.jspecify.annotations.NullMarked;
  * {@link Event#isAsynchronous()} and handle accordingly.
  */
 @NullMarked
-public class PlayerConnectionCloseEvent extends Event {
+public class PlayerConnectionCloseEvent extends EventTmp {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

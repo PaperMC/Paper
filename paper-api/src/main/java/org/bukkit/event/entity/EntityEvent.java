@@ -3,12 +3,13 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventTmp;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents an Entity-related event
  */
-public abstract class EntityEvent extends Event {
+public abstract class EntityEvent extends EventTmp {
 
     protected Entity entity;
 
