@@ -15,6 +15,7 @@ import io.papermc.paper.event.player.*;
 import java.util.Set;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.*;
+import org.bukkit.event.entity.SheepDyeWoolEvent;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.objectweb.asm.ClassReader;
@@ -236,7 +237,9 @@ public final class EventToInterfaceMigration {
                 ElderGuardianAppearanceEvent.class,
                 EntityAttemptSmashAttackEvent.class,
                 EntityAttemptSpinAttackEvent.class,
-                EntityDamageItemEvent.class
+                EntityDamageItemEvent.class,
+                EntityDyeEvent.class,
+                SheepDyeWoolEvent.class
                 //</editor-fold>
             );
 
