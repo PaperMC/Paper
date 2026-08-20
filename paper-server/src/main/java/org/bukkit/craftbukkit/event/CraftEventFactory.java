@@ -132,6 +132,7 @@ import org.bukkit.craftbukkit.event.block.CraftCrafterCraftEvent;
 import org.bukkit.craftbukkit.event.block.CraftEntityBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftFluidLevelChangeEvent;
 import org.bukkit.craftbukkit.event.block.CraftMoistureChangeEvent;
+import org.bukkit.craftbukkit.event.block.CraftNotePlayEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEntityEvent;
@@ -1557,7 +1558,7 @@ public class CraftEventFactory {
     }
 
     public static NotePlayEvent callNotePlayEvent(Level level, BlockPos pos, NoteBlockInstrument instrument, int note) {
-        NotePlayEvent event = new NotePlayEvent(CraftBlock.at(level, pos), org.bukkit.Instrument.values()[instrument.ordinal()], new org.bukkit.Note(note));
+        NotePlayEvent event = new CraftNotePlayEvent(CraftBlock.at(level, pos), org.bukkit.Instrument.values()[instrument.ordinal()], new org.bukkit.Note(note));
         level.getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
