@@ -1,4 +1,4 @@
-package io.papermc.paper.plugin.entrypoint.classloader;
+package io.papermc.paper.plugin.entrypoint.classloader.bytecode;
 
 import java.io.IOException;
 import java.io.InputStream;
