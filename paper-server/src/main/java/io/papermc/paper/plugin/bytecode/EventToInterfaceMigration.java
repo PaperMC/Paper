@@ -218,7 +218,8 @@ public final class EventToInterfaceMigration {
                 CauldronLevelChangeEvent.class,
                 CrafterCraftEvent.class,
                 FluidLevelChangeEvent.class,
-                LeavesDecayEvent.class
+                LeavesDecayEvent.class,
+                MoistureChangeEvent.class
                 //</editor-fold>
             );
 
