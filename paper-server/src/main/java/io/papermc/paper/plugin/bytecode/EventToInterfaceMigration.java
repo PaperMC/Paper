@@ -248,7 +248,8 @@ public final class EventToInterfaceMigration {
                 io.papermc.paper.event.entity.EntityKnockbackEvent.class,
                 EntityPushedByEntityAttackEvent.class,
                 com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent.class,
-                EntityMoveEvent.class
+                EntityMoveEvent.class,
+                EntityPortalReadyEvent.class
                 //</editor-fold>
             );
 
