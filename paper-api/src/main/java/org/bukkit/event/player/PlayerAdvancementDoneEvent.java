@@ -1,45 +1,21 @@
 package org.bukkit.event.player;
 
-import org.bukkit.advancement.Advancement;
-import org.bukkit.entity.Player;
-import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import net.kyori.adventure.text.Component;
+import org.bukkit.advancement.Advancement;
+import org.bukkit.event.HandlerList;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a player has completed all criteria in an advancement.
  */
-public class PlayerAdvancementDoneEvent extends PlayerEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Advancement advancement;
-    private Component message;
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.21.5", forRemoval = true)
-    public PlayerAdvancementDoneEvent(@NotNull Player player, @NotNull Advancement advancement) {
-        this(player, advancement, null);
-    }
-
-    @ApiStatus.Internal
-    public PlayerAdvancementDoneEvent(@NotNull Player player, @NotNull Advancement advancement, @Nullable Component message) {
-        super(player);
-        this.advancement = advancement;
-        this.message = message;
-    }
+public interface PlayerAdvancementDoneEvent extends PlayerEventNew {
 
     /**
      * Get the advancement which has been completed.
      *
      * @return completed advancement
      */
-    @NotNull
-    public Advancement getAdvancement() {
-        return this.advancement;
-    }
+    Advancement getAdvancement();
 
     /**
      * Gets the message to send to all online players.
@@ -49,10 +25,7 @@ public class PlayerAdvancementDoneEvent extends PlayerEvent {
      *
      * @return The announcement message, or {@code null}
      */
-    @Nullable
-    public Component message() {
-        return this.message;
-    }
+    @Nullable Component message();
 
     /**
      * Sets the message to send to all online players.
@@ -61,18 +34,12 @@ public class PlayerAdvancementDoneEvent extends PlayerEvent {
      *
      * @param message The new message
      */
-    public void message(@Nullable Component message) {
-        this.message = message;
-    }
+    void message(@Nullable Component message);
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
