@@ -110,6 +110,7 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.entity.CraftSpellcaster;
+import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -431,7 +432,7 @@ public class CraftEventFactory {
             )
         )).map(java.util.function.Function.identity(), java.util.function.Function.identity());
 
-        PlayerBedEnterEvent event = new PlayerBedEnterEvent(
+        PlayerBedEnterEvent event = new CraftPlayerBedEnterEvent(
             (Player) player.getBukkitEntity(),
             CraftBlock.at(player.level(), bed),
             bedEnterResult.getFirst(),
