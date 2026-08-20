@@ -1,10 +1,7 @@
 package org.bukkit.event.player;
 
 import java.util.Collection;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called when the list of available server commands is sent to
@@ -15,17 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * removal of commands is required, then the command should be assigned a
  * permission which is not granted to the player.
  */
-public class PlayerCommandSendEvent extends PlayerEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Collection<String> commands;
-
-    @ApiStatus.Internal
-    public PlayerCommandSendEvent(@NotNull final Player player, @NotNull final Collection<String> commands) {
-        super(player);
-        this.commands = commands;
-    }
+public interface PlayerCommandSendEvent extends PlayerEventNew {
 
     /**
      * Returns a mutable collection of all top level commands to be sent.
@@ -35,19 +22,12 @@ public class PlayerCommandSendEvent extends PlayerEvent {
      *
      * @return collection of all commands
      */
-    @NotNull
-    public Collection<String> getCommands() {
-        return this.commands;
-    }
+    Collection<String> getCommands();
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
