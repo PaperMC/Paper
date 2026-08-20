@@ -63,7 +63,8 @@ public final class EventToInterfaceMigration {
                 PlayerAdvancementDoneEvent.class,
                 PlayerInteractEntityEvent.class,
                 PlayerInteractAtEntityEvent.class,
-                PlayerArmorStandManipulateEvent.class
+                PlayerArmorStandManipulateEvent.class,
+                PlayerAttemptPickupItemEvent.class
                 //</editor-fold>
             );
 
