@@ -1814,6 +1814,30 @@ index 8e9db734d19b2082437eaa424f33df2b3321c2cf..1ece773f4943760af95f609b8a99f8bb
                  if (!shieldDisableEvent.callEvent()) return;
                  player.getCooldowns().addCooldown(stack, shieldDisableEvent.getCooldown());
                  // Paper end
+diff --git a/net/minecraft/world/item/equipment/Equippable.java b/net/minecraft/world/item/equipment/Equippable.java
+index fe24aff29f04027449abd68b9d0630c2b106877f..5617091793e8d68f5e388e27d37c33b33819f86c 100644
+--- a/net/minecraft/world/item/equipment/Equippable.java
++++ b/net/minecraft/world/item/equipment/Equippable.java
+@@ -130,7 +130,7 @@ public record Equippable(
+             if ((!EnchantmentHelper.has(itemBySlot, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE) || player.isCreative())
+                 && !ItemStack.isSameItemSameComponents(stack, itemBySlot)) {
+                 // Paper start
+-                final io.papermc.paper.event.player.PlayerSwapWithEquipmentSlotEvent event = new io.papermc.paper.event.player.PlayerSwapWithEquipmentSlotEvent(
++                final io.papermc.paper.event.player.PlayerSwapWithEquipmentSlotEvent event = new io.papermc.paper.event.player.PaperPlayerSwapWithEquipmentSlotEvent(
+                     (org.bukkit.entity.Player) player.getBukkitEntity(),
+                     org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(stack),
+                     org.bukkit.craftbukkit.CraftEquipmentSlot.getSlot(this.slot),
+@@ -138,7 +138,9 @@ public record Equippable(
+                 );
+                 event.callEvent();
+                 if (event.isCancelled()) {
+-                    ((org.bukkit.entity.Player) player.getBukkitEntity()).updateInventory();
++                    player.containerMenu.forceHeldSlot(net.minecraft.world.InteractionHand.MAIN_HAND);
++                    player.containerMenu.forceHeldSlot(net.minecraft.world.InteractionHand.OFF_HAND);
++                    player.containerMenu.forceSlot(player.getInventory(), this.slot.getIndex(net.minecraft.world.entity.player.Inventory.INVENTORY_SIZE));
+                     return InteractionResult.FAIL;
+                 }
+                 // Paper end
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
 index 579bbba4e823d4d0318e58759ca732b7c8e4d865..38325b7f799f4636f01efcfd248b1736cf86484f 100644
 --- a/net/minecraft/world/level/Level.java
