@@ -280,7 +280,6 @@ import org.bukkit.event.player.PlayerRecipeDiscoverEvent;
 import org.bukkit.event.player.PlayerRiptideEvent;
 import org.bukkit.event.player.PlayerShearEntityEvent;
 import org.bukkit.event.player.PlayerSignOpenEvent;
-import org.bukkit.event.player.PlayerStatisticIncrementEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerUnleashEntityEvent;
 import org.bukkit.event.raid.RaidFinishEvent;
@@ -2226,7 +2225,7 @@ public class CraftEventFactory {
     }
 
     public static void callPlayerUseUnknownEntityEvent(net.minecraft.world.entity.player.Player player, int entityId, boolean attack, InteractionHand hand, net.minecraft.world.phys.@Nullable Vec3 vector) {
-        new com.destroystokyo.paper.event.player.PlayerUseUnknownEntityEvent(
+        new io.papermc.paper.event.player.PaperPlayerUseUnknownEntityEvent(
             (Player) player.getBukkitEntity(), entityId, attack,
             CraftEquipmentSlot.getHand(hand),
             vector != null ? CraftVector.toBukkit(vector) : null
