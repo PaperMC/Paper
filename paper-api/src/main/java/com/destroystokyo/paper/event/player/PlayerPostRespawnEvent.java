@@ -2,9 +2,7 @@ package com.destroystokyo.paper.event.player;
 
 import io.papermc.paper.event.player.AbstractRespawnEvent;
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerRespawnEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -12,21 +10,7 @@ import org.jspecify.annotations.NullMarked;
  * Fired after a player has respawned
  */
 @NullMarked
-public class PlayerPostRespawnEvent extends AbstractRespawnEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    @ApiStatus.Internal
-    public PlayerPostRespawnEvent(
-        final Player respawnPlayer,
-        final Location respawnLocation,
-        final boolean isBedSpawn,
-        final boolean isAnchorSpawn,
-        final boolean missingRespawnBlock,
-        final PlayerRespawnEvent.RespawnReason respawnReason
-    ) {
-        super(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, missingRespawnBlock, respawnReason);
-    }
+public interface PlayerPostRespawnEvent extends AbstractRespawnEvent {
 
     /**
      * Returns the location of the respawned player.
@@ -34,17 +18,15 @@ public class PlayerPostRespawnEvent extends AbstractRespawnEvent {
      * @return location of the respawned player
      * @see #getRespawnLocation()
      */
-    @ApiStatus.Obsolete
-    public Location getRespawnedLocation() {
-        return super.getRespawnLocation();
+    @ApiStatus.Obsolete(since = "1.21.5")
+    default Location getRespawnedLocation() {
+        return this.getRespawnLocation();
     }
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
