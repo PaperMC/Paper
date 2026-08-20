@@ -497,7 +497,7 @@ index 462ad83bc08d6d6ae55ee852489439ff6e1dc845..f91cb6d32dc3b1f66c735120600536ba
                      return InteractionResult.FAIL;
                  }
 diff --git a/net/minecraft/world/entity/item/ItemEntity.java b/net/minecraft/world/entity/item/ItemEntity.java
-index e82bb8f2d2b0e771dc371fd7e709116e1f5f204f..dc42ea9815371eccbb6bdf33f0cee7076d54e062 100644
+index e82bb8f2d2b0e771dc371fd7e709116e1f5f204f..9fe01860aa4e5b6fc7c22b7ad42f1ae7c42e3f7b 100644
 --- a/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/net/minecraft/world/entity/item/ItemEntity.java
 @@ -411,7 +411,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
@@ -509,6 +509,15 @@ index e82bb8f2d2b0e771dc371fd7e709116e1f5f204f..dc42ea9815371eccbb6bdf33f0cee707
                  this.level().getCraftServer().getPluginManager().callEvent(attemptEvent);
  
                  flyAtPlayer = attemptEvent.getFlyAtPlayer();
+@@ -427,7 +427,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+             if (this.pickupDelay <= 0 && canHold > 0) {
+                 item.setCount(canHold);
+                 // Call legacy event
+-                org.bukkit.event.player.PlayerPickupItemEvent playerEvent = new org.bukkit.event.player.PlayerPickupItemEvent((org.bukkit.entity.Player) entity.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                org.bukkit.event.player.PlayerPickupItemEvent playerEvent = new org.bukkit.craftbukkit.event.player.CraftPlayerPickupItemEvent((org.bukkit.entity.Player) entity.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
+                 playerEvent.setCancelled(!playerEvent.getPlayer().getCanPickupItems());
+                 this.level().getCraftServer().getPluginManager().callEvent(playerEvent);
+                 flyAtPlayer = playerEvent.getFlyAtPlayer(); // Paper
 diff --git a/net/minecraft/world/entity/player/Player.java b/net/minecraft/world/entity/player/Player.java
 index 7bf160cef8bd772d27d4a71f04d5d9861ef67984..aea2e5bb45a6f7f444e137517c610d047846ae15 100644
 --- a/net/minecraft/world/entity/player/Player.java
@@ -607,6 +616,19 @@ index 4a7abf4ae0c1f4c22c1c77d5ce9e67418b274365..cb2e97bbbbbba41d5af3c1f2885648e6
                  if (!playerFishEvent.callEvent()) {
                      return 0;
                  }
+diff --git a/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java b/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
+index 51d3560c5d8cba89469c07fe6b13f0016adc6db7..c6b2cc2c3ec175d48aa6ef32dc23a61cd97be1d8 100644
+--- a/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
++++ b/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
+@@ -681,7 +681,7 @@ public abstract class AbstractArrow extends Projectile {
+             ItemStack itemstack = this.getPickupItem();
+             if (this.pickup == Pickup.ALLOWED && !itemstack.isEmpty() && entity.getInventory().canHold(itemstack) > 0) {
+                 net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), itemstack);
+-                org.bukkit.event.player.PlayerPickupArrowEvent event = new org.bukkit.event.player.PlayerPickupArrowEvent((org.bukkit.entity.Player) entity.getBukkitEntity(), (org.bukkit.entity.Item) item.getBukkitEntity(), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
++                org.bukkit.event.player.PlayerPickupArrowEvent event = new org.bukkit.craftbukkit.event.player.CraftPlayerPickupArrowEvent((org.bukkit.entity.Player) entity.getBukkitEntity(), (org.bukkit.entity.Item) item.getBukkitEntity(), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
+                 // event.setCancelled(!entityhuman.canPickUpLoot); TODO
+                 if (!event.callEvent()) {
+                     return;
 diff --git a/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownEgg.java b/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownEgg.java
 index c7db74ccc3f8c46e97c24857f297fe5fb5f45e36..47a5a35b89d8cd2254a45d23585390effc4ec3b1 100644
 --- a/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownEgg.java
