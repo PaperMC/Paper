@@ -86,7 +86,7 @@ public class CraftMerchantCustom implements CraftMerchant {
         @Override
         public void processTrade(MerchantOffer offer, io.papermc.paper.event.player.@Nullable PlayerPurchaseEvent event) { // The MerchantRecipe passed in here is the one set by the PlayerPurchaseEvent
             /* Based on {@link net.minecraft.world.entity.npc.villager.AbstractVillager#processTrade(MerchantOffer, io.papermc.paper.event.player.PlayerPurchaseEvent)} */
-            if (getTradingPlayer() instanceof net.minecraft.server.level.ServerPlayer) {
+            if (this.tradingPlayer instanceof net.minecraft.server.level.ServerPlayer) {
                 if (event == null || event.willIncreaseTradeUses()) {
                     offer.increaseUses();
                 }
