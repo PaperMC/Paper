@@ -96,7 +96,8 @@ public final class EventToInterfaceMigration {
                 PlayerItemDamageEvent.class,
                 PlayerItemHeldEvent.class,
                 PlayerItemMendEvent.class,
-                PlayerJoinEvent.class
+                PlayerJoinEvent.class,
+                PlayerKickEvent.class
                 //</editor-fold>
             );
 
