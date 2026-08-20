@@ -239,7 +239,8 @@ public final class EventToInterfaceMigration {
                 EntityAttemptSpinAttackEvent.class,
                 EntityDamageItemEvent.class,
                 EntityDyeEvent.class,
-                SheepDyeWoolEvent.class
+                SheepDyeWoolEvent.class,
+                EntityEffectTickEvent.class
                 //</editor-fold>
             );
 
