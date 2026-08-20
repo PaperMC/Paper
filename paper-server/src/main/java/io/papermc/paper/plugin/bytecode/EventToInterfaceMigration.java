@@ -241,7 +241,8 @@ public final class EventToInterfaceMigration {
                 EntityDyeEvent.class,
                 SheepDyeWoolEvent.class,
                 EntityEffectTickEvent.class,
-                EntityEquipmentChangedEvent.class
+                EntityEquipmentChangedEvent.class,
+                EntityFertilizeEggEvent.class
                 //</editor-fold>
             );
 
