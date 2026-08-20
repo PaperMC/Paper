@@ -303,7 +303,8 @@ public final class ClassToInterfaceRules {
             LingeringPotionSplashEvent.class,
             PotionSplashEvent.class,
             WaterBottleSplashEvent.class,
-            TargetHitEvent.class
+            TargetHitEvent.class,
+            AreaEffectCloudApplyEvent.class
             //</editor-fold>
         );
     }
