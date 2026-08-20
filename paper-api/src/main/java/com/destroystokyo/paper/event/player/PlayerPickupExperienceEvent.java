@@ -24,41 +24,21 @@
 package com.destroystokyo.paper.event.player;
 
 import org.bukkit.entity.ExperienceOrb;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
-import org.jetbrains.annotations.ApiStatus;
+import org.bukkit.event.player.PlayerEventNew;
 import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when a player is attempting to pick up an experience orb
  */
 @NullMarked
-public class PlayerPickupExperienceEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final ExperienceOrb experienceOrb;
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public PlayerPickupExperienceEvent(final Player player, final ExperienceOrb experienceOrb) {
-        super(player);
-        this.experienceOrb = experienceOrb;
-    }
+public interface PlayerPickupExperienceEvent extends PlayerEventNew, Cancellable {
 
     /**
-     * @return Returns the Orb that the player is picking up
+     * @return the experience orb that the player is picking up
      */
-    public ExperienceOrb getExperienceOrb() {
-        return this.experienceOrb;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    ExperienceOrb getExperienceOrb();
 
     /**
      * {@inheritDoc}
@@ -66,16 +46,12 @@ public class PlayerPickupExperienceEvent extends PlayerEvent implements Cancella
      * If {@code true}, cancels picking up the experience orb, leaving it in the world
      */
     @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
