@@ -138,7 +138,8 @@ public final class EventToInterfaceMigration {
                 PlayerHandshakeEvent.class,
                 PlayerJumpEvent.class,
                 PlayerLaunchProjectileEvent.class,
-                PlayerPickupExperienceEvent.class
+                PlayerPickupExperienceEvent.class,
+                PlayerReadyArrowEvent.class
                 //</editor-fold>
             );
 

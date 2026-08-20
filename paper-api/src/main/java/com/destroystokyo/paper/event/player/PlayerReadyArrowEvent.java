@@ -23,10 +23,9 @@
 
 package com.destroystokyo.paper.event.player;
 
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerEventNew;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
 
@@ -34,34 +33,17 @@ import org.jspecify.annotations.NullMarked;
  * Called when a player is firing a bow and the server is choosing an arrow to use.
  */
 @NullMarked
-public class PlayerReadyArrowEvent extends PlayerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final ItemStack bow;
-    private final ItemStack arrow;
-
-    private boolean cancelled;
-
-    public PlayerReadyArrowEvent(final Player player, final ItemStack bow, final ItemStack arrow) {
-        super(player);
-        this.bow = bow;
-        this.arrow = arrow;
-    }
+public interface PlayerReadyArrowEvent extends PlayerEventNew, Cancellable {
 
     /**
      * @return the player is using to fire the arrow
      */
-    public ItemStack getBow() {
-        return this.bow;
-    }
+    ItemStack getBow();
 
     /**
      * @return the arrow that is attempting to be used
      */
-    public ItemStack getArrow() {
-        return this.arrow;
-    }
+    ItemStack getArrow();
 
     /**
      * {@inheritDoc}
@@ -69,24 +51,18 @@ public class PlayerReadyArrowEvent extends PlayerEvent implements Cancellable {
      * Whether use of this arrow is cancelled. On cancel, the server will try the next arrow available and fire another event.
      */
     @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    boolean isCancelled();
 
     /**
      * Cancel use of this arrow. On cancel, the server will try the next arrow available and fire another event.
      */
     @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
