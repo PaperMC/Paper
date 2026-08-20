@@ -219,7 +219,8 @@ public final class EventToInterfaceMigration {
                 CrafterCraftEvent.class,
                 FluidLevelChangeEvent.class,
                 LeavesDecayEvent.class,
-                MoistureChangeEvent.class
+                MoistureChangeEvent.class,
+                NotePlayEvent.class
                 //</editor-fold>
             );
 
