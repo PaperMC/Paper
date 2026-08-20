@@ -15,6 +15,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
+import io.papermc.paper.event.player.PaperAsyncChatEvent;
+import io.papermc.paper.event.player.PaperChatEvent;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.key.Key;
@@ -146,7 +148,7 @@ public final class ChatProcessor {
 
     private void processModern(final ChatRenderer renderer, final Set<Audience> viewers, final Component message, final Player player, final boolean cancelled) {
         final PlayerChatMessage.AdventureView signedMessage = this.message.adventureView();
-        final AsyncChatEvent ae = new AsyncChatEvent(this.async, player, viewers, renderer, message, this.paper$originalMessage, signedMessage);
+        final AsyncChatEvent ae = new PaperAsyncChatEvent(this.async, player, viewers, renderer, message, this.paper$originalMessage, signedMessage);
         ae.setCancelled(cancelled); // propagate cancelled state
         this.post(ae);
         final boolean listenersOnSyncEvent = canYouHearMe(ChatEvent.getHandlerList());
@@ -154,7 +156,7 @@ public final class ChatProcessor {
             this.queueIfAsyncOrRunImmediately(new Waitable<>() {
                 @Override
                 protected Void evaluate() {
-                    final ChatEvent chatEvent = new ChatEvent(player, ae.viewers(), ae.renderer(), ae.message(), ChatProcessor.this.paper$originalMessage/*, ae.usePreviewComponent()*/, signedMessage);
+                    final ChatEvent chatEvent = new PaperChatEvent(player, ae.viewers(), ae.renderer(), ae.message(), ChatProcessor.this.paper$originalMessage/*, ae.usePreviewComponent()*/, signedMessage);
                     chatEvent.setCancelled(ae.isCancelled()); // propagate cancelled state
                     ChatProcessor.this.post(chatEvent);
                     ChatProcessor.this.readModernModifications(chatEvent, renderer);
