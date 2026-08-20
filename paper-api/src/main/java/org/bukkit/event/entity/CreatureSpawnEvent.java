@@ -3,29 +3,16 @@ package org.bukkit.event.entity;
 import org.bukkit.Chunk;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.world.ChunkLoadEvent;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a creature is spawned into a world.
  * <p>
  * If this event is cancelled, the creature will not spawn.
  */
-public class CreatureSpawnEvent extends EntitySpawnEvent {
+public interface CreatureSpawnEvent extends EntitySpawnEvent {
 
-    private final SpawnReason spawnReason;
-
-    @ApiStatus.Internal
-    public CreatureSpawnEvent(@NotNull final LivingEntity spawnee, @NotNull final SpawnReason spawnReason) {
-        super(spawnee);
-        this.spawnReason = spawnReason;
-    }
-
-    @NotNull
     @Override
-    public LivingEntity getEntity() {
-        return (LivingEntity) this.entity;
-    }
+    LivingEntity getEntity();
 
     /**
      * Gets the reason for why the creature is being spawned.
@@ -33,15 +20,12 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
      * @return A SpawnReason value detailing the reason for the creature being
      *     spawned
      */
-    @NotNull
-    public SpawnReason getSpawnReason() {
-        return this.spawnReason;
-    }
+    SpawnReason getSpawnReason();
 
     /**
      * An enum to specify the type of spawning
      */
-    public enum SpawnReason {
+    enum SpawnReason {
 
         /**
          * When something spawns from natural means

@@ -306,7 +306,13 @@ public final class ClassToInterfaceRules {
             TargetHitEvent.class,
             AreaEffectCloudApplyEvent.class,
             ArrowBodyCountChangeEvent.class,
-            BatToggleSleepEvent.class
+            BatToggleSleepEvent.class,
+            EntitySpawnEvent.class,
+            CreatureSpawnEvent.class,
+            ItemSpawnEvent.class,
+            ProjectileLaunchEvent.class,
+            SpawnerSpawnEvent.class,
+            TrialSpawnerSpawnEvent.class
             //</editor-fold>
         );
     }
