@@ -162,7 +162,9 @@ public final class EventToInterfaceMigration {
                 PlayerEvent.class,
                 BeaconActivatedEvent.class,
                 BeaconDeactivatedEvent.class,
-                BellRevealRaiderEvent.class
+                BellRevealRaiderEvent.class,
+                io.papermc.paper.event.block.BellRingEvent.class,
+                org.bukkit.event.block.BellRingEvent.class
                 //</editor-fold>
             );
 
