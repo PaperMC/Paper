@@ -217,7 +217,8 @@ public final class EventToInterfaceMigration {
                 FurnaceStartSmeltEvent.class,
                 CauldronLevelChangeEvent.class,
                 CrafterCraftEvent.class,
-                FluidLevelChangeEvent.class
+                FluidLevelChangeEvent.class,
+                LeavesDecayEvent.class
                 //</editor-fold>
             );
 
