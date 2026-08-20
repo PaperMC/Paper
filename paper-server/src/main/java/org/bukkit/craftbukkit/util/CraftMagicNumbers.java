@@ -19,6 +19,8 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datapack.DynamicBuiltinPack;
 import io.papermc.paper.datapack.DynamicBuiltinPacks;
 import io.papermc.paper.entity.EntitySerializationFlag;
+import io.papermc.paper.plugin.bytecode.EventToInterfaceMigration;
+import io.papermc.paper.pluginremap.reflect.ReflectionRemapper;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.MCUtil;
 import java.io.IOException;
@@ -413,19 +415,19 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
+    public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] bytes) {
         // Paper start
         if (DISABLE_OLD_API_SUPPORT) {
-            return clazz;
+            return bytes;
         }
         // Paper end
         try {
-            clazz = this.commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()), ((CraftServer) Bukkit.getServer()).activeCompatibilities);
+            bytes = this.commodore.convert(bytes, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()), ((CraftServer) Bukkit.getServer()).activeCompatibilities);
         } catch (Exception ex) {
             Bukkit.getLogger().log(Level.SEVERE, "Fatal error trying to convert " + pdf.getFullName() + ":" + path, ex);
         }
 
-        return clazz;
+        return bytes;
     }
 
     @Override
