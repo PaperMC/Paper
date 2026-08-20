@@ -87,7 +87,8 @@ public final class EventToInterfaceMigration {
                 PlayerExpCooldownChangeEvent.class,
                 PlayerFishEvent.class,
                 PlayerGameModeChangeEvent.class,
-                PlayerHarvestBlockEvent.class
+                PlayerHarvestBlockEvent.class,
+                PlayerHideEntityEvent.class
                 //</editor-fold>
             );
 
