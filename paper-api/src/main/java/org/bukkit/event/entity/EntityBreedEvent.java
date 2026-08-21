@@ -1,65 +1,33 @@
 package org.bukkit.event.entity;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.checkerframework.checker.index.qual.NonNegative;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when one Entity breeds with another Entity.
  */
-public class EntityBreedEvent extends EntityEvent implements Cancellable {
+public interface EntityBreedEvent extends EntityEventNew, Cancellable {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final LivingEntity mother;
-    private final LivingEntity father;
-    private final LivingEntity breeder;
-    private final ItemStack bredWith;
-    private int experience;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public EntityBreedEvent(@NotNull LivingEntity child, @NotNull LivingEntity mother, @NotNull LivingEntity father, @Nullable LivingEntity breeder, @Nullable ItemStack bredWith, int experience) {
-        super(child);
-
-        this.mother = mother;
-        this.father = father;
-        this.breeder = breeder; // Breeder can be null in the case of spontaneous conception
-        this.bredWith = bredWith;
-        this.experience = experience;
-    }
-
-    @NotNull
     @Override
-    public LivingEntity getEntity() {
-        return (LivingEntity) this.entity;
-    }
+    LivingEntity getEntity();
 
     /**
      * Gets the parent creating this entity.
      *
      * @return The "birth" parent
      */
-    @NotNull
-    public LivingEntity getMother() {
-        return this.mother;
-    }
+    LivingEntity getMother();
 
     /**
      * Gets the other parent of the newly born entity.
      *
      * @return the other parent
      */
-    @NotNull
-    public LivingEntity getFather() {
-        return this.father;
-    }
+    LivingEntity getFather();
 
     /**
      * Gets the Entity responsible for breeding. Breeder is {@code null} for spontaneous
@@ -67,58 +35,33 @@ public class EntityBreedEvent extends EntityEvent implements Cancellable {
      *
      * @return The Entity who initiated breeding.
      */
-    @Nullable
-    public LivingEntity getBreeder() {
-        return this.breeder;
-    }
+    @Nullable LivingEntity getBreeder();
 
     /**
-     * The ItemStack that was used to initiate breeding, if present.
+     * The item that was used to initiate breeding, if present.
      *
-     * @return ItemStack used to initiate breeding.
+     * @return item used to initiate breeding.
      */
-    @Nullable
-    public ItemStack getBredWith() {
-        return this.bredWith;
-    }
+    @Nullable ItemStack getBredWith();
 
     /**
      * Get the amount of experience granted by breeding.
      *
      * @return experience amount
      */
-    public int getExperience() {
-        return this.experience;
-    }
+    @NonNegative int getExperience();
 
     /**
      * Set the amount of experience granted by breeding.
      *
      * @param experience experience amount
      */
-    public void setExperience(int experience) {
-        Preconditions.checkArgument(experience >= 0, "Experience cannot be negative");
-        this.experience = experience;
-    }
+    void setExperience(@NonNegative int experience);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

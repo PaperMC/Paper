@@ -143,6 +143,7 @@ import org.bukkit.craftbukkit.event.entity.CraftBatToggleSleepEvent;
 import org.bukkit.craftbukkit.event.entity.CraftCreatureSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftCreeperPowerEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityBreakDoorEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityBreedEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityChangeBlockEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
@@ -1916,7 +1917,7 @@ public class CraftEventFactory {
         LivingEntity breederEntity = breeder == null ? null : (LivingEntity) breeder.getBukkitEntity();
         CraftItemStack bredWithStack = bredWith == null ? null : CraftItemStack.asCraftMirror(bredWith).clone();
 
-        EntityBreedEvent event = new EntityBreedEvent((LivingEntity) child.getBukkitEntity(), (LivingEntity) mother.getBukkitEntity(), (LivingEntity) father.getBukkitEntity(), breederEntity, bredWithStack, experience);
+        EntityBreedEvent event = new CraftEntityBreedEvent((LivingEntity) child.getBukkitEntity(), (LivingEntity) mother.getBukkitEntity(), (LivingEntity) father.getBukkitEntity(), breederEntity, bredWithStack, experience);
         event.callEvent();
         return event;
     }
