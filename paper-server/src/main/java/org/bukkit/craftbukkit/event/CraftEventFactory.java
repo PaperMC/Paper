@@ -149,6 +149,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityDamageByBlockEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityDamageByEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityDamageEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityDeathEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityEnterLoveModeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
@@ -518,7 +519,7 @@ public class CraftEventFactory {
     }
 
     public static EntityEnterLoveModeEvent callEntityEnterLoveModeEvent(net.minecraft.world.entity.player.Player entityHuman, Animal entityAnimal, int loveTicks) {
-        EntityEnterLoveModeEvent entityEnterLoveModeEvent = new EntityEnterLoveModeEvent((Animals) entityAnimal.getBukkitEntity(), entityHuman != null ? entityHuman.getBukkitEntity() : null, loveTicks);
+        EntityEnterLoveModeEvent entityEnterLoveModeEvent = new CraftEntityEnterLoveModeEvent((Animals) entityAnimal.getBukkitEntity(), entityHuman != null ? entityHuman.getBukkitEntity() : null, loveTicks);
         Bukkit.getPluginManager().callEvent(entityEnterLoveModeEvent);
         return entityEnterLoveModeEvent;
     }
