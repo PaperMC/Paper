@@ -148,10 +148,12 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityChangeBlockEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityDamageByBlockEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityDamageByEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityDamageEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityDeathEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
+import org.bukkit.craftbukkit.event.entity.CraftPlayerDeathEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftProjectileHitEvent;
 import org.bukkit.craftbukkit.event.entity.CraftProjectileLaunchEvent;
@@ -1019,7 +1021,7 @@ public class CraftEventFactory {
     public static EntityDeathEvent callEntityDeathEvent(ServerLevel level, net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource, List<Entity.DefaultDrop> drops, boolean delayedDrops) { // Paper - Restore vanilla drops behavior
         CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
         CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
-        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(level, damageSource.getEntity())); // Paper - Restore vanilla drops behavior
+        EntityDeathEvent event = new CraftEntityDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(level, damageSource.getEntity())); // Paper - Restore vanilla drops behavior
         populateFields(victim, event); // Paper - make cancellable
         event.callEvent();
 
@@ -1056,7 +1058,7 @@ public class CraftEventFactory {
     public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, DamageSource damageSource, List<Entity.DefaultDrop> drops, net.kyori.adventure.text.Component deathMessage, boolean showDeathMessages, boolean keepInventory) {
         CraftPlayer entity = victim.getBukkitEntity();
         CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
-        PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(victim.level(), damageSource.getEntity()), 0, deathMessage, showDeathMessages);
+        PlayerDeathEvent event = new CraftPlayerDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(victim.level(), damageSource.getEntity()), 0, deathMessage, showDeathMessages);
         event.setKeepInventory(keepInventory);
         event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
         populateFields(victim, event); // Paper - make cancellable
