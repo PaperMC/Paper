@@ -278,6 +278,7 @@ public final class ClassToInterfaceRules {
             ElderGuardianAppearanceEvent.class,
             EntityAttemptSmashAttackEvent.class,
             EntityAttemptSpinAttackEvent.class,
+            EntityConstructEvent.class,
             EntityDamageItemEvent.class,
             EntityDyeEvent.class,
             SheepDyeWoolEvent.class,
