@@ -288,6 +288,7 @@ public final class ClassToInterfaceRules {
             CreeperIgniteEvent.class,
             EntityInsideBlockEvent.class,
             EntityLoadCrossbowEvent.class,
+            EntityLungeEvent.class,
             io.papermc.paper.event.entity.EntityKnockbackEvent.class,
             EntityPushedByEntityAttackEvent.class,
             com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent.class,
