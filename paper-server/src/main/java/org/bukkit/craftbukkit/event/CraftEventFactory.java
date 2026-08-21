@@ -158,6 +158,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityKnockbackEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityPickupItemEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityPlaceEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityPortalEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityPotionEffectEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
@@ -1970,7 +1971,7 @@ public class CraftEventFactory {
         PotionEffect bukkitOldEffect = (oldEffect == null) ? null : CraftPotionUtil.toBukkit(oldEffect);
         PotionEffect bukkitNewEffect = (newEffect == null) ? null : CraftPotionUtil.toBukkit(newEffect);
 
-        EntityPotionEffectEvent event = new EntityPotionEffectEvent((LivingEntity) entity.getBukkitEntity(), bukkitOldEffect, bukkitNewEffect, Optionull.map(source, Entity::getBukkitEntity), cause, knownAction != null ? knownAction : computeEffectAction(oldEffect, newEffect), willOverride);
+        EntityPotionEffectEvent event = new CraftEntityPotionEffectEvent((LivingEntity) entity.getBukkitEntity(), bukkitOldEffect, bukkitNewEffect, Optionull.map(source, Entity::getBukkitEntity), cause, knownAction != null ? knownAction : computeEffectAction(oldEffect, newEffect), willOverride);
         Bukkit.getPluginManager().callEvent(event);
 
         return event;
