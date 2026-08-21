@@ -334,7 +334,9 @@ public final class ClassToInterfaceRules {
             EntityEnterLoveModeEvent.class,
             EntityExhaustionEvent.class,
             EntityExplodeEvent.class,
-            EntityInteractEvent.class
+            EntityInteractEvent.class,
+            org.bukkit.event.entity.EntityKnockbackEvent.class,
+            org.bukkit.event.entity.EntityKnockbackByEntityEvent.class
             //</editor-fold>
         );
     }
