@@ -333,7 +333,8 @@ public final class ClassToInterfaceRules {
             EntityEnterBlockEvent.class,
             EntityEnterLoveModeEvent.class,
             EntityExhaustionEvent.class,
-            EntityExplodeEvent.class
+            EntityExplodeEvent.class,
+            EntityInteractEvent.class
             //</editor-fold>
         );
     }
