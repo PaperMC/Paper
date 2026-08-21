@@ -329,7 +329,8 @@ public final class ClassToInterfaceRules {
             EntityDeathEvent.class,
             PlayerDeathEvent.class,
             EntityDismountEvent.class,
-            EntityDropItemEvent.class
+            EntityDropItemEvent.class,
+            EntityEnterBlockEvent.class
             //</editor-fold>
         );
     }
