@@ -857,9 +857,27 @@ index 5dd64fb6e88629c7cc9f110842d1825365113b3b..77078d0eaabb158148f269ee663f205a
              return false;
          }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index d958c4717739e588c5f8985dec5d215c745f49fc..a01067ecd4d1c6def177e16d1765a77fa237e7f9 100644
+index d958c4717739e588c5f8985dec5d215c745f49fc..3e66e10ceb538f7bbb46f4ccbf97cc1fff3767a7 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
+@@ -995,7 +995,7 @@ public abstract class Entity
+                 // not on fire yet
+                 org.bukkit.block.Block damager = pos == null ? null : org.bukkit.craftbukkit.block.CraftBlock.at(this.level, pos);
+                 org.bukkit.entity.Entity damagee = this.getBukkitEntity();
+-                org.bukkit.event.entity.EntityCombustEvent combustEvent = new org.bukkit.event.entity.EntityCombustByBlockEvent(damager, damagee, 15.0F);
++                org.bukkit.event.entity.EntityCombustEvent combustEvent = new org.bukkit.craftbukkit.event.entity.CraftEntityCombustByBlockEvent(damager, damagee, 15.0F);
+ 
+                 if (combustEvent.callEvent()) {
+                     this.igniteForSeconds(combustEvent.getDuration(), false);
+@@ -1038,7 +1038,7 @@ public abstract class Entity
+ 
+     public final void igniteForSeconds(float numberOfSeconds, final boolean callEvent) {
+         if (callEvent) {
+-            org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.event.entity.EntityCombustEvent(this.getBukkitEntity(), numberOfSeconds);
++            org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.craftbukkit.event.entity.CraftEntityCombustEvent(this.getBukkitEntity(), numberOfSeconds);
+             if (!event.callEvent()) {
+                 return;
+             }
 @@ -2450,7 +2450,7 @@ public abstract class Entity
              // Paper start - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
              org.bukkit.util.Vector delta = new org.bukkit.util.Vector(xa, ya, za);
@@ -878,6 +896,15 @@ index d958c4717739e588c5f8985dec5d215c745f49fc..a01067ecd4d1c6def177e16d1765a77f
          // Suppress during worldgen
          if (this.valid) {
              event.getEntity().getServer().getPluginManager().callEvent(event);
+@@ -3835,7 +3835,7 @@ public abstract class Entity
+         // CraftBukkit end
+         if (this.remainingFireTicks == 0) {
+             // CraftBukkit start - Call a combust event when lightning strikes
+-            org.bukkit.event.entity.EntityCombustByEntityEvent entityCombustEvent = new org.bukkit.event.entity.EntityCombustByEntityEvent(stormBukkitEntity, thisBukkitEntity, 8.0F);
++            org.bukkit.event.entity.EntityCombustByEntityEvent entityCombustEvent = new org.bukkit.craftbukkit.event.entity.CraftEntityCombustByEntityEvent(stormBukkitEntity, thisBukkitEntity, 8.0F);
+             pluginManager.callEvent(entityCombustEvent);
+             if (!entityCombustEvent.isCancelled()) {
+                 this.igniteForSeconds(entityCombustEvent.getDuration(), false);
 @@ -4635,7 +4635,7 @@ public abstract class Entity
          // Paper start - entity tracking events
          // Since this event cannot be cancelled, we should call it here to catch all "un-tracks"
@@ -1263,6 +1290,19 @@ index 4552a36c3cd9b5c0f34cd44d376d6d1092ee110a..85d21c405c390dd74ce0b758ac0bfc9c
              this.level().getCraftServer().getPluginManager().callEvent(event);
              if (event.isCancelled()) {
                  return;
+diff --git a/net/minecraft/world/entity/monster/zombie/Zombie.java b/net/minecraft/world/entity/monster/zombie/Zombie.java
+index aa0a34e3bae3c0d81bc87577570340d1efc46c2b..a78bb33e27b5a97edef61a3dff14e8524923fe59 100644
+--- a/net/minecraft/world/entity/monster/zombie/Zombie.java
++++ b/net/minecraft/world/entity/monster/zombie/Zombie.java
+@@ -378,7 +378,7 @@ public class Zombie extends Monster {
+             float difficulty = level.getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
+             if (this.getMainHandItem().isEmpty() && this.isOnFire() && this.random.nextFloat() < difficulty * 0.3F) {
+                 // CraftBukkit start
+-                org.bukkit.event.entity.EntityCombustByEntityEvent event = new org.bukkit.event.entity.EntityCombustByEntityEvent(this.getBukkitEntity(), target.getBukkitEntity(), (float) (2 * (int)difficulty));
++                org.bukkit.event.entity.EntityCombustByEntityEvent event = new org.bukkit.craftbukkit.event.entity.CraftEntityCombustByEntityEvent(this.getBukkitEntity(), target.getBukkitEntity(), (float) (2 * (int)difficulty));
+                 if (event.callEvent()) {
+                     target.igniteForSeconds(event.getDuration(), false);
+                 }
 diff --git a/net/minecraft/world/entity/player/Player.java b/net/minecraft/world/entity/player/Player.java
 index 2a71a2fa949b3a7fb8ff2c44ec3a3d8636237142..5c9d6ff38b5188afed51690aea0df5ead1043940 100644
 --- a/net/minecraft/world/entity/player/Player.java
@@ -1415,9 +1455,18 @@ index c0bb1b62dfcdebbd34a8e8423fa36eb4924a55e5..fcc40f2aa7eeb6765d05886a479d3c94
                      return 0;
                  }
 diff --git a/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java b/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
-index d25d525bad6b8096d80da19f3f969c1be514b115..69020965a465463b4425d91b5c8139a88461c8ea 100644
+index d25d525bad6b8096d80da19f3f969c1be514b115..b8984cc952b06d66cec6fd757d67826923e450b0 100644
 --- a/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
 +++ b/net/minecraft/world/entity/projectile/arrow/AbstractArrow.java
+@@ -499,7 +499,7 @@ public abstract class AbstractArrow extends Projectile {
+         int remainingFireTicks = entity.getRemainingFireTicks();
+         if (this.isOnFire() && !isEnderman) {
+             // CraftBukkit start
+-            org.bukkit.event.entity.EntityCombustByEntityEvent combustEvent = new org.bukkit.event.entity.EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5.0F);
++            org.bukkit.event.entity.EntityCombustByEntityEvent combustEvent = new org.bukkit.craftbukkit.event.entity.CraftEntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5.0F);
+             if (combustEvent.callEvent()) {
+                 entity.igniteForSeconds(combustEvent.getDuration(), false);
+             }
 @@ -699,7 +699,7 @@ public abstract class AbstractArrow extends Projectile {
              ItemStack pickupItem = this.getPickupItem();
              if (this.pickup == Pickup.ALLOWED && !pickupItem.isEmpty() && player.getInventory().canHold(pickupItem) > 0) {
@@ -1427,6 +1476,19 @@ index d25d525bad6b8096d80da19f3f969c1be514b115..69020965a465463b4425d91b5c8139a8
                  // event.setCancelled(!player.canPickUpLoot()); TODO
                  if (!event.callEvent()) {
                      return;
+diff --git a/net/minecraft/world/entity/projectile/hurtingprojectile/SmallFireball.java b/net/minecraft/world/entity/projectile/hurtingprojectile/SmallFireball.java
+index a2aab8db9826e0b4607f54914af43918a7e35512..452f39dcd03fc97e3756383aff6b29bdae5bec9c 100644
+--- a/net/minecraft/world/entity/projectile/hurtingprojectile/SmallFireball.java
++++ b/net/minecraft/world/entity/projectile/hurtingprojectile/SmallFireball.java
+@@ -43,7 +43,7 @@ public class SmallFireball extends Fireball {
+             Entity owner = this.getOwner();
+             int remainingFireTicks = var7.getRemainingFireTicks();
+             // CraftBukkit start - Entity damage by entity event + combust event
+-            org.bukkit.event.entity.EntityCombustByEntityEvent event = new org.bukkit.event.entity.EntityCombustByEntityEvent(this.getBukkitEntity(), var7.getBukkitEntity(), 5.0F);
++            org.bukkit.event.entity.EntityCombustByEntityEvent event = new org.bukkit.craftbukkit.event.entity.CraftEntityCombustByEntityEvent(this.getBukkitEntity(), var7.getBukkitEntity(), 5.0F);
+             var7.level().getCraftServer().getPluginManager().callEvent(event);
+ 
+             if (!event.isCancelled()) {
 diff --git a/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownEgg.java b/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownEgg.java
 index b844dee92b175ddef4506d96e513e5ca3d27750d..bec357f5444662d739b76192f56ee17be75bdff0 100644
 --- a/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownEgg.java
@@ -1846,6 +1908,22 @@ index f5280c9f8e6afb0fbd29cb99948566c358db059c..1a4e144c7aae45c26a4f523e8e00e0fb
                  if (!shieldDisableEvent.callEvent()) return;
                  player.getCooldowns().addCooldown(blockingWith, shieldDisableEvent.getCooldown());
                  // Paper end
+diff --git a/net/minecraft/world/item/enchantment/effects/Ignite.java b/net/minecraft/world/item/enchantment/effects/Ignite.java
+index 94cb3d1e130568a0d0792b3dde797b78867a7282..affe5ef4196ab5b7f18d1b8c5723b47bc7b977cb 100644
+--- a/net/minecraft/world/item/enchantment/effects/Ignite.java
++++ b/net/minecraft/world/item/enchantment/effects/Ignite.java
+@@ -18,9 +18,9 @@ public record Ignite(LevelBasedValue duration) implements EnchantmentEntityEffec
+         // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
+         org.bukkit.event.entity.EntityCombustEvent entityCombustEvent;
+         if (item.owner() != null) {
+-            entityCombustEvent = new org.bukkit.event.entity.EntityCombustByEntityEvent(item.owner().getBukkitEntity(), entity.getBukkitEntity(), this.duration.calculate(enchantmentLevel));
++            entityCombustEvent = new org.bukkit.craftbukkit.event.entity.CraftEntityCombustByEntityEvent(item.owner().getBukkitEntity(), entity.getBukkitEntity(), this.duration.calculate(enchantmentLevel));
+         } else {
+-            entityCombustEvent = new org.bukkit.event.entity.EntityCombustEvent(entity.getBukkitEntity(), this.duration.calculate(enchantmentLevel));
++            entityCombustEvent = new org.bukkit.craftbukkit.event.entity.CraftEntityCombustEvent(entity.getBukkitEntity(), this.duration.calculate(enchantmentLevel));
+         }
+ 
+         org.bukkit.Bukkit.getPluginManager().callEvent(entityCombustEvent);
 diff --git a/net/minecraft/world/item/equipment/Equippable.java b/net/minecraft/world/item/equipment/Equippable.java
 index 30e52dce9536cda641f6ca290181bd926311dbe3..d4eff087196f2e43f12d706e27d5abdad7b7ddfa 100644
 --- a/net/minecraft/world/item/equipment/Equippable.java
@@ -1895,7 +1973,7 @@ index 9286d9bcf3ec4069e77d3133f3d7bf29b2370c5a..cd0d81689897ae791ac6a1de83a8b862
                  return false;
              }
 diff --git a/net/minecraft/world/level/block/BaseFireBlock.java b/net/minecraft/world/level/block/BaseFireBlock.java
-index d1fe9fc3542b28c7ea89385db0dc8686277300a6..6e58e73b3f2d84a0afa8f76ffa64a2552eca2c1d 100644
+index d1fe9fc3542b28c7ea89385db0dc8686277300a6..7a0af8b5d1989a3242d38f0c53da6d18052da8f5 100644
 --- a/net/minecraft/world/level/block/BaseFireBlock.java
 +++ b/net/minecraft/world/level/block/BaseFireBlock.java
 @@ -136,7 +136,7 @@ public abstract class BaseFireBlock extends Block {
@@ -1907,6 +1985,15 @@ index d1fe9fc3542b28c7ea89385db0dc8686277300a6..6e58e73b3f2d84a0afa8f76ffa64a255
          effectApplier.apply(InsideBlockEffectType.CLEAR_FREEZE);
          effectApplier.apply(InsideBlockEffectType.FIRE_IGNITE);
          effectApplier.runAfter(InsideBlockEffectType.FIRE_IGNITE, e -> e.hurt(e.level().damageSources().inFire(), this.fireDamage));
+@@ -153,7 +153,7 @@ public abstract class BaseFireBlock extends Block {
+ 
+             if (entity.getRemainingFireTicks() >= 0) {
+                 // CraftBukkit start
+-                org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.event.entity.EntityCombustByBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(entity.level(), pos), entity.getBukkitEntity(), 8.0F);
++                org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.craftbukkit.event.entity.CraftEntityCombustByBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(entity.level(), pos), entity.getBukkitEntity(), 8.0F);
+                 entity.level().getCraftServer().getPluginManager().callEvent(event);
+ 
+                 if (!event.isCancelled()) {
 diff --git a/net/minecraft/world/level/block/BasePressurePlateBlock.java b/net/minecraft/world/level/block/BasePressurePlateBlock.java
 index f2d7c5fc0339a62c4fc56aa5871cd999e1136ca6..f8136799a9bf5d2580fc30cc31dd9b5dc8ab1dce 100644
 --- a/net/minecraft/world/level/block/BasePressurePlateBlock.java

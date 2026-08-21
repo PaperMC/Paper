@@ -318,7 +318,10 @@ public final class ClassToInterfaceRules {
             EntityAirChangeEvent.class,
             EntityChangeBlockEvent.class,
             EntityBreakDoorEvent.class,
-            EntityBreedEvent.class
+            EntityBreedEvent.class,
+            EntityCombustEvent.class,
+            EntityCombustByEntityEvent.class,
+            EntityCombustByBlockEvent.class
             //</editor-fold>
         );
     }
