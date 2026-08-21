@@ -1,116 +1,46 @@
 package org.bukkit.event.entity;
 
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Objects;
 import org.bukkit.Material;
 import org.bukkit.WorldBorder;
 import org.bukkit.damage.DamageSource;
-import org.bukkit.damage.DamageType;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
- * Stores data for damage events
+ * Stores data for damage events.
  */
-public class EntityDamageEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private static final DamageModifier[] MODIFIERS = DamageModifier.values();
-    private static final Function<? super Double, Double> ZERO = Functions.constant(-0.0);
-    private final Map<DamageModifier, Double> modifiers;
-    private final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions;
-    private final Map<DamageModifier, Double> originals;
-    private final DamageCause cause;
-    private final DamageSource damageSource;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.20.4", forRemoval = true)
-    public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
-        this(damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), damage);
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, final double damage) {
-        this(damagee, cause, damageSource, new EnumMap<>(ImmutableMap.of(DamageModifier.BASE, damage)), new EnumMap<DamageModifier, Function<? super Double, Double>>(ImmutableMap.of(DamageModifier.BASE, ZERO)));
-    }
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.20.4", forRemoval = true)
-    public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
-        this(damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), modifiers, modifierFunctions);
-    }
-
-    @ApiStatus.Internal
-    public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
-        super(damagee);
-        Preconditions.checkArgument(modifiers.containsKey(DamageModifier.BASE), "BASE DamageModifier missing");
-        Preconditions.checkArgument(!modifiers.containsKey(null), "Cannot have null DamageModifier");
-        Preconditions.checkArgument(modifiers.values().stream().allMatch(Objects::nonNull), "Cannot have null modifier values");
-        Preconditions.checkArgument(modifiers.keySet().equals(modifierFunctions.keySet()), "Must have a modifier function for each DamageModifier");
-        Preconditions.checkArgument(modifierFunctions.values().stream().allMatch(Objects::nonNull), "Cannot have null modifier function");
-        this.originals = new EnumMap<>(modifiers);
-        this.cause = cause;
-        this.modifiers = modifiers;
-        this.modifierFunctions = modifierFunctions;
-        this.damageSource = damageSource;
-    }
+public interface EntityDamageEvent extends EntityEventNew, Cancellable {
 
     /**
      * Gets the original damage for the specified modifier, as defined at this
      * event's construction.
      *
-     * @param type the modifier
+     * @param modifier the modifier
      * @return the original damage
      */
-    public double getOriginalDamage(@NotNull DamageModifier type) throws IllegalArgumentException {
-        Preconditions.checkArgument(type != null, "Cannot have null DamageModifier");
-        final Double damage = this.originals.get(type);
-        return (damage != null) ? damage : 0;
-    }
+    double getOriginalDamage(DamageModifier modifier) throws IllegalArgumentException;
 
     /**
      * Sets the damage for the specified modifier.
      *
-     * @param type the damage modifier
+     * @param modifier the damage modifier
      * @param damage the scalar value of the damage's modifier
      * @throws UnsupportedOperationException if the caller does not support
      *     the particular DamageModifier, or to rephrase, when {@link
      *     #isApplicable(DamageModifier)} returns false
      * @see #getFinalDamage()
      */
-    public void setDamage(@NotNull DamageModifier type, double damage) throws IllegalArgumentException, UnsupportedOperationException {
-        Preconditions.checkArgument(type != null, "Cannot have null DamageModifier");
-        if (!this.modifiers.containsKey(type)) {
-            throw new UnsupportedOperationException(type + " is not applicable to " + getEntity());
-        }
-        this.modifiers.put(type, damage);
-    }
+    void setDamage(DamageModifier modifier, double damage) throws UnsupportedOperationException;
 
     /**
      * Gets the damage change for some modifier
      *
-     * @param type the damage modifier
+     * @param modifier the damage modifier
      * @return The raw amount of damage caused by the event
      * @see DamageModifier#BASE
      */
-    public double getDamage(@NotNull DamageModifier type) throws IllegalArgumentException {
-        Preconditions.checkArgument(type != null, "Cannot have null DamageModifier");
-        final Double damage = this.modifiers.get(type);
-        return damage == null ? 0 : damage;
-    }
+    double getDamage(DamageModifier modifier);
 
     /**
      * This checks to see if a particular modifier is valid for this event's
@@ -119,13 +49,10 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * <p>
      * {@link DamageModifier#BASE} is always applicable.
      *
-     * @param type the modifier
+     * @param modifier the modifier
      * @return {@code true} if the modifier is supported by the caller, {@code false} otherwise
      */
-    public boolean isApplicable(@NotNull DamageModifier type) throws IllegalArgumentException {
-        Preconditions.checkArgument(type != null, "Cannot have null DamageModifier");
-        return this.modifiers.containsKey(type);
-    }
+    boolean isApplicable(DamageModifier modifier);
 
     /**
      * Gets the raw amount of damage caused by the event
@@ -133,7 +60,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * @return The raw amount of damage caused by the event
      * @see DamageModifier#BASE
      */
-    public double getDamage() {
+    default double getDamage() {
         return this.getDamage(DamageModifier.BASE);
     }
 
@@ -143,13 +70,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      *
      * @return the amount of damage caused by the event
      */
-    public final double getFinalDamage() {
-        double damage = 0;
-        for (DamageModifier modifier : MODIFIERS) {
-            damage += this.getDamage(modifier);
-        }
-        return damage;
-    }
+    double getFinalDamage();
 
     /**
      * Sets the raw amount of damage caused by the event.
@@ -160,33 +81,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      *
      * @param damage The raw amount of damage caused by the event
      */
-    public void setDamage(double damage) {
-        // These have to happen in the same order as the server calculates them, keep the enum sorted
-        double remaining = damage;
-        double oldRemaining = this.getDamage(DamageModifier.BASE);
-        for (DamageModifier modifier : MODIFIERS) {
-            if (!this.isApplicable(modifier)) {
-                continue;
-            }
-
-            Function<? super Double, Double> modifierFunction = modifierFunctions.get(modifier);
-            double newVanilla = modifierFunction.apply(remaining);
-            double oldVanilla = modifierFunction.apply(oldRemaining);
-            double difference = oldVanilla - newVanilla;
-
-            // Don't allow value to cross zero, assume zero values should be negative
-            double old = this.getDamage(modifier);
-            if (old > 0) {
-                this.setDamage(modifier, Math.max(0, old - difference));
-            } else {
-                this.setDamage(modifier, Math.min(0, old - difference));
-            }
-            remaining += newVanilla;
-            oldRemaining += oldVanilla;
-        }
-
-        this.setDamage(DamageModifier.BASE, damage);
-    }
+    void setDamage(double damage);
 
     /**
      * Gets the cause of the damage.
@@ -201,40 +96,20 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      *
      * @return a DamageCause value detailing the cause of the damage.
      */
-    @NotNull
-    public DamageCause getCause() {
-        return this.cause;
-    }
+    DamageCause getCause();
 
     /**
      * Get the source of damage.
      *
      * @return a DamageSource detailing the source of the damage.
      */
-    @NotNull
-    public DamageSource getDamageSource() {
-        return this.damageSource;
-    }
+    DamageSource getDamageSource();
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
@@ -244,7 +119,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * problems and is in general unsustainable to maintain.
      */
     @Deprecated(since = "1.12")
-    public enum DamageModifier {
+    enum DamageModifier {
         /**
          * This represents the amount of damage being done, also known as the
          * raw {@link EntityDamageEvent#getDamage()}.
@@ -289,13 +164,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * effect.
          */
         ABSORPTION,
-        ;
     }
 
     /**
      * An enum to specify the cause of the damage
      */
-    public enum DamageCause {
+    enum DamageCause {
 
         /**
          * Damage caused by /kill command.
@@ -511,6 +385,6 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * <p>
          * Damage: variable
          */
-        CUSTOM;
+        CUSTOM
     }
 }
