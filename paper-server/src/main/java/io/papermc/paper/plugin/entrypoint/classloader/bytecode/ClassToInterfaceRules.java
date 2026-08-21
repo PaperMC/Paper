@@ -299,6 +299,7 @@ public final class ClassToInterfaceRules {
             ItemTransportingEntityValidateTargetEvent.class,
             PufferFishStateChangeEvent.class,
             ShulkerDuplicateEvent.class,
+            SulfurCubeSwallowItemEvent.class,
             TameableDeathMessageEvent.class,
             WardenAngerChangeEvent.class,
             ProjectileHitEvent.class,
