@@ -12,6 +12,7 @@ import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
+import io.papermc.paper.event.entity.EntityLandEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
@@ -69,6 +70,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
@@ -2424,5 +2426,16 @@ public class CraftEventFactory {
             return PrimedTnt.NO_FUSE;
         }
         return event.getFuseTime();
+    }
+
+    public static boolean callEntityLandEvent(net.minecraft.world.level.block.state.BlockState state, Level level, BlockPos pos, Entity entity, boolean isOverrideMethod) {
+        if (EntityLandEvent.getHandlerList().getRegisteredListeners().length == 0) {
+            return true; // No listeners, skip event creation
+        }
+        if(!isOverrideMethod && (state.is(Blocks.POINTED_DRIPSTONE) || state.is(Blocks.TURTLE_EGG) || state.is(Blocks.FARMLAND))){
+            return true; // Event will be called in the class separately
+        }
+        EntityLandEvent event = new EntityLandEvent(entity.getBukkitEntity(), CraftBlock.at(level, pos));
+        return event.callEvent();
     }
 }
