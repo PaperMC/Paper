@@ -317,7 +317,8 @@ public final class ClassToInterfaceRules {
             EnderDragonChangePhaseEvent.class,
             EntityAirChangeEvent.class,
             EntityChangeBlockEvent.class,
-            EntityBreakDoorEvent.class
+            EntityBreakDoorEvent.class,
+            EntityBreedEvent.class
             //</editor-fold>
         );
     }
