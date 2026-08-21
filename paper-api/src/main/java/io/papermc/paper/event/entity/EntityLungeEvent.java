@@ -1,37 +1,20 @@
 package io.papermc.paper.event.entity;
 
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEvent;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
+import org.bukkit.event.entity.EntityEventNew;
 
 /**
  * Called when a living entity tries to lunge with a spear.
  */
-@NullMarked
-public class EntityLungeEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private int lungePower;
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public EntityLungeEvent(final LivingEntity entity, final int lungePower) {
-        super(entity);
-        this.lungePower = lungePower;
-    }
+public interface EntityLungeEvent extends EntityEventNew, Cancellable {
 
     /**
      * Gets the lunge power, which when initially passed, matches the enchantment level of the item, but can be higher.
      *
      * @return the lunge power
      */
-    public int getLungePower() {
-        return this.lungePower;
-    }
+    int getLungePower();
 
     /**
      * Sets the lunge power. This commonly matches the enchantment level of the item, and can be set higher.
@@ -41,14 +24,7 @@ public class EntityLungeEvent extends EntityEvent implements Cancellable {
      *
      * @param lungePower the new lunge power
      */
-    public void setLungePower(final int lungePower) {
-        this.lungePower = lungePower;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    void setLungePower(int lungePower);
 
     /**
      * Set whether to cancel the lunge. If cancelled, the living entity will not lunge forward.
@@ -56,16 +32,12 @@ public class EntityLungeEvent extends EntityEvent implements Cancellable {
      * @param cancel {@code true} if you wish to cancel this event
      */
     @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
