@@ -155,6 +155,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityExplodeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityInteractEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityKnockbackByEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityKnockbackEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityPickupItemEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
@@ -2011,7 +2012,7 @@ public class CraftEventFactory {
     }
 
     public static EntityPickupItemEvent callEntityPickupItemEvent(Entity entity, ItemEntity item, int remaining, boolean cancelled) {
-        EntityPickupItemEvent event = new EntityPickupItemEvent((LivingEntity) entity.getBukkitEntity(), (Item) item.getBukkitEntity(), remaining);
+        EntityPickupItemEvent event = new CraftEntityPickupItemEvent((LivingEntity) entity.getBukkitEntity(), (Item) item.getBukkitEntity(), remaining);
         event.setCancelled(cancelled);
         Bukkit.getPluginManager().callEvent(event);
         return event;
