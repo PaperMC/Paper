@@ -321,7 +321,8 @@ public final class ClassToInterfaceRules {
             EntityBreedEvent.class,
             EntityCombustEvent.class,
             EntityCombustByEntityEvent.class,
-            EntityCombustByBlockEvent.class
+            EntityCombustByBlockEvent.class,
+            EntityCreatePortalEvent.class
             //</editor-fold>
         );
     }
