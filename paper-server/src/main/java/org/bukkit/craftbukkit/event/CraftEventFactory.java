@@ -151,6 +151,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityDamageEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityDeathEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEnterLoveModeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityExhaustionEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityExplodeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
@@ -2205,7 +2206,7 @@ public class CraftEventFactory {
     }
 
     public static EntityExplodeEvent callEntityExplodeEvent(Entity entity, List<Block> blocks, float yield, Explosion.BlockInteraction effect) {
-        EntityExplodeEvent event = new EntityExplodeEvent(entity.getBukkitEntity(), entity.getBukkitEntity().getLocation(), blocks, yield, CraftExplosionResult.toExplosionResult(effect));
+        EntityExplodeEvent event = new CraftEntityExplodeEvent(entity.getBukkitEntity(), entity.getBukkitEntity().getLocation(), blocks, yield, CraftExplosionResult.toExplosionResult(effect));
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
