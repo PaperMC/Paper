@@ -3,54 +3,30 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a human entity experiences exhaustion.
- * <br>
+ * <p>
  * An exhaustion level greater than 4.0 causes a decrease in saturation by 1.
  */
-public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
+public interface EntityExhaustionEvent extends EntityEventNew, Cancellable {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final ExhaustionReason exhaustionReason;
-    private float exhaustion;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public EntityExhaustionEvent(@NotNull HumanEntity human, @NotNull ExhaustionReason exhaustionReason, float exhaustion) {
-        super(human);
-        this.exhaustionReason = exhaustionReason;
-        this.exhaustion = exhaustion;
-    }
-
-    @NotNull
     @Override
-    public HumanEntity getEntity() {
-        return (HumanEntity) super.entity;
-    }
+    HumanEntity getEntity();
 
     /**
      * Gets the {@link ExhaustionReason} for this event
      *
      * @return the exhaustion reason
      */
-    @NotNull
-    public ExhaustionReason getExhaustionReason() {
-        return this.exhaustionReason;
-    }
+    ExhaustionReason getExhaustionReason();
 
     /**
      * Get the amount of exhaustion to add to the player's current exhaustion.
      *
      * @return amount of exhaustion
      */
-    public float getExhaustion() {
-        return this.exhaustion;
-    }
+    float getExhaustion();
 
     /**
      * Set the exhaustion to apply to the player.
@@ -61,24 +37,12 @@ public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
      *
      * @param exhaustion new exhaustion to add
      */
-    public void setExhaustion(float exhaustion) {
-        this.exhaustion = exhaustion;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setExhaustion(float exhaustion);
 
     /**
      * The reason for why a PlayerExhaustionEvent takes place
      */
-    public enum ExhaustionReason {
+    enum ExhaustionReason {
 
         /**
          * Player mines a block
@@ -145,14 +109,10 @@ public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
         UNKNOWN
     }
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

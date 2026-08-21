@@ -150,6 +150,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityDamageByEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityDamageEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityDeathEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEnterLoveModeEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityExhaustionEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
@@ -2076,7 +2077,7 @@ public class CraftEventFactory {
     }
 
     public static EntityExhaustionEvent callPlayerExhaustionEvent(net.minecraft.world.entity.player.Player humanEntity, EntityExhaustionEvent.ExhaustionReason exhaustionReason, float exhaustion) {
-        EntityExhaustionEvent event = new EntityExhaustionEvent(humanEntity.getBukkitEntity(), exhaustionReason, exhaustion);
+        EntityExhaustionEvent event = new CraftEntityExhaustionEvent(humanEntity.getBukkitEntity(), exhaustionReason, exhaustion);
         Bukkit.getPluginManager().callEvent(event);
 
         return event;
