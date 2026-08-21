@@ -157,6 +157,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityKnockbackByEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityKnockbackEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityPickupItemEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityPlaceEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityPortalEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
@@ -2131,7 +2132,7 @@ public class CraftEventFactory {
 
     public static EntityTeleportEvent callEntityTeleportEvent(Entity nmsEntity, Location to) {
         CraftEntity entity = nmsEntity.getBukkitEntity();
-        EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(entity, entity.getLocation(), to);
+        EntityTeleportEvent event = new org.bukkit.craftbukkit.event.entity.CraftEntityTeleportEvent(entity, entity.getLocation(), to);
 
         Bukkit.getPluginManager().callEvent(event);
 
@@ -2189,7 +2190,7 @@ public class CraftEventFactory {
     ) {
         org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
         Location from = bukkitEntity.getLocation();
-        EntityPortalEvent event = new EntityPortalEvent(bukkitEntity, from, to, searchRadius, true, createRadius, type);
+        EntityPortalEvent event = new CraftEntityPortalEvent(bukkitEntity, from, to, searchRadius, true, createRadius, type);
         event.callEvent();
         if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !entity.isAlive()) {
             return null;
