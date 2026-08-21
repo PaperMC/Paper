@@ -337,7 +337,8 @@ public final class ClassToInterfaceRules {
             EntityInteractEvent.class,
             org.bukkit.event.entity.EntityKnockbackEvent.class,
             org.bukkit.event.entity.EntityKnockbackByEntityEvent.class,
-            EntityMountEvent.class
+            EntityMountEvent.class,
+            EntityPickupItemEvent.class
             //</editor-fold>
         );
     }
