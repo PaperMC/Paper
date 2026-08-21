@@ -156,6 +156,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityInteractEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityKnockbackByEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityKnockbackEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityPickupItemEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityPlaceEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
@@ -641,7 +642,7 @@ public class CraftEventFactory {
         org.bukkit.block.Block clickedBlock = CraftBlock.at(level, clickedPos);
         org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(clickedFace);
 
-        EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), cplayer, clickedBlock, blockFace, CraftEquipmentSlot.getHand(hand));
+        EntityPlaceEvent event = new CraftEntityPlaceEvent(entity.getBukkitEntity(), cplayer, clickedBlock, blockFace, CraftEquipmentSlot.getHand(hand));
         entity.level().getCraftServer().getPluginManager().callEvent(event);
 
         return event;
