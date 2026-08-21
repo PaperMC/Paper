@@ -314,7 +314,8 @@ public final class ClassToInterfaceRules {
             SpawnerSpawnEvent.class,
             TrialSpawnerSpawnEvent.class,
             CreeperPowerEvent.class,
-            EnderDragonChangePhaseEvent.class
+            EnderDragonChangePhaseEvent.class,
+            EntityAirChangeEvent.class
             //</editor-fold>
         );
     }
