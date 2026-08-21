@@ -13,6 +13,7 @@ import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
+import io.papermc.paper.event.entity.PaperEntityIgniteEvent;
 import io.papermc.paper.event.entity.PaperItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PaperPlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PaperPlayerToggleEntityAgeLockEvent;
@@ -2482,7 +2483,7 @@ public class CraftEventFactory {
             return fuseTime; // No listeners, skip event creation
         }
 
-        EntityIgniteEvent event = new EntityIgniteEvent(entity.getBukkitEntity(), fuseTime);
+        EntityIgniteEvent event = new PaperEntityIgniteEvent(entity.getBukkitEntity(), fuseTime);
         if (!event.callEvent()) {
             return PrimedTnt.NO_FUSE;
         }
