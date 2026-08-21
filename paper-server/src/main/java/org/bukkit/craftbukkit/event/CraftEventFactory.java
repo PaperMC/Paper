@@ -153,6 +153,8 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityEnterLoveModeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityExhaustionEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityExplodeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityInteractEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityKnockbackByEntityEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityKnockbackEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
@@ -2238,9 +2240,9 @@ public class CraftEventFactory {
         final org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause legacyCause = org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause.valueOf(cause.name());
         EntityKnockbackEvent legacyEvent;
         if (pusher != null) {
-            legacyEvent = new EntityKnockbackByEntityEvent(entity, pusher.getBukkitEntity(), legacyCause, force, apiKnockback, legacyFinalKnockback);
+            legacyEvent = new CraftEntityKnockbackByEntityEvent(entity, pusher.getBukkitEntity(), legacyCause, force, apiKnockback, legacyFinalKnockback);
         } else {
-            legacyEvent = new EntityKnockbackEvent(entity, legacyCause, force, apiKnockback, legacyFinalKnockback);
+            legacyEvent = new CraftEntityKnockbackEvent(entity, legacyCause, force, apiKnockback, legacyFinalKnockback);
         }
         legacyEvent.callEvent();
 
