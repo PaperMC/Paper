@@ -142,6 +142,8 @@ import org.bukkit.craftbukkit.event.entity.CraftArrowBodyCountChangeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftBatToggleSleepEvent;
 import org.bukkit.craftbukkit.event.entity.CraftCreatureSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftCreeperPowerEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityBreakDoorEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityChangeBlockEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
@@ -1390,7 +1392,7 @@ public class CraftEventFactory {
     public static boolean callEntityChangeBlockEvent(Entity entity, BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, boolean cancelled) {
         Block block = CraftBlock.at(entity.level(), pos);
 
-        EntityChangeBlockEvent event = new EntityChangeBlockEvent(entity.getBukkitEntity(), block, newState.asBlockData());
+        EntityChangeBlockEvent event = new CraftEntityChangeBlockEvent(entity.getBukkitEntity(), block, newState.asBlockData());
         event.setCancelled(cancelled);
         event.getEntity().getServer().getPluginManager().callEvent(event);
         return !event.isCancelled();
@@ -1428,7 +1430,7 @@ public class CraftEventFactory {
         org.bukkit.entity.Entity entity1 = entity.getBukkitEntity();
         Block block = CraftBlock.at(entity.level(), pos);
 
-        EntityBreakDoorEvent event = new EntityBreakDoorEvent((LivingEntity) entity1, block, newState.asBlockData());
+        EntityBreakDoorEvent event = new CraftEntityBreakDoorEvent((LivingEntity) entity1, block, newState.asBlockData());
         entity1.getServer().getPluginManager().callEvent(event);
 
         return event;
