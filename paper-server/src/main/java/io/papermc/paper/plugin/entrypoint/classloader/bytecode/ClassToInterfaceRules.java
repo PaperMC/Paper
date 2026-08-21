@@ -284,6 +284,8 @@ public final class ClassToInterfaceRules {
             EntityEffectTickEvent.class,
             EntityEquipmentChangedEvent.class,
             EntityFertilizeEggEvent.class,
+            EntityIgniteEvent.class,
+            CreeperIgniteEvent.class,
             EntityInsideBlockEvent.class,
             EntityLoadCrossbowEvent.class,
             io.papermc.paper.event.entity.EntityKnockbackEvent.class,
