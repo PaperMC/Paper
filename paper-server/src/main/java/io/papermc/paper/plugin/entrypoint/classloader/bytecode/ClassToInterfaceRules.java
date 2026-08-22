@@ -381,7 +381,8 @@ public final class ClassToInterfaceRules {
             VillagerAcquireTradeEvent.class,
             VillagerCareerChangeEvent.class,
             VillagerReplenishTradeEvent.class,
-            EnderDragonFireballHitEvent.class
+            EnderDragonFireballHitEvent.class,
+            EnderDragonFlameEvent.class
             //</editor-fold>
         );
     }
