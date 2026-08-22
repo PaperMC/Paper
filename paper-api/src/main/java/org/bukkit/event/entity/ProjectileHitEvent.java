@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a projectile hits an object
  */
-public interface ProjectileHitEvent extends EntityEventNew, Cancellable {
+public interface ProjectileHitEvent extends EntityEvent, Cancellable {
 
     @Override
     Projectile getEntity();

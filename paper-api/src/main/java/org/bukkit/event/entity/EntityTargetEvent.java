@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a creature targets or untargets another entity
  */
-public interface EntityTargetEvent extends EntityEventNew, Cancellable {
+public interface EntityTargetEvent extends EntityEvent, Cancellable {
 
     /**
      * Get the entity that this is targeting.

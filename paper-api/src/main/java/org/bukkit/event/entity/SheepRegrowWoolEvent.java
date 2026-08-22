@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a sheep regrows its wool
  */
-public interface SheepRegrowWoolEvent extends EntityEventNew, Cancellable {
+public interface SheepRegrowWoolEvent extends EntityEvent, Cancellable {
 
     @Override
     Sheep getEntity();

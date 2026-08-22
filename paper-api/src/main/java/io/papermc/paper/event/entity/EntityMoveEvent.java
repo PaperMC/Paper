@@ -4,7 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
@@ -12,7 +12,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
  * <p>
  * Does not fire for players; use {@link PlayerMoveEvent} for player movement.
  */
-public interface EntityMoveEvent extends EntityEventNew, Cancellable {
+public interface EntityMoveEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

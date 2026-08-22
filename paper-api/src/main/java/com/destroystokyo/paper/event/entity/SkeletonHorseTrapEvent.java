@@ -5,12 +5,12 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.SkeletonHorse;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Event called when a player gets close to a skeleton horse and triggers the lightning trap
  */
-public interface SkeletonHorseTrapEvent extends EntityEventNew, Cancellable { // todo javadocs?
+public interface SkeletonHorseTrapEvent extends EntityEvent, Cancellable { // todo javadocs?
 
     @Override
     SkeletonHorse getEntity();

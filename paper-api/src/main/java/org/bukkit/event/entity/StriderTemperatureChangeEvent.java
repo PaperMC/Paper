@@ -8,7 +8,7 @@ import org.bukkit.event.HandlerList;
  * Called when a {@link Strider}'s temperature has changed as a result of
  * entering or exiting blocks it considers warm.
  */
-public interface StriderTemperatureChangeEvent extends EntityEventNew, Cancellable {
+public interface StriderTemperatureChangeEvent extends EntityEvent, Cancellable {
 
     @Override
     Strider getEntity();

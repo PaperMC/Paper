@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when an entity stops riding another entity.
  */
-public interface EntityDismountEvent extends EntityEventNew, Cancellable {
+public interface EntityDismountEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the entity which will no longer be ridden.

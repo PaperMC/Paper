@@ -3,9 +3,9 @@ package com.destroystokyo.paper.event.entity;
 import org.bukkit.entity.Enderman;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
-public interface EndermanEscapeEvent extends EntityEventNew, Cancellable {
+public interface EndermanEscapeEvent extends EntityEvent, Cancellable {
 
     @Override
     Enderman getEntity();

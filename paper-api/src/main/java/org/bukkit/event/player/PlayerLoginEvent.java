@@ -85,7 +85,7 @@ public interface PlayerLoginEvent extends PlayerEvent {
      * @return Current kick message
      * @deprecated in favour of {@link #kickMessage()}
      */
-    @Deprecated // Paper
+    @Deprecated
     String getKickMessage();
 
     /**

@@ -3,7 +3,7 @@ package io.papermc.paper.event.entity;
 import java.util.Map;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Unmodifiable;
  *     <li>A player changes their currently held item.</li>
  * </ul>
  */
-public interface EntityEquipmentChangedEvent extends EntityEventNew {
+public interface EntityEquipmentChangedEvent extends EntityEvent {
 
     @Override
     LivingEntity getEntity();

@@ -14,7 +14,7 @@ public class CraftEntityPortalEvent extends CraftEntityTeleportEvent implements 
     private boolean canCreatePortal;
     private int creationRadius;
 
-    public CraftEntityPortalEvent(final Entity entity, final Location from, @Nullable final Location to, final int searchRadius, final boolean canCreatePortal, final int creationRadius, final PortalType portalType) {
+    public CraftEntityPortalEvent(final Entity entity, final Location from, final @Nullable Location to, final int searchRadius, final boolean canCreatePortal, final int creationRadius, final PortalType portalType) {
         super(entity, from, to);
         this.type = portalType;
         this.searchRadius = searchRadius;

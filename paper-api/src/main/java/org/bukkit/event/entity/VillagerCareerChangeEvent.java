@@ -5,7 +5,7 @@ import org.bukkit.entity.Villager.Profession;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
-public interface VillagerCareerChangeEvent extends EntityEventNew, Cancellable {
+public interface VillagerCareerChangeEvent extends EntityEvent, Cancellable {
 
     @Override
     Villager getEntity();

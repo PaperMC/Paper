@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when one Entity breeds with another Entity.
  */
-public interface EntityBreedEvent extends EntityEventNew, Cancellable {
+public interface EntityBreedEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

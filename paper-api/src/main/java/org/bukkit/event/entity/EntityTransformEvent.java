@@ -8,7 +8,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when an entity is about to be replaced by another entity.
  */
-public interface EntityTransformEvent extends EntityEventNew, Cancellable {
+public interface EntityTransformEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the entities that the original entity was transformed to.

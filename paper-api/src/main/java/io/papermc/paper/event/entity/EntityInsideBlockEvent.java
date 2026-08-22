@@ -3,7 +3,7 @@ package io.papermc.paper.event.entity;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Called when an entity enters the hitbox of a block.
@@ -39,7 +39,7 @@ import org.bukkit.event.entity.EntityEventNew;
  *     <li>Wither rose</li>
  * </ul>
  */
-public interface EntityInsideBlockEvent extends EntityEventNew, Cancellable {
+public interface EntityInsideBlockEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the block.

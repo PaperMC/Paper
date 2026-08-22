@@ -4,12 +4,12 @@ import org.bukkit.entity.DragonFireball;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Fired when an EnderDragon shoots a fireball
  */
-public interface EnderDragonShootFireballEvent extends EntityEventNew, Cancellable {
+public interface EnderDragonShootFireballEvent extends EntityEvent, Cancellable {
 
     /**
      * The enderdragon shooting the fireball

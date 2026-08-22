@@ -3,12 +3,12 @@ package com.destroystokyo.paper.event.entity;
 import org.bukkit.entity.Turtle;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Fired when a Turtle decides to go home
  */
-public interface TurtleGoHomeEvent extends EntityEventNew, Cancellable {
+public interface TurtleGoHomeEvent extends EntityEvent, Cancellable {
 
     /**
      * The turtle going home

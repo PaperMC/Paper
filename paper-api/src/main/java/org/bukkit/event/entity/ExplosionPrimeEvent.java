@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when an entity has made a decision to explode.
  */
-public interface ExplosionPrimeEvent extends EntityEventNew, Cancellable {
+public interface ExplosionPrimeEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the radius of the explosion

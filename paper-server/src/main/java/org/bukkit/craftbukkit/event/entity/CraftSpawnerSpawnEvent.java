@@ -9,7 +9,7 @@ public class CraftSpawnerSpawnEvent extends CraftEntitySpawnEvent implements Spa
 
     private final CreatureSpawner spawner;
 
-    public CraftSpawnerSpawnEvent(final Entity spawnee, @Nullable final CreatureSpawner spawner) { // Paper
+    public CraftSpawnerSpawnEvent(final Entity spawnee, final @Nullable CreatureSpawner spawner) {
         super(spawnee);
         this.spawner = spawner;
     }

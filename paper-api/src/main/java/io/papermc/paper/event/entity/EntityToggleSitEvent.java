@@ -2,12 +2,12 @@ package io.papermc.paper.event.entity;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Is called when an entity sits down or stands up.
  */
-public interface EntityToggleSitEvent extends EntityEventNew, Cancellable {
+public interface EntityToggleSitEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the new sitting state that the entity will change to.

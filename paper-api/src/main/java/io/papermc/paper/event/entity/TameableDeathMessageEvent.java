@@ -4,12 +4,12 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Tameable;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Called when a {@link Tameable} dies and sends a death message.
  */
-public interface TameableDeathMessageEvent extends EntityEventNew, Cancellable {
+public interface TameableDeathMessageEvent extends EntityEvent, Cancellable {
 
     /**
      * Get the death message that appears to the owner of the tameable.

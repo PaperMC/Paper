@@ -3,14 +3,14 @@ package io.papermc.paper.event.entity;
 import org.bukkit.entity.Shulker;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Fired when a shulker duplicates itself by spawning a new shulker.
  * <p>
  * The event is fired prior to the newly created shulker, accessible via {@link #getEntity()}, being added to the world.
  */
-public interface ShulkerDuplicateEvent extends EntityEventNew, Cancellable {
+public interface ShulkerDuplicateEvent extends EntityEvent, Cancellable {
 
     /**
      * Provides the newly created shulker, which did not exist prior to the duplication.

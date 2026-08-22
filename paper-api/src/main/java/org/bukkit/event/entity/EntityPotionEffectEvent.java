@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * If the event is cancelled, no change will be made on the entity.
  */
-public interface EntityPotionEffectEvent extends EntityEventNew, Cancellable {
+public interface EntityPotionEffectEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityBreedEvent;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
@@ -24,7 +24,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * The event hence only exposes the two parent entities in the fertilization process and cannot provide the child entity, as it will only exist at a later point in time.
  */
-public interface EntityFertilizeEggEvent extends EntityEventNew, Cancellable {
+public interface EntityFertilizeEggEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

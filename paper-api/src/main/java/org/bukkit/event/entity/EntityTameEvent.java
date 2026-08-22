@@ -8,7 +8,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Thrown when a living entity is tamed.
  */
-public interface EntityTameEvent extends EntityEventNew, Cancellable {
+public interface EntityTameEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

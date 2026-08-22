@@ -3,37 +3,23 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents an Entity-related event
  */
-public abstract class EntityEvent extends EventTmp implements EntityEventNew {
-
-    protected Entity entity;
-
-    protected EntityEvent(@NotNull final Entity entity) {
-        this.entity = entity;
-    }
+public interface EntityEvent extends Event {
 
     /**
      * Returns the Entity involved in this event
      *
      * @return Entity who is involved in this event
      */
-    @NotNull
-    public Entity getEntity() {
-        return this.entity;
-    }
+    Entity getEntity();
 
     /**
-     * Gets the EntityType of the Entity involved in this event.
+     * Gets the type of the Entity involved in this event.
      *
-     * @return EntityType of the Entity involved in this event
+     * @return type of the Entity involved in this event
      */
-    @NotNull
-    public EntityType getEntityType() {
-        return this.entity.getType();
-    }
+    EntityType getEntityType();
 }

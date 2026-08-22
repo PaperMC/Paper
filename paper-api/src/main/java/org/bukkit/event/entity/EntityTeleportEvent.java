@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
  * This may be as a result of natural causes (Enderman, Shulker), pathfinding
  * (Wolf), or commands (/teleport).
  */
-public interface EntityTeleportEvent extends EntityEventNew, Cancellable {
+public interface EntityTeleportEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the location that this entity moved from

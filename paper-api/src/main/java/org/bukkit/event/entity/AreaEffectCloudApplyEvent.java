@@ -10,7 +10,7 @@ import org.bukkit.event.HandlerList;
  * Called when a lingering potion applies its effects. Happens
  * once every 5 ticks
  */
-public interface AreaEffectCloudApplyEvent extends EntityEventNew, Cancellable {
+public interface AreaEffectCloudApplyEvent extends EntityEvent, Cancellable {
 
     @Override
     AreaEffectCloud getEntity();

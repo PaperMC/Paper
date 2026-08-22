@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when an entity interacts with an object
  */
-public interface EntityInteractEvent extends EntityEventNew, Cancellable {
+public interface EntityInteractEvent extends EntityEvent, Cancellable {
 
     /**
      * Returns the involved block

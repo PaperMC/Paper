@@ -2,7 +2,7 @@ package io.papermc.paper.event.entity;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.util.Vector;
 
 /**
@@ -11,7 +11,7 @@ import org.bukkit.util.Vector;
  * @see EntityPushedByEntityAttackEvent
  * @see com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent
  */
-public interface EntityKnockbackEvent extends EntityEventNew, Cancellable {
+public interface EntityKnockbackEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the cause of the knockback.

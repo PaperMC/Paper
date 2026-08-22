@@ -15,6 +15,7 @@ import io.papermc.paper.event.player.*;
 import java.util.Map;
 import java.util.Set;
 import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.*;
@@ -64,7 +65,8 @@ public final class ClassToInterfaceRules {
             //<editor-fold desc="event classes" defaultstate="collapsed">
             //Event.class, CraftEvent.class,
             PlayerEvent.class, CraftPlayerEvent.class,
-            BlockEvent.class, CraftBlockEvent.class
+            BlockEvent.class, CraftBlockEvent.class,
+            EntityEvent.class, CraftEntityEvent.class
             //</editor-fold>
         );
     }

@@ -4,12 +4,12 @@ import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Fired when an EnderDragon spawns an AreaEffectCloud by shooting flames
  */
-public interface EnderDragonFlameEvent extends EntityEventNew, Cancellable {
+public interface EnderDragonFlameEvent extends EntityEvent, Cancellable {
 
     /**
      * The enderdragon involved in this event

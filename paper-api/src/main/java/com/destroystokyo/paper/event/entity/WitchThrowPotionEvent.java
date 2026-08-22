@@ -4,14 +4,14 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Witch;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Fired when a witch throws a potion at a player
  */
-public interface WitchThrowPotionEvent extends EntityEventNew, Cancellable {
+public interface WitchThrowPotionEvent extends EntityEvent, Cancellable {
 
     @Override
     Witch getEntity();

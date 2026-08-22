@@ -4,12 +4,12 @@ import org.bukkit.Location;
 import org.bukkit.entity.Turtle;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Fired when a Turtle lays eggs
  */
-public interface TurtleLayEggEvent extends EntityEventNew, Cancellable {
+public interface TurtleLayEggEvent extends EntityEvent, Cancellable {
 
     /**
      * The turtle laying the eggs

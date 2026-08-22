@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a {@link Spellcaster} casts a spell.
  */
-public interface EntitySpellCastEvent extends EntityEventNew, Cancellable {
+public interface EntitySpellCastEvent extends EntityEvent, Cancellable {
 
     @Override
     Spellcaster getEntity();

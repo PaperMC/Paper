@@ -14,7 +14,7 @@ import org.bukkit.event.world.PortalCreateEvent;
  * @deprecated Use {@link PortalCreateEvent}
  */
 @Deprecated(since = "1.14.1")
-public interface EntityCreatePortalEvent extends EntityEventNew, Cancellable {
+public interface EntityCreatePortalEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

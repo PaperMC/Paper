@@ -3,7 +3,7 @@ package io.papermc.paper.event.entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.potion.PotionEffectType;
 
 /**
@@ -13,7 +13,7 @@ import org.bukkit.potion.PotionEffectType;
  * For example, this event may be called when an entity regenerates health
  * or takes poison damage as a result of a potion effect.
  */
-public interface EntityEffectTickEvent extends EntityEventNew, Cancellable {
+public interface EntityEffectTickEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

@@ -8,7 +8,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Thrown when an entity picks an item up from the ground
  */
-public interface EntityPickupItemEvent extends EntityEventNew, Cancellable {
+public interface EntityPickupItemEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

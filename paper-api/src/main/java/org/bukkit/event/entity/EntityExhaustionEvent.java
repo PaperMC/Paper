@@ -9,7 +9,7 @@ import org.bukkit.event.HandlerList;
  * <p>
  * An exhaustion level greater than 4.0 causes a decrease in saturation by 1.
  */
-public interface EntityExhaustionEvent extends EntityEventNew, Cancellable {
+public interface EntityExhaustionEvent extends EntityEvent, Cancellable {
 
     @Override
     HumanEntity getEntity();

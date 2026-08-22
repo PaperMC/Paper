@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a LivingEntity shoots a bow firing an arrow
  */
-public interface EntityShootBowEvent extends EntityEventNew, Cancellable {
+public interface EntityShootBowEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

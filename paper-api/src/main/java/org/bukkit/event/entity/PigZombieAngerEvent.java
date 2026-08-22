@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * If the event is cancelled, the zombified piglin will not be angered.
  */
-public interface PigZombieAngerEvent extends EntityEventNew, Cancellable {
+public interface PigZombieAngerEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the entity (if any) which triggered this anger update.

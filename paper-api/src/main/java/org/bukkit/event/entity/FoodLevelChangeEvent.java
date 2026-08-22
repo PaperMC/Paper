@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
-public interface FoodLevelChangeEvent extends EntityEventNew, Cancellable {
+public interface FoodLevelChangeEvent extends EntityEvent, Cancellable {
 
     @Override
     HumanEntity getEntity();

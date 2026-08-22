@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a horse jumps.
  */
-public interface HorseJumpEvent extends EntityEventNew, Cancellable {
+public interface HorseJumpEvent extends EntityEvent, Cancellable {
 
     @Override
     AbstractHorse getEntity();

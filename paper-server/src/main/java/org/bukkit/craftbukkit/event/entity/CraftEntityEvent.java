@@ -3,9 +3,9 @@ package org.bukkit.craftbukkit.event.entity;
 import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
-public abstract class CraftEntityEvent extends CraftEvent implements EntityEventNew {
+public abstract class CraftEntityEvent extends CraftEvent implements EntityEvent {
 
     protected Entity entity;
 

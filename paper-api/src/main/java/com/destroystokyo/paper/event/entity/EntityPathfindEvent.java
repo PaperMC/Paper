@@ -4,7 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * This event does not fire for the entities actual movement. Only when it
  * is choosing to start moving to a location.
  */
-public interface EntityPathfindEvent extends EntityEventNew, Cancellable {
+public interface EntityPathfindEvent extends EntityEvent, Cancellable {
 
     /**
      * The Entity that is pathfinding.

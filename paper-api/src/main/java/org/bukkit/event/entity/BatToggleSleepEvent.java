@@ -9,7 +9,7 @@ import org.bukkit.event.HandlerList;
  * If this event is cancelled, the Bat will not toggle its sleep
  * state.
  */
-public interface BatToggleSleepEvent extends EntityEventNew, Cancellable {
+public interface BatToggleSleepEvent extends EntityEvent, Cancellable {
 
     /**
      * Get whether the bat is attempting to awaken.

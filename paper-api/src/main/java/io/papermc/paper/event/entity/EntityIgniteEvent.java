@@ -2,13 +2,13 @@ package io.papermc.paper.event.entity;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.checkerframework.checker.index.qual.Positive;
 
 /**
  * Called when an entity is ignited often by fire or redstone power.
  */
-public interface EntityIgniteEvent extends EntityEventNew, Cancellable {
+public interface EntityIgniteEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the amount of ticks required for this entity to explode.
