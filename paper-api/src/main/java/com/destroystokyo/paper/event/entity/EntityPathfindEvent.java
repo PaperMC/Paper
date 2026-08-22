@@ -4,9 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEvent;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
+import org.bukkit.event.entity.EntityEventNew;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -15,21 +13,7 @@ import org.jspecify.annotations.Nullable;
  * This event does not fire for the entities actual movement. Only when it
  * is choosing to start moving to a location.
  */
-@NullMarked
-public class EntityPathfindEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final @Nullable Entity targetEntity;
-    private final Location location;
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public EntityPathfindEvent(final Entity entity, final Location location, final @Nullable Entity targetEntity) {
-        super(entity);
-        this.targetEntity = targetEntity;
-        this.location = location;
-    }
+public interface EntityPathfindEvent extends EntityEventNew, Cancellable {
 
     /**
      * The Entity that is pathfinding.
@@ -37,9 +21,7 @@ public class EntityPathfindEvent extends EntityEvent implements Cancellable {
      * @return The Entity that is pathfinding.
      */
     @Override
-    public Entity getEntity() {
-        return this.entity;
-    }
+    Entity getEntity();
 
     /**
      * If the Entity is trying to pathfind to an entity, this is the entity in relation.
@@ -48,9 +30,7 @@ public class EntityPathfindEvent extends EntityEvent implements Cancellable {
      *
      * @return The entity target or {@code null}
      */
-    public @Nullable Entity getTargetEntity() {
-        return this.targetEntity;
-    }
+    @Nullable Entity getTargetEntity();
 
     /**
      * The Location of where the entity is about to move to.
@@ -59,26 +39,12 @@ public class EntityPathfindEvent extends EntityEvent implements Cancellable {
      *
      * @return Location of where the entity is trying to pathfind to.
      */
-    public Location getLoc() {
-        return this.location.clone();
-    }
+    Location getLoc(); // todo rename
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
