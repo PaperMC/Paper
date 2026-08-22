@@ -3,31 +3,14 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a horse jumps.
  */
-public class HorseJumpEvent extends EntityEvent implements Cancellable {
+public interface HorseJumpEvent extends EntityEventNew, Cancellable {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private float power;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public HorseJumpEvent(@NotNull final AbstractHorse horse, final float power) {
-        super(horse);
-        this.power = power;
-    }
-
-    @NotNull
     @Override
-    public AbstractHorse getEntity() {
-        return (AbstractHorse) this.entity;
-    }
+    AbstractHorse getEntity();
 
     /**
      * Gets the power of the jump.
@@ -46,9 +29,7 @@ public class HorseJumpEvent extends EntityEvent implements Cancellable {
      *
      * @return jump strength
      */
-    public float getPower() {
-        return this.power;
-    }
+    float getPower();
 
     /**
      * Sets the power of the jump.
@@ -64,32 +45,19 @@ public class HorseJumpEvent extends EntityEvent implements Cancellable {
      * @deprecated horse jumping was moved client side.
      */
     @Deprecated(since = "1.9")
-    public void setPower(float power) {
-        this.power = power;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    void setPower(float power);
 
     /**
      * @deprecated horse jumping was moved client side.
      */
     @Override
     @Deprecated(since = "1.9")
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

@@ -174,6 +174,7 @@ import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExplosionPrimeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftFireworkExplodeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftFoodLevelChangeEvent;
+import org.bukkit.craftbukkit.event.entity.CraftHorseJumpEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPigZapEvent;
@@ -1401,7 +1402,7 @@ public class CraftEventFactory {
     }
 
     public static boolean callHorseJumpEvent(Entity horse, float power) {
-        HorseJumpEvent event = new HorseJumpEvent((AbstractHorse) horse.getBukkitEntity(), power);
+        HorseJumpEvent event = new CraftHorseJumpEvent((AbstractHorse) horse.getBukkitEntity(), power);
         horse.getBukkitEntity().getServer().getPluginManager().callEvent(event);
         return !event.isCancelled();
     }
