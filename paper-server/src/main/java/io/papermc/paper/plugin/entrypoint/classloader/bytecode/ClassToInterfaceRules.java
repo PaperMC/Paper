@@ -371,7 +371,8 @@ public final class ClassToInterfaceRules {
             FireworkExplodeEvent.class,
             FoodLevelChangeEvent.class,
             HorseJumpEvent.class,
-            ItemDespawnEvent.class
+            ItemDespawnEvent.class,
+            ItemMergeEvent.class
             //</editor-fold>
         );
     }
