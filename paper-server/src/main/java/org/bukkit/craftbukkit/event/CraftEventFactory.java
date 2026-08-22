@@ -180,6 +180,7 @@ import org.bukkit.craftbukkit.event.entity.CraftItemMergeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPigZapEvent;
+import org.bukkit.craftbukkit.event.entity.CraftPiglinBarterEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPlayerDeathEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPlayerUnleashEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPotionSplashEvent;
@@ -2108,7 +2109,7 @@ public class CraftEventFactory {
     }
 
     public static PiglinBarterEvent callPiglinBarterEvent(net.minecraft.world.entity.monster.piglin.Piglin piglin, List<ItemStack> outcome, ItemStack input) {
-        PiglinBarterEvent event = new PiglinBarterEvent((Piglin) piglin.getBukkitEntity(), CraftItemStack.asBukkitCopy(input), outcome.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList()));
+        PiglinBarterEvent event = new CraftPiglinBarterEvent((Piglin) piglin.getBukkitEntity(), CraftItemStack.asBukkitCopy(input), outcome.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList()));
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
