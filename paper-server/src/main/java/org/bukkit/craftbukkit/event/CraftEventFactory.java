@@ -855,7 +855,7 @@ public class CraftEventFactory {
                 for (Entity e : entities) {
                     if (e instanceof net.minecraft.world.entity.ExperienceOrb loopItem) {
                         // Paper start
-                        if (!loopItem.isRemoved() && xp.count == loopItem.count && (mergeUnconditionally || loopItem.getValue() < maxValue) && new com.destroystokyo.paper.event.entity.ExperienceOrbMergeEvent((org.bukkit.entity.ExperienceOrb) entity.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) loopItem.getBukkitEntity()).callEvent()) { // Paper - ExperienceOrbMergeEvent
+                        if (!loopItem.isRemoved() && xp.count == loopItem.count && (mergeUnconditionally || loopItem.getValue() < maxValue) && new io.papermc.paper.event.entity.PaperExperienceOrbMergeEvent((org.bukkit.entity.ExperienceOrb) entity.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) loopItem.getBukkitEntity()).callEvent()) { // Paper - ExperienceOrbMergeEvent
                             long newTotal = (long)xp.getValue() + (long)loopItem.getValue();
                             if ((int) newTotal < 0) continue; // Overflow
                             if (!mergeUnconditionally && newTotal > maxValue) {
