@@ -380,7 +380,8 @@ public final class ClassToInterfaceRules {
             StriderTemperatureChangeEvent.class,
             VillagerAcquireTradeEvent.class,
             VillagerCareerChangeEvent.class,
-            VillagerReplenishTradeEvent.class
+            VillagerReplenishTradeEvent.class,
+            EnderDragonFireballHitEvent.class
             //</editor-fold>
         );
     }
