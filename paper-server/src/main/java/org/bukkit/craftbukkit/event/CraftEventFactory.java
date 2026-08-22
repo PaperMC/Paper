@@ -171,6 +171,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityToggleGlideEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityToggleSwimEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityTransformEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
+import org.bukkit.craftbukkit.event.entity.CraftExplosionPrimeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPigZapEvent;
@@ -2235,13 +2236,13 @@ public class CraftEventFactory {
     }
 
     public static ExplosionPrimeEvent callExplosionPrimeEvent(Explosive explosive) {
-        ExplosionPrimeEvent event = new ExplosionPrimeEvent(explosive);
+        ExplosionPrimeEvent event = new CraftExplosionPrimeEvent(explosive);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
 
     public static ExplosionPrimeEvent callExplosionPrimeEvent(Entity nmsEntity, float size, boolean fire) {
-        ExplosionPrimeEvent event = new ExplosionPrimeEvent(nmsEntity.getBukkitEntity(), size, fire);
+        ExplosionPrimeEvent event = new CraftExplosionPrimeEvent(nmsEntity.getBukkitEntity(), size, fire);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
