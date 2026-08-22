@@ -2,8 +2,6 @@ package org.bukkit.event.entity;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an {@link Entity} is removed.
@@ -16,43 +14,26 @@ import org.jetbrains.annotations.NotNull;
  * Modifications to the entity, as noted above, are not defined and are expected to not be persisted in e.g., chunk
  * unloads.
  */
-public class EntityRemoveEvent extends EntityEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Cause cause;
-
-    @ApiStatus.Internal
-    public EntityRemoveEvent(@NotNull Entity entity, @NotNull Cause cause) {
-        super(entity);
-        this.cause = cause;
-    }
+public interface EntityRemoveEvent extends EntityEventNew {
 
     /**
      * Gets the cause why the entity got removed.
      *
      * @return the cause why the entity got removed
      */
-    @NotNull
-    public Cause getCause() {
-        return this.cause;
-    }
+    Cause getCause();
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
      * Represents various ways an entity gets removed.
      */
-    public enum Cause {
+    enum Cause {
         /**
          * When an entity dies.
          */

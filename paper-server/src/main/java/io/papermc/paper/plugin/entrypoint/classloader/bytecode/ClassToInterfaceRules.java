@@ -352,7 +352,8 @@ public final class ClassToInterfaceRules {
             EntityTeleportEndGatewayEvent.class,
             EntityPoseChangeEvent.class,
             EntityPotionEffectEvent.class,
-            EntityRegainHealthEvent.class
+            EntityRegainHealthEvent.class,
+            EntityRemoveEvent.class
             //</editor-fold>
         );
     }
