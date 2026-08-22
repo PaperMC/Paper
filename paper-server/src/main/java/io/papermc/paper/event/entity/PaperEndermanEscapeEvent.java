@@ -1,0 +1,42 @@
+package io.papermc.paper.event.entity;
+
+import com.destroystokyo.paper.event.entity.EndermanEscapeEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
+import org.bukkit.entity.Enderman;
+import org.bukkit.event.HandlerList;
+
+public class PaperEndermanEscapeEvent extends CraftEntityEvent implements EndermanEscapeEvent {
+
+    private final Reason reason;
+    private boolean cancelled;
+
+    public PaperEndermanEscapeEvent(final Enderman entity, final Reason reason) {
+        super(entity);
+        this.reason = reason;
+    }
+
+    @Override
+    public Enderman getEntity() {
+        return (Enderman) this.entity;
+    }
+
+    @Override
+    public Reason getReason() {
+        return this.reason;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(final boolean cancel) {
+        this.cancelled = cancel;
+    }
+
+    @Override
+    public HandlerList getHandlers() {
+        return EndermanEscapeEvent.getHandlerList();
+    }
+}
