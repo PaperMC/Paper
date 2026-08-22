@@ -1,10 +1,7 @@
 package org.bukkit.event.entity;
 
-import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called immediately prior to an entity being unleashed.
@@ -17,78 +14,37 @@ import org.jetbrains.annotations.NotNull;
  * </ul>
  * will have no effect.
  */
-public class EntityUnleashEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final UnleashReason reason;
-    private boolean dropLeash;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public EntityUnleashEvent(@NotNull Entity entity, @NotNull UnleashReason reason) {
-        this(entity, reason, false);
-    }
-
-    @ApiStatus.Internal
-    public EntityUnleashEvent(@NotNull Entity entity, @NotNull UnleashReason reason, boolean dropLeash) {
-        super(entity);
-        this.reason = reason;
-        this.dropLeash = dropLeash;
-    }
+public interface EntityUnleashEvent extends EntityEventNew, Cancellable {
 
     /**
      * Returns the reason for the unleashing.
      *
      * @return The reason
      */
-    @NotNull
-    public UnleashReason getReason() {
-        return this.reason;
-    }
+    UnleashReason getReason();
 
     /**
      * Returns whether a leash item will be dropped.
      *
      * @return Whether the leash item will be dropped
      */
-    public boolean isDropLeash() {
-        return this.dropLeash;
-    }
+    boolean isDropLeash();
 
     /**
      * Sets whether a leash item should be dropped.
      *
      * @param dropLeash Whether the leash item should be dropped
      */
-    public void setDropLeash(boolean dropLeash) {
-        this.dropLeash = dropLeash;
+    void setDropLeash(boolean dropLeash);
+
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
-    }
-
-    public enum UnleashReason {
+    enum UnleashReason {
         /**
          * When the entity's leashholder has died or logged out, and so is
          * unleashed
@@ -106,6 +62,6 @@ public class EntityUnleashEvent extends EntityEvent implements Cancellable {
          * When the leashed entity is removed from the game
          */
         LEASHED_GONE,
-        UNKNOWN;
+        UNKNOWN
     }
 }

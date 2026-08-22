@@ -175,6 +175,7 @@ import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPigZapEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPlayerDeathEvent;
+import org.bukkit.craftbukkit.event.entity.CraftPlayerUnleashEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftProjectileHitEvent;
 import org.bukkit.craftbukkit.event.entity.CraftProjectileLaunchEvent;
@@ -1727,7 +1728,7 @@ public class CraftEventFactory {
             return true;
         }
 
-        PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(hand), dropLeash);
+        PlayerUnleashEntityEvent event = new CraftPlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(hand), dropLeash);
         entity.level().getCraftServer().getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             if (resendState && entity instanceof final Leashable leashable) {
