@@ -857,7 +857,7 @@ index 5dd64fb6e88629c7cc9f110842d1825365113b3b..77078d0eaabb158148f269ee663f205a
              return false;
          }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index d958c4717739e588c5f8985dec5d215c745f49fc..bce6f875b5c39f4977ccce256705fdd8c1ae7857 100644
+index d958c4717739e588c5f8985dec5d215c745f49fc..2077133e32c5db96fa24b18f118526a31b952b51 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -761,7 +761,7 @@ public abstract class Entity
@@ -959,6 +959,15 @@ index d958c4717739e588c5f8985dec5d215c745f49fc..bce6f875b5c39f4977ccce256705fdd8
                      bukkitEntity,
                      bukkitEntity.getLocation(), to.clone(),
                      before, after
+@@ -4300,7 +4300,7 @@ public abstract class Entity
+         this.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION, null); // CraftBukkit - add Bukkit remove cause
+         if (this instanceof Leashable leashable && leashable.isLeashed()) { // Paper - only call if it is leashed
+             // Paper start - Expand EntityUnleashEvent
+-            final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.UNKNOWN, false); // CraftBukkit
++            final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.craftbukkit.event.entity.CraftEntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.UNKNOWN, false); // CraftBukkit
+             event.callEvent();
+             if (!event.isDropLeash()) {
+                 leashable.removeLeash();
 @@ -4635,7 +4635,7 @@ public abstract class Entity
          // Paper start - entity tracking events
          // Since this event cannot be cancelled, we should call it here to catch all "un-tracks"
@@ -981,6 +990,28 @@ index 700c9c0d40dee1df6c97f7c63ad731f16bc5f3e7..fde68b8d59dc20b0e56d032cbe6ab96a
                  player.takeXpDelay = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerXpCooldownEvent(player, 2, org.bukkit.event.player.PlayerExpCooldownChangeEvent.ChangeReason.PICKUP_ORB).getNewCooldown(); // CraftBukkit - entity.takeXpDelay = 2;
                  player.take(this, 1);
                  int remaining = this.repairPlayerItems(serverPlayer, this.getValue());
+diff --git a/net/minecraft/world/entity/Leashable.java b/net/minecraft/world/entity/Leashable.java
+index 98034a4c96bf2972316078d3b3a49140921aab50..4ebd5215b6588f1e371e74e467be5672a8597941 100644
+--- a/net/minecraft/world/entity/Leashable.java
++++ b/net/minecraft/world/entity/Leashable.java
+@@ -149,7 +149,7 @@ public interface Leashable {
+         if (leashData != null && leashData.leashHolder != null) {
+             if (!entity.canInteractWithLevel() || !leashData.leashHolder.canInteractWithLevel()) {
+                 // Paper start - Expand EntityUnleashEvent
+-                final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(
++                final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.craftbukkit.event.entity.CraftEntityUnleashEvent(
+                     entity.getBukkitEntity(),
+                     !entity.isAlive() ? org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.LEASHED_GONE : org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.HOLDER_GONE,
+                     level.getGameRules().get(GameRules.ENTITY_DROPS) && !entity.pluginRemoved
+@@ -221,7 +221,7 @@ public interface Leashable {
+             Entity leashHolder = this.getLeashHolder();
+             Level level = leashHolder.level();
+ 
+-            final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(entity.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE, true);
++            final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.craftbukkit.event.entity.CraftEntityUnleashEvent(entity.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE, true);
+             if (!event.callEvent()) return;
+ 
+             dropLeash = event.isDropLeash();
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
 index 3a4da514c163e7565fc241835db52c464a5c4734..00b0c7f726a35856eb1b608571bce06210be48be 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
@@ -1084,6 +1115,19 @@ index 3a4da514c163e7565fc241835db52c464a5c4734..00b0c7f726a35856eb1b608571bce062
                          this.level().getCraftServer().getPluginManager().callEvent(teleport);
                          if (!teleport.isCancelled() && teleport.getTo() != null) { // Paper
                              Location to = teleport.getTo();
+diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
+index c2dd2da4bfb7d65ad2730ba1ce771e2b488beda4..87ba4328b18e2dd044117cd8025bce4fdc3a8132 100644
+--- a/net/minecraft/world/entity/Mob.java
++++ b/net/minecraft/world/entity/Mob.java
+@@ -1513,7 +1513,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+         boolean result = super.startRiding(entity, force, sendEventAndTriggers);
+         if (result && this.isLeashed()) {
+             // Paper start - Expand EntityUnleashEvent
+-            EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.UNKNOWN, true);
++            EntityUnleashEvent event = new org.bukkit.craftbukkit.event.entity.CraftEntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.UNKNOWN, true);
+             if (!event.callEvent()) {
+                 return result;
+             }
 diff --git a/net/minecraft/world/entity/TamableAnimal.java b/net/minecraft/world/entity/TamableAnimal.java
 index efd6eabde047c897c9eb4366e23f23c1885ab866..b4f569a39c442cfbd80ca373ea14c32dd3e67e94 100644
 --- a/net/minecraft/world/entity/TamableAnimal.java
@@ -1456,9 +1500,18 @@ index a4e9ec3ddc68af0ffa39f22b34d8214e274fbec0..ba702b45442a0ae51d4b11096f4e8434
                      }
                      // Paper end - Call ShulkerDuplicateEvent
 diff --git a/net/minecraft/world/entity/monster/cubemob/SulfurCube.java b/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
-index dfca8003483b67c7b425fb2380762e951f9cfe5d..68dcd6472348f128c72200b23e582d15548ecce5 100644
+index dfca8003483b67c7b425fb2380762e951f9cfe5d..b549d3e37a5fa461ce45822c39a293bcecda7676 100644
 --- a/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
 +++ b/net/minecraft/world/entity/monster/cubemob/SulfurCube.java
+@@ -298,7 +298,7 @@ public class SulfurCube extends AbstractCubeMob implements Bucketable, Shearable
+                 // Paper start - Fire events for SulfurCube explosions
+                 Runnable afterEvent = () -> {
+                     if (this.isLeashed()) {
+-                        final org.bukkit.event.entity.EntityUnleashEvent unleashEvent = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.LEASHED_GONE, true);
++                        final org.bukkit.event.entity.EntityUnleashEvent unleashEvent = new org.bukkit.craftbukkit.event.entity.CraftEntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.LEASHED_GONE, true);
+                         unleashEvent.callEvent();
+                         if (unleashEvent.isDropLeash()) {
+                             this.dropLeash();
 @@ -505,7 +505,7 @@ public class SulfurCube extends AbstractCubeMob implements Bucketable, Shearable
                      // Paper start - SulfurCubeSwallowItemEvent
                      org.bukkit.inventory.ItemStack craftSwallowedItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.getItemBySlot(EquipmentSlot.BODY));
@@ -1693,6 +1746,19 @@ index b844dee92b175ddef4506d96e513e5ca3d27750d..bec357f5444662d739b76192f56ee17b
                      event.callEvent();
  
                      hatching = event.isHatching();
+diff --git a/net/minecraft/world/entity/vehicle/boat/AbstractBoat.java b/net/minecraft/world/entity/vehicle/boat/AbstractBoat.java
+index 3fcd534cee1f605a710ffc43eff4b5106c7dd40c..84a802d962fec70dd5b23e1252ad832bb371266d 100644
+--- a/net/minecraft/world/entity/vehicle/boat/AbstractBoat.java
++++ b/net/minecraft/world/entity/vehicle/boat/AbstractBoat.java
+@@ -750,7 +750,7 @@ public abstract class AbstractBoat extends VehicleEntity implements Leashable {
+     public void remove(final Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause eventCause) { // CraftBukkit - add Bukkit remove cause
+         if (!this.level().isClientSide() && reason.shouldDestroy() && this.isLeashed()) {
+             // Paper start - Fire EntityUnleashEvent on boat destruction
+-            final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.LEASHED_GONE, true);
++            final org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.craftbukkit.event.entity.CraftEntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.LEASHED_GONE, true);
+             event.callEvent();
+             if (event.isDropLeash()) {
+                 this.dropLeash();
 diff --git a/net/minecraft/world/inventory/BeaconMenu.java b/net/minecraft/world/inventory/BeaconMenu.java
 index ba9a752ec6cc608b006007da19d9e84386fe8f0b..cd462dec698e563199d95455364b35753c666152 100644
 --- a/net/minecraft/world/inventory/BeaconMenu.java

@@ -364,7 +364,9 @@ public final class ClassToInterfaceRules {
             EntityToggleSwimEvent.class,
             EntityTransformEvent.class,
             EntityZapEvent.class,
-            PigZapEvent.class
+            PigZapEvent.class,
+            EntityUnleashEvent.class,
+            PlayerUnleashEntityEvent.class
             //</editor-fold>
         );
     }
