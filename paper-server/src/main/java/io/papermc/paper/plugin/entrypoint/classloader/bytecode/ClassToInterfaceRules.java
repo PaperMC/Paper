@@ -392,7 +392,12 @@ public final class ClassToInterfaceRules {
             EntityRemoveFromWorldEvent.class,
             ExperienceOrbMergeEvent.class,
             ProjectileCollideEvent.class,
-            SkeletonHorseTrapEvent.class
+            SkeletonHorseTrapEvent.class,
+            SlimePathfindEvent.class,
+            SlimeChangeDirectionEvent.class,
+            SlimeWanderEvent.class,
+            SlimeSwimEvent.class,
+            SlimeTargetLivingEntityEvent.class
             //</editor-fold>
         );
     }

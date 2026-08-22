@@ -1,9 +1,6 @@
 package com.destroystokyo.paper.event.entity;
 
-import org.bukkit.entity.AbstractCubeMob;
 import org.bukkit.entity.LivingEntity;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when a Slime decides to change direction to target a LivingEntity.
@@ -11,23 +8,12 @@ import org.jspecify.annotations.NullMarked;
  * This event does not fire for the entity's actual movement. Only when it
  * is choosing to start moving.
  */
-@NullMarked
-public class SlimeTargetLivingEntityEvent extends SlimePathfindEvent {
-
-    private final LivingEntity target;
-
-    @ApiStatus.Internal
-    public SlimeTargetLivingEntityEvent(final AbstractCubeMob cubeMob, final LivingEntity target) {
-        super(cubeMob);
-        this.target = target;
-    }
+public interface SlimeTargetLivingEntityEvent extends SlimePathfindEvent {
 
     /**
      * Get the targeted entity
      *
      * @return Targeted entity
      */
-    public LivingEntity getTarget() {
-        return this.target;
-    }
+    LivingEntity getTarget();
 }
