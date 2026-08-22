@@ -172,6 +172,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityToggleSwimEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityTransformEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExplosionPrimeEvent;
+import org.bukkit.craftbukkit.event.entity.CraftFireworkExplodeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPigZapEvent;
@@ -1828,7 +1829,7 @@ public class CraftEventFactory {
     }
 
     public static boolean callFireworkExplodeEvent(FireworkRocketEntity firework) {
-        FireworkExplodeEvent event = new FireworkExplodeEvent((Firework) firework.getBukkitEntity());
+        FireworkExplodeEvent event = new CraftFireworkExplodeEvent((Firework) firework.getBukkitEntity());
         if (!event.callEvent()) {
             firework.discard(null);
             return false;
