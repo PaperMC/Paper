@@ -3,38 +3,12 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a creature targets or untargets another entity
  */
-public class EntityTargetEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private Entity target;
-    private final TargetReason reason;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public EntityTargetEvent(@NotNull final Entity entity, @Nullable final Entity target, @NotNull final TargetReason reason) {
-        super(entity);
-        this.target = target;
-        this.reason = reason;
-    }
-
-    /**
-     * Returns the reason for the targeting
-     *
-     * @return The reason
-     */
-    @NotNull
-    public TargetReason getReason() {
-        return this.reason;
-    }
+public interface EntityTargetEvent extends EntityEventNew, Cancellable {
 
     /**
      * Get the entity that this is targeting.
@@ -44,10 +18,7 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
      *
      * @return The entity
      */
-    @Nullable
-    public Entity getTarget() {
-        return this.target;
-    }
+    @Nullable Entity getTarget();
 
     /**
      * Set the entity that you want the mob to target instead.
@@ -61,35 +32,26 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
      *
      * @param target The entity to target
      */
-    public void setTarget(@Nullable Entity target) {
-        this.target = target;
-    }
+    void setTarget(@Nullable Entity target);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    /**
+     * Returns the reason for the targeting
+     *
+     * @return The reason
+     */
+    TargetReason getReason();
 
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
      * An enum to specify the reason for the targeting
      */
-    public enum TargetReason {
+    enum TargetReason {
 
         /**
          * When the entity's target has died, and so it no longer targets it
@@ -175,6 +137,6 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
         /**
          * A currently unknown reason for the entity changing target.
          */
-        UNKNOWN;
+        UNKNOWN
     }
 }
