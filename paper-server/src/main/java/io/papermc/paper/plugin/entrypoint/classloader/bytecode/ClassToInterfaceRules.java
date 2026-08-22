@@ -353,7 +353,8 @@ public final class ClassToInterfaceRules {
             EntityPoseChangeEvent.class,
             EntityPotionEffectEvent.class,
             EntityRegainHealthEvent.class,
-            EntityRemoveEvent.class
+            EntityRemoveEvent.class,
+            EntityResurrectEvent.class
             //</editor-fold>
         );
     }
