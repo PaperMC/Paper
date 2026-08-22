@@ -161,6 +161,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityPlaceEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityPortalEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityPotionEffectEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityRemoveEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityShootBowEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
@@ -748,7 +749,7 @@ public class CraftEventFactory {
             itemInHand = null;
         }
 
-        EntityShootBowEvent event = new EntityShootBowEvent(shooter, itemInHand, itemConsumable, arrow, CraftEquipmentSlot.getHand(hand), force, consumeItem);
+        EntityShootBowEvent event = new CraftEntityShootBowEvent(shooter, itemInHand, itemConsumable, arrow, CraftEquipmentSlot.getHand(hand), force, consumeItem);
         Bukkit.getPluginManager().callEvent(event);
 
         return event;
