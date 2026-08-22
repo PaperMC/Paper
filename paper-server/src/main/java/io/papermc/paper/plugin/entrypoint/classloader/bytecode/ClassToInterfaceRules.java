@@ -400,7 +400,8 @@ public final class ClassToInterfaceRules {
             SlimeTargetLivingEntityEvent.class,
             TurtleGoHomeEvent.class,
             TurtleLayEggEvent.class,
-            TurtleStartDiggingEvent.class
+            TurtleStartDiggingEvent.class,
+            WitchConsumePotionEvent.class
             //</editor-fold>
         );
     }
