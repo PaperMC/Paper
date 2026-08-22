@@ -168,6 +168,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityTameEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityTargetEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityTargetLivingEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityToggleGlideEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityToggleSwimEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
@@ -1916,7 +1917,7 @@ public class CraftEventFactory {
     }
 
     public static EntityToggleSwimEvent callToggleSwimEvent(net.minecraft.world.entity.LivingEntity entity, boolean swimming) {
-        EntityToggleSwimEvent event = new EntityToggleSwimEvent((LivingEntity) entity.getBukkitEntity(), swimming);
+        EntityToggleSwimEvent event = new CraftEntityToggleSwimEvent((LivingEntity) entity.getBukkitEntity(), swimming);
         entity.level().getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
