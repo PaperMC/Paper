@@ -175,6 +175,7 @@ import org.bukkit.craftbukkit.event.entity.CraftExplosionPrimeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftFireworkExplodeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftFoodLevelChangeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftHorseJumpEvent;
+import org.bukkit.craftbukkit.event.entity.CraftItemDespawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPigZapEvent;
@@ -903,7 +904,7 @@ public class CraftEventFactory {
     public static ItemDespawnEvent callItemDespawnEvent(ItemEntity item) {
         org.bukkit.entity.Item entity = (org.bukkit.entity.Item) item.getBukkitEntity();
 
-        ItemDespawnEvent event = new ItemDespawnEvent(entity, entity.getLocation());
+        ItemDespawnEvent event = new CraftItemDespawnEvent(entity, entity.getLocation());
         entity.getServer().getPluginManager().callEvent(event);
         return event;
     }
