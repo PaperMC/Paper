@@ -379,7 +379,8 @@ public final class ClassToInterfaceRules {
             SlimeSplitEvent.class,
             StriderTemperatureChangeEvent.class,
             VillagerAcquireTradeEvent.class,
-            VillagerCareerChangeEvent.class
+            VillagerCareerChangeEvent.class,
+            VillagerReplenishTradeEvent.class
             //</editor-fold>
         );
     }

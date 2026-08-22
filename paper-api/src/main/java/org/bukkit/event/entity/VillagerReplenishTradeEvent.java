@@ -5,53 +5,32 @@ import org.bukkit.entity.Villager;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.MerchantRecipe;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a {@link Villager} is about to restock one of its trades.
  * <p>
  * If this event passes, the villager will reset the
  * {@link MerchantRecipe#getUses() uses} of the affected {@link #getRecipe()
- * MerchantRecipe} to <code>0</code>.
+ * MerchantRecipe} to {@code 0}.
  */
-public class VillagerReplenishTradeEvent extends EntityEvent implements Cancellable {
+public interface VillagerReplenishTradeEvent extends EntityEventNew, Cancellable {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private MerchantRecipe recipe;
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public VillagerReplenishTradeEvent(@NotNull AbstractVillager villager, @NotNull MerchantRecipe recipe) {
-        super(villager);
-        this.recipe = recipe;
-    }
-
-    @NotNull
     @Override
-    public AbstractVillager getEntity() {
-        return (AbstractVillager) super.getEntity();
-    }
+    AbstractVillager getEntity();
 
     /**
      * Get the recipe to replenish.
      *
      * @return the replenished recipe
      */
-    @NotNull
-    public MerchantRecipe getRecipe() {
-        return this.recipe;
-    }
+    MerchantRecipe getRecipe();
 
     /**
      * Set the recipe to replenish.
      *
      * @param recipe the replenished recipe
      */
-    public void setRecipe(@NotNull MerchantRecipe recipe) {
-        this.recipe = recipe;
-    }
+    void setRecipe(MerchantRecipe recipe);
 
     /**
      * Get the bonus uses added.
@@ -61,8 +40,8 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
      * {@link MerchantRecipe#getUses()}.
      */
     @Deprecated(since = "1.18.1")
-    public int getBonus() {
-        return this.recipe.getUses();
+    default int getBonus() {
+        return this.getRecipe().getUses();
     }
 
     /**
@@ -73,27 +52,13 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
      * has no effect anymore.
      */
     @Deprecated(since = "1.18.1")
-    public void setBonus(int bonus) {
+    default void setBonus(final int bonus) {
     }
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
