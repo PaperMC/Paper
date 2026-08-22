@@ -375,7 +375,8 @@ public final class ClassToInterfaceRules {
             ItemMergeEvent.class,
             PiglinBarterEvent.class,
             PigZombieAngerEvent.class,
-            SheepRegrowWoolEvent.class
+            SheepRegrowWoolEvent.class,
+            SlimeSplitEvent.class
             //</editor-fold>
         );
     }
