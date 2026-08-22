@@ -27,9 +27,7 @@ import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEvent;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
+import org.bukkit.event.entity.EntityEventNew;
 
 /**
  * Fired when an Enderman determines if it should attack a player or not.
@@ -37,19 +35,7 @@ import org.jspecify.annotations.NullMarked;
  * Starts off cancelled if the player is wearing a pumpkin head or is not looking
  * at the Enderman, according to Vanilla rules.
  */
-@NullMarked
-public class EndermanAttackPlayerEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Player player;
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public EndermanAttackPlayerEvent(final Enderman entity, final Player player) {
-        super(entity);
-        this.player = player;
-    }
+public interface EndermanAttackPlayerEvent extends EntityEventNew, Cancellable {
 
     /**
      * The enderman considering attacking
@@ -57,26 +43,20 @@ public class EndermanAttackPlayerEvent extends EntityEvent implements Cancellabl
      * @return The enderman considering attacking
      */
     @Override
-    public Enderman getEntity() {
-        return (Enderman) super.getEntity();
-    }
+    Enderman getEntity();
 
     /**
      * The player the Enderman is considering attacking
      *
      * @return The player the Enderman is considering attacking
      */
-    public Player getPlayer() {
-        return this.player;
-    }
+    Player getPlayer();
 
     /**
      * @return If cancelled, the enderman will not attack
      */
     @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    boolean isCancelled();
 
     /**
      * {@inheritDoc}
@@ -84,16 +64,12 @@ public class EndermanAttackPlayerEvent extends EntityEvent implements Cancellabl
      * Cancels if the Enderman will attack this player
      */
     @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
