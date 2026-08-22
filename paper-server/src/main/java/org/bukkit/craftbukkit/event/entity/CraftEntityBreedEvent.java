@@ -18,7 +18,7 @@ public class CraftEntityBreedEvent extends CraftEntityEvent implements EntityBre
 
     private boolean cancelled;
 
-    public CraftEntityBreedEvent(final LivingEntity child, final LivingEntity mother, final LivingEntity father, @Nullable final LivingEntity breeder, @Nullable final ItemStack bredWith, final int experience) {
+    public CraftEntityBreedEvent(final LivingEntity child, final LivingEntity mother, final LivingEntity father, final @Nullable LivingEntity breeder, final @Nullable ItemStack bredWith, final int experience) {
         super(child);
 
         this.mother = mother;

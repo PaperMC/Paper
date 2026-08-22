@@ -13,7 +13,7 @@ import org.bukkit.inventory.MerchantRecipe;
  * {@link MerchantRecipe#getUses() uses} of the affected {@link #getRecipe()
  * MerchantRecipe} to {@code 0}.
  */
-public interface VillagerReplenishTradeEvent extends EntityEventNew, Cancellable {
+public interface VillagerReplenishTradeEvent extends EntityEvent, Cancellable {
 
     @Override
     AbstractVillager getEntity();

@@ -11,7 +11,7 @@ import org.bukkit.inventory.ItemStack;
  * <br>
  * Called when a piglin completes a barter.
  */
-public interface PiglinBarterEvent extends EntityEventNew, Cancellable {
+public interface PiglinBarterEvent extends EntityEvent, Cancellable {
 
     @Override
     Piglin getEntity();

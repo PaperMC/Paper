@@ -7,14 +7,14 @@ import org.bukkit.entity.Sheep;
 import org.bukkit.entity.Wolf;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Called when an entity is dyed. Currently, this is called for {@link Sheep}
  * being dyed, and {@link Wolf}/{@link Cat} collars being dyed.
  */
-public interface EntityDyeEvent extends EntityEventNew, Cancellable {
+public interface EntityDyeEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the DyeColor the entity is being dyed

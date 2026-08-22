@@ -14,7 +14,7 @@ import org.bukkit.event.HandlerList;
  * </ul>
  * will have no effect.
  */
-public interface EntityUnleashEvent extends EntityEventNew, Cancellable {
+public interface EntityUnleashEvent extends EntityEvent, Cancellable {
 
     /**
      * Returns the reason for the unleashing.

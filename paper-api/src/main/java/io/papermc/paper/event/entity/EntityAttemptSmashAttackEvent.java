@@ -2,13 +2,13 @@ package io.papermc.paper.event.entity;
 
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
  * Called when an entity attempts to perform a smash attack.
  */
-public interface EntityAttemptSmashAttackEvent extends EntityEventNew {
+public interface EntityAttemptSmashAttackEvent extends EntityEvent {
 
     /**
      * Yields the target of the attempted smash attack.

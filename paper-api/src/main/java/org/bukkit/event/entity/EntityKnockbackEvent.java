@@ -13,7 +13,7 @@ import org.bukkit.util.Vector;
  * @deprecated use {@link io.papermc.paper.event.entity.EntityKnockbackEvent}
  */
 @Deprecated(forRemoval = true)
-public interface EntityKnockbackEvent extends EntityEventNew, Cancellable {
+public interface EntityKnockbackEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

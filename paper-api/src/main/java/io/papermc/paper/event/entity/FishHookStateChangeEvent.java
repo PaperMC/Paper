@@ -2,7 +2,7 @@ package io.papermc.paper.event.entity;
 
 import org.bukkit.entity.FishHook;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 
 /**
@@ -10,7 +10,7 @@ import org.bukkit.event.player.PlayerFishEvent;
  * <p>
  * If you want to monitor a player's fishing state transition, you can use {@link PlayerFishEvent}.
  */
-public interface FishHookStateChangeEvent extends EntityEventNew {
+public interface FishHookStateChangeEvent extends EntityEvent {
 
     /**
      * Get the <strong>new</strong> hook state of the {@link FishHook}.

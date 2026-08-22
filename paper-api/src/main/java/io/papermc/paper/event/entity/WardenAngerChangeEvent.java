@@ -4,7 +4,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Warden;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.checkerframework.common.value.qual.IntRange;
 
 /**
@@ -12,7 +12,7 @@ import org.checkerframework.common.value.qual.IntRange;
  * <p>
  * If the event is cancelled, the warden's anger level will not change.
  */
-public interface WardenAngerChangeEvent extends EntityEventNew, Cancellable {
+public interface WardenAngerChangeEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the entity which triggered this anger update.

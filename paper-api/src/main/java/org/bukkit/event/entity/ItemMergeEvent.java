@@ -4,7 +4,7 @@ import org.bukkit.entity.Item;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
-public interface ItemMergeEvent extends EntityEventNew, Cancellable {
+public interface ItemMergeEvent extends EntityEvent, Cancellable {
 
     @Override
     Item getEntity();

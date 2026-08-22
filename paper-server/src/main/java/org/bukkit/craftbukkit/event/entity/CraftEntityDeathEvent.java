@@ -89,7 +89,7 @@ public class CraftEntityDeathEvent extends CraftEntityEvent implements EntityDea
     }
 
     @Override
-    public void setDeathSound(@Nullable final Sound sound) {
+    public void setDeathSound(final @Nullable Sound sound) {
         this.deathSound = sound;
     }
 
@@ -99,7 +99,7 @@ public class CraftEntityDeathEvent extends CraftEntityEvent implements EntityDea
     }
 
     @Override
-    public void setDeathSoundCategory(@Nullable final SoundCategory soundCategory) {
+    public void setDeathSoundCategory(final @Nullable SoundCategory soundCategory) {
         this.deathSoundCategory = soundCategory;
     }
 

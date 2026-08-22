@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when an arrow enters or exists an entity's body.
  */
-public interface ArrowBodyCountChangeEvent extends EntityEventNew, Cancellable {
+public interface ArrowBodyCountChangeEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Stores data for health-regain events
  */
-public interface EntityRegainHealthEvent extends EntityEventNew, Cancellable {
+public interface EntityRegainHealthEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the amount of regained health

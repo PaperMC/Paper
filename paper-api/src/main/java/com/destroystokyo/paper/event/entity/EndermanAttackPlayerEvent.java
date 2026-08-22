@@ -27,7 +27,7 @@ import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Fired when an Enderman determines if it should attack a player or not.
@@ -35,7 +35,7 @@ import org.bukkit.event.entity.EntityEventNew;
  * Starts off cancelled if the player is wearing a pumpkin head or is not looking
  * at the Enderman, according to Vanilla rules.
  */
-public interface EndermanAttackPlayerEvent extends EntityEventNew, Cancellable {
+public interface EndermanAttackPlayerEvent extends EntityEvent, Cancellable {
 
     /**
      * The enderman considering attacking

@@ -26,12 +26,12 @@ package com.destroystokyo.paper.event.entity;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Fired anytime the server is about to merge 2 experience orbs into one
  */
-public interface ExperienceOrbMergeEvent extends EntityEventNew, Cancellable {
+public interface ExperienceOrbMergeEvent extends EntityEvent, Cancellable {
 
     /**
      * {@return the orb that will absorb the other experience orb}

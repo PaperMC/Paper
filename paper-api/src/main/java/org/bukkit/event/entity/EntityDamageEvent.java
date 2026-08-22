@@ -10,7 +10,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Stores data for damage events.
  */
-public interface EntityDamageEvent extends EntityEventNew, Cancellable {
+public interface EntityDamageEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the original damage for the specified modifier, as defined at this

@@ -13,7 +13,7 @@ import org.bukkit.event.HandlerList;
  * It is not called when a silverfish "enters" a stone block. For that listen to
  * the {@link EntityChangeBlockEvent}.
  */
-public interface EntityEnterBlockEvent extends EntityEventNew, Cancellable {
+public interface EntityEnterBlockEvent extends EntityEvent, Cancellable {
 
     /**
      * Get the block the entity will enter.

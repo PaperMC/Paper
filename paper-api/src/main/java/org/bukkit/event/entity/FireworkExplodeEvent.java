@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a firework explodes.
  */
-public interface FireworkExplodeEvent extends EntityEventNew, Cancellable {
+public interface FireworkExplodeEvent extends EntityEvent, Cancellable {
 
     @Override
     Firework getEntity();

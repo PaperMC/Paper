@@ -3,13 +3,13 @@ package io.papermc.paper.event.entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Called when a {@link LivingEntity} attempts to perform an automatic spin attack
  * against a target entity.
  */
-public interface EntityAttemptSpinAttackEvent extends EntityEventNew, Cancellable {
+public interface EntityAttemptSpinAttackEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

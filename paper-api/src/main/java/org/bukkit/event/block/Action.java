@@ -29,7 +29,6 @@ public enum Action {
      * <li>Triggering tripwire
      * </ul>
      */
-    // Paper start
     PHYSICAL;
 
     /**
@@ -49,5 +48,4 @@ public enum Action {
     public boolean isRightClick() {
         return this == RIGHT_CLICK_AIR || this == RIGHT_CLICK_BLOCK;
     }
-    // Paper end
 }

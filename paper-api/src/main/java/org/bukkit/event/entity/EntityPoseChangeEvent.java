@@ -9,7 +9,7 @@ import org.bukkit.event.HandlerList;
  *
  * @see Entity#getPose()
  */
-public interface EntityPoseChangeEvent extends EntityEventNew {
+public interface EntityPoseChangeEvent extends EntityEvent {
 
     /**
      * Gets the entity's new pose.

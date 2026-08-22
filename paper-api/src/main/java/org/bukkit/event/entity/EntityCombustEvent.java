@@ -8,7 +8,7 @@ import org.bukkit.event.HandlerList;
  * <p>
  * If this event is cancelled, the entity will not combust.
  */
-public interface EntityCombustEvent extends EntityEventNew, Cancellable {
+public interface EntityCombustEvent extends EntityEvent, Cancellable {
 
     /**
      * @return the amount of time (in seconds) the combustee should be alight for

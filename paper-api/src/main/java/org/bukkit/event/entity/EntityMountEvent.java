@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when an entity attempts to ride another entity.
  */
-public interface EntityMountEvent extends EntityEventNew, Cancellable {
+public interface EntityMountEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the entity which will be ridden.

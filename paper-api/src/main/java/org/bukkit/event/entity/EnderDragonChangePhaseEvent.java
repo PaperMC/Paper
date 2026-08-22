@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when an EnderDragon switches controller phase.
  */
-public interface EnderDragonChangePhaseEvent extends EntityEventNew, Cancellable {
+public interface EnderDragonChangePhaseEvent extends EntityEvent, Cancellable {
 
     @Override
     EnderDragon getEntity();

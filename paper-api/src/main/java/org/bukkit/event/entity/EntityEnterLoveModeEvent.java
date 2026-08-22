@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
  * This can be cancelled but the item will still be consumed that was used to
  * make the entity enter into love mode.
  */
-public interface EntityEnterLoveModeEvent extends EntityEventNew, Cancellable {
+public interface EntityEnterLoveModeEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the animal that is entering love mode.

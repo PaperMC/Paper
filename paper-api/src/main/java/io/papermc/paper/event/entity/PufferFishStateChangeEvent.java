@@ -3,12 +3,12 @@ package io.papermc.paper.event.entity;
 import org.bukkit.entity.PufferFish;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Called just before a {@link PufferFish} inflates or deflates.
  */
-public interface PufferFishStateChangeEvent extends EntityEventNew, Cancellable {
+public interface PufferFishStateChangeEvent extends EntityEvent, Cancellable {
 
     @Override
     PufferFish getEntity();

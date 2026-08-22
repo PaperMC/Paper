@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Thrown when an entity creates an item drop.
  */
-public interface EntityDropItemEvent extends EntityEventNew, Cancellable {
+public interface EntityDropItemEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the Item created by the entity

@@ -3,14 +3,14 @@ package io.papermc.paper.event.entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
  * Called when a LivingEntity loads a crossbow with a projectile.
  */
-public interface EntityLoadCrossbowEvent extends EntityEventNew, Cancellable {
+public interface EntityLoadCrossbowEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

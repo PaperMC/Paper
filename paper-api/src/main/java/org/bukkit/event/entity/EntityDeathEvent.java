@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Thrown whenever a living entity dies
  */
-public interface EntityDeathEvent extends EntityEventNew, Cancellable {
+public interface EntityDeathEvent extends EntityEvent, Cancellable {
 
     @Override
     LivingEntity getEntity();

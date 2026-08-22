@@ -8,7 +8,7 @@ import org.bukkit.inventory.MerchantRecipe;
 /**
  * Called whenever a villager acquires a new trade.
  */
-public interface VillagerAcquireTradeEvent extends EntityEventNew, Cancellable {
+public interface VillagerAcquireTradeEvent extends EntityEvent, Cancellable {
 
     @Override
     AbstractVillager getEntity();

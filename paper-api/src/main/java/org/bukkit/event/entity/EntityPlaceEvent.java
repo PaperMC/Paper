@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
  * Note that this event is currently only fired for four specific placements:
  * armor stands, boats, minecarts, and end crystals.
  */
-public interface EntityPlaceEvent extends EntityEventNew, Cancellable {
+public interface EntityPlaceEvent extends EntityEvent, Cancellable {
 
     /**
      * Returns the player placing the entity

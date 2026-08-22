@@ -4,10 +4,9 @@ import org.bukkit.PortalType;
 import org.bukkit.World;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -18,8 +17,7 @@ import org.jspecify.annotations.Nullable;
  * Cancelling this event resets the entity's readiness
  * regarding the current portal.
  */
-@NullMarked
-public interface EntityPortalReadyEvent extends EntityEventNew, Cancellable {
+public interface EntityPortalReadyEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the world this portal will teleport to.

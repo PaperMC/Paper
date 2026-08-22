@@ -3,11 +3,11 @@ package com.destroystokyo.paper.event.entity;
 import org.bukkit.entity.Witch;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
-public interface WitchReadyPotionEvent extends EntityEventNew, Cancellable {
+public interface WitchReadyPotionEvent extends EntityEvent, Cancellable {
 
     @Override
     Witch getEntity();

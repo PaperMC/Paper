@@ -14,7 +14,7 @@ import org.bukkit.event.HandlerList;
  * Modifications to the entity, as noted above, are not defined and are expected to not be persisted in e.g., chunk
  * unloads.
  */
-public interface EntityRemoveEvent extends EntityEventNew {
+public interface EntityRemoveEvent extends EntityEvent {
 
     /**
      * Gets the cause why the entity got removed.

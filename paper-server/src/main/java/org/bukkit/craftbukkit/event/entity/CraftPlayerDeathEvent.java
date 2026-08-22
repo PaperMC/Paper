@@ -106,7 +106,7 @@ public class CraftPlayerDeathEvent extends CraftEntityDeathEvent implements Play
 
     @Override
     @Deprecated
-    public void setDeathMessage(@Nullable final String deathMessage) {
+    public void setDeathMessage(final @Nullable String deathMessage) {
         this.deathMessage = LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage);
     }
 

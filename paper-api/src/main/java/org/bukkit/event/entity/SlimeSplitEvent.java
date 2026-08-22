@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a Slime splits into smaller Slimes upon death
  */
-public interface SlimeSplitEvent extends EntityEventNew, Cancellable {
+public interface SlimeSplitEvent extends EntityEvent, Cancellable {
 
     @Override
     AbstractCubeMob getEntity();

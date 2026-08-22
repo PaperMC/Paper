@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Sent when an entity's swimming status is toggled.
  */
-public interface EntityToggleSwimEvent extends EntityEventNew, Cancellable {
+public interface EntityToggleSwimEvent extends EntityEvent, Cancellable {
 
     /**
      * Returns {@code true} if the entity is now swims or

@@ -12,7 +12,7 @@ import org.bukkit.event.HandlerList;
  *
  * @see io.papermc.paper.event.entity.EntityInsideBlockEvent
  */
-public interface EntityPortalEnterEvent extends EntityEventNew, Cancellable {
+public interface EntityPortalEnterEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the portal block the entity is touching

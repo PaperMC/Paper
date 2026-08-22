@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
  * Will be called in a cancelled state if the entity does not have a totem
  * equipped.
  */
-public interface EntityResurrectEvent extends EntityEventNew, Cancellable {
+public interface EntityResurrectEvent extends EntityEvent, Cancellable {
 
     /**
      * Get the hand in which the totem of undying was found, or {@code null} if the

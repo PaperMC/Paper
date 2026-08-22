@@ -2,7 +2,7 @@ package io.papermc.paper.event.entity;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -11,7 +11,7 @@ import org.bukkit.inventory.ItemStack;
  * NOTE: default vanilla behaviour dictates that armor/tools picked up by
  * mobs do not take damage (except via Thorns).
  */
-public interface EntityDamageItemEvent extends EntityEventNew, Cancellable {
+public interface EntityDamageItemEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the item being damaged.

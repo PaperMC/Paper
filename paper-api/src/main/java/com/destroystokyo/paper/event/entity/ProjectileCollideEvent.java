@@ -5,7 +5,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Called when a projectile collides with an entity
@@ -15,7 +15,7 @@ import org.bukkit.event.entity.EntityEventNew;
  * @deprecated use {@link org.bukkit.event.entity.ProjectileHitEvent} and check if there is a hit entity
  */
 @Deprecated(since = "1.19.3")
-public interface ProjectileCollideEvent extends EntityEventNew, Cancellable {
+public interface ProjectileCollideEvent extends EntityEvent, Cancellable {
 
     /**
      * Get the projectile that collided

@@ -9,7 +9,7 @@ import org.bukkit.event.HandlerList;
  * <p>
  * If this event is cancelled, the entity will not spawn.
  */
-public interface EntitySpawnEvent extends EntityEventNew, Cancellable {
+public interface EntitySpawnEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the location at which the entity is spawning.

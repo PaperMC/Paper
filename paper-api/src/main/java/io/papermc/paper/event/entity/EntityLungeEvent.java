@@ -2,12 +2,12 @@ package io.papermc.paper.event.entity;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Called when a living entity tries to lunge with a spear.
  */
-public interface EntityLungeEvent extends EntityEventNew, Cancellable {
+public interface EntityLungeEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the lunge power, which when initially passed, matches the enchantment level of the item, but can be higher.

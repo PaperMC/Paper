@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when the amount of air an entity has remaining changes.
  */
-public interface EntityAirChangeEvent extends EntityEventNew, Cancellable {
+public interface EntityAirChangeEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the amount of air the entity has left (measured in ticks).

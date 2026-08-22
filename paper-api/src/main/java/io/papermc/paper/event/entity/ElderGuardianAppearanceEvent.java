@@ -4,12 +4,12 @@ import org.bukkit.entity.ElderGuardian;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Is called when an {@link ElderGuardian} appears in front of a {@link Player}.
  */
-public interface ElderGuardianAppearanceEvent extends EntityEventNew, Cancellable {
+public interface ElderGuardianAppearanceEvent extends EntityEvent, Cancellable {
 
     /**
      * Get the player affected by the guardian appearance.

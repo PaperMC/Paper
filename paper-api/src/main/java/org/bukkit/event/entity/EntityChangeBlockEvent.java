@@ -9,7 +9,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when any entity changes a block and a more specific event is not available.
  */
-public interface EntityChangeBlockEvent extends EntityEventNew, Cancellable {
+public interface EntityChangeBlockEvent extends EntityEvent, Cancellable {
 
     /**
      * Gets the block the entity is changing

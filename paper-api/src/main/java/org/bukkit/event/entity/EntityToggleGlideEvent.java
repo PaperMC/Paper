@@ -12,7 +12,7 @@ import org.bukkit.event.HandlerList;
  * </ul>
  * This can be visually estimated by the animation in which a player turns horizontal.
  */
-public interface EntityToggleGlideEvent extends EntityEventNew, Cancellable {
+public interface EntityToggleGlideEvent extends EntityEvent, Cancellable {
 
     /**
      * Returns {@code true} if the entity is now gliding or

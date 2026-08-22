@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * If this event is cancelled, the Creeper will not be powered.
  */
-public interface CreeperPowerEvent extends EntityEventNew, Cancellable {
+public interface CreeperPowerEvent extends EntityEvent, Cancellable {
 
     @Override
     Creeper getEntity();

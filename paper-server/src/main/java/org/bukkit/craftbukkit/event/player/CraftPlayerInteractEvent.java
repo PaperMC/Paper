@@ -24,7 +24,7 @@ public class CraftPlayerInteractEvent extends CraftPlayerEvent implements Player
     private Result useItemInHand;
     private Result useClickedBlock;
 
-    public CraftPlayerInteractEvent(final Player player, final Action action, final @Nullable ItemStack item, @Nullable final Block clickedBlock, final BlockFace clickedFace, final @Nullable EquipmentSlot hand, final @Nullable Vector clickedPosition) {
+    public CraftPlayerInteractEvent(final Player player, final Action action, final @Nullable ItemStack item, final @Nullable Block clickedBlock, final BlockFace clickedFace, final @Nullable EquipmentSlot hand, final @Nullable Vector clickedPosition) {
         super(player);
         this.action = action;
         this.item = item;

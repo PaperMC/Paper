@@ -4,12 +4,12 @@ import org.bukkit.Location;
 import org.bukkit.entity.Turtle;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEventNew;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Fired when a Turtle starts digging to lay eggs
  */
-public interface TurtleStartDiggingEvent extends EntityEventNew, Cancellable {
+public interface TurtleStartDiggingEvent extends EntityEvent, Cancellable {
 
     /**
      * The turtle digging
