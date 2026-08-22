@@ -160,6 +160,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityPickupItemEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityPlaceEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityPortalEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityPotionEffectEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityRemoveEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
@@ -263,7 +264,6 @@ import org.bukkit.event.entity.EntityBreakDoorEvent;
 import org.bukkit.event.entity.EntityBreedEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
@@ -272,7 +272,6 @@ import org.bukkit.event.entity.EntityEnterLoveModeEvent;
 import org.bukkit.event.entity.EntityExhaustionEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
-import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
 import org.bukkit.event.entity.EntityKnockbackEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
@@ -2279,7 +2278,7 @@ public class CraftEventFactory {
         // Do not call during generation.
         if (entity.generation) return;
 
-        Bukkit.getPluginManager().callEvent(new EntityRemoveEvent(entity.getBukkitEntity(), cause));
+        new CraftEntityRemoveEvent(entity.getBukkitEntity(), cause).callEvent();
     }
 
     public static void callPlayerUseUnknownEntityEvent(net.minecraft.world.entity.player.Player player, int entityId, boolean attack, InteractionHand hand, net.minecraft.world.phys.@Nullable Vec3 vector) {
