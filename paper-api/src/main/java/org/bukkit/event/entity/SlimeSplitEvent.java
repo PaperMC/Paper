@@ -3,67 +3,33 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.AbstractCubeMob;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a Slime splits into smaller Slimes upon death
  */
-public class SlimeSplitEvent extends EntityEvent implements Cancellable {
+public interface SlimeSplitEvent extends EntityEventNew, Cancellable {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private int count;
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public SlimeSplitEvent(@NotNull final AbstractCubeMob cubeMob, final int count) {
-        super(cubeMob);
-        this.count = count;
-    }
-
-    @NotNull
     @Override
-    public AbstractCubeMob getEntity() {
-        return (AbstractCubeMob) this.entity;
-    }
+    AbstractCubeMob getEntity();
 
     /**
      * Gets the amount of smaller slimes to spawn
      *
      * @return the amount of slimes to spawn
      */
-    public int getCount() {
-        return this.count;
-    }
+    int getCount();
 
     /**
      * Sets how many smaller slimes will spawn on the split
      *
      * @param count the amount of slimes to spawn
      */
-    public void setCount(int count) {
-        this.count = count;
-    }
+    void setCount(int count);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
