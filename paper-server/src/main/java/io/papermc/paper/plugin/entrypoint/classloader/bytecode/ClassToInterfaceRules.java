@@ -389,7 +389,8 @@ public final class ClassToInterfaceRules {
             EntityAddToWorldEvent.class,
             EntityJumpEvent.class,
             EntityPathfindEvent.class,
-            EntityRemoveFromWorldEvent.class
+            EntityRemoveFromWorldEvent.class,
+            ExperienceOrbMergeEvent.class
             //</editor-fold>
         );
     }
