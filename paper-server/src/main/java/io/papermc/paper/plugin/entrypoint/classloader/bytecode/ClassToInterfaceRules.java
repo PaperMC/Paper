@@ -388,7 +388,8 @@ public final class ClassToInterfaceRules {
             EndermanEscapeEvent.class,
             EntityAddToWorldEvent.class,
             EntityJumpEvent.class,
-            EntityPathfindEvent.class
+            EntityPathfindEvent.class,
+            EntityRemoveFromWorldEvent.class
             //</editor-fold>
         );
     }
