@@ -4,50 +4,19 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
-/**
- * Called when a human entity's food level changes
- */
-public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
+public interface FoodLevelChangeEvent extends EntityEventNew, Cancellable {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private int level;
-    private final ItemStack item;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    @Deprecated(since = "1.21.5", forRemoval = true)
-    public FoodLevelChangeEvent(@NotNull final HumanEntity human, final int level) {
-        this(human, level, null);
-    }
-
-    @ApiStatus.Internal
-    public FoodLevelChangeEvent(@NotNull final HumanEntity human, final int level, @Nullable final ItemStack item) {
-        super(human);
-        this.level = level;
-        this.item = item;
-    }
-
-    @NotNull
     @Override
-    public HumanEntity getEntity() {
-        return (HumanEntity) this.entity;
-    }
+    HumanEntity getEntity();
 
     /**
      * Gets the item that triggered this event, if any.
      *
      * @return an ItemStack for the item being consumed
      */
-    @Nullable
-    public ItemStack getItem() {
-        return this.item == null ? null : this.item.clone();
-    }
+    @Nullable ItemStack getItem();
 
     /**
      * Gets the resultant food level that the entity involved in this event
@@ -57,9 +26,7 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
      *
      * @return The resultant food level
      */
-    public int getFoodLevel() {
-        return this.level;
-    }
+    int getFoodLevel();
 
     /**
      * Sets the resultant food level that the entity involved in this event
@@ -68,30 +35,12 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
      * @param level the resultant food level that the entity involved in this
      *     event should be set to
      */
-    public void setFoodLevel(int level) {
-        if (level < 0) level = 0;
+    void setFoodLevel(int level);
 
-        this.level = level;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
