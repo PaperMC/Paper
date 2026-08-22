@@ -1528,7 +1528,7 @@ public class CraftEventFactory {
     public static com.destroystokyo.paper.event.entity.ProjectileCollideEvent callProjectileCollideEvent(Entity entity, EntityHitResult position) {
         Projectile projectile = (Projectile) entity.getBukkitEntity();
         org.bukkit.entity.Entity collided = position.getEntity().getBukkitEntity();
-        com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = new com.destroystokyo.paper.event.entity.ProjectileCollideEvent(projectile, collided);
+        com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = new io.papermc.paper.event.entity.PaperProjectileCollideEvent(projectile, collided);
 
         if (projectile.getShooter() instanceof Player && collided instanceof Player) {
             if (!((Player) projectile.getShooter()).canSee((Player) collided)) {
