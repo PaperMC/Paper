@@ -378,7 +378,8 @@ public final class ClassToInterfaceRules {
             SheepRegrowWoolEvent.class,
             SlimeSplitEvent.class,
             StriderTemperatureChangeEvent.class,
-            VillagerAcquireTradeEvent.class
+            VillagerAcquireTradeEvent.class,
+            VillagerCareerChangeEvent.class
             //</editor-fold>
         );
     }
