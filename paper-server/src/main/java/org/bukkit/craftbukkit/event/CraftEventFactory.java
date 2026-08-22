@@ -163,6 +163,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityPotionEffectEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityRemoveEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityShootBowEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntitySpellCastEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
@@ -2071,7 +2072,7 @@ public class CraftEventFactory {
     }
 
     public static boolean handleEntitySpellCastEvent(SpellcasterIllager caster, SpellcasterIllager.IllagerSpell spell) {
-        EntitySpellCastEvent event = new EntitySpellCastEvent((Spellcaster) caster.getBukkitEntity(), CraftSpellcaster.toBukkitSpell(spell));
+        EntitySpellCastEvent event = new CraftEntitySpellCastEvent((Spellcaster) caster.getBukkitEntity(), CraftSpellcaster.toBukkitSpell(spell));
         Bukkit.getPluginManager().callEvent(event);
         return !event.isCancelled();
     }
