@@ -1,43 +1,21 @@
 package org.bukkit.event.entity;
 
-import java.util.Collections;
 import java.util.List;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when an entity is about to be replaced by another entity.
  */
-@NullMarked
-public class EntityTransformEvent extends EntityEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final List<Entity> transformedEntities;
-    private final Entity converted;
-    private final TransformReason transformReason;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public EntityTransformEvent(Entity original, List<Entity> transformedEntities, TransformReason transformReason) {
-        super(original);
-        this.transformedEntities = Collections.unmodifiableList(transformedEntities);
-        this.converted = transformedEntities.getFirst();
-        this.transformReason = transformReason;
-    }
+public interface EntityTransformEvent extends EntityEventNew, Cancellable {
 
     /**
      * Gets the entities that the original entity was transformed to.
      *
      * @return The transformed entities.
      */
-    public List<Entity> getTransformedEntities() {
-        return this.transformedEntities;
-    }
+    List<Entity> getTransformedEntities();
 
     /**
      * Gets the entity that the original entity was transformed to.
@@ -47,39 +25,23 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
      * @return The transformed entity.
      * @see #getTransformedEntities()
      */
-    public Entity getTransformedEntity() {
-        return this.converted;
-    }
+    Entity getTransformedEntity();
 
     /**
      * Gets the reason for the conversion that has occurred.
      *
      * @return The reason for conversion that has occurred.
      */
-    public TransformReason getTransformReason() {
-        return this.transformReason;
+    TransformReason getTransformReason();
+
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
-    }
-
-    public enum TransformReason {
+    enum TransformReason {
         /**
          * When a zombie gets cured and a villager is spawned.
          */

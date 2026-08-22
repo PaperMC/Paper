@@ -169,9 +169,11 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityTargetEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityTargetLivingEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityToggleGlideEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityToggleSwimEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityTransformEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
+import org.bukkit.craftbukkit.event.entity.CraftPigZapEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPlayerDeathEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftProjectileHitEvent;
@@ -739,7 +741,7 @@ public class CraftEventFactory {
             transformedEntities.add(entity.getBukkitEntity());
         }
 
-        EntityTransformEvent event = new EntityTransformEvent(original.getBukkitEntity(), transformedEntities, convertType);
+        EntityTransformEvent event = new CraftEntityTransformEvent(original.getBukkitEntity(), transformedEntities, convertType);
         Bukkit.getPluginManager().callEvent(event);
 
         return event;
@@ -1389,7 +1391,7 @@ public class CraftEventFactory {
     }
 
     public static PigZapEvent callPigZapEvent(Entity pig, Entity lightning, Entity zombifiedPiglin) {
-        PigZapEvent event = new PigZapEvent((Pig) pig.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), (PigZombie) zombifiedPiglin.getBukkitEntity());
+        PigZapEvent event = new CraftPigZapEvent((Pig) pig.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), (PigZombie) zombifiedPiglin.getBukkitEntity());
         pig.getBukkitEntity().getServer().getPluginManager().callEvent(event);
         return event;
     }
@@ -1402,7 +1404,7 @@ public class CraftEventFactory {
 
     // Paper start
     public static com.destroystokyo.paper.event.entity.EntityZapEvent callEntityZapEvent(Entity entity, Entity lightning, Entity changedEntity) {
-        com.destroystokyo.paper.event.entity.EntityZapEvent event = new com.destroystokyo.paper.event.entity.EntityZapEvent(entity.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), changedEntity.getBukkitEntity());
+        com.destroystokyo.paper.event.entity.EntityZapEvent event = new io.papermc.paper.event.entity.PaperEntityZapEvent(entity.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), changedEntity.getBukkitEntity());
         entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
         return event;
     }
