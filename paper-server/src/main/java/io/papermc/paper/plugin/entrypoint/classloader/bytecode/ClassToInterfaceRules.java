@@ -366,7 +366,8 @@ public final class ClassToInterfaceRules {
             EntityZapEvent.class,
             PigZapEvent.class,
             EntityUnleashEvent.class,
-            PlayerUnleashEntityEvent.class
+            PlayerUnleashEntityEvent.class,
+            ExplosionPrimeEvent.class
             //</editor-fold>
         );
     }
