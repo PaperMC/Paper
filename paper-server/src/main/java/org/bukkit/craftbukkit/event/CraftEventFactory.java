@@ -2309,7 +2309,7 @@ public class CraftEventFactory {
     }
 
     public static ItemStack handleWitchReadyPotionEvent(net.minecraft.world.entity.monster.Witch witch, @Nullable ItemStack potion) {
-        com.destroystokyo.paper.event.entity.WitchReadyPotionEvent event = new com.destroystokyo.paper.event.entity.WitchReadyPotionEvent((org.bukkit.entity.Witch) witch.getBukkitEntity(), CraftItemStack.asCraftMirror(potion));
+        com.destroystokyo.paper.event.entity.WitchReadyPotionEvent event = new io.papermc.paper.event.entity.PaperWitchReadyPotionEvent((org.bukkit.entity.Witch) witch.getBukkitEntity(), CraftItemStack.asCraftMirror(potion));
         if (!event.callEvent() || event.getPotion() == null) {
             return ItemStack.EMPTY;
         }
