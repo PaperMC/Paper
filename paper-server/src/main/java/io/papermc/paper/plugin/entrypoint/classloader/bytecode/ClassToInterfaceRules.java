@@ -368,7 +368,8 @@ public final class ClassToInterfaceRules {
             EntityUnleashEvent.class,
             PlayerUnleashEntityEvent.class,
             ExplosionPrimeEvent.class,
-            FireworkExplodeEvent.class
+            FireworkExplodeEvent.class,
+            FoodLevelChangeEvent.class
             //</editor-fold>
         );
     }

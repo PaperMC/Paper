@@ -173,6 +173,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityTransformEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExplosionPrimeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftFireworkExplodeEvent;
+import org.bukkit.craftbukkit.event.entity.CraftFoodLevelChangeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPigZapEvent;
@@ -1388,7 +1389,7 @@ public class CraftEventFactory {
     }
 
     public static FoodLevelChangeEvent callFoodLevelChangeEvent(net.minecraft.world.entity.player.Player entity, int level, ItemStack item) {
-        FoodLevelChangeEvent event = new FoodLevelChangeEvent(entity.getBukkitEntity(), level, (item == null) ? null : CraftItemStack.asBukkitCopy(item));
+        FoodLevelChangeEvent event = new CraftFoodLevelChangeEvent(entity.getBukkitEntity(), level, (item == null) ? null : CraftItemStack.asBukkitCopy(item));
         entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
         return event;
     }
