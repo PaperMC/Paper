@@ -356,7 +356,8 @@ public final class ClassToInterfaceRules {
             EntityRemoveEvent.class,
             EntityResurrectEvent.class,
             EntityShootBowEvent.class,
-            EntitySpellCastEvent.class
+            EntitySpellCastEvent.class,
+            EntityTameEvent.class
             //</editor-fold>
         );
     }

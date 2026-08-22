@@ -164,6 +164,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityRemoveEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityShootBowEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntitySpellCastEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityTameEvent;
 import org.bukkit.craftbukkit.event.entity.CraftExpBottleEvent;
 import org.bukkit.craftbukkit.event.entity.CraftItemSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
@@ -874,7 +875,7 @@ public class CraftEventFactory {
     }
 
     public static EntityTameEvent callEntityTameEvent(Mob entity, net.minecraft.world.entity.player.Player tamer) {
-        EntityTameEvent event = new EntityTameEvent((LivingEntity) entity.getBukkitEntity(), tamer.getBukkitEntity());
+        EntityTameEvent event = new CraftEntityTameEvent((LivingEntity) entity.getBukkitEntity(), tamer.getBukkitEntity());
         event.callEvent();
         return event;
     }
