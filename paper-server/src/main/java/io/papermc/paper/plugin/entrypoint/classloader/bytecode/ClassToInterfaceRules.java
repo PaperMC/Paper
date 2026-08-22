@@ -385,7 +385,8 @@ public final class ClassToInterfaceRules {
             EnderDragonFlameEvent.class,
             EnderDragonShootFireballEvent.class,
             EndermanAttackPlayerEvent.class,
-            EndermanEscapeEvent.class
+            EndermanEscapeEvent.class,
+            EntityAddToWorldEvent.class
             //</editor-fold>
         );
     }
