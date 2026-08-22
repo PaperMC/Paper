@@ -391,7 +391,8 @@ public final class ClassToInterfaceRules {
             EntityPathfindEvent.class,
             EntityRemoveFromWorldEvent.class,
             ExperienceOrbMergeEvent.class,
-            ProjectileCollideEvent.class
+            ProjectileCollideEvent.class,
+            SkeletonHorseTrapEvent.class
             //</editor-fold>
         );
     }
