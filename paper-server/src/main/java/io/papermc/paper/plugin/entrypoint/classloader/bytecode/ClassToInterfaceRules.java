@@ -401,7 +401,8 @@ public final class ClassToInterfaceRules {
             TurtleGoHomeEvent.class,
             TurtleLayEggEvent.class,
             TurtleStartDiggingEvent.class,
-            WitchConsumePotionEvent.class
+            WitchConsumePotionEvent.class,
+            WitchReadyPotionEvent.class
             //</editor-fold>
         );
     }
