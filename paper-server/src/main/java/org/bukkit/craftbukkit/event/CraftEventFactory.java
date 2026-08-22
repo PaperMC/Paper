@@ -189,6 +189,7 @@ import org.bukkit.craftbukkit.event.entity.CraftProjectileLaunchEvent;
 import org.bukkit.craftbukkit.event.entity.CraftSpawnerSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftStriderTemperatureChangeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftTrialSpawnerSpawnEvent;
+import org.bukkit.craftbukkit.event.entity.CraftVillagerCareerChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEntityEvent;
@@ -773,7 +774,7 @@ public class CraftEventFactory {
     }
 
     public static VillagerCareerChangeEvent callVillagerCareerChangeEvent(net.minecraft.world.entity.npc.villager.Villager villager, Profession future, VillagerCareerChangeEvent.ChangeReason reason) {
-        VillagerCareerChangeEvent event = new VillagerCareerChangeEvent((Villager) villager.getBukkitEntity(), future, reason);
+        VillagerCareerChangeEvent event = new CraftVillagerCareerChangeEvent((Villager) villager.getBukkitEntity(), future, reason);
         Bukkit.getPluginManager().callEvent(event);
 
         return event;
