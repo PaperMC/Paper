@@ -377,7 +377,8 @@ public final class ClassToInterfaceRules {
             PigZombieAngerEvent.class,
             SheepRegrowWoolEvent.class,
             SlimeSplitEvent.class,
-            StriderTemperatureChangeEvent.class
+            StriderTemperatureChangeEvent.class,
+            VillagerAcquireTradeEvent.class
             //</editor-fold>
         );
     }
