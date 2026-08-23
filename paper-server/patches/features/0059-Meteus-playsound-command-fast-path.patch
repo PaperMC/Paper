@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:16:45 +0900
+Subject: [PATCH] Meteus playsound command fast path
+
+
+diff --git a/net/minecraft/server/commands/PlaySoundCommand.java b/net/minecraft/server/commands/PlaySoundCommand.java
+index 53fe9c891456a618f27e85816d3a41bdb6533045..08403502c25ea2b415d61f64f51ca640ad818b2d 100644
+--- a/net/minecraft/server/commands/PlaySoundCommand.java
++++ b/net/minecraft/server/commands/PlaySoundCommand.java
+@@ -162,6 +162,58 @@ public class PlaySoundCommand {
+         double maxDistSqr = Mth.square(soundHolder.value().getRange(volume));
+         ServerLevel level = source.getLevel();
+         long seed = level.getRandom().nextLong();
++        // Meteus start - playsound command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playSoundCommandFastPath) {
++            int count = 0;
++            ServerPlayer firstPlayedFor = null;
++            for (ServerPlayer player : players) {
++                if (player.level() == level) {
++                    double deltaX = position.x - player.getX();
++                    double deltaY = position.y - player.getY();
++                    double deltaZ = position.z - player.getZ();
++                    double distSqr = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ;
++                    Vec3 localPosition = position;
++                    float localVolume = volume;
++                    if (distSqr > maxDistSqr) {
++                        if (minVolume <= 0.0F) {
++                            continue;
++                        }
++
++                        double distance = Math.sqrt(distSqr);
++                        localPosition = new Vec3(
++                            player.getX() + deltaX / distance * 2.0, player.getY() + deltaY / distance * 2.0, player.getZ() + deltaZ / distance * 2.0
++                        );
++                        localVolume = minVolume;
++                    }
++
++                    player.connection
++                        .send(
++                            new ClientboundSoundPacket(soundHolder, soundSource, localPosition.x(), localPosition.y(), localPosition.z(), localVolume, pitch, seed)
++                        );
++                    if (firstPlayedFor == null) {
++                        firstPlayedFor = player;
++                    }
++                    count++;
++                }
++            }
++
++            if (count == 0) {
++                throw ERROR_TOO_FAR.create();
++            }
++
++            if (count == 1) {
++                final ServerPlayer singlePlayedFor = firstPlayedFor;
++                source.sendSuccess(
++                    () -> Component.translatable("commands.playsound.success.single", Component.translationArg(sound), singlePlayedFor.getDisplayName()), true
++                );
++            } else {
++                final int playedForCount = count;
++                source.sendSuccess(() -> Component.translatable("commands.playsound.success.multiple", Component.translationArg(sound), playedForCount), true);
++            }
++
++            return count;
++        }
++        // Meteus end - playsound command fast path
+         List<ServerPlayer> playedFor = new ArrayList<>();
+ 
+         for (ServerPlayer player : players) {

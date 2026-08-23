@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 17:56:58 +0900
+Subject: [PATCH] Meteus entity metadata packet fast paths
+
+
+diff --git a/net/minecraft/network/protocol/game/ClientboundSetEntityDataPacket.java b/net/minecraft/network/protocol/game/ClientboundSetEntityDataPacket.java
+index b8b04a7797259e84d5cc4f1818fe9b7c5e3da908..a7ce3711641e886f81efdc7d733a60291f3f1643 100644
+--- a/net/minecraft/network/protocol/game/ClientboundSetEntityDataPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundSetEntityDataPacket.java
+@@ -2,6 +2,7 @@ package net.minecraft.network.protocol.game;
+ 
+ import java.util.ArrayList;
+ import java.util.List;
++import java.util.RandomAccess;
+ import net.minecraft.network.RegistryFriendlyByteBuf;
+ import net.minecraft.network.codec.StreamCodec;
+ import net.minecraft.network.protocol.Packet;
+@@ -20,9 +21,17 @@ public record ClientboundSetEntityDataPacket(int id, List<SynchedEntityData.Data
+ 
+     private static void pack(final List<SynchedEntityData.DataValue<?>> items, final RegistryFriendlyByteBuf output) {
+         try (io.papermc.paper.util.sanitizer.ItemObfuscationSession ignored = io.papermc.paper.util.sanitizer.ItemObfuscationSession.start(io.papermc.paper.configuration.GlobalConfiguration.get().anticheat.obfuscation.items.binding.level)) { // Paper - data sanitization
++        // Meteus start - entity metadata packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityMetadataPacketFastPath && items instanceof RandomAccess) {
++            for (int i = 0, len = items.size(); i < len; ++i) {
++                items.get(i).write(output);
++            }
++        } else {
++        // Meteus end - entity metadata packet fast path
+         for (SynchedEntityData.DataValue<?> item : items) {
+             item.write(output);
+         }
++        } // Meteus - entity metadata packet fast path
+         } // Paper - data sanitization
+ 
+         output.writeByte(255);
+diff --git a/net/minecraft/network/syncher/SynchedEntityData.java b/net/minecraft/network/syncher/SynchedEntityData.java
+index 0075164bf057271d63a8b97473aa5c41c03eac91..3f8b03c857d3546f6606bdbcf1de1a0c10088deb 100644
+--- a/net/minecraft/network/syncher/SynchedEntityData.java
++++ b/net/minecraft/network/syncher/SynchedEntityData.java
+@@ -84,6 +84,19 @@ public class SynchedEntityData {
+         }
+ 
+         this.isDirty = false;
++        // Meteus start - entity metadata packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityMetadataPacketFastPath) {
++            final List<SynchedEntityData.DataValue<?>> result = new ArrayList<>(this.itemsById.length);
++            for (int i = 0, len = this.itemsById.length; i < len; ++i) {
++                final SynchedEntityData.DataItem<?> dataItem = this.itemsById[i];
++                if (dataItem.isDirty()) {
++                    dataItem.setDirty(false);
++                    result.add(dataItem.value());
++                }
++            }
++            return result;
++        }
++        // Meteus end - entity metadata packet fast path
+         List<SynchedEntityData.DataValue<?>> result = new ArrayList<>();
+ 
+         for (SynchedEntityData.DataItem<?> dataItem : this.itemsById) {

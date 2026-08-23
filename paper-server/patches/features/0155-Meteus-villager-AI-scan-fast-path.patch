@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 14:24:20 +0900
+Subject: [PATCH] Meteus villager AI scan fast path
+
+
+diff --git a/net/minecraft/world/entity/npc/villager/Villager.java b/net/minecraft/world/entity/npc/villager/Villager.java
+index e4ba6e200e85f4e226d6a3e68db734f277b89226..0a01999e6807bc4d8da831809b93a3e03919916e 100644
+--- a/net/minecraft/world/entity/npc/villager/Villager.java
++++ b/net/minecraft/world/entity/npc/villager/Villager.java
+@@ -844,6 +844,15 @@ public class Villager extends AbstractVillager implements VillagerDataHolder, Re
+ 
+     private int countFoodPointsInInventory() {
+         SimpleContainer inventory = this.getInventory();
++        // Meteus start - villager AI scan fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.villagerAiScanFastPath) {
++            int points = 0;
++            for (final Map.Entry<Item, Integer> entry : FOOD_POINTS.entrySet()) {
++                points += inventory.countItem(entry.getKey()) * entry.getValue();
++            }
++            return points;
++        }
++        // Meteus end - villager AI scan fast path
+         return FOOD_POINTS.entrySet().stream().mapToInt(entry -> inventory.countItem(entry.getKey()) * entry.getValue()).sum();
+     }
+ 
+@@ -896,6 +905,37 @@ public class Villager extends AbstractVillager implements VillagerDataHolder, Re
+         if (this.wantsToSpawnGolem(timestamp)) {
+             AABB villagerSearchBox = this.getBoundingBox().inflate(10.0, 10.0, 10.0);
+             List<Villager> nearbyVillagers = level.getEntitiesOfClass(Villager.class, villagerSearchBox);
++            // Meteus start - villager AI scan fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.villagerAiScanFastPath) {
++                int villagersThatWantAGolem = 0;
++                for (int i = 0, len = nearbyVillagers.size(); i < len && villagersThatWantAGolem < 5; ++i) {
++                    if (nearbyVillagers.get(i).wantsToSpawnGolem(timestamp)) {
++                        ++villagersThatWantAGolem;
++                    }
++                }
++                if (villagersThatWantAGolem >= villagersNeededToAgree) {
++                    if (SpawnUtil.trySpawnMob( // Paper - Set Golem Last Seen to stop it from spawning another one - switch to isPresent
++                            EntityType.IRON_GOLEM,
++                            EntitySpawnReason.MOB_SUMMONED,
++                            level,
++                            this.blockPosition(),
++                            10,
++                            8,
++                            6,
++                            SpawnUtil.Strategy.LEGACY_IRON_GOLEM,
++                            false,
++                            org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE, // CraftBukkit,
++                            () -> {GolemSensor.golemDetected(this);} // Paper - Set Golem Last Seen to stop it from spawning another one
++                        )
++                        .isPresent()) { // Paper - Set Golem Last Seen to stop it from spawning another one - switch to isPresent
++                        for (int i = 0, len = nearbyVillagers.size(); i < len; ++i) {
++                            GolemSensor.golemDetected(nearbyVillagers.get(i));
++                        }
++                    }
++                }
++                return;
++            }
++            // Meteus end - villager AI scan fast path
+             List<Villager> nearbyVillagersThatWantAGolem = nearbyVillagers.stream()
+                 .filter(villager -> villager.wantsToSpawnGolem(timestamp))
+                 .limit(5L)

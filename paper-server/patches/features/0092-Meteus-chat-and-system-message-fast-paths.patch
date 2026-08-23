@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 21:01:16 +0900
+Subject: [PATCH] Meteus chat and system message fast paths
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 6f05da9f421865c05bd9e6d03bb21fd44b5c7323..5c7fb89f7becf667270312de2948e056bc1c84ae 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -1261,6 +1261,15 @@ public abstract class PlayerList {
+     }
+ 
+     public void broadcastSystemMessage(final Component message, final boolean overlay) {
++        // Meteus start - system message broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.systemMessageBroadcastFastPath) {
++            this.server.sendSystemMessage(message);
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                this.players.get(i).sendSystemMessage(message, overlay);
++            }
++            return;
++        }
++        // Meteus end - system message broadcast fast path
+         this.broadcastSystemMessage(message, player -> message, overlay);
+     }
+ 
+@@ -1314,6 +1323,32 @@ public abstract class PlayerList {
+         boolean wasFullyFiltered = false;
+ 
+         Packet<?> disguised = senderPlayer != null && unsignedFunction == null ? new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(tracked.content(), chatType) : null; // Paper - don't send player chat packets from vanished players
++        // Meteus start - chat broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chatBroadcastFastPath) {
++            final boolean messageFullyFiltered = message.isFullyFiltered();
++            final boolean hasUnsignedFunction = unsignedFunction != null;
++            final org.bukkit.craftbukkit.entity.CraftPlayer senderBukkit = senderPlayer == null ? null : senderPlayer.getBukkitEntity();
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                final boolean filtered = isFiltered.test(player);
++                // Paper start - don't send player chat packets from vanished players
++                if (senderBukkit != null && !player.getBukkitEntity().canSee(senderBukkit)) {
++                    player.connection.send(hasUnsignedFunction
++                        ? new net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket(unsignedFunction.apply(player.getBukkitEntity()), chatType)
++                        : disguised);
++                    continue;
++                }
++                player.sendChatMessage(tracked, filtered, chatType, hasUnsignedFunction ? unsignedFunction.apply(player.getBukkitEntity()) : null);
++                // Paper end
++                wasFullyFiltered |= filtered && messageFullyFiltered;
++            }
++
++            if (wasFullyFiltered && senderPlayer != null) {
++                senderPlayer.sendSystemMessage(CHAT_FILTERED_FULL);
++            }
++            return;
++        }
++        // Meteus end - chat broadcast fast path
+         for (ServerPlayer player : this.players) {
+             boolean filtered = isFiltered.test(player);
+             // Paper start - don't send player chat packets from vanished players

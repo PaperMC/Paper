@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 14:30:37 +0900
+Subject: [PATCH] Meteus entity inventory drop fast path
+
+
+diff --git a/net/minecraft/world/entity/animal/allay/Allay.java b/net/minecraft/world/entity/animal/allay/Allay.java
+index 69638b9f5c4631ec056ec8066d091e553d814252..1a8d078be0c41ad63c95f55e4593b71ff9d0f66f 100644
+--- a/net/minecraft/world/entity/animal/allay/Allay.java
++++ b/net/minecraft/world/entity/animal/allay/Allay.java
+@@ -424,7 +424,16 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
+     @Override
+     protected void dropEquipment(final ServerLevel level) {
+         super.dropEquipment(level);
++        // Meteus start - entity event list fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++            final List<ItemStack> items = this.inventory.removeAllItems();
++            for (int i = 0, len = items.size(); i < len; ++i) {
++                this.spawnAtLocation(level, items.get(i));
++            }
++        } else {
++        // Meteus end - entity event list fast path
+         this.inventory.removeAllItems().forEach(stack -> this.spawnAtLocation(level, stack));
++        } // Meteus - entity event list fast path
+         ItemStack itemStack = this.getItemBySlot(EquipmentSlot.MAINHAND);
+         if (!itemStack.isEmpty() && !EnchantmentHelper.has(itemStack, EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP)) {
+             this.spawnAtLocation(level, itemStack);
+diff --git a/net/minecraft/world/entity/monster/piglin/Piglin.java b/net/minecraft/world/entity/monster/piglin/Piglin.java
+index b0e8b2db95aa5a0f53ddf8c7d082963dc693f879..a3a3e5a48b9d3b3e3f0142d6962bd15aaf788ab3 100644
+--- a/net/minecraft/world/entity/monster/piglin/Piglin.java
++++ b/net/minecraft/world/entity/monster/piglin/Piglin.java
+@@ -141,7 +141,16 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+     @Override
+     protected void dropCustomDeathLoot(final ServerLevel level, final DamageSource source, final boolean killedByPlayer) {
+         super.dropCustomDeathLoot(level, source, killedByPlayer);
++        // Meteus start - entity event list fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++            final List<ItemStack> items = this.inventory.removeAllItems();
++            for (int i = 0, len = items.size(); i < len; ++i) {
++                this.spawnAtLocation(level, items.get(i));
++            }
++        } else {
++        // Meteus end - entity event list fast path
+         this.inventory.removeAllItems().forEach(itemStack -> this.spawnAtLocation(level, itemStack));
++        } // Meteus - entity event list fast path
+     }
+ 
+     protected ItemStack addToInventory(final ItemStack itemStack) {
+@@ -297,7 +306,16 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+     protected void finishConversion(final ServerLevel level) {
+         PiglinAi.cancelAdmiring(level, this);
+         this.forceDrops = true; // Paper - Add missing forceDrop toggles
++        // Meteus start - entity event list fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++            final List<ItemStack> items = this.inventory.removeAllItems();
++            for (int i = 0, len = items.size(); i < len; ++i) {
++                this.spawnAtLocation(level, items.get(i));
++            }
++        } else {
++        // Meteus end - entity event list fast path
+         this.inventory.removeAllItems().forEach(itemStack -> this.spawnAtLocation(level, itemStack));
++        } // Meteus - entity event list fast path
+         this.forceDrops = false; // Paper - Add missing forceDrop toggles
+         super.finishConversion(level);
+     }

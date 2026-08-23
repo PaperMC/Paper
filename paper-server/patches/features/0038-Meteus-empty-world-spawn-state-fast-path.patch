@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 19:12:07 +0900
+Subject: [PATCH] Meteus empty world spawn state fast path
+
+
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index 396ab3cdcf6f726ce7133395bb39594ef4b1c011..b1cb21b264f35afed615f55e653dda00f70e3452 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -535,11 +535,17 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+     private void tickChunks(final ProfilerFiller profiler, final long timeDiff) {
+         profiler.push("naturalSpawnCount");
+         int chunkCount = this.distanceManager.getNaturalSpawnChunkCount();
++        // Meteus start - empty world spawn state fast path
++        final List<ServerPlayer> players = this.level.players();
++        final boolean hasPlayers = !players.isEmpty();
+         // Paper start - Optional per player mob spawns
+-        NaturalSpawner.SpawnState spawnCookie;
+-        if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
++        NaturalSpawner.@Nullable SpawnState spawnCookie;
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.emptyWorldSpawnStateFastPath && !hasPlayers) {
++            spawnCookie = null;
++        } else if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
++        // Meteus end - empty world spawn state fast path
+             // re-set mob counts
+-            for (ServerPlayer player : this.level.players()) {
++            for (ServerPlayer player : players) { // Meteus - use cached player list
+                 // Paper start - per player mob spawning backoff
+                 for (int j = 0; j < ServerPlayer.MOBCATEGORY_TOTAL_ENUMS; j++) {
+                     player.mobCounts[j] = 0;
+@@ -558,12 +564,12 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         }
+         // Paper end - Optional per player mob spawns
+         this.lastSpawnState = spawnCookie;
+-        boolean doMobSpawning = this.level.getGameRules().get(GameRules.SPAWN_MOBS) && !this.level.players().isEmpty(); // CraftBukkit
++        boolean doMobSpawning = this.level.getGameRules().get(GameRules.SPAWN_MOBS) && hasPlayers; // CraftBukkit // Meteus - use cached player list
+         int tickSpeed = this.level.getGameRules().get(GameRules.RANDOM_TICK_SPEED);
+         List<MobCategory> spawningCategories;
+         if (doMobSpawning && (this.spawnEnemies || this.spawnFriendlies)) { // Paper
+             // Paper start - PlayerNaturallySpawnCreaturesEvent
+-            for (ServerPlayer player : this.level.players()) {
++            for (ServerPlayer player : players) { // Meteus - use cached player list
+                 int chunkRange = Math.min(level.spigotConfig.mobSpawnRange, player.getBukkitEntity().getViewDistance());
+                 chunkRange = Math.min(chunkRange, 8);
+                 player.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(player.getBukkitEntity(), (byte) chunkRange);
+@@ -606,7 +612,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+     }
+ 
+     private void tickSpawningChunk(
+-        final LevelChunk chunk, final long timeDiff, final List<MobCategory> spawningCategories, final NaturalSpawner.SpawnState spawnCookie
++        final LevelChunk chunk, final long timeDiff, final List<MobCategory> spawningCategories, final NaturalSpawner.@Nullable SpawnState spawnCookie
+     ) {
+         ChunkPos chunkPos = chunk.getPos();
+         chunk.incrementInhabitedTime(timeDiff);

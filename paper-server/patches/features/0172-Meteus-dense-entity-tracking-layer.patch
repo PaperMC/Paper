@@ -1,0 +1,372 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 21:56:15 +0900
+Subject: [PATCH] Meteus dense entity tracking layer
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 099118b86547b342cf0e337cacac3fb7fe4d86dc..7f797ca9be79c5824b6ee2854568ca76014df0a5 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1439,6 +1439,12 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                 return;
+             }
+             // Meteus end - empty entity tracker broadcast fast path
++            // Meteus start - entity tracker fanout fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityTrackerFanoutFastPath) {
++                this.meteus$sendToSeenBy(packet);
++                return;
++            }
++            // Meteus end - entity tracker fanout fast path
+             // Meteus start - batched network broadcast flush fast path
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
+                 for (ServerPlayerConnection connection : this.seenBy) {
+@@ -1457,6 +1463,12 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+ 
+         @Override
+         public void sendToTrackingPlayersAndSelf(final Packet<? super ClientGamePacketListener> packet) {
++            // Meteus start - entity tracker fanout fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityTrackerFanoutFastPath) {
++                this.meteus$sendToSeenByAndSelf(packet);
++                return;
++            }
++            // Meteus end - entity tracker fanout fast path
+             // Meteus start - batched network broadcast flush fast path
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
+                 if (!this.seenBy.isEmpty()) {
+@@ -1491,6 +1503,12 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                 return;
+             }
+             // Meteus end - empty entity tracker broadcast fast path
++            // Meteus start - entity tracker fanout fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityTrackerFanoutFastPath) {
++                this.meteus$sendToFilteredSeenBy(packet, targetPredicate);
++                return;
++            }
++            // Meteus end - entity tracker fanout fast path
+             // Meteus start - batched network broadcast flush fast path
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
+                 for (ServerPlayerConnection connection : this.seenBy) {
+@@ -1513,6 +1531,71 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+             }
+         }
+ 
++        // Meteus start - entity tracker fanout fast path
++        private void meteus$sendToSeenBy(final Packet<? super ClientGamePacketListener> packet) {
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
++                for (final ServerPlayerConnection connection : this.seenBy) {
++                    connection.meteus$sendWithoutFlush(packet);
++                }
++                for (final ServerPlayerConnection connection : this.seenBy) {
++                    connection.meteus$flushConnection();
++                }
++                return;
++            }
++
++            for (final ServerPlayerConnection connection : this.seenBy) {
++                connection.send(packet);
++            }
++        }
++
++        private void meteus$sendToSeenByAndSelf(final Packet<? super ClientGamePacketListener> packet) {
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
++                for (final ServerPlayerConnection connection : this.seenBy) {
++                    connection.meteus$sendWithoutFlush(packet);
++                }
++                if (this.entity instanceof ServerPlayer player) {
++                    player.connection.meteus$sendWithoutFlush(packet);
++                }
++                for (final ServerPlayerConnection connection : this.seenBy) {
++                    connection.meteus$flushConnection();
++                }
++                if (this.entity instanceof ServerPlayer player) {
++                    player.connection.meteus$flushConnection();
++                }
++                return;
++            }
++
++            for (final ServerPlayerConnection connection : this.seenBy) {
++                connection.send(packet);
++            }
++            if (this.entity instanceof ServerPlayer player) {
++                player.connection.send(packet);
++            }
++        }
++
++        private void meteus$sendToFilteredSeenBy(final Packet<? super ClientGamePacketListener> packet, final Predicate<ServerPlayer> targetPredicate) {
++            if (!io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
++                for (final ServerPlayerConnection connection : this.seenBy) {
++                    if (targetPredicate.test(connection.getPlayer())) {
++                        connection.send(packet);
++                    }
++                }
++                return;
++            }
++
++            final List<ServerPlayerConnection> receivers = new ArrayList<>(Math.min(this.seenBy.size(), 16));
++            for (final ServerPlayerConnection connection : this.seenBy) {
++                if (targetPredicate.test(connection.getPlayer())) {
++                    receivers.add(connection);
++                    connection.meteus$sendWithoutFlush(packet);
++                }
++            }
++            for (int i = 0, len = receivers.size(); i < len; ++i) {
++                receivers.get(i).meteus$flushConnection();
++            }
++        }
++        // Meteus end - entity tracker fanout fast path
++
+         public void broadcastRemoved() {
+             // Meteus start - empty entity tracker broadcast fast path
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.emptyEntityTrackerBroadcastFastPath && this.seenBy.isEmpty()) {
+diff --git a/net/minecraft/server/level/ServerEntity.java b/net/minecraft/server/level/ServerEntity.java
+index c787a13915a4f672fac8e5ae838fa73872b3813d..ac686e98f33d634fefd5c26bbf3e5f649d72b217 100644
+--- a/net/minecraft/server/level/ServerEntity.java
++++ b/net/minecraft/server/level/ServerEntity.java
+@@ -340,6 +340,12 @@ public class ServerEntity {
+     }
+     // Meteus end - passenger sync fast path
+ 
++    // Meteus start - entity tracker fanout fast path
++    private boolean meteus$hasPacketReceivers() {
++        return !this.trackedPlayers.isEmpty() || this.entity instanceof ServerPlayer;
++    }
++    // Meteus end - entity tracker fanout fast path
++
+     public void removePairing(final ServerPlayer player) {
+         this.entity.stopSeenByPlayer(player);
+         player.connection.send(new ClientboundRemoveEntitiesPacket(this.entity.getId()));
+@@ -462,12 +468,25 @@ public class ServerEntity {
+         List<SynchedEntityData.DataValue<?>> packedValues = entityData.packDirty();
+         if (packedValues != null) {
+             this.trackedDataValues = entityData.getNonDefaultValues();
+-            this.synchronizer.sendToTrackingPlayersAndSelf(new ClientboundSetEntityDataPacket(this.entity.getId(), packedValues));
++            // Meteus start - entity tracker fanout fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityTrackerFanoutFastPath && !this.meteus$hasPacketReceivers()) {
++                packedValues = null;
++            }
++            // Meteus end - entity tracker fanout fast path
++            if (packedValues != null) {
++                this.synchronizer.sendToTrackingPlayersAndSelf(new ClientboundSetEntityDataPacket(this.entity.getId(), packedValues));
++            }
+         }
+ 
+         if (this.entity instanceof LivingEntity) {
+             Set<AttributeInstance> attributes = ((LivingEntity)this.entity).getAttributes().getAttributesToSync();
+             if (!attributes.isEmpty()) {
++                // Meteus start - entity tracker fanout fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityTrackerFanoutFastPath && !this.meteus$hasPacketReceivers()) {
++                    attributes.clear();
++                    return;
++                }
++                // Meteus end - entity tracker fanout fast path
+                 // CraftBukkit start - Send scaled max health
+                 if (this.entity instanceof ServerPlayer serverPlayer) {
+                     serverPlayer.getBukkitEntity().injectScaledMaxHealth(attributes, false);
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 8e5904f393d69bf54ad6d08ea76508d932f191ca..43d93094157d0a657b98448e6f0d8553fc25e30a 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -869,14 +869,18 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             io.papermc.paper.entity.activation.ActivationRange.activateEntities(this); // Paper - EAR
+             // Meteus start - entity tick loop fast path
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityTickLoopFastPath) {
+-                final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet.Iterator<Entity> iterator = this.entityTickList.meteus$iterator();
+-                try {
+-                    while (iterator.hasNext()) {
+-                        this.meteus$tickEntity(iterator.next(), tickRateManager, profiler);
++                // Meteus start - entity tick-list empty fast path
++                if (!io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityTickListEmptyFastPath || !this.entityTickList.meteus$isEmpty()) {
++                // Meteus end - entity tick-list empty fast path
++                    final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet.Iterator<Entity> iterator = this.entityTickList.meteus$iterator();
++                    try {
++                        while (iterator.hasNext()) {
++                            this.meteus$tickEntity(iterator.next(), tickRateManager, profiler);
++                        }
++                    } finally {
++                        iterator.finishedIterating();
+                     }
+-                } finally {
+-                    iterator.finishedIterating();
+-                }
++                } // Meteus - entity tick-list empty fast path
+             } else {
+                 this.entityTickList
+                     .forEach(
+diff --git a/net/minecraft/util/ClassInstanceMultiMap.java b/net/minecraft/util/ClassInstanceMultiMap.java
+index 021457d7676356ee9d5c7ba174206ba190adc1eb..9a69c6e80f76882454b1a476fc4cb312738ec4bd 100644
+--- a/net/minecraft/util/ClassInstanceMultiMap.java
++++ b/net/minecraft/util/ClassInstanceMultiMap.java
+@@ -59,6 +59,23 @@ public class ClassInstanceMultiMap<T> extends AbstractCollection<T> {
+             throw new IllegalArgumentException("Don't know how to search for " + index);
+         }
+ 
++        // Meteus start - entity section scan fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionScanFastPath) {
++            List<? extends T> instances = this.byClass.get(index);
++            if (instances == null) {
++                final List<T> found = Lists.newArrayList();
++                for (int i = 0, len = this.allInstances.size(); i < len; ++i) {
++                    final T instance = this.allInstances.get(i);
++                    if (index.isInstance(instance)) {
++                        found.add(instance);
++                    }
++                }
++                instances = found;
++                this.byClass.put(index, found);
++            }
++            return (Collection<S>)Collections.unmodifiableCollection(instances);
++        }
++        // Meteus end - entity section scan fast path
+         List<? extends T> instances = this.byClass.computeIfAbsent(index, k -> this.allInstances.stream().filter(k::isInstance).collect(Util.toMutableList()));
+         return (Collection<S>)Collections.unmodifiableCollection(instances);
+     }
+@@ -72,6 +89,33 @@ public class ClassInstanceMultiMap<T> extends AbstractCollection<T> {
+         return ImmutableList.copyOf(this.allInstances);
+     }
+ 
++    // Meteus start - entity section scan fast path
++    public List<T> meteus$getRawInstances() {
++        return this.allInstances;
++    }
++
++    public <S> List<? extends T> meteus$findRaw(final Class<S> index) {
++        if (!this.baseClass.isAssignableFrom(index)) {
++            throw new IllegalArgumentException("Don't know how to search for " + index);
++        }
++
++        List<? extends T> instances = this.byClass.get(index);
++        if (instances != null) {
++            return instances;
++        }
++
++        final List<T> found = Lists.newArrayList();
++        for (int i = 0, len = this.allInstances.size(); i < len; ++i) {
++            final T instance = this.allInstances.get(i);
++            if (index.isInstance(instance)) {
++                found.add(instance);
++            }
++        }
++        this.byClass.put(index, found);
++        return found;
++    }
++    // Meteus end - entity section scan fast path
++
+     @Override
+     public int size() {
+         return this.allInstances.size();
+diff --git a/net/minecraft/world/level/entity/EntityLookup.java b/net/minecraft/world/level/entity/EntityLookup.java
+index 18944af62306dc4b580e7cc0f798110490bfc6a9..d6aa544046e95071ee7c661bef8604f942bf6d48 100644
+--- a/net/minecraft/world/level/entity/EntityLookup.java
++++ b/net/minecraft/world/level/entity/EntityLookup.java
+@@ -17,6 +17,18 @@ public class EntityLookup<T extends EntityAccess> {
+     private final Map<UUID, T> byUuid = Maps.newHashMap();
+ 
+     public <U extends T> void getEntities(final EntityTypeTest<T, U> type, final AbortableIterationConsumer<U> consumer) {
++        // Meteus start - entity lookup scan fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionScanFastPath) {
++            for (final it.unimi.dsi.fastutil.objects.ObjectIterator<Int2ObjectMap.Entry<T>> iterator = it.unimi.dsi.fastutil.ints.Int2ObjectMaps.fastIterator(this.byId); iterator.hasNext();) {
++                final T entity = iterator.next().getValue();
++                final U maybeEntity = (U)type.tryCast(entity);
++                if (maybeEntity != null && consumer.accept(maybeEntity).shouldAbort()) {
++                    return;
++                }
++            }
++            return;
++        }
++        // Meteus end - entity lookup scan fast path
+         for (T entity : this.byId.values()) {
+             U maybeEntity = (U)type.tryCast(entity);
+             if (maybeEntity != null && consumer.accept(maybeEntity).shouldAbort()) {
+diff --git a/net/minecraft/world/level/entity/EntitySection.java b/net/minecraft/world/level/entity/EntitySection.java
+index c985dcf7579d3f337e36e6d7ad794992e6f79368..51cdfb880661d711be51dcb63f98932807fabd96 100644
+--- a/net/minecraft/world/level/entity/EntitySection.java
++++ b/net/minecraft/world/level/entity/EntitySection.java
+@@ -22,10 +22,25 @@ public class EntitySection<T extends EntityAccess> {
+ 
+     // Paper start - support retrieving all entities, regardless of whether they are accessible
+     public void getEntities(java.util.List<T> into) {
++        // Meteus start - entity section scan fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionScanFastPath) {
++            into.addAll(this.storage.meteus$getRawInstances());
++            return;
++        }
++        // Meteus end - entity section scan fast path
+         into.addAll(this.storage);
+     }
+ 
+     public void forEachEntity(final Consumer<? super T> consumer) {
++        // Meteus start - entity section scan fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionScanFastPath) {
++            final java.util.List<T> entities = this.storage.meteus$getRawInstances();
++            for (int i = 0, len = entities.size(); i < len; ++i) {
++                consumer.accept(entities.get(i));
++            }
++            return;
++        }
++        // Meteus end - entity section scan fast path
+         for (final T entity : this.storage) {
+             consumer.accept(entity);
+         }
+@@ -41,6 +56,19 @@ public class EntitySection<T extends EntityAccess> {
+     }
+ 
+     public AbortableIterationConsumer.Continuation getEntities(final AABB bb, final AbortableIterationConsumer<T> entities) {
++        // Meteus start - entity section scan fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionScanFastPath) {
++            final java.util.List<T> rawEntities = this.storage.meteus$getRawInstances();
++            for (int i = 0, len = rawEntities.size(); i < len; ++i) {
++                final T entity = rawEntities.get(i);
++                if (entity.getBoundingBox().intersects(bb) && entities.accept(entity).shouldAbort()) {
++                    return AbortableIterationConsumer.Continuation.ABORT;
++                }
++            }
++
++            return AbortableIterationConsumer.Continuation.CONTINUE;
++        }
++        // Meteus end - entity section scan fast path
+         for (T entity : this.storage) {
+             if (entity.getBoundingBox().intersects(bb) && entities.accept(entity).shouldAbort()) {
+                 return AbortableIterationConsumer.Continuation.ABORT;
+@@ -53,6 +81,24 @@ public class EntitySection<T extends EntityAccess> {
+     public <U extends T> AbortableIterationConsumer.Continuation getEntities(
+         final EntityTypeTest<T, U> type, final AABB bb, final AbortableIterationConsumer<? super U> consumer
+     ) {
++        // Meteus start - entity section scan fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionScanFastPath) {
++            final java.util.List<? extends T> foundList = this.storage.meteus$findRaw(type.getBaseClass());
++            if (foundList.isEmpty()) {
++                return AbortableIterationConsumer.Continuation.CONTINUE;
++            }
++
++            for (int i = 0, len = foundList.size(); i < len; ++i) {
++                final T entity = foundList.get(i);
++                final U maybeEntity = (U)type.tryCast(entity);
++                if (maybeEntity != null && entity.getBoundingBox().intersects(bb) && consumer.accept(maybeEntity).shouldAbort()) {
++                    return AbortableIterationConsumer.Continuation.ABORT;
++                }
++            }
++
++            return AbortableIterationConsumer.Continuation.CONTINUE;
++        }
++        // Meteus end - entity section scan fast path
+         Collection<? extends T> foundEntities = this.storage.find(type.getBaseClass());
+         if (foundEntities.isEmpty()) {
+             return AbortableIterationConsumer.Continuation.CONTINUE;
+diff --git a/net/minecraft/world/level/entity/EntityTickList.java b/net/minecraft/world/level/entity/EntityTickList.java
+index 39ce973a4fe84f3f8aa5240c05ea0a333cd7b12d..2c419bf3ce18b5b74ebd067bdf21bbeba8e9a087 100644
+--- a/net/minecraft/world/level/entity/EntityTickList.java
++++ b/net/minecraft/world/level/entity/EntityTickList.java
+@@ -29,6 +29,12 @@ public class EntityTickList {
+         return this.entities.contains(entity); // Paper - rewrite chunk system
+     }
+ 
++    // Meteus start - entity tick-list empty fast path
++    public boolean meteus$isEmpty() {
++        return this.entities.size() == 0;
++    }
++    // Meteus end - entity tick-list empty fast path
++
+     public void forEach(final Consumer<Entity> output) {
+         // Paper start - rewrite chunk system
+         // To ensure nothing weird happens with dimension travelling, do not iterate over new entries...

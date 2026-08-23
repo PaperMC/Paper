@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:23:35 +0900
+Subject: [PATCH] Meteus stopsound command fast path
+
+
+diff --git a/net/minecraft/server/commands/StopSoundCommand.java b/net/minecraft/server/commands/StopSoundCommand.java
+index 288a78caf7e537ee1a417f674d2568edf83d588e..42b6b05aa37aa71c29f4c8c002ec50a4e73128b9 100644
+--- a/net/minecraft/server/commands/StopSoundCommand.java
++++ b/net/minecraft/server/commands/StopSoundCommand.java
+@@ -49,6 +49,13 @@ public class StopSoundCommand {
+     ) {
+         ClientboundStopSoundPacket packet = new ClientboundStopSoundPacket(sound, soundSource);
+ 
++        // Meteus start - stopsound command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.stopSoundCommandFastPath && targets instanceof java.util.List<ServerPlayer> targetList) {
++            for (int i = 0, len = targetList.size(); i < len; ++i) {
++                targetList.get(i).connection.send(packet);
++            }
++        } else
++        // Meteus end - stopsound command fast path
+         for (ServerPlayer player : targets) {
+             player.connection.send(packet);
+         }

@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Mon, 15 Jun 2026 19:56:33 +0900
+Subject: [PATCH] Meteus entity tracker idle skip fast path
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 5a0b3db5dc58828533b3b84002d51a8df896b237..b83248fa49c8d982dbe06d97c51c0c4b3a39554b 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1073,6 +1073,17 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+ 
+         final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.entity.Entity> trackerEntities = entityLookup.trackerEntities;
+         final Entity[] trackerEntitiesRaw = trackerEntities.getRawDataUnchecked();
++        // Meteus start - tracker idle skip fast path: settle every entity's movement flag before any updatePlayer loop reads it
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipFastPath) {
++            for (int i = 0, len = trackerEntities.size(); i < len; ++i) {
++                final Entity entity = trackerEntitiesRaw[i];
++                final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity) entity).moonrise$getTrackedEntity();
++                if (tracker != null) {
++                    tracker.meteus$updateMovementFlag();
++                }
++            }
++        }
++        // Meteus end - tracker idle skip fast path
+         // Meteus start - dense entity tracker fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.denseEntityTrackerFastPath) {
+             for (int i = 0, len = trackerEntities.size(); i < len; ++i) {
+@@ -1296,6 +1307,29 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+         private long lastChunkUpdate = -1L;
+         private ca.spottedleaf.moonrise.common.misc.NearbyPlayers.TrackedChunk lastTrackedChunk;
+ 
++        // Meteus start - tracker idle skip fast path
++        private double meteus$lastTrackX;
++        private double meteus$lastTrackY;
++        private double meteus$lastTrackZ;
++        private boolean meteus$trackPosInit;
++        private boolean meteus$movedThisTrackerTick = true;
++
++        // Recomputed once per tracker tick (pre-pass) so every entity's flag is settled before any
++        // entity's updatePlayer loop reads it. An entity that did not change position cannot change the
++        // tracking state of a player that also did not move.
++        void meteus$updateMovementFlag() {
++            final double x = this.entity.getX();
++            final double y = this.entity.getY();
++            final double z = this.entity.getZ();
++            this.meteus$movedThisTrackerTick = !this.meteus$trackPosInit
++                || x != this.meteus$lastTrackX || y != this.meteus$lastTrackY || z != this.meteus$lastTrackZ;
++            this.meteus$lastTrackX = x;
++            this.meteus$lastTrackY = y;
++            this.meteus$lastTrackZ = z;
++            this.meteus$trackPosInit = true;
++        }
++        // Meteus end - tracker idle skip fast path
++
+         @Override
+         public final void moonrise$tick(final ca.spottedleaf.moonrise.common.misc.NearbyPlayers.TrackedChunk chunk) {
+             if (chunk == null) {
+@@ -1318,10 +1352,30 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+ 
+             final ServerPlayer[] playersRaw = players.getRawDataUnchecked();
+ 
++            // Meteus start - tracker idle skip fast path
++            // A stationary entity's visibility to a stationary player cannot change, so only re-evaluate
++            // players that moved this tick. A staggered full refresh every 32 ticks self-corrects the rare
++            // non-positional cases (view-distance change, vanish API, tracking-range change).
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipFastPath
++                && !this.meteus$movedThisTrackerTick
++                && lastChunkUpdate == currChunkUpdate
++                && lastTrackedChunk == chunk
++                && ((net.minecraft.server.MinecraftServer.currentTick + this.entity.getId()) & 31L) != 0L) {
++                for (int i = 0, len = players.size(); i < len; ++i) {
++                    final ServerPlayer player = playersRaw[i];
++                    final ChunkMap.TrackedEntity playerTracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity) player).moonrise$getTrackedEntity();
++                    if (playerTracker == null || playerTracker.meteus$movedThisTrackerTick) {
++                        this.updatePlayer(player);
++                    }
++                }
++            } else {
++            // Meteus end - tracker idle skip fast path
+             for (int i = 0, len = players.size(); i < len; ++i) {
+                 final ServerPlayer player = playersRaw[i];
+                 this.updatePlayer(player);
+             }
++            } // Meteus - tracker idle skip fast path
++
+ 
+             if (lastChunkUpdate != currChunkUpdate || lastTrackedChunk != chunk) {
+                 // need to purge any players possible not in the chunk list

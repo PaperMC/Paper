@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:33:28 +0900
+Subject: [PATCH] Meteus zombified piglin alert fast path
+
+
+diff --git a/net/minecraft/world/entity/monster/zombie/ZombifiedPiglin.java b/net/minecraft/world/entity/monster/zombie/ZombifiedPiglin.java
+index fb72d1a79705f023e6e4b22ee26391623b931ab0..3ddcccc995b11728e09f2a86935e491e4d2a8714 100644
+--- a/net/minecraft/world/entity/monster/zombie/ZombifiedPiglin.java
++++ b/net/minecraft/world/entity/monster/zombie/ZombifiedPiglin.java
+@@ -140,6 +140,17 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
+     private void alertOthers() {
+         double within = this.getAttributeValue(Attributes.FOLLOW_RANGE);
+         AABB searchAabb = AABB.unitCubeFromLowerCorner(this.position()).inflate(within, 10.0, within);
++        // Meteus start - mob AI detection fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++            final LivingEntity target = this.getTarget();
++            for (final ZombifiedPiglin other : this.level().getEntitiesOfClass(ZombifiedPiglin.class, searchAabb, EntitySelector.NO_SPECTATORS)) {
++                if (other != this && other.getTarget() == null && !other.isAlliedTo(target)) {
++                    other.setTarget(target, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_NEARBY_ENTITY); // CraftBukkit
++                }
++            }
++            return;
++        }
++        // Meteus end - mob AI detection fast path
+         this.level()
+             .getEntitiesOfClass(ZombifiedPiglin.class, searchAabb, EntitySelector.NO_SPECTATORS)
+             .stream()

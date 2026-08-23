@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 20:46:42 +0900
+Subject: [PATCH] Meteus collision and sleep loop fast paths
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 2589bb56313206089ea368dd5b99ac7ae603153e..f0fbf2244900d61afbcd4fda65e710b6e4a75260 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -955,6 +955,17 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+ 
+     private void wakeUpAllPlayers() {
+         this.sleepStatus.removeAllSleepers();
++        // Meteus start - sleep wakeup loop fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.sleepWakeupLoopFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                if (player.isSleeping()) {
++                    player.stopSleepInBed(false, false);
++                }
++            }
++            return;
++        }
++        // Meteus end - sleep wakeup loop fast path
+         this.players.stream().filter(LivingEntity::isSleeping).collect(Collectors.toList()).forEach(player -> player.stopSleepInBed(false, false));
+     }
+ 
+diff --git a/net/minecraft/world/level/EntityGetter.java b/net/minecraft/world/level/EntityGetter.java
+index 06007a319d4afc57be80110fae8e6c73c8d82ac4..160542d3a4116df89a5881d1bf2425b1210caffb 100644
+--- a/net/minecraft/world/level/EntityGetter.java
++++ b/net/minecraft/world/level/EntityGetter.java
+@@ -2,6 +2,7 @@ package net.minecraft.world.level;
+ 
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableList.Builder;
++import java.util.Collections;
+ import java.util.List;
+ import java.util.UUID;
+ import java.util.function.Predicate;
+@@ -78,6 +79,11 @@ public interface EntityGetter extends ca.spottedleaf.moonrise.patches.chunk_syst
+         // Paper start - optimise collisions
+         // first behavior change is to correctly check for empty AABB
+         if (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.isEmpty(testArea)) {
++            // Meteus start - entity collision list fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityCollisionListFastPath) {
++                return Collections.emptyList();
++            }
++            // Meteus end - entity collision list fast path
+             // reduce indirection by always returning type with same class
+             return new java.util.ArrayList<>();
+         }
+@@ -94,6 +100,11 @@ public interface EntityGetter extends ca.spottedleaf.moonrise.patches.chunk_syst
+             entities = ((ca.spottedleaf.moonrise.patches.chunk_system.world.ChunkSystemEntityGetter)this).moonrise$getHardCollidingEntities(source, testArea, null);
+         }
+ 
++        // Meteus start - entity collision list fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityCollisionListFastPath && entities.isEmpty()) {
++            return Collections.emptyList();
++        }
++        // Meteus end - entity collision list fast path
+         final List<VoxelShape> ret = new java.util.ArrayList<>(Math.min(25, entities.size()));
+ 
+         for (int i = 0, len = entities.size(); i < len; ++i) {
+@@ -108,6 +119,11 @@ public interface EntityGetter extends ca.spottedleaf.moonrise.patches.chunk_syst
+             }
+         }
+ 
++        // Meteus start - entity collision list fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityCollisionListFastPath && ret.isEmpty()) {
++            return Collections.emptyList();
++        }
++        // Meteus end - entity collision list fast path
+         return ret;
+         // Paper end - optimise collisions
+     }

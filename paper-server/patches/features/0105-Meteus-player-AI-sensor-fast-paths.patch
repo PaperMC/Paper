@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 17:37:22 +0900
+Subject: [PATCH] Meteus player AI sensor fast paths
+
+
+diff --git a/net/minecraft/world/entity/ai/sensing/PlayerSensor.java b/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
+index 22f58ba0bce5db69c7bcea76d40bac6079f5581a..a9ab22a24a8a90981a3c008f74e49663c7037cfc 100644
+--- a/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
++++ b/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.world.entity.ai.sensing;
+ 
+ import com.google.common.collect.ImmutableSet;
++import java.util.ArrayList;
+ import java.util.Comparator;
+ import java.util.List;
+ import java.util.Set;
+@@ -26,6 +27,40 @@ public class PlayerSensor extends Sensor<LivingEntity> {
+ 
+     @Override
+     protected void doTick(final ServerLevel level, final LivingEntity body) {
++        // Meteus start - player AI sensor fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerAiSensorFastPath) {
++            final double followDistance = this.getFollowDistance(body);
++            final List<Player> players = new ArrayList<>(level.players().size());
++
++            for (final Player player : level.players()) {
++                if (EntitySelector.NO_SPECTATORS.test(player) && body.closerThan(player, followDistance)) {
++                    players.add(player);
++                }
++            }
++
++            players.sort(Comparator.comparingDouble(body::distanceToSqr));
++
++            final Brain<?> brain = body.getBrain();
++            brain.setMemory(MemoryModuleType.NEAREST_PLAYERS, players);
++
++            final List<Player> visiblePlayers = new ArrayList<>(players.size());
++            final List<Player> visibleAttackablePlayers = new ArrayList<>(players.size());
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final Player player = players.get(i);
++                if (isEntityTargetable(level, body, player)) {
++                    visiblePlayers.add(player);
++                    if (isEntityAttackable(level, body, player)) {
++                        visibleAttackablePlayers.add(player);
++                    }
++                }
++            }
++
++            brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, visiblePlayers.isEmpty() ? null : visiblePlayers.get(0));
++            brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYERS, visibleAttackablePlayers);
++            brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, visibleAttackablePlayers.isEmpty() ? null : visibleAttackablePlayers.get(0));
++            return;
++        }
++        // Meteus end - player AI sensor fast path
+         List<Player> players = level.players()
+             .stream()
+             .filter(EntitySelector.NO_SPECTATORS)
+diff --git a/net/minecraft/world/entity/ai/sensing/TemptingSensor.java b/net/minecraft/world/entity/ai/sensing/TemptingSensor.java
+index f0dc4231b79e4f02416917dacce978121ec6d7e2..77f0a2d7c895bd6f8b3727abd1216d635e81743f 100644
+--- a/net/minecraft/world/entity/ai/sensing/TemptingSensor.java
++++ b/net/minecraft/world/entity/ai/sensing/TemptingSensor.java
+@@ -38,6 +38,46 @@ public class TemptingSensor extends Sensor<PathfinderMob> {
+     protected void doTick(final ServerLevel level, final PathfinderMob body) {
+         Brain<?> brain = body.getBrain();
+         TargetingConditions targeting = TEMPT_TARGETING.copy().range((float)body.getAttributeValue(Attributes.TEMPT_RANGE));
++        // Meteus start - player AI sensor fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerAiSensorFastPath) {
++            Player nearestPlayer = null;
++            double nearestDistance = Double.MAX_VALUE;
++
++            for (final Player player : level.players()) {
++                if (!EntitySelector.NO_SPECTATORS.test(player)
++                    || !targeting.test(level, body, player)
++                    || !this.playerHoldingTemptation(body, player)
++                    || body.hasPassenger(player)) {
++                    continue;
++                }
++
++                final double distance = body.distanceToSqr(player);
++                if (distance < nearestDistance) {
++                    nearestDistance = distance;
++                    nearestPlayer = player;
++                }
++            }
++
++            if (nearestPlayer != null) {
++                // CraftBukkit start
++                org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(
++                    body, nearestPlayer, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TEMPT
++                );
++                if (event.isCancelled()) {
++                    return;
++                }
++                if (event.getTarget() instanceof org.bukkit.craftbukkit.entity.CraftHumanEntity target) {
++                    brain.setMemory(MemoryModuleType.TEMPTING_PLAYER, target.getHandle());
++                } else {
++                    brain.eraseMemory(MemoryModuleType.TEMPTING_PLAYER);
++                }
++                // CraftBukkit end
++            } else {
++                brain.eraseMemory(MemoryModuleType.TEMPTING_PLAYER);
++            }
++            return;
++        }
++        // Meteus end - player AI sensor fast path
+         List<Player> players = level.players()
+             .stream()
+             .filter(EntitySelector.NO_SPECTATORS)

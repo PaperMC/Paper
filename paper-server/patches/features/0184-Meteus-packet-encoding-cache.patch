@@ -1,0 +1,239 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Mon, 15 Jun 2026 18:46:01 +0900
+Subject: [PATCH] Meteus packet encoding cache
+
+
+diff --git a/net/minecraft/network/MeteusPreEncodedPacket.java b/net/minecraft/network/MeteusPreEncodedPacket.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2ea7c32580b78727cdca18c416d071b3c78fd1d2
+--- /dev/null
++++ b/net/minecraft/network/MeteusPreEncodedPacket.java
+@@ -0,0 +1,120 @@
++package net.minecraft.network;
++
++import io.netty.channel.ChannelFuture;
++import java.util.List;
++import net.minecraft.network.protocol.Packet;
++import net.minecraft.network.protocol.PacketType;
++import net.minecraft.network.protocol.game.ClientGamePacketListener;
++import net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket;
++import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
++import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
++import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
++import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
++import net.minecraft.server.level.ServerPlayer;
++import org.jspecify.annotations.Nullable;
++
++// Meteus - packet encoding cache.
++// When a clientbound packet is broadcast to many tracking players, the StreamCodec encode normally
++// runs once per recipient connection (O(viewers)). For packets whose encoding does not depend on any
++// per-connection state, this wrapper lets the encode run once: the first PacketEncoder caches the
++// produced bytes and the remaining recipients copy them. Compression and encryption still happen
++// per-connection downstream, so the wire output is byte-for-byte identical to the un-cached path.
++// Only packets returned true by meteus$isCacheable() may be wrapped (locale-independent movement
++// packets carrying purely numeric data - no chat components, no per-connection rendering).
++public final class MeteusPreEncodedPacket implements Packet<ClientGamePacketListener> {
++
++    private final Packet<? super ClientGamePacketListener> delegate;
++    private volatile byte @Nullable [] encoded;
++
++    public MeteusPreEncodedPacket(final Packet<? super ClientGamePacketListener> delegate) {
++        this.delegate = delegate;
++    }
++
++    public Packet<? super ClientGamePacketListener> meteus$delegate() {
++        return this.delegate;
++    }
++
++    public byte @Nullable [] meteus$encoded() {
++        return this.encoded;
++    }
++
++    public void meteus$setEncoded(final byte[] encoded) {
++        this.encoded = encoded;
++    }
++
++    // Only packets whose serialized form is independent of per-connection state (locale, view) are safe.
++    public static boolean meteus$isCacheable(final Packet<?> packet) {
++        return packet instanceof ClientboundMoveEntityPacket // covers Pos, Rot and PosRot
++            || packet instanceof ClientboundEntityPositionSyncPacket
++            || packet instanceof ClientboundSetEntityMotionPacket
++            || packet instanceof ClientboundRotateHeadPacket
++            || packet instanceof ClientboundTeleportEntityPacket;
++    }
++
++    public static Packet<? super ClientGamePacketListener> meteus$maybeWrap(final Packet<? super ClientGamePacketListener> packet, final int recipients) {
++        if (recipients > 1
++            && io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.packetEncodingCacheFastPath
++            && meteus$isCacheable(packet)) {
++            return new MeteusPreEncodedPacket(packet);
++        }
++        return packet;
++    }
++
++    @Override
++    @SuppressWarnings({"unchecked", "rawtypes"})
++    public PacketType<? extends Packet<ClientGamePacketListener>> type() {
++        return (PacketType) this.delegate.type();
++    }
++
++    @Override
++    @SuppressWarnings({"unchecked", "rawtypes"})
++    public void handle(final ClientGamePacketListener listener) {
++        // Outbound broadcast packets are never handled server-side; delegate defensively.
++        ((Packet) this.delegate).handle(listener);
++    }
++
++    @Override
++    public boolean isSkippable() {
++        return this.delegate.isSkippable();
++    }
++
++    @Override
++    public boolean isTerminal() {
++        return this.delegate.isTerminal();
++    }
++
++    @Override
++    public boolean hasLargePacketFallback() {
++        return this.delegate.hasLargePacketFallback();
++    }
++
++    @Override
++    public boolean packetTooLarge(final Connection manager) {
++        return this.delegate.packetTooLarge(manager);
++    }
++
++    @Override
++    public void onPacketDispatch(final @Nullable ServerPlayer player) {
++        this.delegate.onPacketDispatch(player);
++    }
++
++    @Override
++    public void onPacketDispatchFinish(final @Nullable ServerPlayer player, final @Nullable ChannelFuture future) {
++        this.delegate.onPacketDispatchFinish(player, future);
++    }
++
++    @Override
++    public boolean hasFinishListener() {
++        return this.delegate.hasFinishListener();
++    }
++
++    @Override
++    public boolean isReady() {
++        return this.delegate.isReady();
++    }
++
++    @Override
++    public @Nullable List<Packet<?>> getExtraPackets() {
++        return this.delegate.getExtraPackets();
++    }
++}
+diff --git a/net/minecraft/network/PacketEncoder.java b/net/minecraft/network/PacketEncoder.java
+index 27316db9eb78660c6f54e1d1ea4dc7d584c7bb55..8f1d58eefd22495606d8bb6fab289c47e9e06030 100644
+--- a/net/minecraft/network/PacketEncoder.java
++++ b/net/minecraft/network/PacketEncoder.java
+@@ -20,6 +20,12 @@ public class PacketEncoder<T extends PacketListener> extends MessageToByteEncode
+     static final ThreadLocal<java.util.Locale> ADVENTURE_LOCALE = ThreadLocal.withInitial(() -> null); // Paper - adventure; set player's locale
+     @Override
+     protected void encode(final ChannelHandlerContext ctx, final Packet<T> packet, final ByteBuf output) throws Exception {
++        // Meteus start - packet encoding cache
++        if (packet instanceof MeteusPreEncodedPacket pre) {
++            this.meteus$encodeCached(ctx, pre, output);
++            return;
++        }
++        // Meteus end - packet encoding cache
+         PacketType<? extends Packet<? super T>> packetId = packet.type();
+ 
+         try {
+@@ -56,6 +62,37 @@ public class PacketEncoder<T extends PacketListener> extends MessageToByteEncode
+         }
+     }
+ 
++    // Meteus start - packet encoding cache
++    private void meteus$encodeCached(final ChannelHandlerContext ctx, final MeteusPreEncodedPacket pre, final ByteBuf output) {
++        try {
++            final byte[] cached = pre.meteus$encoded();
++            if (cached != null) {
++                // Another recipient already encoded this broadcast packet; replay the captured bytes.
++                output.writeBytes(cached);
++            } else {
++                ADVENTURE_LOCALE.set(ctx.channel().attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).get()); // Paper - adventure; parity with the normal encode path
++                final int start = output.writerIndex();
++                this.protocolInfo.codec().encode(output, meteus$cast(pre.meteus$delegate()));
++                final int length = output.writerIndex() - start;
++                final byte[] data = new byte[length];
++                output.getBytes(start, data);
++                pre.meteus$setEncoded(data); // cacheable packets are locale-independent, so these bytes are valid for every recipient
++            }
++        } finally {
++            final int packetLength = output.readableBytes();
++            if (packetLength > MAX_PACKET_SIZE || (packetLength > MAX_FINAL_PACKET_SIZE && pre.hasLargePacketFallback())) {
++                throw new PacketTooLargeException(pre, packetLength);
++            }
++            ProtocolSwapHandler.handleOutboundTerminalPacket(ctx, pre);
++        }
++    }
++
++    @SuppressWarnings("unchecked")
++    private static <L extends PacketListener> Packet<? super L> meteus$cast(final Packet<?> packet) {
++        return (Packet<? super L>) packet;
++    }
++    // Meteus end - packet encoding cache
++
+     // Paper start
+     // packet size is encoded into 3-byte varint
+     private static final int MAX_FINAL_PACKET_SIZE = (1 << 21) - 1;
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 7f797ca9be79c5824b6ee2854568ca76014df0a5..5a0b3db5dc58828533b3b84002d51a8df896b237 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1533,9 +1533,10 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+ 
+         // Meteus start - entity tracker fanout fast path
+         private void meteus$sendToSeenBy(final Packet<? super ClientGamePacketListener> packet) {
++            final Packet<? super ClientGamePacketListener> outPacket = net.minecraft.network.MeteusPreEncodedPacket.meteus$maybeWrap(packet, this.seenBy.size()); // Meteus - packet encoding cache
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
+                 for (final ServerPlayerConnection connection : this.seenBy) {
+-                    connection.meteus$sendWithoutFlush(packet);
++                    connection.meteus$sendWithoutFlush(outPacket);
+                 }
+                 for (final ServerPlayerConnection connection : this.seenBy) {
+                     connection.meteus$flushConnection();
+@@ -1544,17 +1545,19 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+             }
+ 
+             for (final ServerPlayerConnection connection : this.seenBy) {
+-                connection.send(packet);
++                connection.send(outPacket);
+             }
+         }
+ 
+         private void meteus$sendToSeenByAndSelf(final Packet<? super ClientGamePacketListener> packet) {
++            final int meteus$recipients = this.seenBy.size() + (this.entity instanceof ServerPlayer ? 1 : 0); // Meteus - packet encoding cache
++            final Packet<? super ClientGamePacketListener> outPacket = net.minecraft.network.MeteusPreEncodedPacket.meteus$maybeWrap(packet, meteus$recipients); // Meteus - packet encoding cache
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
+                 for (final ServerPlayerConnection connection : this.seenBy) {
+-                    connection.meteus$sendWithoutFlush(packet);
++                    connection.meteus$sendWithoutFlush(outPacket);
+                 }
+                 if (this.entity instanceof ServerPlayer player) {
+-                    player.connection.meteus$sendWithoutFlush(packet);
++                    player.connection.meteus$sendWithoutFlush(outPacket);
+                 }
+                 for (final ServerPlayerConnection connection : this.seenBy) {
+                     connection.meteus$flushConnection();
+@@ -1566,10 +1569,10 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+             }
+ 
+             for (final ServerPlayerConnection connection : this.seenBy) {
+-                connection.send(packet);
++                connection.send(outPacket);
+             }
+             if (this.entity instanceof ServerPlayer player) {
+-                player.connection.send(packet);
++                player.connection.send(outPacket);
+             }
+         }
+ 

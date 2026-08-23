@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 17:23:41 +0900
+Subject: [PATCH] Meteus clear command fast path
+
+
+diff --git a/net/minecraft/server/commands/ClearInventoryCommands.java b/net/minecraft/server/commands/ClearInventoryCommands.java
+index 7a637e2e6bbe8528858037a9831b1e21af625595..c01a9b6c2f73278f0baf6bc558b1dc6fd2bdba03 100644
+--- a/net/minecraft/server/commands/ClearInventoryCommands.java
++++ b/net/minecraft/server/commands/ClearInventoryCommands.java
+@@ -6,6 +6,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
+ import java.util.Collection;
+ import java.util.Collections;
++import java.util.List;
+ import java.util.function.Predicate;
+ import net.minecraft.commands.CommandBuildContext;
+ import net.minecraft.commands.CommandSourceStack;
+@@ -64,6 +65,39 @@ public class ClearInventoryCommands {
+     ) throws CommandSyntaxException {
+         int count = 0;
+ 
++        // Meteus start - clear command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.clearCommandFastPath && players instanceof List<ServerPlayer> playerList) {
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                final ServerPlayer player = playerList.get(i);
++                count += player.getInventory().clearOrCountMatchingItems(predicate, maxCount, player.inventoryMenu.getCraftSlots());
++                player.containerMenu.broadcastChanges();
++                player.inventoryMenu.slotsChanged(player.getInventory());
++            }
++
++            if (count == 0) {
++                if (playerList.size() == 1) {
++                    throw ERROR_SINGLE.create(playerList.get(0).getName());
++                } else {
++                    throw ERROR_MULTIPLE.create(playerList.size());
++                }
++            } else {
++                int finalCount = count;
++                if (maxCount == 0) {
++                    if (playerList.size() == 1) {
++                        source.sendSuccess(() -> Component.translatable("commands.clear.test.single", finalCount, playerList.get(0).getDisplayName()), true);
++                    } else {
++                        source.sendSuccess(() -> Component.translatable("commands.clear.test.multiple", finalCount, playerList.size()), true);
++                    }
++                } else if (playerList.size() == 1) {
++                    source.sendSuccess(() -> Component.translatable("commands.clear.success.single", finalCount, playerList.get(0).getDisplayName()), true);
++                } else {
++                    source.sendSuccess(() -> Component.translatable("commands.clear.success.multiple", finalCount, playerList.size()), true);
++                }
++
++                return count;
++            }
++        }
++        // Meteus end - clear command fast path
+         for (ServerPlayer player : players) {
+             count += player.getInventory().clearOrCountMatchingItems(predicate, maxCount, player.inventoryMenu.getCraftSlots());
+             player.containerMenu.broadcastChanges();

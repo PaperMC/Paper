@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 18 Jun 2026 22:42:29 +0900
+Subject: [PATCH] Meteus reduce per-entity Vec3 allocation: explosion knockback
+ + item tick (exact)
+
+
+diff --git a/net/minecraft/world/entity/item/ItemEntity.java b/net/minecraft/world/entity/item/ItemEntity.java
+index 7159008f2db50adaa8cbe309d8ce93e456ca9ef6..f4b7e394ec17362727760218b07f91c2bfb0b5de 100644
+--- a/net/minecraft/world/entity/item/ItemEntity.java
++++ b/net/minecraft/world/entity/item/ItemEntity.java
+@@ -215,7 +215,13 @@ public class ItemEntity extends Entity implements TraceableEntity {
+ 
+             this.needsSync = this.needsSync | this.updateFluidInteraction();
+             if (!this.level().isClientSide()) {
+-                double value = this.getDeltaMovement().subtract(oldMovement).lengthSqr();
++                // Meteus - compute the delta-change magnitude with primitives (avoids a Vec3 alloc per item
++                // per tick just to call lengthSqr()); identical value. Matters with thousands of dropped items.
++                final Vec3 cur = this.getDeltaMovement();
++                final double mdx = cur.x - oldMovement.x;
++                final double mdy = cur.y - oldMovement.y;
++                final double mdz = cur.z - oldMovement.z;
++                double value = mdx * mdx + mdy * mdy + mdz * mdz;
+                 if (value > 0.01) {
+                     this.needsSync = true;
+                 }
+diff --git a/net/minecraft/world/level/ServerExplosion.java b/net/minecraft/world/level/ServerExplosion.java
+index b7aad5cb11ddf43db3003d97f521018bb7fb2979..4e9a1c79dfe2c5b14f46a6022d0d1de11a7e58f6 100644
+--- a/net/minecraft/world/level/ServerExplosion.java
++++ b/net/minecraft/world/level/ServerExplosion.java
+@@ -546,8 +546,6 @@ public class ServerExplosion implements Explosion {
+                 if (!entity.ignoreExplosion(this)) {
+                     double dist = Math.sqrt(entity.distanceToSqr(this.center)) / doubleRadius;
+                     if (!(dist > 1.0)) {
+-                        Vec3 entityOrigin = entity instanceof PrimedTnt ? entity.position() : entity.getEyePosition();
+-                        Vec3 direction = entityOrigin.subtract(this.center).normalize();
+                         boolean shouldDamageEntity = this.damageCalculator.shouldDamageEntity(this, entity);
+                         float knockbackMultiplier = this.damageCalculator.getKnockbackMultiplier(entity);
+                         float exposure = !shouldDamageEntity && knockbackMultiplier == 0.0F ? 0.0F : this.getBlockDensity(this.center, entity); // Paper - Optimize explosions
+@@ -587,7 +585,19 @@ public class ServerExplosion implements Explosion {
+                             ? livingEntity.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE)
+                             : 0.0;
+                         double knockbackPower = entity instanceof Player && this.level.paperConfig().environment.disableExplosionKnockback ? 0 : (1.0 - dist) * exposure * knockbackMultiplier * (1.0 - knockbackResistance); // Paper
+-                        Vec3 knockback = direction.scale(knockbackPower);
++                        // Meteus - build the knockback direction with primitives, only when it actually applies;
++                        // skips ~4 per-entity Vec3 allocations (eye-pos, subtract, normalize, scale). Same
++                        // normalize-then-scale arithmetic + 1.0E-4 zero-length cutoff => byte-identical knockback.
++                        Vec3 knockback;
++                        if (knockbackPower == 0.0) {
++                            knockback = Vec3.ZERO;
++                        } else {
++                            final double kdx = entity.getX() - this.center.x;
++                            final double kdy = (entity instanceof PrimedTnt ? entity.getY() : entity.getEyeY()) - this.center.y;
++                            final double kdz = entity.getZ() - this.center.z;
++                            final double klen = Math.sqrt(kdx * kdx + kdy * kdy + kdz * kdz);
++                            knockback = klen < 1.0E-4 ? Vec3.ZERO : new Vec3((kdx / klen) * knockbackPower, (kdy / klen) * knockbackPower, (kdz / klen) * knockbackPower);
++                        }
+                         // CraftBukkit start - Call EntityKnockbackEvent
+                         // Meteus - only build/fire the knockback event when a plugin listens; otherwise the
+                         // computed knockback is used unchanged (identical result, no per-entity event alloc).

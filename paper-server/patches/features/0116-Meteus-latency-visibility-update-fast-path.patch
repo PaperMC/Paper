@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 21:38:04 +0900
+Subject: [PATCH] Meteus latency visibility update fast path
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 76282efeb0b579cd19153420cbf72a25f9f5c3fa..4fcf477603a4426f174b1ead7c777b8b7462e141 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -831,6 +831,16 @@ public abstract class PlayerList {
+             }
+             // Meteus end - shared latency packet fast path
+             // CraftBukkit start
++            // Meteus start - latency visibility update fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.latencyVisibilityUpdateFastPath) {
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    final ServerPlayer target = this.players.get(i);
++                    target.connection.send(new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY), this.meteus$getVisibleLatencyPlayers(target)));
++                }
++                this.sendAllPlayerInfoIn = 0;
++                return;
++            }
++            // Meteus end - latency visibility update fast path
+             for (int i = 0; i < this.players.size(); ++i) {
+                 final ServerPlayer target = this.players.get(i);
+ 
+@@ -853,6 +863,22 @@ public abstract class PlayerList {
+     }
+     // Meteus end - shared latency packet fast path
+ 
++    // Meteus start - latency visibility update fast path
++    private List<ServerPlayer> meteus$getVisibleLatencyPlayers(final ServerPlayer target) {
++        final org.bukkit.craftbukkit.entity.CraftPlayer targetBukkit = target.getBukkitEntity();
++        final List<ServerPlayer> visiblePlayers = new java.util.ArrayList<>(this.players.size());
++
++        for (int i = 0, len = this.players.size(); i < len; ++i) {
++            final ServerPlayer candidate = this.players.get(i);
++            if (targetBukkit.canSee(candidate.getBukkitEntity())) {
++                visiblePlayers.add(candidate);
++            }
++        }
++
++        return visiblePlayers;
++    }
++    // Meteus end - latency visibility update fast path
++
+     // CraftBukkit start - add a world/entity limited version
+     public void broadcastAll(Packet packet, net.minecraft.world.entity.player.Player entityhuman) {
+         // Meteus start - player list broadcast fast path

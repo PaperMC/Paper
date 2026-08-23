@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 17:15:24 +0900
+Subject: [PATCH] Meteus experience command fast path
+
+
+diff --git a/net/minecraft/server/commands/ExperienceCommand.java b/net/minecraft/server/commands/ExperienceCommand.java
+index 0f35ed2c4029b3aaa0e72c1cb0ecd204147f203f..bd5efa1f1f9e325e4e559626fb1645710d65887d 100644
+--- a/net/minecraft/server/commands/ExperienceCommand.java
++++ b/net/minecraft/server/commands/ExperienceCommand.java
+@@ -6,6 +6,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+ import com.mojang.brigadier.tree.LiteralCommandNode;
+ import java.util.Collection;
++import java.util.List;
+ import java.util.function.BiConsumer;
+ import java.util.function.BiPredicate;
+ import java.util.function.ToIntFunction;
+@@ -131,6 +132,24 @@ public class ExperienceCommand {
+     private static int addExperience(
+         final CommandSourceStack source, final Collection<? extends ServerPlayer> players, final int amount, final ExperienceCommand.Type type
+     ) {
++        // Meteus start - experience command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.experienceCommandFastPath && players instanceof List<? extends ServerPlayer> playerList) {
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                type.add.accept(playerList.get(i), amount);
++            }
++
++            if (playerList.size() == 1) {
++                source.sendSuccess(
++                    () -> Component.translatable("commands.experience.add." + type.name + ".success.single", amount, playerList.get(0).getDisplayName()),
++                    true
++                );
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.experience.add." + type.name + ".success.multiple", amount, playerList.size()), true);
++            }
++
++            return playerList.size();
++        }
++        // Meteus end - experience command fast path
+         for (ServerPlayer player : players) {
+             type.add.accept(player, amount);
+         }
+@@ -152,6 +171,30 @@ public class ExperienceCommand {
+     ) throws CommandSyntaxException {
+         int success = 0;
+ 
++        // Meteus start - experience command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.experienceCommandFastPath && players instanceof List<? extends ServerPlayer> playerList) {
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                if (type.set.test(playerList.get(i), amount)) {
++                    success++;
++                }
++            }
++
++            if (success == 0) {
++                throw ERROR_SET_POINTS_INVALID.create();
++            }
++
++            if (playerList.size() == 1) {
++                source.sendSuccess(
++                    () -> Component.translatable("commands.experience.set." + type.name + ".success.single", amount, playerList.get(0).getDisplayName()),
++                    true
++                );
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.experience.set." + type.name + ".success.multiple", amount, playerList.size()), true);
++            }
++
++            return playerList.size();
++        }
++        // Meteus end - experience command fast path
+         for (ServerPlayer player : players) {
+             if (type.set.test(player, amount)) {
+                 success++;

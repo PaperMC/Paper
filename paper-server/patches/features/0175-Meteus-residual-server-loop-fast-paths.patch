@@ -1,0 +1,253 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Mon, 15 Jun 2026 07:20:44 +0900
+Subject: [PATCH] Meteus residual server loop fast paths
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index ca6e23059a9a3a1d5d9fbba00281d45a602b104b..0b92d08208173b0d87d4b209e6d774221ab23e76 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1767,6 +1767,25 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private ServerStatus.Players buildPlayerStatus() {
+         List<ServerPlayer> players = this.playerList.getPlayers();
+         int maxPlayers = this.getMaxPlayers();
++        // Meteus start - server status sample fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverStatusSampleFastPath) {
++            final int playerCount = players.size();
++            if (this.hidesOnlinePlayers() || playerCount == 0 || org.spigotmc.SpigotConfig.playerSample <= 0) {
++                return new ServerStatus.Players(maxPlayers, playerCount, List.of());
++            }
++
++            final int sampleSize = Math.min(playerCount, org.spigotmc.SpigotConfig.playerSample); // Paper - PaperServerListPingEvent
++            final ObjectArrayList<NameAndId> sample = new ObjectArrayList<>(sampleSize);
++            final int offset = Mth.nextInt(this.random, 0, playerCount - sampleSize);
++            for (int i = 0; i < sampleSize; i++) {
++                final ServerPlayer player = players.get(offset + i);
++                sample.add(player.allowsListing() ? player.nameAndId() : ANONYMOUS_PLAYER_PROFILE);
++            }
++
++            Util.shuffle(sample, this.random);
++            return new ServerStatus.Players(maxPlayers, playerCount, sample);
++        }
++        // Meteus end - server status sample fast path
+         if (this.hidesOnlinePlayers()) {
+             return new ServerStatus.Players(maxPlayers, players.size(), List.of());
+         }
+@@ -1837,9 +1856,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+         // CraftBukkit start
+         // Run tasks that are waiting on processing
+-        while (!this.processQueue.isEmpty()) {
+-            this.processQueue.remove().run();
+-        }
++        // Meteus start - server residual tick loop fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverResidualTickLoopFastPath) {
++            Runnable task;
++            while ((task = this.processQueue.poll()) != null) {
++                task.run();
++            }
++        } else {
++        // Meteus end - server residual tick loop fast path
++            while (!this.processQueue.isEmpty()) {
++                this.processQueue.remove().run();
++            }
++        } // Meteus - server residual tick loop fast path
+ 
+         profiler.push("levels");
+         this.updateEffectiveRespawnData();
+@@ -1893,16 +1921,35 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+         profiler.popPush("server gui refresh");
+ 
+-        for (Runnable tickable : this.tickables) {
+-            tickable.run();
+-        }
++        // Meteus start - server residual tick loop fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverResidualTickLoopFastPath) {
++            for (int i = 0, len = this.tickables.size(); i < len; ++i) {
++                this.tickables.get(i).run();
++            }
++        } else {
++        // Meteus end - server residual tick loop fast path
++            for (Runnable tickable : this.tickables) {
++                tickable.run();
++            }
++        } // Meteus - server residual tick loop fast path
+ 
+         profiler.popPush("send chunks");
+ 
+-        for (ServerPlayer player : this.playerList.getPlayers()) {
+-            player.connection.chunkSender.sendNextChunks(player);
+-            player.connection.resumeFlushing();
+-        }
++        // Meteus start - server residual tick loop fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverResidualTickLoopFastPath) {
++            final List<ServerPlayer> players = this.playerList.getPlayers();
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final ServerPlayer player = players.get(i);
++                player.connection.chunkSender.sendNextChunks(player);
++                player.connection.resumeFlushing();
++            }
++        } else {
++        // Meteus end - server residual tick loop fast path
++            for (ServerPlayer player : this.playerList.getPlayers()) {
++                player.connection.chunkSender.sendNextChunks(player);
++                player.connection.resumeFlushing();
++            }
++        } // Meteus - server residual tick loop fast path
+ 
+         profiler.pop();
+         this.serverActivityMonitor.tick();
+diff --git a/net/minecraft/server/ServerScoreboard.java b/net/minecraft/server/ServerScoreboard.java
+index 1ffa1cb8ef07183ac65f3810918af64b54ed39bf..bea303963a484e0ff828520f54e21ac5f9d96ad5 100644
+--- a/net/minecraft/server/ServerScoreboard.java
++++ b/net/minecraft/server/ServerScoreboard.java
+@@ -243,11 +243,15 @@ public class ServerScoreboard extends Scoreboard {
+     }
+ 
+     public void startTrackingObjective(final Objective objective) {
+-        List<Packet<?>> packets = this.getStartTrackingPackets(objective);
+-
+         // Meteus start - scoreboard broadcast fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardBroadcastFastPath) {
+             final List<ServerPlayer> players = this.server.getPlayerList().getPlayers();
++            if (players.isEmpty()) {
++                this.trackedObjectives.add(objective);
++                return;
++            }
++
++            final List<Packet<?>> packets = this.getStartTrackingPackets(objective);
+             for (int i = 0, len = players.size(); i < len; ++i) {
+                 final ServerPlayer player = players.get(i);
+                 if (player.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
+@@ -260,6 +264,7 @@ public class ServerScoreboard extends Scoreboard {
+             return;
+         }
+         // Meteus end - scoreboard broadcast fast path
++        List<Packet<?>> packets = this.getStartTrackingPackets(objective);
+         for (ServerPlayer player : this.server.getPlayerList().getPlayers()) {
+             if (player.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
+             for (Packet<?> packet : packets) {
+@@ -284,11 +289,15 @@ public class ServerScoreboard extends Scoreboard {
+     }
+ 
+     public void stopTrackingObjective(final Objective objective) {
+-        List<Packet<?>> packets = this.getStopTrackingPackets(objective);
+-
+         // Meteus start - scoreboard broadcast fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardBroadcastFastPath) {
+             final List<ServerPlayer> players = this.server.getPlayerList().getPlayers();
++            if (players.isEmpty()) {
++                this.trackedObjectives.remove(objective);
++                return;
++            }
++
++            final List<Packet<?>> packets = this.getStopTrackingPackets(objective);
+             for (int i = 0, len = players.size(); i < len; ++i) {
+                 final ServerPlayer player = players.get(i);
+                 if (player.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
+@@ -301,6 +310,7 @@ public class ServerScoreboard extends Scoreboard {
+             return;
+         }
+         // Meteus end - scoreboard broadcast fast path
++        List<Packet<?>> packets = this.getStopTrackingPackets(objective);
+         for (ServerPlayer player : this.server.getPlayerList().getPlayers()) {
+             if (player.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
+             for (Packet<?> packet : packets) {
+@@ -365,8 +375,12 @@ public class ServerScoreboard extends Scoreboard {
+     private void broadcastAll(Packet<?> packet) {
+         // Meteus start - scoreboard broadcast fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardBroadcastFastPath) {
+-            for (int i = 0, len = this.server.getPlayerList().players.size(); i < len; ++i) {
+-                final ServerPlayer serverPlayer = this.server.getPlayerList().players.get(i);
++            final List<ServerPlayer> players = this.server.getPlayerList().players;
++            if (players.isEmpty()) {
++                return;
++            }
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final ServerPlayer serverPlayer = players.get(i);
+                 if (serverPlayer.getBukkitEntity().getScoreboard().getHandle() == this) {
+                     serverPlayer.connection.send(packet);
+                 }
+diff --git a/net/minecraft/server/bossevents/CustomBossEvent.java b/net/minecraft/server/bossevents/CustomBossEvent.java
+index f55f22b3d3d765d790ac7bb85727846de01b57d6..30eeab4869cd50286a29732a8bcb50ecf2680a15 100644
+--- a/net/minecraft/server/bossevents/CustomBossEvent.java
++++ b/net/minecraft/server/bossevents/CustomBossEvent.java
+@@ -101,6 +101,11 @@ public class CustomBossEvent extends ServerBossEvent {
+     }
+ 
+     public boolean setPlayers(final Collection<ServerPlayer> players) {
++        // Meteus start - custom boss event player set fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.customBossEventPlayerSetFastPath) {
++            return this.meteus$setPlayers(players);
++        }
++        // Meteus end - custom boss event player set fast path
+         Set<UUID> toRemove = Sets.newHashSet();
+         Set<ServerPlayer> toAdd = Sets.newHashSet();
+ 
+@@ -157,6 +162,64 @@ public class CustomBossEvent extends ServerBossEvent {
+         return playersChanged;
+     }
+ 
++    // Meteus start - custom boss event player set fast path
++    private boolean meteus$setPlayers(final Collection<ServerPlayer> players) {
++        if (players.isEmpty()) {
++            final boolean changed = !this.players.isEmpty();
++            if (changed) {
++                this.removeAllPlayers();
++            }
++            return changed;
++        }
++
++        final java.util.HashMap<UUID, ServerPlayer> targetPlayers = new java.util.HashMap<>(Math.max(4, players.size() * 2));
++        for (ServerPlayer player : players) {
++            targetPlayers.put(player.getUUID(), player);
++        }
++
++        final java.util.HashMap<UUID, ServerPlayer> activePlayers = new java.util.HashMap<>(Math.max(4, this.getPlayers().size() * 2));
++        for (ServerPlayer player : this.getPlayers()) {
++            activePlayers.put(player.getUUID(), player);
++        }
++
++        java.util.ArrayList<UUID> toRemove = null;
++        for (UUID uuid : this.players) {
++            if (!targetPlayers.containsKey(uuid)) {
++                if (toRemove == null) {
++                    toRemove = new java.util.ArrayList<>();
++                }
++                toRemove.add(uuid);
++            }
++        }
++
++        boolean playersChanged = false;
++        if (toRemove != null) {
++            for (int i = 0, len = toRemove.size(); i < len; ++i) {
++                final UUID uuid = toRemove.get(i);
++                final ServerPlayer player = activePlayers.get(uuid);
++                if (player != null) {
++                    this.removePlayer(player);
++                } else if (this.players.remove(uuid)) {
++                    this.setDirty();
++                }
++            }
++            playersChanged = true;
++        }
++
++        for (ServerPlayer player : targetPlayers.values()) {
++            if (!this.players.contains(player.getUUID())) {
++                this.addPlayer(player);
++                playersChanged = true;
++            }
++        }
++
++        if (playersChanged) {
++            this.setDirty();
++        }
++        return playersChanged;
++    }
++    // Meteus end - custom boss event player set fast path
++
+     public static CustomBossEvent load(final UUID id, final Identifier customId, final CustomBossEvent.Packed packed, final Runnable setDirty) {
+         CustomBossEvent event = new CustomBossEvent(id, customId, packed.name, setDirty);
+         event.setVisible(packed.visible);

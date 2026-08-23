@@ -1,0 +1,373 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 21:50:17 +0900
+Subject: [PATCH] Meteus batched network fanout layer
+
+
+diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
+index 0f06d509125e72ec11d263d0d5c2179d65f6d8dd..be2305491b6b305d475d1017816166b613a84bbe 100644
+--- a/net/minecraft/network/Connection.java
++++ b/net/minecraft/network/Connection.java
+@@ -518,6 +518,12 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             return true;
+         }
+ 
++        // Meteus start - network queue drain fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkQueueDrainFastPath) {
++            return this.meteus$processQueueByPolling();
++        }
++        // Meteus end - network queue drain fast path
++
+         // If we are on main, we are safe here in that nothing else should be processing queue off main anymore
+         // But if we are not on main due to login/status, the parent is synchronized on packetQueue
+         final java.util.Iterator<WrappedConsumer> iterator = this.pendingActions.iterator();
+@@ -547,6 +553,39 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         }
+         return true;
+     }
++
++    // Meteus start - network queue drain fast path
++    private boolean meteus$processQueueByPolling() {
++        for (;;) {
++            final WrappedConsumer queued = this.pendingActions.peek();
++
++            // Fix NPE (Spigot bug caused by handleDisconnection())
++            if (queued == null) {
++                return true;
++            }
++
++            if (queued.isConsumed()) {
++                this.pendingActions.poll();
++                continue;
++            }
++
++            if (queued instanceof PacketSendAction packetSendAction) {
++                final Packet<?> packet = packetSendAction.packet;
++                if (!packet.isReady()) {
++                    return false;
++                }
++            }
++
++            final WrappedConsumer removed = this.pendingActions.poll();
++            if (removed == null) {
++                return true;
++            }
++            if (removed.tryMarkConsumed()) {
++                removed.accept(this);
++            }
++        }
++    }
++    // Meteus end - network queue drain fast path
+     // Paper end - Optimize network
+ 
+     private static final int MAX_PER_TICK = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxJoinsPerTick; // Paper - Buffer joins to world
+diff --git a/net/minecraft/server/level/ChunkHolder.java b/net/minecraft/server/level/ChunkHolder.java
+index 52ea97378a4558b9f57d44de41f8389ccbd12e7c..b5efe0dcf6944c81bc0f70296d19d85afb960f83 100644
+--- a/net/minecraft/server/level/ChunkHolder.java
++++ b/net/minecraft/server/level/ChunkHolder.java
+@@ -433,6 +433,23 @@ public class ChunkHolder extends GenerationChunkHolder implements ca.spottedleaf
+ 
+     private void meteus$broadcastToSentPlayers(final boolean onlyOnWatchDistanceEdge, final Packet<?> packet) {
+         final ServerPlayer[] raw = this.playersSentChunkTo.getRawDataUnchecked();
++        // Meteus start - batched network broadcast flush fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
++            for (int i = 0, len = this.playersSentChunkTo.size(); i < len; ++i) {
++                final ServerPlayer player = raw[i];
++                if (this.meteus$isChunkSent(player, onlyOnWatchDistanceEdge)) {
++                    player.connection.meteus$sendWithoutFlush(packet);
++                }
++            }
++            for (int i = 0, len = this.playersSentChunkTo.size(); i < len; ++i) {
++                final ServerPlayer player = raw[i];
++                if (this.meteus$isChunkSent(player, onlyOnWatchDistanceEdge)) {
++                    player.connection.meteus$flushConnection();
++                }
++            }
++            return;
++        }
++        // Meteus end - batched network broadcast flush fast path
+         for (int i = 0, len = this.playersSentChunkTo.size(); i < len; ++i) {
+             final ServerPlayer player = raw[i];
+             if (this.meteus$isChunkSent(player, onlyOnWatchDistanceEdge)) {
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 1d0332373234def2a66a7bf785d6dfad34f1592c..099118b86547b342cf0e337cacac3fb7fe4d86dc 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1439,6 +1439,17 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                 return;
+             }
+             // Meteus end - empty entity tracker broadcast fast path
++            // Meteus start - batched network broadcast flush fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
++                for (ServerPlayerConnection connection : this.seenBy) {
++                    connection.meteus$sendWithoutFlush(packet);
++                }
++                for (ServerPlayerConnection connection : this.seenBy) {
++                    connection.meteus$flushConnection();
++                }
++                return;
++            }
++            // Meteus end - batched network broadcast flush fast path
+             for (ServerPlayerConnection connection : this.seenBy) {
+                 connection.send(packet);
+             }
+@@ -1446,6 +1457,27 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+ 
+         @Override
+         public void sendToTrackingPlayersAndSelf(final Packet<? super ClientGamePacketListener> packet) {
++            // Meteus start - batched network broadcast flush fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
++                if (!this.seenBy.isEmpty()) {
++                    for (ServerPlayerConnection connection : this.seenBy) {
++                        connection.meteus$sendWithoutFlush(packet);
++                    }
++                }
++                if (this.entity instanceof ServerPlayer player) {
++                    player.connection.meteus$sendWithoutFlush(packet);
++                }
++                if (!this.seenBy.isEmpty()) {
++                    for (ServerPlayerConnection connection : this.seenBy) {
++                        connection.meteus$flushConnection();
++                    }
++                }
++                if (this.entity instanceof ServerPlayer player) {
++                    player.connection.meteus$flushConnection();
++                }
++                return;
++            }
++            // Meteus end - batched network broadcast flush fast path
+             this.sendToTrackingPlayers(packet);
+             if (this.entity instanceof ServerPlayer player) {
+                 player.connection.send(packet);
+@@ -1459,6 +1491,21 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                 return;
+             }
+             // Meteus end - empty entity tracker broadcast fast path
++            // Meteus start - batched network broadcast flush fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
++                for (ServerPlayerConnection connection : this.seenBy) {
++                    if (targetPredicate.test(connection.getPlayer())) {
++                        connection.meteus$sendWithoutFlush(packet);
++                    }
++                }
++                for (ServerPlayerConnection connection : this.seenBy) {
++                    if (targetPredicate.test(connection.getPlayer())) {
++                        connection.meteus$flushConnection();
++                    }
++                }
++                return;
++            }
++            // Meteus end - batched network broadcast flush fast path
+             for (ServerPlayerConnection connection : this.seenBy) {
+                 if (targetPredicate.test(connection.getPlayer())) {
+                     connection.send(packet);
+diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index 8b194a59f79eea32c9e7a46227034942f6a6e816..fb1793600dab2532fe2d913ca50bd337db064005 100644
+--- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -305,6 +305,20 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     }
+ 
+     public void send(final Packet<?> packet, final @Nullable ChannelFutureListener listener) {
++        this.send(packet, listener, !this.suspendFlushingOnServerThread || !this.server.isSameThread());
++    }
++
++    // Meteus start - batched network broadcast flush fast path
++    public void meteus$sendWithoutFlush(final Packet<?> packet) {
++        this.send(packet, null, false);
++    }
++
++    public void meteus$flushConnection() {
++        this.connection.flushChannel();
++    }
++
++    private void send(final Packet<?> packet, final @Nullable ChannelFutureListener listener, final boolean flush) {
++    // Meteus end - batched network broadcast flush fast path
+         // CraftBukkit start
+         if (packet == null) {
+             return;
+@@ -316,8 +330,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+             this.close();
+         }
+ 
+-        boolean flush = !this.suspendFlushingOnServerThread || !this.server.isSameThread();
+-
+         try {
+             this.connection.send(packet, listener, flush);
+         } catch (Throwable t) {
+diff --git a/net/minecraft/server/network/ServerPlayerConnection.java b/net/minecraft/server/network/ServerPlayerConnection.java
+index 2283bcdf8d188ea4f777960ec071530a0e8af40d..dbabdb753de0108a1ca3366808d439e1d035db7e 100644
+--- a/net/minecraft/server/network/ServerPlayerConnection.java
++++ b/net/minecraft/server/network/ServerPlayerConnection.java
+@@ -7,4 +7,10 @@ public interface ServerPlayerConnection {
+     ServerPlayer getPlayer();
+ 
+     void send(final Packet<?> packet);
++
++    // Meteus start - batched network broadcast flush fast path
++    void meteus$sendWithoutFlush(final Packet<?> packet);
++
++    void meteus$flushConnection();
++    // Meteus end - batched network broadcast flush fast path
+ }
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 9e4189aba322aff95589a376b0c2107ee0455167..64251c2151922633df428c84901ce5dcdb68c362 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -823,6 +823,13 @@ public abstract class PlayerList {
+                 final ClientboundPlayerInfoUpdatePacket packet = new ClientboundPlayerInfoUpdatePacket(
+                     EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY), this.players
+                 );
++                // Meteus start - batched network broadcast flush fast path
++                if (this.meteus$canBatchBroadcastFlush()) {
++                    this.meteus$broadcastAllBatched(packet);
++                    this.sendAllPlayerInfoIn = 0;
++                    return;
++                }
++                // Meteus end - batched network broadcast flush fast path
+                 for (int i = 0, len = this.players.size(); i < len; ++i) {
+                     this.players.get(i).connection.send(packet);
+                 }
+@@ -879,10 +886,45 @@ public abstract class PlayerList {
+     }
+     // Meteus end - latency visibility update fast path
+ 
++    // Meteus start - batched network broadcast flush fast path
++    private boolean meteus$canBatchBroadcastFlush() {
++        return io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath;
++    }
++
++    private void meteus$broadcastAllBatched(final Packet<?> packet) {
++        for (int i = 0, len = this.players.size(); i < len; ++i) {
++            this.players.get(i).connection.meteus$sendWithoutFlush(packet);
++        }
++        for (int i = 0, len = this.players.size(); i < len; ++i) {
++            this.players.get(i).connection.meteus$flushConnection();
++        }
++    }
++    // Meteus end - batched network broadcast flush fast path
++
+     // CraftBukkit start - add a world/entity limited version
+     public void broadcastAll(Packet packet, net.minecraft.world.entity.player.Player entityhuman) {
+         // Meteus start - player list broadcast fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListBroadcastFastPath) {
++            // Meteus start - batched network broadcast flush fast path
++            if (this.meteus$canBatchBroadcastFlush()) {
++                final org.bukkit.entity.Entity entityBukkit = entityhuman == null ? null : entityhuman.getBukkitEntity();
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    final ServerPlayer entityplayer = this.players.get(i);
++                    if (entityBukkit != null && !entityplayer.getBukkitEntity().canSee(entityBukkit)) {
++                        continue;
++                    }
++                    entityplayer.connection.meteus$sendWithoutFlush(packet);
++                }
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    final ServerPlayer entityplayer = this.players.get(i);
++                    if (entityBukkit != null && !entityplayer.getBukkitEntity().canSee(entityBukkit)) {
++                        continue;
++                    }
++                    entityplayer.connection.meteus$flushConnection();
++                }
++                return;
++            }
++            // Meteus end - batched network broadcast flush fast path
+             for (int i = 0, len = this.players.size(); i < len; ++i) {
+                 final ServerPlayer entityplayer = this.players.get(i);
+                 if (entityhuman != null && !entityplayer.getBukkitEntity().canSee(entityhuman.getBukkitEntity())) {
+@@ -905,6 +947,17 @@ public abstract class PlayerList {
+         // Meteus start - player list broadcast fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListBroadcastFastPath) {
+             final List<? extends net.minecraft.world.entity.player.Player> players = world.players();
++            // Meteus start - batched network broadcast flush fast path
++            if (this.meteus$canBatchBroadcastFlush()) {
++                for (int i = 0, len = players.size(); i < len; ++i) {
++                    ((ServerPlayer) players.get(i)).connection.meteus$sendWithoutFlush(packet);
++                }
++                for (int i = 0, len = players.size(); i < len; ++i) {
++                    ((ServerPlayer) players.get(i)).connection.meteus$flushConnection();
++                }
++                return;
++            }
++            // Meteus end - batched network broadcast flush fast path
+             for (int i = 0, len = players.size(); i < len; ++i) {
+                 ((ServerPlayer) players.get(i)).connection.send(packet);
+             }
+@@ -921,6 +974,12 @@ public abstract class PlayerList {
+     public void broadcastAll(final Packet<?> packet) {
+         // Meteus start - player list broadcast fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListBroadcastFastPath) {
++            // Meteus start - batched network broadcast flush fast path
++            if (this.meteus$canBatchBroadcastFlush()) {
++                this.meteus$broadcastAllBatched(packet);
++                return;
++            }
++            // Meteus end - batched network broadcast flush fast path
+             for (int i = 0, len = this.players.size(); i < len; ++i) {
+                 this.players.get(i).connection.send(packet);
+             }
+@@ -935,6 +994,23 @@ public abstract class PlayerList {
+     public void broadcastAll(final Packet<?> packet, final ResourceKey<Level> dimension) {
+         // Meteus start - player list broadcast fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListBroadcastFastPath) {
++            // Meteus start - batched network broadcast flush fast path
++            if (this.meteus$canBatchBroadcastFlush()) {
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    final ServerPlayer player = this.players.get(i);
++                    if (player.level().dimension() == dimension) {
++                        player.connection.meteus$sendWithoutFlush(packet);
++                    }
++                }
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    final ServerPlayer player = this.players.get(i);
++                    if (player.level().dimension() == dimension) {
++                        player.connection.meteus$flushConnection();
++                    }
++                }
++                return;
++            }
++            // Meteus end - batched network broadcast flush fast path
+             for (int i = 0, len = this.players.size(); i < len; ++i) {
+                 final ServerPlayer player = this.players.get(i);
+                 if (player.level().dimension() == dimension) {
+@@ -1108,6 +1184,41 @@ public abstract class PlayerList {
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListBroadcastFastPath) {
+             final double rangeSquared = range * range;
+             final org.bukkit.entity.Entity exceptBukkit = except == null ? null : except.getBukkitEntity();
++            // Meteus start - batched network broadcast flush fast path
++            if (this.meteus$canBatchBroadcastFlush()) {
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    final ServerPlayer player = this.players.get(i);
++                    if (player == except || player.level().dimension() != dimension) {
++                        continue;
++                    }
++                    if (exceptBukkit != null && !player.getBukkitEntity().canSee(exceptBukkit)) {
++                        continue;
++                    }
++                    final double xd = x - player.getX();
++                    final double yd = y - player.getY();
++                    final double zd = z - player.getZ();
++                    if (xd * xd + yd * yd + zd * zd < rangeSquared) {
++                        player.connection.meteus$sendWithoutFlush(packet);
++                    }
++                }
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    final ServerPlayer player = this.players.get(i);
++                    if (player == except || player.level().dimension() != dimension) {
++                        continue;
++                    }
++                    if (exceptBukkit != null && !player.getBukkitEntity().canSee(exceptBukkit)) {
++                        continue;
++                    }
++                    final double xd = x - player.getX();
++                    final double yd = y - player.getY();
++                    final double zd = z - player.getZ();
++                    if (xd * xd + yd * yd + zd * zd < rangeSquared) {
++                        player.connection.meteus$flushConnection();
++                    }
++                }
++                return;
++            }
++            // Meteus end - batched network broadcast flush fast path
+             for (int i = 0, len = this.players.size(); i < len; ++i) {
+                 final ServerPlayer player = this.players.get(i);
+                 if (player == except || player.level().dimension() != dimension) {

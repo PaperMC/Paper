@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 18:20:20 +0900
+Subject: [PATCH] Meteus entity map iteration fast path
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index cf283682a39cd67410c33bb4adf6b78027c3fc5c..53632e0705e57cc944361062f8d9ed34edb74d74 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1016,6 +1016,17 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                 if (entity instanceof ServerPlayer player) {
+                     this.updatePlayerStatus(player, true);
+ 
++                    // Meteus start - entity map iteration fast path
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityMapIterationFastPath) {
++                        for (final Iterator<Int2ObjectMap.Entry<ChunkMap.TrackedEntity>> iterator = it.unimi.dsi.fastutil.ints.Int2ObjectMaps.fastIterator(this.entityMap); iterator.hasNext();) {
++                            final ChunkMap.TrackedEntity e = iterator.next().getValue();
++                            if (e.entity != player) {
++                                e.updatePlayer(player);
++                            }
++                        }
++                        return;
++                    }
++                    // Meteus end - entity map iteration fast path
+                     for (ChunkMap.TrackedEntity e : this.entityMap.values()) {
+                         if (e.entity != player) {
+                             e.updatePlayer(player);
+@@ -1031,9 +1042,17 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+         if (entity instanceof ServerPlayer player) {
+             this.updatePlayerStatus(player, false);
+ 
+-            for (ChunkMap.TrackedEntity trackedEntity : this.entityMap.values()) {
+-                trackedEntity.removePlayer(player);
++            // Meteus start - entity map iteration fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityMapIterationFastPath) {
++                for (final Iterator<Int2ObjectMap.Entry<ChunkMap.TrackedEntity>> iterator = it.unimi.dsi.fastutil.ints.Int2ObjectMaps.fastIterator(this.entityMap); iterator.hasNext();) {
++                    iterator.next().getValue().removePlayer(player);
++                }
++            } else {
++                for (ChunkMap.TrackedEntity trackedEntity : this.entityMap.values()) {
++                    trackedEntity.removePlayer(player);
++                }
+             }
++            // Meteus end - entity map iteration fast path
+         }
+ 
+         ChunkMap.TrackedEntity trackedEntity = this.entityMap.remove(entity.getId());
+@@ -1150,6 +1169,17 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+     }
+ 
+     public void forEachEntityTrackedBy(final ServerPlayer player, final Consumer<Entity> consumer) {
++        // Meteus start - entity map iteration fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityMapIterationFastPath) {
++            for (final Iterator<Int2ObjectMap.Entry<ChunkMap.TrackedEntity>> iterator = it.unimi.dsi.fastutil.ints.Int2ObjectMaps.fastIterator(this.entityMap); iterator.hasNext();) {
++                final ChunkMap.TrackedEntity entity = iterator.next().getValue();
++                if (entity.seenBy.contains(player.connection)) {
++                    consumer.accept(entity.entity);
++                }
++            }
++            return;
++        }
++        // Meteus end - entity map iteration fast path
+         for (ChunkMap.TrackedEntity entity : this.entityMap.values()) {
+             if (entity.seenBy.contains(player.connection)) {
+                 consumer.accept(entity.entity);

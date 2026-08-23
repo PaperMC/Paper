@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 17:14:56 +0900
+Subject: [PATCH] Meteus gamemode command fast path
+
+
+diff --git a/net/minecraft/server/commands/GameModeCommand.java b/net/minecraft/server/commands/GameModeCommand.java
+index bc81191f776cb068b7ec300c5cf0f9dfd46a228f..b10b5d368530e1e14faf2aa78498e02dfa9803f9 100644
+--- a/net/minecraft/server/commands/GameModeCommand.java
++++ b/net/minecraft/server/commands/GameModeCommand.java
+@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
+ import com.mojang.brigadier.context.CommandContext;
+ import java.util.Collection;
+ import java.util.Collections;
++import java.util.List;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+ import net.minecraft.commands.arguments.EntityArgument;
+@@ -49,6 +50,16 @@ public class GameModeCommand {
+     private static int setMode(final CommandContext<CommandSourceStack> context, final Collection<ServerPlayer> players, final GameType type) {
+         int count = 0;
+ 
++        // Meteus start - gamemode command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.gameModeCommandFastPath && players instanceof List<ServerPlayer> playerList) {
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                if (setGameMode(context.getSource(), playerList.get(i), type)) {
++                    count++;
++                }
++            }
++            return count;
++        }
++        // Meteus end - gamemode command fast path
+         for (ServerPlayer player : players) {
+             if (setGameMode(context.getSource(), player, type)) {
+                 count++;

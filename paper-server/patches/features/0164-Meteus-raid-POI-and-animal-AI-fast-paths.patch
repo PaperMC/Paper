@@ -1,0 +1,132 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 14:56:29 +0900
+Subject: [PATCH] Meteus raid POI and animal AI fast paths
+
+
+diff --git a/net/minecraft/world/entity/ai/behavior/GateBehavior.java b/net/minecraft/world/entity/ai/behavior/GateBehavior.java
+index ceb82ede6651b30c5612740c5b82f984fb4b7865..552f39120bc547ecf215b1bb7fc30fc1d056c21b 100644
+--- a/net/minecraft/world/entity/ai/behavior/GateBehavior.java
++++ b/net/minecraft/world/entity/ai/behavior/GateBehavior.java
+@@ -33,6 +33,15 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+         this.exitErasedMemories = exitErasedMemories;
+         this.orderPolicy = orderPolicy;
+         this.runningPolicy = runningPolicy;
++        // Meteus start - AI gate behavior fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.aiGateBehaviorFastPath) {
++            for (int i = 0, len = behaviors.size(); i < len; ++i) {
++                final Pair<? extends BehaviorControl<? super E>, Integer> entry = behaviors.get(i);
++                this.behaviors.add(entry.getFirst(), entry.getSecond());
++            }
++            return;
++        }
++        // Meteus end - AI gate behavior fast path
+         behaviors.forEach(entry -> this.behaviors.add(entry.getFirst(), entry.getSecond()));
+     }
+ 
+diff --git a/net/minecraft/world/entity/ai/village/poi/PoiSection.java b/net/minecraft/world/entity/ai/village/poi/PoiSection.java
+index c22d482a075ef317f23a8473cef837b5b2a5d389..6c7b4326de3f3db62d76949bb73c950afc430a33 100644
+--- a/net/minecraft/world/entity/ai/village/poi/PoiSection.java
++++ b/net/minecraft/world/entity/ai/village/poi/PoiSection.java
+@@ -54,6 +54,14 @@ public class PoiSection implements ca.spottedleaf.moonrise.patches.chunk_system.
+     private PoiSection(final Runnable setDirty, final boolean isValid, final List<PoiRecord> records) {
+         this.setDirty = setDirty;
+         this.isValid = isValid;
++        // Meteus start - world data serialization fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.worldDataSerializationFastPath) {
++            for (int i = 0, len = records.size(); i < len; ++i) {
++                this.add(records.get(i));
++            }
++            return;
++        }
++        // Meteus end - world data serialization fast path
+         records.forEach(this::add);
+     }
+ 
+diff --git a/net/minecraft/world/entity/animal/sniffer/Sniffer.java b/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+index 2995f844e8b1c37c6231d6620d719e293020570b..173b3fbbd9571efecbb1948e1a71d60be05fbcbd 100644
+--- a/net/minecraft/world/entity/animal/sniffer/Sniffer.java
++++ b/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+@@ -278,6 +278,24 @@ public class Sniffer extends Animal {
+     }
+ 
+     private boolean canDig(final BlockPos position) {
++        // Meteus start - animal AI memory fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.animalAiMemoryFastPath) {
++            if (!this.level().getBlockState(position).is(BlockTags.SNIFFER_DIGGABLE_BLOCK)) {
++                return false;
++            }
++            final Optional<List<GlobalPos>> exploredPositions = this.getBrain().getMemory(MemoryModuleType.SNIFFER_EXPLORED_POSITIONS);
++            if (exploredPositions.isPresent()) {
++                final GlobalPos candidate = GlobalPos.of(this.level().dimension(), position);
++                final List<GlobalPos> positions = exploredPositions.get();
++                for (int i = 0, len = positions.size(); i < len; ++i) {
++                    if (candidate.equals(positions.get(i))) {
++                        return false;
++                    }
++                }
++            }
++            return Optional.ofNullable(this.getNavigation().createPath(position, 1)).map(Path::canReach).orElse(false);
++        }
++        // Meteus end - animal AI memory fast path
+         return this.level().getBlockState(position).is(BlockTags.SNIFFER_DIGGABLE_BLOCK)
+             && this.getExploredPositions().noneMatch(explored -> GlobalPos.of(this.level().dimension(), position).equals(explored))
+             && Optional.ofNullable(this.getNavigation().createPath(position, 1)).map(Path::canReach).orElse(false);
+diff --git a/net/minecraft/world/entity/monster/piglin/StartHuntingHoglin.java b/net/minecraft/world/entity/monster/piglin/StartHuntingHoglin.java
+index ab836a8502af408afccfd6ea2f6b7c147d002f62..7951c237d856f5e5127a050268918b2ef85c6d9a 100644
+--- a/net/minecraft/world/entity/monster/piglin/StartHuntingHoglin.java
++++ b/net/minecraft/world/entity/monster/piglin/StartHuntingHoglin.java
+@@ -16,6 +16,33 @@ public class StartHuntingHoglin {
+                     i.registered(MemoryModuleType.NEAREST_VISIBLE_ADULT_PIGLINS)
+                 )
+                 .apply(i, (huntable, angryAt, huntedRecently, nearestPiglins) -> (level, body, timestamp) -> {
++                    // Meteus start - mob AI detection fast path
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++                        if (body.isBaby()) {
++                            return false;
++                        }
++                        final java.util.Optional<List<AbstractPiglin>> piglins = i.tryGet(nearestPiglins);
++                        if (piglins.isPresent()) {
++                            final List<AbstractPiglin> piglinList = piglins.get();
++                            for (int index = 0, len = piglinList.size(); index < len; ++index) {
++                                if (hasHuntedRecently(piglinList.get(index))) {
++                                    return false;
++                                }
++                            }
++                        }
++                        Hoglin target = i.get(huntable);
++                        PiglinAi.setAngerTarget(level, body, target);
++                        PiglinAi.dontKillAnyMoreHoglinsForAWhile(body);
++                        PiglinAi.broadcastAngerTarget(level, body, target);
++                        if (piglins.isPresent()) {
++                            final List<AbstractPiglin> piglinList = piglins.get();
++                            for (int index = 0, len = piglinList.size(); index < len; ++index) {
++                                PiglinAi.dontKillAnyMoreHoglinsForAWhile(piglinList.get(index));
++                            }
++                        }
++                        return true;
++                    }
++                    // Meteus end - mob AI detection fast path
+                     if (!body.isBaby() && !i.tryGet(nearestPiglins).filter(p -> p.stream().anyMatch(StartHuntingHoglin::hasHuntedRecently)).isPresent()) {
+                         Hoglin target = i.get(huntable);
+                         PiglinAi.setAngerTarget(level, body, target);
+diff --git a/net/minecraft/world/entity/raid/Raid.java b/net/minecraft/world/entity/raid/Raid.java
+index 19168bf1e57bac2fd84c3ea84f43bfbd4f8f235b..b6a18c3b779b0cdf42dbcd0440196e53556c8690 100644
+--- a/net/minecraft/world/entity/raid/Raid.java
++++ b/net/minecraft/world/entity/raid/Raid.java
+@@ -636,6 +636,15 @@ public class Raid {
+     }
+ 
+     public int getTotalRaidersAlive() {
++        // Meteus start - raid raider set fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.raidRaiderSetFastPath) {
++            int total = 0;
++            for (final Set<Raider> raiders : this.groupRaiderMap.values()) {
++                total += raiders.size();
++            }
++            return total;
++        }
++        // Meteus end - raid raider set fast path
+         return this.groupRaiderMap.values().stream().mapToInt(Set::size).sum();
+     }
+ 

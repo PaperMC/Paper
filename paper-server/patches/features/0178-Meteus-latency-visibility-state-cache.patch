@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Mon, 15 Jun 2026 07:44:00 +0900
+Subject: [PATCH] Meteus latency visibility state cache
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 7e48eb2703fd153fcfbcb9cce10307620406e40a..6daa38b447b02c3441d233e3b82b08b34fe47820 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -129,6 +129,11 @@ public abstract class PlayerList {
+     private int simulationDistance;
+     private boolean allowCommandsForAllPlayers;
+     private int sendAllPlayerInfoIn;
++    // Meteus start - latency visibility state cache fast path
++    private int meteus$latencyVisibilityMutationVersion = Integer.MIN_VALUE;
++    private int meteus$latencyVisibilityPlayerCount = -1;
++    private boolean meteus$canUseSharedLatencyPacket;
++    // Meteus end - latency visibility state cache fast path
+ 
+     // CraftBukkit start
+     private org.bukkit.craftbukkit.CraftServer cserver;
+@@ -833,6 +838,12 @@ public abstract class PlayerList {
+ 
+     public void tick() {
+         if (++this.sendAllPlayerInfoIn > 600) {
++            // Meteus start - latency visibility state cache fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.latencyVisibilityStateCacheFastPath && this.players.isEmpty()) {
++                this.sendAllPlayerInfoIn = 0;
++                return;
++            }
++            // Meteus end - latency visibility state cache fast path
+             // Meteus start - shared latency packet fast path
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.sharedLatencyPacketFastPath && this.meteus$canUseSharedLatencyPacket()) {
+                 final ClientboundPlayerInfoUpdatePacket packet = new ClientboundPlayerInfoUpdatePacket(
+@@ -875,6 +886,24 @@ public abstract class PlayerList {
+ 
+     // Meteus start - shared latency packet fast path
+     private boolean meteus$canUseSharedLatencyPacket() {
++        // Meteus start - latency visibility state cache fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.latencyVisibilityStateCacheFastPath) {
++            final int visibilityMutationVersion = org.bukkit.craftbukkit.entity.CraftPlayer.meteus$getVisibilityMutationVersion();
++            final int playerCount = this.players.size();
++            if (this.meteus$latencyVisibilityMutationVersion == visibilityMutationVersion && this.meteus$latencyVisibilityPlayerCount == playerCount) {
++                return this.meteus$canUseSharedLatencyPacket;
++            }
++
++            this.meteus$latencyVisibilityMutationVersion = visibilityMutationVersion;
++            this.meteus$latencyVisibilityPlayerCount = playerCount;
++            this.meteus$canUseSharedLatencyPacket = this.meteus$scanCanUseSharedLatencyPacket();
++            return this.meteus$canUseSharedLatencyPacket;
++        }
++        // Meteus end - latency visibility state cache fast path
++        return this.meteus$scanCanUseSharedLatencyPacket();
++    }
++
++    private boolean meteus$scanCanUseSharedLatencyPacket() {
+         for (int i = 0, len = this.players.size(); i < len; ++i) {
+             final org.bukkit.craftbukkit.entity.CraftPlayer player = this.players.get(i).getBukkitEntity();
+             if (player.meteus$hasVisibilityOverrides() || !player.isVisibleByDefault()) {

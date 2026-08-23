@@ -1,0 +1,122 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 17:30:50 +0900
+Subject: [PATCH] Meteus effect command fast path
+
+
+diff --git a/net/minecraft/server/commands/EffectCommands.java b/net/minecraft/server/commands/EffectCommands.java
+index 451566713b3792d9af41a571aaf7b02422d616d3..68981e42dc9a28f14930d2588f0d3b2b949b56cf 100644
+--- a/net/minecraft/server/commands/EffectCommands.java
++++ b/net/minecraft/server/commands/EffectCommands.java
+@@ -7,6 +7,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
+ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+ import java.util.Collection;
++import java.util.List;
+ import net.minecraft.commands.CommandBuildContext;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+@@ -175,6 +176,38 @@ public class EffectCommands {
+             duration = 600;
+         }
+ 
++        // Meteus start - effect command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.effectCommandFastPath && entities instanceof List<? extends Entity> entityList) {
++            for (int i = 0, len = entityList.size(); i < len; ++i) {
++                final Entity entity = entityList.get(i);
++                if (entity instanceof LivingEntity) {
++                    MobEffectInstance instance = new MobEffectInstance(effectHolder, duration, amplifier, false, particles);
++                    if (((LivingEntity)entity).addEffect(instance, source.getEntity(), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.COMMAND)) { // CraftBukkit
++                        count++;
++                    }
++                }
++            }
++
++            if (count == 0) {
++                throw ERROR_GIVE_FAILED.create();
++            }
++
++            if (entityList.size() == 1) {
++                source.sendSuccess(
++                    () -> Component.translatable(
++                        "commands.effect.give.success.single", effect.getDisplayName(), entityList.get(0).getDisplayName(), duration / 20
++                    ),
++                    true
++                );
++            } else {
++                source.sendSuccess(
++                    () -> Component.translatable("commands.effect.give.success.multiple", effect.getDisplayName(), entityList.size(), duration / 20), true
++                );
++            }
++
++            return count;
++        }
++        // Meteus end - effect command fast path
+         for (Entity entity : entities) {
+             if (entity instanceof LivingEntity) {
+                 MobEffectInstance instance = new MobEffectInstance(effectHolder, duration, amplifier, false, particles);
+@@ -207,6 +240,30 @@ public class EffectCommands {
+     private static int clearEffects(final CommandSourceStack source, final Collection<? extends Entity> entities) throws CommandSyntaxException {
+         int count = 0;
+ 
++        // Meteus start - effect command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.effectCommandFastPath && entities instanceof List<? extends Entity> entityList) {
++            for (int i = 0, len = entityList.size(); i < len; ++i) {
++                final Entity entity = entityList.get(i);
++                if (entity instanceof LivingEntity && ((LivingEntity)entity).removeAllEffects(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.COMMAND)) { // CraftBukkit
++                    count++;
++                }
++            }
++
++            if (count == 0) {
++                throw ERROR_CLEAR_EVERYTHING_FAILED.create();
++            }
++
++            if (entityList.size() == 1) {
++                source.sendSuccess(
++                    () -> Component.translatable("commands.effect.clear.everything.success.single", entityList.get(0).getDisplayName()), true
++                );
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.effect.clear.everything.success.multiple", entityList.size()), true);
++            }
++
++            return count;
++        }
++        // Meteus end - effect command fast path
+         for (Entity entity : entities) {
+             if (entity instanceof LivingEntity && ((LivingEntity)entity).removeAllEffects(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.COMMAND)) { // CraftBukkit
+                 count++;
+@@ -232,6 +289,33 @@ public class EffectCommands {
+         MobEffect effect = effectHolder.value();
+         int count = 0;
+ 
++        // Meteus start - effect command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.effectCommandFastPath && entities instanceof List<? extends Entity> entityList) {
++            for (int i = 0, len = entityList.size(); i < len; ++i) {
++                final Entity entity = entityList.get(i);
++                if (entity instanceof LivingEntity && ((LivingEntity)entity).removeEffect(effectHolder, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.COMMAND)) { // CraftBukkit
++                    count++;
++                }
++            }
++
++            if (count == 0) {
++                throw ERROR_CLEAR_SPECIFIC_FAILED.create();
++            }
++
++            if (entityList.size() == 1) {
++                source.sendSuccess(
++                    () -> Component.translatable(
++                        "commands.effect.clear.specific.success.single", effect.getDisplayName(), entityList.get(0).getDisplayName()
++                    ),
++                    true
++                );
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.effect.clear.specific.success.multiple", effect.getDisplayName(), entityList.size()), true);
++            }
++
++            return count;
++        }
++        // Meteus end - effect command fast path
+         for (Entity entity : entities) {
+             if (entity instanceof LivingEntity && ((LivingEntity)entity).removeEffect(effectHolder, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.COMMAND)) { // CraftBukkit
+                 count++;

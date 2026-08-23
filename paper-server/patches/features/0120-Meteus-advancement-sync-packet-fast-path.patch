@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 22:06:15 +0900
+Subject: [PATCH] Meteus advancement sync packet fast path
+
+
+diff --git a/net/minecraft/advancements/AdvancementProgress.java b/net/minecraft/advancements/AdvancementProgress.java
+index ff92cefc74cf304efe7661dab62dbcdda47cccd4..0dfde26ad61b82c6553f283bc61b083486b3956d 100644
+--- a/net/minecraft/advancements/AdvancementProgress.java
++++ b/net/minecraft/advancements/AdvancementProgress.java
+@@ -103,6 +103,16 @@ public class AdvancementProgress implements Comparable<AdvancementProgress> {
+     }
+ 
+     public void serializeToNetwork(final FriendlyByteBuf output) {
++        // Meteus start - advancement packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.advancementPacketFastPath) {
++            output.writeVarInt(this.criteria.size());
++            for (final Entry<String, CriterionProgress> entry : this.criteria.entrySet()) {
++                output.writeUtf(entry.getKey());
++                entry.getValue().serializeToNetwork(output);
++            }
++            return;
++        }
++        // Meteus end - advancement packet fast path
+         output.writeMap(this.criteria, FriendlyByteBuf::writeUtf, (b, v) -> v.serializeToNetwork(b));
+     }
+ 
+diff --git a/net/minecraft/network/protocol/game/ClientboundUpdateAdvancementsPacket.java b/net/minecraft/network/protocol/game/ClientboundUpdateAdvancementsPacket.java
+index 9972911d00e182393faf37ac8117e2d20ee03460..9414244a412b1da99f67e34772f4513d12b719b5 100644
+--- a/net/minecraft/network/protocol/game/ClientboundUpdateAdvancementsPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundUpdateAdvancementsPacket.java
+@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
+ import java.util.Collection;
+ import java.util.List;
+ import java.util.Map;
++import java.util.Map.Entry;
+ import java.util.Set;
+ import net.minecraft.advancements.AdvancementHolder;
+ import net.minecraft.advancements.AdvancementProgress;
+@@ -49,6 +50,23 @@ public class ClientboundUpdateAdvancementsPacket implements Packet<ClientGamePac
+     private void write(final RegistryFriendlyByteBuf output) {
+         output.writeBoolean(this.reset);
+         AdvancementHolder.LIST_STREAM_CODEC.encode(output, this.added);
++        // Meteus start - advancement packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.advancementPacketFastPath) {
++            output.writeVarInt(this.removed.size());
++            for (final Identifier id : this.removed) {
++                output.writeIdentifier(id);
++            }
++
++            output.writeVarInt(this.progress.size());
++            for (final Entry<Identifier, AdvancementProgress> entry : this.progress.entrySet()) {
++                output.writeIdentifier(entry.getKey());
++                entry.getValue().serializeToNetwork(output);
++            }
++
++            output.writeBoolean(this.showAdvancements);
++            return;
++        }
++        // Meteus end - advancement packet fast path
+         output.writeCollection(this.removed, FriendlyByteBuf::writeIdentifier);
+         output.writeMap(this.progress, FriendlyByteBuf::writeIdentifier, (buffer, value) -> value.serializeToNetwork(buffer));
+         output.writeBoolean(this.showAdvancements);

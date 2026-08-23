@@ -1,0 +1,112 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:25:02 +0900
+Subject: [PATCH] Meteus server game packet fast path
+
+
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 228816f8408f59f8e6396fd859e7db3d2426401f..390b8191fecfe3292389e9216be5a11f9a06fb53 100644
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -12,6 +12,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
+ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+ import java.net.SocketAddress;
++import java.util.ArrayList;
+ import java.util.Collections;
+ import java.util.EnumSet;
+ import java.util.HashMap;
+@@ -1407,6 +1408,17 @@ public class ServerGamePacketListenerImpl
+         ItemStack carried = handItem.copy();
+         // CraftBukkit end
+         if (carried.has(DataComponents.WRITABLE_BOOK_CONTENT)) {
++            // Meteus start - server game packet fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverGamePacketFastPath) {
++                final List<Filterable<String>> pages = new ArrayList<>(contents.size());
++                for (int i = 0, len = contents.size(); i < len; ++i) {
++                    pages.add(this.filterableFromOutgoing(contents.get(i)));
++                }
++                carried.set(DataComponents.WRITABLE_BOOK_CONTENT, new WritableBookContent(pages));
++                this.player.getInventory().setItem(slot, CraftEventFactory.handleEditBookEvent(this.player, slot, handItem, carried)); // CraftBukkit // Paper - Don't ignore result (see other callsite for handleEditBookEvent)
++                return;
++            }
++            // Meteus end - server game packet fast path
+             List<Filterable<String>> pages = contents.stream().map(this::filterableFromOutgoing).toList();
+             carried.set(DataComponents.WRITABLE_BOOK_CONTENT, new WritableBookContent(pages));
+             this.player.getInventory().setItem(slot, CraftEventFactory.handleEditBookEvent(this.player, slot, handItem, carried)); // CraftBukkit // Paper - Don't ignore result (see other callsite for handleEditBookEvent)
+@@ -1418,6 +1430,20 @@ public class ServerGamePacketListenerImpl
+         if (carried.has(DataComponents.WRITABLE_BOOK_CONTENT)) {
+             ItemStack writtenBook = carried.transmuteCopy(Items.WRITTEN_BOOK);
+             writtenBook.remove(DataComponents.WRITABLE_BOOK_CONTENT);
++            // Meteus start - server game packet fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverGamePacketFastPath) {
++                final List<Filterable<Component>> pages = new ArrayList<>(contents.size());
++                for (int i = 0, len = contents.size(); i < len; ++i) {
++                    pages.add(this.filterableFromOutgoing(contents.get(i)).<Component>map(Component::literal));
++                }
++                writtenBook.set(
++                    DataComponents.WRITTEN_BOOK_CONTENT, new WrittenBookContent(this.filterableFromOutgoing(title), this.player.getPlainTextName(), 0, pages, true)
++                );
++                CraftEventFactory.handleEditBookEvent(this.player, slot, carried, writtenBook); // CraftBukkit
++                this.player.getInventory().setItem(slot, carried); // CraftBukkit - event factory updates the hand book
++                return;
++            }
++            // Meteus end - server game packet fast path
+             List<Filterable<Component>> pages = contents.stream().map(page -> this.filterableFromOutgoing(page).<Component>map(Component::literal)).toList();
+             writtenBook.set(
+                 DataComponents.WRITTEN_BOOK_CONTENT, new WrittenBookContent(this.filterableFromOutgoing(title), this.player.getPlainTextName(), 0, pages, true)
+@@ -2547,6 +2573,26 @@ public class ServerGamePacketListenerImpl
+     private static <S> SignedMessageChain.DecodeException createSignedArgumentMismatchException(
+         final String command, final List<ArgumentSignatures.Entry> clientArguments, final List<SignableCommand.Argument<S>> expectedArguments
+     ) {
++        // Meteus start - server game packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverGamePacketFastPath) {
++            final StringBuilder clientNamesBuilder = new StringBuilder();
++            for (int i = 0, len = clientArguments.size(); i < len; ++i) {
++                if (i != 0) {
++                    clientNamesBuilder.append(", ");
++                }
++                clientNamesBuilder.append(clientArguments.get(i).name());
++            }
++            final StringBuilder expectedNamesBuilder = new StringBuilder();
++            for (int i = 0, len = expectedArguments.size(); i < len; ++i) {
++                if (i != 0) {
++                    expectedNamesBuilder.append(", ");
++                }
++                expectedNamesBuilder.append(expectedArguments.get(i).name());
++            }
++            LOGGER.error("Signed command mismatch between server and client ('{}'): got [{}] from client, but expected [{}]", command, clientNamesBuilder, expectedNamesBuilder);
++            return new SignedMessageChain.DecodeException(INVALID_COMMAND_SIGNATURE);
++        }
++        // Meteus end - server game packet fast path
+         String clientNames = clientArguments.stream().map(ArgumentSignatures.Entry::name).collect(Collectors.joining(", "));
+         String expectedNames = expectedArguments.stream().map(SignableCommand.Argument::name).collect(Collectors.joining(", "));
+         LOGGER.error("Signed command mismatch between server and client ('{}'): got [{}] from client, but expected [{}]", command, clientNames, expectedNames);
+@@ -2957,10 +3003,23 @@ public class ServerGamePacketListenerImpl
+                             target.refreshEntityData(ServerGamePacketListenerImpl.this.player);
+                             // SPIGOT-7136 - Allays
+                             if (target instanceof net.minecraft.world.entity.animal.allay.Allay || target instanceof net.minecraft.world.entity.animal.equine.AbstractHorse) { // Paper - Fix horse armor desync
+-                                ServerGamePacketListenerImpl.this.send(new net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket(
+-                                    target.getId(), java.util.Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values())
+-                                    .map((slot) -> com.mojang.datafixers.util.Pair.of(slot, ((LivingEntity) target).getItemBySlot(slot).copy()))
+-                                    .collect(Collectors.toList()), true)); // Paper - sanitize
++                                // Meteus start - server game packet fast path
++                                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverGamePacketFastPath) {
++                                    final net.minecraft.world.entity.EquipmentSlot[] slots = net.minecraft.world.entity.EquipmentSlot.values();
++                                    final List<com.mojang.datafixers.util.Pair<net.minecraft.world.entity.EquipmentSlot, ItemStack>> equipment = new ArrayList<>(slots.length);
++                                    final LivingEntity livingTarget = (LivingEntity) target;
++                                    for (int i = 0, len = slots.length; i < len; ++i) {
++                                        final net.minecraft.world.entity.EquipmentSlot slot = slots[i];
++                                        equipment.add(com.mojang.datafixers.util.Pair.of(slot, livingTarget.getItemBySlot(slot).copy()));
++                                    }
++                                    ServerGamePacketListenerImpl.this.send(new net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket(target.getId(), equipment, true)); // Paper - sanitize
++                                } else {
++                                // Meteus end - server game packet fast path
++                                    ServerGamePacketListenerImpl.this.send(new net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket(
++                                        target.getId(), java.util.Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values())
++                                        .map((slot) -> com.mojang.datafixers.util.Pair.of(slot, ((LivingEntity) target).getItemBySlot(slot).copy()))
++                                        .collect(Collectors.toList()), true)); // Paper - sanitize
++                                } // Meteus - server game packet fast path
+                                 player.containerMenu.sendAllDataToRemote();
+                             } else {
+                                 ServerGamePacketListenerImpl.this.player.containerMenu.forceHeldSlot(hand); // Paper - fix slot desync (is this needed?)

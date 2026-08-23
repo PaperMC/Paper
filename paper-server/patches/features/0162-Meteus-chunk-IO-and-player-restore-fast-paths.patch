@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 14:45:41 +0900
+Subject: [PATCH] Meteus chunk IO and player restore fast paths
+
+
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index 94fcbe140cebf63b51e4426ebe1b5149e04e52e2..dacbac9bad5c20ed4ad082dc18cca54d9fe65a1d 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -621,6 +621,14 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+     }
+ 
+     public void loadAndSpawnEnderPearls(final ValueInput playerInput) {
++        // Meteus start - player state restore fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerStateRestoreFastPath) {
++            for (final ValueInput pearlInput : playerInput.childrenListOrEmpty("ender_pearls")) {
++                this.loadAndSpawnEnderPearl(pearlInput);
++            }
++            return;
++        }
++        // Meteus end - player state restore fast path
+         playerInput.childrenListOrEmpty("ender_pearls").forEach(this::loadAndSpawnEnderPearl);
+     }
+ 
+diff --git a/net/minecraft/server/players/CachedUserNameToIdResolver.java b/net/minecraft/server/players/CachedUserNameToIdResolver.java
+index ce26768b951a5cd3e3337ef5347ce1537d593486..9662948eed3fab35860137bf68106b200dab2bbd 100644
+--- a/net/minecraft/server/players/CachedUserNameToIdResolver.java
++++ b/net/minecraft/server/players/CachedUserNameToIdResolver.java
+@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
+ import java.text.DateFormat;
+ import java.text.ParseException;
+ import java.text.SimpleDateFormat;
++import java.util.ArrayList;
+ import java.util.Calendar;
+ import java.util.Comparator;
+ import java.util.Date;
+@@ -212,7 +213,18 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
+         // Paper end - Perf: Async GameProfileCache saving
+         JsonArray entryList = new JsonArray();
+         DateFormat dateFormat = createDateFormat();
++        // Meteus start - user list storage fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.userListStorageFastPath) {
++            final List<CachedUserNameToIdResolver.GameProfileInfo> profiles = this.listTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap);
++            for (int index = 0, len = profiles.size(); index < len; ++index) {
++                entryList.add(writeGameProfile(profiles.get(index), dateFormat));
++            }
++        } else {
++        // Meteus end - user list storage fast path
+         this.listTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach(entry -> entryList.add(writeGameProfile(entry, dateFormat))); // Spigot // Paper - Fix GameProfileCache concurrency
++        // Meteus start - user list storage fast path
++        }
++        // Meteus end - user list storage fast path
+         String toSave = this.gson.toJson(entryList);
+ 
+         Runnable save = () -> { // Paper - Perf: Async GameProfileCache saving
+@@ -238,6 +250,13 @@ public class CachedUserNameToIdResolver implements UserNameToIdResolver {
+     private List<CachedUserNameToIdResolver.GameProfileInfo> listTopMRUProfiles(final int limit) {
+         try {
+             this.stateLock.lock();
++            // Meteus start - user list storage fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.userListStorageFastPath) {
++                final List<CachedUserNameToIdResolver.GameProfileInfo> result = new ArrayList<>(this.profilesByUUID.values());
++                result.sort(Comparator.comparing(CachedUserNameToIdResolver.GameProfileInfo::lastAccess).reversed());
++                return result.size() > limit ? new ArrayList<>(result.subList(0, limit)) : result;
++            }
++            // Meteus end - user list storage fast path
+             return this.profilesByUUID.values()
+                 .stream()
+                 .sorted(Comparator.comparing(CachedUserNameToIdResolver.GameProfileInfo::lastAccess).reversed())
+diff --git a/net/minecraft/world/level/chunk/storage/IOWorker.java b/net/minecraft/world/level/chunk/storage/IOWorker.java
+index cd2ac98e1910c8c6222db084a1d2dffc6f9519c9..9cf47d7351e5223d2a6f44884ce89655413923d1 100644
+--- a/net/minecraft/world/level/chunk/storage/IOWorker.java
++++ b/net/minecraft/world/level/chunk/storage/IOWorker.java
+@@ -154,7 +154,19 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
+ 
+     public CompletableFuture<Void> synchronize(final boolean flush) {
+         CompletableFuture<Void> currentWrites = this.<CompletableFuture<Void>>submitTask(
+-                () -> CompletableFuture.allOf(this.pendingWrites.values().stream().map(store -> store.result).toArray(CompletableFuture[]::new))
++                () -> {
++                    // Meteus start - chunk IO synchronize fast path
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkIoSynchronizeFastPath) {
++                        final CompletableFuture<?>[] futures = new CompletableFuture<?>[this.pendingWrites.size()];
++                        int index = 0;
++                        for (final IOWorker.PendingStore store : this.pendingWrites.values()) {
++                            futures[index++] = store.result;
++                        }
++                        return CompletableFuture.allOf(futures);
++                    }
++                    // Meteus end - chunk IO synchronize fast path
++                    return CompletableFuture.allOf(this.pendingWrites.values().stream().map(store -> store.result).toArray(CompletableFuture[]::new));
++                }
+             )
+             .thenCompose(Function.identity());
+         return flush ? currentWrites.thenCompose(ignore -> this.submitThrowingTask(() -> {
+diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+index 15f56e10c9c53616858a3309928231f48531a260..30fa54f23184b07456c09066463eb13bb22ecf6a 100644
+--- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
++++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+@@ -650,7 +650,15 @@ public record SerializableChunkData(
+         saveTicks(tag, this.packedTicks);
+         tag.put("PostProcessing", packOffsets(this.postProcessingSections));
+         CompoundTag heightmapsTag = new CompoundTag();
+-        this.heightmaps.forEach((type, data) -> heightmapsTag.put(type.getSerializationKey(), new LongArrayTag(data)));
++        // Meteus start - chunk storage serialization fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkStorageSerializationFastPath) {
++            for (final Entry<Heightmap.Types, long[]> entry : this.heightmaps.entrySet()) {
++                heightmapsTag.put(entry.getKey().getSerializationKey(), new LongArrayTag(entry.getValue()));
++            }
++        } else {
++            this.heightmaps.forEach((type, data) -> heightmapsTag.put(type.getSerializationKey(), new LongArrayTag(data)));
++        }
++        // Meteus end - chunk storage serialization fast path
+         tag.put("Heightmaps", heightmapsTag);
+         tag.put("structures", this.structureData);
+         // CraftBukkit start - store chunk persistent data in nbt

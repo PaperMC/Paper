@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:19:58 +0900
+Subject: [PATCH] Meteus passenger tree iteration fast path
+
+
+diff --git a/net/minecraft/server/level/ChunkLoadCounter.java b/net/minecraft/server/level/ChunkLoadCounter.java
+index 35db4372a97d177b8cda437e5577a5ef6556160f..74b661742e0ae383cebd975e5b431ac6fafd4bd8 100644
+--- a/net/minecraft/server/level/ChunkLoadCounter.java
++++ b/net/minecraft/server/level/ChunkLoadCounter.java
+@@ -16,12 +16,16 @@ public class ChunkLoadCounter {
+         chunkSource.runDistanceManagerUpdates();
+         // Meteus start - chunk load counter fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkLoadCounterFastPath) {
+-            for (final ChunkHolder chunkHolder : chunkSource.chunkMap.allChunksWithAtLeastStatus(ChunkStatus.FULL)) {
++            final java.util.Iterator<ChunkHolder> loadedBefore = chunkSource.chunkMap.allChunksWithAtLeastStatus(ChunkStatus.FULL).iterator();
++            while (loadedBefore.hasNext()) {
++                final ChunkHolder chunkHolder = loadedBefore.next();
+                 alreadyLoadedChunks.add(chunkHolder.getPos().pack());
+             }
+             scheduler.run();
+             chunkSource.runDistanceManagerUpdates();
+-            for (final ChunkHolder chunkHolder : chunkSource.chunkMap.allChunksWithAtLeastStatus(ChunkStatus.FULL)) {
++            final java.util.Iterator<ChunkHolder> loadedAfter = chunkSource.chunkMap.allChunksWithAtLeastStatus(ChunkStatus.FULL).iterator();
++            while (loadedAfter.hasNext()) {
++                final ChunkHolder chunkHolder = loadedAfter.next();
+                 if (!alreadyLoadedChunks.contains(chunkHolder.getPos().pack())) {
+                     this.pendingChunks.add(chunkHolder);
+                     this.totalChunks++;
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index 4a28da2f2b83e2acec563508958af5ced11c17a1..584935dacb84ded12da3bb6e1b240850c959c7c8 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -4417,6 +4417,12 @@ public abstract class Entity
+     }
+ 
+     public void teleportPassengers() {
++        // Meteus start - passenger tree iteration fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.passengerTreeIterationFastPath) {
++            this.meteus$teleportPassengersInTree();
++            return;
++        }
++        // Meteus end - passenger tree iteration fast path
+         this.getSelfAndPassengers().forEach(entity -> {
+             for (Entity passenger : entity.passengers) {
+                 entity.positionRider(passenger, Entity::snapTo);
+@@ -4424,6 +4430,16 @@ public abstract class Entity
+         });
+     }
+ 
++    // Meteus start - passenger tree iteration fast path
++    private void meteus$teleportPassengersInTree() {
++        for (int i = 0, len = this.passengers.size(); i < len; ++i) {
++            final Entity passenger = this.passengers.get(i);
++            this.positionRider(passenger, Entity::snapTo);
++            passenger.meteus$teleportPassengersInTree();
++        }
++    }
++    // Meteus end - passenger tree iteration fast path
++
+     public void teleportRelative(final double dx, final double dy, final double dz) {
+         this.teleportTo(this.getX() + dx, this.getY() + dy, this.getZ() + dz);
+     }

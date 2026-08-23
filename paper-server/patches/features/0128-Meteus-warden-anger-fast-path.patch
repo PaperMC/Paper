@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:06:45 +0900
+Subject: [PATCH] Meteus warden anger fast path
+
+
+diff --git a/net/minecraft/world/entity/monster/warden/AngerManagement.java b/net/minecraft/world/entity/monster/warden/AngerManagement.java
+index 54160854ab8728e13e9d31f4d3dc502e85684631..8463545108a0dbf31768199b85a590b2b3037900 100644
+--- a/net/minecraft/world/entity/monster/warden/AngerManagement.java
++++ b/net/minecraft/world/entity/monster/warden/AngerManagement.java
+@@ -65,6 +65,19 @@ public class AngerManagement {
+     }
+ 
+     private List<Pair<UUID, Integer>> createUuidAngerPairs() {
++        // Meteus start - anger serialization fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.worldDataSerializationFastPath) {
++            final List<Pair<UUID, Integer>> angerPairs = new ArrayList<>(this.suspects.size() + this.angerByUuid.size());
++            for (int i = 0, len = this.suspects.size(); i < len; ++i) {
++                final Entity suspect = this.suspects.get(i);
++                angerPairs.add(Pair.of(suspect.getUUID(), this.angerBySuspect.getInt(suspect)));
++            }
++            for (final Entry<UUID> entry : this.angerByUuid.object2IntEntrySet()) {
++                angerPairs.add(Pair.of(entry.getKey(), entry.getIntValue()));
++            }
++            return angerPairs;
++        }
++        // Meteus end - anger serialization fast path
+         return Streams.<Pair<UUID, Integer>>concat(
+                 this.suspects.stream().map(e -> Pair.of(e.getUUID(), this.angerBySuspect.getInt(e))),
+                 this.angerByUuid.object2IntEntrySet().stream().map(e -> Pair.of(e.getKey(), e.getIntValue()))
+@@ -161,6 +174,17 @@ public class AngerManagement {
+     }
+ 
+     private @Nullable Entity getTopSuspect() {
++        // Meteus start - anger suspect fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++            for (int i = 0, len = this.suspects.size(); i < len; ++i) {
++                final Entity suspect = this.suspects.get(i);
++                if (this.filter.test(suspect)) {
++                    return suspect;
++                }
++            }
++            return null;
++        }
++        // Meteus end - anger suspect fast path
+         return this.suspects.stream().filter(this.filter).findFirst().orElse(null);
+     }
+ 

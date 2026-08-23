@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:11:51 +0900
+Subject: [PATCH] Meteus raid raider set fast path
+
+
+diff --git a/net/minecraft/world/entity/raid/Raid.java b/net/minecraft/world/entity/raid/Raid.java
+index bd40c5fecbf449d0774b3ce68c471916fc494154..19168bf1e57bac2fd84c3ea84f43bfbd4f8f235b 100644
+--- a/net/minecraft/world/entity/raid/Raid.java
++++ b/net/minecraft/world/entity/raid/Raid.java
+@@ -7,6 +7,7 @@ import com.mojang.serialization.MapCodec;
+ import com.mojang.serialization.codecs.RecordCodecBuilder;
+ import java.util.Collection;
+ import java.util.Comparator;
++import java.util.HashSet;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
+@@ -839,6 +840,19 @@ public class Raid {
+ 
+     // CraftBukkit start - a method to get all raiders
+     public java.util.Collection<Raider> getRaiders() {
++        // Meteus start - raid raider set fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.raidRaiderSetFastPath) {
++            int expectedSize = 0;
++            for (final Set<Raider> raiders : this.groupRaiderMap.values()) {
++                expectedSize += raiders.size();
++            }
++            final Set<Raider> allRaiders = new HashSet<>(Math.max(16, expectedSize * 2));
++            for (final Set<Raider> raiders : this.groupRaiderMap.values()) {
++                allRaiders.addAll(raiders);
++            }
++            return allRaiders;
++        }
++        // Meteus end - raid raider set fast path
+         return this.groupRaiderMap.values().stream().flatMap(Set::stream).collect(java.util.stream.Collectors.toSet());
+     }
+     // CraftBukkit end

@@ -1,0 +1,259 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Mon, 15 Jun 2026 07:38:01 +0900
+Subject: [PATCH] Meteus server level snapshot iteration layer
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 0c31cb7985a48751a438466af87bd0ae2481ec5f..93d3c606d036bfb7dc84d024955ef13acf4e8e05 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -303,6 +303,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private int meteus$nextChunkTaskPollIndex;
+     private int meteus$chunkTaskPollCalls;
+     // Meteus end - chunk task poll round-robin fast path
++    // Meteus start - server level snapshot iteration fast path
++    private Map<ResourceKey<Level>, ServerLevel> meteus$serverLevelSnapshotSource;
++    private ServerLevel[] meteus$serverLevelSnapshot = new ServerLevel[0];
++    // Meteus end - server level snapshot iteration fast path
+ 
+     public static <S extends MinecraftServer> S spin(final Function<Thread, S> factory) {
+         ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.init(); // Paper - rewrite data converter system
+@@ -1603,6 +1607,17 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+     // Meteus end - chunk task poll round-robin fast path
+ 
++    // Meteus start - server level snapshot iteration fast path
++    private ServerLevel[] meteus$getServerLevelSnapshot() {
++        final Map<ResourceKey<Level>, ServerLevel> currentLevels = this.levels;
++        if (this.meteus$serverLevelSnapshotSource != currentLevels) {
++            this.meteus$serverLevelSnapshot = currentLevels.values().toArray(new ServerLevel[0]);
++            this.meteus$serverLevelSnapshotSource = currentLevels;
++        }
++        return this.meteus$serverLevelSnapshot;
++    }
++    // Meteus end - server level snapshot iteration fast path
++
+     @Override
+     public void doRunTask(final TickTask task) {
+         Profiler.get().incrementCounter("runTask");
+@@ -1676,10 +1691,20 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 while ((task = this.processQueue.poll()) != null) {
+                     task.run();
+                 }
+-                for (final ServerLevel level : this.levels.values()) {
+-                    // process unloads
+-                    level.getChunkSource().tick(() -> true, false);
+-                }
++                // Meteus start - server level snapshot iteration fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverLevelSnapshotIterationFastPath) {
++                    final ServerLevel[] levels = this.meteus$getServerLevelSnapshot();
++                    for (int i = 0, len = levels.length; i < len; ++i) {
++                        // process unloads
++                        levels[i].getChunkSource().tick(() -> true, false);
++                    }
++                } else {
++                // Meteus end - server level snapshot iteration fast path
++                    for (final ServerLevel level : this.levels.values()) {
++                        // process unloads
++                        level.getChunkSource().tick(() -> true, false);
++                    }
++                } // Meteus - server level snapshot iteration fast path
+                 // Paper end - avoid issues with certain tasks not processing during sleep
+                 this.server.spark.executeMainThreadTasks(); // Paper - spark
+                 this.tickConnection();
+@@ -1714,11 +1739,23 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             if (fullSave) {
+                 this.saveGlobalData(false);
+             }
+-            for (final ServerLevel level : this.getAllLevels()) {
+-                if (level.paperConfig().chunks.autoSaveInterval.value() > 0) {
+-                    level.saveIncrementally(fullSave);
++            // Meteus start - server level snapshot iteration fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverLevelSnapshotIterationFastPath) {
++                final ServerLevel[] levels = this.meteus$getServerLevelSnapshot();
++                for (int i = 0, len = levels.length; i < len; ++i) {
++                    final ServerLevel level = levels[i];
++                    if (level.paperConfig().chunks.autoSaveInterval.value() > 0) {
++                        level.saveIncrementally(fullSave);
++                    }
+                 }
+-            }
++            } else {
++            // Meteus end - server level snapshot iteration fast path
++                for (final ServerLevel level : this.getAllLevels()) {
++                    if (level.paperConfig().chunks.autoSaveInterval.value() > 0) {
++                        level.saveIncrementally(fullSave);
++                    }
++                }
++            } // Meteus - server level snapshot iteration fast path
+         } finally {
+             this.isSaving = false;
+         }
+@@ -1890,9 +1927,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().time.affectsAllWorlds) {
+                 this.clockManager.tick();
+             } else {
+-                for (ServerLevel level : this.getAllLevels()) {
+-                    level.clockManager().tick();
+-                }
++                // Meteus start - server level snapshot iteration fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverLevelSnapshotIterationFastPath) {
++                    final ServerLevel[] levels = this.meteus$getServerLevelSnapshot();
++                    for (int i = 0, len = levels.length; i < len; ++i) {
++                        levels[i].clockManager().tick();
++                    }
++                } else {
++                // Meteus end - server level snapshot iteration fast path
++                    for (ServerLevel level : this.getAllLevels()) {
++                        level.clockManager().tick();
++                    }
++                } // Meteus - server level snapshot iteration fast path
+             }
+             // Paper end - per-world time
+             profiler.pop();
+@@ -1929,33 +1975,21 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         final boolean meteus$hasEntityMoveEvent = !meteus$serverWorldTickLoopFastPath || io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0;
+         final boolean meteus$hasInventoryMoveEvent = !meteus$serverWorldTickLoopFastPath || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length > 0;
+         // Meteus end - server world tick loop fast path
+-        for (ServerLevel level : this.getAllLevels()) {
+-            // Meteus start - server world tick loop fast path
+-            if (meteus$serverWorldTickLoopFastPath) {
+-                level.hasPhysicsEvent = meteus$hasPhysicsEvent; // Paper - BlockPhysicsEvent
+-                level.hasEntityMoveEvent = meteus$hasEntityMoveEvent; // Paper - Add EntityMoveEvent
+-            } else {
+-            // Meteus end - server world tick loop fast path
+-                level.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
+-                level.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
+-            } // Meteus - server world tick loop fast path
+-            level.updateLagCompensationTick(); // Paper - lag compensation
+-            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = level.paperConfig().hopper.disableMoveEvent || (meteus$serverWorldTickLoopFastPath ? !meteus$hasInventoryMoveEvent : org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0); // Paper - Perf: Optimize Hoppers // Meteus - server world tick loop fast path
+-            profiler.push(() -> level + " " + level.dimension().identifier());
+-            profiler.push("tick");
+-
+-            try {
+-                level.tick(haveTime);
+-            } catch (Throwable t) {
+-                CrashReport report = CrashReport.forThrowable(t, "Exception ticking world");
+-                level.fillReportDetails(report);
+-                throw new ReportedException(report);
++        // Meteus start - server level snapshot iteration fast path
++        final ServerLevel[] meteus$levels = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverLevelSnapshotIterationFastPath ? this.meteus$getServerLevelSnapshot() : null;
++        if (meteus$levels != null) {
++            for (int meteus$levelIndex = 0, meteus$levelLen = meteus$levels.length; meteus$levelIndex < meteus$levelLen; ++meteus$levelIndex) {
++                final ServerLevel level = meteus$levels[meteus$levelIndex];
++        // Meteus end - server level snapshot iteration fast path
++                this.meteus$tickServerLevel(level, haveTime, profiler, meteus$serverWorldTickLoopFastPath, meteus$hasPhysicsEvent, meteus$hasEntityMoveEvent, meteus$hasInventoryMoveEvent);
+             }
+-
+-            profiler.pop();
+-            profiler.pop();
+-            level.explosionDensityCache.clear(); // Paper - Optimize explosions
++        } else {
++        // Meteus start - server level snapshot iteration fast path
++        for (ServerLevel level : this.getAllLevels()) {
++        // Meteus end - server level snapshot iteration fast path
++            this.meteus$tickServerLevel(level, haveTime, profiler, meteus$serverWorldTickLoopFastPath, meteus$hasPhysicsEvent, meteus$hasEntityMoveEvent, meteus$hasInventoryMoveEvent);
+         }
++        } // Meteus - server level snapshot iteration fast path
+         this.isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
+ 
+         profiler.popPush("connection");
+@@ -2005,6 +2039,45 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.serverActivityMonitor.tick();
+     }
+ 
++    // Meteus start - server level snapshot iteration fast path
++    private void meteus$tickServerLevel(
++        final ServerLevel level,
++        final BooleanSupplier haveTime,
++        final ProfilerFiller profiler,
++        final boolean meteus$serverWorldTickLoopFastPath,
++        final boolean meteus$hasPhysicsEvent,
++        final boolean meteus$hasEntityMoveEvent,
++        final boolean meteus$hasInventoryMoveEvent
++    ) {
++        // Meteus end - server level snapshot iteration fast path
++        // Meteus start - server world tick loop fast path
++        if (meteus$serverWorldTickLoopFastPath) {
++            level.hasPhysicsEvent = meteus$hasPhysicsEvent; // Paper - BlockPhysicsEvent
++            level.hasEntityMoveEvent = meteus$hasEntityMoveEvent; // Paper - Add EntityMoveEvent
++        } else {
++        // Meteus end - server world tick loop fast path
++            level.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
++            level.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
++        } // Meteus - server world tick loop fast path
++        level.updateLagCompensationTick(); // Paper - lag compensation
++        net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = level.paperConfig().hopper.disableMoveEvent || (meteus$serverWorldTickLoopFastPath ? !meteus$hasInventoryMoveEvent : org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0); // Paper - Perf: Optimize Hoppers // Meteus - server world tick loop fast path
++        profiler.push(() -> level + " " + level.dimension().identifier());
++        profiler.push("tick");
++
++        try {
++            level.tick(haveTime);
++        } catch (Throwable t) {
++            CrashReport report = CrashReport.forThrowable(t, "Exception ticking world");
++            level.fillReportDetails(report);
++            throw new ReportedException(report);
++        }
++
++        profiler.pop();
++        profiler.pop();
++        level.explosionDensityCache.clear(); // Paper - Optimize explosions
++    }
++    // Meteus end - server level snapshot iteration fast path
++
+     // Paper start - per world respawn data
+     public void updateEffectiveRespawnData() {
+         ServerLevel respawnLevel = this.findRespawnDimension();
+@@ -2028,20 +2101,43 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 return;
+             }
+ 
+-            for (ServerLevel level : this.getAllLevels()) {
+-                if (level.players().isEmpty()) {
+-                    continue;
++            // Meteus start - server level snapshot iteration fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverLevelSnapshotIterationFastPath) {
++                final ServerLevel[] levels = this.meteus$getServerLevelSnapshot();
++                for (int i = 0, len = levels.length; i < len; ++i) {
++                    final ServerLevel level = levels[i];
++                    if (level.players().isEmpty()) {
++                        continue;
++                    }
++                    this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
+                 }
+-                this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
+-            }
++            } else {
++            // Meteus end - server level snapshot iteration fast path
++                for (ServerLevel level : this.getAllLevels()) {
++                    if (level.players().isEmpty()) {
++                        continue;
++                    }
++                    this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
++                }
++            } // Meteus - server level snapshot iteration fast path
+             profiler.pop();
+             return;
+         }
+         // Meteus end - sparse world time sync fast path
+         // Paper start - per-world time
+-        for (ServerLevel level : this.getAllLevels()) {
+-            this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
+-        }
++        // Meteus start - server level snapshot iteration fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverLevelSnapshotIterationFastPath) {
++            final ServerLevel[] levels = this.meteus$getServerLevelSnapshot();
++            for (int i = 0, len = levels.length; i < len; ++i) {
++                final ServerLevel level = levels[i];
++                this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
++            }
++        } else {
++        // Meteus end - server level snapshot iteration fast path
++            for (ServerLevel level : this.getAllLevels()) {
++                this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
++            }
++        } // Meteus - server level snapshot iteration fast path
+         // Paper end - per-world time
+         profiler.pop();
+     }

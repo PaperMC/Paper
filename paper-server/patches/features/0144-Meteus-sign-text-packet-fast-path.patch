@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:32:59 +0900
+Subject: [PATCH] Meteus sign text packet fast path
+
+
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 390b8191fecfe3292389e9216be5a11f9a06fb53..ed0f77cfc9e4bbb514fce390df2b8c6850d1db82 100644
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3644,7 +3644,17 @@ public class ServerGamePacketListenerImpl
+                 }
+             }
+         }
+-        List<String> lines = Stream.of(linesArray).map(ChatFormatting::stripFormatting).collect(Collectors.toList());
++        final List<String> lines;
++        // Meteus start - server game packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverGamePacketFastPath) {
++            lines = new ArrayList<>(linesArray.length);
++            for (int i = 0; i < linesArray.length; ++i) {
++                lines.add(ChatFormatting.stripFormatting(linesArray[i]));
++            }
++        } else {
++        // Meteus end - server game packet fast path
++        lines = Stream.of(linesArray).map(ChatFormatting::stripFormatting).collect(Collectors.toList());
++        } // Meteus - server game packet fast path
+         // Paper end - Limit client sign length
+         this.filterTextPacket(lines).thenAcceptAsync(filteredLines -> this.updateSignText(packet, (List<FilteredText>)filteredLines), this.server);
+     }
+@@ -3660,7 +3670,7 @@ public class ServerGamePacketListenerImpl
+                 this.player.getBukkitEntity(),
+                 io.papermc.paper.util.MCUtil.toPosition(pos),
+                 packet.isFrontText() ? org.bukkit.block.sign.Side.FRONT : org.bukkit.block.sign.Side.BACK,
+-                lines.stream().<net.kyori.adventure.text.Component>map(line -> net.kyori.adventure.text.Component.text(line.raw())).toList())
++                this.meteus$toAdventureSignLines(lines))
+                 .callEvent()) {
+                 return;
+             }
+@@ -3673,6 +3683,19 @@ public class ServerGamePacketListenerImpl
+         }
+     }
+ 
++    // Meteus start - server game packet fast path
++    private List<net.kyori.adventure.text.Component> meteus$toAdventureSignLines(final List<FilteredText> lines) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverGamePacketFastPath) {
++            final List<net.kyori.adventure.text.Component> components = new ArrayList<>(lines.size());
++            for (int i = 0, len = lines.size(); i < len; ++i) {
++                components.add(net.kyori.adventure.text.Component.text(lines.get(i).raw()));
++            }
++            return components;
++        }
++        return lines.stream().<net.kyori.adventure.text.Component>map(line -> net.kyori.adventure.text.Component.text(line.raw())).toList();
++    }
++    // Meteus end - server game packet fast path
++
+     @Override
+     public void handlePlayerAbilities(final ServerboundPlayerAbilitiesPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
+diff --git a/net/minecraft/server/network/TextFilter.java b/net/minecraft/server/network/TextFilter.java
+index b696220de3b74fbc277d7152b38b84c5a973ec40..731a93cd6adadb7a16719bbd2ba8b10b96e33891 100644
+--- a/net/minecraft/server/network/TextFilter.java
++++ b/net/minecraft/server/network/TextFilter.java
+@@ -13,6 +13,15 @@ public interface TextFilter {
+ 
+         @Override
+         public CompletableFuture<List<FilteredText>> processMessageBundle(final List<String> messages) {
++            // Meteus start - server game packet fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverGamePacketFastPath) {
++                final ImmutableList.Builder<FilteredText> builder = ImmutableList.builderWithExpectedSize(messages.size());
++                for (int i = 0, len = messages.size(); i < len; ++i) {
++                    builder.add(FilteredText.passThrough(messages.get(i)));
++                }
++                return CompletableFuture.completedFuture(builder.build());
++            }
++            // Meteus end - server game packet fast path
+             return CompletableFuture.completedFuture(messages.stream().map(FilteredText::passThrough).collect(ImmutableList.toImmutableList()));
+         }
+     };

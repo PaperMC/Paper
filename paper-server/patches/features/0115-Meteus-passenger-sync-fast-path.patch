@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 18:38:14 +0900
+Subject: [PATCH] Meteus passenger sync fast path
+
+
+diff --git a/net/minecraft/server/level/ServerEntity.java b/net/minecraft/server/level/ServerEntity.java
+index f54ad811b968683e3fe64c451b6462d12bffed32..c787a13915a4f672fac8e5ae838fa73872b3813d 100644
+--- a/net/minecraft/server/level/ServerEntity.java
++++ b/net/minecraft/server/level/ServerEntity.java
+@@ -105,6 +105,23 @@ public class ServerEntity {
+         this.entity.updateDataBeforeSync();
+         List<Entity> passengers = this.entity.getPassengers();
+         if (!passengers.equals(this.lastPassengers)) {
++            // Meteus start - passenger sync fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.passengerSyncFastPath) {
++                final ClientboundSetPassengersPacket packet = new ClientboundSetPassengersPacket(this.entity);
++                if (!this.meteus$hasServerPlayerPassenger(passengers) && !this.meteus$hasServerPlayerPassenger(this.lastPassengers)) {
++                    this.synchronizer.sendToTrackingPlayers(packet);
++                } else {
++                    final List<Entity> previousPassengers = this.lastPassengers;
++                    this.synchronizer.sendToTrackingPlayersFiltered(packet, player -> this.meteus$containsPassenger(passengers, player) == this.meteus$containsPassenger(previousPassengers, player));
++                }
++                // Paper start - Allow riding players
++                if (this.entity instanceof ServerPlayer player) {
++                    player.connection.send(packet);
++                }
++                // Paper end - Allow riding players
++                this.lastPassengers = passengers;
++            } else {
++            // Meteus end - passenger sync fast path
+             this.synchronizer
+                 .sendToTrackingPlayersFiltered(
+                     new ClientboundSetPassengersPacket(this.entity), player -> passengers.contains(player) == this.lastPassengers.contains(player)
+@@ -115,6 +132,9 @@ public class ServerEntity {
+             }
+             // Paper end - Allow riding players
+             this.lastPassengers = passengers;
++            // Meteus start - passenger sync fast path
++            }
++            // Meteus end - passenger sync fast path
+         }
+ 
+         if (!this.trackedPlayers.isEmpty() && this.entity instanceof ItemFrame frame /*&& this.tickCount % 10 == 0*/) { // CraftBukkit - moved tickCount below // Paper - Perf: Only tick item frames if players can see it
+@@ -300,6 +320,26 @@ public class ServerEntity {
+         this.positionCodec.setBase(this.entity.position());
+     }
+ 
++    // Meteus start - passenger sync fast path
++    private boolean meteus$hasServerPlayerPassenger(final List<Entity> passengers) {
++        for (int i = 0, len = passengers.size(); i < len; ++i) {
++            if (passengers.get(i) instanceof ServerPlayer) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    private boolean meteus$containsPassenger(final List<Entity> passengers, final ServerPlayer player) {
++        for (int i = 0, len = passengers.size(); i < len; ++i) {
++            if (passengers.get(i) == player) {
++                return true;
++            }
++        }
++        return false;
++    }
++    // Meteus end - passenger sync fast path
++
+     public void removePairing(final ServerPlayer player) {
+         this.entity.stopSeenByPlayer(player);
+         player.connection.send(new ClientboundRemoveEntitiesPacket(this.entity.getId()));

@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Tue, 16 Jun 2026 00:03:21 +0900
+Subject: [PATCH] Meteus tracker idle-skip moved-player list
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 05c394c72a193c371c843aa88dc7c3c394928d2b..8e40a6561e43e56e1c66f369f470814247a3b2a5 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1067,6 +1067,9 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+         ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$setTrackedEntity(null); // Paper - optimise entity tracker
+     }
+ 
++    // Meteus - tracker idle skip fast path: players that changed position this tracker tick (reused per tick)
++    private final java.util.List<ServerPlayer> meteus$movedPlayersThisTick = new java.util.ArrayList<>();
++
+     // Paper start - optimise entity tracker
+     private void newTrackerTick() {
+         final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup entityLookup = (ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup)((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getEntityLookup();;
+@@ -1075,11 +1078,17 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+         final Entity[] trackerEntitiesRaw = trackerEntities.getRawDataUnchecked();
+         // Meteus start - tracker idle skip fast path: settle every entity's movement flag before any updatePlayer loop reads it
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipFastPath) {
++            this.meteus$movedPlayersThisTick.clear();
+             for (int i = 0, len = trackerEntities.size(); i < len; ++i) {
+                 final Entity entity = trackerEntitiesRaw[i];
+                 final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity) entity).moonrise$getTrackedEntity();
+                 if (tracker != null) {
+                     tracker.meteus$updateMovementFlag();
++                    // Collect moved players so stationary entities can iterate just the movers (O(movers))
++                    // instead of scanning every nearby player (O(players)) to find them.
++                    if (tracker.meteus$movedThisTrackerTick && entity instanceof ServerPlayer movedPlayer) {
++                        this.meteus$movedPlayersThisTick.add(movedPlayer);
++                    }
+                 }
+             }
+         }
+@@ -1361,10 +1370,14 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                 && lastChunkUpdate == currChunkUpdate
+                 && lastTrackedChunk == chunk
+                 && ((net.minecraft.server.MinecraftServer.currentTick + this.entity.getId()) & 127L) != 0L) {
+-                for (int i = 0, len = players.size(); i < len; ++i) {
+-                    final ServerPlayer player = playersRaw[i];
+-                    final ChunkMap.TrackedEntity playerTracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity) player).moonrise$getTrackedEntity();
+-                    if (playerTracker == null || playerTracker.meteus$movedThisTrackerTick) {
++                // Only movers can change a stationary entity's tracking state. Iterate the small global
++                // moved-players list and re-evaluate just those that are nearby (O(movers)), instead of
++                // scanning every nearby player to find the movers (O(players)). Players leaving/entering the
++                // nearby set bump the chunk update count, which forces the full branch + purge below.
++                final java.util.List<ServerPlayer> meteus$moved = ChunkMap.this.meteus$movedPlayersThisTick;
++                for (int i = 0, len = meteus$moved.size(); i < len; ++i) {
++                    final ServerPlayer player = meteus$moved.get(i);
++                    if (players.contains(player)) {
+                         this.updatePlayer(player);
+                     }
+                 }

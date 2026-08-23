@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 22:31:06 +0900
+Subject: [PATCH] Meteus player list iteration fast path
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index f85a05ee93a67b7279b74c344ea007d6e7524032..c66d71bd5871d8365fd20858e11214cf68cae5fa 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -1012,6 +1012,20 @@ public abstract class PlayerList {
+         // Paper start - Incremental chunk and player saving
+             int numSaved = 0;
+             final long now = MinecraftServer.currentTick;
++            // Meteus start - player list iteration fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListIterationFastPath) {
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    final ServerPlayer player = this.players.get(i);
++                    if (interval == -1 || now - player.lastSave >= interval) {
++                        this.save(player);
++                        if (interval != -1 && ++numSaved >= io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.maxPerTick()) {
++                            break;
++                        }
++                    }
++                }
++                return null;
++            }
++            // Meteus end - player list iteration fast path
+             for (final ServerPlayer player : this.players) {
+             if (interval == -1 || now - player.lastSave >= interval) {
+                 this.save(player);
+@@ -1133,10 +1147,20 @@ public abstract class PlayerList {
+     public void removeAll(boolean isRestarting) {
+         // Paper end
+         // CraftBukkit start - disconnect safely
++        // Meteus start - player list iteration fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListIterationFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                if (isRestarting) player.connection.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.restartMessage), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN); else // Paper - kick event cause (cause is never used here)
++                player.connection.disconnect(java.util.Objects.requireNonNullElseGet(this.server.server.shutdownMessage(), net.kyori.adventure.text.Component::empty)); // CraftBukkit - add custom shutdown message // Paper - Adventure
++            }
++        } else {
++        // Meteus end - player list iteration fast path
+         for (ServerPlayer player : this.players) {
+             if (isRestarting) player.connection.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.restartMessage), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN); else // Paper - kick event cause (cause is never used here)
+             player.connection.disconnect(java.util.Objects.requireNonNullElseGet(this.server.server.shutdownMessage(), net.kyori.adventure.text.Component::empty)); // CraftBukkit - add custom shutdown message // Paper - Adventure
+         }
++        } // Meteus - player list iteration fast path
+         // CraftBukkit end
+ 
+         // Paper start - Configurable player collision; Remove collideRule team if it exists
+@@ -1155,6 +1179,18 @@ public abstract class PlayerList {
+     public void broadcastSystemMessage(final Component message, final Function<ServerPlayer, Component> playerMessages, final boolean overlay) {
+         this.server.sendSystemMessage(message);
+ 
++        // Meteus start - player list iteration fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListIterationFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                Component playerMessage = playerMessages.apply(player);
++                if (playerMessage != null) {
++                    player.sendSystemMessage(playerMessage, overlay);
++                }
++            }
++            return;
++        }
++        // Meteus end - player list iteration fast path
+         for (ServerPlayer player : this.players) {
+             Component playerMessage = playerMessages.apply(player);
+             if (playerMessage != null) {

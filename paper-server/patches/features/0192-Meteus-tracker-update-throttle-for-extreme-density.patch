@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Tue, 16 Jun 2026 07:39:51 +0900
+Subject: [PATCH] Meteus tracker update throttle for extreme density
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 35776c93028193b5111b916eb74410c406f38ce8..b3a934758853e4df999cb5824ebbc813b3689411 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1095,6 +1095,12 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+         // Meteus end - tracker idle skip fast path
+         // Meteus start - dense entity tracker fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.denseEntityTrackerFastPath) {
++            // Meteus - tracker update throttle: re-evaluate WHO can see an entity only every N ticks (staggered
++            // per entity), while still BROADCASTING movement every tick. Default 1 (no throttle). >1 trades a few
++            // ticks of view-edge tracking latency for a big cut to the O(movers x viewers) re-eval cost in dense
++            // crowds (vanish stays immediate; chunk-level enter/leave catches up within N ticks). Opt-in for high-pop.
++            final int meteus$throttle = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerUpdateThrottleTicks;
++            final long meteus$throttleTick = net.minecraft.server.MinecraftServer.currentTick;
+             for (int i = 0, len = trackerEntities.size(); i < len; ++i) {
+                 final Entity entity = trackerEntitiesRaw[i];
+                 final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity();
+@@ -1104,7 +1110,9 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+ 
+                 final ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity trackerAccess = tracker;
+                 final ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity chunkEntity = (ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)entity;
+-                trackerAccess.moonrise$tick(chunkEntity.moonrise$getChunkData().nearbyPlayers);
++                if (meteus$throttle <= 1 || (meteus$throttleTick + entity.getId()) % meteus$throttle == 0L) {
++                    trackerAccess.moonrise$tick(chunkEntity.moonrise$getChunkData().nearbyPlayers);
++                }
+                 if (trackerAccess.moonrise$hasPlayers() || chunkEntity.moonrise$getChunkStatus().isOrAfter(FullChunkStatus.ENTITY_TICKING)) {
+                     tracker.serverEntity.sendChanges();
+                 }

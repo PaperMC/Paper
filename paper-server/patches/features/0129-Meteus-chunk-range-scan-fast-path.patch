@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:07:56 +0900
+Subject: [PATCH] Meteus chunk range scan fast path
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 03ebd0cb13c695423a7f5db15e8460d7efa7f47e..2796aeee06570baf1b273822a92cab2bb607988e 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -2897,6 +2897,28 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     }
+ 
+     public void waitForEntities(final ChunkPos centerChunk, final int radius) {
++        // Meteus start - chunk range scan fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkRangeScanFastPath) {
++            final int minChunkX = centerChunk.x() - radius;
++            final int maxChunkX = centerChunk.x() + radius;
++            final int minChunkZ = centerChunk.z() - radius;
++            final int maxChunkZ = centerChunk.z() + radius;
++            this.chunkSource.mainThreadProcessor.managedBlock(() -> { // Paper - rewrite chunk system
++                //this.entityManager.processPendingLoads(); // Paper - rewrite chunk system
++
++                for (int chunkX = minChunkX; chunkX <= maxChunkX; ++chunkX) {
++                    for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; ++chunkZ) {
++                        if (!this.areEntitiesLoaded(ChunkPos.pack(chunkX, chunkZ))) {
++                            return false;
++                        }
++                    }
++                }
++
++                return true;
++            });
++            return;
++        }
++        // Meteus end - chunk range scan fast path
+         List<ChunkPos> chunks = ChunkPos.rangeClosed(centerChunk, radius).toList();
+         this.chunkSource.mainThreadProcessor.managedBlock(() -> { // Paper - rewrite chunk system
+             //this.entityManager.processPendingLoads(); // Paper - rewrite chunk system
+diff --git a/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java b/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java
+index 5c58b92bd7927b4b2a6908715bad2b9c8ff33762..11eb08dcb29c8a6e594a68248a3e9ab63f011cef 100644
+--- a/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java
++++ b/net/minecraft/world/entity/ai/behavior/TransportItemsBetweenContainers.java
+@@ -278,6 +278,42 @@ public class TransportItemsBetweenContainers extends Behavior<PathfinderMob> {
+         AABB targetBlockSearchArea = this.getTargetSearchArea(body);
+         Set<GlobalPos> visitedPositions = getVisitedPositions(body);
+         Set<GlobalPos> unreachablePositions = getUnreachablePositions(body);
++        // Meteus start - chunk range scan fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkRangeScanFastPath) {
++            final ChunkPos centerChunk = ChunkPos.containing(body.blockPosition());
++            final int radius = Math.floorDiv(this.getHorizontalSearchDistance(body), 16) + 1;
++            final int minChunkX = centerChunk.x() - radius;
++            final int maxChunkX = centerChunk.x() + radius;
++            final int minChunkZ = centerChunk.z() - radius;
++            final int maxChunkZ = centerChunk.z() + radius;
++            TransportItemsBetweenContainers.TransportItemTarget target = null;
++            double closestDistance = Float.MAX_VALUE;
++
++            for (int chunkX = minChunkX; chunkX <= maxChunkX; ++chunkX) {
++                for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; ++chunkZ) {
++                    LevelChunk levelChunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
++                    if (levelChunk != null) {
++                        for (BlockEntity potentialTarget : levelChunk.getBlockEntities().values()) {
++                            if (potentialTarget instanceof ChestBlockEntity chestBlockEntity) {
++                                double distance = chestBlockEntity.getBlockPos().distToCenterSqr(body.position());
++                                if (distance < closestDistance) {
++                                    TransportItemsBetweenContainers.TransportItemTarget targetValidToPick = this.isTargetValidToPick(
++                                        body, level, chestBlockEntity, visitedPositions, unreachablePositions, targetBlockSearchArea
++                                    );
++                                    if (targetValidToPick != null) {
++                                        target = targetValidToPick;
++                                        closestDistance = distance;
++                                    }
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++
++            return target == null ? Optional.empty() : Optional.of(target);
++        }
++        // Meteus end - chunk range scan fast path
+         List<ChunkPos> list = ChunkPos.rangeClosed(ChunkPos.containing(body.blockPosition()), Math.floorDiv(this.getHorizontalSearchDistance(body), 16) + 1)
+             .toList();
+         TransportItemsBetweenContainers.TransportItemTarget target = null;

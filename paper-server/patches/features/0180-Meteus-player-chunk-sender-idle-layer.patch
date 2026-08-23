@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Mon, 15 Jun 2026 07:54:54 +0900
+Subject: [PATCH] Meteus player chunk sender idle layer
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 93d3c606d036bfb7dc84d024955ef13acf4e8e05..46e020da55dc651a76dbc6419790c40df4980d51 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -2022,15 +2022,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // Meteus start - server residual tick loop fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverResidualTickLoopFastPath) {
+             final List<ServerPlayer> players = this.playerList.getPlayers();
++            final boolean meteus$playerChunkSenderIdleFastPath = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerChunkSenderIdleFastPath;
+             for (int i = 0, len = players.size(); i < len; ++i) {
+                 final ServerPlayer player = players.get(i);
+-                player.connection.chunkSender.sendNextChunks(player);
++                // Meteus start - player chunk sender idle fast path
++                if (!meteus$playerChunkSenderIdleFastPath || player.connection.chunkSender.meteus$needsTick()) {
++                // Meteus end - player chunk sender idle fast path
++                    player.connection.chunkSender.sendNextChunks(player);
++                } // Meteus - player chunk sender idle fast path
+                 player.connection.resumeFlushing();
+             }
+         } else {
+         // Meteus end - server residual tick loop fast path
+             for (ServerPlayer player : this.playerList.getPlayers()) {
+-                player.connection.chunkSender.sendNextChunks(player);
++                // Meteus start - player chunk sender idle fast path
++                if (!io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerChunkSenderIdleFastPath || player.connection.chunkSender.meteus$needsTick()) {
++                // Meteus end - player chunk sender idle fast path
++                    player.connection.chunkSender.sendNextChunks(player);
++                } // Meteus - player chunk sender idle fast path
+                 player.connection.resumeFlushing();
+             }
+         } // Meteus - server residual tick loop fast path
+diff --git a/net/minecraft/server/network/PlayerChunkSender.java b/net/minecraft/server/network/PlayerChunkSender.java
+index ed907a3c9427cfae219e03f383e84eb1a2b7a75f..c9dce7cd025b364af7683bd3a9129ff55b6d6dde 100644
+--- a/net/minecraft/server/network/PlayerChunkSender.java
++++ b/net/minecraft/server/network/PlayerChunkSender.java
+@@ -80,6 +80,19 @@ public class PlayerChunkSender {
+         }
+     }
+ 
++    // Meteus start - player chunk sender idle fast path
++    public boolean meteus$needsTick() {
++        if (this.unacknowledgedBatches >= this.maxUnacknowledgedBatches) {
++            return false;
++        }
++        if (!this.pendingChunks.isEmpty()) {
++            return true;
++        }
++
++        return this.batchQuota < Math.max(1.0F, this.desiredChunksPerTick);
++    }
++    // Meteus end - player chunk sender idle fast path
++
+     public static void sendChunk(final ServerGamePacketListenerImpl connection, final ServerLevel level, final LevelChunk chunk) { // Paper - rewrite chunk system - public
+         // Paper start - Anti-Xray
+         final boolean shouldModify = level.chunkPacketBlockController.shouldModify(connection.player, chunk);

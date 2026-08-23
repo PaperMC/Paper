@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 11:20:41 +0900
+Subject: [PATCH] Meteus minecraft server player fanout fast paths
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index cc35c6271c98615a486422d0490145227626bd85..983b3499d90b9d8cd450c165a07f7c84cdc85a5e 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1788,7 +1788,16 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     protected void tickChildren(final BooleanSupplier haveTime) {
+         ProfilerFiller profiler = Profiler.get();
++        // Meteus start - minecraft server player fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.minecraftServerPlayerFanoutFastPath) {
++            final List<ServerPlayer> players = this.getPlayerList().getPlayers();
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                players.get(i).connection.suspendFlushing();
++            }
++        } else {
++        // Meteus end - minecraft server player fanout fast path
+         this.getPlayerList().getPlayers().forEach(playerx -> playerx.connection.suspendFlushing());
++        } // Meteus - minecraft server player fanout fast path
+         this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
+         // Paper start - optimise Folia entity scheduler
+         ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler)org.bukkit.Bukkit.getGlobalRegionScheduler()).tick();
+@@ -2058,7 +2067,16 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             ).callEvent();
+             worldData.setDifficulty(worldData.isHardcore() ? Difficulty.HARD : difficulty);
+             level.setSpawnSettings(level.isSpawningMonsters());
++            // Meteus start - minecraft server player fanout fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.minecraftServerPlayerFanoutFastPath) {
++                final List<ServerPlayer> players = level.players();
++                for (int i = 0, len = players.size(); i < len; ++i) {
++                    this.sendDifficultyUpdate(players.get(i));
++                }
++            } else {
++            // Meteus end - minecraft server player fanout fast path
+             level.players().forEach(this::sendDifficultyUpdate);
++            } // Meteus - minecraft server player fanout fast path
+             // Paper end - per level difficulty
+         }
+     }
+@@ -2080,6 +2098,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             level.serverLevelData.setDifficultyLocked(locked);
+         }
+         // Paper end - set for all worlds
++        // Meteus start - minecraft server player fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.minecraftServerPlayerFanoutFastPath) {
++            final List<ServerPlayer> players = this.getPlayerList().getPlayers();
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                this.sendDifficultyUpdate(players.get(i));
++            }
++            return;
++        }
++        // Meteus end - minecraft server player fanout fast path
+         this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
+     }
+ 
+@@ -2952,13 +2979,31 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 ? ClientboundGameEventPacket.LIMITED_CRAFTING
+                 : ClientboundGameEventPacket.IMMEDIATE_RESPAWN;
+             ClientboundGameEventPacket packet = new ClientboundGameEventPacket(eventType, (Boolean)value ? 1.0F : 0.0F);
++            // Meteus start - minecraft server player fanout fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.minecraftServerPlayerFanoutFastPath) {
++                final List<ServerPlayer> players = level.players();
++                for (int i = 0, len = players.size(); i < len; ++i) {
++                    players.get(i).connection.send(packet);
++                }
++            } else {
++            // Meteus end - minecraft server player fanout fast path
+             level.players().forEach(playerx -> playerx.connection.send(packet)); // Paper - per-world game rules
++            } // Meteus - minecraft server player fanout fast path
+         } else if (rule == GameRules.LOCATOR_BAR) {
+             // this.getAllLevels().forEach(level -> { // Paper - per-world game rules
+                 ServerWaypointManager waypointManager = level.getWaypointManager();
+                 waypointManager.locatorBarEnabled = (Boolean) value; // Paper - optimize ServerWaypointManager with locator bar disabled
+                 if ((Boolean)value) {
++                    // Meteus start - minecraft server player fanout fast path
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.minecraftServerPlayerFanoutFastPath) {
++                        final List<ServerPlayer> players = level.players();
++                        for (int i = 0, len = players.size(); i < len; ++i) {
++                            waypointManager.updatePlayer(players.get(i));
++                        }
++                    } else {
++                    // Meteus end - minecraft server player fanout fast path
+                     level.players().forEach(waypointManager::updatePlayer);
++                    } // Meteus - minecraft server player fanout fast path
+                 } else {
+                     waypointManager.breakAllConnections();
+                 }
+@@ -2966,7 +3011,17 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         } else if (rule == GameRules.SPAWN_MONSTERS) {
+             level.setSpawnSettings(level.isSpawningMonsters()); // Paper - per-world game rules
+         } else if (rule == GameRules.ADVANCE_TIME) {
++            // Meteus start - minecraft server player fanout fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.minecraftServerPlayerFanoutFastPath) {
++                final List<ServerPlayer> players = level.players();
++                for (int i = 0, len = players.size(); i < len; ++i) {
++                    final ServerPlayer player = players.get(i);
++                    player.connection.send(level.clockManager().createFullSyncPacket(player));
++                }
++            } else {
++            // Meteus end - minecraft server player fanout fast path
+             level.players().forEach(player -> player.connection.send(level.clockManager().createFullSyncPacket(player))); // Paper - per-world time; per-player time
++            } // Meteus - minecraft server player fanout fast path
+         }
+     }
+ 

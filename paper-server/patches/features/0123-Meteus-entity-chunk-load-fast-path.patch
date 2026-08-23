@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 22:26:50 +0900
+Subject: [PATCH] Meteus entity chunk load fast path
+
+
+diff --git a/net/minecraft/world/entity/EntityType.java b/net/minecraft/world/entity/EntityType.java
+index 1ee78f52205cbb0b254a28999f3707ccccbe998e..a088643d57276c2141fc162922e3ab410775ce2d 100644
+--- a/net/minecraft/world/entity/EntityType.java
++++ b/net/minecraft/world/entity/EntityType.java
+@@ -3,6 +3,8 @@ package net.minecraft.world.entity;
+ import com.google.common.collect.ImmutableSet;
+ import com.mojang.logging.LogUtils;
+ import com.mojang.serialization.Codec;
++import java.util.ArrayList;
++import java.util.List;
+ import java.util.Optional;
+ import java.util.Set;
+ import java.util.function.Consumer;
+@@ -1658,6 +1660,32 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
+         }));
+     }
+ 
++    // Meteus start - chunk storage serialization fast path
++    public static List<Entity> loadEntitiesRecursiveToList(final ValueInput.ValueInputList entities, final Level level, final EntitySpawnReason reason) {
++        final List<Entity> loadedEntities = new ArrayList<>();
++        final java.util.Map<EntityType<?>, Integer> loadedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
++
++        for (final ValueInput tag : entities) {
++            loadEntityRecursive(tag, level, reason, entity -> {
++                // Paper start - Entity load/save limit per chunk
++                final EntityType<?> entityType = entity.getType();
++                final int saveLimit = level.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
++                if (saveLimit > -1) {
++                    if (loadedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
++                        return null;
++                    }
++                    loadedEntityCounts.merge(entityType, 1, Integer::sum);
++                }
++                // Paper end - Entity load/save limit per chunk
++                loadedEntities.add(entity);
++                return entity;
++            });
++        }
++
++        return loadedEntities;
++    }
++    // Meteus end - chunk storage serialization fast path
++
+     private static Optional<Entity> loadStaticEntity(final ValueInput input, final Level level, final EntitySpawnReason reason) {
+         try {
+             return create(input, level, reason);
+diff --git a/net/minecraft/world/level/chunk/storage/EntityStorage.java b/net/minecraft/world/level/chunk/storage/EntityStorage.java
+index 4bd083ecdea207ee5689760fccc9ce8a5a958d57..8583a82c843b4cc4c0b27d2cd5f76272232cd566 100644
+--- a/net/minecraft/world/level/chunk/storage/EntityStorage.java
++++ b/net/minecraft/world/level/chunk/storage/EntityStorage.java
+@@ -72,7 +72,16 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
+             try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(ChunkAccess.problemPath(pos), LOGGER)) {
+                 ValueInput chunkRoot = TagValueInput.create(reporter, this.level.registryAccess(), upgradedChunkTag);
+                 ValueInput.ValueInputList entities = chunkRoot.childrenListOrEmpty("Entities");
+-                List<Entity> chunkEntities = EntityType.loadEntitiesRecursive(entities, this.level, EntitySpawnReason.LOAD).toList();
++                // Meteus start - chunk storage serialization fast path
++                final List<Entity> chunkEntities;
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkStorageSerializationFastPath) {
++                    chunkEntities = EntityType.loadEntitiesRecursiveToList(entities, this.level, EntitySpawnReason.LOAD);
++                } else {
++                // Meteus end - chunk storage serialization fast path
++                chunkEntities = EntityType.loadEntitiesRecursive(entities, this.level, EntitySpawnReason.LOAD).toList();
++                // Meteus start - chunk storage serialization fast path
++                }
++                // Meteus end - chunk storage serialization fast path
+                 return new ChunkEntities<>(pos, chunkEntities);
+             }
+         }, this.entityDeserializerQueue::schedule);

@@ -1,0 +1,339 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 21:40:12 +0900
+Subject: [PATCH] Meteus chunk generation and relight layer
+
+
+diff --git a/net/minecraft/server/level/ChunkHolder.java b/net/minecraft/server/level/ChunkHolder.java
+index 40b4aad38658404aae2a12530cae3add54a001c9..52ea97378a4558b9f57d44de41f8389ccbd12e7c 100644
+--- a/net/minecraft/server/level/ChunkHolder.java
++++ b/net/minecraft/server/level/ChunkHolder.java
+@@ -454,6 +454,15 @@ public class ChunkHolder extends GenerationChunkHolder implements ca.spottedleaf
+         }
+     }
+ 
++    final void meteus$broadcastRelight(final ChunkPos pos, final ThreadedLevelLightEngine lightEngine) {
++        if (this.playersSentChunkTo.size() == 0) {
++            return;
++        }
++
++        final Packet<?> relightPacket = new ClientboundLightUpdatePacket(pos, lightEngine, null, null);
++        this.meteus$broadcastToSentPlayers(false, relightPacket);
++    }
++
+     private void meteus$broadcastBlockEntityIfNeeded(final boolean onlyOnWatchDistanceEdge, final Level level, final BlockPos pos, final BlockState state) {
+         if (state.hasBlockEntity()) {
+             this.meteus$broadcastBlockEntity(onlyOnWatchDistanceEdge, level, pos);
+diff --git a/net/minecraft/server/level/ThreadedLevelLightEngine.java b/net/minecraft/server/level/ThreadedLevelLightEngine.java
+index 948a8a2b38d8ba3a2ea61cb2c85c3039bb938f2d..b99ce95132dbd51a0a01dc93237158afddaf212c 100644
+--- a/net/minecraft/server/level/ThreadedLevelLightEngine.java
++++ b/net/minecraft/server/level/ThreadedLevelLightEngine.java
+@@ -124,6 +124,12 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+                             return;
+                         }
+ 
++                        // Meteus start - direct chunk relight broadcast fast path
++                        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkBroadcastFastPath) {
++                            chunkHolder.vanillaChunkHolder.meteus$broadcastRelight(pos, (ThreadedLevelLightEngine)(Object)ThreadedLevelLightEngine.this);
++                            return;
++                        }
++                        // Meteus end - direct chunk relight broadcast fast path
+                         final java.util.List<ServerPlayer> players = ((ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemChunkHolder)chunkHolder.vanillaChunkHolder).moonrise$getPlayers(false);
+ 
+                         if (players.isEmpty()) {
+diff --git a/net/minecraft/world/level/chunk/ChunkGenerator.java b/net/minecraft/world/level/chunk/ChunkGenerator.java
+index aed69011d7e1a7819276d4bcd14ec47d367cbeb1..c77840972b9be46f63e07866c850a5f3d58aa243 100644
+--- a/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -12,6 +12,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArraySet;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collections;
++import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Optional;
+@@ -340,12 +341,37 @@ public abstract class ChunkGenerator {
+             SectionPos sectionPos = SectionPos.of(centerPos, level.getMinSectionY());
+             BlockPos origin = sectionPos.origin();
+             Registry<Structure> structuresRegistry = level.registryAccess().lookupOrThrow(Registries.STRUCTURE);
+-            Map<Integer, List<Structure>> structuresByStep = structuresRegistry.stream()
++            // Meteus start - chunk decoration planning fast path
++            final Map<Integer, List<Structure>> structuresByStep;
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkRangeScanFastPath) {
++                structuresByStep = new HashMap<>();
++                for (final Structure structure : structuresRegistry) {
++                    structuresByStep.computeIfAbsent(structure.step().ordinal(), ignored -> new ArrayList<>()).add(structure);
++                }
++            } else {
++            // Meteus end - chunk decoration planning fast path
++            structuresByStep = structuresRegistry.stream()
+                 .collect(Collectors.groupingBy(structure -> structure.step().ordinal()));
++            // Meteus start - chunk decoration planning fast path
++            }
++            // Meteus end - chunk decoration planning fast path
+             List<FeatureSorter.StepFeatureData> featureList = this.featuresPerStep.get();
+             WorldgenRandom random = new WorldgenRandom(new XoroshiroRandomSource(RandomSupport.generateUniqueSeed()));
+             long decorationSeed = random.setDecorationSeed(level.getSeed(), origin.getX(), origin.getZ());
+             Set<Holder<Biome>> possibleBiomes = new ObjectArraySet<>();
++            // Meteus start - chunk decoration planning fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkRangeScanFastPath) {
++                final ChunkPos sectionChunk = sectionPos.chunk();
++                for (int dz = -1; dz <= 1; ++dz) {
++                    for (int dx = -1; dx <= 1; ++dx) {
++                        final ChunkAccess chunkInRange = level.getChunk(sectionChunk.x() + dx, sectionChunk.z() + dz);
++                        for (final LevelChunkSection section : chunkInRange.getSections()) {
++                            section.getBiomes().getAll(possibleBiomes::add);
++                        }
++                    }
++                }
++            } else {
++            // Meteus end - chunk decoration planning fast path
+             ChunkPos.rangeClosed(sectionPos.chunk(), 1).forEach(chunkPos -> {
+                 ChunkAccess chunkInRange = level.getChunk(chunkPos.x(), chunkPos.z());
+ 
+@@ -353,6 +379,9 @@ public abstract class ChunkGenerator {
+                     section.getBiomes().getAll(possibleBiomes::add);
+                 }
+             });
++            // Meteus start - chunk decoration planning fast path
++            }
++            // Meteus end - chunk decoration planning fast path
+             possibleBiomes.retainAll(this.biomeSource.possibleBiomes());
+             int featureStepCount = featureList.size();
+ 
+@@ -391,6 +420,14 @@ public abstract class ChunkGenerator {
+                             if (stepIndex < featuresInBiome.size()) {
+                                 HolderSet<PlacedFeature> featuresInBiomeThisStep = featuresInBiome.get(stepIndex);
+                                 FeatureSorter.StepFeatureData stepFeatureData = featureList.get(stepIndex);
++                                // Meteus start - chunk decoration planning fast path
++                                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkRangeScanFastPath) {
++                                    for (final Holder<PlacedFeature> featureHolder : featuresInBiomeThisStep) {
++                                        possibleFeaturesThisStep.add(stepFeatureData.indexMapping().applyAsInt(featureHolder.value()));
++                                    }
++                                    continue;
++                                }
++                                // Meteus end - chunk decoration planning fast path
+                                 featuresInBiomeThisStep.stream()
+                                     .map(Holder::value)
+                                     .forEach(featurex -> possibleFeaturesThisStep.add(stepFeatureData.indexMapping().applyAsInt(featurex)));
+diff --git a/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java b/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
+index 8b4ea2b16da45bcefe743990866e43c94e121825..da6db4cd050ea70db136dafa8764506d6dcd17d2 100644
+--- a/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
++++ b/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
+@@ -11,7 +11,6 @@ import java.util.Map;
+ import java.util.Set;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.TimeUnit;
+-import java.util.stream.Collectors;
+ import java.util.stream.Stream;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Holder;
+@@ -46,16 +45,33 @@ public class ChunkGeneratorStructureState {
+     public static ChunkGeneratorStructureState createForFlat(
+         final RandomState randomState, final long levelSeed, final BiomeSource biomeSource, final Stream<Holder<StructureSet>> structureOverrides, org.spigotmc.SpigotWorldConfig conf // Spigot
+     ) {
+-        List<Holder<StructureSet>> structures = structureOverrides.filter(structureSet -> hasBiomesForStructureSet(structureSet.value(), biomeSource)).toList();
++        // Meteus start - chunk structure planning fast path
++        final List<Holder<StructureSet>> structures = new ArrayList<>();
++        final java.util.Iterator<Holder<StructureSet>> iterator = structureOverrides.iterator();
++        while (iterator.hasNext()) {
++            final Holder<StructureSet> structureSet = iterator.next();
++            if (hasBiomesForStructureSet(structureSet.value(), biomeSource)) {
++                structures.add(structureSet);
++            }
++        }
++        // Meteus end - chunk structure planning fast path
+         return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, 0L, ChunkGeneratorStructureState.injectSpigot(structures, conf), conf); // Spigot
+     }
+ 
+     public static ChunkGeneratorStructureState createForNormal(
+         final RandomState randomState, final long levelSeed, final BiomeSource biomeSource, final HolderLookup<StructureSet> allStructures, org.spigotmc.SpigotWorldConfig conf // Spigot
+     ) {
+-        List<Holder<StructureSet>> structures = allStructures.listElements()
+-            .filter(structureSet -> hasBiomesForStructureSet(structureSet.value(), biomeSource))
+-            .collect(Collectors.toUnmodifiableList());
++        // Meteus start - chunk structure planning fast path
++        final List<Holder<StructureSet>> mutableStructures = new ArrayList<>();
++        final java.util.Iterator<? extends Holder<StructureSet>> iterator = allStructures.listElements().iterator();
++        while (iterator.hasNext()) {
++            final Holder<StructureSet> structureSet = iterator.next();
++            if (hasBiomesForStructureSet(structureSet.value(), biomeSource)) {
++                mutableStructures.add(structureSet);
++            }
++        }
++        final List<Holder<StructureSet>> structures = List.copyOf(mutableStructures);
++        // Meteus end - chunk structure planning fast path
+         return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, levelSeed, ChunkGeneratorStructureState.injectSpigot(structures, conf), conf); // Spigot
+     }
+     // Paper start - Add missing structure set seed configs; horrible hack because spigot creates a ton of direct Holders which lose track of the identifying key
+@@ -70,7 +86,9 @@ public class ChunkGeneratorStructureState {
+ 
+     // Spigot start
+     private static List<Holder<StructureSet>> injectSpigot(List<Holder<StructureSet>> list, org.spigotmc.SpigotWorldConfig conf) {
+-        return list.stream().map((holder) -> {
++        // Meteus start - chunk structure planning fast path
++        final List<Holder<StructureSet>> result = new ArrayList<>(list.size());
++        for (final Holder<StructureSet> holder : list) {
+             StructureSet structureset = holder.value();
+             final Holder<StructureSet> newHolder; // Paper - Add missing structure set seed configs
+             if (structureset.placement() instanceof net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement randomConfig && holder.unwrapKey().orElseThrow().identifier().getNamespace().equals(net.minecraft.resources.Identifier.DEFAULT_NAMESPACE)) { // Paper - Add missing structure set seed configs; check namespace cause datapacks could add structure sets with the same path
+@@ -139,18 +157,24 @@ public class ChunkGeneratorStructureState {
+             } else {
+                 newHolder = holder;
+             }
+-            return newHolder;
++            result.add(newHolder);
+             // Paper end - Add missing structure set seed configs
+-        }).collect(Collectors.toUnmodifiableList());
++        }
++        return List.copyOf(result);
++        // Meteus end - chunk structure planning fast path
+     }
+     // Spigot end
+ 
+     private static boolean hasBiomesForStructureSet(final StructureSet structureSet, final BiomeSource biomeSource) {
+-        Stream<Holder<Biome>> structureBiomes = structureSet.structures().stream().flatMap(entry -> {
+-            Structure structure = entry.structure().value();
+-            return structure.biomes().stream();
+-        });
+-        return structureBiomes.anyMatch(biomeSource.possibleBiomes()::contains);
++        // Meteus start - chunk structure planning fast path
++        final Set<Holder<Biome>> possibleBiomes = biomeSource.possibleBiomes();
++        for (final StructureSet.StructureSelectionEntry entry : structureSet.structures()) {
++            if (hasAnyBiome(entry.structure().value().biomes(), possibleBiomes)) {
++                return true;
++            }
++        }
++        return false;
++        // Meteus end - chunk structure planning fast path
+     }
+ 
+     private ChunkGeneratorStructureState(
+@@ -174,13 +198,14 @@ public class ChunkGeneratorStructureState {
+ 
+     private void generatePositions() {
+         Set<Holder<Biome>> possibleBiomes = this.biomeSource.possibleBiomes();
+-        this.possibleStructureSets().forEach(setHolder -> {
++        // Meteus start - chunk structure planning fast path
++        for (final Holder<StructureSet> setHolder : this.possibleStructureSets()) {
+             StructureSet set = setHolder.value();
+             boolean hasAnyPlaceableStructures = false;
+ 
+             for (StructureSet.StructureSelectionEntry entry : set.structures()) {
+                 Structure structure = entry.structure().value();
+-                if (structure.biomes().stream().anyMatch(possibleBiomes::contains)) {
++                if (hasAnyBiome(structure.biomes(), possibleBiomes)) {
+                     this.placementsForStructure.computeIfAbsent(structure, s -> new ArrayList<>()).add(set.placement());
+                     hasAnyPlaceableStructures = true;
+                 }
+@@ -189,8 +214,20 @@ public class ChunkGeneratorStructureState {
+             if (hasAnyPlaceableStructures && set.placement() instanceof ConcentricRingsStructurePlacement ringsPlacement) {
+                 this.ringPositions.put(ringsPlacement, this.generateRingPositions((Holder<StructureSet>)setHolder, ringsPlacement));
+             }
+-        });
++        }
++        // Meteus end - chunk structure planning fast path
++    }
++
++    // Meteus start - chunk structure planning fast path
++    private static boolean hasAnyBiome(final HolderSet<Biome> structureBiomes, final Set<Holder<Biome>> possibleBiomes) {
++        for (final Holder<Biome> biome : structureBiomes) {
++            if (possibleBiomes.contains(biome)) {
++                return true;
++            }
++        }
++        return false;
+     }
++    // Meteus end - chunk structure planning fast path
+ 
+     private CompletableFuture<List<ChunkPos>> generateRingPositions(final Holder<StructureSet> structureSet, final ConcentricRingsStructurePlacement placement) {
+         if (placement.count() == 0) {
+diff --git a/net/minecraft/world/level/chunk/HashMapPalette.java b/net/minecraft/world/level/chunk/HashMapPalette.java
+index 3ee35885ea1f997bb5a36dd8d5f83b168883ba61..76587df4e76aa5610c971cf9525e08c604240d0f 100644
+--- a/net/minecraft/world/level/chunk/HashMapPalette.java
++++ b/net/minecraft/world/level/chunk/HashMapPalette.java
+@@ -21,6 +21,14 @@ public class HashMapPalette<T> implements Palette<T>, ca.spottedleaf.moonrise.pa
+ 
+     public HashMapPalette(final int bits, final List<T> values) {
+         this(bits);
++        // Meteus start - chunk palette construction fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkPaletteIterationFastPath) {
++            for (int i = 0, len = values.size(); i < len; ++i) {
++                this.values.add(values.get(i));
++            }
++            return;
++        }
++        // Meteus end - chunk palette construction fast path
+         values.forEach(this.values::add);
+     }
+ 
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index 719f2e8bf18f6ad792ef45f391b5ea1b25d11c8c..b0e70aa70a09cfe7da1f3bf0a96a7ab3a294933e 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -729,7 +729,17 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+             section.read(buffer);
+         }
+ 
++        // Meteus start - chunk packet heightmap fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkStorageSerializationFastPath) {
++            for (final Map.Entry<Heightmap.Types, long[]> entry : heightmaps.entrySet()) {
++                this.setHeightmap(entry.getKey(), entry.getValue());
++            }
++        } else {
++        // Meteus end - chunk packet heightmap fast path
+         heightmaps.forEach(this::setHeightmap);
++        // Meteus start - chunk packet heightmap fast path
++        }
++        // Meteus end - chunk packet heightmap fast path
+         this.initializeLightSources();
+ 
+         try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(this.problemPath(), LOGGER)) {
+diff --git a/net/minecraft/world/level/chunk/PalettedContainer.java b/net/minecraft/world/level/chunk/PalettedContainer.java
+index 4aa03384e14413eb6a5800bbe25dd6caf97a7661..fb93b391d8cfd6f7ceff95d062412a1f6d15c315 100644
+--- a/net/minecraft/world/level/chunk/PalettedContainer.java
++++ b/net/minecraft/world/level/chunk/PalettedContainer.java
+@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
+ import com.mojang.serialization.Codec;
+ import com.mojang.serialization.DataResult;
+ import com.mojang.serialization.codecs.RecordCodecBuilder;
++import it.unimi.dsi.fastutil.ints.Int2IntMap;
+ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+ import it.unimi.dsi.fastutil.ints.IntArraySet;
+ import it.unimi.dsi.fastutil.ints.IntIterator;
+@@ -432,6 +433,14 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+         } else {
+             Int2IntOpenHashMap counts = new Int2IntOpenHashMap();
+             this.data.storage.getAll(state -> counts.addTo(state, 1));
++            // Meteus start - chunk palette iteration fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkPaletteIterationFastPath) {
++                for (final Int2IntMap.Entry entry : counts.int2IntEntrySet()) {
++                    output.accept(this.data.palette.valueFor(entry.getIntKey()), entry.getIntValue());
++                }
++                return;
++            }
++            // Meteus end - chunk palette iteration fast path
+             counts.int2IntEntrySet().forEach(entry -> output.accept(this.data.palette.valueFor(entry.getIntKey()), entry.getIntValue()));
+         }
+     }
+diff --git a/net/minecraft/world/level/chunk/storage/RegionBitmap.java b/net/minecraft/world/level/chunk/storage/RegionBitmap.java
+index d44fd9eea0ccb09c894d6431ede8a4c2aae85c5b..dcc6322db41d59f76e8ff6190405000ee49c95e1 100644
+--- a/net/minecraft/world/level/chunk/storage/RegionBitmap.java
++++ b/net/minecraft/world/level/chunk/storage/RegionBitmap.java
+@@ -55,6 +55,15 @@ public class RegionBitmap {
+ 
+     @VisibleForTesting
+     public IntSet getUsed() {
++        // Meteus start - region bitmap snapshot fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkStorageSerializationFastPath) {
++            final IntSet used = new IntArraySet();
++            for (int bit = this.used.nextSetBit(0); bit >= 0; bit = this.used.nextSetBit(bit + 1)) {
++                used.add(bit);
++            }
++            return used;
++        }
++        // Meteus end - region bitmap snapshot fast path
+         return this.used.stream().collect(IntArraySet::new, IntCollection::add, IntCollection::addAll);
+     }
+ }

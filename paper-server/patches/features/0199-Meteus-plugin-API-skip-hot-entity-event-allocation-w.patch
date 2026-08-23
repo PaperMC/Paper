@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Wed, 17 Jun 2026 23:50:36 +0900
+Subject: [PATCH] Meteus plugin-API: skip hot entity event allocation when no
+ listener (knockback/despawn)
+
+
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index 164d9af8bc1c18e0f3389dfe2c2b02403e74fe8a..9ee729bd928b5b558c59edeb74888231e5a69b86 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -2129,6 +2129,13 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+                 deltaMovement.z / 2.0 - deltaVector.z
+             );
+             Vec3 diff = finalVelocity.subtract(deltaMovement);
++            // Meteus - skip the knockback event (alloc + Bukkit wrapper) when no plugin listens; apply the
++            // computed knockback directly. Byte-identical to a non-cancelled, unmodified event (getKnockback()==diff).
++            if (io.papermc.paper.event.entity.EntityKnockbackEvent.getHandlerList().getRegisteredListeners().length == 0) {
++                this.needsSync = true;
++                this.setDeltaMovement(deltaMovement.add(diff.x, diff.y, diff.z));
++                return;
++            }
+             io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity)this.getBukkitEntity(), attacker, attacker, eventCause, power, diff);
+             // Paper end - knockback events
+             if (event.isCancelled()) {
+diff --git a/net/minecraft/world/entity/item/ItemEntity.java b/net/minecraft/world/entity/item/ItemEntity.java
+index 974d1d7b283aace71f0ea8ef07ba68a17b75af8a..7159008f2db50adaa8cbe309d8ce93e456ca9ef6 100644
+--- a/net/minecraft/world/entity/item/ItemEntity.java
++++ b/net/minecraft/world/entity/item/ItemEntity.java
+@@ -223,7 +223,10 @@ public class ItemEntity extends Entity implements TraceableEntity {
+ 
+             if (!this.level().isClientSide() && this.age >= this.despawnRate) { // Spigot // Paper - Alternative item-despawn-rate
+                 // CraftBukkit start - fire ItemDespawnEvent
+-                if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
++                // Meteus - skip the despawn event when no plugin listens (short-circuits before alloc); the item
++                // despawns exactly as with a non-cancelled event. Thousands of items expiring otherwise each alloc one.
++                if (org.bukkit.event.entity.ItemDespawnEvent.getHandlerList().getRegisteredListeners().length > 0
++                    && org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
+                     this.age = 0;
+                     return;
+                 }
+diff --git a/net/minecraft/world/level/ServerExplosion.java b/net/minecraft/world/level/ServerExplosion.java
+index be75ac557f546974838497824cd924dddc05a19f..07e931652a2879007d8c39a0786e4bcf3c45902a 100644
+--- a/net/minecraft/world/level/ServerExplosion.java
++++ b/net/minecraft/world/level/ServerExplosion.java
+@@ -530,7 +530,9 @@ public class ServerExplosion implements Explosion {
+                         double knockbackPower = entity instanceof Player && this.level.paperConfig().environment.disableExplosionKnockback ? 0 : (1.0 - dist) * exposure * knockbackMultiplier * (1.0 - knockbackResistance); // Paper
+                         Vec3 knockback = direction.scale(knockbackPower);
+                         // CraftBukkit start - Call EntityKnockbackEvent
+-                        if (entity instanceof LivingEntity) {
++                        // Meteus - only build/fire the knockback event when a plugin listens; otherwise the
++                        // computed knockback is used unchanged (identical result, no per-entity event alloc).
++                        if (entity instanceof LivingEntity && io.papermc.paper.event.entity.EntityKnockbackEvent.getHandlerList().getRegisteredListeners().length > 0) {
+                             // Paper start - knockback events
+                             io.papermc.paper.event.entity.EntityKnockbackEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, knockbackPower, knockback);
+                             knockback = event.isCancelled() ? Vec3.ZERO : org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getKnockback());

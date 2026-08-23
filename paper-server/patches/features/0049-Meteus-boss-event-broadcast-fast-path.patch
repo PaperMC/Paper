@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 22:52:45 +0900
+Subject: [PATCH] Meteus boss event broadcast fast path
+
+
+diff --git a/net/minecraft/server/level/ServerBossEvent.java b/net/minecraft/server/level/ServerBossEvent.java
+index 3b996666ff183ba8f8a48306af7d2f9272eb30bf..45e9f1e078817ec6ab9bf3540abdf1e9d5cd1edd 100644
+--- a/net/minecraft/server/level/ServerBossEvent.java
++++ b/net/minecraft/server/level/ServerBossEvent.java
+@@ -92,6 +92,11 @@ public class ServerBossEvent extends BossEvent {
+ 
+     public void broadcast(final Function<BossEvent, ClientboundBossEventPacket> factory) {
+         if (this.visible) {
++            // Meteus start - boss event broadcast fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.bossEventBroadcastFastPath && this.players.isEmpty()) {
++                return;
++            }
++            // Meteus end - boss event broadcast fast path
+             ClientboundBossEventPacket packet = factory.apply(this);
+ 
+             for (ServerPlayer player : this.players) {
+@@ -114,6 +119,15 @@ public class ServerBossEvent extends BossEvent {
+ 
+     public void removeAllPlayers() {
+         if (!this.players.isEmpty()) {
++            // Meteus start - boss event broadcast fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.bossEventBroadcastFastPath) {
++                final java.util.List<ServerPlayer> players = Lists.newArrayList(this.players);
++                for (int i = 0, len = players.size(); i < len; ++i) {
++                    this.removePlayer(players.get(i));
++                }
++                return;
++            }
++            // Meteus end - boss event broadcast fast path
+             for (ServerPlayer player : Lists.newArrayList(this.players)) {
+                 this.removePlayer(player);
+             }
+@@ -129,6 +143,18 @@ public class ServerBossEvent extends BossEvent {
+             this.visible = visible;
+             this.setDirty();
+ 
++            // Meteus start - boss event broadcast fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.bossEventBroadcastFastPath) {
++                if (this.players.isEmpty()) {
++                    return;
++                }
++                final ClientboundBossEventPacket packet = visible ? ClientboundBossEventPacket.createAddPacket(this) : ClientboundBossEventPacket.createRemovePacket(this.getId());
++                for (ServerPlayer player : this.players) {
++                    player.connection.send(packet);
++                }
++                return;
++            }
++            // Meteus end - boss event broadcast fast path
+             for (ServerPlayer player : this.players) {
+                 player.connection
+                     .send(visible ? ClientboundBossEventPacket.createAddPacket(this) : ClientboundBossEventPacket.createRemovePacket(this.getId()));

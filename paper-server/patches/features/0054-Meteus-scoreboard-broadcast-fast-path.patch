@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:05:50 +0900
+Subject: [PATCH] Meteus scoreboard broadcast fast path
+
+
+diff --git a/net/minecraft/server/ServerScoreboard.java b/net/minecraft/server/ServerScoreboard.java
+index 9bf09b888425e491072864265c8de3885154a0ba..4f69f7cabcee26c910b5ca6f764a68505684f260 100644
+--- a/net/minecraft/server/ServerScoreboard.java
++++ b/net/minecraft/server/ServerScoreboard.java
+@@ -245,6 +245,21 @@ public class ServerScoreboard extends Scoreboard {
+     public void startTrackingObjective(final Objective objective) {
+         List<Packet<?>> packets = this.getStartTrackingPackets(objective);
+ 
++        // Meteus start - scoreboard broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardBroadcastFastPath) {
++            final List<ServerPlayer> players = this.server.getPlayerList().getPlayers();
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final ServerPlayer player = players.get(i);
++                if (player.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
++                for (int packetIndex = 0, packetLen = packets.size(); packetIndex < packetLen; ++packetIndex) {
++                    player.connection.send(packets.get(packetIndex));
++                }
++            }
++
++            this.trackedObjectives.add(objective);
++            return;
++        }
++        // Meteus end - scoreboard broadcast fast path
+         for (ServerPlayer player : this.server.getPlayerList().getPlayers()) {
+             if (player.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
+             for (Packet<?> packet : packets) {
+@@ -271,6 +286,21 @@ public class ServerScoreboard extends Scoreboard {
+     public void stopTrackingObjective(final Objective objective) {
+         List<Packet<?>> packets = this.getStopTrackingPackets(objective);
+ 
++        // Meteus start - scoreboard broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardBroadcastFastPath) {
++            final List<ServerPlayer> players = this.server.getPlayerList().getPlayers();
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final ServerPlayer player = players.get(i);
++                if (player.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
++                for (int packetIndex = 0, packetLen = packets.size(); packetIndex < packetLen; ++packetIndex) {
++                    player.connection.send(packets.get(packetIndex));
++                }
++            }
++
++            this.trackedObjectives.remove(objective);
++            return;
++        }
++        // Meteus end - scoreboard broadcast fast path
+         for (ServerPlayer player : this.server.getPlayerList().getPlayers()) {
+             if (player.getBukkitEntity().getScoreboard().getHandle() != this) continue; // CraftBukkit - Only players on this board
+             for (Packet<?> packet : packets) {
+@@ -311,6 +341,17 @@ public class ServerScoreboard extends Scoreboard {
+     }
+     // CraftBukkit start - Send to players
+     private void broadcastAll(Packet<?> packet) {
++        // Meteus start - scoreboard broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardBroadcastFastPath) {
++            for (int i = 0, len = this.server.getPlayerList().players.size(); i < len; ++i) {
++                final ServerPlayer serverPlayer = this.server.getPlayerList().players.get(i);
++                if (serverPlayer.getBukkitEntity().getScoreboard().getHandle() == this) {
++                    serverPlayer.connection.send(packet);
++                }
++            }
++            return;
++        }
++        // Meteus end - scoreboard broadcast fast path
+         for (ServerPlayer serverPlayer : this.server.getPlayerList().players) {
+             if (serverPlayer.getBukkitEntity().getScoreboard().getHandle() == this) {
+                 serverPlayer.connection.send(packet);

@@ -1,0 +1,127 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:30:18 +0900
+Subject: [PATCH] Meteus piglin hoglin AI broadcast fast path
+
+
+diff --git a/net/minecraft/world/entity/monster/hoglin/HoglinAi.java b/net/minecraft/world/entity/monster/hoglin/HoglinAi.java
+index 3e9d1ee4165a792d621e3a0727262c50f49fccfb..ab1c0c1c3ccffceefac459a0b5a6376b78f45073 100644
+--- a/net/minecraft/world/entity/monster/hoglin/HoglinAi.java
++++ b/net/minecraft/world/entity/monster/hoglin/HoglinAi.java
+@@ -141,6 +141,15 @@ public class HoglinAi {
+     }
+ 
+     private static void broadcastRetreat(final Hoglin body, final LivingEntity target) {
++        // Meteus start - mob AI detection fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++            final List<Hoglin> visibleAdultHoglins = getVisibleAdultHoglins(body);
++            for (int i = 0, len = visibleAdultHoglins.size(); i < len; ++i) {
++                retreatFromNearestTarget(visibleAdultHoglins.get(i), target);
++            }
++            return;
++        }
++        // Meteus end - mob AI detection fast path
+         getVisibleAdultHoglins(body).forEach(hoglin -> retreatFromNearestTarget(hoglin, target));
+     }
+ 
+@@ -213,6 +222,15 @@ public class HoglinAi {
+     }
+ 
+     private static void broadcastAttackTarget(final Hoglin body, final LivingEntity target) {
++        // Meteus start - mob AI detection fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++            final List<Hoglin> visibleAdultHoglins = getVisibleAdultHoglins(body);
++            for (int i = 0, len = visibleAdultHoglins.size(); i < len; ++i) {
++                setAttackTargetIfCloserThanCurrent(visibleAdultHoglins.get(i), target);
++            }
++            return;
++        }
++        // Meteus end - mob AI detection fast path
+         getVisibleAdultHoglins(body).forEach(hoglin -> setAttackTargetIfCloserThanCurrent(hoglin, target));
+     }
+ 
+diff --git a/net/minecraft/world/entity/monster/piglin/PiglinAi.java b/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+index 48ca15e1991d5b8f238f6fae9fccf3d4cfafe2c3..76c93123652c0d508f76f5111f505e4e2d3a5654 100644
+--- a/net/minecraft/world/entity/monster/piglin/PiglinAi.java
++++ b/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+@@ -564,6 +564,22 @@ public class PiglinAi {
+     public static void angerNearbyPiglins(final ServerLevel level, final Player player, final boolean onlyIfTheySeeThePlayer) {
+         if (!player.level().paperConfig().entities.behavior.piglinsGuardChests) return; // Paper - Config option for Piglins guarding chests
+         List<Piglin> nearbyPiglins = player.level().getEntitiesOfClass(Piglin.class, player.getBoundingBox().inflate(16.0));
++        // Meteus start - mob AI detection fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++            final boolean universalAnger = level.getGameRules().get(GameRules.UNIVERSAL_ANGER);
++            for (int i = 0, len = nearbyPiglins.size(); i < len; ++i) {
++                final Piglin piglin = nearbyPiglins.get(i);
++                if (isIdle(piglin) && (!onlyIfTheySeeThePlayer || BehaviorUtils.canSee(piglin, player))) {
++                    if (universalAnger) {
++                        setAngerTargetToNearestTargetablePlayerIfFound(level, piglin, player);
++                    } else {
++                        setAngerTarget(level, piglin, player);
++                    }
++                }
++            }
++            return;
++        }
++        // Meteus end - mob AI detection fast path
+         nearbyPiglins.stream().filter(PiglinAi::isIdle).filter(piglin -> !onlyIfTheySeeThePlayer || BehaviorUtils.canSee(piglin, player)).forEach(piglin -> {
+             if (level.getGameRules().get(GameRules.UNIVERSAL_ANGER)) {
+                 setAngerTargetToNearestTargetablePlayerIfFound(level, piglin, player);
+@@ -700,6 +716,18 @@ public class PiglinAi {
+     }
+ 
+     protected static void broadcastAngerTarget(final ServerLevel level, final AbstractPiglin body, final LivingEntity target) {
++        // Meteus start - mob AI detection fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++            final List<AbstractPiglin> adultPiglins = getAdultPiglins(body);
++            for (int i = 0, len = adultPiglins.size(); i < len; ++i) {
++                final AbstractPiglin piglin = adultPiglins.get(i);
++                if (!(target instanceof Hoglin hoglin && (!piglin.canHunt() || !hoglin.canBeHunted()))) {
++                    setAngerTargetIfCloserThanCurrent(level, piglin, target);
++                }
++            }
++            return;
++        }
++        // Meteus end - mob AI detection fast path
+         getAdultPiglins(body).forEach(piglin -> {
+             if (!(target instanceof Hoglin hoglin && (!piglin.canHunt() || !hoglin.canBeHunted()))) {
+                 setAngerTargetIfCloserThanCurrent(level, piglin, target);
+@@ -708,6 +736,19 @@ public class PiglinAi {
+     }
+ 
+     protected static void broadcastUniversalAnger(final ServerLevel level, final AbstractPiglin body) {
++        // Meteus start - mob AI detection fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++            final List<AbstractPiglin> adultPiglins = getAdultPiglins(body);
++            for (int i = 0, len = adultPiglins.size(); i < len; ++i) {
++                final AbstractPiglin piglin = adultPiglins.get(i);
++                final Optional<Player> player = getNearestVisibleTargetablePlayer(piglin);
++                if (player.isPresent()) {
++                    setAngerTarget(level, piglin, player.get());
++                }
++            }
++            return;
++        }
++        // Meteus end - mob AI detection fast path
+         getAdultPiglins(body).forEach(piglin -> getNearestVisibleTargetablePlayer(piglin).ifPresent(player -> setAngerTarget(level, piglin, player)));
+     }
+ 
+@@ -759,6 +800,18 @@ public class PiglinAi {
+     }
+ 
+     private static void broadcastRetreat(final Piglin body, final LivingEntity target) {
++        // Meteus start - mob AI detection fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++            final List<AbstractPiglin> visibleAdultPiglins = getVisibleAdultPiglins(body);
++            for (int i = 0, len = visibleAdultPiglins.size(); i < len; ++i) {
++                final AbstractPiglin abstractPiglin = visibleAdultPiglins.get(i);
++                if (abstractPiglin instanceof Piglin piglin) {
++                    retreatFromNearestTarget(piglin, target);
++                }
++            }
++            return;
++        }
++        // Meteus end - mob AI detection fast path
+         getVisibleAdultPiglins(body).forEach(abstractPiglin -> {
+             if (abstractPiglin instanceof Piglin piglin) {
+                 retreatFromNearestTarget(piglin, target);

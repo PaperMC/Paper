@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Mon, 15 Jun 2026 07:29:35 +0900
+Subject: [PATCH] Meteus multiworld chunk task polling layer
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 0b92d08208173b0d87d4b209e6d774221ab23e76..0c31cb7985a48751a438466af87bd0ae2481ec5f 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -297,6 +297,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private final PacketProcessor packetProcessor;
+     // Paper - per-level scheduledEvents
+     private final ServerClockManager clockManager;
++    // Meteus start - chunk task poll round-robin fast path
++    private Map<ResourceKey<Level>, ServerLevel> meteus$chunkTaskPollLevelsSource;
++    private ServerLevel[] meteus$chunkTaskPollLevels = new ServerLevel[0];
++    private int meteus$nextChunkTaskPollIndex;
++    private int meteus$chunkTaskPollCalls;
++    // Meteus end - chunk task poll round-robin fast path
+ 
+     public static <S extends MinecraftServer> S spin(final Function<Thread, S> factory) {
+         ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.init(); // Paper - rewrite data converter system
+@@ -1541,17 +1547,61 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             return true;
+         }
+ 
+-        boolean ret = false; // Paper - force execution of all worlds, do not just bias the first
+         if (this.tickRateManager.isSprinting() || this.shouldRunAllTasks() || this.haveTime()) {
++            // Meteus start - chunk task poll round-robin fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkTaskPollRoundRobinFastPath) {
++                return this.meteus$pollChunkTasksRoundRobin();
++            }
++            // Meteus end - chunk task poll round-robin fast path
++            boolean ret = false; // Paper - force execution of all worlds, do not just bias the first
+             for (ServerLevel level : this.getAllLevels()) {
+                 if (level.getChunkSource().pollTask()) {
+                     ret = true; // Paper - force execution of all worlds, do not just bias the first
+                 }
+             }
++            return ret; // Paper - force execution of all worlds, do not just bias the first
++        }
++
++        return false; // Paper - force execution of all worlds, do not just bias the first
++    }
++
++    // Meteus start - chunk task poll round-robin fast path
++    private ServerLevel[] meteus$getChunkTaskPollLevels() {
++        final Map<ResourceKey<Level>, ServerLevel> currentLevels = this.levels;
++        if (this.meteus$chunkTaskPollLevelsSource != currentLevels) {
++            this.meteus$chunkTaskPollLevels = currentLevels.values().toArray(new ServerLevel[0]);
++            this.meteus$chunkTaskPollLevelsSource = currentLevels;
++            this.meteus$nextChunkTaskPollIndex = 0;
++            this.meteus$chunkTaskPollCalls = 0;
++        }
++        return this.meteus$chunkTaskPollLevels;
++    }
++
++    private boolean meteus$pollChunkTasksRoundRobin() {
++        final ServerLevel[] levels = this.meteus$getChunkTaskPollLevels();
++        final int levelCount = levels.length;
++        if (levelCount == 0) {
++            return false;
++        }
++
++        final io.papermc.paper.configuration.GlobalConfiguration.Meteus.Performance performance = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance;
++        final int fullSweepInterval = Math.max(1, performance.chunkTaskPollFullSweepInterval);
++        final boolean fullSweep = this.tickRateManager.isSprinting() || this.shouldRunAllTasks() || ++this.meteus$chunkTaskPollCalls % fullSweepInterval == 0;
++        final int checks = fullSweep ? levelCount : Math.min(levelCount, Math.max(1, performance.chunkTaskPollRoundRobinBudget));
++        final int start = this.meteus$nextChunkTaskPollIndex;
++        boolean ret = false;
++
++        for (int i = 0; i < checks; ++i) {
++            final ServerLevel level = levels[(start + i) % levelCount];
++            if (level.getChunkSource().pollTask()) {
++                ret = true;
++            }
+         }
+ 
+-        return ret; // Paper - force execution of all worlds, do not just bias the first
++        this.meteus$nextChunkTaskPollIndex = (start + checks) % levelCount;
++        return ret;
+     }
++    // Meteus end - chunk task poll round-robin fast path
+ 
+     @Override
+     public void doRunTask(final TickTask task) {

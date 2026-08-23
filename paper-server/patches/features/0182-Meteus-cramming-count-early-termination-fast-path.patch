@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Mon, 15 Jun 2026 08:21:55 +0900
+Subject: [PATCH] Meteus cramming count early termination fast path
+
+
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index 3f7fb41d77e4cf9c907b3250c313a8a11cdf70b5..164d9af8bc1c18e0f3389dfe2c2b02403e74fe8a 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -3987,11 +3987,19 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+                 if (maxCramming > 0 && pushableEntities.size() > maxCramming - 1 && this.random.nextInt(4) == 0) {
+                     int count = 0;
+ 
++                    // Meteus start - cramming count early termination
++                    final boolean meteus$crammingCountFastPath = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.crammingCountFastPath;
+                     for (Entity entity : pushableEntities) {
+                         if (!entity.isPassenger()) {
+                             count++;
++                            // Once the non-passenger count crosses the cramming threshold the damage decision is
++                            // already final, so stop scanning instead of counting the entire dense crowd.
++                            if (meteus$crammingCountFastPath && count > maxCramming - 1) {
++                                break;
++                            }
+                         }
+                     }
++                    // Meteus end - cramming count early termination
+ 
+                     if (count > maxCramming - 1) {
+                         this.hurtServer(serverLevel, this.damageSources().cramming(), 6.0F);

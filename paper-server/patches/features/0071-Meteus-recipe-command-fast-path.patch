@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 17:15:49 +0900
+Subject: [PATCH] Meteus recipe command fast path
+
+
+diff --git a/net/minecraft/server/commands/RecipeCommand.java b/net/minecraft/server/commands/RecipeCommand.java
+index fc752a4a8e8f30be0956dd5fc7ef8f08131fd683..97ebd2a63d64305d6b1ccf361f9cd2e42c542e55 100644
+--- a/net/minecraft/server/commands/RecipeCommand.java
++++ b/net/minecraft/server/commands/RecipeCommand.java
+@@ -5,6 +5,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+ import java.util.Collection;
+ import java.util.Collections;
++import java.util.List;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+ import net.minecraft.commands.arguments.EntityArgument;
+@@ -80,6 +81,27 @@ public class RecipeCommand {
+     private static int giveRecipes(final CommandSourceStack source, final Collection<ServerPlayer> players, final Collection<RecipeHolder<?>> recipes) throws CommandSyntaxException {
+         int success = 0;
+ 
++        // Meteus start - recipe command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.recipeCommandFastPath && players instanceof List<ServerPlayer> playerList) {
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                success += playerList.get(i).awardRecipes(recipes);
++            }
++
++            if (success == 0) {
++                throw ERROR_GIVE_FAILED.create();
++            }
++
++            if (playerList.size() == 1) {
++                source.sendSuccess(
++                    () -> Component.translatable("commands.recipe.give.success.single", recipes.size(), playerList.get(0).getDisplayName()), true
++                );
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.recipe.give.success.multiple", recipes.size(), playerList.size()), true);
++            }
++
++            return success;
++        }
++        // Meteus end - recipe command fast path
+         for (ServerPlayer player : players) {
+             success += player.awardRecipes(recipes);
+         }
+@@ -102,6 +124,27 @@ public class RecipeCommand {
+     private static int takeRecipes(final CommandSourceStack source, final Collection<ServerPlayer> players, final Collection<RecipeHolder<?>> recipes) throws CommandSyntaxException {
+         int success = 0;
+ 
++        // Meteus start - recipe command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.recipeCommandFastPath && players instanceof List<ServerPlayer> playerList) {
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                success += playerList.get(i).resetRecipes(recipes);
++            }
++
++            if (success == 0) {
++                throw ERROR_TAKE_FAILED.create();
++            }
++
++            if (playerList.size() == 1) {
++                source.sendSuccess(
++                    () -> Component.translatable("commands.recipe.take.success.single", recipes.size(), playerList.get(0).getDisplayName()), true
++                );
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.recipe.take.success.multiple", recipes.size(), playerList.size()), true);
++            }
++
++            return success;
++        }
++        // Meteus end - recipe command fast path
+         for (ServerPlayer player : players) {
+             success += player.resetRecipes(recipes);
+         }

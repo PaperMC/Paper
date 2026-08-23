@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 21:52:18 +0900
+Subject: [PATCH] Meteus command tree packet fast path
+
+
+diff --git a/net/minecraft/network/protocol/game/ClientboundCommandsPacket.java b/net/minecraft/network/protocol/game/ClientboundCommandsPacket.java
+index 129883209f8ca2d678d6204287f89d06a0929a0a..f9e72b4dc08086b4a706ca96a356a94c0464b16c 100644
+--- a/net/minecraft/network/protocol/game/ClientboundCommandsPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundCommandsPacket.java
+@@ -56,6 +56,16 @@ public class ClientboundCommandsPacket implements Packet<ClientGamePacketListene
+     }
+ 
+     private void write(final FriendlyByteBuf output) {
++        // Meteus start - command tree packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.commandTreePacketFastPath) {
++            output.writeVarInt(this.entries.size());
++            for (int i = 0, len = this.entries.size(); i < len; ++i) {
++                this.entries.get(i).write(output);
++            }
++            output.writeVarInt(this.rootIndex);
++            return;
++        }
++        // Meteus end - command tree packet fast path
+         output.writeCollection(this.entries, (buffer, entry) -> entry.write(buffer));
+         output.writeVarInt(this.rootIndex);
+     }
+@@ -182,7 +192,20 @@ public class ClientboundCommandsPacket implements Packet<ClientGamePacketListene
+                 throw new UnsupportedOperationException("Unknown node type " + node);
+         }
+ 
+-        int[] childrenIds = node.getChildren().stream().mapToInt(ids::getInt).toArray();
++        // Meteus start - command tree packet fast path
++        final int[] childrenIds;
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.commandTreePacketFastPath) {
++            childrenIds = new int[node.getChildren().size()];
++            int childIndex = 0;
++            for (final CommandNode<S> child : node.getChildren()) {
++                childrenIds[childIndex++] = ids.getInt(child);
++            }
++        } else {
++        // Meteus end - command tree packet fast path
++        childrenIds = node.getChildren().stream().mapToInt(ids::getInt).toArray();
++        // Meteus start - command tree packet fast path
++        }
++        // Meteus end - command tree packet fast path
+         return new ClientboundCommandsPacket.Entry(nodeStub, flags, redirect, childrenIds);
+     }
+ 

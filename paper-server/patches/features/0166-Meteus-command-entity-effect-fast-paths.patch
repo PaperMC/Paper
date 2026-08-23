@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 21:09:10 +0900
+Subject: [PATCH] Meteus command entity effect fast paths
+
+
+diff --git a/net/minecraft/network/protocol/game/ClientboundCommandsPacket.java b/net/minecraft/network/protocol/game/ClientboundCommandsPacket.java
+index f9e72b4dc08086b4a706ca96a356a94c0464b16c..54276720a9a21e914ad2a6e76feb33e3913afdae 100644
+--- a/net/minecraft/network/protocol/game/ClientboundCommandsPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundCommandsPacket.java
+@@ -6,6 +6,7 @@ import com.mojang.brigadier.tree.ArgumentCommandNode;
+ import com.mojang.brigadier.tree.CommandNode;
+ import com.mojang.brigadier.tree.LiteralCommandNode;
+ import com.mojang.brigadier.tree.RootCommandNode;
++import it.unimi.dsi.fastutil.ints.IntIterator;
+ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+ import it.unimi.dsi.fastutil.ints.IntSet;
+ import it.unimi.dsi.fastutil.ints.IntSets;
+@@ -76,6 +77,23 @@ public class ClientboundCommandsPacket implements Packet<ClientGamePacketListene
+         IntSet elementsToCheck = new IntOpenHashSet(IntSets.fromTo(0, entries.size()));
+ 
+         while (!elementsToCheck.isEmpty()) {
++            // Meteus start - command tree packet fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.commandTreePacketFastPath) {
++                boolean worked = false;
++                final IntIterator iterator = elementsToCheck.iterator();
++                while (iterator.hasNext()) {
++                    final int index = iterator.nextInt();
++                    if (validator.test(entries.get(index), elementsToCheck)) {
++                        iterator.remove();
++                        worked = true;
++                    }
++                }
++                if (!worked) {
++                    throw new IllegalStateException("Server sent an impossible command tree");
++                }
++                continue;
++            }
++            // Meteus end - command tree packet fast path
+             boolean worked = elementsToCheck.removeIf(index -> validator.test(entries.get(index), elementsToCheck));
+             if (!worked) {
+                 throw new IllegalStateException("Server sent an impossible command tree");
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index e143f999ea2701cf8f114ac8e356803de44469b2..bc2e7317f53ab36ac88a1df00943596a342c9caa 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -1015,6 +1015,19 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     private void updateSynchronizedMobEffectParticles() {
++        // Meteus start - mob effect particle sync fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++            final List<ParticleOptions> visibleEffectParticles = new java.util.ArrayList<>(this.activeEffects.size());
++            for (final MobEffectInstance effect : this.activeEffects.values()) {
++                if (effect.isVisible()) {
++                    visibleEffectParticles.add(effect.getParticleOptions());
++                }
++            }
++            this.entityData.set(DATA_EFFECT_PARTICLES, visibleEffectParticles);
++            this.entityData.set(DATA_EFFECT_AMBIENCE_ID, areAllEffectsAmbient(this.activeEffects.values()));
++            return;
++        }
++        // Meteus end - mob effect particle sync fast path
+         List<ParticleOptions> visibleEffectParticles = this.activeEffects
+             .values()
+             .stream()
+@@ -2077,6 +2090,14 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         LootParams params = paramsBuilder.apply(new LootParams.Builder(level));
+         List<ItemStack> drops = lootTable.getRandomItems(params);
+         if (!drops.isEmpty()) {
++            // Meteus start - loot drop fanout fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++                for (int i = 0, len = drops.size(); i < len; ++i) {
++                    consumer.accept(level, drops.get(i));
++                }
++                return true;
++            }
++            // Meteus end - loot drop fanout fast path
+             drops.forEach(stack -> consumer.accept(level, stack));
+             return true;
+         } else {
+diff --git a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
+index 0ed3fea287c65da82a8823d1949828b0c55d29b2..178d333e480a42f361e48b1f99e66404eecc12da 100644
+--- a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
++++ b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
+@@ -175,6 +175,15 @@ public class AttributeInstance {
+         this.permanentModifiers.clear();
+         this.permanentModifiers.putAll(other.permanentModifiers);
+         this.modifiersByOperation.clear();
++        // Meteus start - attribute copy fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityAttributeMutationFastPath) {
++            for (final Map.Entry<AttributeModifier.Operation, Map<Identifier, AttributeModifier>> entry : other.modifiersByOperation.entrySet()) {
++                this.getModifiers(entry.getKey()).putAll(entry.getValue());
++            }
++            this.setDirty();
++            return;
++        }
++        // Meteus end - attribute copy fast path
+         other.modifiersByOperation
+             .forEach(
+                 (operation, attributeModifiers) -> this.getModifiers(operation)
+diff --git a/net/minecraft/world/entity/animal/frog/Frog.java b/net/minecraft/world/entity/animal/frog/Frog.java
+index ef9f543aea1e88e1f81d888c7b21aeac934f102b..5d306ecd0eb9cae3180288cead5681fce6f3fd53 100644
+--- a/net/minecraft/world/entity/animal/frog/Frog.java
++++ b/net/minecraft/world/entity/animal/frog/Frog.java
+@@ -1,7 +1,6 @@
+ package net.minecraft.world.entity.animal.frog;
+ 
+ import java.util.List;
+-import java.util.Objects;
+ import java.util.Optional;
+ import java.util.OptionalInt;
+ import net.minecraft.core.BlockPos;
+@@ -114,7 +113,16 @@ public class Frog extends Animal {
+     }
+ 
+     public Optional<Entity> getTongueTarget() {
+-        return this.entityData.get(DATA_TONGUE_TARGET_ID).stream().mapToObj(this.level()::getEntity).filter(Objects::nonNull).findFirst();
++        // Meteus start - animal target lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.animalAiMemoryFastPath) {
++            final OptionalInt targetId = this.entityData.get(DATA_TONGUE_TARGET_ID);
++            if (targetId.isEmpty()) {
++                return Optional.empty();
++            }
++            return Optional.ofNullable(this.level().getEntity(targetId.getAsInt()));
++        }
++        // Meteus end - animal target lookup fast path
++        return this.entityData.get(DATA_TONGUE_TARGET_ID).stream().mapToObj(this.level()::getEntity).filter(java.util.Objects::nonNull).findFirst();
+     }
+ 
+     public void setTongueTarget(final Entity target) {

@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 22:19:04 +0900
+Subject: [PATCH] Meteus attack sensor target fast path
+
+
+diff --git a/net/minecraft/world/entity/ai/sensing/BreezeAttackEntitySensor.java b/net/minecraft/world/entity/ai/sensing/BreezeAttackEntitySensor.java
+index 4c035ed3eb4eb782e76953c0dca2aa30b8977807..6dce92b1cdefae3785a2dd85e76808e5fd23c827 100644
+--- a/net/minecraft/world/entity/ai/sensing/BreezeAttackEntitySensor.java
++++ b/net/minecraft/world/entity/ai/sensing/BreezeAttackEntitySensor.java
+@@ -4,9 +4,11 @@ import com.google.common.collect.ImmutableSet;
+ import com.google.common.collect.Iterables;
+ import java.util.Collection;
+ import java.util.List;
++import java.util.Optional;
+ import java.util.Set;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.entity.EntitySelector;
++import net.minecraft.world.entity.LivingEntity;
+ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+ import net.minecraft.world.entity.monster.breeze.Breeze;
+ 
+@@ -19,6 +21,23 @@ public class BreezeAttackEntitySensor extends NearestLivingEntitySensor<Breeze>
+     @Override
+     protected void doTick(final ServerLevel level, final Breeze breeze) {
+         super.doTick(level, breeze);
++        // Meteus start - mob AI detection fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++            final Optional<List<LivingEntity>> livingEntities = breeze.getBrain().getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES);
++            if (livingEntities.isPresent()) {
++                final List<LivingEntity> entities = livingEntities.get();
++                for (int i = 0, len = entities.size(); i < len; ++i) {
++                    final LivingEntity entity = entities.get(i);
++                    if (EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(entity) && Sensor.isEntityAttackable(level, breeze, entity)) {
++                        breeze.getBrain().setMemory(MemoryModuleType.NEAREST_ATTACKABLE, entity);
++                        return;
++                    }
++                }
++            }
++            breeze.getBrain().eraseMemory(MemoryModuleType.NEAREST_ATTACKABLE);
++            return;
++        }
++        // Meteus end - mob AI detection fast path
+         breeze.getBrain()
+             .getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES)
+             .stream()
+diff --git a/net/minecraft/world/entity/ai/sensing/WardenEntitySensor.java b/net/minecraft/world/entity/ai/sensing/WardenEntitySensor.java
+index 83285d9f3310ab7827607f0022a24b5627f7b480..4ccea68753046bafa960acf80535d33d2320da25 100644
+--- a/net/minecraft/world/entity/ai/sensing/WardenEntitySensor.java
++++ b/net/minecraft/world/entity/ai/sensing/WardenEntitySensor.java
+@@ -22,6 +22,37 @@ public class WardenEntitySensor extends NearestLivingEntitySensor<Warden> {
+     @Override
+     protected void doTick(final ServerLevel level, final Warden body) {
+         super.doTick(level, body);
++        // Meteus start - mob AI detection fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++            LivingEntity firstNonPlayer = null;
++            final Optional<List<LivingEntity>> livingEntities = body.getBrain().getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES);
++            if (livingEntities.isPresent()) {
++                final List<LivingEntity> entities = livingEntities.get();
++                for (int i = 0, len = entities.size(); i < len; ++i) {
++                    final LivingEntity entity = entities.get(i);
++                    if (!body.canTargetEntity(entity)) {
++                        continue;
++                    }
++
++                    if (entity.is(EntityType.PLAYER)) {
++                        body.getBrain().setMemory(MemoryModuleType.NEAREST_ATTACKABLE, entity);
++                        return;
++                    }
++
++                    if (firstNonPlayer == null) {
++                        firstNonPlayer = entity;
++                    }
++                }
++            }
++
++            if (firstNonPlayer != null) {
++                body.getBrain().setMemory(MemoryModuleType.NEAREST_ATTACKABLE, firstNonPlayer);
++            } else {
++                body.getBrain().eraseMemory(MemoryModuleType.NEAREST_ATTACKABLE);
++            }
++            return;
++        }
++        // Meteus end - mob AI detection fast path
+         getClosest(body, e -> e.is(EntityType.PLAYER))
+             .or(() -> getClosest(body, e -> !e.is(EntityType.PLAYER)))
+             .ifPresentOrElse(

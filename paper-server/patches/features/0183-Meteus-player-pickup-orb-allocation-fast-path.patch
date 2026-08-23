@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Mon, 15 Jun 2026 08:36:51 +0900
+Subject: [PATCH] Meteus player pickup orb allocation fast path
+
+
+diff --git a/net/minecraft/world/entity/player/Player.java b/net/minecraft/world/entity/player/Player.java
+index e34b050cfeb9d9afa1869b19ff862627d27d60f7..d065ed78948ea5d4d3f2e289a03c3a36a14ce810 100644
+--- a/net/minecraft/world/entity/player/Player.java
++++ b/net/minecraft/world/entity/player/Player.java
+@@ -501,17 +501,27 @@ public abstract class Player extends Avatar implements ContainerUser {
+             }
+ 
+             List<Entity> entities = this.level().getEntities(this, pickupArea);
+-            List<Entity> orbs = Lists.newArrayList();
++            // Meteus start - player pickup orb allocation fast path
++            // Most ticks no experience orb is in range, so defer allocating the orb list until the first orb is
++            // seen. The collected orbs and the random pick below are unchanged.
++            final boolean meteus$lazyPickupOrbs = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerPickupOrbAllocFastPath;
++            List<Entity> orbs = meteus$lazyPickupOrbs ? null : Lists.newArrayList();
++            // Meteus end - player pickup orb allocation fast path
+ 
+             for (Entity entity : entities) {
+                 if (entity.is(EntityType.EXPERIENCE_ORB)) {
++                    // Meteus start - player pickup orb allocation fast path
++                    if (orbs == null) {
++                        orbs = Lists.newArrayList();
++                    }
++                    // Meteus end - player pickup orb allocation fast path
+                     orbs.add(entity);
+                 } else if (!entity.isRemoved()) {
+                     this.touch(entity);
+                 }
+             }
+ 
+-            if (!orbs.isEmpty()) {
++            if (orbs != null && !orbs.isEmpty()) { // Meteus - player pickup orb allocation fast path - null-safe when lazily allocated
+                 this.touch(Util.getRandom(orbs, this.random));
+             }
+         }

@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Tue, 16 Jun 2026 00:28:31 +0900
+Subject: [PATCH] Meteus entity tracker boundary fast path
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index a8441ac8447a4c557c5d21b28a3a421d167e7299..6d0f948a02580e1af10680e1d057a197bba03bd5 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1701,6 +1701,22 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                 double visibleRange = Math.min(this.getEffectiveRange(), playerViewDistance * 16);
+                 double distanceSquared = deltaToPlayerX * deltaToPlayerX + deltaToPlayerZ * deltaToPlayerZ; // Paper
+                 double rangeSquared = visibleRange * visibleRange;
++                // Meteus start - tracker boundary fast path
++                // A pair that is already tracked and clearly inside range (by more than one tick of movement)
++                // cannot change tracking state this tick, so skip the per-pair broadcast/chunk/vanish/seenBy
++                // work - the dominant cost when many players are co-located (every pair is well inside range).
++                // seenBy.contains reflects vanish (which untracks directly); guarded to the common config:
++                // Y-tracking off and neither side a spectator (so broadcastToPlayer is true).
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipFastPath
++                    && visibleRange > 16.0D
++                    && distanceSquared <= (visibleRange - 16.0D) * (visibleRange - 16.0D)
++                    && !level.paperConfig().entities.trackingRangeY.enabled
++                    && this.seenBy.contains(player.connection)
++                    && !this.entity.isSpectator()
++                    && !player.isSpectator()) {
++                    return;
++                }
++                // Meteus end - tracker boundary fast path
+                 // Paper start - Configurable entity tracking range by Y
+                 boolean visibleToPlayer = distanceSquared <= rangeSquared;
+                 if (visibleToPlayer && level.paperConfig().entities.trackingRangeY.enabled) {

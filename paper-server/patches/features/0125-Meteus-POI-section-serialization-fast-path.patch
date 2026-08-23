@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:02:55 +0900
+Subject: [PATCH] Meteus POI section serialization fast path
+
+
+diff --git a/net/minecraft/world/entity/ai/village/poi/PoiSection.java b/net/minecraft/world/entity/ai/village/poi/PoiSection.java
+index 263c64f340417c0b49691a350b4bec592d58739d..c22d482a075ef317f23a8473cef837b5b2a5d389 100644
+--- a/net/minecraft/world/entity/ai/village/poi/PoiSection.java
++++ b/net/minecraft/world/entity/ai/village/poi/PoiSection.java
+@@ -8,6 +8,7 @@ import com.mojang.serialization.Codec;
+ import com.mojang.serialization.codecs.RecordCodecBuilder;
+ import it.unimi.dsi.fastutil.shorts.Short2ObjectMap;
+ import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
++import java.util.ArrayList;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Optional;
+@@ -57,6 +58,15 @@ public class PoiSection implements ca.spottedleaf.moonrise.patches.chunk_system.
+     }
+ 
+     public PoiSection.Packed pack() {
++        // Meteus start - world data serialization fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.worldDataSerializationFastPath) {
++            final List<PoiRecord.Packed> packedRecords = new ArrayList<>(this.records.size());
++            for (final PoiRecord record : this.records.values()) {
++                packedRecords.add(record.pack());
++            }
++            return new PoiSection.Packed(this.isValid, packedRecords);
++        }
++        // Meteus end - world data serialization fast path
+         return new PoiSection.Packed(this.isValid, this.records.values().stream().map(PoiRecord::pack).toList());
+     }
+ 
+@@ -170,6 +180,15 @@ public class PoiSection implements ca.spottedleaf.moonrise.patches.chunk_system.
+         );
+ 
+         public PoiSection unpack(final Runnable setDirty) {
++            // Meteus start - world data serialization fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.worldDataSerializationFastPath) {
++                final List<PoiRecord> unpackedRecords = new ArrayList<>(this.records.size());
++                for (int i = 0, len = this.records.size(); i < len; ++i) {
++                    unpackedRecords.add(this.records.get(i).unpack(setDirty));
++                }
++                return new PoiSection(setDirty, this.isValid, unpackedRecords);
++            }
++            // Meteus end - world data serialization fast path
+             return new PoiSection(setDirty, this.isValid, this.records.stream().map(record -> record.unpack(setDirty)).toList());
+         }
+     }

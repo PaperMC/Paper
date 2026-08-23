@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:26:27 +0900
+Subject: [PATCH] Meteus user list storage fast path
+
+
+diff --git a/net/minecraft/server/players/ServerOpList.java b/net/minecraft/server/players/ServerOpList.java
+index daf5f663517c7e24eadabff5fbed543be2f952c2..f154caa10c48f500791ac38348cbf5d76a72d7d3 100644
+--- a/net/minecraft/server/players/ServerOpList.java
++++ b/net/minecraft/server/players/ServerOpList.java
+@@ -17,6 +17,18 @@ public class ServerOpList extends StoredUserList<NameAndId, ServerOpListEntry> {
+ 
+     @Override
+     public String[] getUserList() {
++        // Meteus start - user list storage fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.userListStorageFastPath) {
++            final java.util.List<String> names = new java.util.ArrayList<>(this.getEntries().size());
++            for (final StoredUserEntry<NameAndId> entry : this.getEntries()) {
++                final NameAndId user = entry.getUser();
++                if (user != null) {
++                    names.add(user.name());
++                }
++            }
++            return names.toArray(new String[0]);
++        }
++        // Meteus end - user list storage fast path
+         return this.getEntries().stream().map(StoredUserEntry::getUser).filter(Objects::nonNull).map(NameAndId::name).toArray(String[]::new);
+     }
+ 
+diff --git a/net/minecraft/server/players/StoredUserList.java b/net/minecraft/server/players/StoredUserList.java
+index eaf8fb8a9cf94d0d16debf90e5ceda3f91c979ef..9d5c4fcc324803df57f1d41ee3acae915aa22080 100644
+--- a/net/minecraft/server/players/StoredUserList.java
++++ b/net/minecraft/server/players/StoredUserList.java
+@@ -127,7 +127,15 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+     public void save() throws IOException {
+         this.removeExpired(); // Paper - remove expired values before saving
+         JsonArray result = new JsonArray();
++        // Meteus start - user list storage fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.userListStorageFastPath) {
++            for (final V entry : this.map.values()) {
++                result.add(Util.make(new JsonObject(), entry::serialize));
++            }
++        } else {
++        // Meteus end - user list storage fast path
+         this.map.values().stream().map(entry -> Util.make(new JsonObject(), entry::serialize)).forEach(result::add);
++        } // Meteus - user list storage fast path
+ 
+         try (BufferedWriter writer = Files.newWriter(this.file, StandardCharsets.UTF_8)) {
+             GSON.toJson(result, GSON.newJsonWriter(writer));
+diff --git a/net/minecraft/server/players/UserBanList.java b/net/minecraft/server/players/UserBanList.java
+index 35fa92e3db1bf79b2fd89f21e28a9c2470c6c5a6..97f3fa683c408fc66ad782af5b38892362c16690 100644
+--- a/net/minecraft/server/players/UserBanList.java
++++ b/net/minecraft/server/players/UserBanList.java
+@@ -21,6 +21,18 @@ public class UserBanList extends StoredUserList<NameAndId, UserBanListEntry> {
+ 
+     @Override
+     public String[] getUserList() {
++        // Meteus start - user list storage fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.userListStorageFastPath) {
++            final java.util.List<String> names = new java.util.ArrayList<>(this.getEntries().size());
++            for (final StoredUserEntry<NameAndId> entry : this.getEntries()) {
++                final NameAndId user = entry.getUser();
++                if (user != null) {
++                    names.add(user.name());
++                }
++            }
++            return names.toArray(new String[0]);
++        }
++        // Meteus end - user list storage fast path
+         return this.getEntries().stream().map(StoredUserEntry::getUser).filter(Objects::nonNull).map(NameAndId::name).toArray(String[]::new);
+     }
+ 
+diff --git a/net/minecraft/server/players/UserWhiteList.java b/net/minecraft/server/players/UserWhiteList.java
+index e42147dca81ef47e15e7407b6136a7121cac3c64..e05e196cd0a7f09341b2e4d391ad3c43ce894f6e 100644
+--- a/net/minecraft/server/players/UserWhiteList.java
++++ b/net/minecraft/server/players/UserWhiteList.java
+@@ -65,6 +65,18 @@ public class UserWhiteList extends StoredUserList<NameAndId, UserWhiteListEntry>
+ 
+     @Override
+     public String[] getUserList() {
++        // Meteus start - user list storage fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.userListStorageFastPath) {
++            final java.util.List<String> names = new java.util.ArrayList<>(this.getEntries().size());
++            for (final StoredUserEntry<NameAndId> entry : this.getEntries()) {
++                final NameAndId user = entry.getUser();
++                if (user != null) {
++                    names.add(user.name());
++                }
++            }
++            return names.toArray(new String[0]);
++        }
++        // Meteus end - user list storage fast path
+         return this.getEntries().stream().map(StoredUserEntry::getUser).filter(Objects::nonNull).map(NameAndId::name).toArray(String[]::new);
+     }
+ 

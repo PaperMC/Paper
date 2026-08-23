@@ -1,0 +1,127 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 14:41:03 +0900
+Subject: [PATCH] Meteus chunk storage and dense effect fast paths
+
+
+diff --git a/net/minecraft/world/entity/monster/ElderGuardian.java b/net/minecraft/world/entity/monster/ElderGuardian.java
+index ed994bae12ccf0500fb01ca84d40177b067b9ac2..8518783acc5f4b42d72359ef702251583c686cdc 100644
+--- a/net/minecraft/world/entity/monster/ElderGuardian.java
++++ b/net/minecraft/world/entity/monster/ElderGuardian.java
+@@ -66,10 +66,19 @@ public class ElderGuardian extends Guardian {
+         if ((this.tickCount + this.getId()) % 1200 == 0) {
+             MobEffectInstance miningFatigue = new MobEffectInstance(MobEffects.MINING_FATIGUE, 6000, 2);
+             List<ServerPlayer> affectedPlayers = MobEffectUtil.addEffectToPlayersAround(level, this, this.position(), 50.0, miningFatigue, 1200, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK, player -> new io.papermc.paper.event.entity.ElderGuardianAppearanceEvent((org.bukkit.entity.ElderGuardian)this.getBukkitEntity(), player.getBukkitEntity()).callEvent()); // CraftBukkit // Paper - Add ElderGuardianAppearanceEvent
+-            affectedPlayers.forEach(
+-                player -> player.connection
+-                    .send(new ClientboundGameEventPacket(ClientboundGameEventPacket.GUARDIAN_ELDER_EFFECT, this.isSilent() ? 0.0F : 1.0F))
+-            );
++            // Meteus start - dense player effect fanout fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.densePlayerEffectFanoutFastPath) {
++                final ClientboundGameEventPacket packet = new ClientboundGameEventPacket(ClientboundGameEventPacket.GUARDIAN_ELDER_EFFECT, this.isSilent() ? 0.0F : 1.0F);
++                for (int index = 0, len = affectedPlayers.size(); index < len; ++index) {
++                    affectedPlayers.get(index).connection.send(packet);
++                }
++            } else {
++                affectedPlayers.forEach(
++                    player -> player.connection
++                        .send(new ClientboundGameEventPacket(ClientboundGameEventPacket.GUARDIAN_ELDER_EFFECT, this.isSilent() ? 0.0F : 1.0F))
++                );
++            }
++            // Meteus end - dense player effect fanout fast path
+         }
+ 
+         if (!this.hasHome()) {
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index a9d781e2fcac4e2426b0e35e46bbc10c540f9fd9..719f2e8bf18f6ad792ef45f391b5ea1b25d11c8c 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -876,6 +876,19 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+     }
+ 
+     public void clearAllBlockEntities() {
++        // Meteus start - chunk block entity lifecycle fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkBlockEntityLifecycleFastPath) {
++            for (final BlockEntity blockEntity : this.blockEntities.values()) {
++                blockEntity.setRemoved();
++            }
++            this.blockEntities.clear();
++            for (final LevelChunk.RebindableTickingBlockEntityWrapper ticker : this.tickersInLevel.values()) {
++                ticker.rebind(NULL_TICKER);
++            }
++            this.tickersInLevel.clear();
++            return;
++        }
++        // Meteus end - chunk block entity lifecycle fast path
+         this.blockEntities.values().forEach(BlockEntity::setRemoved);
+         this.blockEntities.clear();
+         this.tickersInLevel.values().forEach(ticker -> ticker.rebind(NULL_TICKER));
+@@ -883,6 +896,19 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+     }
+ 
+     public void registerAllBlockEntitiesAfterLevelLoad() {
++        // Meteus start - chunk block entity lifecycle fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkBlockEntityLifecycleFastPath) {
++            for (final BlockEntity blockEntity : this.blockEntities.values()) {
++                if (this.level instanceof ServerLevel serverLevel) {
++                    this.addGameEventListener(blockEntity, serverLevel);
++                }
++
++                this.level.onBlockEntityAdded(blockEntity);
++                this.updateBlockEntityTicker(blockEntity);
++            }
++            return;
++        }
++        // Meteus end - chunk block entity lifecycle fast path
+         this.blockEntities.values().forEach(blockEntity -> {
+             if (this.level instanceof ServerLevel serverLevel) {
+                 this.addGameEventListener(blockEntity, serverLevel);
+diff --git a/net/minecraft/world/level/chunk/PalettedContainer.java b/net/minecraft/world/level/chunk/PalettedContainer.java
+index 66a05adab494f8674f0636f8b34533f8ef640028..4aa03384e14413eb6a5800bbe25dd6caf97a7661 100644
+--- a/net/minecraft/world/level/chunk/PalettedContainer.java
++++ b/net/minecraft/world/level/chunk/PalettedContainer.java
+@@ -6,6 +6,7 @@ import com.mojang.serialization.DataResult;
+ import com.mojang.serialization.codecs.RecordCodecBuilder;
+ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+ import it.unimi.dsi.fastutil.ints.IntArraySet;
++import it.unimi.dsi.fastutil.ints.IntIterator;
+ import it.unimi.dsi.fastutil.ints.IntSet;
+ import java.util.Arrays;
+ import java.util.List;
+@@ -258,6 +259,15 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+         Palette<T> palette = this.data.palette();
+         IntSet allExistingEntries = new IntArraySet();
+         this.data.storage.getAll(allExistingEntries::add);
++        // Meteus start - chunk palette iteration fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkPaletteIterationFastPath) {
++            final IntIterator iterator = allExistingEntries.iterator();
++            while (iterator.hasNext()) {
++                consumer.accept(palette.valueFor(iterator.nextInt()));
++            }
++            return;
++        }
++        // Meteus end - chunk palette iteration fast path
+         allExistingEntries.forEach(state -> consumer.accept(palette.valueFor(state)));
+     }
+ 
+diff --git a/net/minecraft/world/level/chunk/storage/SectionStorage.java b/net/minecraft/world/level/chunk/storage/SectionStorage.java
+index 4bc70852449459037d293d2813c1c73345149b4e..8d9c845d337a41614cdc270854a87bbc308fbc2a 100644
+--- a/net/minecraft/world/level/chunk/storage/SectionStorage.java
++++ b/net/minecraft/world/level/chunk/storage/SectionStorage.java
+@@ -121,6 +121,16 @@ public class SectionStorage<R, P> implements AutoCloseable, ca.spottedleaf.moonr
+ 
+     public void flushAll() {
+         if (!this.dirtyChunks.isEmpty()) {
++            // Meteus start - section storage flush fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.sectionStorageFlushFastPath) {
++                final LongIterator iterator = this.dirtyChunks.iterator();
++                while (iterator.hasNext()) {
++                    this.writeChunk(ChunkPos.unpack(iterator.nextLong()));
++                }
++                this.dirtyChunks.clear();
++                return;
++            }
++            // Meteus end - section storage flush fast path
+             this.dirtyChunks.forEach(pos -> this.writeChunk(ChunkPos.unpack(pos)));
+             this.dirtyChunks.clear();
+         }

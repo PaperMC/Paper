@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 19:17:33 +0900
+Subject: [PATCH] Meteus player list broadcast fast path
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index e448a39c060503eea42035f26711f3766e8013f2..f85a05ee93a67b7279b74c344ea007d6e7524032 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -770,6 +770,18 @@ public abstract class PlayerList {
+ 
+     // CraftBukkit start - add a world/entity limited version
+     public void broadcastAll(Packet packet, net.minecraft.world.entity.player.Player entityhuman) {
++        // Meteus start - player list broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListBroadcastFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer entityplayer = this.players.get(i);
++                if (entityhuman != null && !entityplayer.getBukkitEntity().canSee(entityhuman.getBukkitEntity())) {
++                    continue;
++                }
++                entityplayer.connection.send(packet);
++            }
++            return;
++        }
++        // Meteus end - player list broadcast fast path
+         for (ServerPlayer entityplayer : this.players) { // Paper - replace for i with for each for thread safety
+             if (entityhuman != null && !entityplayer.getBukkitEntity().canSee(entityhuman.getBukkitEntity())) {
+                 continue;
+@@ -787,12 +799,31 @@ public abstract class PlayerList {
+     // CraftBukkit end
+ 
+     public void broadcastAll(final Packet<?> packet) {
++        // Meteus start - player list broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListBroadcastFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                this.players.get(i).connection.send(packet);
++            }
++            return;
++        }
++        // Meteus end - player list broadcast fast path
+         for (ServerPlayer player : this.players) {
+             player.connection.send(packet);
+         }
+     }
+ 
+     public void broadcastAll(final Packet<?> packet, final ResourceKey<Level> dimension) {
++        // Meteus start - player list broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListBroadcastFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                if (player.level().dimension() == dimension) {
++                    player.connection.send(packet);
++                }
++            }
++            return;
++        }
++        // Meteus end - player list broadcast fast path
+         for (ServerPlayer player : this.players) {
+             if (player.level().dimension() == dimension) {
+                 player.connection.send(packet);

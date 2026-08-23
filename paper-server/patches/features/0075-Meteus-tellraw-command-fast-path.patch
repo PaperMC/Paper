@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 17:30:16 +0900
+Subject: [PATCH] Meteus tellraw command fast path
+
+
+diff --git a/net/minecraft/server/commands/TellRawCommand.java b/net/minecraft/server/commands/TellRawCommand.java
+index 26c618695df1b86791f08983a5e0c33d69275552..40da55df0be87b551f675b862c4284ec0c7eb1d6 100644
+--- a/net/minecraft/server/commands/TellRawCommand.java
++++ b/net/minecraft/server/commands/TellRawCommand.java
+@@ -1,6 +1,8 @@
+ package net.minecraft.server.commands;
+ 
+ import com.mojang.brigadier.CommandDispatcher;
++import java.util.Collection;
++import java.util.List;
+ import net.minecraft.commands.CommandBuildContext;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+@@ -18,7 +20,18 @@ public class TellRawCommand {
+                         .then(Commands.argument("message", ComponentArgument.textComponent(context)).executes(c -> {
+                             int result = 0;
+ 
+-                            for (ServerPlayer player : EntityArgument.getPlayers(c, "targets")) {
++                            final Collection<ServerPlayer> targets = EntityArgument.getPlayers(c, "targets");
++                            // Meteus start - tellraw command fast path
++                            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.tellRawCommandFastPath && targets instanceof List<ServerPlayer> targetList) {
++                                for (int i = 0, len = targetList.size(); i < len; ++i) {
++                                    final ServerPlayer player = targetList.get(i);
++                                    player.sendSystemMessage(ComponentArgument.getResolvedComponent(c, "message", player));
++                                    result++;
++                                }
++                                return result;
++                            }
++                            // Meteus end - tellraw command fast path
++                            for (ServerPlayer player : targets) {
+                                 player.sendSystemMessage(ComponentArgument.getResolvedComponent(c, "message", player));
+                                 result++;
+                             }

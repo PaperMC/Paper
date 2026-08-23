@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:17:52 +0900
+Subject: [PATCH] Meteus chunk load counter fast path
+
+
+diff --git a/net/minecraft/server/level/ChunkLoadCounter.java b/net/minecraft/server/level/ChunkLoadCounter.java
+index 323173680c1f16c9c336a39b92f42e3e45c60eb1..35db4372a97d177b8cda437e5577a5ef6556160f 100644
+--- a/net/minecraft/server/level/ChunkLoadCounter.java
++++ b/net/minecraft/server/level/ChunkLoadCounter.java
+@@ -14,6 +14,22 @@ public class ChunkLoadCounter {
+         ServerChunkCache chunkSource = level.getChunkSource();
+         LongSet alreadyLoadedChunks = new LongOpenHashSet();
+         chunkSource.runDistanceManagerUpdates();
++        // Meteus start - chunk load counter fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkLoadCounterFastPath) {
++            for (final ChunkHolder chunkHolder : chunkSource.chunkMap.allChunksWithAtLeastStatus(ChunkStatus.FULL)) {
++                alreadyLoadedChunks.add(chunkHolder.getPos().pack());
++            }
++            scheduler.run();
++            chunkSource.runDistanceManagerUpdates();
++            for (final ChunkHolder chunkHolder : chunkSource.chunkMap.allChunksWithAtLeastStatus(ChunkStatus.FULL)) {
++                if (!alreadyLoadedChunks.contains(chunkHolder.getPos().pack())) {
++                    this.pendingChunks.add(chunkHolder);
++                    this.totalChunks++;
++                }
++            }
++            return;
++        }
++        // Meteus end - chunk load counter fast path
+         chunkSource.chunkMap.allChunksWithAtLeastStatus(ChunkStatus.FULL).forEach(chunkHolder -> alreadyLoadedChunks.add(chunkHolder.getPos().pack()));
+         scheduler.run();
+         chunkSource.runDistanceManagerUpdates();
+@@ -30,6 +46,16 @@ public class ChunkLoadCounter {
+     }
+ 
+     public int pendingChunks() {
++        // Meteus start - chunk load counter fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkLoadCounterFastPath) {
++            for (int i = this.pendingChunks.size() - 1; i >= 0; --i) {
++                if (this.pendingChunks.get(i).getLatestStatus() == ChunkStatus.FULL) {
++                    this.pendingChunks.remove(i);
++                }
++            }
++            return this.pendingChunks.size();
++        }
++        // Meteus end - chunk load counter fast path
+         this.pendingChunks.removeIf(chunkHolder -> chunkHolder.getLatestStatus() == ChunkStatus.FULL);
+         return this.pendingChunks.size();
+     }

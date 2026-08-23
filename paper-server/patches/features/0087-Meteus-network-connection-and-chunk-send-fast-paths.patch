@@ -1,0 +1,173 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 20:36:07 +0900
+Subject: [PATCH] Meteus network connection and chunk send fast paths
+
+
+diff --git a/net/minecraft/server/network/PlayerChunkSender.java b/net/minecraft/server/network/PlayerChunkSender.java
+index 373da9d604cfb1614a0618d856aefd2be3c7682b..ed907a3c9427cfae219e03f383e84eb1a2b7a75f 100644
+--- a/net/minecraft/server/network/PlayerChunkSender.java
++++ b/net/minecraft/server/network/PlayerChunkSender.java
+@@ -2,8 +2,10 @@ package net.minecraft.server.network;
+ 
+ import com.google.common.collect.Comparators;
+ import com.mojang.logging.LogUtils;
++import it.unimi.dsi.fastutil.longs.LongIterator;
+ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+ import it.unimi.dsi.fastutil.longs.LongSet;
++import java.util.ArrayList;
+ import java.util.Comparator;
+ import java.util.List;
+ import java.util.Objects;
+@@ -97,6 +99,11 @@ public class PlayerChunkSender {
+     }
+ 
+     private List<LevelChunk> collectChunksToSend(final ChunkMap chunkMap, final ChunkPos playerPos) {
++        // Meteus start - chunk send queue fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkSendQueueFastPath) {
++            return this.meteus$collectChunksToSend(chunkMap, playerPos, Mth.floor(this.batchQuota));
++        }
++        // Meteus end - chunk send queue fast path
+         int maxBatchSize = Mth.floor(this.batchQuota);
+         List<LevelChunk> chunks;
+         if (!this.memoryConnection && this.pendingChunks.size() > maxBatchSize) {
+@@ -124,6 +131,72 @@ public class PlayerChunkSender {
+         return chunks;
+     }
+ 
++    // Meteus start - chunk send queue fast path
++    private List<LevelChunk> meteus$collectChunksToSend(final ChunkMap chunkMap, final ChunkPos playerPos, final int maxBatchSize) {
++        final int pendingSize = this.pendingChunks.size();
++        if (pendingSize == 0) {
++            return List.of();
++        }
++        final int effectiveMaxBatchSize = Math.max(1, maxBatchSize);
++
++        final ArrayList<LevelChunk> chunks;
++        if (!this.memoryConnection && pendingSize > effectiveMaxBatchSize) {
++            final LevelChunk[] nearestChunks = new LevelChunk[effectiveMaxBatchSize];
++            final int[] nearestDistances = new int[effectiveMaxBatchSize];
++            int selected = 0;
++
++            for (final LongIterator iterator = this.pendingChunks.longIterator(); iterator.hasNext();) {
++                final LevelChunk chunk = chunkMap.getChunkToSend(iterator.nextLong());
++                if (chunk == null) {
++                    continue;
++                }
++
++                final int distance = playerPos.distanceSquared(chunk.getPos());
++                if (selected < effectiveMaxBatchSize) {
++                    int insertAt = selected;
++                    while (insertAt > 0 && distance < nearestDistances[insertAt - 1]) {
++                        nearestChunks[insertAt] = nearestChunks[insertAt - 1];
++                        nearestDistances[insertAt] = nearestDistances[insertAt - 1];
++                        --insertAt;
++                    }
++                    nearestChunks[insertAt] = chunk;
++                    nearestDistances[insertAt] = distance;
++                    ++selected;
++                } else if (distance < nearestDistances[effectiveMaxBatchSize - 1]) {
++                    int insertAt = effectiveMaxBatchSize - 1;
++                    while (insertAt > 0 && distance < nearestDistances[insertAt - 1]) {
++                        nearestChunks[insertAt] = nearestChunks[insertAt - 1];
++                        nearestDistances[insertAt] = nearestDistances[insertAt - 1];
++                        --insertAt;
++                    }
++                    nearestChunks[insertAt] = chunk;
++                    nearestDistances[insertAt] = distance;
++                }
++            }
++
++            chunks = new ArrayList<>(selected);
++            for (int i = 0; i < selected; ++i) {
++                chunks.add(nearestChunks[i]);
++            }
++        } else {
++            chunks = new ArrayList<>(pendingSize);
++            for (final LongIterator iterator = this.pendingChunks.longIterator(); iterator.hasNext();) {
++                final LevelChunk chunk = chunkMap.getChunkToSend(iterator.nextLong());
++                if (chunk != null) {
++                    chunks.add(chunk);
++                }
++            }
++            chunks.sort(Comparator.comparingInt(chunk -> playerPos.distanceSquared(chunk.getPos())));
++        }
++
++        for (int i = 0, len = chunks.size(); i < len; ++i) {
++            this.pendingChunks.remove(chunks.get(i).getPos().pack());
++        }
++
++        return chunks;
++    }
++    // Meteus end - chunk send queue fast path
++
+     public void onChunkBatchReceivedByClient(final float desiredChunksPerTick) {
+         this.unacknowledgedBatches--;
+         this.desiredChunksPerTick = Double.isNaN(desiredChunksPerTick) ? 0.01F : Mth.clamp(desiredChunksPerTick, 0.01F, 64.0F);
+diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
+index 474b7f06223514d95bad3d91356dfaa5435b77f5..4ecaa7f9b7e16a3645178593ac2112b5485ed1ac 100644
+--- a/net/minecraft/server/network/ServerConnectionListener.java
++++ b/net/minecraft/server/network/ServerConnectionListener.java
+@@ -220,6 +220,18 @@ public class ServerConnectionListener {
+                 Collections.shuffle(this.connections);
+             }
+             // Spigot end
++            // Meteus start - network connection tick fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkConnectionTickFastPath) {
++                for (int i = 0; i < this.connections.size();) {
++                    if (this.meteus$tickConnection(this.connections.get(i))) {
++                        ++i;
++                    } else {
++                        this.connections.remove(i);
++                    }
++                }
++                return;
++            }
++            // Meteus end - network connection tick fast path
+             Iterator<Connection> iterator = this.connections.iterator();
+ 
+             while (iterator.hasNext()) {
+@@ -255,6 +267,43 @@ public class ServerConnectionListener {
+         }
+     }
+ 
++    // Meteus start - network connection tick fast path
++    private boolean meteus$tickConnection(final Connection connection) {
++        if (connection.isConnecting()) {
++            return true;
++        }
++
++        if (connection.isConnected()) {
++            // Paper start - Force kill connection ticking
++            // also call this multiple times, doesnt matter
++            // See MC-307764
++            if (connection.handleConnectionDisconnectOnNextTick) {
++                return true;
++            }
++            // Paper end - Force kill connection ticking
++            try {
++                connection.tick();
++            } catch (Exception e) {
++                if (connection.isMemoryConnection()) {
++                    throw new ReportedException(CrashReport.forThrowable(e, "Ticking memory connection"));
++                }
++
++                LOGGER.warn("Failed to handle packet for {}", connection.getLoggableAddress(this.server.logIPs()), e);
++                Component component = Component.literal("Internal server error");
++                connection.send(new ClientboundDisconnectPacket(component), PacketSendListener.thenRun(() -> connection.disconnect(component)));
++                connection.setReadOnly();
++            }
++            return true;
++        }
++
++        if (connection.preparing) {
++            return true; // Spigot - Fix a race condition where a Connection could be unregistered just before connection
++        }
++        connection.handleDisconnection();
++        return false;
++    }
++    // Meteus end - network connection tick fast path
++
+     public MinecraftServer getServer() {
+         return this.server;
+     }

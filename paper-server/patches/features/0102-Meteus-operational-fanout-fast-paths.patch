@@ -1,0 +1,256 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 11:28:33 +0900
+Subject: [PATCH] Meteus operational fanout fast paths
+
+
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index 6a5d404e570ede5d49c82bccc30aa75ddd58983b..fc2562b4df554d8653f96f7146ef8b42ca8889e1 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -469,6 +469,18 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+     public void sendLowDiskSpaceWarning() {
+         super.sendLowDiskSpaceWarning();
+         Permission.HasCommandLevel adminCheck = new Permission.HasCommandLevel(PermissionLevel.ADMINS);
++        // Meteus start - low disk admin warning fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.lowDiskAdminWarningFastPath) {
++            final List<ServerPlayer> players = this.getPlayerList().getPlayers();
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final ServerPlayer player = players.get(i);
++                if (player.permissions().hasPermission(adminCheck)) {
++                    player.connection.send(ClientboundLowDiskSpaceWarningPacket.INSTANCE);
++                }
++            }
++            return;
++        }
++        // Meteus end - low disk admin warning fast path
+         this.getPlayerList()
+             .getPlayers()
+             .stream()
+diff --git a/net/minecraft/server/notifications/NotificationManager.java b/net/minecraft/server/notifications/NotificationManager.java
+index 377df52577ff5cdfb0e88b8c14650a491d5a47b1..71c9dcede51e8e13d3db2d7806b11f2ff997ba92 100644
+--- a/net/minecraft/server/notifications/NotificationManager.java
++++ b/net/minecraft/server/notifications/NotificationManager.java
+@@ -18,86 +18,222 @@ public class NotificationManager implements NotificationService {
+ 
+     @Override
+     public void playerJoined(final ServerPlayer player) {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).playerJoined(player);
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(notificationService -> notificationService.playerJoined(player));
+     }
+ 
+     @Override
+     public void playerLeft(final ServerPlayer player) {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).playerLeft(player);
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(notificationService -> notificationService.playerLeft(player));
+     }
+ 
+     @Override
+     public void serverStarted() {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).serverStarted();
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(NotificationService::serverStarted);
+     }
+ 
+     @Override
+     public void serverShuttingDown() {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).serverShuttingDown();
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(NotificationService::serverShuttingDown);
+     }
+ 
+     @Override
+     public void serverSaveStarted() {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).serverSaveStarted();
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(NotificationService::serverSaveStarted);
+     }
+ 
+     @Override
+     public void serverSaveCompleted() {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).serverSaveCompleted();
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(NotificationService::serverSaveCompleted);
+     }
+ 
+     @Override
+     public void serverActivityOccured() {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).serverActivityOccured();
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(NotificationService::serverActivityOccured);
+     }
+ 
+     @Override
+     public void playerOped(final ServerOpListEntry operator) {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).playerOped(operator);
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(notificationService -> notificationService.playerOped(operator));
+     }
+ 
+     @Override
+     public void playerDeoped(final ServerOpListEntry operator) {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).playerDeoped(operator);
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(notificationService -> notificationService.playerDeoped(operator));
+     }
+ 
+     @Override
+     public void playerAddedToAllowlist(final NameAndId player) {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).playerAddedToAllowlist(player);
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(notificationService -> notificationService.playerAddedToAllowlist(player));
+     }
+ 
+     @Override
+     public void playerRemovedFromAllowlist(final NameAndId player) {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).playerRemovedFromAllowlist(player);
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(notificationService -> notificationService.playerRemovedFromAllowlist(player));
+     }
+ 
+     @Override
+     public void ipBanned(final IpBanListEntry ban) {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).ipBanned(ban);
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(notificationService -> notificationService.ipBanned(ban));
+     }
+ 
+     @Override
+     public void ipUnbanned(final String ip) {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).ipUnbanned(ip);
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(notificationService -> notificationService.ipUnbanned(ip));
+     }
+ 
+     @Override
+     public void playerBanned(final UserBanListEntry ban) {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).playerBanned(ban);
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(notificationService -> notificationService.playerBanned(ban));
+     }
+ 
+     @Override
+     public void playerUnbanned(final NameAndId player) {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).playerUnbanned(player);
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(notificationService -> notificationService.playerUnbanned(player));
+     }
+ 
+     @Override
+     public <T> void onGameRuleChanged(net.minecraft.server.level.ServerLevel level, final GameRule<T> gameRule, final T value) { // Paper - per-world game rules (add level param)
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).onGameRuleChanged(level, gameRule, value);
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(notificationService -> notificationService.onGameRuleChanged(level, gameRule, value)); // Paper - per-world game rules (add level param)
+     }
+ 
+     @Override
+     public void statusHeartbeat() {
++        // Meteus start - notification service fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.notificationServiceFanoutFastPath) {
++            for (int i = 0, len = this.notificationServices.size(); i < len; ++i) {
++                this.notificationServices.get(i).statusHeartbeat();
++            }
++            return;
++        }
++        // Meteus end - notification service fanout fast path
+         this.notificationServices.forEach(NotificationService::statusHeartbeat);
+     }
+ }

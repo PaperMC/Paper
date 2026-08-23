@@ -1,0 +1,225 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 17:58:35 +0900
+Subject: [PATCH] Meteus scoreboard and team command fast paths
+
+
+diff --git a/net/minecraft/server/commands/ScoreboardCommand.java b/net/minecraft/server/commands/ScoreboardCommand.java
+index 1e8f4cb55851b89ee2272917fd440e2f8749442f..d1e3e09f488a77fdb81f583b8278a54b723dbfed 100644
+--- a/net/minecraft/server/commands/ScoreboardCommand.java
++++ b/net/minecraft/server/commands/ScoreboardCommand.java
+@@ -416,6 +416,17 @@ public class ScoreboardCommand {
+             if (objective.getCriteria() == ObjectiveCriteria.TRIGGER) {
+                 boolean available = false;
+ 
++                // Meteus start - scoreboard command fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardCommandFastPath && targets instanceof List<?> targetList) {
++                    for (int i = 0, len = targetList.size(); i < len; ++i) {
++                        ReadOnlyScoreInfo scoreInfo = scoreboard.getPlayerScoreInfo((ScoreHolder) targetList.get(i), objective);
++                        if (scoreInfo == null || scoreInfo.isLocked()) {
++                            available = true;
++                            break;
++                        }
++                    }
++                } else
++                // Meteus end - scoreboard command fast path
+                 for (ScoreHolder name : targets) {
+                     ReadOnlyScoreInfo scoreInfo = scoreboard.getPlayerScoreInfo(name, objective);
+                     if (scoreInfo == null || scoreInfo.isLocked()) {
+@@ -464,6 +475,22 @@ public class ScoreboardCommand {
+         Scoreboard scoreboard = source.getServer().getScoreboard();
+         int result = 0;
+ 
++        // Meteus start - scoreboard command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardCommandFastPath
++            && targets instanceof List<?> targetList
++            && sources instanceof List<?> sourceList) {
++            for (int i = 0, targetLen = targetList.size(); i < targetLen; ++i) {
++                ScoreAccess score = scoreboard.getOrCreatePlayerScore((ScoreHolder) targetList.get(i), targetObjective);
++
++                for (int j = 0, sourceLen = sourceList.size(); j < sourceLen; ++j) {
++                    ScoreAccess sourceScore = scoreboard.getOrCreatePlayerScore((ScoreHolder) sourceList.get(j), sourceObjective);
++                    operation.apply(score, sourceScore);
++                }
++
++                result += score.get();
++            }
++        } else
++        // Meteus end - scoreboard command fast path
+         for (ScoreHolder target : targets) {
+             ScoreAccess score = scoreboard.getOrCreatePlayerScore(target, targetObjective);
+ 
+@@ -503,6 +530,17 @@ public class ScoreboardCommand {
+         Scoreboard scoreboard = source.getServer().getScoreboard();
+         int count = 0;
+ 
++        // Meteus start - scoreboard command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardCommandFastPath && names instanceof List<?> nameList) {
++            for (int i = 0, len = nameList.size(); i < len; ++i) {
++                ScoreAccess score = scoreboard.getOrCreatePlayerScore((ScoreHolder) nameList.get(i), objective);
++                if (score.locked()) {
++                    score.unlock();
++                    count++;
++                }
++            }
++        } else
++        // Meteus end - scoreboard command fast path
+         for (ScoreHolder name : names) {
+             ScoreAccess score = scoreboard.getOrCreatePlayerScore(name, objective);
+             if (score.locked()) {
+@@ -534,6 +572,13 @@ public class ScoreboardCommand {
+     private static int resetScores(final CommandSourceStack source, final Collection<ScoreHolder> names) {
+         Scoreboard scoreboard = source.getServer().getScoreboard();
+ 
++        // Meteus start - scoreboard command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardCommandFastPath && names instanceof List<?> nameList) {
++            for (int i = 0, len = nameList.size(); i < len; ++i) {
++                scoreboard.resetAllPlayerScores((ScoreHolder) nameList.get(i));
++            }
++        } else
++        // Meteus end - scoreboard command fast path
+         for (ScoreHolder name : names) {
+             scoreboard.resetAllPlayerScores(name);
+         }
+@@ -550,6 +595,13 @@ public class ScoreboardCommand {
+     private static int resetScore(final CommandSourceStack source, final Collection<ScoreHolder> names, final Objective objective) {
+         Scoreboard scoreboard = source.getServer().getScoreboard();
+ 
++        // Meteus start - scoreboard command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardCommandFastPath && names instanceof List<?> nameList) {
++            for (int i = 0, len = nameList.size(); i < len; ++i) {
++                scoreboard.resetSinglePlayerScore((ScoreHolder) nameList.get(i), objective);
++            }
++        } else
++        // Meteus end - scoreboard command fast path
+         for (ScoreHolder name : names) {
+             scoreboard.resetSinglePlayerScore(name, objective);
+         }
+@@ -573,6 +625,13 @@ public class ScoreboardCommand {
+     private static int setScore(final CommandSourceStack source, final Collection<ScoreHolder> names, final Objective objective, final int value) {
+         Scoreboard scoreboard = source.getServer().getScoreboard();
+ 
++        // Meteus start - scoreboard command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardCommandFastPath && names instanceof List<?> nameList) {
++            for (int i = 0, len = nameList.size(); i < len; ++i) {
++                scoreboard.getOrCreatePlayerScore((ScoreHolder) nameList.get(i), objective).set(value);
++            }
++        } else
++        // Meteus end - scoreboard command fast path
+         for (ScoreHolder name : names) {
+             scoreboard.getOrCreatePlayerScore(name, objective).set(value);
+         }
+@@ -599,6 +658,13 @@ public class ScoreboardCommand {
+     ) {
+         Scoreboard scoreboard = source.getServer().getScoreboard();
+ 
++        // Meteus start - scoreboard command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardCommandFastPath && names instanceof List<?> nameList) {
++            for (int i = 0, len = nameList.size(); i < len; ++i) {
++                scoreboard.getOrCreatePlayerScore((ScoreHolder) nameList.get(i), objective).display(display);
++            }
++        } else
++        // Meteus end - scoreboard command fast path
+         for (ScoreHolder name : names) {
+             scoreboard.getOrCreatePlayerScore(name, objective).display(display);
+         }
+@@ -643,6 +709,13 @@ public class ScoreboardCommand {
+     ) {
+         Scoreboard scoreboard = source.getServer().getScoreboard();
+ 
++        // Meteus start - scoreboard command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardCommandFastPath && names instanceof List<?> nameList) {
++            for (int i = 0, len = nameList.size(); i < len; ++i) {
++                scoreboard.getOrCreatePlayerScore((ScoreHolder) nameList.get(i), objective).numberFormatOverride(numberFormat);
++            }
++        } else
++        // Meteus end - scoreboard command fast path
+         for (ScoreHolder name : names) {
+             scoreboard.getOrCreatePlayerScore(name, objective).numberFormatOverride(numberFormat);
+         }
+@@ -686,6 +759,15 @@ public class ScoreboardCommand {
+         Scoreboard scoreboard = source.getServer().getScoreboard();
+         int result = 0;
+ 
++        // Meteus start - scoreboard command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardCommandFastPath && names instanceof List<?> nameList) {
++            for (int i = 0, len = nameList.size(); i < len; ++i) {
++                ScoreAccess score = scoreboard.getOrCreatePlayerScore((ScoreHolder) nameList.get(i), objective);
++                score.set(score.get() + value);
++                result += score.get();
++            }
++        } else
++        // Meteus end - scoreboard command fast path
+         for (ScoreHolder name : names) {
+             ScoreAccess score = scoreboard.getOrCreatePlayerScore(name, objective);
+             score.set(score.get() + value);
+@@ -714,6 +796,15 @@ public class ScoreboardCommand {
+         Scoreboard scoreboard = source.getServer().getScoreboard();
+         int result = 0;
+ 
++        // Meteus start - scoreboard command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardCommandFastPath && names instanceof List<?> nameList) {
++            for (int i = 0, len = nameList.size(); i < len; ++i) {
++                ScoreAccess score = scoreboard.getOrCreatePlayerScore((ScoreHolder) nameList.get(i), objective);
++                score.set(score.get() - value);
++                result += score.get();
++            }
++        } else
++        // Meteus end - scoreboard command fast path
+         for (ScoreHolder name : names) {
+             ScoreAccess score = scoreboard.getOrCreatePlayerScore(name, objective);
+             score.set(score.get() - value);
+diff --git a/net/minecraft/server/commands/TeamCommand.java b/net/minecraft/server/commands/TeamCommand.java
+index b64ca9b1125354dc1c3d1a844cc396adefcf5938..192ce89e20d59bb26369c183166ba67fc9526eeb 100644
+--- a/net/minecraft/server/commands/TeamCommand.java
++++ b/net/minecraft/server/commands/TeamCommand.java
+@@ -8,6 +8,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+ import java.util.Collection;
+ import java.util.Collections;
++import java.util.List;
+ import net.minecraft.ChatFormatting;
+ import net.minecraft.commands.CommandBuildContext;
+ import net.minecraft.commands.CommandSourceStack;
+@@ -271,6 +272,13 @@ public class TeamCommand {
+     private static int leaveTeam(final CommandSourceStack source, final Collection<ScoreHolder> members) {
+         Scoreboard scoreboard = source.getServer().getScoreboard();
+ 
++        // Meteus start - team command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.teamCommandFastPath && members instanceof List<?> memberList) {
++            for (int i = 0, len = memberList.size(); i < len; ++i) {
++                scoreboard.removePlayerFromTeam(((ScoreHolder) memberList.get(i)).getScoreboardName());
++            }
++        } else
++        // Meteus end - team command fast path
+         for (ScoreHolder member : members) {
+             scoreboard.removePlayerFromTeam(member.getScoreboardName());
+         }
+@@ -287,6 +295,13 @@ public class TeamCommand {
+     private static int joinTeam(final CommandSourceStack source, final PlayerTeam team, final Collection<ScoreHolder> members) {
+         Scoreboard scoreboard = source.getServer().getScoreboard();
+ 
++        // Meteus start - team command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.teamCommandFastPath && members instanceof List<?> memberList) {
++            for (int i = 0, len = memberList.size(); i < len; ++i) {
++                scoreboard.addPlayerToTeam(((ScoreHolder) memberList.get(i)).getScoreboardName(), team);
++            }
++        } else
++        // Meteus end - team command fast path
+         for (ScoreHolder member : members) {
+             scoreboard.addPlayerToTeam(member.getScoreboardName(), team);
+         }
+@@ -399,6 +414,13 @@ public class TeamCommand {
+             throw ERROR_TEAM_ALREADY_EMPTY.create();
+         }
+ 
++        // Meteus start - team command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.teamCommandFastPath && members instanceof List<?> memberList) {
++            for (int i = 0, len = memberList.size(); i < len; ++i) {
++                scoreboard.removePlayerFromTeam((String) memberList.get(i), team);
++            }
++        } else
++        // Meteus end - team command fast path
+         for (String member : members) {
+             scoreboard.removePlayerFromTeam(member, team);
+         }

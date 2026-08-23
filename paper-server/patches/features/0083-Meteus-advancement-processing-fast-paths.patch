@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 18:16:41 +0900
+Subject: [PATCH] Meteus advancement processing fast paths
+
+
+diff --git a/net/minecraft/server/PlayerAdvancements.java b/net/minecraft/server/PlayerAdvancements.java
+index f8c3b8b1f153157074452b3d13b94efa568d048e..1fe8e1ebd39aef655629c35d7411592edd5655e6 100644
+--- a/net/minecraft/server/PlayerAdvancements.java
++++ b/net/minecraft/server/PlayerAdvancements.java
+@@ -15,12 +15,14 @@ import java.io.Writer;
+ import java.nio.charset.StandardCharsets;
+ import java.nio.file.Files;
+ import java.nio.file.Path;
++import java.util.ArrayList;
+ import java.util.HashMap;
+ import java.util.HashSet;
+ import java.util.LinkedHashMap;
++import java.util.List;
+ import java.util.Map;
+-import java.util.Set;
+ import java.util.Map.Entry;
++import java.util.Set;
+ import java.util.function.BiConsumer;
+ import net.minecraft.advancements.Advancement;
+ import net.minecraft.advancements.AdvancementHolder;
+@@ -340,6 +342,17 @@ public class PlayerAdvancements {
+             .xmap(PlayerAdvancements.Data::new, PlayerAdvancements.Data::map);
+ 
+         public void forEach(final BiConsumer<Identifier, AdvancementProgress> consumer) {
++            // Meteus start - advancement storage fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.advancementStorageFastPath) {
++                final List<Entry<Identifier, AdvancementProgress>> entries = new ArrayList<>(this.map.entrySet());
++                entries.sort(Entry.comparingByValue());
++                for (int i = 0, len = entries.size(); i < len; ++i) {
++                    final Entry<Identifier, AdvancementProgress> entry = entries.get(i);
++                    consumer.accept(entry.getKey(), entry.getValue());
++                }
++                return;
++            }
++            // Meteus end - advancement storage fast path
+             this.map.entrySet().stream().sorted(Entry.comparingByValue()).forEach(entry -> consumer.accept(entry.getKey(), entry.getValue()));
+         }
+     }
+diff --git a/net/minecraft/server/commands/AdvancementCommands.java b/net/minecraft/server/commands/AdvancementCommands.java
+index 17b74b385c8e5204da8c692f8ebc4367d6aad5d9..1c8d4450509935e22e5364c38cc7ff983bf87599 100644
+--- a/net/minecraft/server/commands/AdvancementCommands.java
++++ b/net/minecraft/server/commands/AdvancementCommands.java
+@@ -239,6 +239,13 @@ public class AdvancementCommands {
+     ) throws CommandSyntaxException {
+         int count = 0;
+ 
++        // Meteus start - advancement command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.advancementCommandFastPath && players instanceof List<ServerPlayer> playerList) {
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                count += action.perform(playerList.get(i), advancements, showAdvancements);
++            }
++        } else
++        // Meteus end - advancement command fast path
+         for (ServerPlayer player : players) {
+             count += action.perform(player, advancements, showAdvancements);
+         }
+@@ -308,6 +315,15 @@ public class AdvancementCommands {
+             throw ERROR_CRITERION_NOT_FOUND.create(Advancement.name(holder), criterion);
+         }
+ 
++        // Meteus start - advancement command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.advancementCommandFastPath && players instanceof List<ServerPlayer> playerList) {
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                if (action.performCriterion(playerList.get(i), holder, criterion)) {
++                    count++;
++                }
++            }
++        } else
++        // Meteus end - advancement command fast path
+         for (ServerPlayer player : players) {
+             if (action.performCriterion(player, holder, criterion)) {
+                 count++;
+@@ -429,6 +445,15 @@ public class AdvancementCommands {
+                 player.getAdvancements().flushDirty(player, true);
+             }
+ 
++            // Meteus start - advancement command fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.advancementCommandFastPath && advancements instanceof List<?> advancementList) {
++                for (int i = 0, len = advancementList.size(); i < len; ++i) {
++                    if (this.perform(player, (AdvancementHolder) advancementList.get(i))) {
++                        count++;
++                    }
++                }
++            } else
++            // Meteus end - advancement command fast path
+             for (AdvancementHolder advancement : advancements) {
+                 if (this.perform(player, advancement)) {
+                     count++;

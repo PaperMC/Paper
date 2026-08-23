@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Wed, 17 Jun 2026 23:27:33 +0900
+Subject: [PATCH] Meteus explosion exposure raycast: drop per-ray Vec3
+ allocation (exact)
+
+
+diff --git a/net/minecraft/world/level/ServerExplosion.java b/net/minecraft/world/level/ServerExplosion.java
+index 34d7eef8b2540172bd4dcdbf80df45e9cbfcb43c..be75ac557f546974838497824cd924dddc05a19f 100644
+--- a/net/minecraft/world/level/ServerExplosion.java
++++ b/net/minecraft/world/level/ServerExplosion.java
+@@ -138,14 +138,16 @@ public class ServerExplosion implements Explosion {
+         return ret;
+     }
+ 
+-    private boolean clipsAnything(final Vec3 from, final Vec3 to,
++    private boolean clipsAnything(final double fromXIn, final double fromYIn, final double fromZIn, final Vec3 to,
+                                   final ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.LazyEntityCollisionContext context,
+                                   final ca.spottedleaf.moonrise.patches.collisions.ExplosionBlockCache[] blockCache,
+                                   final BlockPos.MutableBlockPos currPos) {
+         // assume that context.delegated = false
+-        final double adjX = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON * (from.x - to.x);
+-        final double adjY = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON * (from.y - to.y);
+-        final double adjZ = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON * (from.z - to.z);
++        // Meteus - take the ray origin as primitives instead of a Vec3. getSeenFraction allocated one Vec3 per
++        // ray and was the #1 allocation source under heavy explosions; the math here is unchanged (exact values).
++        final double adjX = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON * (fromXIn - to.x);
++        final double adjY = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON * (fromYIn - to.y);
++        final double adjZ = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON * (fromZIn - to.z);
+ 
+         if (adjX == 0.0 && adjY == 0.0 && adjZ == 0.0) {
+             return false;
+@@ -154,9 +156,10 @@ public class ServerExplosion implements Explosion {
+         final double toXAdj = to.x - adjX;
+         final double toYAdj = to.y - adjY;
+         final double toZAdj = to.z - adjZ;
+-        final double fromXAdj = from.x + adjX;
+-        final double fromYAdj = from.y + adjY;
+-        final double fromZAdj = from.z + adjZ;
++        final double fromXAdj = fromXIn + adjX;
++        final double fromYAdj = fromYIn + adjY;
++        final double fromZAdj = fromZIn + adjZ;
++        Vec3 fromVec = null; // Meteus - origin Vec3 built lazily, only if a ray actually reaches a non-empty block
+ 
+         int currX = Mth.floor(fromXAdj);
+         int currY = Mth.floor(fromYAdj);
+@@ -217,8 +220,13 @@ public class ServerExplosion implements Explosion {
+                     }
+                 }
+ 
+-                if (!collision.isEmpty() && collision.clip(from, to, currPos) != null) {
+-                    return true;
++                if (!collision.isEmpty()) {
++                    if (fromVec == null) { // Meteus - build the origin Vec3 once, only when a block lies on the ray
++                        fromVec = new Vec3(fromXIn, fromYIn, fromZIn);
++                    }
++                    if (collision.clip(fromVec, to, currPos) != null) {
++                        return true;
++                    }
+                 }
+             }
+ 
+@@ -281,13 +289,8 @@ public class ServerExplosion implements Explosion {
+                 for (double dz = 0.0; dz <= 1.0; dz += incZ) {
+                     ++totalRays;
+ 
+-                    final Vec3 from = new Vec3(
+-                            fromX,
+-                            fromY,
+-                            Math.fma(dz, diffZ, offZ)
+-                    );
+-
+-                    if (!this.clipsAnything(from, source, context, blockCache, blockPos)) {
++                    // Meteus - pass the ray origin as primitives (no per-ray Vec3 allocation)
++                    if (!this.clipsAnything(fromX, fromY, Math.fma(dz, diffZ, offZ), source, context, blockCache, blockPos)) {
+                         ++missedRays;
+                     }
+                 }

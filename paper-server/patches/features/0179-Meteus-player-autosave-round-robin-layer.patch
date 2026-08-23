@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Mon, 15 Jun 2026 07:48:44 +0900
+Subject: [PATCH] Meteus player autosave round robin layer
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 6daa38b447b02c3441d233e3b82b08b34fe47820..92a6ffb5fbe188e748ce1389e91b0cb28d58c4af 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -134,6 +134,9 @@ public abstract class PlayerList {
+     private int meteus$latencyVisibilityPlayerCount = -1;
+     private boolean meteus$canUseSharedLatencyPacket;
+     // Meteus end - latency visibility state cache fast path
++    // Meteus start - player autosave round-robin fast path
++    private int meteus$nextPlayerSaveIndex;
++    // Meteus end - player autosave round-robin fast path
+ 
+     // CraftBukkit start
+     private org.bukkit.craftbukkit.CraftServer cserver;
+@@ -1313,6 +1316,29 @@ public abstract class PlayerList {
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerSaveLoopFastPath) {
+                 final boolean fullSave = interval == -1;
+                 final int maxPerTick = fullSave ? Integer.MAX_VALUE : io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.maxPerTick();
++                // Meteus start - player autosave round-robin fast path
++                if (!fullSave && io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerAutosaveRoundRobinFastPath) {
++                    final int playerCount = this.players.size();
++                    if (playerCount == 0 || maxPerTick <= 0) {
++                        return null;
++                    }
++
++                    int nextIndex = Math.floorMod(this.meteus$nextPlayerSaveIndex, playerCount);
++                    for (int checked = 0; checked < playerCount; ++checked) {
++                        final int index = (nextIndex + checked) % playerCount;
++                        final ServerPlayer player = this.players.get(index);
++                        if (now - player.lastSave >= interval) {
++                            this.save(player);
++                            nextIndex = (index + 1) % playerCount;
++                            if (++numSaved >= maxPerTick) {
++                                break;
++                            }
++                        }
++                    }
++                    this.meteus$nextPlayerSaveIndex = nextIndex;
++                    return null;
++                }
++                // Meteus end - player autosave round-robin fast path
+                 for (int i = 0, len = this.players.size(); i < len; ++i) {
+                     final ServerPlayer player = this.players.get(i);
+                     if (fullSave || now - player.lastSave >= interval) {

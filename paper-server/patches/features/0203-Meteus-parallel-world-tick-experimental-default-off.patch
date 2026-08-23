@@ -1,0 +1,324 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 26 Jun 2026 17:46:52 +0900
+Subject: [PATCH] Meteus parallel world tick (experimental, default off)
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 46e020da55dc651a76dbc6419790c40df4980d51..4e4a6cc19189ab2c96ce3f75c078f8352124b251 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -307,6 +307,20 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private Map<ResourceKey<Level>, ServerLevel> meteus$serverLevelSnapshotSource;
+     private ServerLevel[] meteus$serverLevelSnapshot = new ServerLevel[0];
+     // Meteus end - server level snapshot iteration fast path
++    // Meteus start - parallel world tick
++    // Worker pool of TickThreads that tick independent worlds in parallel with the main thread.
++    private volatile java.util.concurrent.ThreadPoolExecutor meteus$worldTickPool;
++    private int meteus$worldTickPoolSize = -1;
++    // True only between the dispatch and the barrier of the parallel world-tick phase. Read cheaply by the
++    // cross-world transfer guard so it costs nothing outside that phase.
++    public volatile boolean meteus$parallelWorldTickActive;
++    // The world the current thread is ticking during the parallel phase (null when not in that phase, or for
++    // threads that are not world-tick workers). Used to detect "world A's tick is mutating world B".
++    private final ThreadLocal<ServerLevel> meteus$currentTickLevel = new ThreadLocal<>();
++    // Cross-world operations (dimension transfers) deferred out of the parallel phase, drained on the main
++    // thread immediately after the barrier so they never race a world being ticked on another thread.
++    private final java.util.concurrent.ConcurrentLinkedQueue<Runnable> meteus$deferredCrossWorldOps = new java.util.concurrent.ConcurrentLinkedQueue<>();
++    // Meteus end - parallel world tick
+ 
+     public static <S extends MinecraftServer> S spin(final Function<Thread, S> factory) {
+         ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.init(); // Paper - rewrite data converter system
+@@ -452,6 +466,27 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private long lastMidTickExecuteFailure;
+ 
+     private boolean tickMidTickTasks() {
++        // Meteus start - parallel world tick: during the parallel phase a worker thread may ONLY touch the
++        // single world it owns this tick. The normal all-worlds sweep below would have this worker poll other
++        // worlds' chunk systems while their owning workers tick them concurrently, racing the chunk-holder
++        // lists (ArrayIndexOutOfBounds in ReferenceList#add). So restrict mid-tick task execution to the owned
++        // world; other worlds' tasks are drained by their own owning threads (and at end-of-tick chunkSource.tick).
++        if (this.meteus$parallelWorldTickActive) {
++            final ServerLevel owned = this.meteus$currentTickLevel.get();
++            if (owned == null) {
++                return false;
++            }
++            final long currTime = System.nanoTime();
++            if (currTime - ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel) owned).moonrise$getLastMidTickFailure() <= TASK_EXECUTION_FAILURE_BACKOFF) {
++                return false;
++            }
++            if (!owned.getChunkSource().pollTask()) {
++                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel) owned).moonrise$setLastMidTickFailure(currTime);
++                return false;
++            }
++            return true;
++        }
++        // Meteus end - parallel world tick
+         // give all worlds a fair chance at by targeting them all.
+         // if we execute too many tasks, that's fine - we have logic to correctly handle overuse of allocated time.
+         boolean executed = false;
+@@ -1977,6 +2012,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // Meteus end - server world tick loop fast path
+         // Meteus start - server level snapshot iteration fast path
+         final ServerLevel[] meteus$levels = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverLevelSnapshotIterationFastPath ? this.meteus$getServerLevelSnapshot() : null;
++        // Meteus start - parallel world tick: tick independent worlds across the worker pool + main thread, barrier, then drain deferred cross-world transfers
++        if (meteus$levels != null
++                && io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.parallelWorldTick
++                && meteus$levels.length >= Math.max(2, io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.parallelWorldTickMinWorlds)) {
++            this.meteus$tickLevelsParallel(meteus$levels, haveTime, meteus$serverWorldTickLoopFastPath, meteus$hasPhysicsEvent, meteus$hasEntityMoveEvent, meteus$hasInventoryMoveEvent);
++        } else
++        // Meteus end - parallel world tick
+         if (meteus$levels != null) {
+             for (int meteus$levelIndex = 0, meteus$levelLen = meteus$levels.length; meteus$levelIndex < meteus$levelLen; ++meteus$levelIndex) {
+                 final ServerLevel level = meteus$levels[meteus$levelIndex];
+@@ -2069,7 +2111,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             level.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
+         } // Meteus - server world tick loop fast path
+         level.updateLagCompensationTick(); // Paper - lag compensation
++        // Meteus start - parallel world tick: skipHopperEvents is a shared static, so under parallel ticking it
++        // is set once (plugin-safe global value) in meteus$tickLevelsParallel rather than raced per world here.
++        if (!this.meteus$parallelWorldTickActive) {
+         net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = level.paperConfig().hopper.disableMoveEvent || (meteus$serverWorldTickLoopFastPath ? !meteus$hasInventoryMoveEvent : org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0); // Paper - Perf: Optimize Hoppers // Meteus - server world tick loop fast path
++        }
++        // Meteus end - parallel world tick
+         profiler.push(() -> level + " " + level.dimension().identifier());
+         profiler.push("tick");
+ 
+@@ -2087,6 +2134,158 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+     // Meteus end - server level snapshot iteration fast path
+ 
++    // Meteus start - parallel world tick
++    // Tick every world for this tick across the worker pool plus the main thread, with a barrier before any
++    // post-tick (connection/player-list) work. Each world is dispatched to exactly ONE thread, so within a
++    // world everything - entity ticking, the chunk system, plugin events - still runs single-threaded:
++    // chunk sync stays correct and single-world plugins behave exactly as on vanilla Paper. Only the
++    // independent worlds run concurrently with each other. Cross-world entity transfers are deferred (see
++    // meteus$shouldDeferCrossWorld) and drained here on the main thread after the barrier.
++    private void meteus$tickLevelsParallel(
++        final ServerLevel[] levels,
++        final BooleanSupplier haveTime,
++        final boolean fastPath,
++        final boolean hasPhysicsEvent,
++        final boolean hasEntityMoveEvent,
++        final boolean hasInventoryMoveEvent
++    ) {
++        final java.util.concurrent.ThreadPoolExecutor pool = this.meteus$getWorldTickPool();
++        final int n = levels.length;
++        final java.util.List<java.util.concurrent.Future<?>> futures = new java.util.ArrayList<>(n - 1);
++        Throwable failure = null;
++        // The hopper-event-skip flag is a shared static; set it once for all worlds to the plugin-safe value
++        // (fire InventoryMoveItemEvent whenever any plugin listens) so no world races it mid-tick. Per-world
++        // hopper.disableMoveEvent is not applied under parallel tick (documented experimental limitation).
++        net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = !hasInventoryMoveEvent;
++        this.meteus$parallelWorldTickActive = true;
++        try {
++            // Submit worlds 1..n-1 to the pool; the main thread ticks world 0 itself so no core sits idle.
++            for (int i = 1; i < n; i++) {
++                final ServerLevel level = levels[i];
++                futures.add(pool.submit(() -> this.meteus$tickServerLevelOwned(level, haveTime, fastPath, hasPhysicsEvent, hasEntityMoveEvent, hasInventoryMoveEvent)));
++            }
++            try {
++                this.meteus$tickServerLevelOwned(levels[0], haveTime, fastPath, hasPhysicsEvent, hasEntityMoveEvent, hasInventoryMoveEvent);
++            } catch (final Throwable t) {
++                failure = t;
++            }
++            // Barrier: every world must finish before we touch shared post-tick state.
++            for (int i = 0, len = futures.size(); i < len; i++) {
++                try {
++                    futures.get(i).get();
++                } catch (final java.util.concurrent.ExecutionException e) {
++                    if (failure == null) {
++                        failure = e.getCause() != null ? e.getCause() : e;
++                    }
++                } catch (final InterruptedException e) {
++                    Thread.currentThread().interrupt();
++                    if (failure == null) {
++                        failure = e;
++                    }
++                }
++            }
++        } finally {
++            this.meteus$parallelWorldTickActive = false;
++        }
++        // Drain cross-world transfers deferred out of the parallel phase - now safely on the main thread,
++        // after every world has finished ticking, so the add/portal-creation cannot race a ticking world.
++        Runnable op;
++        while ((op = this.meteus$deferredCrossWorldOps.poll()) != null) {
++            try {
++                op.run();
++            } catch (final Throwable t) {
++                LOGGER.error("[Meteus] deferred cross-world operation failed", t);
++            }
++        }
++        if (failure != null) {
++            if (failure instanceof RuntimeException runtimeException) {
++                throw runtimeException;
++            }
++            if (failure instanceof Error error) {
++                throw error;
++            }
++            throw new RuntimeException(failure);
++        }
++    }
++
++    // Tick one world as its sole owner this tick: claim it for this thread, point its per-level chunk-system
++    // executor at this thread (so sync chunk loads run inline exactly as the main thread would), tick, then
++    // restore the executor to the main thread and release the claim. Uses this thread's own (inactive)
++    // profiler, never the main thread's, so no profiler state is shared across worker threads.
++    private void meteus$tickServerLevelOwned(
++        final ServerLevel level,
++        final BooleanSupplier haveTime,
++        final boolean fastPath,
++        final boolean hasPhysicsEvent,
++        final boolean hasEntityMoveEvent,
++        final boolean hasInventoryMoveEvent
++    ) {
++        final ServerLevel previous = this.meteus$currentTickLevel.get();
++        this.meteus$currentTickLevel.set(level);
++        final net.minecraft.server.level.ServerChunkCache chunkSource = level.getChunkSource();
++        chunkSource.mainThread = Thread.currentThread();
++        try {
++            this.meteus$tickServerLevel(level, haveTime, Profiler.get(), fastPath, hasPhysicsEvent, hasEntityMoveEvent, hasInventoryMoveEvent);
++        } finally {
++            chunkSource.mainThread = this.serverThread;
++            if (previous == null) {
++                this.meteus$currentTickLevel.remove();
++            } else {
++                this.meteus$currentTickLevel.set(previous);
++            }
++        }
++    }
++
++    private java.util.concurrent.ThreadPoolExecutor meteus$getWorldTickPool() {
++        int configured = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.parallelWorldTickThreads;
++        if (configured <= 0) {
++            configured = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
++        }
++        final java.util.concurrent.ThreadPoolExecutor existing = this.meteus$worldTickPool;
++        if (existing != null && this.meteus$worldTickPoolSize == configured) {
++            return existing;
++        }
++        synchronized (this) {
++            if (this.meteus$worldTickPool != null && this.meteus$worldTickPoolSize == configured) {
++                return this.meteus$worldTickPool;
++            }
++            final java.util.concurrent.ThreadPoolExecutor old = this.meteus$worldTickPool;
++            final java.util.concurrent.atomic.AtomicInteger index = new java.util.concurrent.atomic.AtomicInteger();
++            final java.util.concurrent.ThreadPoolExecutor created = new java.util.concurrent.ThreadPoolExecutor(
++                configured, configured, 60L, java.util.concurrent.TimeUnit.SECONDS,
++                new java.util.concurrent.LinkedBlockingQueue<>(),
++                runnable -> {
++                    final Thread thread = new ca.spottedleaf.moonrise.common.util.TickThread(runnable, "Meteus World-Tick-" + index.incrementAndGet());
++                    thread.setDaemon(true);
++                    return thread;
++                }
++            );
++            created.allowCoreThreadTimeOut(true);
++            this.meteus$worldTickPool = created;
++            this.meteus$worldTickPoolSize = configured;
++            if (old != null) {
++                old.shutdown();
++            }
++            return created;
++        }
++    }
++
++    // True when the calling thread is ticking a world OTHER than `target` during the parallel world-tick
++    // phase - i.e. an operation is about to mutate a world that another thread may be ticking right now.
++    // Such operations must be deferred to the main thread post-barrier instead of running inline.
++    public boolean meteus$shouldDeferCrossWorld(final ServerLevel target) {
++        if (!this.meteus$parallelWorldTickActive) {
++            return false;
++        }
++        final ServerLevel owned = this.meteus$currentTickLevel.get();
++        return owned != null && owned != target;
++    }
++
++    public void meteus$deferCrossWorldOp(final Runnable op) {
++        this.meteus$deferredCrossWorldOps.add(op);
++    }
++    // Meteus end - parallel world tick
++
+     // Paper start - per world respawn data
+     public void updateEffectiveRespawnData() {
+         ServerLevel respawnLevel = this.findRespawnDimension();
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index a7142fcbadcbd5543aa28e8e94586e79188708f4..e82f40c6d8a63be42cf2f0f64bd3604a812cbf75 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -58,7 +58,12 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final DistanceManager distanceManager;
+     private final ServerLevel level;
+-    public final Thread mainThread;
++    // Meteus start - parallel world tick: the chunk system's "owning thread" for this level. Normally the
++    // server main thread; during the parallel world-tick phase it is temporarily reassigned to the worker
++    // tick-thread driving this level (and restored to the main thread at the barrier), so sync chunk loads
++    // and the per-level main-thread executor run inline on whichever single thread owns this level that tick.
++    public volatile Thread mainThread;
++    // Meteus end - parallel world tick
+     private final ThreadedLevelLightEngine lightEngine;
+     public final ServerChunkCache.MainThreadExecutor mainThreadProcessor;
+     public final ChunkMap chunkMap;
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 19537e05a2d2cfb702895a53c0baea1b91703871..88cc6f355be212ff9151730c1df55395c602bc92 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -1748,6 +1748,12 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     }
+ 
+     private void addPlayer(final ServerPlayer player) {
++        // Meteus start - parallel world tick: defer a cross-world player add to the main thread post-barrier (login/respawn run post-barrier so are never deferred)
++        if (this.server.meteus$shouldDeferCrossWorld(this)) {
++            this.server.meteus$deferCrossWorldOp(() -> this.addPlayer(player));
++            return;
++        }
++        // Meteus end - parallel world tick
+         Entity existing = this.getEntity(player.getUUID());
+         if (existing != null) {
+             LOGGER.warn("Force-added player with duplicate UUID {}", player.getUUID());
+@@ -1760,6 +1766,15 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+ 
+     // CraftBukkit start
+     private boolean addEntity(final Entity entity, final org.bukkit.event.entity.CreatureSpawnEvent.@Nullable SpawnReason spawnReason) {
++        // Meteus start - parallel world tick: defer a cross-world entity add to the main thread post-barrier.
++        // Safety net for any cross-world add path not already routed through Entity#teleport; same-world adds
++        // (mob spawns, drops during this world's own tick) are not deferred. Costs a volatile read when the
++        // parallel phase is inactive.
++        if (this.server.meteus$shouldDeferCrossWorld(this)) {
++            this.server.meteus$deferCrossWorldOp(() -> this.addEntity(entity, spawnReason));
++            return true;
++        }
++        // Meteus end - parallel world tick
+         org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
+         entity.generation = false; // Paper - Don't fire sync event during generation; Reset flag if it was added during a ServerLevel generation process
+         // Paper start - extra debug info
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index a31f56f96ac787d92fb53f7b1a6fb463083456b3..da23b849aefede5f3a856d2db4e394bb6597db70 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -4033,6 +4033,23 @@ public abstract class Entity
+     }
+ 
+     public @Nullable Entity teleport(TeleportTransition transition) { // Paper - remove param final
++        // Meteus start - parallel world tick: defer cross-world teleports out of the parallel phase.
++        // During parallel world ticking a transfer into another world (entity add + possible portal-block
++        // creation + arrival logic) would race that world being ticked on another thread, so we queue the
++        // whole transfer to run on the main thread right after the barrier - atomic and race-free, the same
++        // tick, just a fraction later (imperceptible; portals already have travel latency). Returning null
++        // here matches the existing contract (this method already returns null in several cases below), and
++        // the deferred re-entry runs with the parallel phase inactive so it transfers for real.
++        final net.minecraft.server.level.ServerLevel meteus$newLevel = transition.newLevel();
++        if (meteus$newLevel != this.level && this.level instanceof net.minecraft.server.level.ServerLevel) {
++            final net.minecraft.server.MinecraftServer meteus$server = meteus$newLevel.getServer();
++            if (meteus$server != null && meteus$server.meteus$shouldDeferCrossWorld(meteus$newLevel)) {
++                final TeleportTransition meteus$transition = transition;
++                meteus$server.meteus$deferCrossWorldOp(() -> this.teleport(meteus$transition));
++                return null;
++            }
++        }
++        // Meteus end - parallel world tick
+         // Paper start - Fix item duplication and teleport issues
+         if ((!this.isAlive() || !this.valid) && (transition.newLevel() != this.level)) {
+             LOGGER.warn("Illegal Entity Teleport {} to {}:{}", this, transition.newLevel(), transition.position(), new Throwable());

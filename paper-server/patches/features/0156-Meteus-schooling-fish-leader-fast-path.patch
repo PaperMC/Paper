@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 14:25:01 +0900
+Subject: [PATCH] Meteus schooling fish leader fast path
+
+
+diff --git a/net/minecraft/world/entity/ai/goal/FollowFlockLeaderGoal.java b/net/minecraft/world/entity/ai/goal/FollowFlockLeaderGoal.java
+index 8553db5f82eb62b0cb2aacc9b7071436aaf96c39..582d135639f68721483820233b4897648501c16c 100644
+--- a/net/minecraft/world/entity/ai/goal/FollowFlockLeaderGoal.java
++++ b/net/minecraft/world/entity/ai/goal/FollowFlockLeaderGoal.java
+@@ -35,6 +35,20 @@ public class FollowFlockLeaderGoal extends Goal {
+             List<? extends AbstractSchoolingFish> leadersWithSpaceOrNotFollowers = this.mob
+                 .level()
+                 .getEntitiesOfClass((Class<? extends AbstractSchoolingFish>)this.mob.getClass(), this.mob.getBoundingBox().inflate(8.0, 8.0, 8.0), predicate);
++            // Meteus start - schooling fish leader fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.schoolingFishLeaderFastPath) {
++                AbstractSchoolingFish leader = this.mob;
++                for (int i = 0, len = leadersWithSpaceOrNotFollowers.size(); i < len; ++i) {
++                    final AbstractSchoolingFish fish = leadersWithSpaceOrNotFollowers.get(i);
++                    if (fish.canBeFollowed()) {
++                        leader = fish;
++                        break;
++                    }
++                }
++                leader.addFollowers(leadersWithSpaceOrNotFollowers);
++                return this.mob.isFollower();
++            }
++            // Meteus end - schooling fish leader fast path
+             AbstractSchoolingFish leader = DataFixUtils.orElse(
+                 leadersWithSpaceOrNotFollowers.stream().filter(AbstractSchoolingFish::canBeFollowed).findAny(), this.mob
+             );
+diff --git a/net/minecraft/world/entity/animal/fish/AbstractSchoolingFish.java b/net/minecraft/world/entity/animal/fish/AbstractSchoolingFish.java
+index 2811ac180e6b3ea991f052bf959d8ad6e33242ae..76ee42e9c0980c0e41bc29755c62dc11363e6223 100644
+--- a/net/minecraft/world/entity/animal/fish/AbstractSchoolingFish.java
++++ b/net/minecraft/world/entity/animal/fish/AbstractSchoolingFish.java
+@@ -99,6 +99,19 @@ public abstract class AbstractSchoolingFish extends AbstractFish {
+             .forEach(otherFish -> otherFish.startFollowing(this));
+     }
+ 
++    // Meteus start - schooling fish leader fast path
++    public void addFollowers(final List<? extends AbstractSchoolingFish> schoolingFish) {
++        int remaining = this.getMaxSchoolSize() - this.schoolSize;
++        for (int i = 0, len = schoolingFish.size(); i < len && remaining > 0; ++i) {
++            final AbstractSchoolingFish fish = schoolingFish.get(i);
++            if (fish != this && !fish.isFollower()) {
++                fish.startFollowing(this);
++                --remaining;
++            }
++        }
++    }
++    // Meteus end - schooling fish leader fast path
++
+     @Override
+     public @Nullable SpawnGroupData finalizeSpawn(
+         final ServerLevelAccessor level, final DifficultyInstance difficulty, final EntitySpawnReason spawnReason, @Nullable SpawnGroupData groupData

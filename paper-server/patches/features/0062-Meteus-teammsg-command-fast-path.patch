@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:23:52 +0900
+Subject: [PATCH] Meteus teammsg command fast path
+
+
+diff --git a/net/minecraft/server/commands/TeamMsgCommand.java b/net/minecraft/server/commands/TeamMsgCommand.java
+index 6a79944b040307acef3d1c66bd0dacaba514c708..8401c650592eebb297c0f90c20cc33c9d2df7f89 100644
+--- a/net/minecraft/server/commands/TeamMsgCommand.java
++++ b/net/minecraft/server/commands/TeamMsgCommand.java
+@@ -39,12 +39,26 @@ public class TeamMsgCommand {
+                                     throw ERROR_NOT_ON_TEAM.create();
+                                 }
+ 
+-                                List<ServerPlayer> receivers = source.getServer()
+-                                    .getPlayerList()
+-                                    .getPlayers()
+-                                    .stream()
+-                                    .filter(receiver -> receiver == entity || receiver.getTeam() == team)
+-                                    .toList();
++                                // Meteus start - teammsg command fast path
++                                List<ServerPlayer> receivers;
++                                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.teamMsgCommandFastPath) {
++                                    final List<ServerPlayer> players = source.getServer().getPlayerList().getPlayers();
++                                    receivers = new java.util.ArrayList<>();
++                                    for (int i = 0, len = players.size(); i < len; ++i) {
++                                        final ServerPlayer receiver = players.get(i);
++                                        if (receiver == entity || receiver.getTeam() == team) {
++                                            receivers.add(receiver);
++                                        }
++                                    }
++                                } else {
++                                    receivers = source.getServer()
++                                        .getPlayerList()
++                                        .getPlayers()
++                                        .stream()
++                                        .filter(receiver -> receiver == entity || receiver.getTeam() == team)
++                                        .toList();
++                                }
++                                // Meteus end - teammsg command fast path
+                                 if (!receivers.isEmpty()) {
+                                     MessageArgument.resolveChatMessage(c, "message", message -> sendMessage(source, entity, team, receivers, message));
+                                 }

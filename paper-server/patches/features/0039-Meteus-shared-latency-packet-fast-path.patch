@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 19:16:58 +0900
+Subject: [PATCH] Meteus shared latency packet fast path
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 5bea5dcdaf8ee0a38cd8587a55845e940d8f4cac..e448a39c060503eea42035f26711f3766e8013f2 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -733,6 +733,18 @@ public abstract class PlayerList {
+ 
+     public void tick() {
+         if (++this.sendAllPlayerInfoIn > 600) {
++            // Meteus start - shared latency packet fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.sharedLatencyPacketFastPath && this.meteus$canUseSharedLatencyPacket()) {
++                final ClientboundPlayerInfoUpdatePacket packet = new ClientboundPlayerInfoUpdatePacket(
++                    EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY), this.players
++                );
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    this.players.get(i).connection.send(packet);
++                }
++                this.sendAllPlayerInfoIn = 0;
++                return;
++            }
++            // Meteus end - shared latency packet fast path
+             // CraftBukkit start
+             for (int i = 0; i < this.players.size(); ++i) {
+                 final ServerPlayer target = this.players.get(i);
+@@ -744,6 +756,18 @@ public abstract class PlayerList {
+         }
+     }
+ 
++    // Meteus start - shared latency packet fast path
++    private boolean meteus$canUseSharedLatencyPacket() {
++        for (int i = 0, len = this.players.size(); i < len; ++i) {
++            final org.bukkit.craftbukkit.entity.CraftPlayer player = this.players.get(i).getBukkitEntity();
++            if (player.meteus$hasVisibilityOverrides() || !player.isVisibleByDefault()) {
++                return false;
++            }
++        }
++        return true;
++    }
++    // Meteus end - shared latency packet fast path
++
+     // CraftBukkit start - add a world/entity limited version
+     public void broadcastAll(Packet packet, net.minecraft.world.entity.player.Player entityhuman) {
+         for (ServerPlayer entityplayer : this.players) { // Paper - replace for i with for each for thread safety

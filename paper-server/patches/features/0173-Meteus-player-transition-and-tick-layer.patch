@@ -1,0 +1,254 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 22:03:07 +0900
+Subject: [PATCH] Meteus player transition and tick layer
+
+
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index 664fcb98327a24751d1d69a5fbcfda30ad47f1d1..616da20caddcc487448f057e33de7f956896b2a2 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -260,6 +260,14 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+     private SectionPos lastSectionPos = SectionPos.of(0, 0, 0);
+     private ChunkTrackingView chunkTrackingView = ChunkTrackingView.EMPTY;
+     private ServerPlayer.@Nullable RespawnConfig respawnConfig;
++    // Meteus start - player inventory special item fast path
++    private boolean meteus$hasInventorySpecialItemUpdates;
++    // Meteus end - player inventory special item fast path
++    // Meteus start - player attribute state fast path
++    private boolean meteus$lastCreativeAttributeState;
++    private boolean meteus$lastCrouchingAttributeState;
++    private boolean meteus$hasAttributeStateSnapshot;
++    // Meteus end - player attribute state fast path
+     private final TextFilter textFilter;
+     private boolean textFilteringEnabled;
+     private boolean allowsListing;
+@@ -777,6 +785,24 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+     }
+ 
+     private void updatePlayerAttributes() {
++        // Meteus start - player attribute state fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerAttributeStateFastPath) {
++            final boolean creative = this.isCreative();
++            final boolean crouching = this.isCrouching();
++            if (this.meteus$hasAttributeStateSnapshot
++                && this.meteus$lastCreativeAttributeState == creative
++                && this.meteus$lastCrouchingAttributeState == crouching
++                && this.tickCount % 5 != 0) {
++                return;
++            }
++
++            this.meteus$hasAttributeStateSnapshot = true;
++            this.meteus$lastCreativeAttributeState = creative;
++            this.meteus$lastCrouchingAttributeState = crouching;
++            this.meteus$updatePlayerAttributes(creative, crouching);
++            return;
++        }
++        // Meteus end - player attribute state fast path
+         AttributeInstance blockInteractionRange = this.getAttribute(Attributes.BLOCK_INTERACTION_RANGE);
+         if (blockInteractionRange != null) {
+             if (this.isCreative()) {
+@@ -805,6 +831,37 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+         }
+     }
+ 
++    // Meteus start - player attribute state fast path
++    private void meteus$updatePlayerAttributes(final boolean creative, final boolean crouching) {
++        AttributeInstance blockInteractionRange = this.getAttribute(Attributes.BLOCK_INTERACTION_RANGE);
++        if (blockInteractionRange != null) {
++            if (creative) {
++                blockInteractionRange.addOrUpdateTransientModifier(CREATIVE_BLOCK_INTERACTION_RANGE_MODIFIER);
++            } else {
++                blockInteractionRange.removeModifier(CREATIVE_BLOCK_INTERACTION_RANGE_MODIFIER);
++            }
++        }
++
++        AttributeInstance entityInteractionRange = this.getAttribute(Attributes.ENTITY_INTERACTION_RANGE);
++        if (entityInteractionRange != null) {
++            if (creative) {
++                entityInteractionRange.addOrUpdateTransientModifier(CREATIVE_ENTITY_INTERACTION_RANGE_MODIFIER);
++            } else {
++                entityInteractionRange.removeModifier(CREATIVE_ENTITY_INTERACTION_RANGE_MODIFIER);
++            }
++        }
++
++        AttributeInstance waypointTransmitRange = this.getAttribute(Attributes.WAYPOINT_TRANSMIT_RANGE);
++        if (waypointTransmitRange != null) {
++            if (crouching) {
++                waypointTransmitRange.addOrUpdateTransientModifier(WAYPOINT_TRANSMIT_RANGE_CROUCH_MODIFIER);
++            } else {
++                waypointTransmitRange.removeModifier(WAYPOINT_TRANSMIT_RANGE_CROUCH_MODIFIER);
++            }
++        }
++    }
++    // Meteus end - player attribute state fast path
++
+     public void doTick() {
+         try {
+             if (valid && !this.isSpectator() || !this.touchingUnloadedChunk()) { // Paper - don't tick dead players that are not in the world currently (pending respawn)
+@@ -830,12 +887,20 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+                 }
+             }
+ 
+-            for (int i = 0; i < this.getInventory().getContainerSize(); i++) {
+-                ItemStack itemStack = this.getInventory().getItem(i);
+-                if (!itemStack.isEmpty()) {
+-                    this.synchronizeSpecialItemUpdates(itemStack);
++            // Meteus start - player inventory special item fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerInventorySpecialItemFastPath) {
++                if (this.meteus$hasInventorySpecialItemUpdates || this.tickCount % 5 == 0) {
++                    this.meteus$hasInventorySpecialItemUpdates = this.meteus$synchronizeSpecialInventoryUpdates();
+                 }
+-            }
++            } else {
++            // Meteus end - player inventory special item fast path
++                for (int i = 0; i < this.getInventory().getContainerSize(); i++) {
++                    ItemStack itemStack = this.getInventory().getItem(i);
++                    if (!itemStack.isEmpty()) {
++                        this.synchronizeSpecialItemUpdates(itemStack);
++                    }
++                }
++            } // Meteus - player inventory special item fast path
+ 
+             if (this.getHealth() != this.lastSentHealth
+                 || this.lastSentFood != this.foodData.getFoodLevel()
+@@ -923,6 +988,24 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+         }
+     }
+ 
++    // Meteus start - player inventory special item fast path
++    private boolean meteus$synchronizeSpecialInventoryUpdates() {
++        boolean foundSpecialItem = false;
++        for (int i = 0, len = this.getInventory().getContainerSize(); i < len; ++i) {
++            final ItemStack itemStack = this.getInventory().getItem(i);
++            if (itemStack.isEmpty()) {
++                continue;
++            }
++
++            if (itemStack.has(DataComponents.MAP_ID)) {
++                foundSpecialItem = true;
++                this.synchronizeSpecialItemUpdates(itemStack);
++            }
++        }
++        return foundSpecialItem;
++    }
++    // Meteus end - player inventory special item fast path
++
+     @Override
+     protected void tickRegeneration() {
+         if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.level().getGameRules().get(GameRules.NATURAL_HEALTH_REGENERATION)) {
+@@ -1553,8 +1636,16 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+ 
+         this.isChangingDimension = true;
+         LevelData levelData = newLevel.getLevelData();
+-        this.connection.send(new ClientboundRespawnPacket(this.createCommonSpawnInfo(newLevel), ClientboundRespawnPacket.KEEP_ALL_DATA));
+-        this.connection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
++        // Meteus start - player transition packet batch fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerTransitionPacketBatchFastPath) {
++            this.connection.meteus$sendWithoutFlush(new ClientboundRespawnPacket(this.createCommonSpawnInfo(newLevel), ClientboundRespawnPacket.KEEP_ALL_DATA));
++            this.connection.meteus$sendWithoutFlush(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
++            this.connection.meteus$flushConnection();
++        } else {
++        // Meteus end - player transition packet batch fast path
++            this.connection.send(new ClientboundRespawnPacket(this.createCommonSpawnInfo(newLevel), ClientboundRespawnPacket.KEEP_ALL_DATA));
++            this.connection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
++        } // Meteus - player transition packet batch fast path
+         PlayerList playerList = this.server.getPlayerList();
+         playerList.sendPlayerPermissionLevel(this);
+         this.portalProcess = null; // SPIGOT-7785: there is no need to carry this over as it contains the old world/location and we might run into trouble if there is a portal in the same spot in both worlds
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 64251c2151922633df428c84901ce5dcdb68c362..7e48eb2703fd153fcfbcb9cce10307620406e40a 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -720,11 +720,26 @@ public abstract class PlayerList {
+         byte dataToKeep = keepAllPlayerData ? ClientboundRespawnPacket.KEEP_ATTRIBUTE_MODIFIERS : 0;
+         ServerLevel playerLevel = player.level();
+         LevelData levelData = playerLevel.getLevelData();
+-        player.connection.send(new ClientboundRespawnPacket(player.createCommonSpawnInfo(playerLevel), dataToKeep));
++        // Meteus start - player transition packet batch fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerTransitionPacketBatchFastPath) {
++            player.connection.meteus$sendWithoutFlush(new ClientboundRespawnPacket(player.createCommonSpawnInfo(playerLevel), dataToKeep));
++        } else {
++        // Meteus end - player transition packet batch fast path
++            player.connection.send(new ClientboundRespawnPacket(player.createCommonSpawnInfo(playerLevel), dataToKeep));
++        } // Meteus - player transition packet batch fast path
+         player.connection.internalTeleport(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot()); // Paper
+-        player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
+-        player.connection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
+-        player.connection.send(new ClientboundSetExperiencePacket(player.experienceProgress, player.totalExperience, player.experienceLevel));
++        // Meteus start - player transition packet batch fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerTransitionPacketBatchFastPath) {
++            player.connection.meteus$sendWithoutFlush(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
++            player.connection.meteus$sendWithoutFlush(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
++            player.connection.meteus$sendWithoutFlush(new ClientboundSetExperiencePacket(player.experienceProgress, player.totalExperience, player.experienceLevel));
++            player.connection.meteus$flushConnection();
++        } else {
++        // Meteus end - player transition packet batch fast path
++            player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
++            player.connection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
++            player.connection.send(new ClientboundSetExperiencePacket(player.experienceProgress, player.totalExperience, player.experienceLevel));
++        } // Meteus - player transition packet batch fast path
+         this.sendActivePlayerEffects(player);
+         this.sendLevelInfo(player, level);
+         this.sendPlayerPermissionLevel(player);
+@@ -1328,6 +1343,22 @@ public abstract class PlayerList {
+ 
+     public void sendLevelInfo(final ServerPlayer player, final ServerLevel level) {
+         WorldBorder worldBorder = level.getWorldBorder();
++        // Meteus start - player transition packet batch fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerTransitionPacketBatchFastPath) {
++            player.connection.meteus$sendWithoutFlush(new ClientboundInitializeBorderPacket(worldBorder));
++            player.connection.meteus$sendWithoutFlush(level.clockManager().createFullSyncPacket(player)); // Paper - per-world time; per-player time
++            player.connection.meteus$sendWithoutFlush(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
++            if (level.isRaining()) {
++                player.setPlayerWeather(org.bukkit.WeatherType.DOWNFALL, false);
++                player.updateWeather(-level.rainLevel, level.rainLevel, -level.thunderLevel, level.thunderLevel);
++            }
++
++            player.connection.meteus$sendWithoutFlush(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
++            player.connection.meteus$flushConnection();
++            this.server.tickRateManager().updateJoiningPlayer(player);
++            return;
++        }
++        // Meteus end - player transition packet batch fast path
+         player.connection.send(new ClientboundInitializeBorderPacket(worldBorder));
+         player.connection.send(level.clockManager().createFullSyncPacket(player)); // Paper - per-world time; per-player time
+         player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getRespawnData()));
+@@ -1356,6 +1387,19 @@ public abstract class PlayerList {
+         // needs to be done because the ServerPlayer instance is being reused on respawn instead of getting replaced like on vanilla
+         java.util.Collection<net.minecraft.world.entity.ai.attributes.AttributeInstance> syncableAttributes = player.getAttributes().getSyncableAttributes();
+         player.getBukkitEntity().injectScaledMaxHealth(syncableAttributes, true);
++        // Meteus start - player transition packet batch fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerTransitionPacketBatchFastPath) {
++            player.connection.meteus$sendWithoutFlush(new net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket(player.getId(), syncableAttributes));
++            player.refreshEntityData(player); // CraftBukkit - SPIGOT-7218: sync metadata
++            player.connection.meteus$sendWithoutFlush(new ClientboundSetHeldSlotPacket(player.getInventory().getSelectedSlot()));
++            int reducedDebugInfoEvent = player.level().getGameRules().get(GameRules.REDUCED_DEBUG_INFO) ? 22 : 23;
++            player.connection.meteus$sendWithoutFlush(new ClientboundEntityEventPacket(player, (byte) reducedDebugInfoEvent));
++            float immediateRespawnEvent = player.level().getGameRules().get(GameRules.IMMEDIATE_RESPAWN) ? 1.0F: 0.0F;
++            player.connection.meteus$sendWithoutFlush(new ClientboundGameEventPacket(ClientboundGameEventPacket.IMMEDIATE_RESPAWN, immediateRespawnEvent));
++            player.connection.meteus$flushConnection();
++            return;
++        }
++        // Meteus end - player transition packet batch fast path
+         player.connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket(player.getId(), syncableAttributes));
+         // Paper end - send all attributes
+         player.refreshEntityData(player); // CraftBukkit - SPIGOT-7218: sync metadata
+diff --git a/net/minecraft/world/inventory/AbstractContainerMenu.java b/net/minecraft/world/inventory/AbstractContainerMenu.java
+index 9f5da4dc6033e60915e8566852c1983ca562301a..65dfdc3787f917c2e12f4fabf0935ad65985c03d 100644
+--- a/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -257,6 +257,13 @@ public abstract class AbstractContainerMenu {
+     }
+ 
+     public void broadcastChanges() {
++        // Meteus start - player container broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerContainerBroadcastFastPath
++            && this.synchronizer == null
++            && this.containerListeners.isEmpty()) {
++            return;
++        }
++        // Meteus end - player container broadcast fast path
+         for (int i = 0; i < this.slots.size(); i++) {
+             ItemStack current = this.slots.get(i).getItem();
+             Supplier<ItemStack> currentCopy = Suppliers.memoize(current::copy);

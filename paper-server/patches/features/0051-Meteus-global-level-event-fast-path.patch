@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 22:52:46 +0900
+Subject: [PATCH] Meteus global level event fast path
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index d67c7415de60516295f52e90c752934e0cf6bba9..229ab4bf9ad0f9e2d105c2fc3dba56c494760b71 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -1815,6 +1815,29 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     @Override
+     public void globalLevelEvent(final int type, final BlockPos pos, final int data) {
+         if (this.getGameRules().get(GameRules.GLOBAL_SOUND_EVENTS)) {
++            // Meteus start - global level event fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.globalLevelEventFastPath) {
++                final Vec3 centerOfBlock = Vec3.atCenterOf(pos);
++                final java.util.List<ServerPlayer> players = this.server.getPlayerList().getPlayers();
++                for (int i = 0, len = players.size(); i < len; ++i) {
++                    final ServerPlayer player = players.get(i);
++                    final Vec3 soundPos;
++                    if (player.level() == this) {
++                        if (player.distanceToSqr(centerOfBlock) < Mth.square(32)) {
++                            soundPos = centerOfBlock;
++                        } else {
++                            final Vec3 directionToEvent = centerOfBlock.subtract(player.position()).normalize();
++                            soundPos = player.position().add(directionToEvent.scale(32.0));
++                        }
++                    } else {
++                        soundPos = player.position();
++                    }
++
++                    player.connection.send(new ClientboundLevelEventPacket(type, BlockPos.containing(soundPos), data, true));
++                }
++                return;
++            }
++            // Meteus end - global level event fast path
+             this.server.getPlayerList().getPlayers().forEach(player -> {
+                 Vec3 soundPos;
+                 if (player.level() == this) {

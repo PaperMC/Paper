@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:11:47 +0900
+Subject: [PATCH] Meteus entity passenger list fast path
+
+
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index 74a2b3dcd303b25e9c26f3e4d4220b390b32f1d5..4a28da2f2b83e2acec563508958af5ced11c17a1 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -3418,6 +3418,18 @@ public abstract class Entity
+         if (this.passengers.size() == 1 && this.passengers.get(0) == passenger) {
+             this.passengers = ImmutableList.of();
+         } else {
++            // Meteus start - entity passenger list fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityPassengerListFastPath) {
++                final Builder<Entity> remainingPassengers = ImmutableList.builderWithExpectedSize(this.passengers.size() - 1);
++                for (int i = 0, len = this.passengers.size(); i < len; ++i) {
++                    final Entity currentPassenger = this.passengers.get(i);
++                    if (currentPassenger != passenger) {
++                        remainingPassengers.add(currentPassenger);
++                    }
++                }
++                this.passengers = remainingPassengers.build();
++            } else
++            // Meteus end - entity passenger list fast path
+             this.passengers = this.passengers.stream().filter(p -> p != passenger).collect(ImmutableList.toImmutableList());
+         }
+ 

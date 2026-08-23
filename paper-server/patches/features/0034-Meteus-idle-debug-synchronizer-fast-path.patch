@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 18:48:52 +0900
+Subject: [PATCH] Meteus idle debug synchronizer fast path
+
+
+diff --git a/net/minecraft/util/debug/LevelDebugSynchronizers.java b/net/minecraft/util/debug/LevelDebugSynchronizers.java
+index f03cc96eb8d385e948debbdd0186e881ceb7e500..12f573a06d0004c589bb6c364177b9d8b9c1cf01 100644
+--- a/net/minecraft/util/debug/LevelDebugSynchronizers.java
++++ b/net/minecraft/util/debug/LevelDebugSynchronizers.java
+@@ -45,6 +45,18 @@ public class LevelDebugSynchronizers {
+     }
+ 
+     public void tick(final ServerDebugSubscribers serverSubscribers) {
++        // Meteus start - idle debug synchronizer fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.idleDebugSynchronizerFastPath && !serverSubscribers.hasAnySubscribers()) {
++            this.enabledSubscriptions = Set.of();
++            if (!this.sleeping) {
++                this.sleeping = true;
++                for (TrackingDebugSynchronizer<?> synchronizer : this.allSynchronizers) {
++                    synchronizer.clear();
++                }
++            }
++            return;
++        }
++        // Meteus end - idle debug synchronizer fast path
+         this.enabledSubscriptions = serverSubscribers.enabledSubscriptions();
+         boolean shouldSleep = this.enabledSubscriptions.isEmpty();
+         if (this.sleeping != shouldSleep) {
+diff --git a/net/minecraft/util/debug/ServerDebugSubscribers.java b/net/minecraft/util/debug/ServerDebugSubscribers.java
+index ffbc6e6b88336e692c94586de8181a8c33b002f3..010de816ee51274262f3620059346fc59cc02bc3 100644
+--- a/net/minecraft/util/debug/ServerDebugSubscribers.java
++++ b/net/minecraft/util/debug/ServerDebugSubscribers.java
+@@ -49,6 +49,10 @@ public class ServerDebugSubscribers {
+         return !this.getSubscribersFor(subscription).isEmpty();
+     }
+ 
++    public boolean hasAnySubscribers() {
++        return !this.enabledSubscriptions.isEmpty();
++    }
++
+     public boolean hasRequiredPermissions(final ServerPlayer player) {
+         NameAndId nameAndId = player.nameAndId();
+         return SharedConstants.IS_RUNNING_IN_IDE && this.server.isSingleplayerOwner(nameAndId) || this.server.getPlayerList().isOp(nameAndId);

@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:03:43 +0900
+Subject: [PATCH] Meteus raid data serialization fast path
+
+
+diff --git a/net/minecraft/world/entity/raid/Raids.java b/net/minecraft/world/entity/raid/Raids.java
+index bc0f31a16f7b055e85f10eda377026a927032535..e835836044863d9c9065272afb5adc8939f07df6 100644
+--- a/net/minecraft/world/entity/raid/Raids.java
++++ b/net/minecraft/world/entity/raid/Raids.java
+@@ -5,6 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
++import java.util.ArrayList;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.OptionalInt;
+@@ -34,7 +35,7 @@ public class Raids extends SavedData {
+                 Raids.RaidWithId.CODEC
+                     .listOf()
+                     .optionalFieldOf("raids", List.of())
+-                    .forGetter(r -> r.raidMap.int2ObjectEntrySet().stream().map(Raids.RaidWithId::from).toList()),
++                    .forGetter(Raids::packRaids),
+                 Codec.INT.fieldOf("next_id").forGetter(r -> r.nextId),
+                 Codec.INT.fieldOf("tick").forGetter(r -> r.tick)
+             )
+@@ -114,15 +115,28 @@ public class Raids extends SavedData {
+             return null;
+         }
+ 
+-        List<PoiRecord> posses = level.getPoiManager().getInRange(e -> e.is(PoiTypeTags.VILLAGE), raidPosition, 64, PoiManager.Occupancy.IS_OCCUPIED).toList();
+         int count = 0;
+         Vec3 posTotals = Vec3.ZERO;
+ 
++        // Meteus start - world data serialization fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.worldDataSerializationFastPath) {
++            final Iterator<PoiRecord> poiIterator = level.getPoiManager().getInRange(e -> e.is(PoiTypeTags.VILLAGE), raidPosition, 64, PoiManager.Occupancy.IS_OCCUPIED).iterator();
++            while (poiIterator.hasNext()) {
++                final BlockPos pos = poiIterator.next().getPos();
++                posTotals = posTotals.add(pos.getX(), pos.getY(), pos.getZ());
++                ++count;
++            }
++        } else {
++        // Meteus end - world data serialization fast path
++        List<PoiRecord> posses = level.getPoiManager().getInRange(e -> e.is(PoiTypeTags.VILLAGE), raidPosition, 64, PoiManager.Occupancy.IS_OCCUPIED).toList();
+         for (PoiRecord p : posses) {
+             BlockPos pos = p.getPos();
+             posTotals = posTotals.add(pos.getX(), pos.getY(), pos.getZ());
+             count++;
+         }
++        // Meteus start - world data serialization fast path
++        }
++        // Meteus end - world data serialization fast path
+ 
+         BlockPos raidCenterPos;
+         if (count > 0) {
+@@ -187,9 +201,35 @@ public class Raids extends SavedData {
+ 
+     @VisibleForDebug
+     public List<BlockPos> getRaidCentersInChunk(final ChunkPos chunkPos) {
++        // Meteus start - world data serialization fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.worldDataSerializationFastPath) {
++            final List<BlockPos> centers = new ArrayList<>();
++            for (final Raid raid : this.raidMap.values()) {
++                final BlockPos center = raid.getCenter();
++                if (chunkPos.contains(center)) {
++                    centers.add(center);
++                }
++            }
++            return centers;
++        }
++        // Meteus end - world data serialization fast path
+         return this.raidMap.values().stream().map(Raid::getCenter).filter(chunkPos::contains).toList();
+     }
+ 
++    // Meteus start - world data serialization fast path
++    private List<Raids.RaidWithId> packRaids() {
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.worldDataSerializationFastPath) {
++            return this.raidMap.int2ObjectEntrySet().stream().map(Raids.RaidWithId::from).toList();
++        }
++
++        final List<Raids.RaidWithId> raids = new ArrayList<>(this.raidMap.size());
++        for (final Entry<Raid> entry : this.raidMap.int2ObjectEntrySet()) {
++            raids.add(Raids.RaidWithId.from(entry));
++        }
++        return raids;
++    }
++    // Meteus end - world data serialization fast path
++
+     private record RaidWithId(int id, Raid raid) {
+         public static final Codec<Raids.RaidWithId> CODEC = RecordCodecBuilder.create(
+             i -> i.group(Codec.INT.fieldOf("id").forGetter(Raids.RaidWithId::id), Raid.MAP_CODEC.forGetter(Raids.RaidWithId::raid))

@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Tue, 16 Jun 2026 08:01:32 +0900
+Subject: [PATCH] Meteus skip spawn census when mob spawning disabled
+
+
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index 55c4544d81389cb45589f1f782336358a3cc0b79..a7142fcbadcbd5543aa28e8e94586e79188708f4 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -545,7 +545,15 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         final boolean hasPlayers = !players.isEmpty();
+         // Paper start - Optional per player mob spawns
+         NaturalSpawner.@Nullable SpawnState spawnCookie;
+-        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.emptyWorldSpawnStateFastPath && !hasPlayers) {
++        // Meteus start - skip spawn census when mob spawning is disabled
++        // createState() iterates every entity each tick to compute mob caps, but that census is only consumed
++        // by the spawn loop below, which is gated on the SPAWN_MOBS gamerule. When spawning is off the whole
++        // O(entities) census (and the per-player mobCount bookkeeping) is wasted work - skip it.
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.spawnCensusSkipFastPath
++            && !this.level.getGameRules().get(GameRules.SPAWN_MOBS)) {
++            spawnCookie = null;
++        } else if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.emptyWorldSpawnStateFastPath && !hasPlayers) {
++        // Meteus end - skip spawn census when mob spawning is disabled
+             spawnCookie = null;
+         } else if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
+         // Meteus end - empty world spawn state fast path

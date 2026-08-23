@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:29:31 +0900
+Subject: [PATCH] Meteus JSON-RPC broadcast message fast path
+
+
+diff --git a/net/minecraft/server/jsonrpc/internalapi/MinecraftServerStateServiceImpl.java b/net/minecraft/server/jsonrpc/internalapi/MinecraftServerStateServiceImpl.java
+index 46ec7995003ec90b873f06de9bb3c7cb3c479fc8..e7183410f7dbb269f873d34f088ffc86d91ff193 100644
+--- a/net/minecraft/server/jsonrpc/internalapi/MinecraftServerStateServiceImpl.java
++++ b/net/minecraft/server/jsonrpc/internalapi/MinecraftServerStateServiceImpl.java
+@@ -84,6 +84,20 @@ public class MinecraftServerStateServiceImpl implements MinecraftServerStateServ
+     public void broadcastSystemMessage(final Component message, final boolean overlay, final ClientInfo clientInfo) {
+         this.jsonrpcLogger.log(clientInfo, "Broadcast system message (overlay: {}): '{}'", overlay, message.getString());
+ 
++        // Meteus start - JSON-RPC broadcast message fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.jsonRpcBroadcastMessageFastPath) {
++            final List<ServerPlayer> players = this.server.getPlayerList().getPlayers();
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final ServerPlayer player = players.get(i);
++                if (overlay) {
++                    player.sendOverlayMessage(message);
++                } else {
++                    player.sendSystemMessage(message);
++                }
++            }
++            return;
++        }
++        // Meteus end - JSON-RPC broadcast message fast path
+         for (ServerPlayer player : this.server.getPlayerList().getPlayers()) {
+             if (overlay) {
+                 player.sendOverlayMessage(message);

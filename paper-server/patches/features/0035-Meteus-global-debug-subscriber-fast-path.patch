@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 18:55:33 +0900
+Subject: [PATCH] Meteus global debug subscriber fast path
+
+
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index 60ff8173750b57aa05bb19a3dd1c744f870f59a5..3664cae79a157fba19799987173f9595b83a19f3 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -2115,6 +2115,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+     }
+ 
+     public void disconnect() {
++        this.requestDebugSubscriptions(Set.of()); // Meteus - keep debug subscriber fast path accounting exact
+         this.disconnected = true;
+         this.ejectPassengers();
+ 
+@@ -2969,7 +2970,9 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+     }
+ 
+     public void requestDebugSubscriptions(final Set<DebugSubscription<?>> subscriptions) {
++        final boolean hadRequestedSubscriptions = !this.requestedDebugSubscriptions.isEmpty();
+         this.requestedDebugSubscriptions = Set.copyOf(subscriptions);
++        this.server.debugSubscribers().onPlayerDebugSubscriptionsChanged(hadRequestedSubscriptions, !this.requestedDebugSubscriptions.isEmpty()); // Meteus - global debug subscriber fast path
+     }
+ 
+     public Set<DebugSubscription<?>> debugSubscriptions() {
+diff --git a/net/minecraft/util/debug/ServerDebugSubscribers.java b/net/minecraft/util/debug/ServerDebugSubscribers.java
+index 010de816ee51274262f3620059346fc59cc02bc3..049b6150940c48757e72d4756ffb7650d4427f56 100644
+--- a/net/minecraft/util/debug/ServerDebugSubscribers.java
++++ b/net/minecraft/util/debug/ServerDebugSubscribers.java
+@@ -14,6 +14,7 @@ import net.minecraft.server.players.NameAndId;
+ public class ServerDebugSubscribers {
+     private final MinecraftServer server;
+     private final Map<DebugSubscription<?>, List<ServerPlayer>> enabledSubscriptions = new HashMap<>();
++    private int playersWithRequestedSubscriptions;
+ 
+     public ServerDebugSubscribers(final MinecraftServer server) {
+         this.server = server;
+@@ -24,6 +25,12 @@ public class ServerDebugSubscribers {
+     }
+ 
+     public void tick() {
++        // Meteus start - global debug subscriber fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.globalDebugSubscriberFastPath && this.playersWithRequestedSubscriptions == 0) {
++            this.enabledSubscriptions.clear();
++            return;
++        }
++        // Meteus end - global debug subscriber fast path
+         this.enabledSubscriptions.values().forEach(List::clear);
+ 
+         for (ServerPlayer player : this.server.getPlayerList().getPlayers()) {
+@@ -53,6 +60,16 @@ public class ServerDebugSubscribers {
+         return !this.enabledSubscriptions.isEmpty();
+     }
+ 
++    public void onPlayerDebugSubscriptionsChanged(final boolean hadRequestedSubscriptions, final boolean hasRequestedSubscriptions) {
++        if (hadRequestedSubscriptions == hasRequestedSubscriptions) {
++            return;
++        }
++        this.playersWithRequestedSubscriptions += hasRequestedSubscriptions ? 1 : -1;
++        if (this.playersWithRequestedSubscriptions < 0) {
++            this.playersWithRequestedSubscriptions = 0;
++        }
++    }
++
+     public boolean hasRequiredPermissions(final ServerPlayer player) {
+         NameAndId nameAndId = player.nameAndId();
+         return SharedConstants.IS_RUNNING_IN_IDE && this.server.isSingleplayerOwner(nameAndId) || this.server.getPlayerList().isOp(nameAndId);

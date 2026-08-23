@@ -1,0 +1,159 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 14:36:31 +0900
+Subject: [PATCH] Meteus entity and AI candidate fast paths
+
+
+diff --git a/net/minecraft/world/entity/Leashable.java b/net/minecraft/world/entity/Leashable.java
+index 132ce6cef9f9f485028246c41bee805d5d0fe1ec..3b338726d2803563193851caa37491335e332fc7 100644
+--- a/net/minecraft/world/entity/Leashable.java
++++ b/net/minecraft/world/entity/Leashable.java
+@@ -394,10 +394,17 @@ public interface Leashable {
+     static List<Leashable> leashableInArea(final Level level, final Vec3 pos, final Predicate<Leashable> test) {
+         double size = 32.0;
+         AABB scanArea = AABB.ofSize(pos, 32.0, 32.0, 32.0);
+-        return level.getEntitiesOfClass(Entity.class, scanArea, e -> e instanceof Leashable leashable && test.test(leashable))
+-            .stream()
+-            .map(Leashable.class::cast)
+-            .toList();
++        // Meteus start - leash area scan fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.leashAreaScanFastPath) {
++            final List<Entity> entities = level.getEntitiesOfClass(Entity.class, scanArea, e -> e instanceof Leashable leashable && test.test(leashable));
++            final List<Leashable> leashables = new ArrayList<>(entities.size());
++            for (int index = 0, len = entities.size(); index < len; ++index) {
++                leashables.add((Leashable)entities.get(index));
++            }
++            return leashables;
++        }
++        // Meteus end - leash area scan fast path
++        return level.getEntitiesOfClass(Entity.class, scanArea, e -> e instanceof Leashable leashable && test.test(leashable)).stream().map(Leashable.class::cast).toList();
+     }
+ 
+     final class LeashData {
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index 0e1c1f424de5dd9e6afba1d7a10dfbbdabb1e790..e143f999ea2701cf8f114ac8e356803de44469b2 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -3661,11 +3661,22 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+     private void handleEquipmentChanges(final Map<EquipmentSlot, ItemStack> changedItems) {
+         List<Pair<EquipmentSlot, ItemStack>> itemsToSend = Lists.newArrayListWithCapacity(changedItems.size());
+-        changedItems.forEach((slot, newItem) -> {
+-            ItemStack newItemToStore = newItem.copy();
+-            itemsToSend.add(Pair.of(slot, newItemToStore));
+-            this.lastEquipmentItems.put(slot, newItemToStore);
+-        });
++        // Meteus start - entity equipment serialization fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEquipmentSerializationFastPath) {
++            for (final Entry<EquipmentSlot, ItemStack> entry : changedItems.entrySet()) {
++                final EquipmentSlot slot = entry.getKey();
++                final ItemStack newItemToStore = entry.getValue().copy();
++                itemsToSend.add(Pair.of(slot, newItemToStore));
++                this.lastEquipmentItems.put(slot, newItemToStore);
++            }
++        } else {
++            changedItems.forEach((slot, newItem) -> {
++                ItemStack newItemToStore = newItem.copy();
++                itemsToSend.add(Pair.of(slot, newItemToStore));
++                this.lastEquipmentItems.put(slot, newItemToStore);
++            });
++        }
++        // Meteus end - entity equipment serialization fast path
+         ((ServerLevel)this.level()).getChunkSource().sendToTrackingPlayers(this, new ClientboundSetEquipmentPacket(this.getId(), itemsToSend, true)); // Paper - data sanitization
+     }
+ 
+diff --git a/net/minecraft/world/entity/ai/behavior/InsideBrownianWalk.java b/net/minecraft/world/entity/ai/behavior/InsideBrownianWalk.java
+index b57a48842e31f678de4dcef689a4c9dcf9dd66af..82457111456b99eb85c7fcaf289cfe4d24a5d665 100644
+--- a/net/minecraft/world/entity/ai/behavior/InsideBrownianWalk.java
++++ b/net/minecraft/world/entity/ai/behavior/InsideBrownianWalk.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.world.entity.ai.behavior;
+ 
++import com.google.common.collect.Lists;
+ import java.util.Collections;
+ import java.util.List;
+ import net.minecraft.core.BlockPos;
+@@ -21,6 +22,30 @@ public class InsideBrownianWalk {
+                         }
+ 
+                         BlockPos bodyPos = body.blockPosition();
++                        // Meteus start - AI candidate build fast path
++                        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.aiCandidateBuildFastPath) {
++                            final int bodyX = bodyPos.getX();
++                            final int bodyY = bodyPos.getY();
++                            final int bodyZ = bodyPos.getZ();
++                            List<BlockPos> poses = Lists.newArrayListWithCapacity(27);
++                            for (int x = bodyX - 1; x <= bodyX + 1; ++x) {
++                                for (int y = bodyY - 1; y <= bodyY + 1; ++y) {
++                                    for (int z = bodyZ - 1; z <= bodyZ + 1; ++z) {
++                                        poses.add(new BlockPos(x, y, z));
++                                    }
++                                }
++                            }
++                            Collections.shuffle(poses);
++                            for (int index = 0, len = poses.size(); index < len; ++index) {
++                                BlockPos pos = poses.get(index);
++                                if (!level.canSeeSky(pos) && level.loadedAndEntityCanStandOn(pos, body) && level.noCollision(body)) {
++                                    walkTarget.set(new WalkTarget(pos, speedModifier, 0));
++                                    break;
++                                }
++                            }
++                            return true;
++                        }
++                        // Meteus end - AI candidate build fast path
+                         List<BlockPos> poses = BlockPos.betweenClosedStream(bodyPos.offset(-1, -1, -1), bodyPos.offset(1, 1, 1))
+                             .map(BlockPos::immutable)
+                             .collect(Util.toMutableList());
+diff --git a/net/minecraft/world/entity/ai/behavior/LongJumpToRandomPos.java b/net/minecraft/world/entity/ai/behavior/LongJumpToRandomPos.java
+index fe7403770b6c117cc2b9e5a3ab9f8554deed703c..abed0db278bf50fcf932bfa92921f7efebd566cd 100644
+--- a/net/minecraft/world/entity/ai/behavior/LongJumpToRandomPos.java
++++ b/net/minecraft/world/entity/ai/behavior/LongJumpToRandomPos.java
+@@ -129,6 +129,26 @@ public class LongJumpToRandomPos<E extends Mob> extends Behavior<E> {
+         int mobX = mobPos.getX();
+         int mobY = mobPos.getY();
+         int mobZ = mobPos.getZ();
++        // Meteus start - AI candidate build fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.aiCandidateBuildFastPath) {
++            final int width = this.maxLongJumpWidth;
++            final int height = this.maxLongJumpHeight;
++            final int side = width * 2 + 1;
++            this.jumpCandidates = Lists.newArrayListWithCapacity(Math.max(0, side * side * (height * 2 + 1) - 1));
++            for (int x = mobX - width; x <= mobX + width; ++x) {
++                for (int y = mobY - height; y <= mobY + height; ++y) {
++                    for (int z = mobZ - width; z <= mobZ + width; ++z) {
++                        if (x == mobX && y == mobY && z == mobZ) {
++                            continue;
++                        }
++                        BlockPos pos = new BlockPos(x, y, z);
++                        this.jumpCandidates.add(new LongJumpToRandomPos.PossibleJump(pos, Mth.ceil(mobPos.distSqr(pos))));
++                    }
++                }
++            }
++            return;
++        }
++        // Meteus end - AI candidate build fast path
+         this.jumpCandidates = BlockPos.betweenClosedStream(
+                 mobX - this.maxLongJumpWidth,
+                 mobY - this.maxLongJumpHeight,
+diff --git a/net/minecraft/world/entity/item/FallingBlockEntity.java b/net/minecraft/world/entity/item/FallingBlockEntity.java
+index 045ce9cf39ec1c106bf7e9694e6d309f58900850..37d37172adfa001c7217f0302b426973d6012c81 100644
+--- a/net/minecraft/world/entity/item/FallingBlockEntity.java
++++ b/net/minecraft/world/entity/item/FallingBlockEntity.java
+@@ -286,7 +286,16 @@ public class FallingBlockEntity extends Entity {
+             ? fallable.getFallDamageSource(this)
+             : this.damageSources().fallingBlock(this);
+         float damage = Math.min(Mth.floor(fallDistanceInt * this.fallDamagePerDistance), this.fallDamageMax);
+-        this.level().getEntities(this, this.getBoundingBox(), entitySelector).forEach(entity -> entity.hurt(actualDamageSource, damage));
++        // Meteus start - falling block damage fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++            final java.util.List<Entity> entities = this.level().getEntities(this, this.getBoundingBox(), entitySelector);
++            for (int index = 0, len = entities.size(); index < len; ++index) {
++                entities.get(index).hurt(actualDamageSource, damage);
++            }
++        } else {
++            this.level().getEntities(this, this.getBoundingBox(), entitySelector).forEach(entity -> entity.hurt(actualDamageSource, damage));
++        }
++        // Meteus end - falling block damage fast path
+         boolean isAnvil = this.blockState.is(BlockTags.ANVIL);
+         if (isAnvil && damage > 0.0F && this.random.nextFloat() < 0.05F + fallDistanceInt * 0.05F) {
+             BlockState newBlockState = AnvilBlock.damage(this.blockState);

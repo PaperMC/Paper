@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:16:23 +0900
+Subject: [PATCH] Meteus particle command fast path
+
+
+diff --git a/net/minecraft/server/commands/ParticleCommand.java b/net/minecraft/server/commands/ParticleCommand.java
+index ce8a8e665ca68f14158739dd7a07f932a472203c..690517e5529d137f774995a6c631697d1ec2e6d7 100644
+--- a/net/minecraft/server/commands/ParticleCommand.java
++++ b/net/minecraft/server/commands/ParticleCommand.java
+@@ -151,6 +151,25 @@ public class ParticleCommand {
+     ) throws CommandSyntaxException {
+         int result = 0;
+ 
++        // Meteus start - particle command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.particleCommandFastPath && players instanceof java.util.List<ServerPlayer> playerList) {
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                final ServerPlayer player = playerList.get(i);
++                if (source.getLevel().sendParticles(player, particle, force, false, pos.x, pos.y, pos.z, count, delta.x, delta.y, delta.z, speed)) {
++                    result++;
++                }
++            }
++
++            if (result == 0) {
++                throw ERROR_FAILED.create();
++            }
++
++            source.sendSuccess(
++                () -> Component.translatable("commands.particle.success", BuiltInRegistries.PARTICLE_TYPE.getKey(particle.getType()).toString()), true
++            );
++            return result;
++        }
++        // Meteus end - particle command fast path
+         for (ServerPlayer player : players) {
+             if (source.getLevel().sendParticles(player, particle, force, false, pos.x, pos.y, pos.z, count, delta.x, delta.y, delta.z, speed)) {
+                 result++;

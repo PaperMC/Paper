@@ -1,0 +1,98 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 17:31:20 +0900
+Subject: [PATCH] Meteus teleport command fast path
+
+
+diff --git a/net/minecraft/server/commands/TeleportCommand.java b/net/minecraft/server/commands/TeleportCommand.java
+index 290547abf7037c5c88736c66765b2ee8f575c53b..7dcb65d212f3eace3aed51da529eb0c4df357728 100644
+--- a/net/minecraft/server/commands/TeleportCommand.java
++++ b/net/minecraft/server/commands/TeleportCommand.java
+@@ -7,6 +7,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
+ import java.util.Collection;
+ import java.util.Collections;
+ import java.util.EnumSet;
++import java.util.List;
+ import java.util.Locale;
+ import java.util.Set;
+ import net.minecraft.commands.CommandSourceStack;
+@@ -149,6 +150,37 @@ public class TeleportCommand {
+     }
+ 
+     private static int teleportToEntity(final CommandSourceStack source, final Collection<? extends Entity> entities, final Entity destination) throws CommandSyntaxException {
++        // Meteus start - teleport command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.teleportCommandFastPath && entities instanceof List<? extends Entity> entityList) {
++            for (int i = 0, len = entityList.size(); i < len; ++i) {
++                performTeleport(
++                    source,
++                    entityList.get(i),
++                    (ServerLevel)destination.level(),
++                    destination.getX(),
++                    destination.getY(),
++                    destination.getZ(),
++                    EnumSet.noneOf(Relative.class),
++                    destination.getYRot(),
++                    destination.getXRot(),
++                    null
++                );
++            }
++
++            if (entityList.size() == 1) {
++                source.sendSuccess(
++                    () -> Component.translatable(
++                        "commands.teleport.success.entity.single", entityList.get(0).getDisplayName(), destination.getDisplayName()
++                    ),
++                    true
++                );
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.teleport.success.entity.multiple", entityList.size(), destination.getDisplayName()), true);
++            }
++
++            return entityList.size();
++        }
++        // Meteus end - teleport command fast path
+         for (Entity entity : entities) {
+             performTeleport(
+                 source,
+@@ -189,6 +221,41 @@ public class TeleportCommand {
+         Vec3 pos = destination.getPosition(source);
+         Vec2 rot = rotation == null ? null : rotation.getRotation(source);
+ 
++        // Meteus start - teleport command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.teleportCommandFastPath && entities instanceof List<? extends Entity> entityList) {
++            for (int i = 0, len = entityList.size(); i < len; ++i) {
++                final Entity entity = entityList.get(i);
++                Set<Relative> relatives = getRelatives(destination, rotation, entity.level().dimension() == level.dimension());
++                if (rot == null) {
++                    performTeleport(source, entity, level, pos.x, pos.y, pos.z, relatives, entity.getYRot(), entity.getXRot(), lookAt);
++                } else {
++                    performTeleport(source, entity, level, pos.x, pos.y, pos.z, relatives, rot.y, rot.x, lookAt);
++                }
++            }
++
++            if (entityList.size() == 1) {
++                source.sendSuccess(
++                    () -> Component.translatable(
++                        "commands.teleport.success.location.single",
++                        entityList.get(0).getDisplayName(),
++                        formatDouble(pos.x),
++                        formatDouble(pos.y),
++                        formatDouble(pos.z)
++                    ),
++                    true
++                );
++            } else {
++                source.sendSuccess(
++                    () -> Component.translatable(
++                        "commands.teleport.success.location.multiple", entityList.size(), formatDouble(pos.x), formatDouble(pos.y), formatDouble(pos.z)
++                    ),
++                    true
++                );
++            }
++
++            return entityList.size();
++        }
++        // Meteus end - teleport command fast path
+         for (Entity entity : entities) {
+             Set<Relative> relatives = getRelatives(destination, rotation, entity.level().dimension() == level.dimension());
+             if (rot == null) {

@@ -1,0 +1,112 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 22:12:19 +0900
+Subject: [PATCH] Meteus chunk storage serialization fast path
+
+
+diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+index 7d29fdc6548324d97ec34d476b5b48ec0bdba0d2..15f56e10c9c53616858a3309928231f48531a260 100644
+--- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
++++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+@@ -188,8 +188,19 @@ public record SerializableChunkData(
+             }
+         }
+ 
+-        List<CompoundTag> entities = chunkData.getList("entities").stream().flatMap(ListTag::compoundStream).toList();
+-        List<CompoundTag> blockEntities = chunkData.getList("block_entities").stream().flatMap(ListTag::compoundStream).toList();
++        // Meteus start - chunk storage serialization fast path
++        final List<CompoundTag> entities;
++        final List<CompoundTag> blockEntities;
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkStorageSerializationFastPath) {
++            entities = readCompoundList(chunkData, "entities");
++            blockEntities = readCompoundList(chunkData, "block_entities");
++        } else {
++        // Meteus end - chunk storage serialization fast path
++        entities = chunkData.getList("entities").stream().flatMap(ListTag::compoundStream).toList();
++        blockEntities = chunkData.getList("block_entities").stream().flatMap(ListTag::compoundStream).toList();
++        // Meteus start - chunk storage serialization fast path
++        }
++        // Meteus end - chunk storage serialization fast path
+         CompoundTag structureData = chunkData.getCompoundOrEmpty("structures");
+         ListTag sectionTags = chunkData.getListOrEmpty("sections");
+         List<SerializableChunkData.SectionData> sectionData = new ArrayList<>(sectionTags.size());
+@@ -519,9 +530,23 @@ public record SerializableChunkData(
+         }
+ 
+         ChunkAccess.PackedTicks ticksForSerialization = chunk.getTicksForSerialization(level.getGameTime());
+-        ShortList[] postProcessingSections = Arrays.stream(chunk.getPostProcessing())
++        // Meteus start - chunk storage serialization fast path
++        final ShortList[] postProcessingSections;
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkStorageSerializationFastPath) {
++            final ShortList[] sourcePostProcessingSections = chunk.getPostProcessing();
++            postProcessingSections = new ShortList[sourcePostProcessingSections.length];
++            for (int i = 0, len = sourcePostProcessingSections.length; i < len; ++i) {
++                final ShortList section = sourcePostProcessingSections[i];
++                postProcessingSections[i] = section != null && !section.isEmpty() ? new ShortArrayList(section) : null;
++            }
++        } else {
++        // Meteus end - chunk storage serialization fast path
++        postProcessingSections = Arrays.stream(chunk.getPostProcessing())
+             .map(shorts -> shorts != null && !shorts.isEmpty() ? new ShortArrayList(shorts) : null)
+             .toArray(ShortList[]::new);
++        // Meteus start - chunk storage serialization fast path
++        }
++        // Meteus end - chunk storage serialization fast path
+         CompoundTag structureData = packStructureData(StructurePieceSerializationContext.fromLevel(level), pos, chunk.getAllStarts(), chunk.getAllReferences());
+         // CraftBukkit start - store chunk persistent data in nbt
+         CompoundTag persistentDataContainer = null;
+@@ -653,6 +678,22 @@ public record SerializableChunkData(
+         return tag != null ? tag.read("Status", ChunkStatus.CODEC).orElse(ChunkStatus.EMPTY) : ChunkStatus.EMPTY;
+     }
+ 
++    // Meteus start - chunk storage serialization fast path
++    private static List<CompoundTag> readCompoundList(final CompoundTag chunkData, final String key) {
++        final Optional<ListTag> maybeList = chunkData.getList(key);
++        if (maybeList.isEmpty()) {
++            return List.of();
++        }
++
++        final ListTag listTag = maybeList.get();
++        final List<CompoundTag> compounds = new ArrayList<>(listTag.size());
++        for (int i = 0, len = listTag.size(); i < len; ++i) {
++            listTag.getCompound(i).ifPresent(compounds::add);
++        }
++        return compounds;
++    }
++    // Meteus end - chunk storage serialization fast path
++
+     private static LevelChunk.@Nullable PostLoadProcessor postLoadChunk(
+         final ServerLevel level, final List<CompoundTag> entities, final List<CompoundTag> blockEntities
+     ) {
+@@ -750,6 +791,21 @@ public record SerializableChunkData(
+             } else {
+                 Optional<long[]> longArray = entry.asLongArray();
+                 if (!longArray.isEmpty()) {
++                    // Meteus start - chunk storage serialization fast path
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkStorageSerializationFastPath) {
++                        final long[] references = longArray.get();
++                        final LongOpenHashSet validReferences = new LongOpenHashSet(references.length);
++                        for (final long chunkLongPos : references) {
++                            final ChunkPos refPos = ChunkPos.unpack(chunkLongPos);
++                            if (refPos.getChessboardDistance(pos) > 8) {
++                                LOGGER.warn("Found invalid structure reference [ {} @ {} ] for chunk {}.", structureId, refPos, pos);
++                            } else {
++                                validReferences.add(chunkLongPos);
++                            }
++                        }
++                        outmap.put(structureType, validReferences);
++                    } else {
++                    // Meteus end - chunk storage serialization fast path
+                     outmap.put(structureType, new LongOpenHashSet(Arrays.stream(longArray.get()).filter(chunkLongPos -> {
+                         ChunkPos refPos = ChunkPos.unpack(chunkLongPos);
+                         if (refPos.getChessboardDistance(pos) > 8) {
+@@ -759,6 +815,9 @@ public record SerializableChunkData(
+                             return true;
+                         }
+                     }).toArray()));
++                    // Meteus start - chunk storage serialization fast path
++                    }
++                    // Meteus end - chunk storage serialization fast path
+                 }
+             }
+         });

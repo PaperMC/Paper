@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:34:36 +0900
+Subject: [PATCH] Meteus server text filter bundle fast path
+
+
+diff --git a/net/minecraft/server/network/ServerTextFilter.java b/net/minecraft/server/network/ServerTextFilter.java
+index b2bc95715c4dc977f4979d68bb45c69053d98ccd..76df5886ea45715d02757fa9902e9da8d05d05ec 100644
+--- a/net/minecraft/server/network/ServerTextFilter.java
++++ b/net/minecraft/server/network/ServerTextFilter.java
+@@ -239,6 +239,17 @@ public abstract class ServerTextFilter implements AutoCloseable {
+ 
+         @Override
+         public CompletableFuture<List<FilteredText>> processMessageBundle(final List<String> messages) {
++            // Meteus start - server game packet fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverGamePacketFastPath) {
++                final ImmutableList.Builder<CompletableFuture<FilteredText>> requests = ImmutableList.builderWithExpectedSize(messages.size());
++                for (int i = 0, len = messages.size(); i < len; ++i) {
++                    requests.add(ServerTextFilter.this.requestMessageProcessing(
++                        this.profile, messages.get(i), ServerTextFilter.this.chatIgnoreStrategy, this.streamExecutor
++                    ));
++                }
++                return Util.sequenceFailFast(requests.build()).exceptionally(e -> ImmutableList.of());
++            }
++            // Meteus end - server game packet fast path
+             List<CompletableFuture<FilteredText>> requests = messages.stream()
+                 .map(
+                     message -> ServerTextFilter.this.requestMessageProcessing(

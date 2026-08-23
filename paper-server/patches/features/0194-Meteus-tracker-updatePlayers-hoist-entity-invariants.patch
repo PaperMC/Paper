@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Tue, 16 Jun 2026 19:19:51 +0900
+Subject: [PATCH] Meteus tracker updatePlayers hoist entity invariants
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index b3a934758853e4df999cb5824ebbc813b3689411..35bd75d0904cb8f5ec6fbea914370f39c2cd3896 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1827,7 +1827,42 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+         public void updatePlayers(final List<ServerPlayer> players) {
+             // Meteus start - entity tracker update players fast path
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityTrackerUpdatePlayersFastPath) {
+-                for (int i = 0, len = players.size(); i < len; ++i) {
++                final int len = players.size();
++                // Meteus start - hoist entity-level invariants out of the per-pair loop
++                // getEffectiveRange() (iterates passengers) and this.entity.isSpectator() are invariant for the
++                // whole call but were recomputed for every player inside updatePlayer - O(viewers) redundant work
++                // per tracked entity. When the boundary fast-path applies (idle-skip on, Y-tracking off, entity not
++                // a spectator) we can compute them once and inline the per-pair "already tracked & clearly in range"
++                // test, skipping the updatePlayer call (and its repeated getEffectiveRange/isSpectator) entirely for
++                // the common co-located pair. Semantics are identical to updatePlayer's own boundary fast-path.
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipFastPath
++                    && !level.paperConfig().entities.trackingRangeY.enabled
++                    && !this.entity.isSpectator()) {
++                    final double effectiveRange = this.getEffectiveRange();
++                    final double entityX = this.entity.getX();
++                    final double entityZ = this.entity.getZ();
++                    for (int i = 0; i < len; ++i) {
++                        final ServerPlayer player = players.get(i);
++                        if (player == this.entity) {
++                            continue;
++                        }
++                        final double visibleRange = Math.min(effectiveRange, ChunkMap.this.getPlayerViewDistance(player) * 16.0D);
++                        if (visibleRange > 16.0D) {
++                            final double deltaX = player.getX() - entityX;
++                            final double deltaZ = player.getZ() - entityZ;
++                            final double inner = visibleRange - 16.0D;
++                            if (deltaX * deltaX + deltaZ * deltaZ <= inner * inner
++                                && !player.isSpectator()
++                                && this.seenBy.contains(player.connection)) {
++                                continue; // already tracked and clearly inside range - cannot change state this tick
++                            }
++                        }
++                        this.updatePlayer(player);
++                    }
++                    return;
++                }
++                // Meteus end - hoist entity-level invariants out of the per-pair loop
++                for (int i = 0; i < len; ++i) {
+                     this.updatePlayer(players.get(i));
+                 }
+                 return;

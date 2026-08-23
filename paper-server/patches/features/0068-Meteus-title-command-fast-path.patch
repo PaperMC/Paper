@@ -1,0 +1,108 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 08:02:25 +0900
+Subject: [PATCH] Meteus title command fast path
+
+
+diff --git a/net/minecraft/server/commands/TitleCommand.java b/net/minecraft/server/commands/TitleCommand.java
+index ecf9f5cc7fd23570c1c7f7f267643dccb79e62ba..e24ec27fd514db8db3eeef73e36a3a6d95309a05 100644
+--- a/net/minecraft/server/commands/TitleCommand.java
++++ b/net/minecraft/server/commands/TitleCommand.java
+@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
+ import com.mojang.brigadier.arguments.IntegerArgumentType;
+ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import java.util.Collection;
++import java.util.List;
+ import java.util.function.Function;
+ import net.minecraft.commands.CommandBuildContext;
+ import net.minecraft.commands.CommandSourceStack;
+@@ -104,6 +105,21 @@ public class TitleCommand {
+     private static int clearTitle(final CommandSourceStack source, final Collection<ServerPlayer> targets) {
+         ClientboundClearTitlesPacket packet = new ClientboundClearTitlesPacket(false);
+ 
++        // Meteus start - title command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.titleCommandFastPath && targets instanceof List<ServerPlayer> targetList) {
++            for (int i = 0, len = targetList.size(); i < len; ++i) {
++                targetList.get(i).connection.send(packet);
++            }
++
++            if (targetList.size() == 1) {
++                source.sendSuccess(() -> Component.translatable("commands.title.cleared.single", targetList.get(0).getDisplayName()), true);
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.title.cleared.multiple", targetList.size()), true);
++            }
++
++            return targetList.size();
++        }
++        // Meteus end - title command fast path
+         for (ServerPlayer player : targets) {
+             player.connection.send(packet);
+         }
+@@ -120,6 +136,21 @@ public class TitleCommand {
+     private static int resetTitle(final CommandSourceStack source, final Collection<ServerPlayer> targets) {
+         ClientboundClearTitlesPacket packet = new ClientboundClearTitlesPacket(true);
+ 
++        // Meteus start - title command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.titleCommandFastPath && targets instanceof List<ServerPlayer> targetList) {
++            for (int i = 0, len = targetList.size(); i < len; ++i) {
++                targetList.get(i).connection.send(packet);
++            }
++
++            if (targetList.size() == 1) {
++                source.sendSuccess(() -> Component.translatable("commands.title.reset.single", targetList.get(0).getDisplayName()), true);
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.title.reset.multiple", targetList.size()), true);
++            }
++
++            return targetList.size();
++        }
++        // Meteus end - title command fast path
+         for (ServerPlayer player : targets) {
+             player.connection.send(packet);
+         }
+@@ -140,6 +171,23 @@ public class TitleCommand {
+         final String type,
+         final Function<Component, Packet<?>> factory
+     ) throws CommandSyntaxException {
++        // Meteus start - title command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.titleCommandFastPath && targets instanceof List<ServerPlayer> targetList) {
++            for (int i = 0, len = targetList.size(); i < len; ++i) {
++                final ServerPlayer player = targetList.get(i);
++                player.connection
++                    .send(factory.apply(ComponentUtils.resolve(ResolutionContext.builder().withSource(source).withEntityOverride(player).build(), title)));
++            }
++
++            if (targetList.size() == 1) {
++                source.sendSuccess(() -> Component.translatable("commands.title.show." + type + ".single", targetList.get(0).getDisplayName()), true);
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.title.show." + type + ".multiple", targetList.size()), true);
++            }
++
++            return targetList.size();
++        }
++        // Meteus end - title command fast path
+         for (ServerPlayer player : targets) {
+             player.connection
+                 .send(factory.apply(ComponentUtils.resolve(ResolutionContext.builder().withSource(source).withEntityOverride(player).build(), title)));
+@@ -157,6 +205,21 @@ public class TitleCommand {
+     private static int setTimes(final CommandSourceStack source, final Collection<ServerPlayer> targets, final int fadeIn, final int stay, final int fadeOut) {
+         ClientboundSetTitlesAnimationPacket packet = new ClientboundSetTitlesAnimationPacket(fadeIn, stay, fadeOut);
+ 
++        // Meteus start - title command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.titleCommandFastPath && targets instanceof List<ServerPlayer> targetList) {
++            for (int i = 0, len = targetList.size(); i < len; ++i) {
++                targetList.get(i).connection.send(packet);
++            }
++
++            if (targetList.size() == 1) {
++                source.sendSuccess(() -> Component.translatable("commands.title.times.single", targetList.get(0).getDisplayName()), true);
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.title.times.multiple", targetList.size()), true);
++            }
++
++            return targetList.size();
++        }
++        // Meteus end - title command fast path
+         for (ServerPlayer player : targets) {
+             player.connection.send(packet);
+         }

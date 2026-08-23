@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 18:02:24 +0900
+Subject: [PATCH] Meteus level chunk packet data fast path
+
+
+diff --git a/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+index a52f93d0563f713b1d2b707cdb6ab74e4793a54d..b82146bc539bd1896f98ce0d008f645d446380dc 100644
+--- a/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
++++ b/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+@@ -3,6 +3,7 @@ package net.minecraft.network.protocol.game;
+ import com.google.common.collect.Lists;
+ import io.netty.buffer.ByteBuf;
+ import io.netty.buffer.Unpooled;
++import java.util.ArrayList;
+ import java.util.EnumMap;
+ import java.util.List;
+ import java.util.Map;
+@@ -48,17 +49,35 @@ public class ClientboundLevelChunkPacketData {
+     }
+     public ClientboundLevelChunkPacketData(final LevelChunk levelChunk, final io.papermc.paper.antixray.ChunkPacketInfo<net.minecraft.world.level.block.state.BlockState> chunkPacketInfo) {
+         // Paper end - Anti-Xray - Add chunk packet info
++        // Meteus start - level chunk packet data fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.levelChunkPacketDataFastPath) {
++            final EnumMap<Heightmap.Types, long[]> heightmaps = new EnumMap<>(Heightmap.Types.class);
++            for (final Entry<Heightmap.Types, Heightmap> entry : levelChunk.getHeightmaps()) {
++                if (entry.getKey().sendToClient()) {
++                    heightmaps.put(entry.getKey(), entry.getValue().getRawData().clone());
++                }
++            }
++            this.heightmaps = heightmaps;
++        } else {
++        // Meteus end - level chunk packet data fast path
+         this.heightmaps = levelChunk.getHeightmaps()
+             .stream()
+             .filter(entryx -> ((Heightmap.Types)entryx.getKey()).sendToClient())
+             .collect(Collectors.toMap(Entry::getKey, entryx -> (long[])((Heightmap)entryx.getValue()).getRawData().clone()));
++        } // Meteus - level chunk packet data fast path
+         this.buffer = new byte[calculateChunkSize(levelChunk)];
+         // Paper start - Anti-Xray - Add chunk packet info
+         if (chunkPacketInfo != null) {
+             chunkPacketInfo.setBuffer(this.buffer);
+         }
+         extractChunkData(new FriendlyByteBuf(this.getWriteBuffer()), levelChunk, chunkPacketInfo);
+-        this.blockEntitiesData = Lists.newArrayList();
++        // Meteus start - level chunk packet data fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.levelChunkPacketDataFastPath) {
++            this.blockEntitiesData = new ArrayList<>(levelChunk.getBlockEntities().size());
++        } else {
++        // Meteus end - level chunk packet data fast path
++            this.blockEntitiesData = Lists.newArrayList();
++        } // Meteus - level chunk packet data fast path
+         int totalTileEntities = 0; // Paper - Handle oversized block entities in chunks
+ 
+         for (Entry<BlockPos, BlockEntity> entry : levelChunk.getBlockEntities().entrySet()) {

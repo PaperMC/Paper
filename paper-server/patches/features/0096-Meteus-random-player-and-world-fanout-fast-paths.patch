@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 10:41:16 +0900
+Subject: [PATCH] Meteus random player and world fanout fast paths
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 326b29a86832275c8ec7b937e284e71e48360f3f..03ebd0cb13c695423a7f5db15e8460d7efa7f47e 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -1675,6 +1675,19 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     }
+ 
+     public @Nullable ServerPlayer getRandomPlayer() {
++        // Meteus start - random player fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.randomPlayerFastPath) {
++            ServerPlayer selected = null;
++            int alivePlayers = 0;
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                if (player.isAlive() && this.random.nextInt(++alivePlayers) == 0) {
++                    selected = player;
++                }
++            }
++            return selected;
++        }
++        // Meteus end - random player fast path
+         List<ServerPlayer> players = this.getPlayers(LivingEntity::isAlive);
+         return players.isEmpty() ? null : players.get(this.random.nextInt(players.size()));
+     }
+@@ -2235,6 +2248,35 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     private void runBlockEvents() {
+         this.blockEventsToReschedule.clear();
+ 
++        // Meteus start - block event broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.blockEventBroadcastFastPath) {
++            while (!this.blockEvents.isEmpty()) {
++                final BlockEventData eventData = this.blockEvents.removeFirst();
++                final BlockPos eventPos = eventData.pos();
++                if (this.shouldTickBlocksAt(eventPos)) {
++                    if (this.doBlockEvent(eventData)) {
++                        this.server
++                            .getPlayerList()
++                            .broadcast(
++                                null,
++                                eventPos.getX(),
++                                eventPos.getY(),
++                                eventPos.getZ(),
++                                64.0,
++                                this.dimension(),
++                                new ClientboundBlockEventPacket(eventPos, eventData.block(), eventData.paramA(), eventData.paramB())
++                            );
++                    }
++                } else {
++                    this.blockEventsToReschedule.add(eventData);
++                }
++            }
++
++            this.blockEvents.addAll(this.blockEventsToReschedule);
++            return;
++        }
++        // Meteus end - block event broadcast fast path
++
+         while (!this.blockEvents.isEmpty()) {
+             BlockEventData eventData = this.blockEvents.removeFirst();
+             if (this.shouldTickBlocksAt(eventData.pos())) {
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 899a2fd534d85b573d3f45f861eed5ec88898054..fc218bcc331715b367c34d954efa140aff5b34f0 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -852,6 +852,15 @@ public abstract class PlayerList {
+     }
+ 
+     public void broadcastAll(Packet packet, Level world) {
++        // Meteus start - player list broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListBroadcastFastPath) {
++            final List<? extends net.minecraft.world.entity.player.Player> players = world.players();
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                ((ServerPlayer) players.get(i)).connection.send(packet);
++            }
++            return;
++        }
++        // Meteus end - player list broadcast fast path
+         for (int i = 0; i < world.players().size(); ++i) {
+             ((ServerPlayer) world.players().get(i)).connection.send(packet);
+         }

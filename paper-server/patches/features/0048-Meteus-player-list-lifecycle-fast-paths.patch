@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 22:43:04 +0900
+Subject: [PATCH] Meteus player list lifecycle fast paths
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index b71de8ce59b8a635d6bd84760963f73839bcfa46..9f370db60901959941b3906528231490a2dba4d4 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -357,6 +357,17 @@ public abstract class PlayerList {
+ 
+     // Paper start - virtual world border API
+     private void broadcastWorldborder(Packet<?> packet, ResourceKey<Level> dimension) {
++        // Meteus start - player list world update fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListWorldUpdateFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer serverPlayer = this.players.get(i);
++                if (serverPlayer.level().dimension() == dimension && serverPlayer.getBukkitEntity().getWorldBorder() == null) {
++                    serverPlayer.connection.send(packet);
++                }
++            }
++            return;
++        }
++        // Meteus end - player list world update fast path
+         for (ServerPlayer serverPlayer : this.players) {
+             if (serverPlayer.level().dimension() == dimension && serverPlayer.getBukkitEntity().getWorldBorder() == null) {
+                 serverPlayer.connection.send(packet);
+@@ -513,6 +524,19 @@ public abstract class PlayerList {
+         // CraftBukkit start
+         // this.broadcastAll(new ClientboundPlayerInfoRemovePacket(List.of(player.getUUID())));
+         ClientboundPlayerInfoRemovePacket packet = new ClientboundPlayerInfoRemovePacket(List.of(player.getUUID()));
++        // Meteus start - player remove broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerRemoveBroadcastFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer otherPlayer = this.players.get(i);
++
++                if (otherPlayer.getBukkitEntity().canSee(player.getBukkitEntity())) {
++                    otherPlayer.connection.send(packet);
++                } else {
++                    otherPlayer.getBukkitEntity().onEntityRemove(player);
++                }
++            }
++        } else {
++        // Meteus end - player remove broadcast fast path
+         for (int i = 0; i < this.players.size(); i++) {
+             ServerPlayer otherPlayer = this.players.get(i);
+ 
+@@ -522,6 +546,7 @@ public abstract class PlayerList {
+                 otherPlayer.getBukkitEntity().onEntityRemove(player);
+             }
+         }
++        } // Meteus - player remove broadcast fast path
+         // This removes the scoreboard (and player reference) for the specific player in the manager
+         this.cserver.getScoreboardManager().removePlayer(player.getBukkitEntity());
+         // CraftBukkit end
+@@ -573,11 +598,24 @@ public abstract class PlayerList {
+         UUID playerId = profile.id(); // Paper - validate usernames
+         Set<ServerPlayer> dupes = Sets.newIdentityHashSet();
+ 
++        // Meteus start - duplicate login scan fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.duplicateLoginScanFastPath) {
++            final boolean proxyOnlineMode = io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode();
++            final String profileName = profile.name();
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                if (player.getUUID().equals(playerId) || (proxyOnlineMode && player.getGameProfile().name().equalsIgnoreCase(profileName))) { // Paper - validate usernames
++                    dupes.add(player);
++                }
++            }
++        } else {
++        // Meteus end - duplicate login scan fast path
+         for (ServerPlayer player : this.players) {
+             if (player.getUUID().equals(playerId) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && player.getGameProfile().name().equalsIgnoreCase(profile.name()))) { // Paper - validate usernames
+                 dupes.add(player);
+             }
+         }
++        } // Meteus - duplicate login scan fast path
+ 
+         ServerPlayer serverPlayer = this.playersByUUID.get(playerId);
+         if (serverPlayer != null) {
+@@ -1305,6 +1343,18 @@ public abstract class PlayerList {
+         this.viewDistance = viewDistance;
+         //this.broadcastAll(new ClientboundSetChunkCacheRadiusPacket(viewDistance)); // Paper - rewrite chunk system
+ 
++        // Meteus start - player list world update fast path
++        final io.papermc.paper.configuration.GlobalConfiguration meteus$config = io.papermc.paper.configuration.GlobalConfiguration.get();
++        if (meteus$config != null && meteus$config.meteus.performance.playerListWorldUpdateFastPath) {
++            final Iterable<ServerLevel> levels = this.server.getAllLevels();
++            if (levels instanceof java.util.List<ServerLevel> list) {
++                for (int i = 0, len = list.size(); i < len; ++i) {
++                    list.get(i).getChunkSource().setViewDistance(viewDistance);
++                }
++                return;
++            }
++        }
++        // Meteus end - player list world update fast path
+         for (ServerLevel level : this.server.getAllLevels()) {
+             level.getChunkSource().setViewDistance(viewDistance);
+         }
+@@ -1314,6 +1364,18 @@ public abstract class PlayerList {
+         this.simulationDistance = simulationDistance;
+         //this.broadcastAll(new ClientboundSetSimulationDistancePacket(simulationDistance)); // Paper - rewrite chunk system
+ 
++        // Meteus start - player list world update fast path
++        final io.papermc.paper.configuration.GlobalConfiguration meteus$config = io.papermc.paper.configuration.GlobalConfiguration.get();
++        if (meteus$config != null && meteus$config.meteus.performance.playerListWorldUpdateFastPath) {
++            final Iterable<ServerLevel> levels = this.server.getAllLevels();
++            if (levels instanceof java.util.List<ServerLevel> list) {
++                for (int i = 0, len = list.size(); i < len; ++i) {
++                    list.get(i).getChunkSource().setSimulationDistance(simulationDistance);
++                }
++                return;
++            }
++        }
++        // Meteus end - player list world update fast path
+         for (ServerLevel level : this.server.getAllLevels()) {
+             level.getChunkSource().setSimulationDistance(simulationDistance);
+         }

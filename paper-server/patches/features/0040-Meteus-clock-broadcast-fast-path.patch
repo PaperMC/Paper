@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 19:16:58 +0900
+Subject: [PATCH] Meteus clock broadcast fast path
+
+
+diff --git a/net/minecraft/world/clock/ServerClockManager.java b/net/minecraft/world/clock/ServerClockManager.java
+index 436ed3d95c21b8590664a125785545e0d07375fd..d3372535e658977c1a49ad8ff9b0501869086f54 100644
+--- a/net/minecraft/world/clock/ServerClockManager.java
++++ b/net/minecraft/world/clock/ServerClockManager.java
+@@ -2,6 +2,7 @@ package net.minecraft.world.clock;
+ 
+ import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
+ import java.util.HashMap;
++import java.util.List;
+ import java.util.Map;
+ import java.util.Map.Entry;
+ import java.util.function.Consumer;
+@@ -165,7 +166,25 @@ public class ServerClockManager extends SavedData implements ClockManager {
+ 
+     // Paper start - per-world time; per-player time
+     private void broadcastUpdates(final Holder<WorldClock> clock, final ServerClockManager.ClockInstance instance) {
+-        for (final net.minecraft.server.level.ServerPlayer player : this.level != null ? this.level.players() : this.server.getPlayerList().getPlayers()) {
++        final List<net.minecraft.server.level.ServerPlayer> players = this.level != null ? this.level.players() : this.server.getPlayerList().getPlayers();
++        // Meteus start - clock broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.clockBroadcastFastPath) {
++            if (players.isEmpty()) {
++                return;
++            }
++            final long gameTime = this.getGameTime();
++            final boolean advanceTime = this.advanceTime();
++            for (final net.minecraft.server.level.ServerPlayer player : players) {
++                final var packet = new net.minecraft.network.protocol.game.ClientboundSetTimePacket(
++                    gameTime,
++                    java.util.Map.of(clock, this.meteus$packNetworkState(clock, instance, player, advanceTime))
++                );
++                player.connection.send(packet);
++            }
++            return;
++        }
++        // Meteus end - clock broadcast fast path
++        for (final net.minecraft.server.level.ServerPlayer player : players) {
+             final var packet = new net.minecraft.network.protocol.game.ClientboundSetTimePacket(
+                 this.getGameTime(),
+                 java.util.Map.of(clock, this.packNetworkState(clock, instance, player))
+@@ -186,6 +205,21 @@ public class ServerClockManager extends SavedData implements ClockManager {
+         return instance.packNetworkState(this.advanceTime());
+     }
+ 
++    // Meteus start - clock broadcast fast path
++    private ClockNetworkState meteus$packNetworkState(
++        final Holder<WorldClock> clock,
++        final ServerClockManager.ClockInstance instance,
++        final net.minecraft.server.level.ServerPlayer player,
++        final boolean advanceTime
++    ) {
++        if (player.level().dimensionType().defaultClock().filter(clock::equals).isPresent()) {
++            final boolean paused = !player.relativeTime || instance.paused || !advanceTime;
++            return new ClockNetworkState(player.getPlayerTime(), instance.partialTick, paused ? 0.0F : instance.rate);
++        }
++        return instance.packNetworkState(advanceTime);
++    }
++    // Meteus end - clock broadcast fast path
++
+     private boolean advanceTime() {
+         return this.level != null ? this.level.getGameRules().get(GameRules.ADVANCE_TIME) : this.server.getGlobalGameRules().get(GameRules.ADVANCE_TIME);
+     }

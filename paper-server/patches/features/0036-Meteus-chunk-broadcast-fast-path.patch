@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 19:01:40 +0900
+Subject: [PATCH] Meteus chunk broadcast fast path
+
+
+diff --git a/net/minecraft/server/level/ChunkHolder.java b/net/minecraft/server/level/ChunkHolder.java
+index cd5a325d37f617431ceb568a655701601618198f..591c5882fd384ad5a2ee8be51723b495b60a6f0c 100644
+--- a/net/minecraft/server/level/ChunkHolder.java
++++ b/net/minecraft/server/level/ChunkHolder.java
+@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
+ import it.unimi.dsi.fastutil.shorts.ShortSet;
+ import java.util.BitSet;
+ import java.util.List;
++import java.util.RandomAccess;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.CompletionStage;
+ import java.util.concurrent.Executor;
+@@ -335,6 +336,14 @@ public class ChunkHolder extends GenerationChunkHolder implements ca.spottedleaf
+     }
+ 
+     private void broadcast(final List<ServerPlayer> players, final Packet<?> packet) {
++        // Meteus start - chunk broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkBroadcastFastPath && players instanceof RandomAccess) {
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                players.get(i).connection.send(packet);
++            }
++            return;
++        }
++        // Meteus end - chunk broadcast fast path
+         players.forEach(player -> player.connection.send(packet));
+     }
+ 

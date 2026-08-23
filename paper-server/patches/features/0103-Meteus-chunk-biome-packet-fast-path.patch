@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 15:30:51 +0900
+Subject: [PATCH] Meteus chunk biome packet fast path
+
+
+diff --git a/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java b/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
+index b817e30a23a0030f948ff6c12175767fa8c5546c..fbc059f4b81c49960fce3bafba6d6899429cc474 100644
+--- a/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
+@@ -2,7 +2,9 @@ package net.minecraft.network.protocol.game;
+ 
+ import io.netty.buffer.ByteBuf;
+ import io.netty.buffer.Unpooled;
++import java.util.ArrayList;
+ import java.util.List;
++import java.util.RandomAccess;
+ import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.codec.StreamCodec;
+ import net.minecraft.network.protocol.Packet;
+@@ -22,10 +24,34 @@ public record ClientboundChunksBiomesPacket(List<ClientboundChunksBiomesPacket.C
+     }
+ 
+     public static ClientboundChunksBiomesPacket forChunks(final List<LevelChunk> chunks) {
++        // Meteus start - chunk biome packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkBiomePacketFastPath) {
++            final ArrayList<ClientboundChunksBiomesPacket.ChunkBiomeData> chunkBiomeData = new ArrayList<>(chunks.size());
++            if (chunks instanceof RandomAccess) {
++                for (int i = 0, len = chunks.size(); i < len; ++i) {
++                    chunkBiomeData.add(new ClientboundChunksBiomesPacket.ChunkBiomeData(chunks.get(i)));
++                }
++            } else {
++                for (final LevelChunk chunk : chunks) {
++                    chunkBiomeData.add(new ClientboundChunksBiomesPacket.ChunkBiomeData(chunk));
++                }
++            }
++            return new ClientboundChunksBiomesPacket(chunkBiomeData);
++        }
++        // Meteus end - chunk biome packet fast path
+         return new ClientboundChunksBiomesPacket(chunks.stream().map(ClientboundChunksBiomesPacket.ChunkBiomeData::new).toList());
+     }
+ 
+     private void write(final FriendlyByteBuf output) {
++        // Meteus start - chunk biome packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkBiomePacketFastPath && this.chunkBiomeData instanceof RandomAccess) {
++            output.writeVarInt(this.chunkBiomeData.size());
++            for (int i = 0, len = this.chunkBiomeData.size(); i < len; ++i) {
++                this.chunkBiomeData.get(i).write(output);
++            }
++            return;
++        }
++        // Meteus end - chunk biome packet fast path
+         output.writeCollection(this.chunkBiomeData, (o, c) -> c.write(o));
+     }
+ 

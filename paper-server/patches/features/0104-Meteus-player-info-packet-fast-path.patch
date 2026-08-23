@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 15:57:15 +0900
+Subject: [PATCH] Meteus player info packet fast path
+
+
+diff --git a/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java b/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+index aaa497096f07f2ef9da62b9760f5c9aa0b0263d3..76aded03d52556f851e32781942c49dd0f200043 100644
+--- a/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+@@ -3,10 +3,12 @@ package net.minecraft.network.protocol.game;
+ import com.google.common.base.MoreObjects;
+ import com.mojang.authlib.GameProfile;
+ import com.mojang.authlib.properties.PropertyMap;
++import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.EnumSet;
+ import java.util.List;
+ import java.util.Objects;
++import java.util.RandomAccess;
+ import java.util.UUID;
+ import net.minecraft.Optionull;
+ import net.minecraft.network.FriendlyByteBuf;
+@@ -32,6 +34,22 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+ 
+     public ClientboundPlayerInfoUpdatePacket(final EnumSet<ClientboundPlayerInfoUpdatePacket.Action> actions, final Collection<ServerPlayer> players) {
+         this.actions = actions;
++        // Meteus start - player info packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerInfoPacketFastPath) {
++            final ArrayList<ClientboundPlayerInfoUpdatePacket.Entry> entries = new ArrayList<>(players.size());
++            if (players instanceof List<?> playerList && playerList instanceof RandomAccess) {
++                for (int i = 0, len = playerList.size(); i < len; ++i) {
++                    entries.add(new ClientboundPlayerInfoUpdatePacket.Entry((ServerPlayer)playerList.get(i)));
++                }
++            } else {
++                for (final ServerPlayer player : players) {
++                    entries.add(new ClientboundPlayerInfoUpdatePacket.Entry(player));
++                }
++            }
++            this.entries = entries;
++            return;
++        }
++        // Meteus end - player info packet fast path
+         this.entries = players.stream().map(ClientboundPlayerInfoUpdatePacket.Entry::new).toList();
+     }
+ 
+@@ -120,6 +138,20 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+ 
+     private void write(final RegistryFriendlyByteBuf output) {
+         output.writeEnumSet(this.actions, ClientboundPlayerInfoUpdatePacket.Action.class);
++        // Meteus start - player info packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerInfoPacketFastPath && this.entries instanceof RandomAccess) {
++            output.writeVarInt(this.entries.size());
++            for (int i = 0, len = this.entries.size(); i < len; ++i) {
++                final ClientboundPlayerInfoUpdatePacket.Entry entry = this.entries.get(i);
++                output.writeUUID(entry.profileId());
++
++                for (final ClientboundPlayerInfoUpdatePacket.Action action : this.actions) {
++                    action.writer.write(output, entry);
++                }
++            }
++            return;
++        }
++        // Meteus end - player info packet fast path
+         output.writeCollection(this.entries, (buf, entry) -> {
+             buf.writeUUID(entry.profileId());
+ 

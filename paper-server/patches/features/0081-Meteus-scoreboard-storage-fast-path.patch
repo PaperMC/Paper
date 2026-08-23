@@ -1,0 +1,100 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 18:04:04 +0900
+Subject: [PATCH] Meteus scoreboard storage fast path
+
+
+diff --git a/net/minecraft/world/scores/PlayerScores.java b/net/minecraft/world/scores/PlayerScores.java
+index 1261101fe5b3f82fdc931c01ad1bc5f2202f0c4e..917ae2d07bdc2799767a7395f6e56d3f35948ff1 100644
+--- a/net/minecraft/world/scores/PlayerScores.java
++++ b/net/minecraft/world/scores/PlayerScores.java
+@@ -33,6 +33,14 @@ class PlayerScores {
+ 
+     public Object2IntMap<Objective> listScores() {
+         Object2IntMap<Objective> result = new Object2IntOpenHashMap<>();
++        // Meteus start - scoreboard storage fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardStorageFastPath) {
++            for (Map.Entry<Objective, Score> entry : this.scores.entrySet()) {
++                result.put(entry.getKey(), entry.getValue().value());
++            }
++            return result;
++        }
++        // Meteus end - scoreboard storage fast path
+         this.scores.forEach((objective, score) -> result.put(objective, score.value()));
+         return result;
+     }
+diff --git a/net/minecraft/world/scores/Scoreboard.java b/net/minecraft/world/scores/Scoreboard.java
+index 5cd65073793152967484ba9b92326eb6ede69805..661f48595c12a3279d3bb6d4c39f67d7bac55278 100644
+--- a/net/minecraft/world/scores/Scoreboard.java
++++ b/net/minecraft/world/scores/Scoreboard.java
+@@ -183,6 +183,15 @@ public class Scoreboard {
+     }
+ 
+     public Collection<ScoreHolder> getTrackedPlayers() {
++        // Meteus start - scoreboard storage fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardStorageFastPath) {
++            final List<ScoreHolder> result = new ArrayList<>(this.playerScores.size());
++            for (String player : this.playerScores.keySet()) {
++                result.add(ScoreHolder.forNameOnly(player));
++            }
++            return result;
++        }
++        // Meteus end - scoreboard storage fast path
+         return this.playerScores.keySet().stream().map(ScoreHolder::forNameOnly).toList();
+     }
+ 
+@@ -347,6 +356,18 @@ public class Scoreboard {
+     }
+ 
+     protected List<Scoreboard.PackedScore> packPlayerScores() {
++        // Meteus start - scoreboard storage fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardStorageFastPath) {
++            final List<Scoreboard.PackedScore> result = new ArrayList<>();
++            for (Map.Entry<String, PlayerScores> playerEntry : this.playerScores.entrySet()) {
++                final String player = playerEntry.getKey();
++                for (Map.Entry<Objective, Score> entry : playerEntry.getValue().listRawScores().entrySet()) {
++                    result.add(new Scoreboard.PackedScore(player, entry.getKey().getName(), entry.getValue().pack()));
++                }
++            }
++            return result;
++        }
++        // Meteus end - scoreboard storage fast path
+         return this.playerScores
+             .entrySet()
+             .stream()
+@@ -373,6 +394,18 @@ public class Scoreboard {
+     }
+ 
+     protected List<PlayerTeam.Packed> packPlayerTeams() {
++        // Meteus start - scoreboard storage fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardStorageFastPath) {
++            final List<PlayerTeam.Packed> result = new ArrayList<>(this.teamsByName.size());
++            final boolean saveEmptyTeams = io.papermc.paper.configuration.GlobalConfiguration.get().scoreboards.saveEmptyScoreboardTeams;
++            for (PlayerTeam team : this.getPlayerTeams()) {
++                if (saveEmptyTeams || !team.getPlayers().isEmpty()) {
++                    result.add(team.pack());
++                }
++            }
++            return result;
++        }
++        // Meteus end - scoreboard storage fast path
+         return this.getPlayerTeams().stream().filter(p -> io.papermc.paper.configuration.GlobalConfiguration.get().scoreboards.saveEmptyScoreboardTeams || !p.getPlayers().isEmpty()).map(PlayerTeam::pack).toList(); // Paper - Don't save empty scoreboard teams to scoreboard.dat
+     }
+ 
+@@ -394,6 +427,16 @@ public class Scoreboard {
+     }
+ 
+     protected List<Objective.Packed> packObjectives() {
++        // Meteus start - scoreboard storage fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardStorageFastPath) {
++            final Collection<Objective> objectives = this.getObjectives();
++            final List<Objective.Packed> result = new ArrayList<>(objectives.size());
++            for (Objective objective : objectives) {
++                result.add(objective.pack());
++            }
++            return result;
++        }
++        // Meteus end - scoreboard storage fast path
+         return this.getObjectives().stream().map(Objective::pack).toList();
+     }
+ 

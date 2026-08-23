@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 10:48:07 +0900
+Subject: [PATCH] Meteus chunk biome and operator fanout fast paths
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 65590b58c81c521dea5803aae98a858b3f47023f..cf283682a39cd67410c33bb4adf6b78027c3fc5c 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1158,6 +1158,31 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+     }
+ 
+     public void resendBiomesForChunks(final List<ChunkAccess> chunks) {
++        // Meteus start - chunk biome broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkBiomeBroadcastFastPath) {
++            final Map<ServerPlayer, List<LevelChunk>> chunksForPlayers = new HashMap<>(Math.max(1, Math.min(this.level.players().size(), chunks.size())));
++
++            for (int i = 0, len = chunks.size(); i < len; ++i) {
++                final ChunkAccess chunkAccess = chunks.get(i);
++                final ChunkPos pos = chunkAccess.getPos();
++                final LevelChunk chunk = chunkAccess instanceof LevelChunk levelChunk ? levelChunk : this.level.getChunk(pos.x(), pos.z());
++
++                for (final ServerPlayer player : this.getPlayers(pos, false)) {
++                    List<LevelChunk> chunkList = chunksForPlayers.get(player);
++                    if (chunkList == null) {
++                        chunkList = new ArrayList<>(Math.min(8, chunks.size()));
++                        chunksForPlayers.put(player, chunkList);
++                    }
++                    chunkList.add(chunk);
++                }
++            }
++
++            for (final Map.Entry<ServerPlayer, List<LevelChunk>> entry : chunksForPlayers.entrySet()) {
++                entry.getKey().connection.send(ClientboundChunksBiomesPacket.forChunks(entry.getValue()));
++            }
++            return;
++        }
++        // Meteus end - chunk biome broadcast fast path
+         Map<ServerPlayer, List<LevelChunk>> chunksForPlayers = new HashMap<>();
+ 
+         for (ChunkAccess chunkAccess : chunks) {
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index 3664cae79a157fba19799987173f9595b83a19f3..1e86501d25437780b3c30641e79a20cc0785fd49 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -1245,6 +1245,15 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+ 
+     private void tellNeutralMobsThatIDied() {
+         AABB aabb = new AABB(this.blockPosition()).inflate(32.0, 10.0, 32.0);
++        // Meteus start - neutral mob death fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.neutralMobDeathFastPath) {
++            final List<Mob> mobs = this.level().getEntitiesOfClass(Mob.class, aabb, mob -> mob instanceof NeutralMob && EntitySelector.NO_SPECTATORS.test(mob));
++            for (int i = 0, len = mobs.size(); i < len; ++i) {
++                ((NeutralMob)mobs.get(i)).playerDied(this.level(), this);
++            }
++            return;
++        }
++        // Meteus end - neutral mob death fast path
+         this.level()
+             .getEntitiesOfClass(Mob.class, aabb, EntitySelector.NO_SPECTATORS)
+             .stream()
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 810b352503cdf56091ec6340ad72edde238fe359..5a7377e9f792d9a2290ee04359f329e7e860e22a 100644
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1161,6 +1161,18 @@ public class ServerGamePacketListenerImpl
+     private <T> void broadcastGameRuleChangeToOperators(final GameRule<T> rule, final T value) {
+         Component message = Component.translatable("commands.gamerule.set", rule.id(), rule.serialize(value));
+         PlayerList playerList = this.server.getPlayerList();
++        // Meteus start - game rule operator broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.gameRuleOperatorBroadcastFastPath) {
++            final List<ServerPlayer> players = playerList.getPlayers();
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final ServerPlayer op = players.get(i);
++                if (playerList.isOp(op.nameAndId())) {
++                    op.sendSystemMessage(message);
++                }
++            }
++            return;
++        }
++        // Meteus end - game rule operator broadcast fast path
+         playerList.getPlayers().stream().filter(op -> playerList.isOp(op.nameAndId())).forEach(op -> op.sendSystemMessage(message));
+     }
+ 

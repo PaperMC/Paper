@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Wed, 17 Jun 2026 08:39:56 +0900
+Subject: [PATCH] Meteus skip redundant zero-delta idle position sync packets
+
+
+diff --git a/net/minecraft/server/level/ServerEntity.java b/net/minecraft/server/level/ServerEntity.java
+index ac686e98f33d634fefd5c26bbf3e5f649d72b217..0fda0395fb38119a29fd5fe5563c13b6add1f683 100644
+--- a/net/minecraft/server/level/ServerEntity.java
++++ b/net/minecraft/server/level/ServerEntity.java
+@@ -203,8 +203,17 @@ public class ServerEntity {
+                     sentRotation = true;
+                 } else if ((!pos || !shouldSendRotation) && !(this.entity instanceof AbstractArrow)) {
+                     if (pos) {
++                        // Meteus start - skip redundant zero-delta position packet
++                        // pos is forced true every 60 ticks even for a stationary entity; when there is no real
++                        // movement (no position change AND a zero encoded delta) that Pos packet is a no-op on the
++                        // client, so skip fanning it out to every viewer. On-ground changes already took the teleport
++                        // branch above, and the forced-teleport interval still resyncs position, so there is no drift.
++                        if (positionChanged || xa != 0L || ya != 0L || za != 0L
++                            || !io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.skipIdlePositionSyncFastPath) {
+                         packet = new ClientboundMoveEntityPacket.Pos(this.entity.getId(), (short)xa, (short)ya, (short)za, this.entity.onGround());
+                         sentPosition = true;
++                        }
++                        // Meteus end - skip redundant zero-delta position packet
+                     } else if (shouldSendRotation) {
+                         packet = new ClientboundMoveEntityPacket.Rot(this.entity.getId(), yRotn, xRotn, this.entity.onGround());
+                         sentRotation = true;

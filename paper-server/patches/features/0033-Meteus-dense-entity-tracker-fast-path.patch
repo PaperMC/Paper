@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 18:41:53 +0900
+Subject: [PATCH] Meteus dense entity tracker fast path
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 42ec67c53c35189838ce4767c2be620e05108159..2f5a770a17ea4d9574e1693f1edfc2e6bd3edd95 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1041,6 +1041,25 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+ 
+         final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.entity.Entity> trackerEntities = entityLookup.trackerEntities;
+         final Entity[] trackerEntitiesRaw = trackerEntities.getRawDataUnchecked();
++        // Meteus start - dense entity tracker fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.denseEntityTrackerFastPath) {
++            for (int i = 0, len = trackerEntities.size(); i < len; ++i) {
++                final Entity entity = trackerEntitiesRaw[i];
++                final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity();
++                if (tracker == null) {
++                    continue;
++                }
++
++                final ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity trackerAccess = tracker;
++                final ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity chunkEntity = (ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)entity;
++                trackerAccess.moonrise$tick(chunkEntity.moonrise$getChunkData().nearbyPlayers);
++                if (trackerAccess.moonrise$hasPlayers() || chunkEntity.moonrise$getChunkStatus().isOrAfter(FullChunkStatus.ENTITY_TICKING)) {
++                    tracker.serverEntity.sendChanges();
++                }
++            }
++            return;
++        }
++        // Meteus end - dense entity tracker fast path
+         for (int i = 0, len = trackerEntities.size(); i < len; ++i) {
+             final Entity entity = trackerEntitiesRaw[i];
+             final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity();

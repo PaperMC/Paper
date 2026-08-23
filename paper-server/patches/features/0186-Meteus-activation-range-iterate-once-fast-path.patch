@@ -1,0 +1,110 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Mon, 15 Jun 2026 23:44:47 +0900
+Subject: [PATCH] Meteus activation range iterate-once fast path
+
+
+diff --git a/io/papermc/paper/entity/activation/ActivationRange.java b/io/papermc/paper/entity/activation/ActivationRange.java
+index ce6b57eeeeb1bd652f4bb53c19dcfbc05126c7e9..087aa2b06e01e0dd020de041244128150b288263 100644
+--- a/io/papermc/paper/entity/activation/ActivationRange.java
++++ b/io/papermc/paper/entity/activation/ActivationRange.java
+@@ -141,6 +141,15 @@ public final class ActivationRange {
+         maxRange = Math.max(maxRange, villagerActivationRange);
+         maxRange = Math.min((world.spigotConfig.simulationDistance << 4) - 8, maxRange);
+ 
++        // Meteus start - activation range iterate-once fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.activationRangeIterateOnceFastPath
++            && world instanceof net.minecraft.server.level.ServerLevel meteus$serverLevel) {
++            meteus$activateEntitiesIterateOnce(meteus$serverLevel, miscActivationRange, raiderActivationRange, animalActivationRange,
++                monsterActivationRange, waterActivationRange, flyingActivationRange, villagerActivationRange);
++            return;
++        }
++        // Meteus end - activation range iterate-once fast path
++
+         for (final Player player : world.players()) {
+             player.activatedTick = MinecraftServer.currentTick;
+             if (world.spigotConfig.ignoreSpectatorActivation && player.isSpectator()) {
+@@ -169,6 +178,83 @@ public final class ActivationRange {
+         }
+     }
+ 
++    // Meteus start - activation range iterate-once fast path
++    private static int meteus$rangeForType(final ActivationType type,
++            final int misc, final int raider, final int animal, final int monster, final int water, final int flying, final int villager) {
++        switch (type) {
++            case WATER: return water;
++            case VILLAGER: return villager;
++            case FLYING_MONSTER: return flying;
++            case RAIDER: return raider;
++            case MONSTER: return monster;
++            case ANIMAL: return animal;
++            default: return misc;
++        }
++    }
++
++    // Instead of scanning all entities around every player (O(players * entities-in-range)), iterate the
++    // activatable entities once. Players and other always-active entities resolve in O(1); a mob is active
++    // if any non-spectator player has it within that mob type's range, early-exiting on the first hit (O(1)
++    // in a dense crowd). This collapses the O(players^2) cost when many players are packed together.
++    private static void meteus$activateEntitiesIterateOnce(final net.minecraft.server.level.ServerLevel world,
++            final int misc, final int raider, final int animal, final int monster, final int water, final int flying, final int villager) {
++        final long currentTick = MinecraftServer.currentTick;
++        final boolean ignoreSpectators = world.spigotConfig.ignoreSpectatorActivation;
++        final boolean tickMarkers = world.paperConfig().entities.markers.tick;
++        final int worldHeight = world.getHeight();
++
++        // Players are always active and self-activate (matches the per-player loop's player.activatedTick set).
++        final java.util.List<net.minecraft.server.level.ServerPlayer> players = world.players();
++        for (int i = 0, len = players.size(); i < len; i++) {
++            players.get(i).activatedTick = currentTick;
++        }
++        if (players.isEmpty()) {
++            return;
++        }
++
++        final ca.spottedleaf.moonrise.common.misc.NearbyPlayers nearbyPlayers =
++            ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel) world).moonrise$getNearbyPlayers();
++        final ca.spottedleaf.moonrise.common.list.ReferenceList<Entity> tracked =
++            ((ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup)
++                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel) world).moonrise$getEntityLookup()).trackerEntities;
++        final Entity[] raw = tracked.getRawDataUnchecked();
++        for (int i = 0, len = tracked.size(); i < len; i++) {
++            final Entity entity = raw[i];
++            if (entity == null || currentTick <= entity.activatedTick) {
++                continue; // null slot, or already active this tick (players, or activated earlier)
++            }
++            if (!tickMarkers && entity instanceof Marker) {
++                continue;
++            }
++            if (entity.defaultActivationState) {
++                entity.activatedTick = currentTick;
++                continue;
++            }
++            final int range = meteus$rangeForType(entity.activationType, misc, raider, animal, monster, water, flying, villager);
++            if (range <= 0) {
++                continue;
++            }
++            final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.server.level.ServerPlayer> near =
++                nearbyPlayers.getPlayers(entity.chunkPosition(), ca.spottedleaf.moonrise.common.misc.NearbyPlayers.NearbyMapType.TICK_VIEW_DISTANCE);
++            if (near == null) {
++                continue;
++            }
++            final net.minecraft.server.level.ServerPlayer[] nearRaw = near.getRawDataUnchecked();
++            final net.minecraft.world.phys.AABB entityBB = entity.getBoundingBox();
++            for (int j = 0, nlen = near.size(); j < nlen; j++) {
++                final net.minecraft.server.level.ServerPlayer player = nearRaw[j];
++                if (ignoreSpectators && player.isSpectator()) {
++                    continue;
++                }
++                if (player.getBoundingBox().inflate(range, worldHeight, range).intersects(entityBB)) {
++                    entity.activatedTick = currentTick;
++                    break;
++                }
++            }
++        }
++    }
++    // Meteus end - activation range iterate-once fast path
++
+     /**
+      * Tries to activate an entity.
+      *

@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Wed, 17 Jun 2026 19:11:36 +0900
+Subject: [PATCH] Meteus hoist redundant recomputation in tracker
+ broadcast/tick
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 25863ae53b1900d9032736fb5f88d08206bbb3f6..9c72540093969dfa6ea0358192d713fd51e7894a 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1415,7 +1415,8 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+             // players that moved this tick. A staggered full refresh every trackerIdleSkipRefreshTicks ticks
+             // backstops rare non-positional changes (vanish/view-distance are already handled directly).
+             final int meteus$refreshTicks = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipRefreshTicks;
+-            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipFastPath
++            final boolean meteus$idleSkip = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipFastPath; // Meteus - read once, used in both branches
++            if (meteus$idleSkip
+                 && !this.meteus$movedThisTrackerTick
+                 && lastChunkUpdate == currChunkUpdate
+                 && lastTrackedChunk == chunk
+@@ -1442,7 +1443,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                     }
+                     this.updatePlayer(player);
+                 }
+-            } else if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipFastPath
++            } else if (meteus$idleSkip
+                 && this.meteus$movedThisTrackerTick
+                 && lastChunkUpdate == currChunkUpdate
+                 && lastTrackedChunk == chunk
+@@ -1691,20 +1692,22 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+         }
+ 
+         private void meteus$sendToSeenByAndSelf(final Packet<? super ClientGamePacketListener> packet) {
+-            final int meteus$recipients = this.seenBy.size() + (this.entity instanceof ServerPlayer ? 1 : 0); // Meteus - packet encoding cache
++            // Meteus - hoist the entity-instanceof-ServerPlayer check (was recomputed up to 4x per call)
++            final ServerPlayer meteus$self = this.entity instanceof ServerPlayer p ? p : null;
++            final int meteus$recipients = this.seenBy.size() + (meteus$self != null ? 1 : 0); // Meteus - packet encoding cache
+             final Packet<? super ClientGamePacketListener> outPacket = net.minecraft.network.MeteusPreEncodedPacket.meteus$maybeWrap(packet, meteus$recipients); // Meteus - packet encoding cache
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkBroadcastFlushFastPath) {
+                 for (final ServerPlayerConnection connection : this.seenBy) {
+                     connection.meteus$sendWithoutFlush(outPacket);
+                 }
+-                if (this.entity instanceof ServerPlayer player) {
+-                    player.connection.meteus$sendWithoutFlush(outPacket);
++                if (meteus$self != null) {
++                    meteus$self.connection.meteus$sendWithoutFlush(outPacket);
+                 }
+                 for (final ServerPlayerConnection connection : this.seenBy) {
+                     connection.meteus$flushConnection();
+                 }
+-                if (this.entity instanceof ServerPlayer player) {
+-                    player.connection.meteus$flushConnection();
++                if (meteus$self != null) {
++                    meteus$self.connection.meteus$flushConnection();
+                 }
+                 return;
+             }
+@@ -1712,8 +1715,8 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+             for (final ServerPlayerConnection connection : this.seenBy) {
+                 connection.send(outPacket);
+             }
+-            if (this.entity instanceof ServerPlayer player) {
+-                player.connection.send(outPacket);
++            if (meteus$self != null) {
++                meteus$self.connection.send(outPacket);
+             }
+         }
+ 

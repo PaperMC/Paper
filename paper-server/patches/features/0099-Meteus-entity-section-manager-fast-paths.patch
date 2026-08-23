@@ -1,0 +1,283 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 11:05:08 +0900
+Subject: [PATCH] Meteus entity section manager fast paths
+
+
+diff --git a/net/minecraft/world/level/entity/EntitySection.java b/net/minecraft/world/level/entity/EntitySection.java
+index ec794f2c0d7a3c01295c8e242ed67f1b006ca31a..c985dcf7579d3f337e36e6d7ad794992e6f79368 100644
+--- a/net/minecraft/world/level/entity/EntitySection.java
++++ b/net/minecraft/world/level/entity/EntitySection.java
+@@ -2,6 +2,7 @@ package net.minecraft.world.level.entity;
+ 
+ import com.mojang.logging.LogUtils;
+ import java.util.Collection;
++import java.util.function.Consumer;
+ import java.util.stream.Stream;
+ import net.minecraft.util.AbortableIterationConsumer;
+ import net.minecraft.util.ClassInstanceMultiMap;
+@@ -23,6 +24,12 @@ public class EntitySection<T extends EntityAccess> {
+     public void getEntities(java.util.List<T> into) {
+         into.addAll(this.storage);
+     }
++
++    public void forEachEntity(final Consumer<? super T> consumer) {
++        for (final T entity : this.storage) {
++            consumer.accept(entity);
++        }
++    }
+     // Paper end - support retrieving all entities, regardless of whether they are accessible
+ 
+     public void add(final T entity) {
+diff --git a/net/minecraft/world/level/entity/EntitySectionStorage.java b/net/minecraft/world/level/entity/EntitySectionStorage.java
+index f853c217ec89f9d23f00aa1551272271ea24fbe6..f28167c45a2133e4f8f9b4b0aa5521dca57b1c5b 100644
+--- a/net/minecraft/world/level/entity/EntitySectionStorage.java
++++ b/net/minecraft/world/level/entity/EntitySectionStorage.java
+@@ -12,6 +12,7 @@ import java.util.Objects;
+ import java.util.Spliterator;
+ import java.util.Spliterators;
+ import java.util.PrimitiveIterator.OfLong;
++import java.util.function.Consumer;
+ import java.util.stream.LongStream;
+ import java.util.stream.Stream;
+ import java.util.stream.StreamSupport;
+@@ -102,6 +103,18 @@ public class EntitySectionStorage<T extends EntityAccess> {
+         return this.getExistingSectionPositionsInChunk(chunkKey).mapToObj(this.sections::get).filter(Objects::nonNull);
+     }
+ 
++    // Meteus start - entity section manager fast path
++    public void forEachExistingSectionInChunk(final long chunkKey, final Consumer<? super EntitySection<T>> consumer) {
++        final LongIterator iterator = this.getChunkSections(ChunkPos.getX(chunkKey), ChunkPos.getZ(chunkKey)).iterator();
++        while (iterator.hasNext()) {
++            final EntitySection<T> section = this.sections.get(iterator.nextLong());
++            if (section != null) {
++                consumer.accept(section);
++            }
++        }
++    }
++    // Meteus end - entity section manager fast path
++
+     private static long getChunkKeyFromSectionKey(final long sectionPos) {
+         return ChunkPos.pack(SectionPos.x(sectionPos), SectionPos.z(sectionPos));
+     }
+diff --git a/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+index d02ea8f2aef0bf855efa9a7954d80c777d174276..815fca1eafe10bb3207e4c7ed299e69651094b86 100644
+--- a/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
++++ b/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+@@ -13,6 +13,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
+ import java.io.IOException;
+ import java.io.UncheckedIOException;
+ import java.io.Writer;
++import java.util.ArrayList;
+ import java.util.List;
+ import java.util.Queue;
+ import java.util.Set;
+@@ -54,6 +55,13 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+ 
+     // CraftBukkit start - add method to get all entities in chunk
+     public List<Entity> getEntities(ChunkPos chunkPos) {
++        // Meteus start - entity section manager fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionManagerFastPath) {
++            final List<Entity> entities = new ArrayList<>();
++            this.sectionStorage.forEachExistingSectionInChunk(chunkPos.pack(), section -> section.forEachEntity(entity -> entities.add((Entity)entity)));
++            return entities;
++        }
++        // Meteus end - entity section manager fast path
+         return this.sectionStorage.getExistingSectionsInChunk(chunkPos.pack()).flatMap(EntitySection::getEntities).map(entity -> (Entity) entity).collect(Collectors.toList());
+     }
+ 
+@@ -173,6 +181,48 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+             this.ensureChunkQueuedForLoad(chunkPosKey);
+         }
+ 
++        // Meteus start - entity section manager fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionManagerFastPath) {
++            this.sectionStorage.forEachExistingSectionInChunk(chunkPosKey, section -> {
++                Visibility previousStatus = section.updateChunkStatus(chunkStatus);
++                boolean wasAccessible = previousStatus.isAccessible();
++                boolean isAccessible = chunkStatus.isAccessible();
++                boolean wasTicking = previousStatus.isTicking();
++                boolean isTicking = chunkStatus.isTicking();
++                if (wasTicking && !isTicking) {
++                    section.forEachEntity(entity -> {
++                        if (!entity.isAlwaysTicking()) {
++                            this.stopTicking(entity);
++                        }
++                    });
++                }
++
++                if (wasAccessible && !isAccessible) {
++                    section.forEachEntity(entity -> {
++                        if (!entity.isAlwaysTicking()) {
++                            this.stopTracking(entity);
++                        }
++                    });
++                } else if (!wasAccessible && isAccessible) {
++                    section.forEachEntity(entity -> {
++                        if (!entity.isAlwaysTicking()) {
++                            this.startTracking(entity);
++                        }
++                    });
++                }
++
++                if (!wasTicking && isTicking) {
++                    section.forEachEntity(entity -> {
++                        if (!entity.isAlwaysTicking()) {
++                            this.startTicking(entity);
++                        }
++                    });
++                }
++            });
++            return;
++        }
++        // Meteus end - entity section manager fast path
++
+         this.sectionStorage.getExistingSectionsInChunk(chunkPosKey).forEach(section -> {
+             Visibility previousStatus = section.updateChunkStatus(chunkStatus);
+             boolean wasAccessible = previousStatus.isAccessible();
+@@ -214,6 +264,42 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+             return false;
+         }
+ 
++        // Meteus start - entity section manager fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionManagerFastPath) {
++            final List<T> rootEntitiesToSave = new ArrayList<>();
++            this.sectionStorage.forEachExistingSectionInChunk(chunkPos, section -> section.forEachEntity(entity -> {
++                if (entity.shouldBeSaved()) {
++                    rootEntitiesToSave.add(entity);
++                }
++            }));
++
++            if (rootEntitiesToSave.isEmpty()) {
++                if (chunkLoadStatus == PersistentEntitySectionManager.ChunkLoadStatus.LOADED) {
++                    if (callEvent) org.bukkit.craftbukkit.event.CraftEventFactory.callEntitiesUnloadEvent(((net.minecraft.world.level.chunk.storage.EntityStorage) this.permanentStorage).level, ChunkPos.unpack(chunkPos), ImmutableList.of()); // CraftBukkit
++                    this.permanentStorage.storeEntities(new ChunkEntities<>(ChunkPos.unpack(chunkPos), ImmutableList.of()));
++                }
++
++                return true;
++            } else if (chunkLoadStatus == PersistentEntitySectionManager.ChunkLoadStatus.FRESH) {
++                this.requestChunkLoad(chunkPos);
++                return false;
++            } else {
++                if (callEvent) {
++                    final List<Entity> eventEntities = new ArrayList<>(rootEntitiesToSave.size());
++                    for (int i = 0, len = rootEntitiesToSave.size(); i < len; ++i) {
++                        eventEntities.add((Entity)rootEntitiesToSave.get(i));
++                    }
++                    org.bukkit.craftbukkit.event.CraftEventFactory.callEntitiesUnloadEvent(((net.minecraft.world.level.chunk.storage.EntityStorage) this.permanentStorage).level, ChunkPos.unpack(chunkPos), eventEntities); // CraftBukkit
++                }
++                this.permanentStorage.storeEntities(new ChunkEntities<>(ChunkPos.unpack(chunkPos), rootEntitiesToSave));
++                for (int i = 0, len = rootEntitiesToSave.size(); i < len; ++i) {
++                    savedEntityVisitor.accept(rootEntitiesToSave.get(i));
++                }
++                return true;
++            }
++        }
++        // Meteus end - entity section manager fast path
++
+         List<T> rootEntitiesToSave = this.sectionStorage
+             .getExistingSectionsInChunk(chunkPos)
+             .flatMap(section -> section.getEntities().filter(EntityAccess::shouldBeSaved))
+@@ -248,6 +334,17 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+ 
+     private boolean processChunkUnload(final long chunkKey) {
+         org.spigotmc.AsyncCatcher.catchOp("Entity chunk unload process"); // Paper
++        // Meteus start - entity section manager fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionManagerFastPath) {
++            boolean storeSuccessful = this.storeChunkSections(chunkKey, this::meteus$unloadPassengersAndSelf, true); // CraftBukkit - add boolean for event call
++            if (!storeSuccessful) {
++                return false;
++            }
++
++            this.chunkLoadStatuses.remove(chunkKey);
++            return true;
++        }
++        // Meteus end - entity section manager fast path
+         boolean storeSuccessful = this.storeChunkSections(chunkKey, entity -> entity.getPassengersAndSelf().forEach(this::unloadEntity), true); // CraftBukkit - add boolean for event call
+         if (!storeSuccessful) {
+             return false;
+@@ -262,6 +359,20 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+         e.setLevelCallback(EntityInLevelCallback.NULL);
+     }
+ 
++    // Meteus start - entity section manager fast path
++    private void meteus$unloadPassengersAndSelf(final EntityAccess entity) {
++        if (entity instanceof Entity minecraftEntity) {
++            final List<Entity> passengers = minecraftEntity.getPassengers();
++            for (int i = 0, len = passengers.size(); i < len; ++i) {
++                this.meteus$unloadPassengersAndSelf(passengers.get(i));
++            }
++            this.unloadEntity(minecraftEntity);
++        } else {
++            entity.getPassengersAndSelf().forEach(this::unloadEntity);
++        }
++    }
++    // Meteus end - entity section manager fast path
++
+     private void processUnloads() {
+         this.chunksToUnload.removeIf(chunkKey -> this.chunkVisibility.get(chunkKey) != Visibility.HIDDEN || this.processChunkUnload(chunkKey));
+     }
+@@ -270,7 +381,15 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+         org.spigotmc.AsyncCatcher.catchOp("Entity chunk process pending loads"); // Paper
+         ChunkEntities<T> loadedChunk;
+         while ((loadedChunk = this.loadingInbox.poll()) != null) {
++            // Meteus start - entity section manager fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionManagerFastPath) {
++                for (final java.util.Iterator<T> iterator = loadedChunk.getEntities().iterator(); iterator.hasNext();) {
++                    this.addEntity(iterator.next(), true);
++                }
++            } else {
++            // Meteus end - entity section manager fast path
+             loadedChunk.getEntities().forEach(e -> this.addEntity((T)e, true));
++            } // Meteus - entity section manager fast path
+             this.chunkLoadStatuses.put(loadedChunk.getPos().pack(), PersistentEntitySectionManager.ChunkLoadStatus.LOADED);
+             // CraftBukkit start - call entity load event
+             List<Entity> entities = this.getEntities(loadedChunk.getPos());
+diff --git a/net/minecraft/world/level/entity/TransientEntitySectionManager.java b/net/minecraft/world/level/entity/TransientEntitySectionManager.java
+index 6b8f8aa517f5be7cc5dd8f7e8158295835eca2af..33b92d5af8077497a7ecaaba516f33e565428f2c 100644
+--- a/net/minecraft/world/level/entity/TransientEntitySectionManager.java
++++ b/net/minecraft/world/level/entity/TransientEntitySectionManager.java
+@@ -28,6 +28,21 @@ public class TransientEntitySectionManager<T extends EntityAccess> {
+     public void startTicking(final ChunkPos pos) {
+         long chunkKey = pos.pack();
+         this.tickingChunks.add(chunkKey);
++        // Meteus start - entity section manager fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionManagerFastPath) {
++            this.sectionStorage.forEachExistingSectionInChunk(chunkKey, section -> {
++                Visibility previousStatus = section.updateChunkStatus(Visibility.TICKING);
++                if (!previousStatus.isTicking()) {
++                    section.forEachEntity(entity -> {
++                        if (!entity.isAlwaysTicking()) {
++                            this.callbacks.onTickingStart(entity);
++                        }
++                    });
++                }
++            });
++            return;
++        }
++        // Meteus end - entity section manager fast path
+         this.sectionStorage.getExistingSectionsInChunk(chunkKey).forEach(section -> {
+             Visibility previousStatus = section.updateChunkStatus(Visibility.TICKING);
+             if (!previousStatus.isTicking()) {
+@@ -39,6 +54,21 @@ public class TransientEntitySectionManager<T extends EntityAccess> {
+     public void stopTicking(final ChunkPos pos) {
+         long chunkKey = pos.pack();
+         this.tickingChunks.remove(chunkKey);
++        // Meteus start - entity section manager fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entitySectionManagerFastPath) {
++            this.sectionStorage.forEachExistingSectionInChunk(chunkKey, section -> {
++                Visibility previousStatus = section.updateChunkStatus(Visibility.TRACKED);
++                if (previousStatus.isTicking()) {
++                    section.forEachEntity(entity -> {
++                        if (!entity.isAlwaysTicking()) {
++                            this.callbacks.onTickingEnd(entity);
++                        }
++                    });
++                }
++            });
++            return;
++        }
++        // Meteus end - entity section manager fast path
+         this.sectionStorage.getExistingSectionsInChunk(chunkKey).forEach(section -> {
+             Visibility previousStatus = section.updateChunkStatus(Visibility.TRACKED);
+             if (previousStatus.isTicking()) {

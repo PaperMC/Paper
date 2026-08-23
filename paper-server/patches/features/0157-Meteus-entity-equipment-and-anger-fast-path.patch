@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 14:25:41 +0900
+Subject: [PATCH] Meteus entity equipment and anger fast path
+
+
+diff --git a/net/minecraft/world/entity/EquipmentTable.java b/net/minecraft/world/entity/EquipmentTable.java
+index 4b018c64d3123bb7a0687491d2ac3a535302890c..f61f2e6942d6b3c552ebc274c5b6a505ce1e2709 100644
+--- a/net/minecraft/world/entity/EquipmentTable.java
++++ b/net/minecraft/world/entity/EquipmentTable.java
+@@ -15,6 +15,24 @@ public record EquipmentTable(ResourceKey<LootTable> lootTable, Map<EquipmentSlot
+         .xmap(
+             either -> either.map(EquipmentTable::createForAllSlots, Function.identity()),
+             provider -> {
++                // Meteus start - entity equipment serialization fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEquipmentSerializationFastPath) {
++                    boolean hasFirst = false;
++                    float firstValue = 0.0F;
++                    boolean dropChancesTheSame = true;
++                    for (final Float value : provider.values()) {
++                        if (!hasFirst) {
++                            firstValue = value;
++                            hasFirst = true;
++                        } else if (Float.compare(firstValue, value) != 0) {
++                            dropChancesTheSame = false;
++                            break;
++                        }
++                    }
++                    boolean allSlotsArePresent = provider.keySet().containsAll(EquipmentSlot.VALUES);
++                    return dropChancesTheSame && allSlotsArePresent ? Either.left(firstValue) : Either.right((Map<EquipmentSlot, Float>)provider);
++                }
++                // Meteus end - entity equipment serialization fast path
+                 boolean dropChancesTheSame = provider.values().stream().distinct().count() == 1L;
+                 boolean allSlotsArePresent = provider.keySet().containsAll(EquipmentSlot.VALUES);
+                 return dropChancesTheSame && allSlotsArePresent
+diff --git a/net/minecraft/world/entity/ai/goal/target/ResetUniversalAngerTargetGoal.java b/net/minecraft/world/entity/ai/goal/target/ResetUniversalAngerTargetGoal.java
+index 24c0c32eb105da2e945ff6d2bb77423bac56b649..59dd9f8c21dcbbc36c5b6383a7f93c286bbf3b26 100644
+--- a/net/minecraft/world/entity/ai/goal/target/ResetUniversalAngerTargetGoal.java
++++ b/net/minecraft/world/entity/ai/goal/target/ResetUniversalAngerTargetGoal.java
+@@ -37,6 +37,19 @@ public class ResetUniversalAngerTargetGoal<T extends Mob & NeutralMob> extends G
+         this.lastHurtByPlayerTimestamp = this.mob.getLastHurtByMobTimestamp();
+         this.mob.forgetCurrentTargetAndRefreshUniversalAnger();
+         if (this.alertOthersOfSameType) {
++            // Meteus start - mob AI detection fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++                final List<? extends Mob> nearbyMobs = this.getNearbyMobsOfSameType();
++                for (int i = 0, len = nearbyMobs.size(); i < len; ++i) {
++                    final Mob otherMob = nearbyMobs.get(i);
++                    if (otherMob != this.mob) {
++                        ((NeutralMob)otherMob).forgetCurrentTargetAndRefreshUniversalAnger();
++                    }
++                }
++                super.start();
++                return;
++            }
++            // Meteus end - mob AI detection fast path
+             this.getNearbyMobsOfSameType()
+                 .stream()
+                 .filter(otherMob -> otherMob != this.mob)

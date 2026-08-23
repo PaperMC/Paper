@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:23:20 +0900
+Subject: [PATCH] Meteus list players command fast path
+
+
+diff --git a/net/minecraft/server/commands/ListPlayersCommand.java b/net/minecraft/server/commands/ListPlayersCommand.java
+index b850c908a594f839ce124c6bd01762d31cc3aa1e..cc4e62f6d884384f8f34b74bcb82148971eaa43b 100644
+--- a/net/minecraft/server/commands/ListPlayersCommand.java
++++ b/net/minecraft/server/commands/ListPlayersCommand.java
+@@ -36,6 +36,18 @@ public class ListPlayersCommand {
+         List<ServerPlayer> playersTemp = playerList.getPlayers();
+         if (source.getBukkitSender() instanceof org.bukkit.entity.Player) {
+             org.bukkit.entity.Player sender = (org.bukkit.entity.Player) source.getBukkitSender();
++            // Meteus start - list players command fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.listPlayersCommandFastPath) {
++                final List<ServerPlayer> visiblePlayers = new java.util.ArrayList<>(playersTemp.size());
++                for (int i = 0, len = playersTemp.size(); i < len; ++i) {
++                    final ServerPlayer player = playersTemp.get(i);
++                    if (sender.canSee(player.getBukkitEntity())) {
++                        visiblePlayers.add(player);
++                    }
++                }
++                playersTemp = visiblePlayers;
++            } else
++            // Meteus end - list players command fast path
+             playersTemp = playersTemp.stream().filter((ep) -> sender.canSee(ep.getBukkitEntity())).collect(java.util.stream.Collectors.toList());
+         }
+         final List<ServerPlayer> players = playersTemp;

@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 21:45:07 +0900
+Subject: [PATCH] Meteus recipe key award fast path
+
+
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index 1e86501d25437780b3c30641e79a20cc0785fd49..94fcbe140cebf63b51e4426ebe1b5149e04e52e2 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -21,7 +21,6 @@ import java.util.OptionalInt;
+ import java.util.Set;
+ import java.util.UUID;
+ import java.util.concurrent.CompletableFuture;
+-import java.util.stream.Collectors;
+ import net.minecraft.ChatFormatting;
+ import net.minecraft.CrashReport;
+ import net.minecraft.CrashReportCategory;
+@@ -2093,9 +2092,24 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+ 
+     @Override
+     public void awardRecipesByKey(final List<ResourceKey<Recipe<?>>> recipeIds) {
++        // Meteus start - recipe key award fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.recipeKeyAwardFastPath) {
++            final List<RecipeHolder<?>> recipes = new java.util.ArrayList<>(recipeIds.size());
++
++            for (int i = 0, len = recipeIds.size(); i < len; ++i) {
++                final Optional<RecipeHolder<?>> recipe = this.server.getRecipeManager().byKey((ResourceKey<Recipe<?>>)recipeIds.get(i));
++                if (recipe.isPresent()) {
++                    recipes.add(recipe.get());
++                }
++            }
++
++            this.awardRecipes(recipes);
++            return;
++        }
++        // Meteus end - recipe key award fast path
+         List<RecipeHolder<?>> recipes = recipeIds.stream()
+             .flatMap(id -> this.server.getRecipeManager().byKey((ResourceKey<Recipe<?>>)id).stream())
+-            .collect(Collectors.toList());
++            .collect(java.util.stream.Collectors.toList());
+         this.awardRecipes(recipes);
+     }
+ 

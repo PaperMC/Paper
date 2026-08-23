@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 21:21:04 +0900
+Subject: [PATCH] Meteus chunk entity IO fast paths
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 4b72a4682f35233f3c52ae713332e90e51ce0e08..8e5904f393d69bf54ad6d08ea76508d932f191ca 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -2893,6 +2893,11 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         // Paper end - add chunkpos param
+         this.moonrise$getEntityLookup().addLegacyChunkEntities(loaded.toList(), chunkPos); // Paper - rewrite chunk system
+     }
++    // Meteus start - chunk entity post-load fast path
++    public void meteus$addLegacyChunkEntities(final List<Entity> loaded, final ChunkPos chunkPos) {
++        this.moonrise$getEntityLookup().addLegacyChunkEntities(loaded, chunkPos);
++    }
++    // Meteus end - chunk entity post-load fast path
+ 
+     public void addWorldGenChunkEntities(final Stream<Entity> loaded) {
+         // Paper start - add chunkpos param
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index dacbac9bad5c20ed4ad082dc18cca54d9fe65a1d..664fcb98327a24751d1d69a5fbcfda30ad47f1d1 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -2102,12 +2102,25 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+     public void awardRecipesByKey(final List<ResourceKey<Recipe<?>>> recipeIds) {
+         // Meteus start - recipe key award fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.recipeKeyAwardFastPath) {
++            if (recipeIds.isEmpty()) {
++                return;
++            }
++
+             final List<RecipeHolder<?>> recipes = new java.util.ArrayList<>(recipeIds.size());
+ 
+-            for (int i = 0, len = recipeIds.size(); i < len; ++i) {
+-                final Optional<RecipeHolder<?>> recipe = this.server.getRecipeManager().byKey((ResourceKey<Recipe<?>>)recipeIds.get(i));
+-                if (recipe.isPresent()) {
+-                    recipes.add(recipe.get());
++            if (recipeIds instanceof java.util.RandomAccess) {
++                for (int i = 0, len = recipeIds.size(); i < len; ++i) {
++                    final Optional<RecipeHolder<?>> recipe = this.server.getRecipeManager().byKey((ResourceKey<Recipe<?>>)recipeIds.get(i));
++                    if (recipe.isPresent()) {
++                        recipes.add(recipe.get());
++                    }
++                }
++            } else {
++                for (final ResourceKey<Recipe<?>> recipeId : recipeIds) {
++                    final Optional<RecipeHolder<?>> recipe = this.server.getRecipeManager().byKey(recipeId);
++                    if (recipe.isPresent()) {
++                        recipes.add(recipe.get());
++                    }
+                 }
+             }
+ 
+diff --git a/net/minecraft/world/entity/EntityType.java b/net/minecraft/world/entity/EntityType.java
+index a088643d57276c2141fc162922e3ab410775ce2d..ad09d7a8eaad2b04c02591ea8acbbb277468b5f5 100644
+--- a/net/minecraft/world/entity/EntityType.java
++++ b/net/minecraft/world/entity/EntityType.java
+@@ -1662,6 +1662,10 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,
+ 
+     // Meteus start - chunk storage serialization fast path
+     public static List<Entity> loadEntitiesRecursiveToList(final ValueInput.ValueInputList entities, final Level level, final EntitySpawnReason reason) {
++        if (entities.isEmpty()) {
++            return List.of();
++        }
++
+         final List<Entity> loadedEntities = new ArrayList<>();
+         final java.util.Map<EntityType<?>, Integer> loadedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
+ 
+diff --git a/net/minecraft/world/level/chunk/storage/EntityStorage.java b/net/minecraft/world/level/chunk/storage/EntityStorage.java
+index b033846c9cd7de1d2cafe8d940f26219eff5451c..4d7a9af1990609612e277a7b430aff4594268ab5 100644
+--- a/net/minecraft/world/level/chunk/storage/EntityStorage.java
++++ b/net/minecraft/world/level/chunk/storage/EntityStorage.java
+@@ -75,7 +75,7 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
+                 // Meteus start - chunk storage serialization fast path
+                 final List<Entity> chunkEntities;
+                 if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkStorageSerializationFastPath) {
+-                    chunkEntities = EntityType.loadEntitiesRecursiveToList(entities, this.level, EntitySpawnReason.LOAD);
++                    chunkEntities = entities.isEmpty() ? List.of() : EntityType.loadEntitiesRecursiveToList(entities, this.level, EntitySpawnReason.LOAD);
+                 } else {
+                 // Meteus end - chunk storage serialization fast path
+                 chunkEntities = EntityType.loadEntitiesRecursive(entities, this.level, EntitySpawnReason.LOAD).toList();
+diff --git a/net/minecraft/world/level/chunk/storage/IOWorker.java b/net/minecraft/world/level/chunk/storage/IOWorker.java
+index 9cf47d7351e5223d2a6f44884ce89655413923d1..5878cbab9d38d5378f13df862f5f9b7806b8bc4a 100644
+--- a/net/minecraft/world/level/chunk/storage/IOWorker.java
++++ b/net/minecraft/world/level/chunk/storage/IOWorker.java
+@@ -157,6 +157,9 @@ public class IOWorker implements AutoCloseable, ChunkScanAccess {
+                 () -> {
+                     // Meteus start - chunk IO synchronize fast path
+                     if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkIoSynchronizeFastPath) {
++                        if (this.pendingWrites.isEmpty()) {
++                            return CompletableFuture.completedFuture(null);
++                        }
+                         final CompletableFuture<?>[] futures = new CompletableFuture<?>[this.pendingWrites.size()];
+                         int index = 0;
+                         for (final IOWorker.PendingStore store : this.pendingWrites.values()) {
+diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+index 30fa54f23184b07456c09066463eb13bb22ecf6a..3fc08c686e51cbd16198ff0e014e1bdc1e34fa90 100644
+--- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
++++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+@@ -710,9 +710,20 @@ public record SerializableChunkData(
+             : levelChunk -> {
+                 if (!entities.isEmpty()) {
+                     try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(levelChunk.problemPath(), LOGGER)) {
+-                        level.addLegacyChunkEntities(
+-                            EntityType.loadEntitiesRecursive(TagValueInput.create(reporter, level.registryAccess(), entities), level, EntitySpawnReason.LOAD)
+-                        );
++                        // Meteus start - chunk entity post-load fast path
++                        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkStorageSerializationFastPath) {
++                            level.meteus$addLegacyChunkEntities(
++                                EntityType.loadEntitiesRecursiveToList(
++                                    TagValueInput.create(reporter, level.registryAccess(), entities), level, EntitySpawnReason.LOAD
++                                ),
++                                levelChunk.getPos()
++                            );
++                        } else {
++                            level.addLegacyChunkEntities(
++                                EntityType.loadEntitiesRecursive(TagValueInput.create(reporter, level.registryAccess(), entities), level, EntitySpawnReason.LOAD)
++                            );
++                        }
++                        // Meteus end - chunk entity post-load fast path
+                     }
+                 }
+ 

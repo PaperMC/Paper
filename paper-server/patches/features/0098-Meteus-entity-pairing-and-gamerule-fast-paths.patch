@@ -1,0 +1,130 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 10:54:57 +0900
+Subject: [PATCH] Meteus entity pairing and gamerule fast paths
+
+
+diff --git a/net/minecraft/server/level/ServerEntity.java b/net/minecraft/server/level/ServerEntity.java
+index 5fad52157fc22755196ce9eaddaa2bc23c5bb86b..f54ad811b968683e3fe64c451b6462d12bffed32 100644
+--- a/net/minecraft/server/level/ServerEntity.java
++++ b/net/minecraft/server/level/ServerEntity.java
+@@ -306,6 +306,15 @@ public class ServerEntity {
+     }
+ 
+     public void addPairing(final ServerPlayer player) {
++        // Meteus start - entity pairing packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityPairingPacketFastPath) {
++            final List<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>(8);
++            this.sendPairingData(player, packets::add);
++            player.connection.send(new ClientboundBundlePacket(packets));
++            this.entity.startSeenByPlayer(player);
++            return;
++        }
++        // Meteus end - entity pairing packet fast path
+         List<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
+         this.sendPairingData(player, packets::add);
+         player.connection.send(new ClientboundBundlePacket(packets));
+@@ -340,6 +349,25 @@ public class ServerEntity {
+         }
+ 
+         if (this.entity instanceof LivingEntity livingEntity) {
++            // Meteus start - entity pairing packet fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityPairingPacketFastPath) {
++                List<Pair<EquipmentSlot, ItemStack>> slots = null;
++                for (final EquipmentSlot slot : EquipmentSlot.VALUES) {
++                    final ItemStack itemStack = livingEntity.getItemBySlot(slot);
++                    if (!itemStack.isEmpty()) {
++                        if (slots == null) {
++                            slots = new ArrayList<>(EquipmentSlot.VALUES.size());
++                        }
++                        slots.add(Pair.of(slot, itemStack.copy()));
++                    }
++                }
++
++                if (slots != null) {
++                    broadcast.accept(new ClientboundSetEquipmentPacket(this.entity.getId(), slots, true)); // Paper - data sanitization
++                }
++                ((LivingEntity) this.entity).detectEquipmentUpdates(); // CraftBukkit - SPIGOT-3789: sync again immediately after sending
++            } else {
++            // Meteus end - entity pairing packet fast path
+             List<Pair<EquipmentSlot, ItemStack>> slots = Lists.newArrayList();
+ 
+             for (EquipmentSlot slot : EquipmentSlot.VALUES) {
+@@ -353,6 +381,7 @@ public class ServerEntity {
+                 broadcast.accept(new ClientboundSetEquipmentPacket(this.entity.getId(), slots, true)); // Paper - data sanitization
+             }
+             ((LivingEntity) this.entity).detectEquipmentUpdates(); // CraftBukkit - SPIGOT-3789: sync again immediately after sending
++            } // Meteus - entity pairing packet fast path
+         }
+ 
+         if (!this.entity.getPassengers().isEmpty()) {
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 5a7377e9f792d9a2290ee04359f329e7e860e22a..228816f8408f59f8e6396fd859e7db3d2426401f 100644
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3048,7 +3048,16 @@ public class ServerGamePacketListenerImpl
+         } else {
+             GameRules gameRules = this.player.level().getGameRules();
+             Map<ResourceKey<GameRule<?>>, String> values = new HashMap<>();
++            // Meteus start - game rule value request fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.gameRuleValueRequestFastPath) {
++                for (final java.util.Iterator<GameRule<?>> iterator = gameRules.availableRules().iterator(); iterator.hasNext();) {
++                    final GameRule<?> rule = iterator.next();
++                    addGameRuleValue(gameRules, values, rule);
++                }
++            } else {
++            // Meteus end - game rule value request fast path
+             gameRules.availableRules().forEach(rule -> addGameRuleValue(gameRules, values, (GameRule<?>)rule));
++            } // Meteus - game rule value request fast path
+             this.send(new ClientboundGameRuleValuesPacket(values));
+         }
+     }
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index fc218bcc331715b367c34d954efa140aff5b34f0..76282efeb0b579cd19153420cbf72a25f9f5c3fa 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -503,6 +503,11 @@ public abstract class PlayerList {
+             if (vehicle.hasExactlyOnePlayerPassenger()) {
+                 LOGGER.debug("Removing player mount");
+                 player.stopRiding();
++                // Meteus start - player vehicle unload fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerVehicleUnloadFastPath) {
++                    this.meteus$removePassengerStackWithPlayer(vehicle);
++                } else {
++                // Meteus end - player vehicle unload fast path
+                 vehicle.getPassengersAndSelf().forEach(e -> {
+                     // Paper start - Fix villager boat exploit
+                     if (e instanceof net.minecraft.world.entity.npc.villager.AbstractVillager villager) {
+@@ -514,6 +519,7 @@ public abstract class PlayerList {
+                     // Paper end - Fix villager boat exploit
+                     e.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER, org.bukkit.event.entity.EntityRemoveEvent.Cause.PLAYER_QUIT); // CraftBukkit - add Bukkit remove cause
+                 });
++                } // Meteus - player vehicle unload fast path
+             }
+         }
+ 
+@@ -576,6 +582,24 @@ public abstract class PlayerList {
+         return playerQuitEvent.quitMessage(); // Paper - Adventure
+     }
+ 
++    // Meteus start - player vehicle unload fast path
++    private void meteus$removePassengerStackWithPlayer(final Entity entity) {
++        final List<Entity> passengers = entity.getPassengers();
++        for (int i = 0, len = passengers.size(); i < len; ++i) {
++            this.meteus$removePassengerStackWithPlayer(passengers.get(i));
++        }
++        // Paper start - Fix villager boat exploit
++        if (entity instanceof net.minecraft.world.entity.npc.villager.AbstractVillager villager) {
++            final net.minecraft.world.entity.player.Player human = villager.getTradingPlayer();
++            if (human != null) {
++                villager.setTradingPlayer(null);
++            }
++        }
++        // Paper end - Fix villager boat exploit
++        entity.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER, org.bukkit.event.entity.EntityRemoveEvent.Cause.PLAYER_QUIT); // CraftBukkit - add Bukkit remove cause
++    }
++    // Meteus end - player vehicle unload fast path
++
+     // Paper start - PlayerLoginEvent
+     public record LoginResult(@Nullable Component message, org.bukkit.event.player.PlayerLoginEvent.Result result) {
+         public static LoginResult ALLOW = new net.minecraft.server.players.PlayerList.LoginResult(null, org.bukkit.event.player.PlayerLoginEvent.Result.ALLOWED);

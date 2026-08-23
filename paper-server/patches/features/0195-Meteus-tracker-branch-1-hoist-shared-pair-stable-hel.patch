@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Wed, 17 Jun 2026 08:23:50 +0900
+Subject: [PATCH] Meteus tracker branch-1 hoist + shared pair-stable helper
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 35bd75d0904cb8f5ec6fbea914370f39c2cd3896..25863ae53b1900d9032736fb5f88d08206bbb3f6 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1368,6 +1368,24 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+             }
+             return true;
+         }
++
++        // Shared cheap per-pair test for the boundary fast path: true if the pair is already tracked and
++        // clearly inside range (cannot change tracking state this tick), given entity-level invariants the
++        // caller computed once (effectiveRange, entity x/z). Lets both updatePlayers and the stationary-entity
++        // moved-players loop skip the full updatePlayer body - and its repeated getEffectiveRange/isSpectator -
++        // for the common co-located pair. Caller must have verified Y-tracking off and entity not a spectator.
++        private boolean meteus$pairClearlyStable(final ServerPlayer player, final double effectiveRange, final double entityX, final double entityZ) {
++            final double visibleRange = Math.min(effectiveRange, (double) (ChunkMap.this.getPlayerViewDistance(player) * 16));
++            if (visibleRange <= 16.0D) {
++                return false;
++            }
++            final double deltaX = player.getX() - entityX;
++            final double deltaZ = player.getZ() - entityZ;
++            final double inner = visibleRange - 16.0D;
++            return deltaX * deltaX + deltaZ * deltaZ <= inner * inner
++                && !player.isSpectator()
++                && this.seenBy.contains(player.connection);
++        }
+         // Meteus end - tracker idle skip fast path
+ 
+         @Override
+@@ -1408,11 +1426,21 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                 // scanning every nearby player to find the movers (O(players)). Players leaving/entering the
+                 // nearby set bump the chunk update count, which forces the full branch + purge below.
+                 final java.util.List<ServerPlayer> meteus$moved = ChunkMap.this.meteus$movedPlayersThisTick;
++                // Hoist entity-level invariants out of the moved-player loop and skip co-located already-tracked
++                // pairs via the shared cheap test (instead of a full updatePlayer call that recomputes them).
++                final boolean meteus$hoist = !level.paperConfig().entities.trackingRangeY.enabled && !this.entity.isSpectator();
++                final double meteus$effRange = meteus$hoist ? this.getEffectiveRange() : 0.0D;
++                final double meteus$ex = this.entity.getX();
++                final double meteus$ez = this.entity.getZ();
+                 for (int i = 0, len = meteus$moved.size(); i < len; ++i) {
+                     final ServerPlayer player = meteus$moved.get(i);
+-                    if (players.contains(player)) {
+-                        this.updatePlayer(player);
++                    if (!players.contains(player)) {
++                        continue;
++                    }
++                    if (meteus$hoist && this.meteus$pairClearlyStable(player, meteus$effRange, meteus$ex, meteus$ez)) {
++                        continue;
+                     }
++                    this.updatePlayer(player);
+                 }
+             } else if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipFastPath
+                 && this.meteus$movedThisTrackerTick
+@@ -1846,16 +1874,8 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                         if (player == this.entity) {
+                             continue;
+                         }
+-                        final double visibleRange = Math.min(effectiveRange, ChunkMap.this.getPlayerViewDistance(player) * 16.0D);
+-                        if (visibleRange > 16.0D) {
+-                            final double deltaX = player.getX() - entityX;
+-                            final double deltaZ = player.getZ() - entityZ;
+-                            final double inner = visibleRange - 16.0D;
+-                            if (deltaX * deltaX + deltaZ * deltaZ <= inner * inner
+-                                && !player.isSpectator()
+-                                && this.seenBy.contains(player.connection)) {
+-                                continue; // already tracked and clearly inside range - cannot change state this tick
+-                            }
++                        if (this.meteus$pairClearlyStable(player, effectiveRange, entityX, entityZ)) {
++                            continue; // already tracked and clearly inside range - cannot change state this tick
+                         }
+                         this.updatePlayer(player);
+                     }

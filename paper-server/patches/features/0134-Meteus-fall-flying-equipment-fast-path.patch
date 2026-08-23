@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:13:38 +0900
+Subject: [PATCH] Meteus fall flying equipment fast path
+
+
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index 358ff4330102a058c86d8209374d8cb9dd18b6ad..9423d29996a30c3416dbf2e519ef5d2d6f23e376 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -3851,9 +3851,24 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+             if (checkFallFlyTicks % 10 == 0) {
+                 int freeFallInterval = checkFallFlyTicks / 10;
+                 if (freeFallInterval % 2 == 0) {
+-                    List<EquipmentSlot> slotsWithGliders = EquipmentSlot.VALUES.stream().filter(slot -> canGlideUsing(this.getItemBySlot(slot), slot)).toList();
+-                    EquipmentSlot slotToDamage = Util.getRandom(slotsWithGliders, this.random);
+-                    this.getItemBySlot(slotToDamage).hurtAndBreak(1, this, slotToDamage);
++                    // Meteus start - fall flying equipment fast path
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.fallFlyingEquipmentFastPath) {
++                        EquipmentSlot slotToDamage = null;
++                        int gliderSlots = 0;
++                        for (final EquipmentSlot slot : EquipmentSlot.VALUES) {
++                            if (canGlideUsing(this.getItemBySlot(slot), slot) && (++gliderSlots == 1 || this.random.nextInt(gliderSlots) == 0)) {
++                                slotToDamage = slot;
++                            }
++                        }
++                        if (slotToDamage != null) {
++                            this.getItemBySlot(slotToDamage).hurtAndBreak(1, this, slotToDamage);
++                        }
++                    } else {
++                    // Meteus end - fall flying equipment fast path
++                        List<EquipmentSlot> slotsWithGliders = EquipmentSlot.VALUES.stream().filter(slot -> canGlideUsing(this.getItemBySlot(slot), slot)).toList();
++                        EquipmentSlot slotToDamage = Util.getRandom(slotsWithGliders, this.random);
++                        this.getItemBySlot(slotToDamage).hurtAndBreak(1, this, slotToDamage);
++                    } // Meteus - fall flying equipment fast path
+                 }
+ 
+                 this.gameEvent(GameEvent.ELYTRA_GLIDE);

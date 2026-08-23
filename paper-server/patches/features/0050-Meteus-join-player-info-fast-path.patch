@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 22:52:46 +0900
+Subject: [PATCH] Meteus join player info fast path
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 9f370db60901959941b3906528231490a2dba4d4..a06565433714c8e5e222a91336beaed94637c50c 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -257,6 +257,28 @@ public abstract class PlayerList {
+         ClientboundPlayerInfoUpdatePacket packet = ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(player)); // Paper - Add Listing API for Player
+ 
+         final List<ServerPlayer> onlinePlayers = Lists.newArrayListWithExpectedSize(this.players.size() - 1); // Paper - Use single player info update packet on join
++        // Meteus start - join player info fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.joinPlayerInfoFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer entityplayer1 = this.players.get(i);
++                final org.bukkit.craftbukkit.entity.CraftPlayer otherBukkit = entityplayer1.getBukkitEntity();
++
++                if (otherBukkit.canSee(bukkitPlayer)) {
++                    if (otherBukkit.isListed(bukkitPlayer)) {
++                        entityplayer1.connection.send(packet);
++                    } else {
++                        entityplayer1.connection.send(ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(player, false));
++                    }
++                }
++
++                if (entityplayer1 == player || !bukkitPlayer.canSee(otherBukkit)) { // Paper - Use single player info update packet on join; Don't include joining player
++                    continue;
++                }
++
++                onlinePlayers.add(entityplayer1); // Paper - Use single player info update packet on join
++            }
++        } else {
++        // Meteus end - join player info fast path
+         for (int i = 0; i < this.players.size(); ++i) {
+             ServerPlayer entityplayer1 = (ServerPlayer) this.players.get(i);
+ 
+@@ -278,6 +300,7 @@ public abstract class PlayerList {
+ 
+             onlinePlayers.add(entityplayer1); // Paper - Use single player info update packet on join
+         }
++        } // Meteus - join player info fast path
+         // Paper start - Use single player info update packet on join
+         if (!onlinePlayers.isEmpty()) {
+             player.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(onlinePlayers, player)); // Paper - Add Listing API for Player

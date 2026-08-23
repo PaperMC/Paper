@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 18:28:24 +0900
+Subject: [PATCH] Meteus network collection packet fast paths
+
+
+diff --git a/net/minecraft/network/protocol/game/ClientboundCustomChatCompletionsPacket.java b/net/minecraft/network/protocol/game/ClientboundCustomChatCompletionsPacket.java
+index b6ed54a7577aa144024c9c7c82c28b8469d991d7..d9762598e619fe9c28a697cc7cdaf4ecc38420a9 100644
+--- a/net/minecraft/network/protocol/game/ClientboundCustomChatCompletionsPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundCustomChatCompletionsPacket.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.network.protocol.game;
+ 
+ import java.util.List;
++import java.util.RandomAccess;
+ import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.codec.StreamCodec;
+ import net.minecraft.network.protocol.Packet;
+@@ -18,6 +19,16 @@ public record ClientboundCustomChatCompletionsPacket(ClientboundCustomChatComple
+ 
+     private void write(final FriendlyByteBuf output) {
+         output.writeEnum(this.action);
++        // Meteus start - network collection packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkCollectionPacketFastPath
++            && this.entries instanceof RandomAccess) {
++            output.writeVarInt(this.entries.size());
++            for (int i = 0, len = this.entries.size(); i < len; ++i) {
++                output.writeUtf(this.entries.get(i));
++            }
++            return;
++        }
++        // Meteus end - network collection packet fast path
+         output.writeCollection(this.entries, FriendlyByteBuf::writeUtf);
+     }
+ 
+diff --git a/net/minecraft/network/protocol/game/ClientboundLoginPacket.java b/net/minecraft/network/protocol/game/ClientboundLoginPacket.java
+index d0d8c78d0478c7f0bbf5d474ace081f3a8ab7f14..323a6c1cf5ff4175799c67160a525f429bcd018f 100644
+--- a/net/minecraft/network/protocol/game/ClientboundLoginPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundLoginPacket.java
+@@ -47,7 +47,18 @@ public record ClientboundLoginPacket(
+     private void write(final RegistryFriendlyByteBuf output) {
+         output.writeInt(this.playerId);
+         output.writeBoolean(this.hardcore);
++        // Meteus start - network collection packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkCollectionPacketFastPath) {
++            output.writeVarInt(this.levels.size());
++            for (final ResourceKey<Level> level : this.levels) {
++                output.writeResourceKey(level);
++            }
++        } else {
++        // Meteus end - network collection packet fast path
+         output.writeCollection(this.levels, FriendlyByteBuf::writeResourceKey);
++        // Meteus start - network collection packet fast path
++        }
++        // Meteus end - network collection packet fast path
+         output.writeVarInt(this.maxPlayers);
+         output.writeVarInt(this.chunkRadius);
+         output.writeVarInt(this.simulationDistance);
+diff --git a/net/minecraft/network/protocol/game/ClientboundPlayerInfoRemovePacket.java b/net/minecraft/network/protocol/game/ClientboundPlayerInfoRemovePacket.java
+index 1c9ae0570931f35bd8e8994f16d99a47f82c03e5..fd7ddf9721933f9bb226180cabd6530e59ec56b4 100644
+--- a/net/minecraft/network/protocol/game/ClientboundPlayerInfoRemovePacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundPlayerInfoRemovePacket.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.network.protocol.game;
+ 
+ import java.util.List;
++import java.util.RandomAccess;
+ import java.util.UUID;
+ import net.minecraft.core.UUIDUtil;
+ import net.minecraft.network.FriendlyByteBuf;
+@@ -18,6 +19,16 @@ public record ClientboundPlayerInfoRemovePacket(List<UUID> profileIds) implement
+     }
+ 
+     private void write(final FriendlyByteBuf output) {
++        // Meteus start - network collection packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkCollectionPacketFastPath
++            && this.profileIds instanceof RandomAccess) {
++            output.writeVarInt(this.profileIds.size());
++            for (int i = 0, len = this.profileIds.size(); i < len; ++i) {
++                output.writeUUID(this.profileIds.get(i));
++            }
++            return;
++        }
++        // Meteus end - network collection packet fast path
+         output.writeCollection(this.profileIds, UUIDUtil.STREAM_CODEC);
+     }
+ 
+diff --git a/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java b/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
+index b9591a852c95b9d4a8420ef8b6aa254c25bce107..8a3ff77dc61fe667e8ac67a8808cf4293552cd9a 100644
+--- a/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket.java
+@@ -2,7 +2,9 @@ package net.minecraft.network.protocol.game;
+ 
+ import com.google.common.collect.ImmutableList;
+ import java.util.Collection;
++import java.util.List;
+ import java.util.Optional;
++import java.util.RandomAccess;
+ import net.minecraft.ChatFormatting;
+ import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.RegistryFriendlyByteBuf;
+@@ -91,6 +93,17 @@ public class ClientboundSetPlayerTeamPacket implements Packet<ClientGamePacketLi
+         }
+ 
+         if (shouldHavePlayerList(this.method)) {
++            // Meteus start - network collection packet fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkCollectionPacketFastPath
++                && this.players instanceof List<?> playerList
++                && playerList instanceof RandomAccess) {
++                output.writeVarInt(playerList.size());
++                for (int i = 0, len = playerList.size(); i < len; ++i) {
++                    output.writeUtf((String)playerList.get(i));
++                }
++                return;
++            }
++            // Meteus end - network collection packet fast path
+             output.writeCollection(this.players, FriendlyByteBuf::writeUtf);
+         }
+     }

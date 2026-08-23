@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 21:06:19 +0900
+Subject: [PATCH] Meteus player disconnect fanout fast path
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 5c7fb89f7becf667270312de2948e056bc1c84ae..899a2fd534d85b573d3f45f861eed5ec88898054 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -1235,6 +1235,21 @@ public abstract class PlayerList {
+     public void removeAll(boolean isRestarting) {
+         // Paper end
+         // CraftBukkit start - disconnect safely
++        // Meteus start - player disconnect fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerDisconnectFanoutFastPath) {
++            if (isRestarting) {
++                final net.kyori.adventure.text.Component restartMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.restartMessage);
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    this.players.get(i).connection.disconnect(restartMessage, org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN); // Paper - kick event cause (cause is never used here)
++                }
++            } else {
++                final net.kyori.adventure.text.Component shutdownMessage = java.util.Objects.requireNonNullElseGet(this.server.server.shutdownMessage(), net.kyori.adventure.text.Component::empty); // CraftBukkit - add custom shutdown message // Paper - Adventure
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    this.players.get(i).connection.disconnect(shutdownMessage); // CraftBukkit - add custom shutdown message // Paper - Adventure
++                }
++            }
++        } else {
++        // Meteus end - player disconnect fanout fast path
+         // Meteus start - player list iteration fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListIterationFastPath) {
+             for (int i = 0, len = this.players.size(); i < len; ++i) {
+@@ -1249,6 +1264,7 @@ public abstract class PlayerList {
+             player.connection.disconnect(java.util.Objects.requireNonNullElseGet(this.server.server.shutdownMessage(), net.kyori.adventure.text.Component::empty)); // CraftBukkit - add custom shutdown message // Paper - Adventure
+         }
+         } // Meteus - player list iteration fast path
++        } // Meteus - player disconnect fanout fast path
+         // CraftBukkit end
+ 
+         // Paper start - Configurable player collision; Remove collideRule team if it exists

@@ -1,0 +1,258 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 21:30:04 +0900
+Subject: [PATCH] Meteus direct chunk player broadcast layer
+
+
+diff --git a/net/minecraft/network/protocol/game/ClientboundSetEntityDataPacket.java b/net/minecraft/network/protocol/game/ClientboundSetEntityDataPacket.java
+index a7ce3711641e886f81efdc7d733a60291f3f1643..73aa10a5027f0acdfded7cba0185326f41d2b61e 100644
+--- a/net/minecraft/network/protocol/game/ClientboundSetEntityDataPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundSetEntityDataPacket.java
+@@ -20,6 +20,12 @@ public record ClientboundSetEntityDataPacket(int id, List<SynchedEntityData.Data
+     }
+ 
+     private static void pack(final List<SynchedEntityData.DataValue<?>> items, final RegistryFriendlyByteBuf output) {
++        // Meteus start - entity metadata packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityMetadataPacketFastPath && items.isEmpty()) {
++            output.writeByte(255);
++            return;
++        }
++        // Meteus end - entity metadata packet fast path
+         try (io.papermc.paper.util.sanitizer.ItemObfuscationSession ignored = io.papermc.paper.util.sanitizer.ItemObfuscationSession.start(io.papermc.paper.configuration.GlobalConfiguration.get().anticheat.obfuscation.items.binding.level)) { // Paper - data sanitization
+         // Meteus start - entity metadata packet fast path
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityMetadataPacketFastPath && items instanceof RandomAccess) {
+diff --git a/net/minecraft/server/level/ChunkHolder.java b/net/minecraft/server/level/ChunkHolder.java
+index ab05ca04214a8ca601ae719ad736a5d0d162138c..40b4aad38658404aae2a12530cae3add54a001c9 100644
+--- a/net/minecraft/server/level/ChunkHolder.java
++++ b/net/minecraft/server/level/ChunkHolder.java
+@@ -3,7 +3,9 @@ package net.minecraft.server.level;
+ import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
+ import it.unimi.dsi.fastutil.shorts.ShortSet;
+ import java.util.BitSet;
++import java.util.Collections;
+ import java.util.List;
++import java.util.Map;
+ import java.util.RandomAccess;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.CompletionStage;
+@@ -90,6 +92,28 @@ public class ChunkHolder extends GenerationChunkHolder implements ca.spottedleaf
+ 
+     @Override
+     public final List<ServerPlayer> moonrise$getPlayers(final boolean onlyOnWatchDistanceEdge) {
++        // Meteus start - chunk player list empty fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkBroadcastFastPath) {
++            if (this.playersSentChunkTo.size() == 0) {
++                return Collections.emptyList();
++            }
++
++            List<ServerPlayer> ret = null;
++            final ServerPlayer[] raw = this.playersSentChunkTo.getRawDataUnchecked();
++            for (int i = 0, len = this.playersSentChunkTo.size(); i < len; ++i) {
++                final ServerPlayer player = raw[i];
++                if (onlyOnWatchDistanceEdge && !((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.getChunkMap().level).moonrise$getPlayerChunkLoader().isChunkSent(player, this.pos.x(), this.pos.z(), onlyOnWatchDistanceEdge)) {
++                    continue;
++                }
++                if (ret == null) {
++                    ret = new java.util.ArrayList<>(len - i);
++                }
++                ret.add(player);
++            }
++
++            return ret == null ? Collections.emptyList() : ret;
++        }
++        // Meteus end - chunk player list empty fast path
+         final List<ServerPlayer> ret = new java.util.ArrayList<>();
+         final ServerPlayer[] raw = this.playersSentChunkTo.getRawDataUnchecked();
+         for (int i = 0, len = this.playersSentChunkTo.size(); i < len; ++i) {
+@@ -274,6 +298,12 @@ public class ChunkHolder extends GenerationChunkHolder implements ca.spottedleaf
+     }
+ 
+     public void broadcastChanges(final LevelChunk chunk) {
++        // Meteus start - direct chunk change broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkBroadcastFastPath) {
++            this.meteus$broadcastChangesDirect(chunk);
++            return;
++        }
++        // Meteus end - direct chunk change broadcast fast path
+         if (this.hasChangesToBroadcast()) {
+             Level level = chunk.getLevel();
+             if (!this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty()) {
+@@ -325,6 +355,122 @@ public class ChunkHolder extends GenerationChunkHolder implements ca.spottedleaf
+         }
+     }
+ 
++    // Meteus start - direct chunk change broadcast fast path
++    private void meteus$broadcastChangesDirect(final LevelChunk chunk) {
++        if (!this.hasChangesToBroadcast()) {
++            return;
++        }
++
++        final Level level = chunk.getLevel();
++        if (!this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty()) {
++            if (this.meteus$hasBroadcastPlayers(true)) {
++                this.meteus$broadcastToSentPlayers(
++                    true,
++                    new ClientboundLightUpdatePacket(chunk.getPos(), this.lightEngine, this.skyChangedLightSectionFilter, this.blockChangedLightSectionFilter)
++                );
++            }
++
++            this.skyChangedLightSectionFilter.clear();
++            this.blockChangedLightSectionFilter.clear();
++        }
++
++        if (this.hasChangedSections) {
++            final boolean hasPlayers = this.meteus$hasBroadcastPlayers(false);
++            for (int sectionIndex = 0; sectionIndex < this.changedBlocksPerSection.length; sectionIndex++) {
++                final ShortSet changedBlocks = this.changedBlocksPerSection[sectionIndex];
++                if (changedBlocks == null) {
++                    continue;
++                }
++
++                this.changedBlocksPerSection[sectionIndex] = null;
++                if (!hasPlayers) {
++                    continue;
++                }
++
++                final int sectionY = this.levelHeightAccessor.getSectionYFromSectionIndex(sectionIndex);
++                final SectionPos sectionPos = SectionPos.of(chunk.getPos(), sectionY);
++                if (changedBlocks.size() == 1) {
++                    final BlockPos pos = sectionPos.relativeToBlockPos(changedBlocks.iterator().nextShort());
++                    final BlockState state = level.getBlockState(pos);
++                    this.meteus$broadcastToSentPlayers(false, new ClientboundBlockUpdatePacket(pos, state));
++                    this.meteus$broadcastBlockEntityIfNeeded(false, level, pos, state);
++                } else {
++                    final LevelChunkSection section = chunk.getSection(sectionIndex);
++                    final ClientboundSectionBlocksUpdatePacket packet = new ClientboundSectionBlocksUpdatePacket(sectionPos, changedBlocks, section);
++                    this.meteus$broadcastToSentPlayers(false, packet);
++                    this.meteus$broadcastBlockEntitiesForSectionUpdate(false, level, packet);
++                }
++            }
++
++            this.hasChangedSections = false;
++        }
++    }
++
++    private boolean meteus$hasBroadcastPlayers(final boolean onlyOnWatchDistanceEdge) {
++        final int len = this.playersSentChunkTo.size();
++        if (len == 0) {
++            return false;
++        }
++        if (!onlyOnWatchDistanceEdge) {
++            return true;
++        }
++
++        final ServerPlayer[] raw = this.playersSentChunkTo.getRawDataUnchecked();
++        for (int i = 0; i < len; ++i) {
++            if (this.meteus$isChunkSent(raw[i], true)) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    private boolean meteus$isChunkSent(final ServerPlayer player, final boolean onlyOnWatchDistanceEdge) {
++        return !onlyOnWatchDistanceEdge
++            || ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.getChunkMap().level)
++                .moonrise$getPlayerChunkLoader()
++                .isChunkSent(player, this.pos.x(), this.pos.z(), true);
++    }
++
++    private void meteus$broadcastToSentPlayers(final boolean onlyOnWatchDistanceEdge, final Packet<?> packet) {
++        final ServerPlayer[] raw = this.playersSentChunkTo.getRawDataUnchecked();
++        for (int i = 0, len = this.playersSentChunkTo.size(); i < len; ++i) {
++            final ServerPlayer player = raw[i];
++            if (this.meteus$isChunkSent(player, onlyOnWatchDistanceEdge)) {
++                player.connection.send(packet);
++            }
++        }
++    }
++
++    final void meteus$collectBiomeResendPlayers(final Map<ServerPlayer, List<LevelChunk>> chunksForPlayers, final LevelChunk chunk, final int totalChunkCount) {
++        final ServerPlayer[] raw = this.playersSentChunkTo.getRawDataUnchecked();
++        for (int i = 0, len = this.playersSentChunkTo.size(); i < len; ++i) {
++            final ServerPlayer player = raw[i];
++            List<LevelChunk> chunkList = chunksForPlayers.get(player);
++            if (chunkList == null) {
++                chunkList = new java.util.ArrayList<>(Math.min(8, totalChunkCount));
++                chunksForPlayers.put(player, chunkList);
++            }
++            chunkList.add(chunk);
++        }
++    }
++
++    private void meteus$broadcastBlockEntityIfNeeded(final boolean onlyOnWatchDistanceEdge, final Level level, final BlockPos pos, final BlockState state) {
++        if (state.hasBlockEntity()) {
++            this.meteus$broadcastBlockEntity(onlyOnWatchDistanceEdge, level, pos);
++        }
++    }
++
++    private void meteus$broadcastBlockEntity(final boolean onlyOnWatchDistanceEdge, final Level level, final BlockPos blockPos) {
++        final BlockEntity blockEntity = level.getBlockEntity(blockPos);
++        if (blockEntity != null) {
++            final Packet<?> packet = blockEntity.getUpdatePacket();
++            if (packet != null) {
++                this.meteus$broadcastToSentPlayers(onlyOnWatchDistanceEdge, packet);
++            }
++        }
++    }
++    // Meteus end - direct chunk change broadcast fast path
++
+     // Meteus start - section block update fast path
+     private void meteus$broadcastBlockEntitiesForSectionUpdate(final List<ServerPlayer> players, final Level level, final ClientboundSectionBlocksUpdatePacket packet) {
+         BlockPos.MutableBlockPos cursor = null;
+@@ -340,6 +486,21 @@ public class ChunkHolder extends GenerationChunkHolder implements ca.spottedleaf
+             }
+         }
+     }
++
++    private void meteus$broadcastBlockEntitiesForSectionUpdate(final boolean onlyOnWatchDistanceEdge, final Level level, final ClientboundSectionBlocksUpdatePacket packet) {
++        BlockPos.MutableBlockPos cursor = null;
++
++        for (int i = 0, len = packet.meteus$updateCount(); i < len; ++i) {
++            if (packet.meteus$getUpdateState(i).hasBlockEntity()) {
++                if (cursor == null) {
++                    cursor = new BlockPos.MutableBlockPos();
++                }
++
++                packet.meteus$setUpdatePos(i, cursor);
++                this.meteus$broadcastBlockEntity(onlyOnWatchDistanceEdge, level, cursor);
++            }
++        }
++    }
+     // Meteus end - section block update fast path
+ 
+     private void broadcastBlockEntityIfNeeded(final List<ServerPlayer> players, final Level level, final BlockPos pos, final BlockState state) {
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 53632e0705e57cc944361062f8d9ed34edb74d74..1d0332373234def2a66a7bf785d6dfad34f1592c 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -977,6 +977,11 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+         // Paper start - rewrite chunk system
+         final ChunkHolder holder = this.getVisibleChunkIfPresent(pos.pack());
+         if (holder == null) {
++            // Meteus start - chunk player list empty fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkBroadcastFastPath) {
++                return Collections.emptyList();
++            }
++            // Meteus end - chunk player list empty fast path
+             return new ArrayList<>();
+         } else {
+             return ((ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemChunkHolder)holder).moonrise$getPlayers(borderOnly);
+@@ -1196,14 +1201,9 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                 final ChunkAccess chunkAccess = chunks.get(i);
+                 final ChunkPos pos = chunkAccess.getPos();
+                 final LevelChunk chunk = chunkAccess instanceof LevelChunk levelChunk ? levelChunk : this.level.getChunk(pos.x(), pos.z());
+-
+-                for (final ServerPlayer player : this.getPlayers(pos, false)) {
+-                    List<LevelChunk> chunkList = chunksForPlayers.get(player);
+-                    if (chunkList == null) {
+-                        chunkList = new ArrayList<>(Math.min(8, chunks.size()));
+-                        chunksForPlayers.put(player, chunkList);
+-                    }
+-                    chunkList.add(chunk);
++                final ChunkHolder holder = this.getVisibleChunkIfPresent(pos.pack());
++                if (holder != null) {
++                    holder.meteus$collectBiomeResendPlayers(chunksForPlayers, chunk, chunks.size());
+                 }
+             }
+ 

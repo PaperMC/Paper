@@ -1,0 +1,122 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 21:14:17 +0900
+Subject: [PATCH] Meteus player and chunk broadcast fast paths
+
+
+diff --git a/net/minecraft/network/protocol/game/ClientboundPlayerInfoRemovePacket.java b/net/minecraft/network/protocol/game/ClientboundPlayerInfoRemovePacket.java
+index fd7ddf9721933f9bb226180cabd6530e59ec56b4..166c17a050fd126d93aa5c5713dbb92cee3d7a37 100644
+--- a/net/minecraft/network/protocol/game/ClientboundPlayerInfoRemovePacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundPlayerInfoRemovePacket.java
+@@ -20,11 +20,16 @@ public record ClientboundPlayerInfoRemovePacket(List<UUID> profileIds) implement
+ 
+     private void write(final FriendlyByteBuf output) {
+         // Meteus start - network collection packet fast path
+-        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkCollectionPacketFastPath
+-            && this.profileIds instanceof RandomAccess) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkCollectionPacketFastPath) {
+             output.writeVarInt(this.profileIds.size());
+-            for (int i = 0, len = this.profileIds.size(); i < len; ++i) {
+-                output.writeUUID(this.profileIds.get(i));
++            if (this.profileIds instanceof RandomAccess) {
++                for (int i = 0, len = this.profileIds.size(); i < len; ++i) {
++                    output.writeUUID(this.profileIds.get(i));
++                }
++            } else {
++                for (final UUID profileId : this.profileIds) {
++                    output.writeUUID(profileId);
++                }
+             }
+             return;
+         }
+diff --git a/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java b/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+index 76aded03d52556f851e32781942c49dd0f200043..6dbf9bae696e4265e5015a9692b6b2ea3c7fc1cb 100644
+--- a/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+@@ -139,14 +139,24 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+     private void write(final RegistryFriendlyByteBuf output) {
+         output.writeEnumSet(this.actions, ClientboundPlayerInfoUpdatePacket.Action.class);
+         // Meteus start - player info packet fast path
+-        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerInfoPacketFastPath && this.entries instanceof RandomAccess) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerInfoPacketFastPath) {
+             output.writeVarInt(this.entries.size());
+-            for (int i = 0, len = this.entries.size(); i < len; ++i) {
+-                final ClientboundPlayerInfoUpdatePacket.Entry entry = this.entries.get(i);
+-                output.writeUUID(entry.profileId());
++            if (this.entries instanceof RandomAccess) {
++                for (int i = 0, len = this.entries.size(); i < len; ++i) {
++                    final ClientboundPlayerInfoUpdatePacket.Entry entry = this.entries.get(i);
++                    output.writeUUID(entry.profileId());
++
++                    for (final ClientboundPlayerInfoUpdatePacket.Action action : this.actions) {
++                        action.writer.write(output, entry);
++                    }
++                }
++            } else {
++                for (final ClientboundPlayerInfoUpdatePacket.Entry entry : this.entries) {
++                    output.writeUUID(entry.profileId());
+ 
+-                for (final ClientboundPlayerInfoUpdatePacket.Action action : this.actions) {
+-                    action.writer.write(output, entry);
++                    for (final ClientboundPlayerInfoUpdatePacket.Action action : this.actions) {
++                        action.writer.write(output, entry);
++                    }
+                 }
+             }
+             return;
+diff --git a/net/minecraft/server/level/ChunkHolder.java b/net/minecraft/server/level/ChunkHolder.java
+index d83106e723e7557ca594d23a4b3f223c3df0e667..ab05ca04214a8ca601ae719ad736a5d0d162138c 100644
+--- a/net/minecraft/server/level/ChunkHolder.java
++++ b/net/minecraft/server/level/ChunkHolder.java
+@@ -360,9 +360,15 @@ public class ChunkHolder extends GenerationChunkHolder implements ca.spottedleaf
+ 
+     private void broadcast(final List<ServerPlayer> players, final Packet<?> packet) {
+         // Meteus start - chunk broadcast fast path
+-        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkBroadcastFastPath && players instanceof RandomAccess) {
+-            for (int i = 0, len = players.size(); i < len; ++i) {
+-                players.get(i).connection.send(packet);
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkBroadcastFastPath) {
++            if (players instanceof RandomAccess) {
++                for (int i = 0, len = players.size(); i < len; ++i) {
++                    players.get(i).connection.send(packet);
++                }
++            } else {
++                for (final ServerPlayer player : players) {
++                    player.connection.send(packet);
++                }
+             }
+             return;
+         }
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index 4fcf477603a4426f174b1ead7c777b8b7462e141..9e4189aba322aff95589a376b0c2107ee0455167 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -1104,6 +1104,28 @@ public abstract class PlayerList {
+         final ResourceKey<Level> dimension,
+         final Packet<?> packet
+     ) {
++        // Meteus start - ranged broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListBroadcastFastPath) {
++            final double rangeSquared = range * range;
++            final org.bukkit.entity.Entity exceptBukkit = except == null ? null : except.getBukkitEntity();
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                if (player == except || player.level().dimension() != dimension) {
++                    continue;
++                }
++                if (exceptBukkit != null && !player.getBukkitEntity().canSee(exceptBukkit)) {
++                    continue;
++                }
++                final double xd = x - player.getX();
++                final double yd = y - player.getY();
++                final double zd = z - player.getZ();
++                if (xd * xd + yd * yd + zd * zd < rangeSquared) {
++                    player.connection.send(packet);
++                }
++            }
++            return;
++        }
++        // Meteus end - ranged broadcast fast path
+         for (int i = 0; i < this.players.size(); i++) {
+             ServerPlayer player = this.players.get(i);
+             // CraftBukkit start - Test if player receiving packet can see the source of the packet

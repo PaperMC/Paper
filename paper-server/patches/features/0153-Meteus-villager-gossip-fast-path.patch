@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 14:19:42 +0900
+Subject: [PATCH] Meteus villager gossip fast path
+
+
+diff --git a/net/minecraft/world/entity/ai/gossip/GossipContainer.java b/net/minecraft/world/entity/ai/gossip/GossipContainer.java
+index 9008b12745628fdcc225415e20e740192185bdd8..4b53eda8034bf42565640529c0472eb1ebe8ea02 100644
+--- a/net/minecraft/world/entity/ai/gossip/GossipContainer.java
++++ b/net/minecraft/world/entity/ai/gossip/GossipContainer.java
+@@ -36,12 +36,29 @@ public class GossipContainer {
+     }
+ 
+     private GossipContainer(final List<GossipContainer.GossipEntry> entries) {
++        // Meteus start - villager gossip fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.villagerGossipFastPath) {
++            for (int i = 0, len = entries.size(); i < len; ++i) {
++                final GossipContainer.GossipEntry entry = entries.get(i);
++                this.getOrCreate(entry.target).entries.put(entry.type, entry.value);
++            }
++            return;
++        }
++        // Meteus end - villager gossip fast path
+         entries.forEach(e -> this.getOrCreate(e.target).entries.put(e.type, e.value));
+     }
+ 
+     @VisibleForDebug
+     public Map<UUID, Object2IntMap<GossipType>> getGossipEntries() {
+         Map<UUID, Object2IntMap<GossipType>> result = Maps.newHashMap();
++        // Meteus start - villager gossip fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.villagerGossipFastPath) {
++            for (final Map.Entry<UUID, GossipContainer.EntityGossips> entry : this.gossips.entrySet()) {
++                result.put(entry.getKey(), entry.getValue().entries);
++            }
++            return result;
++        }
++        // Meteus end - villager gossip fast path
+         this.gossips.keySet().forEach(uuid -> {
+             GossipContainer.EntityGossips entityGossips = this.gossips.get(uuid);
+             result.put(uuid, entityGossips.entries);
+@@ -111,6 +128,17 @@ public class GossipContainer {
+ 
+     public void transferFrom(final GossipContainer source, final RandomSource random, final int maxCount) {
+         Collection<GossipContainer.GossipEntry> newGossips = source.selectGossipsForTransfer(random, maxCount);
++        // Meteus start - villager gossip fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.villagerGossipFastPath) {
++            for (final GossipContainer.GossipEntry newGossip : newGossips) {
++                int decayedValue = newGossip.value - newGossip.type.decayPerTransfer;
++                if (decayedValue >= 2) {
++                    this.getOrCreate(newGossip.target).entries.mergeInt(newGossip.type, decayedValue, GossipContainer::mergeValuesForTransfer);
++                }
++            }
++            return;
++        }
++        // Meteus end - villager gossip fast path
+         newGossips.forEach(newGossip -> {
+             int decayedValue = newGossip.value - newGossip.type.decayPerTransfer;
+             if (decayedValue >= 2) {
+@@ -125,6 +153,17 @@ public class GossipContainer {
+     }
+ 
+     public long getCountForType(final GossipType type, final DoublePredicate valueTest) {
++        // Meteus start - villager gossip fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.villagerGossipFastPath) {
++            long count = 0L;
++            for (final GossipContainer.EntityGossips entityGossips : this.gossips.values()) {
++                if (valueTest.test(entityGossips.entries.getOrDefault(type, 0) * type.weight)) {
++                    ++count;
++                }
++            }
++            return count;
++        }
++        // Meteus end - villager gossip fast path
+         return this.gossips.values().stream().filter(e -> valueTest.test(e.entries.getOrDefault(type, 0) * type.weight)).count();
+     }
+ 
+@@ -168,6 +207,14 @@ public class GossipContainer {
+     }
+ 
+     public void putAll(final GossipContainer container) {
++        // Meteus start - villager gossip fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.villagerGossipFastPath) {
++            for (final Map.Entry<UUID, GossipContainer.EntityGossips> entry : container.gossips.entrySet()) {
++                this.getOrCreate(entry.getKey()).entries.putAll(entry.getValue().entries);
++            }
++            return;
++        }
++        // Meteus end - villager gossip fast path
+         container.gossips.forEach((target, gossips) -> this.getOrCreate(target).entries.putAll(gossips.entries));
+     }
+ 

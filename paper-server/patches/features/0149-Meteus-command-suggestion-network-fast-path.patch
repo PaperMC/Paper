@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:39:39 +0900
+Subject: [PATCH] Meteus command suggestion network fast path
+
+
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index ed0f77cfc9e4bbb514fce390df2b8c6850d1db82..617ca63a1f58021b7bae4969840e794fe60ebc84 100644
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -16,6 +16,7 @@ import java.util.ArrayList;
+ import java.util.Collections;
+ import java.util.EnumSet;
+ import java.util.HashMap;
++import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Objects;
+@@ -913,8 +914,23 @@ public class ServerGamePacketListenerImpl
+         // Paper end - AsyncTabCompleteEvent
+         ParseResults<CommandSourceStack> parse = this.server.getCommands().getDispatcher().parse(command, this.player.createCommandSourceStack());
+         // Paper start - Handle non-recoverable exceptions
+-        if (!parse.getExceptions().isEmpty()
+-            && parse.getExceptions().values().stream().anyMatch(e -> e instanceof io.papermc.paper.brigadier.TagParseCommandSyntaxException)) {
++        // Meteus start - server game packet fast path
++        final boolean hasNonRecoverableException;
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverGamePacketFastPath) {
++            boolean found = false;
++            for (final com.mojang.brigadier.exceptions.CommandSyntaxException exception : parse.getExceptions().values()) {
++                if (exception instanceof io.papermc.paper.brigadier.TagParseCommandSyntaxException) {
++                    found = true;
++                    break;
++                }
++            }
++            hasNonRecoverableException = found;
++        } else {
++            hasNonRecoverableException = !parse.getExceptions().isEmpty()
++                && parse.getExceptions().values().stream().anyMatch(e -> e instanceof io.papermc.paper.brigadier.TagParseCommandSyntaxException);
++        }
++        if (hasNonRecoverableException) {
++        // Meteus end - server game packet fast path
+             this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM);
+             return;
+         }
+@@ -922,7 +938,17 @@ public class ServerGamePacketListenerImpl
+         this.server.getCommands().getDispatcher().getCompletionSuggestions(parse).thenAccept(results -> {
+             // Paper start - Don't tab-complete namespaced commands if send-namespaced is false
+             if (!org.spigotmc.SpigotConfig.sendNamespaced && results.getRange().getStart() <= 1) {
++                // Meteus start - server game packet fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverGamePacketFastPath) {
++                    for (final Iterator<com.mojang.brigadier.suggestion.Suggestion> iterator = results.getList().iterator(); iterator.hasNext();) {
++                        if (iterator.next().getText().contains(":")) {
++                            iterator.remove();
++                        }
++                    }
++                } else {
++                // Meteus end - server game packet fast path
+                 results.getList().removeIf(suggestion -> suggestion.getText().contains(":"));
++                } // Meteus - server game packet fast path
+             }
+             // Paper end - Don't tab-complete namespaced commands if send-namespaced is false
+             // Paper start - Brigadier API
+diff --git a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+index 4ae94fe8c32a77eb5e1b0eda659b44cd11d4ca9d..157c04db2fcd5e24d3bb0d54a52e342635353a29 100644
+--- a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+@@ -94,7 +94,17 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+                         ServerHandshakePacketListenerImpl.throttleCounter = 0;
+ 
+                         // Cleanup stale entries
++                        // Meteus start - network connection tick fast path
++                        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkConnectionTickFastPath) {
++                            for (final java.util.Iterator<java.util.Map.Entry<java.net.InetAddress, Long>> iterator = ServerHandshakePacketListenerImpl.throttleTracker.entrySet().iterator(); iterator.hasNext();) {
++                                if (iterator.next().getValue() > connectionThrottle) {
++                                    iterator.remove();
++                                }
++                            }
++                        } else {
++                        // Meteus end - network connection tick fast path
+                         ServerHandshakePacketListenerImpl.throttleTracker.values().removeIf(time -> time > connectionThrottle);
++                        } // Meteus - network connection tick fast path
+                     }
+                 }
+             }

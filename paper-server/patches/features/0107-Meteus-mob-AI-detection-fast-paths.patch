@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 17:47:17 +0900
+Subject: [PATCH] Meteus mob AI detection fast paths
+
+
+diff --git a/net/minecraft/world/entity/ai/sensing/GolemSensor.java b/net/minecraft/world/entity/ai/sensing/GolemSensor.java
+index 730b372e46d75e43a553b49dad41cc2d2f7510ee..432b2e038a436275422ea365a5217d416775b39e 100644
+--- a/net/minecraft/world/entity/ai/sensing/GolemSensor.java
++++ b/net/minecraft/world/entity/ai/sensing/GolemSensor.java
+@@ -33,6 +33,18 @@ public class GolemSensor extends Sensor<LivingEntity> {
+     public static void checkForNearbyGolem(final LivingEntity body) {
+         Optional<List<LivingEntity>> livingEntitiesMemory = body.getBrain().getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES);
+         if (!livingEntitiesMemory.isEmpty()) {
++            // Meteus start - mob AI detection fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++                final List<LivingEntity> livingEntities = livingEntitiesMemory.get();
++                for (int i = 0, len = livingEntities.size(); i < len; ++i) {
++                    if (livingEntities.get(i).is(EntityType.IRON_GOLEM)) {
++                        golemDetected(body);
++                        return;
++                    }
++                }
++                return;
++            }
++            // Meteus end - mob AI detection fast path
+             boolean golemPresent = livingEntitiesMemory.get().stream().anyMatch(entity -> entity.is(EntityType.IRON_GOLEM));
+             if (golemPresent) {
+                 golemDetected(body);
+diff --git a/net/minecraft/world/entity/ai/sensing/MobSensor.java b/net/minecraft/world/entity/ai/sensing/MobSensor.java
+index ac9c50d680814b5752f7c712633555d587633598..3a971648b07fa6d81a077e5c1af811b3872df1d4 100644
+--- a/net/minecraft/world/entity/ai/sensing/MobSensor.java
++++ b/net/minecraft/world/entity/ai/sensing/MobSensor.java
+@@ -46,6 +46,18 @@ public class MobSensor<T extends LivingEntity> extends Sensor<T> {
+     public void checkForMobsNearby(final T body) {
+         Optional<List<LivingEntity>> livingEntitiesMemory = body.getBrain().getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES);
+         if (!livingEntitiesMemory.isEmpty()) {
++            // Meteus start - mob AI detection fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++                final List<LivingEntity> livingEntities = livingEntitiesMemory.get();
++                for (int i = 0, len = livingEntities.size(); i < len; ++i) {
++                    if (this.mobTest.test(body, livingEntities.get(i))) {
++                        this.mobDetected(body);
++                        return;
++                    }
++                }
++                return;
++            }
++            // Meteus end - mob AI detection fast path
+             boolean mobPresent = livingEntitiesMemory.get().stream().anyMatch(entity -> this.mobTest.test(body, entity));
+             if (mobPresent) {
+                 this.mobDetected(body);
+diff --git a/net/minecraft/world/entity/monster/warden/WardenSpawnTracker.java b/net/minecraft/world/entity/monster/warden/WardenSpawnTracker.java
+index 859a1daaf26f1228869826124c9d0717cb9a743f..40ef91b83f6124ac21fb74b5e5a45ecaa60be349 100644
+--- a/net/minecraft/world/entity/monster/warden/WardenSpawnTracker.java
++++ b/net/minecraft/world/entity/monster/warden/WardenSpawnTracker.java
+@@ -71,6 +71,38 @@ public class WardenSpawnTracker {
+             players.add(triggerPlayer);
+         }
+ 
++        // Meteus start - mob AI detection fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.mobAiDetectionFastPath) {
++            WardenSpawnTracker highestWarningSpawnTracker = null;
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final Optional<WardenSpawnTracker> spawnTracker = players.get(i).getWardenSpawnTracker();
++                if (spawnTracker.isEmpty()) {
++                    continue;
++                }
++
++                final WardenSpawnTracker tracker = spawnTracker.get();
++                if (tracker.onCooldown()) {
++                    return OptionalInt.empty();
++                }
++                if (highestWarningSpawnTracker == null || tracker.getWarningLevel() > highestWarningSpawnTracker.getWarningLevel()) {
++                    highestWarningSpawnTracker = tracker;
++                }
++            }
++
++            if (highestWarningSpawnTracker == null) {
++                return OptionalInt.empty();
++            }
++
++            highestWarningSpawnTracker.increaseWarningLevel();
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final Optional<WardenSpawnTracker> spawnTracker = players.get(i).getWardenSpawnTracker();
++                if (spawnTracker.isPresent()) {
++                    spawnTracker.get().copyData(highestWarningSpawnTracker);
++                }
++            }
++            return OptionalInt.of(highestWarningSpawnTracker.warningLevel);
++        }
++        // Meteus end - mob AI detection fast path
+         if (players.stream().anyMatch(player -> player.getWardenSpawnTracker().map(WardenSpawnTracker::onCooldown).orElse(false))) {
+             return OptionalInt.empty();
+         } else {

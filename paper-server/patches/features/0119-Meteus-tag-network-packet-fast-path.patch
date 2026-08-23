@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 22:00:30 +0900
+Subject: [PATCH] Meteus tag network packet fast path
+
+
+diff --git a/net/minecraft/network/protocol/common/ClientboundUpdateTagsPacket.java b/net/minecraft/network/protocol/common/ClientboundUpdateTagsPacket.java
+index dcf53d18ab698547a63bc465706317b497b7b43d..ce206f291e0aaade86c4b5d008162bcc167692d9 100644
+--- a/net/minecraft/network/protocol/common/ClientboundUpdateTagsPacket.java
++++ b/net/minecraft/network/protocol/common/ClientboundUpdateTagsPacket.java
+@@ -24,6 +24,16 @@ public class ClientboundUpdateTagsPacket implements Packet<ClientCommonPacketLis
+     }
+ 
+     private void write(final FriendlyByteBuf output) {
++        // Meteus start - tag network packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.tagNetworkPacketFastPath) {
++            output.writeVarInt(this.tags.size());
++            for (final Map.Entry<ResourceKey<? extends Registry<?>>, TagNetworkSerialization.NetworkPayload> entry : this.tags.entrySet()) {
++                output.writeResourceKey(entry.getKey());
++                entry.getValue().write(output);
++            }
++            return;
++        }
++        // Meteus end - tag network packet fast path
+         output.writeMap(this.tags, FriendlyByteBuf::writeResourceKey, (buffer, value) -> value.write(buffer));
+     }
+ 
+diff --git a/net/minecraft/tags/TagNetworkSerialization.java b/net/minecraft/tags/TagNetworkSerialization.java
+index 3e379c97d48cce4e2448c6b5975c25c706487692..de44626d4b67d14b36cdab8794a5dabd5e16b97e 100644
+--- a/net/minecraft/tags/TagNetworkSerialization.java
++++ b/net/minecraft/tags/TagNetworkSerialization.java
+@@ -4,10 +4,12 @@ import com.mojang.datafixers.util.Pair;
+ import it.unimi.dsi.fastutil.ints.IntArrayList;
+ import it.unimi.dsi.fastutil.ints.IntList;
+ import java.util.HashMap;
++import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Optional;
+ import java.util.stream.Collectors;
++import net.minecraft.core.RegistryAccess;
+ import net.minecraft.core.Holder;
+ import net.minecraft.core.LayeredRegistryAccess;
+ import net.minecraft.core.Registry;
+@@ -21,6 +23,21 @@ public class TagNetworkSerialization {
+     public static Map<ResourceKey<? extends Registry<?>>, TagNetworkSerialization.NetworkPayload> serializeTagsToNetwork(
+         final LayeredRegistryAccess<RegistryLayer> registries
+     ) {
++        // Meteus start - tag network packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.tagNetworkPacketFastPath) {
++            final Map<ResourceKey<? extends Registry<?>>, TagNetworkSerialization.NetworkPayload> result = new HashMap<>();
++
++            for (final Iterator<RegistryAccess.RegistryEntry<?>> iterator = RegistrySynchronization.networkSafeRegistries(registries).iterator(); iterator.hasNext();) {
++                final RegistryAccess.RegistryEntry<?> entry = iterator.next();
++                final TagNetworkSerialization.NetworkPayload payload = serializeToNetwork(entry.value());
++                if (!payload.isEmpty()) {
++                    result.put(entry.key(), payload);
++                }
++            }
++
++            return result;
++        }
++        // Meteus end - tag network packet fast path
+         return RegistrySynchronization.networkSafeRegistries(registries)
+             .map(e -> Pair.of(e.key(), serializeToNetwork(e.value())))
+             .filter(e -> !e.getSecond().isEmpty())
+@@ -65,6 +82,16 @@ public class TagNetworkSerialization {
+         }
+ 
+         public void write(final FriendlyByteBuf buf) {
++            // Meteus start - tag network packet fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.tagNetworkPacketFastPath) {
++                buf.writeVarInt(this.tags.size());
++                for (final Map.Entry<Identifier, IntList> entry : this.tags.entrySet()) {
++                    buf.writeIdentifier(entry.getKey());
++                    buf.writeIntIdList(entry.getValue());
++                }
++                return;
++            }
++            // Meteus end - tag network packet fast path
+             buf.writeMap(this.tags, FriendlyByteBuf::writeIdentifier, FriendlyByteBuf::writeIntIdList);
+         }
+ 

@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 18 Jun 2026 22:42:30 +0900
+Subject: [PATCH] Meteus player container: supplier-free per-slot broadcast,
+ exact (no per-slot memoized supplier)
+
+
+diff --git a/net/minecraft/world/inventory/AbstractContainerMenu.java b/net/minecraft/world/inventory/AbstractContainerMenu.java
+index 65dfdc3787f917c2e12f4fabf0935ad65985c03d..9c71cf06457e988f899d566011ac47831e7fb9ef 100644
+--- a/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -258,11 +258,17 @@ public abstract class AbstractContainerMenu {
+ 
+     public void broadcastChanges() {
+         // Meteus start - player container broadcast fast path
+-        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerContainerBroadcastFastPath
+-            && this.synchronizer == null
+-            && this.containerListeners.isEmpty()) {
++        final boolean meteus$fast = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerContainerBroadcastFastPath;
++        if (meteus$fast && this.synchronizer == null && this.containerListeners.isEmpty()) {
+             return;
+         }
++        if (meteus$fast) {
++            // Supplier-free slot sync (see meteus$syncSlot): Suppliers.memoize(current::copy) allocated two
++            // objects per slot every tick - even for unchanged slots - i.e. 46 x (every player) x (every tick).
++            for (int i = 0, len = this.slots.size(); i < len; i++) {
++                this.meteus$syncSlot(i);
++            }
++        } else {
+         // Meteus end - player container broadcast fast path
+         for (int i = 0; i < this.slots.size(); i++) {
+             ItemStack current = this.slots.get(i).getItem();
+@@ -270,6 +276,7 @@ public abstract class AbstractContainerMenu {
+             this.triggerSlotListeners(i, current, currentCopy);
+             this.synchronizeSlotToRemote(i, current, currentCopy);
+         }
++        } // Meteus - player container broadcast fast path
+ 
+         this.synchronizeCarriedToRemote();
+ 
+@@ -330,6 +337,36 @@ public abstract class AbstractContainerMenu {
+         }
+     }
+ 
++    // Meteus - supplier-free equivalent of triggerSlotListeners + synchronizeSlotToRemote for one slot: copies
++    // the stack at most once, and only when it actually changed, sharing that copy between the listener
++    // notification and the remote sync - exactly as Suppliers.memoize(item::copy) did, but without allocating a
++    // memoized supplier + capturing lambda per slot every tick. Same matches() checks and order => identical
++    // behaviour. Package-private so the player's InventoryMenu can reuse it.
++    final void meteus$syncSlot(final int i) {
++        final ItemStack current = this.slots.get(i).getItem();
++        ItemStack copy = null;
++        final ItemStack localExpected = this.lastSlots.get(i);
++        if (!ItemStack.matches(localExpected, current)) {
++            copy = current.copy();
++            this.lastSlots.set(i, copy);
++            for (ContainerListener containerListener : this.containerListeners) {
++                containerListener.slotChanged(this, i, localExpected, copy); // Paper - Add PlayerInventorySlotChangeEvent
++            }
++        }
++        if (!this.suppressRemoteUpdates) {
++            final RemoteSlot remoteExpected = this.remoteSlots.get(i);
++            if (!remoteExpected.matches(current)) {
++                remoteExpected.force(current);
++                if (this.synchronizer != null) {
++                    if (copy == null) {
++                        copy = current.copy();
++                    }
++                    this.synchronizer.sendSlotChange(this, i, copy);
++                }
++            }
++        }
++    }
++
+     private void synchronizeDataSlotToRemote(final int i, final int current) {
+         if (!this.suppressRemoteUpdates) {
+             int remoteExpected = this.remoteDataSlots.getInt(i);
+diff --git a/net/minecraft/world/inventory/InventoryMenu.java b/net/minecraft/world/inventory/InventoryMenu.java
+index 10aa3b1cd8fe19af1ab88a93bd4e8f104b8e4219..47c3320ee094609a25c674e2315d3831f26944cd 100644
+--- a/net/minecraft/world/inventory/InventoryMenu.java
++++ b/net/minecraft/world/inventory/InventoryMenu.java
+@@ -236,6 +236,12 @@ public class InventoryMenu extends AbstractCraftingMenu {
+     }
+ 
+     private void broadcastSlotChange(int slot) {
++        // Meteus - supplier-free slot sync (see AbstractContainerMenu#meteus$syncSlot); called per-tick per
++        // player for armor/offhand/result slots, so the per-slot memoized supplier added up.
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerContainerBroadcastFastPath) {
++            this.meteus$syncSlot(slot);
++            return;
++        }
+         ItemStack item = this.slots.get(slot).getItem();
+         java.util.function.Supplier<net.minecraft.world.item.ItemStack> supplier = com.google.common.base.Suppliers.memoize(item::copy);
+         this.triggerSlotListeners(slot, item, supplier);

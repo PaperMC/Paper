@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 20:51:31 +0900
+Subject: [PATCH] Meteus block entity and spawner loop fast paths
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index f0fbf2244900d61afbcd4fda65e710b6e4a75260..e63b8631c7f3294d1e0932cd8ad6063f7cf2c918 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -948,6 +948,14 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     }
+ 
+     public void tickCustomSpawners(final boolean spawnEnemies) {
++        // Meteus start - custom spawner loop fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.customSpawnerLoopFastPath) {
++            for (int i = 0, len = this.customSpawners.size(); i < len; ++i) {
++                this.customSpawners.get(i).tick(this, spawnEnemies);
++            }
++            return;
++        }
++        // Meteus end - custom spawner loop fast path
+         for (CustomSpawner spawner : this.customSpawners) {
+             spawner.tick(this, spawnEnemies);
+         }
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 56659181dc817ea028428eabf5937308c04b8cc5..0708ea453f3bbf8d9104469372d7c27ffadc02e9 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -1490,6 +1490,33 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         boolean tickBlockEntities = this.tickRateManager().runsNormally();
+ 
+         int tickedEntities = 0; // Paper - rewrite chunk system
++        // Meteus start - block entity tick removal fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.blockEntityTickRemovalFastPath) {
++            it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<@Nullable TickingBlockEntity> toRemove = null;
++            for (int tickerIndex = 0; tickerIndex < this.blockEntityTickers.size(); tickerIndex++) {
++                final TickingBlockEntity ticker = this.blockEntityTickers.get(tickerIndex);
++                if (ticker == null || ticker.isRemoved()) {
++                    if (toRemove == null) {
++                        toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>();
++                    }
++                    toRemove.add(ticker);
++                } else if (tickBlockEntities && this.shouldTickBlocksAt(ticker.getPos())) {
++                    ticker.tick();
++                    // Paper start - rewrite chunk system
++                    if ((++tickedEntities & 7) == 0) {
++                        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)(Level)(Object)this).moonrise$midTickTasks();
++                    }
++                    // Paper end - rewrite chunk system
++                }
++            }
++
++            if (toRemove != null) {
++                this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075 use removeAll
++            }
++            this.tickingBlockEntities = false;
++            return;
++        }
++        // Meteus end - block entity tick removal fast path
+         // Paper start - Fix MC-117075 use removeAll
+         final it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<@Nullable TickingBlockEntity> toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>();
+         toRemove.add(null);

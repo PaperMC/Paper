@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Tue, 16 Jun 2026 00:13:50 +0900
+Subject: [PATCH] Meteus configurable tracker idle-skip refresh interval
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 8e40a6561e43e56e1c66f369f470814247a3b2a5..a8441ac8447a4c557c5d21b28a3a421d167e7299 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1363,13 +1363,15 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+ 
+             // Meteus start - tracker idle skip fast path
+             // A stationary entity's visibility to a stationary player cannot change, so only re-evaluate
+-            // players that moved this tick. A staggered full refresh every 32 ticks self-corrects the rare
+-            // non-positional cases (view-distance change, vanish API, tracking-range change).
++            // players that moved this tick. A staggered full refresh every trackerIdleSkipRefreshTicks ticks
++            // backstops rare non-positional changes (vanish/view-distance are already handled directly).
++            final int meteus$refreshTicks = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipRefreshTicks;
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipFastPath
+                 && !this.meteus$movedThisTrackerTick
+                 && lastChunkUpdate == currChunkUpdate
+                 && lastTrackedChunk == chunk
+-                && ((net.minecraft.server.MinecraftServer.currentTick + this.entity.getId()) & 127L) != 0L) {
++                && meteus$refreshTicks > 1
++                && (net.minecraft.server.MinecraftServer.currentTick + this.entity.getId()) % meteus$refreshTicks != 0L) {
+                 // Only movers can change a stationary entity's tracking state. Iterate the small global
+                 // moved-players list and re-evaluate just those that are nearby (O(movers)), instead of
+                 // scanning every nearby player to find the movers (O(players)). Players leaving/entering the

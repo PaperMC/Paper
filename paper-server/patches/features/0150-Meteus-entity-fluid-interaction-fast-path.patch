@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:41:07 +0900
+Subject: [PATCH] Meteus entity fluid interaction fast path
+
+
+diff --git a/net/minecraft/world/entity/EntityFluidInteraction.java b/net/minecraft/world/entity/EntityFluidInteraction.java
+index 817ec969b758f9902e9dc19d3be2d801740d207b..a8e50d68108ef5dcd1c1c2a2e5f3c5c1d7bc2975 100644
+--- a/net/minecraft/world/entity/EntityFluidInteraction.java
++++ b/net/minecraft/world/entity/EntityFluidInteraction.java
+@@ -30,7 +30,16 @@ public class EntityFluidInteraction {
+     }
+ 
+     public void update(final Entity entity, final boolean ignoreCurrent) {
++        final boolean meteusFluidInteractionFastPath = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityFluidInteractionFastPath; // Meteus - entity fluid interaction fast path
++        // Meteus start - entity fluid interaction fast path
++        if (meteusFluidInteractionFastPath) {
++            for (final EntityFluidInteraction.Tracker tracker : this.trackerByFluid.values()) {
++                tracker.reset();
++            }
++        } else {
++        // Meteus end - entity fluid interaction fast path
+         this.trackerByFluid.values().forEach(EntityFluidInteraction.Tracker::reset);
++        } // Meteus - entity fluid interaction fast path
+         AABB box = entity.getFluidInteractionBox();
+         if (box != null) {
+             int x0 = Mth.floor(box.minX);
+@@ -39,7 +48,7 @@ public class EntityFluidInteraction {
+             int x1 = Mth.ceil(box.maxX) - 1;
+             int y1 = Mth.ceil(box.maxY) - 1;
+             int z1 = Mth.ceil(box.maxZ) - 1;
+-            if (hasFluidAndLoaded(entity.level(), x0 - 1, y0, z0 - 1, x1 + 1, y1, z1 + 1)) {
++            if (hasFluidAndLoaded(entity.level(), x0 - 1, y0, z0 - 1, x1 + 1, y1, z1 + 1, meteusFluidInteractionFastPath)) { // Meteus - entity fluid interaction fast path
+                 double entityY = entity.getBoundingBox().minY;
+                 int eyeBlockX = entity.getBlockX();
+                 double eyeY = entity.getEyeY();
+@@ -93,7 +102,7 @@ public class EntityFluidInteraction {
+         }
+     }
+ 
+-    private static boolean hasFluidAndLoaded(final Level level, final int x0, final int y0, final int z0, final int x1, final int y1, final int z1) {
++    private static boolean hasFluidAndLoaded(final Level level, final int x0, final int y0, final int z0, final int x1, final int y1, final int z1, final boolean meteusFluidInteractionFastPath) { // Meteus - entity fluid interaction fast path
+         int sectionX0 = SectionPos.blockToSectionCoord(x0);
+         int sectionY0 = SectionPos.blockToSectionCoord(y0);
+         int sectionZ0 = SectionPos.blockToSectionCoord(z0);
+@@ -111,10 +120,19 @@ public class EntityFluidInteraction {
+ 
+                 LevelChunkSection[] sections = chunk.getSections();
+ 
++                // Meteus start - entity fluid interaction fast path
++                if (meteusFluidInteractionFastPath && hasFluid) {
++                    continue;
++                }
++                // Meteus end - entity fluid interaction fast path
++
+                 for (int sectionY = sectionY0; sectionY <= sectionY1; sectionY++) {
+                     int sectionIndex = chunk.getSectionIndexFromSectionY(sectionY);
+-                    if (sectionIndex >= 0 && sectionIndex < sections.length) {
+-                        hasFluid |= sections[sectionIndex].hasFluid();
++                    if (sectionIndex >= 0 && sectionIndex < sections.length && sections[sectionIndex].hasFluid()) {
++                        hasFluid = true;
++                        if (meteusFluidInteractionFastPath) { // Meteus - entity fluid interaction fast path
++                            break;
++                        } // Meteus - entity fluid interaction fast path
+                     }
+                 }
+             }
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index 9423d29996a30c3416dbf2e519ef5d2d6f23e376..0e1c1f424de5dd9e6afba1d7a10dfbbdabb1e790 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -3497,6 +3497,17 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+ 
+     public int stabbedEntities(final Predicate<Entity> filter) {
++        // Meteus start - entity event list fast path
++        if (this.recentKineticEnemies != null && io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++            int count = 0;
++            for (final Entity entity : this.recentKineticEnemies.keySet()) {
++                if (filter.test(entity)) {
++                    ++count;
++                }
++            }
++            return count;
++        }
++        // Meteus end - entity event list fast path
+         return this.recentKineticEnemies == null ? 0 : (int)this.recentKineticEnemies.keySet().stream().filter(filter).count();
+     }
+ 

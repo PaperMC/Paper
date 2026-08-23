@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 14:29:09 +0900
+Subject: [PATCH] Meteus AI ram and villager trade fast path
+
+
+diff --git a/net/minecraft/world/entity/ai/behavior/PrepareRamNearestTarget.java b/net/minecraft/world/entity/ai/behavior/PrepareRamNearestTarget.java
+index 818d7882a4d7001a9d8f90516b7368e89a5689a0..bcd82b2ab01508f54b5259b21895138a2a00656e 100644
+--- a/net/minecraft/world/entity/ai/behavior/PrepareRamNearestTarget.java
++++ b/net/minecraft/world/entity/ai/behavior/PrepareRamNearestTarget.java
+@@ -161,6 +161,27 @@ public class PrepareRamNearestTarget<E extends PathfinderMob> extends Behavior<E
+         }
+ 
+         PathNavigation navigation = body.getNavigation();
++        // Meteus start - AI ram target fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.aiRamTargetFastPath) {
++            BlockPos best = null;
++            double bestDistance = Double.MAX_VALUE;
++            final BlockPos bodyPos = body.blockPosition();
++            for (int i = 0, len = possibleRamPositions.size(); i < len; ++i) {
++                final BlockPos pos = possibleRamPositions.get(i);
++                final double distance = bodyPos.distSqr(pos);
++                if (distance >= bestDistance) {
++                    continue;
++                }
++
++                Path path = navigation.createPath(pos, 0);
++                if (path != null && path.canReach()) {
++                    best = pos;
++                    bestDistance = distance;
++                }
++            }
++            return Optional.ofNullable(best);
++        }
++        // Meteus end - AI ram target fast path
+         return possibleRamPositions.stream().sorted(Comparator.comparingDouble(body.blockPosition()::distSqr)).filter(pos -> {
+             Path path = navigation.createPath(pos, 0);
+             return path != null && path.canReach();
+diff --git a/net/minecraft/world/entity/ai/behavior/TradeWithVillager.java b/net/minecraft/world/entity/ai/behavior/TradeWithVillager.java
+index 1d405a77c4cf70bd818a4f59163e5b319808d5f3..7ed59e878cac625d2772039ed3850b3546c2d7d4 100644
+--- a/net/minecraft/world/entity/ai/behavior/TradeWithVillager.java
++++ b/net/minecraft/world/entity/ai/behavior/TradeWithVillager.java
+@@ -73,6 +73,17 @@ public class TradeWithVillager extends Behavior<Villager> {
+     private static Set<Item> figureOutWhatIAmWillingToTrade(final Villager myBody, final Villager target) {
+         ImmutableSet<Item> targetItems = target.getVillagerData().profession().value().requestedItems();
+         ImmutableSet<Item> selfItems = myBody.getVillagerData().profession().value().requestedItems();
++        // Meteus start - villager AI scan fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.villagerAiScanFastPath) {
++            final com.google.common.collect.ImmutableSet.Builder<Item> trades = ImmutableSet.builderWithExpectedSize(targetItems.size());
++            for (final Item item : targetItems) {
++                if (!selfItems.contains(item)) {
++                    trades.add(item);
++                }
++            }
++            return trades.build();
++        }
++        // Meteus end - villager AI scan fast path
+         return targetItems.stream().filter(entry -> !selfItems.contains(entry)).collect(Collectors.toSet());
+     }
+ 

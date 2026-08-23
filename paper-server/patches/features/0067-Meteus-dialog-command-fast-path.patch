@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 08:01:55 +0900
+Subject: [PATCH] Meteus dialog command fast path
+
+
+diff --git a/net/minecraft/server/commands/DialogCommand.java b/net/minecraft/server/commands/DialogCommand.java
+index fcbe76e95a7de7c79afd0a116b6cbcf286ba85ff..3ac1a5fda09f0d4adf2282b1ef480bd69ec03b21 100644
+--- a/net/minecraft/server/commands/DialogCommand.java
++++ b/net/minecraft/server/commands/DialogCommand.java
+@@ -2,6 +2,7 @@ package net.minecraft.server.commands;
+ 
+ import com.mojang.brigadier.CommandDispatcher;
+ import java.util.Collection;
++import java.util.List;
+ import net.minecraft.commands.CommandBuildContext;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+@@ -45,6 +46,21 @@ public class DialogCommand {
+     }
+ 
+     private static int showDialog(final CommandSourceStack sender, final Collection<ServerPlayer> targets, final Holder<Dialog> dialog) {
++        // Meteus start - dialog command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.dialogCommandFastPath && targets instanceof List<ServerPlayer> targetList) {
++            for (int i = 0, len = targetList.size(); i < len; ++i) {
++                targetList.get(i).openDialog(dialog);
++            }
++
++            if (targetList.size() == 1) {
++                sender.sendSuccess(() -> Component.translatable("commands.dialog.show.single", targetList.get(0).getDisplayName()), true);
++            } else {
++                sender.sendSuccess(() -> Component.translatable("commands.dialog.show.multiple", targetList.size()), true);
++            }
++
++            return targetList.size();
++        }
++        // Meteus end - dialog command fast path
+         for (ServerPlayer target : targets) {
+             target.openDialog(dialog);
+         }
+@@ -59,6 +75,21 @@ public class DialogCommand {
+     }
+ 
+     private static int clearDialog(final CommandSourceStack sender, final Collection<ServerPlayer> targets) {
++        // Meteus start - dialog command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.dialogCommandFastPath && targets instanceof List<ServerPlayer> targetList) {
++            for (int i = 0, len = targetList.size(); i < len; ++i) {
++                targetList.get(i).connection.send(ClientboundClearDialogPacket.INSTANCE);
++            }
++
++            if (targetList.size() == 1) {
++                sender.sendSuccess(() -> Component.translatable("commands.dialog.clear.single", targetList.get(0).getDisplayName()), true);
++            } else {
++                sender.sendSuccess(() -> Component.translatable("commands.dialog.clear.multiple", targetList.size()), true);
++            }
++
++            return targetList.size();
++        }
++        // Meteus end - dialog command fast path
+         for (ServerPlayer target : targets) {
+             target.connection.send(ClientboundClearDialogPacket.INSTANCE);
+         }

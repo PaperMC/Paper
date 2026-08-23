@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 10:26:55 +0900
+Subject: [PATCH] Meteus entity removal fanout fast paths
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index e63b8631c7f3294d1e0932cd8ad6063f7cf2c918..2298ddad62a831ec6ad48d642ba2121fc824b392 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -2191,6 +2191,22 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         return this.getGameRules().get(gameRule) ? Explosion.BlockInteraction.DESTROY_WITH_DECAY : Explosion.BlockInteraction.DESTROY;
+     }
+ 
++    // Meteus start - player map cleanup fast path
++    private void meteus$cleanupRemovedPlayerMapData(final ServerLevel level, final Player player, final String playerName) {
++        for (final Optional<net.minecraft.world.level.saveddata.SavedData> optionalSavedData : level.getDataStorage().cache.values()) {
++            final net.minecraft.world.level.saveddata.SavedData savedData = optionalSavedData.orElse(null);
++            if (!(savedData instanceof MapItemSavedData map)) {
++                continue;
++            }
++
++            map.carriedByPlayers.remove(player);
++            if (map.carriedBy.removeIf(holdingPlayer -> holdingPlayer.player == player)) {
++                map.decorations.remove(playerName);
++            }
++        }
++    }
++    // Meteus end - player map cleanup fast path
++
+     @Override
+     public void blockEvent(final BlockPos pos, final Block block, final int b0, final int b1) {
+         this.blockEvents.add(new BlockEventData(pos, block, b0, b1));
+@@ -3067,6 +3083,21 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
+             // Spigot start // TODO I don't think this is needed anymore
+             if (entity instanceof Player player) {
++                // Meteus start - player map cleanup fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerMapCleanupFastPath) {
++                    final String playerName = player.getName().getString();
++                    final Iterable<ServerLevel> levels = ServerLevel.this.getServer().getAllLevels();
++                    if (levels instanceof java.util.List<ServerLevel> levelList) {
++                        for (int levelIndex = 0, levelCount = levelList.size(); levelIndex < levelCount; ++levelIndex) {
++                            ServerLevel.this.meteus$cleanupRemovedPlayerMapData(levelList.get(levelIndex), player, playerName);
++                        }
++                    } else {
++                        for (final ServerLevel level : levels) {
++                            ServerLevel.this.meteus$cleanupRemovedPlayerMapData(level, player, playerName);
++                        }
++                    }
++                } else {
++                // Meteus end - player map cleanup fast path
+                 for (final ServerLevel level : ServerLevel.this.getServer().getAllLevels()) {
+                     for (final Optional<net.minecraft.world.level.saveddata.SavedData> savedData : level.getDataStorage().cache.values()) {
+                         if (savedData.isEmpty() || !(savedData.get() instanceof MapItemSavedData map)) {
+@@ -3079,6 +3110,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+                         }
+                     }
+                 }
++                } // Meteus - player map cleanup fast path
+             }
+             // Spigot end
+             // Spigot start
+@@ -3122,9 +3154,18 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             // CraftBukkit start
+             entity.valid = false;
+             if (!(entity instanceof ServerPlayer)) {
++                // Meteus start - entity remove callback fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityRemoveCallbackFastPath) {
++                    final java.util.List<ServerPlayer> players = ServerLevel.this.server.getPlayerList().players;
++                    for (int i = 0, len = players.size(); i < len; ++i) {
++                        players.get(i).getBukkitEntity().onEntityRemove(entity);
++                    }
++                } else {
++                // Meteus end - entity remove callback fast path
+                 for (ServerPlayer player : ServerLevel.this.server.getPlayerList().players) { // Paper - call onEntityRemove for all online players
+                     player.getBukkitEntity().onEntityRemove(entity);
+                 }
++                } // Meteus - entity remove callback fast path
+             }
+             // CraftBukkit end
+             new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld()).callEvent(); // Paper - fire while valid

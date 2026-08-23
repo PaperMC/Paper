@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 10:33:27 +0900
+Subject: [PATCH] Meteus explosion and particle fanout fast paths
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 2298ddad62a831ec6ad48d642ba2121fc824b392..326b29a86832275c8ec7b937e284e71e48360f3f 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -2177,6 +2177,26 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         // CraftBukkit end
+         ParticleOptions explosionParticle = explosion.isSmall() ? smallExplosionParticles : largeExplosionParticles;
+ 
++        // Meteus start - explosion packet fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.explosionPacketFanoutFastPath) {
++            final java.util.Map<Player, Vec3> hitPlayers = explosion.getHitPlayers();
++            final double centerX = center.x;
++            final double centerY = center.y;
++            final double centerZ = center.z;
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                final double xDiff = player.getX() - centerX;
++                final double yDiff = player.getY() - centerY;
++                final double zDiff = player.getZ() - centerZ;
++                if (xDiff * xDiff + yDiff * yDiff + zDiff * zDiff < 4096.0) {
++                    final Optional<Vec3> playerKnockback = Optional.ofNullable(hitPlayers.get(player));
++                    player.connection.send(new ClientboundExplodePacket(center, r, blockCount, playerKnockback, explosionParticle, explosionSound, blockParticles));
++                }
++            }
++
++            return explosion; // CraftBukkit
++        }
++        // Meteus end - explosion packet fanout fast path
+         for (ServerPlayer player : this.players) {
+             if (player.distanceToSqr(center) < 4096.0) {
+                 Optional<Vec3> playerKnockback = Optional.ofNullable(explosion.getHitPlayers().get(player));
+@@ -2334,6 +2354,22 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         );
+         int result = 0;
+ 
++        // Meteus start - particle fanout fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.particleFanoutFastPath) {
++            final org.bukkit.entity.Entity senderBukkit = sender == null ? null : sender.getBukkitEntity();
++            for (int i = 0, len = receivers.size(); i < len; ++i) { // Paper - particle API
++                final ServerPlayer player = receivers.get(i); // Paper - particle API
++                if (senderBukkit != null && !player.getBukkitEntity().canSee(senderBukkit)) {
++                    continue; // CraftBukkit
++                }
++                if (this.sendParticles(player, overrideLimiter, x, y, z, packet)) {
++                    result++;
++                }
++            }
++
++            return result;
++        }
++        // Meteus end - particle fanout fast path
+         for (int i = 0; i < receivers.size(); i++) { // Paper - particle API
+             ServerPlayer player = receivers.get(i); // Paper - particle API
+             if (sender != null && !player.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit

@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:00:22 +0900
+Subject: [PATCH] Meteus player lookup fast path
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index a06565433714c8e5e222a91336beaed94637c50c..d14525316c1ef3cd88ad4d9d8095c9f32eed3db6 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -1175,6 +1175,17 @@ public abstract class PlayerList {
+     public List<ServerPlayer> getPlayersWithAddress(final String ip) {
+         List<ServerPlayer> result = Lists.newArrayList();
+ 
++        // Meteus start - player lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerLookupFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                if (player.getIpAddress().equals(ip)) {
++                    result.add(player);
++                }
++            }
++            return result;
++        }
++        // Meteus end - player lookup fast path
+         for (ServerPlayer player : this.players) {
+             if (player.getIpAddress().equals(ip)) {
+                 result.add(player);
+@@ -1413,6 +1424,17 @@ public abstract class PlayerList {
+     }
+ 
+     public @Nullable ServerPlayer getPlayer(final String playerName) {
++        // Meteus start - player lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerLookupFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                if (player.getGameProfile().name().equalsIgnoreCase(playerName)) {
++                    return player;
++                }
++            }
++            return null;
++        }
++        // Meteus end - player lookup fast path
+         for (ServerPlayer player : this.players) {
+             if (player.getGameProfile().name().equalsIgnoreCase(playerName)) {
+                 return player;

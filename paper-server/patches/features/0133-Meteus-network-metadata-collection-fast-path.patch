@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:12:49 +0900
+Subject: [PATCH] Meteus network metadata collection fast path
+
+
+diff --git a/net/minecraft/network/FriendlyByteBuf.java b/net/minecraft/network/FriendlyByteBuf.java
+index 12cd230ebe97dab655f8546948f06b93f0babf1f..0251caf2092216b9fca16156f83ae53baea4d14c 100644
+--- a/net/minecraft/network/FriendlyByteBuf.java
++++ b/net/minecraft/network/FriendlyByteBuf.java
+@@ -167,6 +167,14 @@ public class FriendlyByteBuf extends ByteBuf {
+ 
+     public void writeIntIdList(final IntList ids) {
+         this.writeVarInt(ids.size());
++        // Meteus start - network collection packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkCollectionPacketFastPath) {
++            for (int i = 0, len = ids.size(); i < len; ++i) {
++                this.writeVarInt(ids.getInt(i));
++            }
++            return;
++        }
++        // Meteus end - network collection packet fast path
+         ids.forEach(this::writeVarInt);
+     }
+ 
+@@ -193,6 +201,15 @@ public class FriendlyByteBuf extends ByteBuf {
+         final Map<K, V> map, final StreamEncoder<? super FriendlyByteBuf, K> keyEncoder, final StreamEncoder<? super FriendlyByteBuf, V> valueEncoder
+     ) {
+         this.writeVarInt(map.size());
++        // Meteus start - network collection packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.networkCollectionPacketFastPath) {
++            for (final Map.Entry<K, V> entry : map.entrySet()) {
++                keyEncoder.encode(this, entry.getKey());
++                valueEncoder.encode(this, entry.getValue());
++            }
++            return;
++        }
++        // Meteus end - network collection packet fast path
+         map.forEach((k, v) -> {
+             keyEncoder.encode(this, (K)k);
+             valueEncoder.encode(this, (V)v);
+diff --git a/net/minecraft/network/syncher/SynchedEntityData.java b/net/minecraft/network/syncher/SynchedEntityData.java
+index 3f8b03c857d3546f6606bdbcf1de1a0c10088deb..526389dd9af4736eedceceebeac5448d5601b00c 100644
+--- a/net/minecraft/network/syncher/SynchedEntityData.java
++++ b/net/minecraft/network/syncher/SynchedEntityData.java
+@@ -110,6 +110,23 @@ public class SynchedEntityData {
+     }
+ 
+     public @Nullable List<SynchedEntityData.DataValue<?>> getNonDefaultValues() {
++        // Meteus start - entity metadata packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityMetadataPacketFastPath) {
++            List<SynchedEntityData.DataValue<?>> result = null;
++            for (int i = 0, len = this.itemsById.length; i < len; ++i) {
++                final SynchedEntityData.DataItem<?> dataItem = this.itemsById[i];
++                if (!dataItem.isSetToDefault()) {
++                    if (result == null) {
++                        result = new ArrayList<>(this.itemsById.length - i);
++                    }
++
++                    result.add(dataItem.value());
++                }
++            }
++
++            return result;
++        }
++        // Meteus end - entity metadata packet fast path
+         List<SynchedEntityData.DataValue<?>> result = null;
+ 
+         for (SynchedEntityData.DataItem<?> dataItem : this.itemsById) {

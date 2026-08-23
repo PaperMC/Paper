@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 14:20:42 +0900
+Subject: [PATCH] Meteus entity equipment serialization fast path
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 5a3989142145b1583a4ede7d8a1cc52dbee6b526..4b72a4682f35233f3c52ae713332e90e51ce0e08 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -20,6 +20,7 @@ import java.nio.file.Path;
+ import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.Comparator;
++import java.util.Iterator;
+ import java.util.List;
+ import java.util.Locale;
+ import java.util.Objects;
+@@ -2797,6 +2798,16 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+ 
+     @VisibleForTesting
+     public void clearBlockEvents(final BoundingBox bb) {
++        // Meteus start - block event broadcast fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.blockEventBroadcastFastPath) {
++            for (final Iterator<BlockEventData> iterator = this.blockEvents.iterator(); iterator.hasNext();) {
++                if (bb.isInside(iterator.next().pos())) {
++                    iterator.remove();
++                }
++            }
++            return;
++        }
++        // Meteus end - block event broadcast fast path
+         this.blockEvents.removeIf(e -> bb.isInside(e.pos()));
+     }
+ 
+diff --git a/net/minecraft/world/entity/DropChances.java b/net/minecraft/world/entity/DropChances.java
+index 40f96cecdf55b376be40171edae137286ab44d8d..da15f9f848013098e739892595799e09af73de27 100644
+--- a/net/minecraft/world/entity/DropChances.java
++++ b/net/minecraft/world/entity/DropChances.java
+@@ -2,6 +2,7 @@ package net.minecraft.world.entity;
+ 
+ import com.mojang.serialization.Codec;
+ import java.util.HashMap;
++import java.util.Iterator;
+ import java.util.Map;
+ import net.minecraft.util.ExtraCodecs;
+ import net.minecraft.util.Util;
+@@ -17,6 +18,16 @@ public record DropChances(Map<EquipmentSlot, Float> byEquipment) {
+ 
+     private static Map<EquipmentSlot, Float> filterDefaultValues(final Map<EquipmentSlot, Float> map) {
+         Map<EquipmentSlot, Float> filteredMap = new HashMap<>(map);
++        // Meteus start - entity equipment serialization fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEquipmentSerializationFastPath) {
++            for (final Iterator<Float> iterator = filteredMap.values().iterator(); iterator.hasNext();) {
++                if (iterator.next() == 0.085F) {
++                    iterator.remove();
++                }
++            }
++            return filteredMap;
++        }
++        // Meteus end - entity equipment serialization fast path
+         filteredMap.values().removeIf(chance -> chance == 0.085F);
+         return filteredMap;
+     }
+diff --git a/net/minecraft/world/entity/EntityEquipment.java b/net/minecraft/world/entity/EntityEquipment.java
+index 20041325ae77f16a5b77f5de7255788b52ebb3a5..0ca7630d62f8d593a5d5495099580bb5304ebf93 100644
+--- a/net/minecraft/world/entity/EntityEquipment.java
++++ b/net/minecraft/world/entity/EntityEquipment.java
+@@ -2,6 +2,7 @@ package net.minecraft.world.entity;
+ 
+ import com.mojang.serialization.Codec;
+ import java.util.EnumMap;
++import java.util.Iterator;
+ import java.util.Map;
+ import java.util.Objects;
+ import java.util.Map.Entry;
+@@ -14,6 +15,16 @@ public class EntityEquipment {
+         return new EntityEquipment(map);
+     }, equipment -> {
+         Map<EquipmentSlot, ItemStack> items = new EnumMap<>(equipment.items);
++        // Meteus start - entity equipment serialization fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEquipmentSerializationFastPath) {
++            for (final Iterator<ItemStack> iterator = items.values().iterator(); iterator.hasNext();) {
++                if (iterator.next().isEmpty()) {
++                    iterator.remove();
++                }
++            }
++            return items;
++        }
++        // Meteus end - entity equipment serialization fast path
+         items.values().removeIf(ItemStack::isEmpty);
+         return items;
+     });

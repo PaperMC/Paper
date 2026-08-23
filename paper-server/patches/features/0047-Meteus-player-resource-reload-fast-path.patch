@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 22:37:31 +0900
+Subject: [PATCH] Meteus player resource reload fast path
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index c66d71bd5871d8365fd20858e11214cf68cae5fa..b71de8ce59b8a635d6bd84760963f73839bcfa46 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -1353,6 +1353,16 @@ public abstract class PlayerList {
+         // for (PlayerAdvancements playerAdvancements : this.advancements.values()) {
+         //     playerAdvancements.reload(this.server.getAdvancements());
+         // }
++        // Meteus start - player resource reload fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerResourceReloadFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                player.getAdvancements().reload(this.server.getAdvancements());
++                player.getAdvancements().flushDirty(player, false); // CraftBukkit - trigger immediate flush of advancements
++            }
++            return;
++        }
++        // Meteus end - player resource reload fast path
+         for (ServerPlayer player : this.players) {
+             player.getAdvancements().reload(this.server.getAdvancements());
+             player.getAdvancements().flushDirty(player, false); // CraftBukkit - trigger immediate flush of advancements
+@@ -1375,6 +1385,16 @@ public abstract class PlayerList {
+             recipeManager.getSynchronizedItemProperties(), recipeManager.getSynchronizedStonecutterRecipes()
+         );
+ 
++        // Meteus start - player resource reload fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerResourceReloadFastPath) {
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                player.connection.send(recipes);
++                player.getRecipeBook().sendInitialRecipeBook(player);
++            }
++            return;
++        }
++        // Meteus end - player resource reload fast path
+         for (ServerPlayer player : this.players) {
+             player.connection.send(recipes);
+             player.getRecipeBook().sendInitialRecipeBook(player);

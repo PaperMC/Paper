@@ -1,0 +1,237 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 20:21:33 +0900
+Subject: [PATCH] Meteus nearby player lookup fast paths
+
+
+diff --git a/net/minecraft/server/level/ServerEntityGetter.java b/net/minecraft/server/level/ServerEntityGetter.java
+index 3a742c3ae5c32701a0934f86c0c33cd50f316652..86653eac9627cd7a4c90d47f5940c7d347679375 100644
+--- a/net/minecraft/server/level/ServerEntityGetter.java
++++ b/net/minecraft/server/level/ServerEntityGetter.java
+@@ -52,6 +52,22 @@ public interface ServerEntityGetter extends EntityGetter {
+         double bestDistance = Double.MAX_VALUE;
+         LivingEntity nearestEntity = null;
+ 
++        // Meteus start - nearby player lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.nearbyPlayerLookupFastPath) {
++            final List<LivingEntity> entities = this.getEntitiesOfClass(LivingEntity.class, bb, e -> e.is(tag));
++            for (int i = 0, len = entities.size(); i < len; ++i) {
++                final LivingEntity entity = entities.get(i);
++                if (targetConditions.test(this.getLevel(), source, entity)) {
++                    double distance = entity.distanceToSqr(x, y, z);
++                    if (distance < bestDistance) {
++                        bestDistance = distance;
++                        nearestEntity = entity;
++                    }
++                }
++            }
++            return nearestEntity;
++        }
++        // Meteus end - nearby player lookup fast path
+         for (LivingEntity entity : this.getEntitiesOfClass(LivingEntity.class, bb, e -> e.is(tag))) {
+             if (targetConditions.test(this.getLevel(), source, entity)) {
+                 double distance = entity.distanceToSqr(x, y, z);
+@@ -76,6 +92,21 @@ public interface ServerEntityGetter extends EntityGetter {
+         double best = -1.0;
+         T result = null;
+ 
++        // Meteus start - nearby player lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.nearbyPlayerLookupFastPath) {
++            for (int i = 0, len = entities.size(); i < len; ++i) {
++                final T entity = entities.get(i);
++                if (targetConditions.test(this.getLevel(), source, entity)) {
++                    double dist = entity.distanceToSqr(x, y, z);
++                    if (best == -1.0 || dist < best) {
++                        best = dist;
++                        result = entity;
++                    }
++                }
++            }
++            return result;
++        }
++        // Meteus end - nearby player lookup fast path
+         for (T entity : entities) {
+             if (targetConditions.test(this.getLevel(), source, entity)) {
+                 double dist = entity.distanceToSqr(x, y, z);
+@@ -92,6 +123,18 @@ public interface ServerEntityGetter extends EntityGetter {
+     default List<Player> getNearbyPlayers(final TargetingConditions targetConditions, final LivingEntity source, final AABB bb) {
+         List<Player> foundPlayers = new ArrayList<>();
+ 
++        // Meteus start - nearby player lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.nearbyPlayerLookupFastPath) {
++            final List<? extends Player> players = this.players();
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final Player player = players.get(i);
++                if (bb.contains(player.getX(), player.getY(), player.getZ()) && targetConditions.test(this.getLevel(), source, player)) {
++                    foundPlayers.add(player);
++                }
++            }
++            return foundPlayers;
++        }
++        // Meteus end - nearby player lookup fast path
+         for (Player player : this.players()) {
+             if (bb.contains(player.getX(), player.getY(), player.getZ()) && targetConditions.test(this.getLevel(), source, player)) {
+                 foundPlayers.add(player);
+@@ -107,6 +150,17 @@ public interface ServerEntityGetter extends EntityGetter {
+         List<T> nearby = this.getEntitiesOfClass(type, bb, entityx -> true);
+         List<T> entities = new ArrayList<>();
+ 
++        // Meteus start - nearby player lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.nearbyPlayerLookupFastPath) {
++            for (int i = 0, len = nearby.size(); i < len; ++i) {
++                final T entity = nearby.get(i);
++                if (targetConditions.test(this.getLevel(), source, entity)) {
++                    entities.add(entity);
++                }
++            }
++            return entities;
++        }
++        // Meteus end - nearby player lookup fast path
+         for (T entity : nearby) {
+             if (targetConditions.test(this.getLevel(), source, entity)) {
+                 entities.add(entity);
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 50a39a7788f18682eb1bebc3c8ba838b4e73cc65..761cb04144cdc7964b91f7bd3294469cd445c25f 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -1566,6 +1566,24 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     }
+ 
+     public List<ServerPlayer> getPlayers(final Predicate<? super ServerPlayer> selector, final int maxResults) {
++        // Meteus start - nearby player lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.nearbyPlayerLookupFastPath) {
++            final int playerCount = this.players.size();
++            List<ServerPlayer> result = new java.util.ArrayList<>(Math.min(playerCount, Math.max(0, maxResults)));
++
++            for (int i = 0; i < playerCount; ++i) {
++                ServerPlayer player = this.players.get(i);
++                if (selector.test(player)) {
++                    result.add(player);
++                    if (result.size() >= maxResults) {
++                        return result;
++                    }
++                }
++            }
++
++            return result;
++        }
++        // Meteus end - nearby player lookup fast path
+         List<ServerPlayer> result = Lists.newArrayList();
+ 
+         for (ServerPlayer player : this.players) {
+diff --git a/net/minecraft/world/level/EntityGetter.java b/net/minecraft/world/level/EntityGetter.java
+index cc938f43c4a5e947ed87ca2001cbaca4084bf64c..06007a319d4afc57be80110fae8e6c73c8d82ac4 100644
+--- a/net/minecraft/world/level/EntityGetter.java
++++ b/net/minecraft/world/level/EntityGetter.java
+@@ -122,6 +122,23 @@ public interface EntityGetter extends ca.spottedleaf.moonrise.patches.chunk_syst
+         double best = -1.0;
+         Player result = null;
+ 
++        // Meteus start - nearby player lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.nearbyPlayerLookupFastPath) {
++            final List<? extends Player> players = this.players();
++            final double rangeSquared = range * range;
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final Player player = players.get(i);
++                if (predicate == null || predicate.test(player)) {
++                    double dist = player.distanceToSqr(x, y, z);
++                    if ((range < 0.0 || dist < rangeSquared) && (best == -1.0 || dist < best)) {
++                        best = dist;
++                        result = player;
++                    }
++                }
++            }
++            return result;
++        }
++        // Meteus end - nearby player lookup fast path
+         for (Player player : this.players()) {
+             if (predicate == null || predicate.test(player)) {
+                 double dist = player.distanceToSqr(x, y, z);
+@@ -139,6 +156,23 @@ public interface EntityGetter extends ca.spottedleaf.moonrise.patches.chunk_syst
+     default List<org.bukkit.entity.HumanEntity> findNearbyBukkitPlayers(double x, double y, double z, double range, @Nullable Predicate<Entity> predicate) {
+         ImmutableList.Builder<org.bukkit.entity.HumanEntity> players = ImmutableList.builder();
+ 
++        // Meteus start - nearby player lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.nearbyPlayerLookupFastPath) {
++            final List<? extends Player> levelPlayers = this.players();
++            final double rangeSquared = range * range;
++            for (int i = 0, len = levelPlayers.size(); i < len; ++i) {
++                final Player player = levelPlayers.get(i);
++                if (predicate == null || predicate.test(player)) {
++                    double dist = player.distanceToSqr(x, y, z);
++
++                    if (range < 0.0 || dist < rangeSquared) {
++                        players.add(player.getBukkitEntity());
++                    }
++                }
++            }
++            return players.build();
++        }
++        // Meteus end - nearby player lookup fast path
+         for (Player player : this.players()) {
+             if (predicate == null || predicate.test(player)) {
+                 double dist = player.distanceToSqr(x, y, z);
+@@ -169,6 +203,22 @@ public interface EntityGetter extends ca.spottedleaf.moonrise.patches.chunk_syst
+     }
+ 
+     default boolean hasNearbyAlivePlayerThatAffectsSpawning(double x, double y, double z, double range) {
++        // Meteus start - nearby player lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.nearbyPlayerLookupFastPath) {
++            final List<? extends Player> players = this.players();
++            final double rangeSquared = range * range;
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final Player player = players.get(i);
++                if (EntitySelector.PLAYER_AFFECTS_SPAWNING.test(player)) { // combines NO_SPECTATORS and LIVING_ENTITY_STILL_ALIVE with an "affects spawning" check
++                    double playerDist = player.distanceToSqr(x, y, z);
++                    if (range < 0.0 || playerDist < rangeSquared) {
++                        return true;
++                    }
++                }
++            }
++            return false;
++        }
++        // Meteus end - nearby player lookup fast path
+         for (Player player : this.players()) {
+             if (EntitySelector.PLAYER_AFFECTS_SPAWNING.test(player)) { // combines NO_SPECTATORS and LIVING_ENTITY_STILL_ALIVE with an "affects spawning" check
+                 double playerDist = player.distanceToSqr(x, y, z);
+@@ -182,6 +232,22 @@ public interface EntityGetter extends ca.spottedleaf.moonrise.patches.chunk_syst
+     // Paper end - Affects Spawning API
+ 
+     default boolean hasNearbyAlivePlayer(final double x, final double y, final double z, final double range) {
++        // Meteus start - nearby player lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.nearbyPlayerLookupFastPath) {
++            final List<? extends Player> players = this.players();
++            final double rangeSquared = range * range;
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final Player player = players.get(i);
++                if (EntitySelector.NO_SPECTATORS.test(player) && EntitySelector.LIVING_ENTITY_STILL_ALIVE.test(player)) {
++                    double playerDist = player.distanceToSqr(x, y, z);
++                    if (range < 0.0 || playerDist < rangeSquared) {
++                        return true;
++                    }
++                }
++            }
++            return false;
++        }
++        // Meteus end - nearby player lookup fast path
+         for (Player player : this.players()) {
+             if (EntitySelector.NO_SPECTATORS.test(player) && EntitySelector.LIVING_ENTITY_STILL_ALIVE.test(player)) {
+                 double playerDist = player.distanceToSqr(x, y, z);
+@@ -195,12 +261,15 @@ public interface EntityGetter extends ca.spottedleaf.moonrise.patches.chunk_syst
+     }
+ 
+     default @Nullable Player getPlayerByUUID(final UUID uuid) {
+-        for (int i = 0; i < this.players().size(); i++) {
+-            Player player = this.players().get(i);
++        // Meteus start - nearby player lookup fast path
++        final List<? extends Player> players = this.players();
++        for (int i = 0, len = players.size(); i < len; i++) {
++            Player player = players.get(i);
+             if (uuid.equals(player.getUUID())) {
+                 return player;
+             }
+         }
++        // Meteus end - nearby player lookup fast path
+ 
+         return null;
+     }

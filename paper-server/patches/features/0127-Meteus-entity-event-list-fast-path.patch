@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:06:00 +0900
+Subject: [PATCH] Meteus entity event list fast path
+
+
+diff --git a/net/minecraft/world/entity/monster/piglin/PiglinAi.java b/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+index bc213e8a6b09a3c06c22eddc95c7e00c5d8521ed..48ca15e1991d5b8f238f6fae9fccf3d4cfafe2c3 100644
+--- a/net/minecraft/world/entity/monster/piglin/PiglinAi.java
++++ b/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+@@ -394,7 +394,16 @@ public class PiglinAi {
+                 // CraftBukkit start
+                 org.bukkit.event.entity.PiglinBarterEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPiglinBarterEvent(body, getBarterResponseItems(body), itemStack);
+                 if (!event.isCancelled()) {
+-                    throwItems(body, event.getOutcome().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).collect(java.util.stream.Collectors.toList()));
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++                        final List<org.bukkit.inventory.ItemStack> outcome = event.getOutcome();
++                        final List<ItemStack> convertedOutcome = new ArrayList<>(outcome.size());
++                        for (int i = 0, len = outcome.size(); i < len; ++i) {
++                            convertedOutcome.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(outcome.get(i)));
++                        }
++                        throwItems(body, convertedOutcome);
++                    } else {
++                        throwItems(body, event.getOutcome().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).collect(java.util.stream.Collectors.toList()));
++                    }
+                 }
+                 // CraftBukkit end
+             } else if (!barterCurrency) {
+diff --git a/net/minecraft/world/entity/projectile/hurtingprojectile/DragonFireball.java b/net/minecraft/world/entity/projectile/hurtingprojectile/DragonFireball.java
+index 5d5a235549b210dd8223a1019c0ee0dbe3470fab..2c0a05b68f1440a469b6164eed8c7ee810c168bb 100644
+--- a/net/minecraft/world/entity/projectile/hurtingprojectile/DragonFireball.java
++++ b/net/minecraft/world/entity/projectile/hurtingprojectile/DragonFireball.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.world.entity.projectile.hurtingprojectile;
+ 
++import java.util.ArrayList;
+ import java.util.List;
+ import net.minecraft.core.particles.ParticleOptions;
+ import net.minecraft.core.particles.ParticleTypes;
+@@ -55,7 +56,17 @@ public class DragonFireball extends AbstractHurtingProjectile {
+                     }
+                 }
+ 
+-                if (new com.destroystokyo.paper.event.entity.EnderDragonFireballHitEvent((org.bukkit.entity.DragonFireball) this.getBukkitEntity(), entitiesOfClass.stream().map(LivingEntity::getBukkitLivingEntity).collect(java.util.stream.Collectors.toList()), (org.bukkit.entity.AreaEffectCloud) cloud.getBukkitEntity()).callEvent()) { // Paper - EnderDragon Events
++                final List<org.bukkit.entity.LivingEntity> bukkitHitEntities;
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++                    bukkitHitEntities = new ArrayList<>(entitiesOfClass.size());
++                    for (int i = 0, len = entitiesOfClass.size(); i < len; ++i) {
++                        bukkitHitEntities.add(entitiesOfClass.get(i).getBukkitLivingEntity());
++                    }
++                } else {
++                    bukkitHitEntities = entitiesOfClass.stream().map(LivingEntity::getBukkitLivingEntity).collect(java.util.stream.Collectors.toList());
++                }
++
++                if (new com.destroystokyo.paper.event.entity.EnderDragonFireballHitEvent((org.bukkit.entity.DragonFireball) this.getBukkitEntity(), bukkitHitEntities, (org.bukkit.entity.AreaEffectCloud) cloud.getBukkitEntity()).callEvent()) { // Paper - EnderDragon Events
+                 this.level().levelEvent(LevelEvent.PARTICLES_DRAGON_FIREBALL_SPLASH, this.blockPosition(), this.isSilent() ? -1 : 1);
+                 this.level().addFreshEntity(cloud, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EXPLOSION); // Paper - use correct spawn reason
+                 } else cloud.discard(null); // Paper - EnderDragon Events

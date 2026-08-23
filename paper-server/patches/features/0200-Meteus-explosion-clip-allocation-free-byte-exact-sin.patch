@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 18 Jun 2026 17:40:17 +0900
+Subject: [PATCH] Meteus explosion clip: allocation-free byte-exact single-AABB
+ boolean clip
+
+
+diff --git a/net/minecraft/world/level/ServerExplosion.java b/net/minecraft/world/level/ServerExplosion.java
+index 07e931652a2879007d8c39a0786e4bcf3c45902a..b7aad5cb11ddf43db3003d97f521018bb7fb2979 100644
+--- a/net/minecraft/world/level/ServerExplosion.java
++++ b/net/minecraft/world/level/ServerExplosion.java
+@@ -221,11 +221,21 @@ public class ServerExplosion implements Explosion {
+                 }
+ 
+                 if (!collision.isEmpty()) {
+-                    if (fromVec == null) { // Meteus - build the origin Vec3 once, only when a block lies on the ray
+-                        fromVec = new Vec3(fromXIn, fromYIn, fromZIn);
+-                    }
+-                    if (collision.clip(fromVec, to, currPos) != null) {
+-                        return true;
++                    // Meteus - allocation-free exact clip for single-AABB collision shapes (full cubes etc. -
++                    // nearly every block an explosion ray crosses); avoids the per-ray origin Vec3 + BlockHitResult
++                    // that dominated explosion allocation. Identical hit decision; complex shapes fall back to clip().
++                    final net.minecraft.world.phys.AABB meteus$single = collision.moonrise$getSingleAABBRepresentation();
++                    if (meteus$single != null) {
++                        if (meteus$singleAabbRayHits(meteus$single, fromXIn, fromYIn, fromZIn, to, currX, currY, currZ)) {
++                            return true;
++                        }
++                    } else {
++                        if (fromVec == null) { // Meteus - build the origin Vec3 once, only when a block lies on the ray
++                            fromVec = new Vec3(fromXIn, fromYIn, fromZIn);
++                        }
++                        if (collision.clip(fromVec, to, currPos) != null) {
++                            return true;
++                        }
+                     }
+                 }
+             }
+@@ -257,6 +267,55 @@ public class ServerExplosion implements Explosion {
+         }
+     }
+ 
++    // Meteus - allocation-free boolean equivalent of `VoxelShape.clip(from, to, pos) != null` for a shape whose
++    // collision is a single AABB (the common case: full cubes, slabs, etc.). Byte-faithful inline copy of
++    // VoxelShape.clip's single-AABB branch + AABB.getDirection/clipPoint, returning a boolean instead of
++    // allocating an origin Vec3 and a BlockHitResult. Same arithmetic and epsilons => identical hit decision,
++    // so explosion exposure (and thus damage/knockback) is unchanged. Non-single-AABB shapes keep using clip().
++    private static boolean meteus$singleAabbRayHits(final AABB box, final double fromX, final double fromY, final double fromZ,
++                                                    final Vec3 to, final int posX, final int posY, final int posZ) {
++        final double dirX = to.x - fromX;
++        final double dirY = to.y - fromY;
++        final double dirZ = to.z - fromZ;
++        if (dirX * dirX + dirY * dirY + dirZ * dirZ < ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON) {
++            return false;
++        }
++        // VoxelShape.clip: if the slightly-advanced origin is already inside the (block-local) box -> immediate hit
++        final double behindOffX = (fromX + dirX * 0.001) - posX;
++        final double behindOffY = (fromY + dirY * 0.001) - posY;
++        final double behindOffZ = (fromZ + dirZ * 0.001) - posZ;
++        if (box.contains(behindOffX, behindOffY, behindOffZ)) {
++            return true;
++        }
++        // else: AABB.getDirection(box.move(pos), from, {1.0}, null, dir) != null  (inlined; world-space box bounds)
++        final double minX = box.minX + posX, minY = box.minY + posY, minZ = box.minZ + posZ;
++        final double maxX = box.maxX + posX, maxY = box.maxY + posY, maxZ = box.maxZ + posZ;
++        double scale = 1.0;
++        boolean hit = false;
++        if (dirX > 1.0E-7) {
++            final double s = (minX - fromX) / dirX, pb = fromY + s * dirY, pc = fromZ + s * dirZ;
++            if (0.0 < s && s < scale && minY - 1.0E-7 < pb && pb < maxY + 1.0E-7 && minZ - 1.0E-7 < pc && pc < maxZ + 1.0E-7) { scale = s; hit = true; }
++        } else if (dirX < -1.0E-7) {
++            final double s = (maxX - fromX) / dirX, pb = fromY + s * dirY, pc = fromZ + s * dirZ;
++            if (0.0 < s && s < scale && minY - 1.0E-7 < pb && pb < maxY + 1.0E-7 && minZ - 1.0E-7 < pc && pc < maxZ + 1.0E-7) { scale = s; hit = true; }
++        }
++        if (dirY > 1.0E-7) {
++            final double s = (minY - fromY) / dirY, pb = fromZ + s * dirZ, pc = fromX + s * dirX;
++            if (0.0 < s && s < scale && minZ - 1.0E-7 < pb && pb < maxZ + 1.0E-7 && minX - 1.0E-7 < pc && pc < maxX + 1.0E-7) { scale = s; hit = true; }
++        } else if (dirY < -1.0E-7) {
++            final double s = (maxY - fromY) / dirY, pb = fromZ + s * dirZ, pc = fromX + s * dirX;
++            if (0.0 < s && s < scale && minZ - 1.0E-7 < pb && pb < maxZ + 1.0E-7 && minX - 1.0E-7 < pc && pc < maxX + 1.0E-7) { scale = s; hit = true; }
++        }
++        if (dirZ > 1.0E-7) {
++            final double s = (minZ - fromZ) / dirZ, pb = fromX + s * dirX, pc = fromY + s * dirY;
++            if (0.0 < s && s < scale && minX - 1.0E-7 < pb && pb < maxX + 1.0E-7 && minY - 1.0E-7 < pc && pc < maxY + 1.0E-7) { scale = s; hit = true; }
++        } else if (dirZ < -1.0E-7) {
++            final double s = (maxZ - fromZ) / dirZ, pb = fromX + s * dirX, pc = fromY + s * dirY;
++            if (0.0 < s && s < scale && minX - 1.0E-7 < pb && pb < maxX + 1.0E-7 && minY - 1.0E-7 < pc && pc < maxY + 1.0E-7) { scale = s; hit = true; }
++        }
++        return hit;
++    }
++
+     private float getSeenFraction(final Vec3 source, final Entity target,
+                                    final ca.spottedleaf.moonrise.patches.collisions.ExplosionBlockCache[] blockCache,
+                                    final BlockPos.MutableBlockPos blockPos) {

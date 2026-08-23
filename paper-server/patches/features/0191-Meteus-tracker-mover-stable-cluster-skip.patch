@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Tue, 16 Jun 2026 00:59:16 +0900
+Subject: [PATCH] Meteus tracker mover stable-cluster skip
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 6d0f948a02580e1af10680e1d057a197bba03bd5..35776c93028193b5111b916eb74410c406f38ce8 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1337,6 +1337,29 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+             this.meteus$lastTrackZ = z;
+             this.meteus$trackPosInit = true;
+         }
++
++        // True if every current viewer is clearly inside range (by more than one tick of movement), so a
++        // small move of this entity cannot push any of them out of range. Scans seenBy with cheap distance
++        // checks only (no contains/canSee/broadcast) - the per-pair work the boundary path otherwise does.
++        private boolean meteus$allViewersClearlyInRange() {
++            final double effRange = this.getEffectiveRange();
++            final double ex = this.entity.getX();
++            final double ez = this.entity.getZ();
++            for (final ServerPlayerConnection conn : this.seenBy) {
++                final ServerPlayer p = conn.getPlayer();
++                final double range = Math.min(effRange, (double) (ChunkMap.this.getPlayerViewDistance(p) * 16));
++                if (range <= 16.0D) {
++                    return false;
++                }
++                final double margin = range - 16.0D;
++                final double dx = p.getX() - ex;
++                final double dz = p.getZ() - ez;
++                if (dx * dx + dz * dz > margin * margin) {
++                    return false;
++                }
++            }
++            return true;
++        }
+         // Meteus end - tracker idle skip fast path
+ 
+         @Override
+@@ -1383,6 +1406,19 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                         this.updatePlayer(player);
+                     }
+                 }
++            } else if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.trackerIdleSkipFastPath
++                && this.meteus$movedThisTrackerTick
++                && lastChunkUpdate == currChunkUpdate
++                && lastTrackedChunk == chunk
++                && meteus$refreshTicks > 1
++                && (net.minecraft.server.MinecraftServer.currentTick + this.entity.getId()) % meteus$refreshTicks != 0L
++                && !level.paperConfig().entities.trackingRangeY.enabled
++                && this.seenBy.size() == players.size()
++                && this.meteus$allViewersClearlyInRange()) {
++                // This entity moved, but its tracking set is provably stable: every nearby player is already
++                // tracked (equal sizes + unchanged chunk-set => no new entrant) and every viewer is clearly
++                // inside range by more than one tick of movement (=> no exit). So skip the whole per-pair
++                // loop. Rare non-positional changes (spectator/broadcast) self-correct on the next refresh tick.
+             } else {
+             // Meteus end - tracker idle skip fast path
+             for (int i = 0, len = players.size(); i < len; ++i) {

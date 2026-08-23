@@ -1,0 +1,142 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 15:01:57 +0900
+Subject: [PATCH] Meteus entity lifecycle and drop fanout fast paths
+
+
+diff --git a/net/minecraft/world/entity/ConversionType.java b/net/minecraft/world/entity/ConversionType.java
+index 650c4bda62468939887d39ef6f25d638c489b17d..02f4fc77eef13bd91a93143ef5ad77feef347e9f 100644
+--- a/net/minecraft/world/entity/ConversionType.java
++++ b/net/minecraft/world/entity/ConversionType.java
+@@ -131,7 +131,15 @@ public enum ConversionType {
+         to.setNoGravity(from.isNoGravity());
+         to.setPortalCooldown(from.getPortalCooldown());
+         to.setSilent(from.isSilent());
+-        from.entityTags().forEach(to::addTag);
++        // Meteus start - entity event list fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++            for (final String tag : from.entityTags()) {
++                to.addTag(tag);
++            }
++        } else {
++            from.entityTags().forEach(to::addTag);
++        }
++        // Meteus end - entity event list fast path
+ 
+         for (DataComponentType<?> component : COMPONENTS_TO_COPY) {
+             copyComponent(from, to, component);
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index b2cd56bb63b452aa5ff68650a22dae3d81c85f08..a31f56f96ac787d92fb53f7b1a6fb463083456b3 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -5189,7 +5189,18 @@ public abstract class Entity
+             this.stopRiding();
+         }
+ 
+-        if (this.removalReason != Entity.RemovalReason.UNLOADED_TO_CHUNK) { this.getPassengers().forEach(Entity::stopRiding); } // Paper - rewrite chunk system
++        // Meteus start - entity passenger list fast path
++        if (this.removalReason != Entity.RemovalReason.UNLOADED_TO_CHUNK) { // Paper - rewrite chunk system
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityPassengerListFastPath) {
++                final List<Entity> passengers = this.getPassengers();
++                for (int i = 0, len = passengers.size(); i < len; ++i) {
++                    passengers.get(i).stopRiding();
++                }
++            } else {
++                this.getPassengers().forEach(Entity::stopRiding);
++            }
++        }
++        // Meteus end - entity passenger list fast path
+         this.levelCallback.onRemove(reason);
+         this.onRemoval(reason);
+         // Paper start - Folia schedulers
+diff --git a/net/minecraft/world/entity/animal/cow/MushroomCow.java b/net/minecraft/world/entity/animal/cow/MushroomCow.java
+index 5230d2cb67e83f978750b0fa6bbb1fb6eecded98..0c3ac914b24f6a9f34bcc99f5af6a92a1ca92ddf 100644
+--- a/net/minecraft/world/entity/animal/cow/MushroomCow.java
++++ b/net/minecraft/world/entity/animal/cow/MushroomCow.java
+@@ -200,9 +200,17 @@ public class MushroomCow extends AbstractCow implements Shearable {
+         this.convertTo(EntityType.COW, ConversionParams.single(this, false, false), cow -> {
+             level.sendParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY(0.5), this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+             // Paper start - custom shear drops; moved drop generation to separate method
++            // Meteus start - entity event list fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++                for (int i = 0, len = drops.size(); i < len; ++i) {
++                    this.spawnAtLocation(level, new ItemEntity(this.level(), this.getX(), this.getY(1.0), this.getZ(), drops.get(i)));
++                }
++            } else {
++            // Meteus end - entity event list fast path
+             drops.forEach(drop -> {
+                 this.spawnAtLocation(level, new ItemEntity(this.level(), this.getX(), this.getY(1.0), this.getZ(), drop));
+             });
++            } // Meteus - entity event list fast path
+             // Paper end - custom shear drops
+         }, org.bukkit.event.entity.EntityTransformEvent.TransformReason.SHEARED, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED); // CraftBukkit
+     }
+diff --git a/net/minecraft/world/entity/animal/golem/SnowGolem.java b/net/minecraft/world/entity/animal/golem/SnowGolem.java
+index 31060e38923265c285bae43568d317a9270ad935..94780f9512777cee4755bfe8419ca42f75b62ab1 100644
+--- a/net/minecraft/world/entity/animal/golem/SnowGolem.java
++++ b/net/minecraft/world/entity/animal/golem/SnowGolem.java
+@@ -182,11 +182,21 @@ public class SnowGolem extends AbstractGolem implements RangedAttackMob, Shearab
+         level.playSound(null, this, SoundEvents.SNOW_GOLEM_SHEAR, soundSource, 1.0F, 1.0F);
+         this.setPumpkin(false);
+         // Paper start - custom shear drops
++        // Meteus start - entity event list fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++            for (int i = 0, len = drops.size(); i < len; ++i) {
++                this.forceDrops = true; // CraftBukkit
++                this.spawnAtLocation(level, drops.get(i), this.getEyeHeight());
++                this.forceDrops = false; // CraftBukkit
++            }
++        } else {
++        // Meteus end - entity event list fast path
+         drops.forEach(drop -> {
+             this.forceDrops = true; // CraftBukkit
+             this.spawnAtLocation(level, drop, this.getEyeHeight());
+             this.forceDrops = false; // CraftBukkit
+         });
++        } // Meteus - entity event list fast path
+         // Paper end - custom shear drops
+     }
+ 
+diff --git a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index 6cccc63f742e25de2655cf092a5cd2b861b59978..3d11f6b8627aba484174cb9fddf6cc5f3f745497 100644
+--- a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -503,9 +503,18 @@ public class EnderDragon extends Mob implements Enemy {
+                         .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.EXPLOSION_RADIUS, 1.0F / event.getYield())
+                         .withOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY, blockEntity);
+ 
++                    // Meteus start - entity event list fast path
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++                        final java.util.List<net.minecraft.world.item.ItemStack> drops = state.getDrops(builder);
++                        for (int i = 0, len = drops.size(); i < len; ++i) {
++                            net.minecraft.world.level.block.Block.popResource(this.level(), pos, drops.get(i));
++                        }
++                    } else {
++                    // Meteus end - entity event list fast path
+                     state.getDrops(builder).forEach((item) -> {
+                         net.minecraft.world.level.block.Block.popResource(this.level(), pos, item);
+                     });
++                    } // Meteus - entity event list fast path
+                     state.spawnAfterBreak((ServerLevel) this.level(), pos, net.minecraft.world.item.ItemStack.EMPTY, false);
+                 }
+                 // Paper start - TNTPrimeEvent
+diff --git a/net/minecraft/world/entity/monster/skeleton/Bogged.java b/net/minecraft/world/entity/monster/skeleton/Bogged.java
+index f157729acf531c08543d800c824b462dc4e080f0..ff99dfe430e108f031020549b4e47c4eba2852bf 100644
+--- a/net/minecraft/world/entity/monster/skeleton/Bogged.java
++++ b/net/minecraft/world/entity/monster/skeleton/Bogged.java
+@@ -161,7 +161,15 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+     // Paper start - custom shear drops
+     private void spawnShearedMushrooms(final ServerLevel level, final ItemStack tool, java.util.List<ItemStack> drops) {
+         this.forceDrops = true; // Paper - Add missing forceDrop toggles
++        // Meteus start - entity event list fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityEventListFastPath) {
++            for (int i = 0, len = drops.size(); i < len; ++i) {
++                this.spawnAtLocation(level, drops.get(i), this.getBbHeight());
++            }
++        } else {
++        // Meteus end - entity event list fast path
+         drops.forEach(drop -> this.spawnAtLocation(level, drop, this.getBbHeight()));
++        } // Meteus - entity event list fast path
+         this.forceDrops = false; // Paper - Add missing forceDrop toggles
+         // Paper end - custom shear drops
+     }

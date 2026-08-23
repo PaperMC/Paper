@@ -1,0 +1,114 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 17:52:09 +0900
+Subject: [PATCH] Meteus command connection fanout fast paths
+
+
+diff --git a/net/minecraft/server/commands/BanIpCommands.java b/net/minecraft/server/commands/BanIpCommands.java
+index dee5e12db878c13392083a46496de88d0b5924c3..bc5cc36b5546498baf273afe9e7c69928800260d 100644
+--- a/net/minecraft/server/commands/BanIpCommands.java
++++ b/net/minecraft/server/commands/BanIpCommands.java
+@@ -62,6 +62,13 @@ public class BanIpCommands {
+             source.sendSuccess(() -> Component.translatable("commands.banip.info", players.size(), EntitySelector.joinNames(players)), true);
+         }
+ 
++        // Meteus start - ban-ip command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.banIpCommandFastPath) {
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                players.get(i).connection.disconnect(Component.translatable("multiplayer.disconnect.ip_banned"), org.bukkit.event.player.PlayerKickEvent.Cause.IP_BANNED); // Paper - kick event cause
++            }
++        } else
++        // Meteus end - ban-ip command fast path
+         for (ServerPlayer player : players) {
+             player.connection.disconnect(Component.translatable("multiplayer.disconnect.ip_banned"), org.bukkit.event.player.PlayerKickEvent.Cause.IP_BANNED); // Paper - kick event cause
+         }
+diff --git a/net/minecraft/server/commands/DebugConfigCommand.java b/net/minecraft/server/commands/DebugConfigCommand.java
+index 8b0cf3db26bf7f5dd9f2194cfb4e130f33efe568..53829c4e628311920ebaf06855e3e328cc88f328 100644
+--- a/net/minecraft/server/commands/DebugConfigCommand.java
++++ b/net/minecraft/server/commands/DebugConfigCommand.java
+@@ -3,6 +3,7 @@ package net.minecraft.server.commands;
+ import com.mojang.authlib.GameProfile;
+ import com.mojang.brigadier.CommandDispatcher;
+ import java.util.HashSet;
++import java.util.List;
+ import java.util.Set;
+ import java.util.UUID;
+ import net.minecraft.commands.CommandBuildContext;
+@@ -62,6 +63,20 @@ public class DebugConfigCommand {
+     private static Iterable<String> getUuidsInConfig(final MinecraftServer server) {
+         Set<String> result = new HashSet<>();
+ 
++        // Meteus start - debugconfig command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.debugConfigCommandFastPath) {
++            final List<Connection> connections = server.getConnection().getConnections();
++            synchronized (connections) {
++                for (int i = 0, len = connections.size(); i < len; ++i) {
++                    final Connection connection = connections.get(i);
++                    if (connection.getPacketListener() instanceof ServerConfigurationPacketListenerImpl configListener) {
++                        result.add(configListener.getOwner().id().toString());
++                    }
++                }
++            }
++            return result;
++        }
++        // Meteus end - debugconfig command fast path
+         for (Connection connection : server.getConnection().getConnections()) {
+             if (connection.getPacketListener() instanceof ServerConfigurationPacketListenerImpl configListener) {
+                 result.add(configListener.getOwner().id().toString());
+@@ -79,6 +94,20 @@ public class DebugConfigCommand {
+     }
+ 
+     private static @Nullable ServerConfigurationPacketListenerImpl findConfigPlayer(final MinecraftServer server, final UUID target) {
++        // Meteus start - debugconfig command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.debugConfigCommandFastPath) {
++            final List<Connection> connections = server.getConnection().getConnections();
++            synchronized (connections) {
++                for (int i = 0, len = connections.size(); i < len; ++i) {
++                    final Connection connection = connections.get(i);
++                    if (connection.getPacketListener() instanceof ServerConfigurationPacketListenerImpl configListener && configListener.getOwner().id().equals(target)) {
++                        return configListener;
++                    }
++                }
++            }
++            return null;
++        }
++        // Meteus end - debugconfig command fast path
+         for (Connection connection : server.getConnection().getConnections()) {
+             if (connection.getPacketListener() instanceof ServerConfigurationPacketListenerImpl configListener && configListener.getOwner().id().equals(target)
+                 )
+diff --git a/net/minecraft/server/commands/ServerPackCommand.java b/net/minecraft/server/commands/ServerPackCommand.java
+index bb95e2eb32d0c25a9dfac0f8b15cd2215600262d..2fd61e24d3aa09dbfd21f2af003b88f113a51c6e 100644
+--- a/net/minecraft/server/commands/ServerPackCommand.java
++++ b/net/minecraft/server/commands/ServerPackCommand.java
+@@ -3,11 +3,13 @@ package net.minecraft.server.commands;
+ import com.mojang.brigadier.CommandDispatcher;
+ import com.mojang.brigadier.arguments.StringArgumentType;
+ import java.nio.charset.StandardCharsets;
++import java.util.List;
+ import java.util.Optional;
+ import java.util.UUID;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+ import net.minecraft.commands.arguments.UuidArgument;
++import net.minecraft.network.Connection;
+ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
+ import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
+@@ -54,6 +56,17 @@ public class ServerPackCommand {
+     }
+ 
+     private static void sendToAllConnections(final CommandSourceStack source, final Packet<?> packet) {
++        // Meteus start - serverpack command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverPackCommandFastPath) {
++            final List<Connection> connections = source.getServer().getConnection().getConnections();
++            synchronized (connections) {
++                for (int i = 0, len = connections.size(); i < len; ++i) {
++                    connections.get(i).send(packet);
++                }
++            }
++            return;
++        }
++        // Meteus end - serverpack command fast path
+         source.getServer().getConnection().getConnections().forEach(connection -> connection.send(packet));
+     }
+ 

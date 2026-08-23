@@ -1,0 +1,97 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 22:31:06 +0900
+Subject: [PATCH] Meteus waypoint empty fast path
+
+
+diff --git a/net/minecraft/server/waypoints/ServerWaypointManager.java b/net/minecraft/server/waypoints/ServerWaypointManager.java
+index b9748a392c9f76e61a1b673085b4dd74c007c70d..92dc631ed7bd205030d24d4e4fa4426a3e69f22b 100644
+--- a/net/minecraft/server/waypoints/ServerWaypointManager.java
++++ b/net/minecraft/server/waypoints/ServerWaypointManager.java
+@@ -32,6 +32,11 @@ public class ServerWaypointManager implements WaypointManager<WaypointTransmitte
+         this.waypoints.add(waypoint);
+ 
+         if (!this.locatorBarEnabled) return; // Paper - optimize ServerWaypointManager with locator bar disabled
++        // Meteus start - waypoint empty fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.waypointEmptyFastPath && this.players.isEmpty()) {
++            return;
++        }
++        // Meteus end - waypoint empty fast path
+         for (ServerPlayer player : this.players) {
+             this.createConnection(player, waypoint);
+         }
+@@ -41,6 +46,11 @@ public class ServerWaypointManager implements WaypointManager<WaypointTransmitte
+     public void updateWaypoint(final WaypointTransmitter waypoint) {
+         if (!this.locatorBarEnabled) return; // Paper - optimize ServerWaypointManager with locator bar disabled
+         if (this.waypoints.contains(waypoint)) {
++            // Meteus start - waypoint empty fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.waypointEmptyFastPath && this.players.isEmpty()) {
++                return;
++            }
++            // Meteus end - waypoint empty fast path
+             Map<ServerPlayer, WaypointTransmitter.Connection> playerConnection = Tables.transpose(this.connections).row(waypoint);
+             SetView<ServerPlayer> potentialPlayers = Sets.difference(this.players, playerConnection.keySet());
+ 
+@@ -56,6 +66,12 @@ public class ServerWaypointManager implements WaypointManager<WaypointTransmitte
+ 
+     @Override
+     public void untrackWaypoint(final WaypointTransmitter waypoint) {
++        // Meteus start - waypoint empty fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.waypointEmptyFastPath && this.connections.isEmpty()) {
++            this.waypoints.remove(waypoint);
++            return;
++        }
++        // Meteus end - waypoint empty fast path
+         this.connections.column(waypoint).forEach((player, connection) -> connection.disconnect());
+         Tables.transpose(this.connections).row(waypoint).clear();
+         this.waypoints.remove(waypoint);
+@@ -65,6 +81,14 @@ public class ServerWaypointManager implements WaypointManager<WaypointTransmitte
+         this.players.add(player);
+ 
+         if (this.locatorBarEnabled) { // Paper - optimize ServerWaypointManager with locator bar disabled
++        // Meteus start - waypoint empty fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.waypointEmptyFastPath && this.waypoints.isEmpty()) {
++            if (player.isTransmittingWaypoint()) {
++                this.trackWaypoint(player);
++            }
++            return;
++        }
++        // Meteus end - waypoint empty fast path
+         for (WaypointTransmitter waypoint : this.waypoints) {
+             this.createConnection(player, waypoint);
+         }
+@@ -77,6 +101,11 @@ public class ServerWaypointManager implements WaypointManager<WaypointTransmitte
+ 
+     public void updatePlayer(final ServerPlayer player) {
+         if (!this.locatorBarEnabled) return; // Paper - optimize ServerWaypointManager with locator bar disabled
++        // Meteus start - waypoint empty fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.waypointEmptyFastPath && this.waypoints.isEmpty()) {
++            return;
++        }
++        // Meteus end - waypoint empty fast path
+         Map<WaypointTransmitter, WaypointTransmitter.Connection> waypointConnections = this.connections.row(player);
+         SetView<WaypointTransmitter> potentialWaypoints = Sets.difference(this.waypoints, waypointConnections.keySet());
+ 
+@@ -99,12 +128,22 @@ public class ServerWaypointManager implements WaypointManager<WaypointTransmitte
+     }
+ 
+     public void breakAllConnections() {
++        // Meteus start - waypoint empty fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.waypointEmptyFastPath && this.connections.isEmpty()) {
++            return;
++        }
++        // Meteus end - waypoint empty fast path
+         this.connections.values().forEach(WaypointTransmitter.Connection::disconnect);
+         this.connections.clear();
+     }
+ 
+     public void remakeConnections(final WaypointTransmitter waypoint) {
+         if (!this.locatorBarEnabled) return; // Paper - optimize ServerWaypointManager with locator bar disabled
++        // Meteus start - waypoint empty fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.waypointEmptyFastPath && this.players.isEmpty()) {
++            return;
++        }
++        // Meteus end - waypoint empty fast path
+         for (ServerPlayer player : this.players) {
+             this.createConnection(player, waypoint);
+         }

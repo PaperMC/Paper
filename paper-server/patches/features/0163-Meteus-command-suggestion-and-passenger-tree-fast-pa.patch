@@ -1,0 +1,152 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 14:50:17 +0900
+Subject: [PATCH] Meteus command suggestion and passenger tree fast paths
+
+
+diff --git a/net/minecraft/commands/CommandSourceStack.java b/net/minecraft/commands/CommandSourceStack.java
+index 89b9d1a4122d502437d516f8affc5ba72f421f5f..36d49b238be6c5e2a791f822ff22e59168d7c03f 100644
+--- a/net/minecraft/commands/CommandSourceStack.java
++++ b/net/minecraft/commands/CommandSourceStack.java
+@@ -9,7 +9,9 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+ import com.mojang.brigadier.suggestion.Suggestions;
+ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
++import java.util.ArrayList;
+ import java.util.Collection;
++import java.util.List;
+ import java.util.Objects;
+ import java.util.Optional;
+ import java.util.Set;
+@@ -562,6 +564,22 @@ public class CommandSourceStack implements SharedSuggestionProvider, ExecutionCo
+ 
+     @Override
+     public Collection<String> getOnlinePlayerNames() {
++        // Meteus start - player lookup fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerLookupFastPath
++            && this.entity instanceof ServerPlayer sourcePlayer
++            && !sourcePlayer.getBukkitEntity().hasPermission("paper.bypass-visibility.tab-completion")) {
++            final org.bukkit.entity.Player sourceBukkit = sourcePlayer.getBukkitEntity();
++            final List<ServerPlayer> players = this.getServer().getPlayerList().getPlayers();
++            final ArrayList<String> names = new ArrayList<>(players.size());
++            for (int index = 0, len = players.size(); index < len; ++index) {
++                final ServerPlayer serverPlayer = players.get(index);
++                if (sourceBukkit.canSee(serverPlayer.getBukkitEntity())) {
++                    names.add(serverPlayer.getGameProfile().name());
++                }
++            }
++            return names;
++        }
++        // Meteus end - player lookup fast path
+         return this.entity instanceof ServerPlayer sourcePlayer && !sourcePlayer.getBukkitEntity().hasPermission("paper.bypass-visibility.tab-completion") ? this.getServer().getPlayerList().getPlayers().stream().filter(serverPlayer -> sourcePlayer.getBukkitEntity().canSee(serverPlayer.getBukkitEntity())).map(serverPlayer -> serverPlayer.getGameProfile().name()).toList() : Lists.newArrayList(this.server.getPlayerNames()); // Paper - Make CommandSourceStack respect hidden players
+     }
+ 
+diff --git a/net/minecraft/commands/SharedSuggestionProvider.java b/net/minecraft/commands/SharedSuggestionProvider.java
+index ce29240ba7948e4d7d61697099f70c7db9e27f08..28f158c4f590157ee62ca32403fdb30bf08e7899 100644
+--- a/net/minecraft/commands/SharedSuggestionProvider.java
++++ b/net/minecraft/commands/SharedSuggestionProvider.java
+@@ -110,6 +110,14 @@ public interface SharedSuggestionProvider extends PermissionSetSupplier {
+         final Iterable<T> values, final String contents, final String prefix, final Function<T, Identifier> converter, final Consumer<T> consumer
+     ) {
+         if (contents.isEmpty()) {
++            // Meteus start - command suggestion provider fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.commandSuggestionProviderFastPath) {
++                for (final T value : values) {
++                    consumer.accept(value);
++                }
++                return;
++            }
++            // Meteus end - command suggestion provider fast path
+             values.forEach(consumer);
+         } else {
+             String commonPrefix = Strings.commonPrefix(contents, prefix);
+@@ -237,6 +245,18 @@ public interface SharedSuggestionProvider extends PermissionSetSupplier {
+ 
+     static CompletableFuture<Suggestions> suggest(final Stream<String> values, final SuggestionsBuilder builder) {
+         String lowerPrefix = builder.getRemaining().toLowerCase(Locale.ROOT);
++        // Meteus start - command suggestion provider fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.commandSuggestionProviderFastPath) {
++            final java.util.Iterator<String> iterator = values.iterator();
++            while (iterator.hasNext()) {
++                final String value = iterator.next();
++                if (matchesSubStr(lowerPrefix, value.toLowerCase(Locale.ROOT))) {
++                    builder.suggest(value);
++                }
++            }
++            return builder.buildFuture();
++        }
++        // Meteus end - command suggestion provider fast path
+         values.filter(v -> matchesSubStr(lowerPrefix, v.toLowerCase(Locale.ROOT))).forEach(builder::suggest);
+         return builder.buildFuture();
+     }
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index 584935dacb84ded12da3bb6e1b240850c959c7c8..b2cd56bb63b452aa5ff68650a22dae3d81c85f08 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -3309,9 +3309,17 @@ public abstract class Entity
+             this.vehicle.addPassenger(this);
+             if (sendEventAndTriggers) {
+                 this.level().gameEvent(this, GameEvent.ENTITY_MOUNT, this.vehicle.position);
+-                entityToRide.getIndirectPassengersStream()
+-                    .filter(e -> e instanceof ServerPlayer)
+-                    .forEach(player -> CriteriaTriggers.START_RIDING_TRIGGER.trigger((ServerPlayer)player));
++                // Meteus start - passenger tree iteration fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.passengerTreeIterationFastPath) {
++                    entityToRide.meteus$triggerStartRidingForPlayerPassengers();
++                } else {
++                    // Meteus end - passenger tree iteration fast path
++                    entityToRide.getIndirectPassengersStream()
++                        .filter(e -> e instanceof ServerPlayer)
++                        .forEach(player -> CriteriaTriggers.START_RIDING_TRIGGER.trigger((ServerPlayer)player));
++                    // Meteus start - passenger tree iteration fast path
++                }
++                // Meteus end - passenger tree iteration fast path
+             }
+ 
+             return true;
+@@ -4431,6 +4439,16 @@ public abstract class Entity
+     }
+ 
+     // Meteus start - passenger tree iteration fast path
++    private void meteus$triggerStartRidingForPlayerPassengers() {
++        for (int i = 0, len = this.passengers.size(); i < len; ++i) {
++            final Entity passenger = this.passengers.get(i);
++            if (passenger instanceof ServerPlayer serverPlayer) {
++                CriteriaTriggers.START_RIDING_TRIGGER.trigger(serverPlayer);
++            }
++            passenger.meteus$triggerStartRidingForPlayerPassengers();
++        }
++    }
++
+     private void meteus$teleportPassengersInTree() {
+         for (int i = 0, len = this.passengers.size(); i < len; ++i) {
+             final Entity passenger = this.passengers.get(i);
+@@ -4671,9 +4689,28 @@ public abstract class Entity
+     }
+ 
+     public int countPlayerPassengers() {
++        // Meteus start - passenger tree iteration fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.passengerTreeIterationFastPath) {
++            return this.meteus$countPlayerPassengersInTree();
++        }
++        // Meteus end - passenger tree iteration fast path
+         return (int)this.getIndirectPassengersStream().filter(e -> e instanceof Player).count();
+     }
+ 
++    // Meteus start - passenger tree iteration fast path
++    private int meteus$countPlayerPassengersInTree() {
++        int count = 0;
++        for (int i = 0, len = this.passengers.size(); i < len; ++i) {
++            final Entity passenger = this.passengers.get(i);
++            if (passenger instanceof Player) {
++                ++count;
++            }
++            count += passenger.meteus$countPlayerPassengersInTree();
++        }
++        return count;
++    }
++    // Meteus end - passenger tree iteration fast path
++
+     public boolean hasExactlyOnePlayerPassenger() {
+         if (this.passengers.isEmpty()) { return false; } // Paper - Optimize indirect passenger iteration
+         return this.countPlayerPassengers() == 1;

@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:28:51 +0900
+Subject: [PATCH] Meteus JSON-RPC player list fast path
+
+
+diff --git a/net/minecraft/server/jsonrpc/methods/PlayerService.java b/net/minecraft/server/jsonrpc/methods/PlayerService.java
+index 78bdfb85a0156b5324b59644279c8001867370ed..94d03fa4e7fbdc40675280f190ff95c58218c16c 100644
+--- a/net/minecraft/server/jsonrpc/methods/PlayerService.java
++++ b/net/minecraft/server/jsonrpc/methods/PlayerService.java
+@@ -15,6 +15,16 @@ public class PlayerService {
+     private static final Component DEFAULT_KICK_MESSAGE = Component.translatable("multiplayer.disconnect.kicked");
+ 
+     public static List<PlayerDto> get(final MinecraftApi minecraftApi) {
++        // Meteus start - JSON-RPC player list fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.jsonRpcPlayerListFastPath) {
++            final List<ServerPlayer> players = minecraftApi.playerListService().getPlayers();
++            final List<PlayerDto> result = new ArrayList<>(players.size());
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                result.add(PlayerDto.from(players.get(i)));
++            }
++            return result;
++        }
++        // Meteus end - JSON-RPC player list fast path
+         return minecraftApi.playerListService().getPlayers().stream().map(PlayerDto::from).toList();
+     }
+ 

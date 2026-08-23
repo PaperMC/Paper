@@ -1,0 +1,188 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 17:41:19 +0900
+Subject: [PATCH] Meteus command target iteration fast paths
+
+
+diff --git a/net/minecraft/server/commands/KickCommand.java b/net/minecraft/server/commands/KickCommand.java
+index 808c36bd2324c7b956cf1f32d9a4dac0ce4ad828..7cd9fa778c030449ac2d51fb2e87be8c0464a6a0 100644
+--- a/net/minecraft/server/commands/KickCommand.java
++++ b/net/minecraft/server/commands/KickCommand.java
+@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
+ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+ import java.util.Collection;
++import java.util.List;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+ import net.minecraft.commands.arguments.EntityArgument;
+@@ -41,6 +42,18 @@ public class KickCommand {
+ 
+         int count = 0;
+ 
++        // Meteus start - kick command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.kickCommandFastPath && players instanceof List<ServerPlayer> playerList) {
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                ServerPlayer player = playerList.get(i);
++                if (!source.getServer().isSingleplayerOwner(player.nameAndId())) {
++                    player.connection.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.KICK_COMMAND); // Paper - kick event cause
++                    source.sendSuccess(() -> Component.translatable("commands.kick.success", player.getDisplayName(), reason), true);
++                    count++;
++                }
++            }
++        } else
++        // Meteus end - kick command fast path
+         for (ServerPlayer player : players) {
+             if (!source.getServer().isSingleplayerOwner(player.nameAndId())) {
+                 player.connection.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.KICK_COMMAND); // Paper - kick event cause
+diff --git a/net/minecraft/server/commands/KillCommand.java b/net/minecraft/server/commands/KillCommand.java
+index ceef214b551114ba030f0f4b4aaf28aaa8013a3f..92c49fa9453c0ddde703529d325c1ffeb13b5a37 100644
+--- a/net/minecraft/server/commands/KillCommand.java
++++ b/net/minecraft/server/commands/KillCommand.java
+@@ -3,6 +3,7 @@ package net.minecraft.server.commands;
+ import com.google.common.collect.ImmutableList;
+ import com.mojang.brigadier.CommandDispatcher;
+ import java.util.Collection;
++import java.util.List;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+ import net.minecraft.commands.arguments.EntityArgument;
+@@ -20,6 +21,13 @@ public class KillCommand {
+     }
+ 
+     private static int kill(final CommandSourceStack source, final Collection<? extends Entity> victims) {
++        // Meteus start - kill command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.killCommandFastPath && victims instanceof List<?> victimList) {
++            for (int i = 0, len = victimList.size(); i < len; ++i) {
++                ((Entity) victimList.get(i)).kill(source.getLevel());
++            }
++        } else
++        // Meteus end - kill command fast path
+         for (Entity entity : victims) {
+             entity.kill(source.getLevel());
+         }
+diff --git a/net/minecraft/server/commands/MsgCommand.java b/net/minecraft/server/commands/MsgCommand.java
+index d5c7ea54008ebd65622887115cd4bc12fa6619ec..dbd4006c95a222c365e4443cd91c50ba1023e461 100644
+--- a/net/minecraft/server/commands/MsgCommand.java
++++ b/net/minecraft/server/commands/MsgCommand.java
+@@ -3,6 +3,7 @@ package net.minecraft.server.commands;
+ import com.mojang.brigadier.CommandDispatcher;
+ import com.mojang.brigadier.tree.LiteralCommandNode;
+ import java.util.Collection;
++import java.util.List;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+ import net.minecraft.commands.arguments.EntityArgument;
+@@ -35,6 +36,18 @@ public class MsgCommand {
+         OutgoingChatMessage tracked = OutgoingChatMessage.create(message);
+         boolean wasFullyFiltered = false;
+ 
++        // Meteus start - msg command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.msgCommandFastPath && players instanceof List<ServerPlayer> playerList) {
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                ServerPlayer player = playerList.get(i);
++                ChatType.Bound outgoingChatType = ChatType.bind(ChatType.MSG_COMMAND_OUTGOING, source).withTargetName(player.getDisplayName());
++                source.sendChatMessage(tracked, false, outgoingChatType);
++                boolean filtered = source.shouldFilterMessageTo(player);
++                player.sendChatMessage(tracked, filtered, incomingChatType);
++                wasFullyFiltered |= filtered && message.isFullyFiltered();
++            }
++        } else
++        // Meteus end - msg command fast path
+         for (ServerPlayer player : players) {
+             ChatType.Bound outgoingChatType = ChatType.bind(ChatType.MSG_COMMAND_OUTGOING, source).withTargetName(player.getDisplayName());
+             source.sendChatMessage(tracked, false, outgoingChatType);
+diff --git a/net/minecraft/server/commands/SwingCommand.java b/net/minecraft/server/commands/SwingCommand.java
+index 82f38edebe847ff138bbf5ffb98b7c881b50ad50..6de8a3f75da5f3578be96073c6b1d2afb8509ea6 100644
+--- a/net/minecraft/server/commands/SwingCommand.java
++++ b/net/minecraft/server/commands/SwingCommand.java
+@@ -40,6 +40,17 @@ public class SwingCommand {
+     private static int swing(final CommandSourceStack source, final Collection<? extends Entity> targets, final InteractionHand hand) throws CommandSyntaxException {
+         int livingEntitiesCount = 0;
+ 
++        // Meteus start - swing command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.swingCommandFastPath && targets instanceof List<?> targetList) {
++            for (int i = 0, len = targetList.size(); i < len; ++i) {
++                Entity entity = (Entity) targetList.get(i);
++                if (entity instanceof LivingEntity livingEntity) {
++                    livingEntity.swing(hand, true);
++                    livingEntitiesCount++;
++                }
++            }
++        } else
++        // Meteus end - swing command fast path
+         for (Entity entity : targets) {
+             if (entity instanceof LivingEntity livingEntity) {
+                 livingEntity.swing(hand, true);
+diff --git a/net/minecraft/server/commands/TagCommand.java b/net/minecraft/server/commands/TagCommand.java
+index 97dbff6de2ba316724d19c5822ae83518eb72b9b..7a360c2e44ae75cead123e0e6e7997602386fc8a 100644
+--- a/net/minecraft/server/commands/TagCommand.java
++++ b/net/minecraft/server/commands/TagCommand.java
+@@ -6,6 +6,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
+ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+ import java.util.Collection;
++import java.util.List;
+ import java.util.Set;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+@@ -50,6 +51,13 @@ public class TagCommand {
+     private static Collection<String> getTags(final Collection<? extends Entity> entities) {
+         Set<String> result = Sets.newHashSet();
+ 
++        // Meteus start - tag command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.tagCommandFastPath && entities instanceof List<?> entityList) {
++            for (int i = 0, len = entityList.size(); i < len; ++i) {
++                result.addAll(((Entity) entityList.get(i)).entityTags());
++            }
++        } else
++        // Meteus end - tag command fast path
+         for (Entity entity : entities) {
+             result.addAll(entity.entityTags());
+         }
+@@ -60,6 +68,15 @@ public class TagCommand {
+     private static int addTag(final CommandSourceStack source, final Collection<? extends Entity> targets, final String name) throws CommandSyntaxException {
+         int count = 0;
+ 
++        // Meteus start - tag command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.tagCommandFastPath && targets instanceof List<?> targetList) {
++            for (int i = 0, len = targetList.size(); i < len; ++i) {
++                if (((Entity) targetList.get(i)).addTag(name)) {
++                    count++;
++                }
++            }
++        } else
++        // Meteus end - tag command fast path
+         for (Entity entity : targets) {
+             if (entity.addTag(name)) {
+                 count++;
+@@ -82,6 +99,15 @@ public class TagCommand {
+     private static int removeTag(final CommandSourceStack source, final Collection<? extends Entity> targets, final String name) throws CommandSyntaxException {
+         int count = 0;
+ 
++        // Meteus start - tag command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.tagCommandFastPath && targets instanceof List<?> targetList) {
++            for (int i = 0, len = targetList.size(); i < len; ++i) {
++                if (((Entity) targetList.get(i)).removeTag(name)) {
++                    count++;
++                }
++            }
++        } else
++        // Meteus end - tag command fast path
+         for (Entity entity : targets) {
+             if (entity.removeTag(name)) {
+                 count++;
+@@ -104,6 +130,13 @@ public class TagCommand {
+     private static int listTags(final CommandSourceStack source, final Collection<? extends Entity> targets) {
+         Set<String> tags = Sets.newHashSet();
+ 
++        // Meteus start - tag command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.tagCommandFastPath && targets instanceof List<?> targetList) {
++            for (int i = 0, len = targetList.size(); i < len; ++i) {
++                tags.addAll(((Entity) targetList.get(i)).entityTags());
++            }
++        } else
++        // Meteus end - tag command fast path
+         for (Entity entity : targets) {
+             tags.addAll(entity.entityTags());
+         }

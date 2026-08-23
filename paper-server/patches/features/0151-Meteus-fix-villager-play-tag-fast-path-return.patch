@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:42:57 +0900
+Subject: [PATCH] Meteus fix villager play tag fast path return
+
+
+diff --git a/net/minecraft/world/entity/ai/behavior/PlayTagWithOtherKids.java b/net/minecraft/world/entity/ai/behavior/PlayTagWithOtherKids.java
+index 141dfc88272a6a90a8e1fffe3beab26d07f69634..931a81a64f536010834a5f81715d3537adb60283 100644
+--- a/net/minecraft/world/entity/ai/behavior/PlayTagWithOtherKids.java
++++ b/net/minecraft/world/entity/ai/behavior/PlayTagWithOtherKids.java
+@@ -40,15 +40,15 @@ public class PlayTagWithOtherKids {
+                     List<LivingEntity> friendsNearby = i.get(babies);
+                     // Meteus start - animal AI memory fast path
+                     if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.animalAiMemoryFastPath) {
+-                        boolean otherKidChasingMe = false;
++                        boolean otherKidChasingMeFast = false;
+                         for (int index = 0, len = friendsNearby.size(); index < len; ++index) {
+                             if (isFriendChasingMe(me, friendsNearby.get(index))) {
+-                                otherKidChasingMe = true;
++                                otherKidChasingMeFast = true;
+                                 break;
+                             }
+                         }
+ 
+-                        if (!otherKidChasingMe) {
++                        if (!otherKidChasingMeFast) {
+                             final LivingEntity otherKidBeingChased = findSomeoneBeingChasedFast(friendsNearby);
+                             if (otherKidBeingChased != null) {
+                                 chaseKid(interactionTarget, lookTarget, walkTarget, otherKidBeingChased);
+@@ -62,28 +62,28 @@ public class PlayTagWithOtherKids {
+                         }
+                     } else {
+                     // Meteus end - animal AI memory fast path
+-                    Optional<LivingEntity> otherKidChasingMe = friendsNearby.stream().filter(friend -> isFriendChasingMe(me, friend)).findAny();
+-                    if (!otherKidChasingMe.isPresent()) {
+-                        Optional<LivingEntity> otherKidBeingChased = findSomeoneBeingChased(friendsNearby);
+-                        if (otherKidBeingChased.isPresent()) {
+-                            chaseKid(interactionTarget, lookTarget, walkTarget, otherKidBeingChased.get());
+-                            return true;
+-                        } else {
+-                            friendsNearby.stream().findAny().ifPresent(entity -> chaseKid(interactionTarget, lookTarget, walkTarget, entity));
+-                            return true;
+-                        }
+-                    } else {
+-                    } // Meteus - animal AI memory fast path
+-                        for (int j = 0; j < 10; j++) {
+-                            Vec3 pos = LandRandomPos.getPos(me, 20, 8);
+-                            if (pos != null && level.isVillage(BlockPos.containing(pos))) {
+-                                walkTarget.set(new WalkTarget(pos, 0.6F, 0));
+-                                break;
++                        Optional<LivingEntity> otherKidChasingMe = friendsNearby.stream().filter(friend -> isFriendChasingMe(me, friend)).findAny();
++                        if (!otherKidChasingMe.isPresent()) {
++                            Optional<LivingEntity> otherKidBeingChased = findSomeoneBeingChased(friendsNearby);
++                            if (otherKidBeingChased.isPresent()) {
++                                chaseKid(interactionTarget, lookTarget, walkTarget, otherKidBeingChased.get());
++                                return true;
++                            } else {
++                                friendsNearby.stream().findAny().ifPresent(entity -> chaseKid(interactionTarget, lookTarget, walkTarget, entity));
++                                return true;
+                             }
+                         }
++                    } // Meteus - animal AI memory fast path
+ 
+-                        return true;
++                    for (int j = 0; j < 10; j++) {
++                        Vec3 pos = LandRandomPos.getPos(me, 20, 8);
++                        if (pos != null && level.isVillage(BlockPos.containing(pos))) {
++                            walkTarget.set(new WalkTarget(pos, 0.6F, 0));
++                            break;
++                        }
+                     }
++
++                    return true;
+                 })
+         );
+     }

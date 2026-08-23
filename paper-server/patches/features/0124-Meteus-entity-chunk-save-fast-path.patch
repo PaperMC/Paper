@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 22:32:32 +0900
+Subject: [PATCH] Meteus entity chunk save fast path
+
+
+diff --git a/net/minecraft/world/level/chunk/storage/EntityStorage.java b/net/minecraft/world/level/chunk/storage/EntityStorage.java
+index 8583a82c843b4cc4c0b27d2cd5f76272232cd566..b033846c9cd7de1d2cafe8d940f26219eff5451c 100644
+--- a/net/minecraft/world/level/chunk/storage/EntityStorage.java
++++ b/net/minecraft/world/level/chunk/storage/EntityStorage.java
+@@ -102,6 +102,11 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
+             try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(ChunkAccess.problemPath(pos), LOGGER)) {
+                 ListTag entities = new ListTag();
+                 final java.util.Map<net.minecraft.world.entity.EntityType<?>, Integer> savedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
++                // Meteus start - chunk storage serialization fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkStorageSerializationFastPath) {
++                    chunk.forEachEntity(e -> this.meteus$saveEntity(reporter, entities, savedEntityCounts, e));
++                } else {
++                // Meteus end - chunk storage serialization fast path
+                 chunk.getEntities().forEach(e -> {
+                     // Paper start - Entity load/save limit per chunk
+                     final EntityType<?> entityType = e.getType();
+@@ -119,6 +124,9 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
+                         entities.add(result);
+                     }
+                 });
++                // Meteus start - chunk storage serialization fast path
++                }
++                // Meteus end - chunk storage serialization fast path
+                 CompoundTag chunkTag = NbtUtils.addCurrentDataVersion(new CompoundTag());
+                 chunkTag.put("Entities", entities);
+                 chunkTag.store("Position", ChunkPos.CODEC, pos);
+@@ -128,6 +136,31 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
+         }
+     }
+ 
++    // Meteus start - chunk storage serialization fast path
++    private void meteus$saveEntity(
++        final ProblemReporter.ScopedCollector reporter,
++        final ListTag entities,
++        final java.util.Map<net.minecraft.world.entity.EntityType<?>, Integer> savedEntityCounts,
++        final Entity entity
++    ) {
++        // Paper start - Entity load/save limit per chunk
++        final EntityType<?> entityType = entity.getType();
++        final int saveLimit = this.level.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
++        if (saveLimit > -1) {
++            if (savedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
++                return;
++            }
++            savedEntityCounts.merge(entityType, 1, Integer::sum);
++        }
++        // Paper end - Entity load/save limit per chunk
++        final TagValueOutput output = TagValueOutput.createWithContext(reporter.forChild(entity.problemPath()), entity.registryAccess());
++        if (entity.save(output)) {
++            final CompoundTag result = output.buildResult();
++            entities.add(result);
++        }
++    }
++    // Meteus end - chunk storage serialization fast path
++
+     private void reportSaveFailureIfPresent(final CompletableFuture<?> operation, final ChunkPos pos) {
+         operation.exceptionally(t -> {
+             LOGGER.error("Failed to store entity chunk {}", pos, t);
+diff --git a/net/minecraft/world/level/entity/ChunkEntities.java b/net/minecraft/world/level/entity/ChunkEntities.java
+index a64a20046af22b28339ed3ed9a85357f0766128c..ca5575d315d36920d41fd7651dc577d185183eeb 100644
+--- a/net/minecraft/world/level/entity/ChunkEntities.java
++++ b/net/minecraft/world/level/entity/ChunkEntities.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.world.level.entity;
+ 
+ import java.util.List;
++import java.util.function.Consumer;
+ import java.util.stream.Stream;
+ import net.minecraft.world.level.ChunkPos;
+ 
+@@ -21,6 +22,14 @@ public class ChunkEntities<T> {
+         return this.entities.stream();
+     }
+ 
++    // Meteus start - chunk storage serialization fast path
++    public void forEachEntity(final Consumer<? super T> consumer) {
++        for (int i = 0, len = this.entities.size(); i < len; ++i) {
++            consumer.accept(this.entities.get(i));
++        }
++    }
++    // Meteus end - chunk storage serialization fast path
++
+     public boolean isEmpty() {
+         return this.entities.isEmpty();
+     }

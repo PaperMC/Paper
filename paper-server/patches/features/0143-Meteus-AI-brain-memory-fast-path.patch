@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:30:55 +0900
+Subject: [PATCH] Meteus AI brain memory fast path
+
+
+diff --git a/net/minecraft/world/entity/ai/Brain.java b/net/minecraft/world/entity/ai/Brain.java
+index 07a9f94438fd82830c5e53ecb86d4dd6d67631b0..30dfd11877ef05acdccb2faebb367cb22c89bdf7 100644
+--- a/net/minecraft/world/entity/ai/Brain.java
++++ b/net/minecraft/world/entity/ai/Brain.java
+@@ -152,6 +152,14 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public void clearMemories() {
++        // Meteus start - AI brain memory fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.aiBrainMemoryFastPath) {
++            for (final MemorySlot<?> slot : this.memories.values()) {
++                slot.clear();
++            }
++            return;
++        }
++        // Meteus end - AI brain memory fast path
+         this.memories.values().forEach(MemorySlot::clear);
+     }
+ 
+@@ -227,6 +235,14 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     public void forEach(final Brain.Visitor visitor) {
++        // Meteus start - AI brain memory fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.aiBrainMemoryFastPath) {
++            for (final Entry<MemoryModuleType<?>, MemorySlot<?>> entry : this.memories.entrySet()) {
++                callVisitor(visitor, entry.getKey(), entry.getValue());
++            }
++            return;
++        }
++        // Meteus end - AI brain memory fast path
+         this.memories.forEach((memoryModuleType, slot) -> callVisitor(visitor, (MemoryModuleType<?>)memoryModuleType, (MemorySlot<?>)slot));
+     }
+ 
+@@ -396,6 +412,14 @@ public class Brain<E extends LivingEntity> {
+     }
+ 
+     private void forgetOutdatedMemories() {
++        // Meteus start - AI brain memory fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.aiBrainMemoryFastPath) {
++            for (final MemorySlot<?> slot : this.memories.values()) {
++                slot.tick();
++            }
++            return;
++        }
++        // Meteus end - AI brain memory fast path
+         this.memories.values().forEach(MemorySlot::tick);
+     }
+ 

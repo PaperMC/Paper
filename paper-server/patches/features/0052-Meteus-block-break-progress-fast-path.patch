@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:00:22 +0900
+Subject: [PATCH] Meteus block break progress fast path
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 229ab4bf9ad0f9e2d105c2fc3dba56c494760b71..50a39a7788f18682eb1bebc3c8ba838b4e73cc65 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -1747,6 +1747,30 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+                 .callEvent();
+         }
+         // Paper end - Add BlockBreakProgressUpdateEvent
++        // Meteus start - block break progress fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.blockBreakProgressFastPath) {
++            final java.util.List<ServerPlayer> players = this.server.getPlayerList().getPlayers();
++            final org.bukkit.entity.Entity breakerBukkit = breakerPlayer == null ? null : breakerPlayer.getBukkitEntity();
++            final double blockX = blockPos.getX();
++            final double blockY = blockPos.getY();
++            final double blockZ = blockPos.getZ();
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final ServerPlayer player = players.get(i);
++                if (player.level() == this && player.getId() != id) {
++                    final double xd = blockX - player.getX();
++                    final double yd = blockY - player.getY();
++                    final double zd = blockZ - player.getZ();
++                    if (xd * xd + yd * yd + zd * zd < 1024.0) {
++                        if (breakerBukkit != null && !player.getBukkitEntity().canSee(breakerBukkit)) {
++                            continue;
++                        }
++                        player.connection.send(new ClientboundBlockDestructionPacket(id, blockPos, progress));
++                    }
++                }
++            }
++            return;
++        }
++        // Meteus end - block break progress fast path
+         for (ServerPlayer player : this.server.getPlayerList().getPlayers()) {
+             if (player.level() == this && player.getId() != id) {
+                 double xd = blockPos.getX() - player.getX();

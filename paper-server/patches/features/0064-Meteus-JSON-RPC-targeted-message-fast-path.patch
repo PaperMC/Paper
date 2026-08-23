@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:29:13 +0900
+Subject: [PATCH] Meteus JSON-RPC targeted message fast path
+
+
+diff --git a/net/minecraft/server/jsonrpc/internalapi/MinecraftServerStateServiceImpl.java b/net/minecraft/server/jsonrpc/internalapi/MinecraftServerStateServiceImpl.java
+index 85547811c61a87043944c09829e27ff9cce28d85..46ec7995003ec90b873f06de9bb3c7cb3c479fc8 100644
+--- a/net/minecraft/server/jsonrpc/internalapi/MinecraftServerStateServiceImpl.java
++++ b/net/minecraft/server/jsonrpc/internalapi/MinecraftServerStateServiceImpl.java
+@@ -43,6 +43,31 @@ public class MinecraftServerStateServiceImpl implements MinecraftServerStateServ
+ 
+     @Override
+     public void sendSystemMessage(final Component message, final boolean overlay, final Collection<ServerPlayer> players, final ClientInfo clientInfo) {
++        // Meteus start - JSON-RPC targeted message fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.jsonRpcTargetedMessageFastPath) {
++            this.jsonrpcLogger.log(clientInfo, "Send system message to '{}' players (overlay: {}): '{}'", players.size(), overlay, message.getString());
++
++            if (players instanceof List<ServerPlayer> playerList) {
++                for (int i = 0, len = playerList.size(); i < len; ++i) {
++                    final ServerPlayer player = playerList.get(i);
++                    if (overlay) {
++                        player.sendOverlayMessage(message);
++                    } else {
++                        player.sendSystemMessage(message);
++                    }
++                }
++            } else {
++                for (ServerPlayer player : players) {
++                    if (overlay) {
++                        player.sendOverlayMessage(message);
++                    } else {
++                        player.sendSystemMessage(message);
++                    }
++                }
++            }
++            return;
++        }
++        // Meteus end - JSON-RPC targeted message fast path
+         List<String> playerNames = players.stream().map(Player::getPlainTextName).toList();
+         this.jsonrpcLogger.log(clientInfo, "Send system message to '{}' players (overlay: {}): '{}'", playerNames.size(), overlay, message.getString());
+ 

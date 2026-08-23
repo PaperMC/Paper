@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 18:13:49 +0900
+Subject: [PATCH] Meteus section block update fast path
+
+
+diff --git a/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java b/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
+index a66d8fe21b7c162340ea2f6ac0b02de6093ad3b8..3d09daaeeec36f2e0901e3b46b157a62f20c70ec 100644
+--- a/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
+@@ -91,4 +91,19 @@ public class ClientboundSectionBlocksUpdatePacket implements Packet<ClientGamePa
+             updateFunction.accept(cursor, this.states[i]);
+         }
+     }
++
++    // Meteus start - section block update fast path
++    public int meteus$updateCount() {
++        return this.positions.length;
++    }
++
++    public BlockState meteus$getUpdateState(final int index) {
++        return this.states[index];
++    }
++
++    public void meteus$setUpdatePos(final int index, final BlockPos.MutableBlockPos cursor) {
++        short packedPos = this.positions[index];
++        cursor.set(this.sectionPos.relativeToBlockX(packedPos), this.sectionPos.relativeToBlockY(packedPos), this.sectionPos.relativeToBlockZ(packedPos));
++    }
++    // Meteus end - section block update fast path
+ }
+diff --git a/net/minecraft/server/level/ChunkHolder.java b/net/minecraft/server/level/ChunkHolder.java
+index 591c5882fd384ad5a2ee8be51723b495b60a6f0c..d83106e723e7557ca594d23a4b3f223c3df0e667 100644
+--- a/net/minecraft/server/level/ChunkHolder.java
++++ b/net/minecraft/server/level/ChunkHolder.java
+@@ -308,6 +308,12 @@ public class ChunkHolder extends GenerationChunkHolder implements ca.spottedleaf
+                                 LevelChunkSection section = chunk.getSection(sectionIndex);
+                                 ClientboundSectionBlocksUpdatePacket packet = new ClientboundSectionBlocksUpdatePacket(sectionPos, changedBlocks, section);
+                                 this.broadcast(players, packet);
++                                // Meteus start - section block update fast path
++                                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.sectionBlockUpdateFastPath) {
++                                    this.meteus$broadcastBlockEntitiesForSectionUpdate(players, level, packet);
++                                    continue;
++                                }
++                                // Meteus end - section block update fast path
+                                 packet.runUpdates((pos, state) -> this.broadcastBlockEntityIfNeeded(players, level, pos, state));
+                             }
+                         }
+@@ -319,6 +325,23 @@ public class ChunkHolder extends GenerationChunkHolder implements ca.spottedleaf
+         }
+     }
+ 
++    // Meteus start - section block update fast path
++    private void meteus$broadcastBlockEntitiesForSectionUpdate(final List<ServerPlayer> players, final Level level, final ClientboundSectionBlocksUpdatePacket packet) {
++        BlockPos.MutableBlockPos cursor = null;
++
++        for (int i = 0, len = packet.meteus$updateCount(); i < len; ++i) {
++            if (packet.meteus$getUpdateState(i).hasBlockEntity()) {
++                if (cursor == null) {
++                    cursor = new BlockPos.MutableBlockPos();
++                }
++
++                packet.meteus$setUpdatePos(i, cursor);
++                this.broadcastBlockEntity(players, level, cursor);
++            }
++        }
++    }
++    // Meteus end - section block update fast path
++
+     private void broadcastBlockEntityIfNeeded(final List<ServerPlayer> players, final Level level, final BlockPos pos, final BlockState state) {
+         if (state.hasBlockEntity()) {
+             this.broadcastBlockEntity(players, level, pos);

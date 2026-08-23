@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 19:06:37 +0900
+Subject: [PATCH] Meteus entity tracker purge fast path
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 2f5a770a17ea4d9574e1693f1edfc2e6bd3edd95..a4c3d48294a046164b79216361947b7977feb706 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -24,6 +24,7 @@ import java.io.Writer;
+ import java.nio.file.Path;
+ import java.util.ArrayList;
+ import java.util.HashMap;
++import java.util.Iterator;
+ import java.util.List;
+ import java.util.Locale;
+ import java.util.Map;
+@@ -1262,6 +1263,18 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+ 
+             if (lastChunkUpdate != currChunkUpdate || lastTrackedChunk != chunk) {
+                 // need to purge any players possible not in the chunk list
++                // Meteus start - entity tracker purge fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityTrackerPurgeFastPath) {
++                    for (final Iterator<ServerPlayerConnection> iterator = this.seenBy.iterator(); iterator.hasNext();) {
++                        final ServerPlayerConnection conn = iterator.next();
++                        final ServerPlayer player = conn.getPlayer();
++                        if (!players.contains(player)) {
++                            this.meteus$removePlayer(player, iterator);
++                        }
++                    }
++                    return;
++                }
++                // Meteus end - entity tracker purge fast path
+                 for (final ServerPlayerConnection conn : new java.util.ArrayList<>(this.seenBy)) {
+                     final ServerPlayer player = conn.getPlayer();
+                     if (!players.contains(player)) {
+@@ -1273,6 +1286,17 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+ 
+         @Override
+         public final void moonrise$removeNonTickThreadPlayers() {
++            // Meteus start - entity tracker purge fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityTrackerPurgeFastPath) {
++                for (final Iterator<ServerPlayerConnection> iterator = this.seenBy.iterator(); iterator.hasNext();) {
++                    final ServerPlayer player = iterator.next().getPlayer();
++                    if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(player)) {
++                        this.meteus$removePlayer(player, iterator);
++                    }
++                }
++                return;
++            }
++            // Meteus end - entity tracker purge fast path
+             boolean foundToRemove = false;
+             for (final ServerPlayerConnection conn : this.seenBy) {
+                 if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(conn.getPlayer())) {
+@@ -1300,6 +1324,14 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+             if (this.seenBy.isEmpty()) {
+                 return;
+             }
++            // Meteus start - entity tracker purge fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.entityTrackerPurgeFastPath) {
++                for (final Iterator<ServerPlayerConnection> iterator = this.seenBy.iterator(); iterator.hasNext();) {
++                    this.meteus$removePlayer(iterator.next().getPlayer(), iterator);
++                }
++                return;
++            }
++            // Meteus end - entity tracker purge fast path
+             for (final ServerPlayerConnection conn : new java.util.ArrayList<>(this.seenBy)) {
+                 ServerPlayer player = conn.getPlayer();
+                 this.removePlayer(player);
+@@ -1310,6 +1342,15 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+         public final boolean moonrise$hasPlayers() {
+             return !this.seenBy.isEmpty();
+         }
++
++        private void meteus$removePlayer(final ServerPlayer player, final Iterator<ServerPlayerConnection> iterator) {
++            org.spigotmc.AsyncCatcher.catchOp("player tracker clear"); // Spigot
++            iterator.remove();
++            this.serverEntity.removePairing(player);
++            if (this.seenBy.isEmpty()) {
++                ChunkMap.this.level.debugSynchronizers().dropEntity(this.entity);
++            }
++        }
+         // Paper end - optimise entity tracker
+ 
+         public TrackedEntity(final Entity entity, final int range, final int updateInterval, final boolean trackDelta) {

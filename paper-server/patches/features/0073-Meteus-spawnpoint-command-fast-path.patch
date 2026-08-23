@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 17:24:00 +0900
+Subject: [PATCH] Meteus spawnpoint command fast path
+
+
+diff --git a/net/minecraft/server/commands/SetSpawnCommand.java b/net/minecraft/server/commands/SetSpawnCommand.java
+index 6fec6aa3b15cb5fd5f1d2648fff4c295e9c2defa..4c2fabc936b6c4f15e6ed6cd3172d85bf86c7895 100644
+--- a/net/minecraft/server/commands/SetSpawnCommand.java
++++ b/net/minecraft/server/commands/SetSpawnCommand.java
+@@ -3,6 +3,7 @@ package net.minecraft.server.commands;
+ import com.mojang.brigadier.CommandDispatcher;
+ import java.util.Collection;
+ import java.util.Collections;
++import java.util.List;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+ import net.minecraft.commands.arguments.EntityArgument;
+@@ -75,6 +76,18 @@ public class SetSpawnCommand {
+         float pitch = Mth.clamp(rotationVector.x, -90.0F, 90.0F);
+ 
+         final Collection<ServerPlayer> actualTargets = new java.util.ArrayList<>(); // Paper - Add PlayerSetSpawnEvent
++        // Meteus start - spawnpoint command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.setSpawnCommandFastPath && targets instanceof List<ServerPlayer> targetList) {
++            for (int i = 0, len = targetList.size(); i < len; ++i) {
++                final ServerPlayer target = targetList.get(i);
++                // Paper start - Add PlayerSetSpawnEvent
++                if (target.setRespawnPosition(new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(dimension, pos, yaw, pitch), true), false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.COMMAND)) {
++                    actualTargets.add(target);
++                }
++                // Paper end - Add PlayerSetSpawnEvent
++            }
++        } else
++        // Meteus end - spawnpoint command fast path
+         for (ServerPlayer target : targets) {
+             // Paper start - Add PlayerSetSpawnEvent
+             if (target.setRespawnPosition(new ServerPlayer.RespawnConfig(LevelData.RespawnData.of(dimension, pos, yaw, pitch), true), false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.COMMAND)) {

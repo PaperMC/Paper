@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:11:44 +0900
+Subject: [PATCH] Meteus command suggestion packet fast path
+
+
+diff --git a/net/minecraft/network/chat/LastSeenMessages.java b/net/minecraft/network/chat/LastSeenMessages.java
+index 9974da42ee79bc289a5d376b4412f2cac1590d4f..83ea5b76f1046c07f2e8e61c7aa55cfd30cb6202 100644
+--- a/net/minecraft/network/chat/LastSeenMessages.java
++++ b/net/minecraft/network/chat/LastSeenMessages.java
+@@ -24,6 +24,15 @@ public record LastSeenMessages(List<MessageSignature> entries) {
+     }
+ 
+     public LastSeenMessages.Packed pack(final MessageSignatureCache cache) {
++        // Meteus start - command suggestion packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.commandSuggestionPacketFastPath) {
++            final List<MessageSignature.Packed> packedEntries = new ArrayList<>(this.entries.size());
++            for (int i = 0, len = this.entries.size(); i < len; ++i) {
++                packedEntries.add(this.entries.get(i).pack(cache));
++            }
++            return new LastSeenMessages.Packed(packedEntries);
++        }
++        // Meteus end - command suggestion packet fast path
+         return new LastSeenMessages.Packed(this.entries.stream().map(entry -> entry.pack(cache)).toList());
+     }
+ 
+diff --git a/net/minecraft/network/protocol/game/ClientboundCommandSuggestionsPacket.java b/net/minecraft/network/protocol/game/ClientboundCommandSuggestionsPacket.java
+index efa894324f8a0450bad82eddfadd3a72758f964c..9793d4b903d46c7699cd0307a1c6bf828aa76ea3 100644
+--- a/net/minecraft/network/protocol/game/ClientboundCommandSuggestionsPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundCommandSuggestionsPacket.java
+@@ -3,6 +3,7 @@ package net.minecraft.network.protocol.game;
+ import com.mojang.brigadier.context.StringRange;
+ import com.mojang.brigadier.suggestion.Suggestion;
+ import com.mojang.brigadier.suggestion.Suggestions;
++import java.util.ArrayList;
+ import java.util.List;
+ import java.util.Optional;
+ import net.minecraft.network.RegistryFriendlyByteBuf;
+@@ -29,19 +30,35 @@ public record ClientboundCommandSuggestionsPacket(int id, int start, int length,
+     );
+ 
+     public ClientboundCommandSuggestionsPacket(final int id, final Suggestions suggestions) {
+-        this(
+-            id,
+-            suggestions.getRange().getStart(),
+-            suggestions.getRange().getLength(),
+-            suggestions.getList()
+-                .stream()
+-                .map(
+-                    suggestion -> new ClientboundCommandSuggestionsPacket.Entry(
+-                        suggestion.getText(), Optional.ofNullable(suggestion.getTooltip()).map(ComponentUtils::fromMessage)
+-                    )
++        this(id, suggestions, io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.commandSuggestionPacketFastPath);
++    }
++
++    private ClientboundCommandSuggestionsPacket(final int id, final Suggestions suggestions, final boolean meteusFastPath) {
++        this(id, suggestions.getRange().getStart(), suggestions.getRange().getLength(), createEntries(suggestions, meteusFastPath));
++    }
++
++    private static List<ClientboundCommandSuggestionsPacket.Entry> createEntries(final Suggestions suggestions, final boolean meteusFastPath) {
++        // Meteus start - command suggestion packet fast path
++        if (meteusFastPath) {
++            final List<Suggestion> suggestionList = suggestions.getList();
++            final List<ClientboundCommandSuggestionsPacket.Entry> entries = new ArrayList<>(suggestionList.size());
++            for (int i = 0, len = suggestionList.size(); i < len; ++i) {
++                final Suggestion suggestion = suggestionList.get(i);
++                entries.add(new ClientboundCommandSuggestionsPacket.Entry(
++                    suggestion.getText(), Optional.ofNullable(suggestion.getTooltip()).map(ComponentUtils::fromMessage)
++                ));
++            }
++            return entries;
++        }
++        // Meteus end - command suggestion packet fast path
++        return suggestions.getList()
++            .stream()
++            .map(
++                suggestion -> new ClientboundCommandSuggestionsPacket.Entry(
++                    suggestion.getText(), Optional.ofNullable(suggestion.getTooltip()).map(ComponentUtils::fromMessage)
+                 )
+-                .toList()
+-        );
++            )
++            .toList();
+     }
+ 
+     @Override
+@@ -56,6 +73,16 @@ public record ClientboundCommandSuggestionsPacket(int id, int start, int length,
+ 
+     public Suggestions toSuggestions() {
+         StringRange range = StringRange.between(this.start, this.start + this.length);
++        // Meteus start - command suggestion packet fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.commandSuggestionPacketFastPath) {
++            final List<Suggestion> convertedSuggestions = new ArrayList<>(this.suggestions.size());
++            for (int i = 0, len = this.suggestions.size(); i < len; ++i) {
++                final ClientboundCommandSuggestionsPacket.Entry entry = this.suggestions.get(i);
++                convertedSuggestions.add(new Suggestion(range, entry.text(), entry.tooltip().orElse(null)));
++            }
++            return new Suggestions(range, convertedSuggestions);
++        }
++        // Meteus end - command suggestion packet fast path
+         return new Suggestions(range, this.suggestions.stream().map(entry -> new Suggestion(range, entry.text(), entry.tooltip().orElse(null))).toList());
+     }
+ 

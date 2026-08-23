@@ -1,0 +1,223 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 22:10:34 +0900
+Subject: [PATCH] Meteus saved data and multiworld tick layer
+
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 983b3499d90b9d8cd450c165a07f7c84cdc85a5e..ca6e23059a9a3a1d5d9fbba00281d45a602b104b 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1845,11 +1845,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.updateEffectiveRespawnData();
+ 
+         this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
++        // Meteus start - server world tick loop fast path
++        final boolean meteus$serverWorldTickLoopFastPath = io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverWorldTickLoopFastPath;
++        final boolean meteus$hasPhysicsEvent = !meteus$serverWorldTickLoopFastPath || org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0;
++        final boolean meteus$hasEntityMoveEvent = !meteus$serverWorldTickLoopFastPath || io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0;
++        final boolean meteus$hasInventoryMoveEvent = !meteus$serverWorldTickLoopFastPath || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length > 0;
++        // Meteus end - server world tick loop fast path
+         for (ServerLevel level : this.getAllLevels()) {
+-            level.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
+-            level.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
++            // Meteus start - server world tick loop fast path
++            if (meteus$serverWorldTickLoopFastPath) {
++                level.hasPhysicsEvent = meteus$hasPhysicsEvent; // Paper - BlockPhysicsEvent
++                level.hasEntityMoveEvent = meteus$hasEntityMoveEvent; // Paper - Add EntityMoveEvent
++            } else {
++            // Meteus end - server world tick loop fast path
++                level.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
++                level.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
++            } // Meteus - server world tick loop fast path
+             level.updateLagCompensationTick(); // Paper - lag compensation
+-            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = level.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
++            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = level.paperConfig().hopper.disableMoveEvent || (meteus$serverWorldTickLoopFastPath ? !meteus$hasInventoryMoveEvent : org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0); // Paper - Perf: Optimize Hoppers // Meteus - server world tick loop fast path
+             profiler.push(() -> level + " " + level.dimension().identifier());
+             profiler.push("tick");
+ 
+@@ -1911,6 +1924,23 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public void forceGameTimeSynchronization() {
+         ProfilerFiller profiler = Profiler.get();
+         profiler.push("timeSync");
++        // Meteus start - sparse world time sync fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.sparseWorldTimeSyncFastPath) {
++            if (this.playerList.getPlayerCount() == 0) {
++                profiler.pop();
++                return;
++            }
++
++            for (ServerLevel level : this.getAllLevels()) {
++                if (level.players().isEmpty()) {
++                    continue;
++                }
++                this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
++            }
++            profiler.pop();
++            return;
++        }
++        // Meteus end - sparse world time sync fast path
+         // Paper start - per-world time
+         for (ServerLevel level : this.getAllLevels()) {
+             this.playerList.broadcastAll(new ClientboundSetTimePacket(level.getGameTime(), Map.of()), level);
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 43d93094157d0a657b98448e6f0d8553fc25e30a..19537e05a2d2cfb702895a53c0baea1b91703871 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -221,6 +221,9 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     private final StructureCheck structureCheck;
+     private final boolean tickTime;
+     private final LevelDebugSynchronizers debugSynchronizers = new LevelDebugSynchronizers(this);
++    // Meteus start - server level world border cache fast path
++    private @Nullable WorldBorder meteus$cachedWorldBorder;
++    // Meteus end - server level world border cache fast path
+ 
+     // CraftBukkit start
+     private final ResourceKey<LevelStem> typeKey;
+@@ -2547,6 +2550,17 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+ 
+     @Override
+     public WorldBorder getWorldBorder() {
++        // Meteus start - server level world border cache fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.serverLevelWorldBorderCacheFastPath) {
++            WorldBorder worldBorder = this.meteus$cachedWorldBorder;
++            if (worldBorder == null) {
++                worldBorder = this.getDataStorage().computeIfAbsent(WorldBorder.TYPE);
++                worldBorder.applyInitialSettings(this.levelData.getGameTime());
++                this.meteus$cachedWorldBorder = worldBorder;
++            }
++            return worldBorder;
++        }
++        // Meteus end - server level world border cache fast path
+         WorldBorder worldBorder = this.getDataStorage().computeIfAbsent(WorldBorder.TYPE);
+         worldBorder.applyInitialSettings(this.levelData.getGameTime());
+         return worldBorder;
+diff --git a/net/minecraft/world/level/saveddata/SavedData.java b/net/minecraft/world/level/saveddata/SavedData.java
+index 78360fb439aa3b3b8702cc293378849f4190d364..98e083ab611fc74fe860ffc3771b57ea4414c229 100644
+--- a/net/minecraft/world/level/saveddata/SavedData.java
++++ b/net/minecraft/world/level/saveddata/SavedData.java
+@@ -2,16 +2,30 @@ package net.minecraft.world.level.saveddata;
+ 
+ public abstract class SavedData {
+     private boolean dirty;
++    // Meteus start - saved data dirty index
++    private @org.jspecify.annotations.Nullable Runnable meteus$dirtyCallback;
++    // Meteus end - saved data dirty index
+ 
+     public void setDirty() {
+         this.setDirty(true);
+     }
+ 
+     public void setDirty(final boolean dirty) {
++        // Meteus start - saved data dirty index
++        if (dirty && !this.dirty && this.meteus$dirtyCallback != null) {
++            this.meteus$dirtyCallback.run();
++        }
++        // Meteus end - saved data dirty index
+         this.dirty = dirty;
+     }
+ 
+     public boolean isDirty() {
+         return this.dirty;
+     }
++
++    // Meteus start - saved data dirty index
++    public void meteus$setDirtyCallback(final @org.jspecify.annotations.Nullable Runnable dirtyCallback) {
++        this.meteus$dirtyCallback = dirtyCallback;
++    }
++    // Meteus end - saved data dirty index
+ }
+diff --git a/net/minecraft/world/level/storage/SavedDataStorage.java b/net/minecraft/world/level/storage/SavedDataStorage.java
+index f359e53024019f35aaa5cd8477da708bda2fc57a..0f29941c9665afa2a45e0d009a2f622c01117e4f 100644
+--- a/net/minecraft/world/level/storage/SavedDataStorage.java
++++ b/net/minecraft/world/level/storage/SavedDataStorage.java
+@@ -46,6 +46,9 @@ public class SavedDataStorage implements AutoCloseable {
+     private final Path dataFolder;
+     private CompletableFuture<?> pendingWriteFuture = CompletableFuture.completedFuture(null);
+     private boolean closed;
++    // Meteus start - saved data dirty index
++    private final java.util.HashSet<SavedDataType<?>> meteus$dirtyTypes = new java.util.HashSet<>();
++    // Meteus end - saved data dirty index
+ 
+     public SavedDataStorage(final Path dataFolder, final DataFixer fixerUpper, final HolderLookup.Provider registries) {
+         this.fixerUpper = fixerUpper;
+@@ -76,7 +79,13 @@ public class SavedDataStorage implements AutoCloseable {
+     public <T extends SavedData> @Nullable T get(final SavedDataType<T> type) {
+         Optional<SavedData> data = this.cache.get(type);
+         if (data == null) {
+-            data = Optional.ofNullable(this.readSavedData(type));
++            // Meteus start - saved data dirty index
++            final T loadedData = this.readSavedData(type);
++            if (loadedData != null) {
++                this.meteus$registerDirtyCallback(type, loadedData);
++            }
++            data = Optional.ofNullable(loadedData);
++            // Meteus end - saved data dirty index
+             this.cache.put(type, data);
+         }
+ 
+@@ -102,6 +111,9 @@ public class SavedDataStorage implements AutoCloseable {
+     }
+ 
+     public <T extends SavedData> void set(final SavedDataType<T> type, final T data) {
++        // Meteus start - saved data dirty index
++        this.meteus$registerDirtyCallback(type, data);
++        // Meteus end - saved data dirty index
+         this.cache.put(type, Optional.of(data));
+         data.setDirty();
+     }
+@@ -186,6 +198,11 @@ public class SavedDataStorage implements AutoCloseable {
+     }
+ 
+     private Map<SavedDataType<?>, CompoundTag> collectDirtyTagsToSave() {
++        // Meteus start - saved data dirty index
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.savedDataDirtyIndexFastPath) {
++            return this.meteus$collectDirtyTagsToSave();
++        }
++        // Meteus end - saved data dirty index
+         Map<SavedDataType<?>, CompoundTag> tagsToSave = new Object2ObjectArrayMap<>();
+         RegistryOps<Tag> ops = this.registries.createSerializationContext(NbtOps.INSTANCE);
+         this.cache.forEach((type, optional) -> optional.filter(SavedData::isDirty).ifPresent(data -> {
+@@ -195,6 +212,42 @@ public class SavedDataStorage implements AutoCloseable {
+         return tagsToSave;
+     }
+ 
++    // Meteus start - saved data dirty index
++    private <T extends SavedData> void meteus$registerDirtyCallback(final SavedDataType<T> type, final T data) {
++        data.meteus$setDirtyCallback(() -> this.meteus$dirtyTypes.add(type));
++        if (data.isDirty()) {
++            this.meteus$dirtyTypes.add(type);
++        }
++    }
++
++    private Map<SavedDataType<?>, CompoundTag> meteus$collectDirtyTagsToSave() {
++        final Map<SavedDataType<?>, CompoundTag> tagsToSave = new Object2ObjectArrayMap<>();
++        if (this.meteus$dirtyTypes.isEmpty()) {
++            return tagsToSave;
++        }
++
++        final List<SavedDataType<?>> dirtyTypes = new ArrayList<>(this.meteus$dirtyTypes);
++        this.meteus$dirtyTypes.clear();
++        final RegistryOps<Tag> ops = this.registries.createSerializationContext(NbtOps.INSTANCE);
++        for (int i = 0, len = dirtyTypes.size(); i < len; ++i) {
++            final SavedDataType<?> type = dirtyTypes.get(i);
++            final Optional<SavedData> optional = this.cache.get(type);
++            if (optional == null || optional.isEmpty()) {
++                continue;
++            }
++
++            final SavedData data = optional.get();
++            if (!data.isDirty()) {
++                continue;
++            }
++
++            tagsToSave.put(type, this.encodeUnchecked(type, data, ops));
++            data.setDirty(false);
++        }
++        return tagsToSave;
++    }
++    // Meteus end - saved data dirty index
++
+     private <T extends SavedData> CompoundTag encodeUnchecked(final SavedDataType<T> type, final SavedData data, final RegistryOps<Tag> ops) {
+         Codec<T> codec = type.codec();
+         CompoundTag tag = new CompoundTag();

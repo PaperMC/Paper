@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 22:37:31 +0900
+Subject: [PATCH] Meteus weather player loop fast path
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 229ff740e0418a05d824a67401ae6f105b4c3642..d67c7415de60516295f52e90c752934e0cf6bba9 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -1285,6 +1285,35 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel));
+         }
+         */
++        // Meteus start - weather player loop fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.weatherPlayerLoopFastPath) {
++            if (this.players.isEmpty()) {
++                return;
++            }
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                if (player.level() == this) {
++                    player.tickWeather();
++                }
++            }
++
++            if (wasRaining != this.isRaining()) {
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    final ServerPlayer player = this.players.get(i);
++                    if (player.level() == this) {
++                        player.setPlayerWeather((!wasRaining ? org.bukkit.WeatherType.DOWNFALL : org.bukkit.WeatherType.CLEAR), false);
++                    }
++                }
++            }
++            for (int i = 0, len = this.players.size(); i < len; ++i) {
++                final ServerPlayer player = this.players.get(i);
++                if (player.level() == this) {
++                    player.updateWeather(this.oRainLevel, this.rainLevel, this.oThunderLevel, this.thunderLevel);
++                }
++            }
++            return;
++        }
++        // Meteus end - weather player loop fast path
+         for (ServerPlayer player : this.players) {
+             if (player.level() == this) {
+                 player.tickWeather();

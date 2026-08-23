@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:10:46 +0900
+Subject: [PATCH] Meteus scoreboard waypoint fast path
+
+
+diff --git a/net/minecraft/server/ServerScoreboard.java b/net/minecraft/server/ServerScoreboard.java
+index 4f69f7cabcee26c910b5ca6f764a68505684f260..1ffa1cb8ef07183ac65f3810918af64b54ed39bf 100644
+--- a/net/minecraft/server/ServerScoreboard.java
++++ b/net/minecraft/server/ServerScoreboard.java
+@@ -331,6 +331,28 @@ public class ServerScoreboard extends Scoreboard {
+     }
+ 
+     private void updateTeamWaypoints(final PlayerTeam team) {
++        // Meteus start - scoreboard waypoint fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.scoreboardWaypointFastPath) {
++            final List<ServerPlayer> onlineTeamPlayers = Lists.newArrayList();
++            for (String name : team.getPlayers()) {
++                final ServerPlayer player = this.server.getPlayerList().getPlayerByName(name);
++                if (player != null) {
++                    onlineTeamPlayers.add(player);
++                }
++            }
++
++            if (onlineTeamPlayers.isEmpty()) {
++                return;
++            }
++
++            for (ServerLevel level : this.server.getAllLevels()) {
++                for (int i = 0, len = onlineTeamPlayers.size(); i < len; ++i) {
++                    level.getWaypointManager().remakeConnections(onlineTeamPlayers.get(i));
++                }
++            }
++            return;
++        }
++        // Meteus end - scoreboard waypoint fast path
+         for (ServerLevel level : this.server.getAllLevels()) {
+             team.getPlayers()
+                 .stream()

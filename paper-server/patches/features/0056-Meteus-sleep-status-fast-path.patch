@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Thu, 11 Jun 2026 23:11:09 +0900
+Subject: [PATCH] Meteus sleep status fast path
+
+
+diff --git a/net/minecraft/server/players/SleepStatus.java b/net/minecraft/server/players/SleepStatus.java
+index 61870e387c93a5f0e62180372438b7011a294cd6..803c3bf92422d7305f05993913ceb77d60120497 100644
+--- a/net/minecraft/server/players/SleepStatus.java
++++ b/net/minecraft/server/players/SleepStatus.java
+@@ -15,6 +15,22 @@ public class SleepStatus {
+ 
+     public boolean areEnoughDeepSleeping(final int sleepPercentageNeeded, final List<ServerPlayer> players) {
+         // CraftBukkit start
++        // Meteus start - sleep status fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.sleepStatusFastPath) {
++            int deepSleepers = 0;
++            boolean anyDeepSleep = false;
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final ServerPlayer player = players.get(i);
++                if (player.isSleepingLongEnough()) {
++                    anyDeepSleep = true;
++                    deepSleepers++;
++                } else if (player.fauxSleeping) {
++                    deepSleepers++;
++                }
++            }
++            return anyDeepSleep && deepSleepers >= this.sleepersNeeded(sleepPercentageNeeded);
++        }
++        // Meteus end - sleep status fast path
+         int deepSleepers = (int)players.stream().filter(player -> player.isSleepingLongEnough() || player.fauxSleeping).count();
+         boolean anyDeepSleep = players.stream().anyMatch(Player::isSleepingLongEnough);
+         return anyDeepSleep && deepSleepers >= this.sleepersNeeded(sleepPercentageNeeded);

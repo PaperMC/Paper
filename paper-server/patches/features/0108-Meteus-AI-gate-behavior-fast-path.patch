@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sat, 13 Jun 2026 17:52:21 +0900
+Subject: [PATCH] Meteus AI gate behavior fast path
+
+
+diff --git a/net/minecraft/world/entity/ai/behavior/GateBehavior.java b/net/minecraft/world/entity/ai/behavior/GateBehavior.java
+index 3adfb334068d3722329f91011c41d5e59b1956c9..ceb82ede6651b30c5612740c5b82f984fb4b7865 100644
+--- a/net/minecraft/world/entity/ai/behavior/GateBehavior.java
++++ b/net/minecraft/world/entity/ai/behavior/GateBehavior.java
+@@ -85,6 +85,17 @@ public class GateBehavior<E extends LivingEntity> implements BehaviorControl<E>
+             }
+         }
+         // Paper end - Perf: Remove streams from hot code
++        // Meteus start - AI gate behavior fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.aiGateBehaviorFastPath) {
++            for (final BehaviorControl<? super E> behavior : this.behaviors) {
++                if (behavior.getStatus() == Behavior.Status.RUNNING) {
++                    return;
++                }
++            }
++            this.doStop(level, body, timestamp);
++            return;
++        }
++        // Meteus end - AI gate behavior fast path
+         if (this.behaviors.stream().noneMatch(behavior -> behavior.getStatus() == Behavior.Status.RUNNING)) {
+             this.doStop(level, body, timestamp);
+         }

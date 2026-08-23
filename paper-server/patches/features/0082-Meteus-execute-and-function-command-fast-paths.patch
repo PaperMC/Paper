@@ -1,0 +1,212 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 18:10:41 +0900
+Subject: [PATCH] Meteus execute and function command fast paths
+
+
+diff --git a/net/minecraft/server/commands/ExecuteCommand.java b/net/minecraft/server/commands/ExecuteCommand.java
+index 502f5516023ac3b5de1fb063e64456d3f270302c..8a116005eef97c21989aae89cb60aba72193da16 100644
+--- a/net/minecraft/server/commands/ExecuteCommand.java
++++ b/net/minecraft/server/commands/ExecuteCommand.java
+@@ -1,7 +1,6 @@
+ package net.minecraft.server.commands;
+ 
+ import com.google.common.annotations.VisibleForTesting;
+-import com.google.common.collect.Lists;
+ import com.mojang.brigadier.Command;
+ import com.mojang.brigadier.CommandDispatcher;
+ import com.mojang.brigadier.RedirectModifier;
+@@ -152,18 +151,37 @@ public class ExecuteCommand {
+                 .then(addConditionals(execute, Commands.literal("if"), true, context))
+                 .then(addConditionals(execute, Commands.literal("unless"), false, context))
+                 .then(Commands.literal("as").then(Commands.argument("targets", EntityArgument.entities()).fork(execute, c -> {
+-                    List<CommandSourceStack> result = Lists.newArrayList();
++                    Collection<? extends Entity> targets = EntityArgument.getOptionalEntities(c, "targets");
++                    List<CommandSourceStack> result = new ArrayList<>(targets.size());
+ 
+-                    for (Entity entity : EntityArgument.getOptionalEntities(c, "targets")) {
++                    // Meteus start - execute command fast path
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.executeCommandFastPath && targets instanceof List<?> targetList) {
++                        for (int i = 0, len = targetList.size(); i < len; ++i) {
++                            result.add(c.getSource().withEntity((Entity) targetList.get(i)));
++                        }
++                    } else
++                    // Meteus end - execute command fast path
++                    for (Entity entity : targets) {
+                         result.add(c.getSource().withEntity(entity));
+                     }
+ 
+                     return result;
+                 })))
+                 .then(Commands.literal("at").then(Commands.argument("targets", EntityArgument.entities()).fork(execute, c -> {
+-                    List<CommandSourceStack> result = Lists.newArrayList();
+-
+-                    for (Entity entity : EntityArgument.getOptionalEntities(c, "targets")) {
++                    Collection<? extends Entity> targets = EntityArgument.getOptionalEntities(c, "targets");
++                    List<CommandSourceStack> result = new ArrayList<>(targets.size());
++
++                    // Meteus start - execute command fast path
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.executeCommandFastPath && targets instanceof List<?> targetList) {
++                        for (int i = 0, len = targetList.size(); i < len; ++i) {
++                            Entity entity = (Entity) targetList.get(i);
++                            result.add(
++                                c.getSource().withLevel((ServerLevel)entity.level()).withPosition(entity.position()).withRotation(entity.getRotationVector())
++                            );
++                        }
++                    } else
++                    // Meteus end - execute command fast path
++                    for (Entity entity : targets) {
+                         result.add(
+                             c.getSource().withLevel((ServerLevel)entity.level()).withPosition(entity.position()).withRotation(entity.getRotationVector())
+                         );
+@@ -183,9 +201,17 @@ public class ExecuteCommand {
+                                 .redirect(execute, c -> c.getSource().withPosition(Vec3Argument.getVec3(c, "pos")).withAnchor(EntityAnchorArgument.Anchor.FEET))
+                         )
+                         .then(Commands.literal("as").then(Commands.argument("targets", EntityArgument.entities()).fork(execute, c -> {
+-                            List<CommandSourceStack> result = Lists.newArrayList();
++                            Collection<? extends Entity> targets = EntityArgument.getOptionalEntities(c, "targets");
++                            List<CommandSourceStack> result = new ArrayList<>(targets.size());
+ 
+-                            for (Entity entity : EntityArgument.getOptionalEntities(c, "targets")) {
++                            // Meteus start - execute command fast path
++                            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.executeCommandFastPath && targets instanceof List<?> targetList) {
++                                for (int i = 0, len = targetList.size(); i < len; ++i) {
++                                    result.add(c.getSource().withPosition(((Entity) targetList.get(i)).position()));
++                                }
++                            } else
++                            // Meteus end - execute command fast path
++                            for (Entity entity : targets) {
+                                 result.add(c.getSource().withPosition(entity.position()));
+                             }
+ 
+@@ -211,9 +237,17 @@ public class ExecuteCommand {
+                                 .redirect(execute, c -> c.getSource().withRotation(RotationArgument.getRotation(c, "rot").getRotation(c.getSource())))
+                         )
+                         .then(Commands.literal("as").then(Commands.argument("targets", EntityArgument.entities()).fork(execute, c -> {
+-                            List<CommandSourceStack> result = Lists.newArrayList();
++                            Collection<? extends Entity> targets = EntityArgument.getOptionalEntities(c, "targets");
++                            List<CommandSourceStack> result = new ArrayList<>(targets.size());
+ 
+-                            for (Entity entity : EntityArgument.getOptionalEntities(c, "targets")) {
++                            // Meteus start - execute command fast path
++                            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.executeCommandFastPath && targets instanceof List<?> targetList) {
++                                for (int i = 0, len = targetList.size(); i < len; ++i) {
++                                    result.add(c.getSource().withRotation(((Entity) targetList.get(i)).getRotationVector()));
++                                }
++                            } else
++                            // Meteus end - execute command fast path
++                            for (Entity entity : targets) {
+                                 result.add(c.getSource().withRotation(entity.getRotationVector()));
+                             }
+ 
+@@ -227,10 +261,18 @@ public class ExecuteCommand {
+                                 .then(
+                                     Commands.argument("targets", EntityArgument.entities())
+                                         .then(Commands.argument("anchor", EntityAnchorArgument.anchor()).fork(execute, c -> {
+-                                            List<CommandSourceStack> result = Lists.newArrayList();
++                                            Collection<? extends Entity> targets = EntityArgument.getOptionalEntities(c, "targets");
++                                            List<CommandSourceStack> result = new ArrayList<>(targets.size());
+                                             EntityAnchorArgument.Anchor anchor = EntityAnchorArgument.getAnchor(c, "anchor");
+ 
+-                                            for (Entity entity : EntityArgument.getOptionalEntities(c, "targets")) {
++                                            // Meteus start - execute command fast path
++                                            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.executeCommandFastPath && targets instanceof List<?> targetList) {
++                                                for (int i = 0, len = targetList.size(); i < len; ++i) {
++                                                    result.add(c.getSource().facing((Entity) targetList.get(i), anchor));
++                                                }
++                                            } else
++                                            // Meteus end - execute command fast path
++                                            for (Entity entity : targets) {
+                                                 result.add(c.getSource().facing(entity, anchor));
+                                             }
+ 
+diff --git a/net/minecraft/server/commands/FunctionCommand.java b/net/minecraft/server/commands/FunctionCommand.java
+index b03df63cf94630df88fc244254d6d4d017bdbe81..86bbd0ed17e3004a314ec33ec7c7932c900b64e2 100644
+--- a/net/minecraft/server/commands/FunctionCommand.java
++++ b/net/minecraft/server/commands/FunctionCommand.java
+@@ -10,7 +10,9 @@ import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
+ import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
+ import com.mojang.brigadier.suggestion.SuggestionProvider;
+ import com.mojang.datafixers.util.Pair;
++import java.util.ArrayList;
+ import java.util.Collection;
++import java.util.List;
+ import net.minecraft.commands.CommandResultCallback;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+@@ -167,6 +169,17 @@ public class FunctionCommand {
+             originalSource.callback(), output.currentFrame().returnValueConsumer()
+         );
+ 
++        // Meteus start - function command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.functionCommandFastPath && functions instanceof List<?> functionList) {
++            for (int i = 0, len = functionList.size(); i < len; ++i) {
++                @SuppressWarnings("unchecked")
++                CommandFunction<T> function = (CommandFunction<T>) functionList.get(i);
++                Identifier id = function.id();
++                CommandResultCallback functionResultCollector = decorateOutputIfNeeded(originalSource, callbacks, id, functionCommandOutputCallback);
++                instantiateAndQueueFunctions(arguments, output, dispatcher, noCallbackSource, function, id, functionResultCollector, true);
++            }
++        } else
++        // Meteus end - function command fast path
+         for (CommandFunction<T> function : functions) {
+             Identifier id = function.id();
+             CommandResultCallback functionResultCollector = decorateOutputIfNeeded(originalSource, callbacks, id, functionCommandOutputCallback);
+@@ -194,6 +207,17 @@ public class FunctionCommand {
+                 CommandResultCallback functionResultCollector = decorateOutputIfNeeded(originalSource, callbacks, id, originalCallback);
+                 instantiateAndQueueFunctions(arguments, output, dispatcher, noCallbackSource, function, id, functionResultCollector, false);
+             } else if (originalCallback == CommandResultCallback.EMPTY) {
++                // Meteus start - function command fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.functionCommandFastPath && functions instanceof List<?> functionList) {
++                    for (int i = 0, len = functionList.size(); i < len; ++i) {
++                        @SuppressWarnings("unchecked")
++                        CommandFunction<T> function = (CommandFunction<T>) functionList.get(i);
++                        Identifier id = function.id();
++                        CommandResultCallback functionResultCollector = decorateOutputIfNeeded(originalSource, callbacks, id, originalCallback);
++                        instantiateAndQueueFunctions(arguments, output, dispatcher, noCallbackSource, function, id, functionResultCollector, false);
++                    }
++                } else
++                // Meteus end - function command fast path
+                 for (CommandFunction<T> function : functions) {
+                     Identifier id = function.id();
+                     CommandResultCallback functionResultCollector = decorateOutputIfNeeded(originalSource, callbacks, id, originalCallback);
+@@ -213,6 +237,17 @@ public class FunctionCommand {
+                 Accumulator accumulator = new Accumulator();
+                 CommandResultCallback partialResultCallback = (success, result) -> accumulator.add(result);
+ 
++                // Meteus start - function command fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.functionCommandFastPath && functions instanceof List<?> functionList) {
++                    for (int i = 0, len = functionList.size(); i < len; ++i) {
++                        @SuppressWarnings("unchecked")
++                        CommandFunction<T> function = (CommandFunction<T>) functionList.get(i);
++                        Identifier id = function.id();
++                        CommandResultCallback functionResultCollector = decorateOutputIfNeeded(originalSource, callbacks, id, partialResultCallback);
++                        instantiateAndQueueFunctions(arguments, output, dispatcher, noCallbackSource, function, id, functionResultCollector, false);
++                    }
++                } else
++                // Meteus end - function command fast path
+                 for (CommandFunction<T> function : functions) {
+                     Identifier id = function.id();
+                     CommandResultCallback functionResultCollector = decorateOutputIfNeeded(originalSource, callbacks, id, partialResultCallback);
+@@ -258,6 +293,21 @@ public class FunctionCommand {
+                     () -> Component.translatable("commands.function.scheduled.single", Component.translationArg(functions.iterator().next().id())), true
+                 );
+             } else {
++                // Meteus start - function command fast path
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.functionCommandFastPath) {
++                    final List<Identifier> functionIds = new ArrayList<>(functions.size());
++                    for (CommandFunction<CommandSourceStack> function : functions) {
++                        functionIds.add(function.id());
++                    }
++                    sender.sendSuccess(
++                        () -> Component.translatable(
++                            "commands.function.scheduled.multiple",
++                            ComponentUtils.formatList(functionIds, Component::translationArg)
++                        ),
++                        true
++                    );
++                } else
++                // Meteus end - function command fast path
+                 sender.sendSuccess(
+                     () -> Component.translatable(
+                         "commands.function.scheduled.multiple",

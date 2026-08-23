@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 17:24:26 +0900
+Subject: [PATCH] Meteus give command fast path
+
+
+diff --git a/net/minecraft/server/commands/GiveCommand.java b/net/minecraft/server/commands/GiveCommand.java
+index 5bd2c78b49539c20351562774313d5ce2b5ee94d..ae9b99b9772b8e42cf5f800c14166bfc87c8024e 100644
+--- a/net/minecraft/server/commands/GiveCommand.java
++++ b/net/minecraft/server/commands/GiveCommand.java
+@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
+ import com.mojang.brigadier.arguments.IntegerArgumentType;
+ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+ import java.util.Collection;
++import java.util.List;
+ import net.minecraft.commands.CommandBuildContext;
+ import net.minecraft.commands.CommandSourceStack;
+ import net.minecraft.commands.Commands;
+@@ -54,6 +55,59 @@ public class GiveCommand {
+             return 0;
+         }
+ 
++        // Meteus start - give command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.giveCommandFastPath && players instanceof List<ServerPlayer> playerList) {
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                final ServerPlayer player = playerList.get(i);
++                int remaining = count;
++
++                while (remaining > 0) {
++                    int size = Math.min(maxStackSize, remaining);
++                    remaining -= size;
++                    ItemStack copyToDrop = prototypeItemStack.copyWithCount(size);
++                    boolean added = player.getInventory().add(copyToDrop);
++                    if (added && copyToDrop.isEmpty()) {
++                        ItemEntity drop = player.drop(prototypeItemStack.copy(), false, false, false, null); // Paper - do not fire PlayerDropItemEvent for /give command
++                        if (drop != null) {
++                            drop.makeFakeItem();
++                        }
++
++                        player.level()
++                            .playSound(
++                                null,
++                                player.getX(),
++                                player.getY(),
++                                player.getZ(),
++                                SoundEvents.ITEM_PICKUP,
++                                SoundSource.PLAYERS,
++                                0.2F,
++                                ((player.getRandom().nextFloat() - player.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F
++                            );
++                        player.containerMenu.broadcastChanges();
++                    } else {
++                        ItemEntity drop = player.drop(copyToDrop, false, false, false, null); // Paper - do not fire PlayerDropItemEvent for /give command
++                        if (drop != null) {
++                            drop.setNoPickUpDelay();
++                            drop.setTarget(player.getUUID());
++                        }
++                    }
++                }
++            }
++
++            if (playerList.size() == 1) {
++                source.sendSuccess(
++                    () -> Component.translatable(
++                        "commands.give.success.single", count, prototypeItemStack.getDisplayName(), playerList.get(0).getDisplayName()
++                    ),
++                    true
++                );
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.give.success.multiple", count, prototypeItemStack.getDisplayName(), playerList.size()), true); // Paper - MC-151857 - correct translation key
++            }
++
++            return playerList.size();
++        }
++        // Meteus end - give command fast path
+         for (ServerPlayer player : players) {
+             int remaining = count;
+ 

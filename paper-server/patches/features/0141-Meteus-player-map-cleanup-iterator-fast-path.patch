@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Sun, 14 Jun 2026 09:27:03 +0900
+Subject: [PATCH] Meteus player map cleanup iterator fast path
+
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 2796aeee06570baf1b273822a92cab2bb607988e..5a3989142145b1583a4ede7d8a1cc52dbee6b526 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -2233,7 +2233,15 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             }
+ 
+             map.carriedByPlayers.remove(player);
+-            if (map.carriedBy.removeIf(holdingPlayer -> holdingPlayer.player == player)) {
++            boolean removedPlayer = false;
++            final java.util.Iterator<MapItemSavedData.HoldingPlayer> holdingPlayerIterator = map.carriedBy.iterator();
++            while (holdingPlayerIterator.hasNext()) {
++                if (holdingPlayerIterator.next().player == player) {
++                    holdingPlayerIterator.remove();
++                    removedPlayer = true;
++                }
++            }
++            if (removedPlayer) {
+                 map.decorations.remove(playerName);
+             }
+         }

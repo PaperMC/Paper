@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 08:01:34 +0900
+Subject: [PATCH] Meteus transfer command fast path
+
+
+diff --git a/net/minecraft/server/commands/TransferCommand.java b/net/minecraft/server/commands/TransferCommand.java
+index d20201534b2e85af89a82b21ff4ba741d05a078c..5cf1b8a7d20a57b0c2d833ab78ea6393a0dc752e 100644
+--- a/net/minecraft/server/commands/TransferCommand.java
++++ b/net/minecraft/server/commands/TransferCommand.java
+@@ -59,6 +59,24 @@ public class TransferCommand {
+             throw ERROR_NO_PLAYERS.create();
+         }
+ 
++        // Meteus start - transfer command fast path
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.transferCommandFastPath && players instanceof List<ServerPlayer> playerList) {
++            final ClientboundTransferPacket packet = new ClientboundTransferPacket(hostname, port);
++            for (int i = 0, len = playerList.size(); i < len; ++i) {
++                playerList.get(i).connection.send(packet);
++            }
++
++            if (playerList.size() == 1) {
++                source.sendSuccess(
++                    () -> Component.translatable("commands.transfer.success.single", playerList.get(0).getDisplayName(), hostname, port), true
++                );
++            } else {
++                source.sendSuccess(() -> Component.translatable("commands.transfer.success.multiple", playerList.size(), hostname, port), true);
++            }
++
++            return playerList.size();
++        }
++        // Meteus end - transfer command fast path
+         for (ServerPlayer player : players) {
+             player.connection.send(new ClientboundTransferPacket(hostname, port));
+         }

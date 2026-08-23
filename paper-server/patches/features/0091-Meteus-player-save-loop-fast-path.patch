@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 20:56:24 +0900
+Subject: [PATCH] Meteus player save loop fast path
+
+
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index d14525316c1ef3cd88ad4d9d8095c9f32eed3db6..6f05da9f421865c05bd9e6d03bb21fd44b5c7323 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -1073,6 +1073,22 @@ public abstract class PlayerList {
+         // Paper start - Incremental chunk and player saving
+             int numSaved = 0;
+             final long now = MinecraftServer.currentTick;
++            // Meteus start - player save loop fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerSaveLoopFastPath) {
++                final boolean fullSave = interval == -1;
++                final int maxPerTick = fullSave ? Integer.MAX_VALUE : io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.maxPerTick();
++                for (int i = 0, len = this.players.size(); i < len; ++i) {
++                    final ServerPlayer player = this.players.get(i);
++                    if (fullSave || now - player.lastSave >= interval) {
++                        this.save(player);
++                        if (!fullSave && ++numSaved >= maxPerTick) {
++                            break;
++                        }
++                    }
++                }
++                return null;
++            }
++            // Meteus end - player save loop fast path
+             // Meteus start - player list iteration fast path
+             if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.playerListIterationFastPath) {
+                 for (int i = 0, len = this.players.size(); i < len; ++i) {

@@ -1,0 +1,184 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AGC Developer <developer@agc.com>
+Date: Fri, 12 Jun 2026 20:29:22 +0900
+Subject: [PATCH] Meteus chunk spawn and mob cap fast paths
+
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index 954b68b71d65c9d7f2b018c81b03140ecad45b83..65590b58c81c521dea5803aae98a858b3f47023f 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -23,6 +23,7 @@ import java.io.IOException;
+ import java.io.Writer;
+ import java.nio.file.Path;
+ import java.util.ArrayList;
++import java.util.Collections;
+ import java.util.HashMap;
+ import java.util.Iterator;
+ import java.util.List;
+@@ -840,6 +841,9 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+             pos, ca.spottedleaf.moonrise.common.misc.NearbyPlayers.NearbyMapType.SPAWN_RANGE
+         );
+         if (players == null) {
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.localMobCapPlayerFastPath) {
++                return Collections.emptyList();
++            }
+             return new ArrayList<>();
+         }
+ 
+@@ -861,7 +865,10 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+             }
+         }
+ 
+-        return ret == null ? new ArrayList<>() : ret;
++        if (ret != null) {
++            return ret;
++        }
++        return io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.localMobCapPlayerFastPath ? Collections.emptyList() : new ArrayList<>();
+         // Paper end - chunk tick iteration optimisation
+     }
+ 
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index 669936caf2ff8afaa23103c1eb479d81af58b014..55c4544d81389cb45589f1f782336358a3cc0b79 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -550,19 +550,38 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         } else if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
+         // Meteus end - empty world spawn state fast path
+             // re-set mob counts
+-            for (ServerPlayer player : players) { // Meteus - use cached player list
+-                // Paper start - per player mob spawning backoff
+-                for (int j = 0; j < ServerPlayer.MOBCATEGORY_TOTAL_ENUMS; j++) {
+-                    player.mobCounts[j] = 0;
+-
+-                    int newBackoff = player.mobBackoffCounts[j] - 1; // TODO make configurable bleed // TODO use nonlinear algorithm?
+-                    if (newBackoff < 0) {
+-                        newBackoff = 0;
++            // Meteus start - chunk spawn tick loop fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkSpawnTickLoopFastPath) {
++                for (int i = 0, len = players.size(); i < len; ++i) {
++                    final ServerPlayer player = players.get(i);
++                    // Paper start - per player mob spawning backoff
++                    for (int j = 0; j < ServerPlayer.MOBCATEGORY_TOTAL_ENUMS; j++) {
++                        player.mobCounts[j] = 0;
++
++                        int newBackoff = player.mobBackoffCounts[j] - 1; // TODO make configurable bleed // TODO use nonlinear algorithm?
++                        if (newBackoff < 0) {
++                            newBackoff = 0;
++                        }
++                        player.mobBackoffCounts[j] = newBackoff;
+                     }
+-                    player.mobBackoffCounts[j] = newBackoff;
++                    // Paper end - per player mob spawning backoff
++                }
++            } else {
++                for (ServerPlayer player : players) { // Meteus - use cached player list
++                    // Paper start - per player mob spawning backoff
++                    for (int j = 0; j < ServerPlayer.MOBCATEGORY_TOTAL_ENUMS; j++) {
++                        player.mobCounts[j] = 0;
++
++                        int newBackoff = player.mobBackoffCounts[j] - 1; // TODO make configurable bleed // TODO use nonlinear algorithm?
++                        if (newBackoff < 0) {
++                            newBackoff = 0;
++                        }
++                        player.mobBackoffCounts[j] = newBackoff;
++                    }
++                    // Paper end - per player mob spawning backoff
+                 }
+-                // Paper end - per player mob spawning backoff
+             }
++            // Meteus end - chunk spawn tick loop fast path
+             spawnCookie = NaturalSpawner.createState(chunkCount, this.level.getAllEntities(), this::getFullChunk, null, true);
+         } else {
+             spawnCookie = NaturalSpawner.createState(chunkCount, this.level.getAllEntities(), this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
+@@ -574,12 +593,24 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         List<MobCategory> spawningCategories;
+         if (doMobSpawning && (this.spawnEnemies || this.spawnFriendlies)) { // Paper
+             // Paper start - PlayerNaturallySpawnCreaturesEvent
+-            for (ServerPlayer player : players) { // Meteus - use cached player list
+-                int chunkRange = Math.min(level.spigotConfig.mobSpawnRange, player.getBukkitEntity().getViewDistance());
+-                chunkRange = Math.min(chunkRange, 8);
+-                player.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(player.getBukkitEntity(), (byte) chunkRange);
+-                player.playerNaturallySpawnedEvent.callEvent();
++            // Meteus start - chunk spawn tick loop fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkSpawnTickLoopFastPath) {
++                for (int i = 0, len = players.size(); i < len; ++i) {
++                    final ServerPlayer player = players.get(i);
++                    int chunkRange = Math.min(level.spigotConfig.mobSpawnRange, player.getBukkitEntity().getViewDistance());
++                    chunkRange = Math.min(chunkRange, 8);
++                    player.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(player.getBukkitEntity(), (byte) chunkRange);
++                    player.playerNaturallySpawnedEvent.callEvent();
++                }
++            } else {
++                for (ServerPlayer player : players) { // Meteus - use cached player list
++                    int chunkRange = Math.min(level.spigotConfig.mobSpawnRange, player.getBukkitEntity().getViewDistance());
++                    chunkRange = Math.min(chunkRange, 8);
++                    player.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(player.getBukkitEntity(), (byte) chunkRange);
++                    player.playerNaturallySpawnedEvent.callEvent();
++                }
+             }
++            // Meteus end - chunk spawn tick loop fast path
+             // Paper end - PlayerNaturallySpawnCreaturesEvent
+             boolean spawnPersistent = this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) != 0L && this.level.getGameTime() % this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) == 0L; // CraftBukkit
+             spawningCategories = NaturalSpawner.getFilteredSpawningCategories(spawnCookie, this.spawnFriendlies, this.spawnEnemies, spawnPersistent, this.level); // CraftBukkit
+@@ -599,9 +630,17 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+             // Paper end - chunk tick iteration optimisation
+             profiler.popPush("tickSpawningChunks");
+ 
+-            for (LevelChunk chunk : spawningChunks) {
+-                this.tickSpawningChunk(chunk, timeDiff, spawningCategories, spawnCookie);
++            // Meteus start - chunk spawn tick loop fast path
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.chunkSpawnTickLoopFastPath) {
++                for (int i = 0, len = spawningChunks.size(); i < len; ++i) {
++                    this.tickSpawningChunk(spawningChunks.get(i), timeDiff, spawningCategories, spawnCookie);
++                }
++            } else {
++                for (LevelChunk chunk : spawningChunks) {
++                    this.tickSpawningChunk(chunk, timeDiff, spawningCategories, spawnCookie);
++                }
+             }
++            // Meteus end - chunk spawn tick loop fast path
+         } finally {
+             spawningChunks.clear();
+         }
+diff --git a/net/minecraft/world/level/LocalMobCapCalculator.java b/net/minecraft/world/level/LocalMobCapCalculator.java
+index 5b3808e6ff58d350fe3fd65fb56e8f209e1b2c93..ced0ff2cefa6b1ed40afe5aaa1393f45864a2b28 100644
+--- a/net/minecraft/world/level/LocalMobCapCalculator.java
++++ b/net/minecraft/world/level/LocalMobCapCalculator.java
+@@ -25,13 +25,34 @@ public class LocalMobCapCalculator {
+     }
+ 
+     public void addMob(final ChunkPos pos, final MobCategory category) {
+-        for (ServerPlayer player : this.getPlayersNear(pos)) {
++        // Meteus start - local mob-cap player fast path
++        final List<ServerPlayer> players = this.getPlayersNear(pos);
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.localMobCapPlayerFastPath) {
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                this.playerMobCounts.computeIfAbsent(players.get(i), key -> new LocalMobCapCalculator.MobCounts()).add(category);
++            }
++            return;
++        }
++        // Meteus end - local mob-cap player fast path
++        for (ServerPlayer player : players) {
+             this.playerMobCounts.computeIfAbsent(player, key -> new LocalMobCapCalculator.MobCounts()).add(category);
+         }
+     }
+ 
+     public boolean canSpawn(final MobCategory mobCategory, final ChunkPos pos) {
+-        for (ServerPlayer serverPlayer : this.getPlayersNear(pos)) {
++        // Meteus start - local mob-cap player fast path
++        final List<ServerPlayer> players = this.getPlayersNear(pos);
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().meteus.performance.localMobCapPlayerFastPath) {
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                LocalMobCapCalculator.MobCounts mobCounts = this.playerMobCounts.get(players.get(i));
++                if (mobCounts == null || mobCounts.canSpawn(mobCategory)) {
++                    return true;
++                }
++            }
++            return false;
++        }
++        // Meteus end - local mob-cap player fast path
++        for (ServerPlayer serverPlayer : players) {
+             LocalMobCapCalculator.MobCounts mobCounts = this.playerMobCounts.get(serverPlayer);
+             if (mobCounts == null || mobCounts.canSpawn(mobCategory)) {
+                 return true;
