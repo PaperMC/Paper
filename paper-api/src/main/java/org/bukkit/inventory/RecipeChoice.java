@@ -278,7 +278,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         /**
          * @deprecated Use {@link RecipeChoice#exactChoice(ItemStack, ItemStack...)} instead
          */
-        @Deprecated(since = "1.21.11", forRemoval = true)
+        @Deprecated(since = "26.2", forRemoval = true)
         public ExactChoice(ItemStack stack) {
             this(Arrays.asList(stack));
         }
@@ -286,7 +286,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         /**
          * @deprecated Use {@link RecipeChoice#exactChoice(ItemStack, ItemStack...)} instead
          */
-        @Deprecated(since = "1.21.11", forRemoval = true)
+        @Deprecated(since = "26.2", forRemoval = true)
         public ExactChoice(ItemStack... stacks) {
             this(Arrays.asList(stacks));
         }
@@ -294,7 +294,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         /**
          * @deprecated Use {@link RecipeChoice#exactChoice(List)} instead
          */
-        @Deprecated(since = "1.21.11", forRemoval = true)
+        @Deprecated(since = "26.2", forRemoval = true)
         public ExactChoice(List<ItemStack> choices) {
             Preconditions.checkArgument(choices != null, "choices");
             Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
