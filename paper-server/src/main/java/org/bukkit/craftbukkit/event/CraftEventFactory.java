@@ -2428,14 +2428,15 @@ public class CraftEventFactory {
         return event.getFuseTime();
     }
 
-    public static boolean callEntityLandEvent(net.minecraft.world.level.block.state.BlockState state, Level level, BlockPos pos, Entity entity, boolean isOverrideMethod) {
+    public static double callEntityLandEvent(net.minecraft.world.level.block.state.BlockState state, Level level, BlockPos pos, Entity entity, double fallDistance, boolean isOverrideMethod) {
         if (EntityLandEvent.getHandlerList().getRegisteredListeners().length == 0) {
-            return true; // No listeners, skip event creation
+            return fallDistance; // No listeners, skip event creation
         }
         if(!isOverrideMethod && (state.is(Blocks.POINTED_DRIPSTONE) || state.is(Blocks.TURTLE_EGG) || state.is(Blocks.FARMLAND))){
-            return true; // Event will be called in the class separately
+            return fallDistance; // Event will be called in the class separately
         }
-        EntityLandEvent event = new EntityLandEvent(entity.getBukkitEntity(), CraftBlock.at(level, pos));
-        return event.callEvent();
+        EntityLandEvent event = new EntityLandEvent(entity.getBukkitEntity(), CraftBlock.at(level, pos), fallDistance);
+        event.callEvent();
+        return event.isCancelled() ? -1 : event.getFallDistance();
     }
 }

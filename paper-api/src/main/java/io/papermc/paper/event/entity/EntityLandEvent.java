@@ -19,10 +19,12 @@ public class EntityLandEvent extends EntityEvent implements Cancellable {
 
     private final Block block;
     private boolean cancelled;
+    private double fallDistance;
 
-    public EntityLandEvent(final Entity entity, final Block block) {
+    public EntityLandEvent(final Entity entity, final Block block, double fallDistance) {
         super(entity);
         this.block = block;
+        this.fallDistance = fallDistance;
     }
 
     @Override
@@ -57,5 +59,26 @@ public class EntityLandEvent extends EntityEvent implements Cancellable {
     @Override
     public void setCancelled(final boolean cancel) {
         this.cancelled = cancel;
+    }
+
+    /**
+     * Gets the fall distance of the entity before landing.
+     *
+     * @return the fall distance
+     */
+    public double getFallDistance() {
+        return fallDistance;
+    }
+
+    /**
+     * Sets the fall distance of the entity before landing.
+     * Fall distance in the event is used to calculate fall damage and
+     * the chance of transforming {@link org.bukkit.Material#FARMLAND} to {@link org.bukkit.Material#DIRT} and
+     * the type of falling sound when the entity lands on {@link org.bukkit.Material#POWDER_SNOW}.
+     *
+     * @param fallDistance the fall distance
+     */
+    public void setFallDistance(final double fallDistance) {
+        this.fallDistance = fallDistance;
     }
 }
