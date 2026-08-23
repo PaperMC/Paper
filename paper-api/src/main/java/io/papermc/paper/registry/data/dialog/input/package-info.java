@@ -2,8 +2,8 @@
  * Dialog inputs for Paper API.
  */
 @NullMarked
-@ApiStatus.Experimental
+@MinecraftVersionDependent
 package io.papermc.paper.registry.data.dialog.input;
 
-import org.jetbrains.annotations.ApiStatus;
+import io.papermc.paper.annotation.MinecraftVersionDependent;
 import org.jspecify.annotations.NullMarked;

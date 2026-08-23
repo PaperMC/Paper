@@ -14,7 +14,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CUSTOM_MODEL_DATA
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface CustomModelData {
 
@@ -58,7 +57,6 @@ public interface CustomModelData {
     /**
      * Builder for {@link CustomModelData}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<CustomModelData> {
 

@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface TooltipDisplay {
 
@@ -29,7 +28,6 @@ public interface TooltipDisplay {
     /**
      * Builder for {@link TooltipDisplay}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<TooltipDisplay> {
 

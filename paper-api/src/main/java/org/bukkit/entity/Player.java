@@ -632,7 +632,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return collection of entities corresponding to current pearls.
      */
-    @ApiStatus.Experimental
     public Collection<EnderPearl> getEnderPearls();
 
     /**
@@ -3558,7 +3557,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param side The side to edit
      * @see io.papermc.paper.event.packet.UncheckedSignChangeEvent
      */
-    @ApiStatus.Experimental
     void openVirtualSign(Position block, Side side);
 
     /**
@@ -3815,7 +3813,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param pitch the pitch
      * @see #setRotation(Angle, Angle)
      */
-    @ApiStatus.Obsolete(since = "26.2")
     void setRotation(float yaw, float pitch);
 
     /**
@@ -3940,20 +3937,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Gets the set of chunk keys for all chunks that have been sent to the player.
      *
      * @return an immutable set of chunk keys
-     * @apiNote currently marked as experimental to gather feedback regarding the returned set being an immutable copy
-     * vs it potentially being an unmodifiable view of the set chunks.
      */
-    @ApiStatus.Experimental
     java.util.@org.jetbrains.annotations.Unmodifiable Set<Long> getSentChunkKeys();
 
     /**
      * Gets the set of chunks that have been sent to the player.
      *
      * @return an immutable set of chunks
-     * @apiNote currently marked as experimental to gather feedback regarding the returned set being an immutable copy
-      * vs it potentially being an unmodifiable view of the set chunks.
      */
-    @ApiStatus.Experimental
     java.util.@org.jetbrains.annotations.Unmodifiable Set<org.bukkit.Chunk> getSentChunks();
 
     /**
@@ -4047,7 +4038,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return the game connection
      */
-    @ApiStatus.Experimental
     PlayerGameConnection getConnection();
 
     @Override

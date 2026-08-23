@@ -12,7 +12,6 @@ import java.util.List;
  * Represents entity's combat tracker
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface CombatTracker {
 

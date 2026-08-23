@@ -13,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CONTAINER
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ItemContainerContents {
 
@@ -35,7 +34,6 @@ public interface ItemContainerContents {
     @Contract(value = "-> new", pure = true)
     @Unmodifiable List<ItemStack> contents();
 
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemContainerContents> {
 

@@ -1,11 +1,8 @@
 package io.papermc.paper.math;
 
-import org.jspecify.annotations.NullMarked;
-
 /**
  * Represents a rotation with specified pitch and yaw values.
  */
-@NullMarked
 public interface Rotation {
     /**
      * Creates a new rotation with the specified yaw and pitch values.

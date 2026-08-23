@@ -14,7 +14,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CAN_PLACE_ON
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ItemAdventurePredicate {
 
@@ -39,7 +38,6 @@ public interface ItemAdventurePredicate {
     /**
      * Builder for {@link ItemAdventurePredicate}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ItemAdventurePredicate> {
         /**

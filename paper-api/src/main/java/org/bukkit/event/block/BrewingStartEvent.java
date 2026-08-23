@@ -10,7 +10,6 @@ import org.jetbrains.annotations.Range;
 /**
  * Called when a brewing stand starts to brew.
  */
-@ApiStatus.Experimental // Paper
 public class BrewingStartEvent extends InventoryBlockStartEvent {
 
     private int brewingTime;
@@ -51,7 +50,6 @@ public class BrewingStartEvent extends InventoryBlockStartEvent {
      *
      * @return recipe brew time (in ticks)
      */
-    @ApiStatus.Experimental
     public @Range(from = 1, to = Integer.MAX_VALUE) int getRecipeBrewTime() {
         return this.recipeBrewTime;
     }
@@ -64,7 +62,6 @@ public class BrewingStartEvent extends InventoryBlockStartEvent {
      * @param recipeBrewTime recipe brew time (in ticks)
      * @throws IllegalArgumentException if the recipe brew time is non-positive
      */
-    @ApiStatus.Experimental
     public void setRecipeBrewTime(@Range(from = 1, to = Integer.MAX_VALUE) int recipeBrewTime) {
         Preconditions.checkArgument(recipeBrewTime > 0, "recipeBrewTime must be positive");
         this.recipeBrewTime = recipeBrewTime;

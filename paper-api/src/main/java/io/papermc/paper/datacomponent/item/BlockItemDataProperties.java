@@ -12,7 +12,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BLOCK_DATA
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface BlockItemDataProperties {
 
@@ -43,7 +42,6 @@ public interface BlockItemDataProperties {
     /**
      * Builder for {@link BlockItemDataProperties}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BlockItemDataProperties> {
         // building this requires BlockProperty API, so an empty builder for now (essentially read-only)

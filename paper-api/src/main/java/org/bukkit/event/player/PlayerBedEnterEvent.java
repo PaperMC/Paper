@@ -57,7 +57,6 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      *
      * @return the action representing the default outcome of this event
      */
-    @ApiStatus.Experimental
     public @NotNull BedEnterAction enterAction() {
         return this.enterAction;
     }

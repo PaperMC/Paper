@@ -10,7 +10,6 @@ import org.jspecify.annotations.Nullable;
  * happening during {@link io.papermc.paper.event.player.PlayerBedFailEnterEvent}
  */
 @ApiStatus.NonExtendable
-@ApiStatus.Experimental
 public interface BedEnterAction {
 
     /**
