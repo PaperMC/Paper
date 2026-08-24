@@ -127,7 +127,7 @@ dependencies {
     runtimeOnly(log4jPlugins.output)
     alsoShade(log4jPlugins.output)
 
-    implementation("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT") {
+    implementation("com.velocitypowered:velocity-native:4.1.0") {
         isTransitive = false
     }
     implementation("io.netty:netty-codec-haproxy:4.2.15.Final") // Add support for proxy protocol
