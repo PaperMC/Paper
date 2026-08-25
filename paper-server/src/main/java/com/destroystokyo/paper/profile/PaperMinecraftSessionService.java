@@ -9,6 +9,7 @@ import com.mojang.authlib.yggdrasil.ServicesKeySet;
 import com.mojang.authlib.yggdrasil.YggdrasilMinecraftSessionService;
 
 import io.papermc.paper.event.profile.PaperFillProfileEvent;
+import io.papermc.paper.event.profile.PaperPreFillProfileEvent;
 import java.net.Proxy;
 import java.util.Collections;
 import java.util.UUID;
@@ -22,7 +23,7 @@ public class PaperMinecraftSessionService extends YggdrasilMinecraftSessionServi
 
     public @Nullable ProfileResult fetchProfile(GameProfile profile, final boolean requireSecure) {
         CraftPlayerProfile playerProfile = (CraftPlayerProfile) CraftPlayerProfile.asBukkitCopy(profile);
-        new PreFillProfileEvent(playerProfile).callEvent();
+        new PaperPreFillProfileEvent(playerProfile).callEvent(); // todo this path is never called
         profile = playerProfile.getGameProfile();
         if (profile.properties().containsKey("textures")) {
             return new ProfileResult(profile, Collections.emptySet());
