@@ -549,7 +549,9 @@ public final class ClassToInterfaceRules {
             InventoryMoveItemEvent.class,
             InventoryPickupItemEvent.class,
             AsyncPlayerPreLoginEvent.class,
-            TabCompleteEvent.class
+            TabCompleteEvent.class,
+            ClockTimeSkipEvent.class,
+            TimeSkipEvent.class
             //</editor-fold>
         );
     }
