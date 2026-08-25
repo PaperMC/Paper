@@ -26,6 +26,7 @@ import java.util.Set;
 import net.minecraft.util.Util;
 import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
+import org.bukkit.craftbukkit.event.hanging.CraftHangingEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftInventoryInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidEvent;
@@ -41,6 +42,7 @@ import org.bukkit.event.block.*;
 import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
 import org.bukkit.event.entity.*;
+import org.bukkit.event.hanging.*;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.raid.*;
@@ -105,6 +107,7 @@ public final class ClassToInterfaceRules {
             map.put(VehicleCollisionEvent.class, CraftVehicleCollisionEvent.class);
             map.put(VehicleEvent.class, CraftVehicleEvent.class);
             map.put(WeatherEvent.class, CraftWeatherEvent.class);
+            map.put(HangingEvent.class, CraftHangingEvent.class);
             //</editor-fold>
         });
     }
@@ -519,7 +522,10 @@ public final class ClassToInterfaceRules {
             VehicleUpdateEvent.class,
             LightningStrikeEvent.class,
             ThunderChangeEvent.class,
-            WeatherChangeEvent.class
+            WeatherChangeEvent.class,
+            HangingPlaceEvent.class,
+            HangingBreakEvent.class,
+            HangingBreakByEntityEvent.class
             //</editor-fold>
         );
     }
