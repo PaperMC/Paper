@@ -548,7 +548,8 @@ public final class ClassToInterfaceRules {
             PlayerLeashEntityEvent.class,
             InventoryMoveItemEvent.class,
             InventoryPickupItemEvent.class,
-            AsyncPlayerPreLoginEvent.class
+            AsyncPlayerPreLoginEvent.class,
+            TabCompleteEvent.class
             //</editor-fold>
         );
     }

@@ -10,6 +10,10 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.commands.CommandSource;
@@ -18,11 +22,7 @@ import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
+import org.bukkit.craftbukkit.event.server.CraftTabCompleteEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.server.TabCompleteEvent;
 
@@ -113,7 +113,7 @@ public class BukkitCommandNode extends LiteralCommandNode<CommandSourceStack> {
             }
 
             if (sender instanceof final Player player) {
-                TabCompleteEvent tabEvent = new org.bukkit.event.server.TabCompleteEvent(player, builder.getInput(), results != null ? results : new ArrayList<>(), true, pos); // Paper - AsyncTabCompleteEvent
+                TabCompleteEvent tabEvent = new CraftTabCompleteEvent(player, builder.getInput(), results != null ? results : new ArrayList<>(), true, pos); // Paper - AsyncTabCompleteEvent
                 if (!tabEvent.callEvent()) {
                     results = null;
                 } else {

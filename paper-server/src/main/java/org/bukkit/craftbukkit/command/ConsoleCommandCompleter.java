@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import net.minecraft.server.dedicated.DedicatedServer;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.event.server.CraftTabCompleteEvent;
 import org.bukkit.craftbukkit.util.Waitable;
 
 import org.jline.reader.Candidate;
@@ -41,7 +42,7 @@ public class ConsoleCommandCompleter implements Completer {
                 Waitable<List<String>> syncCompletions = new Waitable<>() {
                     @Override
                     protected List<String> evaluate() {
-                        org.bukkit.event.server.TabCompleteEvent syncEvent = new org.bukkit.event.server.TabCompleteEvent(server.getConsoleSender(), buffer,
+                        org.bukkit.event.server.TabCompleteEvent syncEvent = new org.bukkit.craftbukkit.event.server.CraftTabCompleteEvent(server.getConsoleSender(), buffer,
                             finalCompletions.stream()
                                 .map(com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion::suggestion)
                                 .collect(java.util.stream.Collectors.toList()));
@@ -74,7 +75,7 @@ public class ConsoleCommandCompleter implements Completer {
             protected List<String> evaluate() {
                 List<String> offers = server.getCommandMap().tabComplete(server.getConsoleSender(), buffer); // Paper - Remove "this."
 
-                TabCompleteEvent tabEvent = new TabCompleteEvent(server.getConsoleSender(), buffer, (offers == null) ? Collections.emptyList() : offers); // Paper - Remove "this."
+                TabCompleteEvent tabEvent = new CraftTabCompleteEvent(server.getConsoleSender(), buffer, (offers == null) ? Collections.emptyList() : offers); // Paper - Remove "this."
                 server.getPluginManager().callEvent(tabEvent); // Paper - Remove "this."
 
                 return tabEvent.isCancelled() ? Collections.emptyList() : tabEvent.getCompletions();
