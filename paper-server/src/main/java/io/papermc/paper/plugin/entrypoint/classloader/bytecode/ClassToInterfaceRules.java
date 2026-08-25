@@ -556,7 +556,8 @@ public final class ClassToInterfaceRules {
             PreLookupProfileEvent.class,
             ProfileWhitelistVerifyEvent.class,
             AsyncTabCompleteEvent.class,
-            ServerExceptionEvent.class
+            ServerExceptionEvent.class,
+            ServerTickEndEvent.class
             //</editor-fold>
         );
     }
