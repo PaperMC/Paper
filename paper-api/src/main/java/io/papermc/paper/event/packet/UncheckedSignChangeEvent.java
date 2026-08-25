@@ -10,7 +10,6 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a client attempts to modify a sign, but the location at which the sign should be edited
@@ -21,7 +20,6 @@ import org.jspecify.annotations.NullMarked;
  *
  * @see Player#openVirtualSign(Position, Side)
  */
-@NullMarked
 public interface UncheckedSignChangeEvent extends PlayerEvent, Cancellable {
 
     /**

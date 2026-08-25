@@ -3,5 +3,7 @@
  * org.bukkit.block.Block block} is changed or interacts with the {@link
  * org.bukkit.World world}.
  */
+@NullMarked
 package org.bukkit.event.block;
 
+import org.jspecify.annotations.NullMarked;

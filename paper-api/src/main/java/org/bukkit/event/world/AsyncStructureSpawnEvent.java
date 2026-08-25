@@ -8,7 +8,7 @@ import org.bukkit.util.BoundingBox;
 /**
  * Called when a {@link Structure} is naturally generated in the world.
  */
-public interface AsyncStructureSpawnEvent extends WorldEventNew, Cancellable {
+public interface AsyncStructureSpawnEvent extends WorldEvent, Cancellable {
 
     /**
      * Get the structure reference that is generated.

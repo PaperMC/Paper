@@ -4,7 +4,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Difficulty;
 import org.bukkit.World;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.world.WorldEventNew;
+import org.bukkit.event.world.WorldEvent;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * If the world is in {@link World#isHardcore() hardcore}
  * the resulting difficulty will always be {@link Difficulty#HARD}
  */
-public interface WorldDifficultyChangeEvent extends WorldEventNew {
+public interface WorldDifficultyChangeEvent extends WorldEvent {
 
     /**
      * Gets the command source associated with this event.

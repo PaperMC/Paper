@@ -6,7 +6,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.world.WorldEventNew;
+import org.bukkit.event.world.WorldEvent;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.jetbrains.annotations.UnmodifiableView;
@@ -25,7 +25,7 @@ import org.jspecify.annotations.Nullable;
  *     <li>{@link World#locateNearestStructure(Location, Structure, int, boolean)} is invoked.</li>
  * </ul>
  */
-public interface StructuresLocateEvent extends WorldEventNew, Cancellable {
+public interface StructuresLocateEvent extends WorldEvent, Cancellable {
 
     /**
      * Gets the {@link Location} from which the search is to be conducted.

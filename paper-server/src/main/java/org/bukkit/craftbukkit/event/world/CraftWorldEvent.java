@@ -2,9 +2,9 @@ package org.bukkit.craftbukkit.event.world;
 
 import org.bukkit.World;
 import org.bukkit.craftbukkit.event.CraftEvent;
-import org.bukkit.event.world.WorldEventNew;
+import org.bukkit.event.world.WorldEvent;
 
-public abstract class CraftWorldEvent extends CraftEvent implements WorldEventNew {
+public abstract class CraftWorldEvent extends CraftEvent implements WorldEvent {
 
     protected final World world;
 

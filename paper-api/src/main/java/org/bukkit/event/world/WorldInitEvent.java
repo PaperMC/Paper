@@ -8,7 +8,7 @@ import org.bukkit.event.HandlerList;
  * To get every world it is recommended to add following to the plugin.yml.
  * <pre>load: STARTUP</pre>
  */
-public interface WorldInitEvent extends WorldEventNew {
+public interface WorldInitEvent extends WorldEvent {
 
     static HandlerList getHandlerList() {
         final class Holder {

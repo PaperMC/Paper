@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * Event that is called when an organic structure attempts to grow (Sapling {@literal ->}
  * Tree), (Mushroom {@literal ->} Huge Mushroom), naturally or using bonemeal.
  */
-public interface StructureGrowEvent extends WorldEventNew, Cancellable {
+public interface StructureGrowEvent extends WorldEvent, Cancellable {
 
     /**
      * Gets the location of the structure.
