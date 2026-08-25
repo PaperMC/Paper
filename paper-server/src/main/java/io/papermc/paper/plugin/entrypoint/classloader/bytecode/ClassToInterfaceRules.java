@@ -24,6 +24,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftInventoryInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidEvent;
+import org.bukkit.craftbukkit.event.world.CraftChunkEvent;
 import org.bukkit.event.block.*;
 import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
@@ -80,7 +81,8 @@ public final class ClassToInterfaceRules {
             EntityEvent.class, CraftEntityEvent.class,
             InventoryInteractEvent.class, CraftInventoryInteractEvent.class,
             RaidEvent.class, CraftRaidEvent.class,
-            WorldBorderEvent.class, PaperWorldBorderEvent.class
+            WorldBorderEvent.class, PaperWorldBorderEvent.class,
+            ChunkEvent.class, CraftChunkEvent.class
             //</editor-fold>
         );
     }
@@ -460,7 +462,14 @@ public final class ClassToInterfaceRules {
             WorldBorderBoundsChangeFinishEvent.class,
             WorldBorderBoundsChangeEvent.class,
             AsyncStructureGenerateEvent.class,
-            AsyncStructureSpawnEvent.class
+            AsyncStructureSpawnEvent.class,
+            ChunkLoadEvent.class,
+            ChunkPopulateEvent.class,
+            ChunkUnloadEvent.class,
+            EntitiesLoadEvent.class,
+            EntitiesUnloadEvent.class,
+            PlayerChunkLoadEvent.class,
+            PlayerChunkUnloadEvent.class
             //</editor-fold>
         );
     }
