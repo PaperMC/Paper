@@ -191,6 +191,7 @@ import org.bukkit.craftbukkit.event.entity.CraftSpawnerSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftStriderTemperatureChangeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftTrialSpawnerSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftVillagerCareerChangeEvent;
+import org.bukkit.craftbukkit.event.inventory.CraftInventoryOpenEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftTradeSelectEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
@@ -1493,7 +1494,7 @@ public class CraftEventFactory {
         CraftPlayer craftPlayer = player.getBukkitEntity();
         player.containerMenu.transferTo(container, craftPlayer);
 
-        InventoryOpenEvent event = new InventoryOpenEvent(container.getBukkitView());
+        InventoryOpenEvent event = new CraftInventoryOpenEvent(container.getBukkitView());
         event.setCancelled(cancelled);
         server.getPluginManager().callEvent(event);
 
