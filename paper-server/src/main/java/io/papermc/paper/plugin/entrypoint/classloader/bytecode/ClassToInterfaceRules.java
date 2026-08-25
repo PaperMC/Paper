@@ -17,6 +17,7 @@ import io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEv
 import io.papermc.paper.event.connection.configuration.PlayerConnectionInitialConfigureEvent;
 import io.papermc.paper.event.connection.configuration.PlayerConnectionReconfigureEvent;
 import io.papermc.paper.event.entity.*;
+import io.papermc.paper.event.inventory.ItemCraftedEvent;
 import io.papermc.paper.event.packet.*;
 import io.papermc.paper.event.player.*;
 import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
@@ -536,7 +537,8 @@ public final class ClassToInterfaceRules {
             PlayerConnectionInitialConfigureEvent.class,
             PlayerConnectionReconfigureEvent.class,
             PlayerConnectionValidateLoginEvent.class,
-            EntityCollideWithEntityEvent.class
+            EntityCollideWithEntityEvent.class,
+            ItemCraftedEvent.class
             //</editor-fold>
         );
     }
