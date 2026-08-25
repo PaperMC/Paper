@@ -545,7 +545,8 @@ public final class ClassToInterfaceRules {
             AsyncServerDataFixerRemoveBlockEntityEvent.class,
             WhitelistStateUpdateEvent.class,
             UnknownCommandEvent.class,
-            PlayerLeashEntityEvent.class
+            PlayerLeashEntityEvent.class,
+            InventoryMoveItemEvent.class
             //</editor-fold>
         );
     }
