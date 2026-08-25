@@ -7,7 +7,7 @@ import org.bukkit.event.EventTmp;
 /**
  * Miscellaneous server events
  */
-public abstract class ServerEvent extends EventTmp {
+public abstract class ServerEvent extends EventTmp implements ServerEventNew {
 
     public ServerEvent() {
         super(!Bukkit.isPrimaryThread()); // Paper
