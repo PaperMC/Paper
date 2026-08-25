@@ -112,6 +112,7 @@ import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.event.world.CraftSpawnChangeEvent;
 import org.bukkit.craftbukkit.generator.structure.CraftGeneratedStructure;
 import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -340,7 +341,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             this.world.serverLevelData.setSpawn(LevelData.RespawnData.of(this.world.dimension(), new BlockPos(x, y, z), yaw, pitch));
 
             this.server.getServer().updateEffectiveRespawnData();
-            new SpawnChangeEvent(this, previousLocation).callEvent();
+            new CraftSpawnChangeEvent(this, previousLocation).callEvent();
             return true;
         } catch (Exception e) {
             return false;
