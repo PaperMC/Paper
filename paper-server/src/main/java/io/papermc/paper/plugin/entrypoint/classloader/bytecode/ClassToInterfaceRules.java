@@ -502,7 +502,8 @@ public final class ClassToInterfaceRules {
             ServerListPingEvent.class,
             PaperServerListPingEvent.class,
             VehicleCreateEvent.class,
-            VehicleDamageEvent.class
+            VehicleDamageEvent.class,
+            VehicleDestroyEvent.class
             //</editor-fold>
         );
     }
