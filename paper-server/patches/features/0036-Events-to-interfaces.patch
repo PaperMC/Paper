@@ -286,6 +286,28 @@ index d447b444abd9b62ab241419301a96d19ae77a7eb..d8c153a2147676ac3a1db4e41de80e4d
                  this.player.level().getCraftServer().getPluginManager().callEvent(event); // CraftBukkit
                  // Paper end
                  holder.value().rewards().grant(this.player);
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index 0b6d7f99edde802cb464baa5a4b2b4a4dcce684a..981ea7f985cccaebd7e3478721b4dd3448411e3b 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -566,7 +566,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         while ((input = this.serverCommandQueue.poll()) != null) {
+             // Paper end - Perf: use proper queue
+             // CraftBukkit start - ServerCommand for preprocessing
+-            org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(this.console, input.msg);
++            org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.craftbukkit.event.server.CraftServerCommandEvent(this.console, input.msg);
+             this.server.getPluginManager().callEvent(event);
+             if (event.isCancelled()) continue;
+             input = new ConsoleInput(event.getCommand(), input.source);
+@@ -892,7 +892,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         rconConsoleSource.prepareForCommand();
+         this.executeBlocking(() -> {
+             CommandSourceStack wrapper = rconConsoleSource.createCommandSourceStack();
+-            org.bukkit.event.server.RemoteServerCommandEvent event = new org.bukkit.event.server.RemoteServerCommandEvent(rconConsoleSource.getBukkitSender(wrapper), command);
++            org.bukkit.event.server.RemoteServerCommandEvent event = new org.bukkit.craftbukkit.event.server.CraftRemoteServerCommandEvent(rconConsoleSource.getBukkitSender(wrapper), command);
+             this.server.getPluginManager().callEvent(event);
+             if (event.isCancelled()) {
+                 return;
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
 index 7e9361407042ddaabe3f66ee8957ae84b6ef2317..2f9e0f252d9b413058d423372411f0dd2635518b 100644
 --- a/net/minecraft/server/level/ChunkMap.java
@@ -2811,6 +2833,19 @@ index 30e52dce9536cda641f6ca290181bd926311dbe3..d4eff087196f2e43f12d706e27d5abda
                      return InteractionResult.FAIL;
                  }
                  // Paper end
+diff --git a/net/minecraft/world/level/BaseCommandBlock.java b/net/minecraft/world/level/BaseCommandBlock.java
+index fbe1cf1f02a27cbe0666fb83eb74c82df92785c9..2916d85d1e9a37d7cae463330ccbff80cd311dc1 100644
+--- a/net/minecraft/world/level/BaseCommandBlock.java
++++ b/net/minecraft/world/level/BaseCommandBlock.java
+@@ -114,7 +114,7 @@ public abstract class BaseCommandBlock {
+                         }
+                     });
+                     // Paper start - ServerCommandEvent
+-                    org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(commandSourceStack.getBukkitSender(), net.minecraft.commands.Commands.trimOptionalPrefix(this.command));
++                    org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.craftbukkit.event.server.CraftServerCommandEvent(commandSourceStack.getBukkitSender(), net.minecraft.commands.Commands.trimOptionalPrefix(this.command));
+                     if (!event.callEvent()) {
+                         return true;
+                     }
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
 index 9286d9bcf3ec4069e77d3133f3d7bf29b2370c5a..cd0d81689897ae791ac6a1de83a8b862b6fa1d14 100644
 --- a/net/minecraft/world/level/Level.java

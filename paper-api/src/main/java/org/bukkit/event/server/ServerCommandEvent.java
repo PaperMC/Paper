@@ -3,8 +3,6 @@ package org.bukkit.event.server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called when a command is run by a non-player. It is
@@ -40,30 +38,14 @@ import org.jetbrains.annotations.NotNull;
  * beginning of the message should be preserved. If a slash is added or
  * removed, unexpected behavior may result.
  */
-public class ServerCommandEvent extends ServerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final CommandSender sender;
-    private String command;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public ServerCommandEvent(@NotNull final CommandSender sender, @NotNull final String command) {
-        this.sender = sender;
-        this.command = command;
-    }
+public interface ServerCommandEvent extends ServerEventNew, Cancellable {
 
     /**
      * Get the command sender.
      *
      * @return The sender
      */
-    @NotNull
-    public CommandSender getSender() {
-        return this.sender;
-    }
+    CommandSender getSender();
 
     /**
      * Gets the command that the user is attempting to execute from the
@@ -71,38 +53,19 @@ public class ServerCommandEvent extends ServerEvent implements Cancellable {
      *
      * @return Command the user is attempting to execute
      */
-    @NotNull
-    public String getCommand() {
-        return this.command;
-    }
+    String getCommand();
 
     /**
      * Sets the command that the server will execute
      *
      * @param message New message that the server will execute
      */
-    public void setCommand(@NotNull String message) {
-        this.command = message;
-    }
+    void setCommand(String message);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
