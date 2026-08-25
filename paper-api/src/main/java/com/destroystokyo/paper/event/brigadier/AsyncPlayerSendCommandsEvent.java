@@ -5,7 +5,6 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired any time a Brigadier RootCommandNode is generated for a player to inform the client of commands.
@@ -27,7 +26,6 @@ import org.jspecify.annotations.NullMarked;
  *
  * <p>This is a draft/experimental API and is subject to change.</p>
  */
-@NullMarked
 @ApiStatus.Experimental
 public interface AsyncPlayerSendCommandsEvent<S extends CommandSourceStack> extends PlayerEvent {
 

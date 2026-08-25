@@ -4,14 +4,12 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when sending {@link Suggestions} to the client. Will be called asynchronously if a plugin
  * marks the {@link com.destroystokyo.paper.event.server.AsyncTabCompleteEvent} event handled asynchronously,
  * otherwise called synchronously.
  */
-@NullMarked
 public interface AsyncPlayerSendSuggestionsEvent extends PlayerEvent, Cancellable {
 
     /**

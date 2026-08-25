@@ -14,7 +14,7 @@ import org.bukkit.event.HandlerList;
  * should be async if fired from an async thread. Please see that event for
  * further information.
  */
-public interface BroadcastMessageEvent extends ServerEventNew, Cancellable {
+public interface BroadcastMessageEvent extends ServerEvent, Cancellable {
 
     /**
      * Get the broadcast message.
