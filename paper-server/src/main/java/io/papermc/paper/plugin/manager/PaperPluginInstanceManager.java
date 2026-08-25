@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import io.papermc.paper.FeatureHooks;
+import io.papermc.paper.event.server.PaperServerExceptionEvent;
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import io.papermc.paper.plugin.entrypoint.Entrypoint;
 import io.papermc.paper.plugin.entrypoint.dependency.MetaDependencyTree;
@@ -33,7 +34,6 @@ import org.bukkit.craftbukkit.event.server.CraftPluginDisableEvent;
 import org.bukkit.craftbukkit.event.server.CraftPluginEnableEvent;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -328,7 +328,7 @@ class PaperPluginInstanceManager {
 
     private void handlePluginException(String msg, Throwable ex, Plugin plugin) {
         Bukkit.getServer().getLogger().log(Level.SEVERE, msg, ex);
-        this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));
+        this.pluginManager.callEvent(new PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));
     }
 
     public boolean isTransitiveDepend(@NotNull PluginMeta plugin, @NotNull PluginMeta depend) {

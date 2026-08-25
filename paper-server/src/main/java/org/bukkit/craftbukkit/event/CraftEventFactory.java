@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.event;
 
 import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
 import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
+import com.destroystokyo.paper.exception.ServerInternalException;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
@@ -24,6 +25,7 @@ import io.papermc.paper.event.player.PaperPlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PaperPlayerToggleEntityAgeLockEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
+import io.papermc.paper.event.server.PaperServerExceptionEvent;
 import io.papermc.paper.network.PaperLegacyStatusClient;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -395,7 +397,6 @@ import org.bukkit.event.world.ClockTimeSkipEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
 import org.bukkit.event.world.LootGenerateEvent;
-import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.inventory.CraftingRecipe;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
@@ -2558,5 +2559,13 @@ public class CraftEventFactory {
         }
 
         return event;
+    }
+
+    public static void reportInternalException(Throwable cause) {
+        try {
+            new PaperServerExceptionEvent(new ServerInternalException(cause)).callEvent();
+        } catch (Throwable t) {
+            Bukkit.getLogger().log(java.util.logging.Level.WARNING, "Exception posting PaperServerExceptionEvent", t); // Don't want to rethrow!
+        }
     }
 }

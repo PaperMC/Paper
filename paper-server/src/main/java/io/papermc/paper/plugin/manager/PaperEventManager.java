@@ -3,6 +3,7 @@ package io.papermc.paper.plugin.manager;
 import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 import com.destroystokyo.paper.exception.ServerEventException;
 import com.google.common.collect.Sets;
+import io.papermc.paper.event.server.PaperServerExceptionEvent;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -68,7 +69,7 @@ class PaperEventManager {
                 String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getPluginMeta().getDisplayName();
                 this.server.getLogger().log(Level.SEVERE, msg, ex);
                 if (!(event instanceof ServerExceptionEvent)) { // We don't want to cause an endless event loop
-                    this.callEvent(new ServerExceptionEvent(new ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
+                    this.callEvent(new PaperServerExceptionEvent(new ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
                 }
             }
         }

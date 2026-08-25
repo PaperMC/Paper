@@ -1124,6 +1124,28 @@ index f6601bc30fa37a309923ea9883b04233f83b2c0b..7ea2a4bedda24d5f116f0537ecbb337b
                      }, io.papermc.paper.connection.PaperConfigurationTask.CONFIGURATION_POOL);
                  }
                  if (this.eventFuture != null) {
+diff --git a/net/minecraft/server/players/OldUsersConverter.java b/net/minecraft/server/players/OldUsersConverter.java
+index e38acabda1d2e49d88b94d46cc51f6602870d6b6..42a07eb271bd2d0c93efd72eee87df87959958a7 100644
+--- a/net/minecraft/server/players/OldUsersConverter.java
++++ b/net/minecraft/server/players/OldUsersConverter.java
+@@ -326,7 +326,7 @@ public class OldUsersConverter {
+                         } catch (Exception exception) {
+                             // Paper start
+                             exception.printStackTrace();
+-                            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception);
++                            org.bukkit.craftbukkit.event.CraftEventFactory.reportInternalException(exception);
+                             // Paper end
+                         }
+ 
+@@ -342,7 +342,7 @@ public class OldUsersConverter {
+                             } catch (Exception exception) {
+                                 // Paper start
+                                 exception.printStackTrace();
+-                                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception);
++                                org.bukkit.craftbukkit.event.CraftEventFactory.reportInternalException(exception);
+                                 // Paper end
+                             }
+                        }
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
 index baec5d072b8f2d9379dba850b04e881e5267ca6b..816ba0945fd0d04cb4790385bfbdda55d65b15be 100644
 --- a/net/minecraft/server/players/PlayerList.java
@@ -1688,6 +1710,19 @@ index 862224dfc003bf02ee0d7c1d804549210d6c8ffa..ff61575d10707009a98bbc8021974ad4
                  org.bukkit.craftbukkit.util.CraftLocation.toBukkit(possibleTarget, this.mob.level()), target == null ? null : target.getBukkitEntity()).callEvent()) {
                  if (!copiedSet) {
                      copiedSet = true;
+diff --git a/net/minecraft/world/entity/ai/village/VillageSiege.java b/net/minecraft/world/entity/ai/village/VillageSiege.java
+index eca08fd41469b09aced3f3a5ccb316930e90e4be..92e9d7a551565ed926371c9f1edf0482916e3395 100644
+--- a/net/minecraft/world/entity/ai/village/VillageSiege.java
++++ b/net/minecraft/world/entity/ai/village/VillageSiege.java
+@@ -102,7 +102,7 @@ public class VillageSiege implements CustomSpawner {
+                 zombie.finalizeSpawn(level, level.getCurrentDifficultyAt(zombie.blockPosition()), EntitySpawnReason.EVENT, null);
+             } catch (Exception e) {
+                 LOGGER.warn("Failed to create zombie for village siege at {}", spawnPos, e);
+-                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(e); // Paper - ServerExceptionEvent
++                org.bukkit.craftbukkit.event.CraftEventFactory.reportInternalException(e); // Paper - ServerExceptionEvent
+                 return;
+             }
+ 
 diff --git a/net/minecraft/world/entity/animal/camel/Camel.java b/net/minecraft/world/entity/animal/camel/Camel.java
 index 57127335a3c68fbf9ac3d64a8504c6e271a5d532..d0804605df6a53b655cc71a8eee8ad3a49822767 100644
 --- a/net/minecraft/world/entity/animal/camel/Camel.java
@@ -3385,7 +3420,7 @@ index 2f89a9145902e514089924462003709f256ac3f4..c365823d3ba0cff9e8e755c8813234ba
                                  org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(entityType.get()),
                                  org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level)
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 9286d9bcf3ec4069e77d3133f3d7bf29b2370c5a..cd0d81689897ae791ac6a1de83a8b862b6fa1d14 100644
+index 9286d9bcf3ec4069e77d3133f3d7bf29b2370c5a..a79b002b13d149509c6d9367abc6e09c10149373 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -1177,7 +1177,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
@@ -3406,8 +3441,17 @@ index 9286d9bcf3ec4069e77d3133f3d7bf29b2370c5a..cd0d81689897ae791ac6a1de83a8b862
              if (!event.callEvent()) {
                  return false;
              }
+@@ -1524,7 +1524,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+             // Paper start - Prevent block entity and entity crashes
+             final String msg = String.format("Entity threw exception at %s:%s,%s,%s", io.papermc.paper.util.MCUtil.getLevelName(entity.level()), entity.getX(), entity.getY(), entity.getZ());
+             MinecraftServer.LOGGER.error(msg, t);
+-            getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, t))); // Paper - ServerExceptionEvent
++            getCraftServer().getPluginManager().callEvent(new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, t))); // Paper - ServerExceptionEvent
+             entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
+             // Paper end - Prevent block entity and entity crashes
+         }
 diff --git a/net/minecraft/world/level/NaturalSpawner.java b/net/minecraft/world/level/NaturalSpawner.java
-index e193cbed115663e9ca7a611837d5b8540dda03db..2a4a8345cd8d0204f4e49d17844141a54d9fdbf0 100644
+index e193cbed115663e9ca7a611837d5b8540dda03db..402e52663993d47942e3a1a2a980ef61e7c5feb6 100644
 --- a/net/minecraft/world/level/NaturalSpawner.java
 +++ b/net/minecraft/world/level/NaturalSpawner.java
 @@ -391,7 +391,7 @@ public final class NaturalSpawner {
@@ -3419,6 +3463,24 @@ index e193cbed115663e9ca7a611837d5b8540dda03db..2a4a8345cd8d0204f4e49d17844141a5
                  org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level),
                  org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(type), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL
          );
+@@ -421,7 +421,7 @@ public final class NaturalSpawner {
+             LOGGER.warn("Can't spawn entity of type: {}", BuiltInRegistries.ENTITY_TYPE.getKey(type));
+         } catch (Exception e) {
+             LOGGER.warn("Failed to create mob", e);
+-            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(e); // Paper - ServerExceptionEvent
++            org.bukkit.craftbukkit.event.CraftEventFactory.reportInternalException(e); // Paper - ServerExceptionEvent
+         }
+ 
+         return null;
+@@ -549,7 +549,7 @@ public final class NaturalSpawner {
+                                     entity = spawnerData.type().create(level.getLevel(), EntitySpawnReason.NATURAL);
+                                 } catch (Exception e) {
+                                     LOGGER.warn("Failed to create mob", e);
+-                                    com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(e); // Paper - ServerExceptionEvent
++                                    org.bukkit.craftbukkit.event.CraftEventFactory.reportInternalException(e); // Paper - ServerExceptionEvent
+                                     continue;
+                                 }
+ 
 diff --git a/net/minecraft/world/level/block/BaseFireBlock.java b/net/minecraft/world/level/block/BaseFireBlock.java
 index d1fe9fc3542b28c7ea89385db0dc8686277300a6..7a0af8b5d1989a3242d38f0c53da6d18052da8f5 100644
 --- a/net/minecraft/world/level/block/BaseFireBlock.java
@@ -4513,9 +4575,18 @@ index 1624d73d63a848b1eced1964193f14f7ab9c1bc2..eca2d875eea73e7c811dbbc853ca9886
              if (event.isCancelled()) {
                  return true;
 diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
-index 681563230061212afa7994c8eb16c068754db5dd..167579787111210484346a860bbf7aedb07463fe 100644
+index 681563230061212afa7994c8eb16c068754db5dd..127f5864a09fad469644f431b1fbfbbcaafa112b 100644
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -532,7 +532,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+                 "Trying to set block entity %s at position %s, but state %s does not allow it".formatted(blockEntity, pos, blockState)
+             );
+             e.printStackTrace();
+-            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(e);
++            org.bukkit.craftbukkit.event.CraftEventFactory.reportInternalException(e);
+             // Paper end - ServerExceptionEvent
+         } else {
+             BlockState cachedBlockState = blockEntity.getBlockState();
 @@ -642,7 +642,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
               * no way of creating a CraftWorld/CraftServer at that point.
               */
@@ -4543,6 +4614,37 @@ index 681563230061212afa7994c8eb16c068754db5dd..167579787111210484346a860bbf7aed
          server.getPluginManager().callEvent(unloadEvent);
          // note: saving can be prevented, but not forced if no saving is actually required
          this.mustNotSave = !unloadEvent.isSaveChunk();
+@@ -971,7 +971,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+                         // Paper start - Prevent block entity and entity crashes
+                         final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", io.papermc.paper.util.MCUtil.getLevelName(LevelChunk.this.getLevel()), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
+                         LevelChunk.LOGGER.error(msg, t);
+-                        LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, t))); // Paper - ServerExceptionEvent
++                        LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, t))); // Paper - ServerExceptionEvent
+                         LevelChunk.this.removeBlockEntity(this.getPos());
+                         // Paper end - Prevent block entity and entity crashes
+                     }
+diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
+index 3de7fd2b084c38e72d7a6bc416880a881f514ad3..76b65f104c1782cc480d5ce267942d377d29d091 100644
+--- a/net/minecraft/world/level/chunk/storage/RegionFile.java
++++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -764,7 +764,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+ 
+             return true;
+         } catch (IOException e) {
+-            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(e); // Paper - ServerExceptionEvent
++            org.bukkit.craftbukkit.event.CraftEventFactory.reportInternalException(e); // Paper - ServerExceptionEvent
+             return false;
+         }
+     }
+@@ -842,7 +842,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+             extFile.write(data);
+             // Paper start - ServerExceptionEvent
+         } catch (Throwable throwable) {
+-            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable);
++            org.bukkit.craftbukkit.event.CraftEventFactory.reportInternalException(throwable);
+             throw throwable;
+             // Paper end - ServerExceptionEvent
+         }
 diff --git a/net/minecraft/world/level/dimension/end/EnderDragonFight.java b/net/minecraft/world/level/dimension/end/EnderDragonFight.java
 index 26926083cbb2722bb5fbcbc81bcc44a99799ad9e..b2c96477d23ea3b4299f7215d048b8b344b49234 100644
 --- a/net/minecraft/world/level/dimension/end/EnderDragonFight.java

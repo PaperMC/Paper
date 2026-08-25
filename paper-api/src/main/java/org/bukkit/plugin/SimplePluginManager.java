@@ -598,7 +598,7 @@ public final class SimplePluginManager implements PluginManager {
     // Paper start
     private void handlePluginException(String msg, Throwable ex, Plugin plugin) {
         server.getLogger().log(Level.SEVERE, msg, ex);
-        callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));
+        // TODO - callEvent(new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));
     }
     // Paper end
 
@@ -671,7 +671,7 @@ public final class SimplePluginManager implements PluginManager {
                 String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName();
                 server.getLogger().log(Level.SEVERE, msg, ex);
                 if (!(event instanceof com.destroystokyo.paper.event.server.ServerExceptionEvent)) { // We don't want to cause an endless event loop
-                    callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
+                    // TODO - callEvent(new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));
                 }
                 // Paper end
             }
