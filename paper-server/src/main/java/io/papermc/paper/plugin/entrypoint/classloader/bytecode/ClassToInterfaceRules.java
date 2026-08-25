@@ -11,6 +11,7 @@ import io.papermc.asm.ClassInfoProvider;
 import io.papermc.asm.RewriteRuleVisitorFactory;
 import io.papermc.asm.rules.classes.ClassToInterfaceRule;
 import io.papermc.paper.event.block.*;
+import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
 import io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent;
 import io.papermc.paper.event.connection.configuration.PlayerConnectionInitialConfigureEvent;
@@ -533,7 +534,8 @@ public final class ClassToInterfaceRules {
             AsyncPlayerConnectionConfigureEvent.class,
             PlayerCodeOfConductSendEvent.class,
             PlayerConnectionInitialConfigureEvent.class,
-            PlayerConnectionReconfigureEvent.class
+            PlayerConnectionReconfigureEvent.class,
+            PlayerConnectionValidateLoginEvent.class
             //</editor-fold>
         );
     }
