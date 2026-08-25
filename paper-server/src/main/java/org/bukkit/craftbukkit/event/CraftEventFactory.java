@@ -221,6 +221,10 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerRiptideEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerShearEntityEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerSignOpenEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerStatisticIncrementEvent;
+import org.bukkit.craftbukkit.event.raid.CraftRaidFinishEvent;
+import org.bukkit.craftbukkit.event.raid.CraftRaidSpawnWaveEvent;
+import org.bukkit.craftbukkit.event.raid.CraftRaidStopEvent;
+import org.bukkit.craftbukkit.event.raid.CraftRaidTriggerEvent;
 import org.bukkit.craftbukkit.event.world.CraftLootGenerateEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -2057,18 +2061,18 @@ public class CraftEventFactory {
     }
 
     public static boolean callRaidTriggerEvent(Level level, Raid raid, ServerPlayer player) {
-        RaidTriggerEvent event = new RaidTriggerEvent(new CraftRaid(raid, level), level.getWorld(), player.getBukkitEntity());
+        RaidTriggerEvent event = new CraftRaidTriggerEvent(new CraftRaid(raid, level), level.getWorld(), player.getBukkitEntity());
         Bukkit.getPluginManager().callEvent(event);
         return !event.isCancelled();
     }
 
     public static void callRaidFinishEvent(Level level, Raid raid, List<Player> players) {
-        RaidFinishEvent event = new RaidFinishEvent(new CraftRaid(raid, level), level.getWorld(), players);
+        RaidFinishEvent event = new CraftRaidFinishEvent(new CraftRaid(raid, level), level.getWorld(), players);
         Bukkit.getPluginManager().callEvent(event);
     }
 
     public static void callRaidStopEvent(Level level, Raid raid, RaidStopEvent.Reason reason) {
-        RaidStopEvent event = new RaidStopEvent(new CraftRaid(raid, level), level.getWorld(), reason);
+        RaidStopEvent event = new CraftRaidStopEvent(new CraftRaid(raid, level), level.getWorld(), reason);
         Bukkit.getPluginManager().callEvent(event);
     }
 
@@ -2078,7 +2082,7 @@ public class CraftEventFactory {
         for (net.minecraft.world.entity.raid.Raider raider : raiders) {
             bukkitRaiders.add((Raider) raider.getBukkitEntity());
         }
-        RaidSpawnWaveEvent event = new RaidSpawnWaveEvent(new CraftRaid(raid, level), level.getWorld(), bukkitLeader, bukkitRaiders);
+        RaidSpawnWaveEvent event = new CraftRaidSpawnWaveEvent(new CraftRaid(raid, level), level.getWorld(), bukkitLeader, bukkitRaiders);
         event.callEvent();
     }
 

@@ -1,48 +1,28 @@
 package org.bukkit.event.raid;
 
 import org.bukkit.Raid;
-import org.bukkit.World;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a {@link Raid} is stopped.
  */
-public class RaidStopEvent extends RaidEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Reason reason;
-
-    @ApiStatus.Internal
-    public RaidStopEvent(@NotNull Raid raid, @NotNull World world, @NotNull Reason reason) {
-        super(raid, world);
-        this.reason = reason;
-    }
+public interface RaidStopEvent extends RaidEvent {
 
     /**
      * Returns the stop reason.
      *
      * @return Reason
      */
-    @NotNull
-    public Reason getReason() {
-        return this.reason;
+    Reason getReason();
+
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
-    }
-
-    public enum Reason {
+    enum Reason {
 
         /**
          * Because the difficulty has been changed to peaceful.
