@@ -192,6 +192,7 @@ import org.bukkit.craftbukkit.event.entity.CraftStriderTemperatureChangeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftTrialSpawnerSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftVillagerCareerChangeEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftInventoryOpenEvent;
+import org.bukkit.craftbukkit.event.inventory.CraftPrepareItemCraftEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftTradeSelectEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
@@ -1510,7 +1511,7 @@ public class CraftEventFactory {
         CraftInventoryCrafting inventory = new CraftInventoryCrafting(matrix, resultInventory);
         inventory.setResult(CraftItemStack.asCraftMirror(result));
 
-        PrepareItemCraftEvent event = new PrepareItemCraftEvent(inventory, lastCraftView, isRepair);
+        PrepareItemCraftEvent event = new CraftPrepareItemCraftEvent(inventory, lastCraftView, isRepair);
         Bukkit.getPluginManager().callEvent(event);
 
         return CraftItemStack.asNMSCopy(event.getInventory().getResult());
