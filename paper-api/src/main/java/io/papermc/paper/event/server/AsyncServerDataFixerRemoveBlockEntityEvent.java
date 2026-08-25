@@ -3,12 +3,8 @@ package io.papermc.paper.event.server;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.persistence.PersistentDataContainerView;
 import net.kyori.adventure.key.Key;
-import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * This event is emitted by the server when the data fixer is removing a block entity associated with a block
@@ -23,66 +19,34 @@ import org.jspecify.annotations.NullMarked;
  * might be blocking on.
  * Schedule large amount of work into separate thread pools.
  */
-@NullMarked
-public class AsyncServerDataFixerRemoveBlockEntityEvent extends EventTmp {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Key worldKey;
-    private final Key blockEntityType;
-    private final BlockPosition blockPosition;
-    private final PersistentDataContainerView persistentDataContainerView;
-
-    @ApiStatus.Internal
-    public AsyncServerDataFixerRemoveBlockEntityEvent(
-        final Key worldKey,
-        final Key blockEntityType,
-        final BlockPosition blockPosition,
-        final PersistentDataContainerView persistentDataContainerView
-    ) {
-        super(!Bukkit.isPrimaryThread());
-        this.worldKey = worldKey;
-        this.blockEntityType = blockEntityType;
-        this.blockPosition = blockPosition;
-        this.persistentDataContainerView = persistentDataContainerView;
-    }
-
-    /**
-     * {@return the key representing the no longer existing block entity type}
-     */
-    public Key getBlockEntityType() {
-        return blockEntityType;
-    }
+public interface AsyncServerDataFixerRemoveBlockEntityEvent extends Event {
 
     /**
      * {@return the key of the world this block entity was removed from}
      *
      * @see org.bukkit.Server#getWorld(Key)
      */
-    public Key getWorldKey() {
-        return worldKey;
-    }
+    Key getWorldKey();
+
+    /**
+     * {@return the key representing the no longer existing block entity type}
+     */
+    Key getBlockEntityType();
 
     /**
      * {@return the position of the block entity that was removed}
      */
-    public BlockPosition getBlockPosition() {
-        return blockPosition;
-    }
+    BlockPosition getBlockPosition();
 
     /**
      * {@return an immutable view of the persistent data container that was attached to the removed block entity}
      */
-    public PersistentDataContainerView getPersistentDataContainerView() {
-        return persistentDataContainerView;
-    }
+    PersistentDataContainerView getPersistentDataContainerView();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

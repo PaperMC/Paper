@@ -20,6 +20,7 @@ import io.papermc.paper.event.entity.*;
 import io.papermc.paper.event.inventory.ItemCraftedEvent;
 import io.papermc.paper.event.packet.*;
 import io.papermc.paper.event.player.*;
+import io.papermc.paper.event.server.AsyncServerDataFixerRemoveBlockEntityEvent;
 import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
 import io.papermc.paper.event.world.StructuresLocateEvent;
 import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
@@ -538,7 +539,8 @@ public final class ClassToInterfaceRules {
             PlayerConnectionReconfigureEvent.class,
             PlayerConnectionValidateLoginEvent.class,
             EntityCollideWithEntityEvent.class,
-            ItemCraftedEvent.class
+            ItemCraftedEvent.class,
+            AsyncServerDataFixerRemoveBlockEntityEvent.class
             //</editor-fold>
         );
     }
