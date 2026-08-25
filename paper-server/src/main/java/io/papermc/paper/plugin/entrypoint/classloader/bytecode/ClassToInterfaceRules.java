@@ -5,6 +5,7 @@ import com.destroystokyo.paper.event.brigadier.*;
 import com.destroystokyo.paper.event.entity.*;
 import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
 import com.destroystokyo.paper.event.player.*;
+import com.destroystokyo.paper.event.profile.*;
 import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
 import com.destroystokyo.paper.loottable.*;
 import io.papermc.asm.ClassInfoProvider;
@@ -12,20 +13,13 @@ import io.papermc.asm.RewriteRuleVisitorFactory;
 import io.papermc.asm.rules.classes.ClassToInterfaceRule;
 import io.papermc.paper.event.block.*;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
-import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
-import io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent;
-import io.papermc.paper.event.connection.configuration.PlayerConnectionInitialConfigureEvent;
-import io.papermc.paper.event.connection.configuration.PlayerConnectionReconfigureEvent;
+import io.papermc.paper.event.connection.configuration.*;
 import io.papermc.paper.event.entity.*;
 import io.papermc.paper.event.inventory.ItemCraftedEvent;
 import io.papermc.paper.event.packet.*;
 import io.papermc.paper.event.player.*;
-import io.papermc.paper.event.server.AsyncServerDataFixerRemoveBlockEntityEvent;
-import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
-import io.papermc.paper.event.server.WhitelistStateUpdateEvent;
-import io.papermc.paper.event.world.StructuresLocateEvent;
-import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
-import io.papermc.paper.event.world.WorldGameRuleChangeEvent;
+import io.papermc.paper.event.server.*;
+import io.papermc.paper.event.world.*;
 import io.papermc.paper.event.world.border.*;
 import io.papermc.paper.threadedregions.RegionizedServerInitEvent;
 import java.util.HashMap;
@@ -555,7 +549,8 @@ public final class ClassToInterfaceRules {
             PreCreatureSpawnEvent.class,
             PreSpawnerSpawnEvent.class,
             PhantomPreSpawnEvent.class,
-            ThrownEggHatchEvent.class
+            ThrownEggHatchEvent.class,
+            FillProfileEvent.class
             //</editor-fold>
         );
     }

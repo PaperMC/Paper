@@ -8,6 +8,7 @@ import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.authlib.yggdrasil.ServicesKeySet;
 import com.mojang.authlib.yggdrasil.YggdrasilMinecraftSessionService;
 
+import io.papermc.paper.event.profile.PaperFillProfileEvent;
 import java.net.Proxy;
 import java.util.Collections;
 import java.util.UUID;
@@ -28,7 +29,7 @@ public class PaperMinecraftSessionService extends YggdrasilMinecraftSessionServi
         }
         ProfileResult result = super.fetchProfile(profile.id(), requireSecure);
         if (result != null) {
-            final FillProfileEvent event = new FillProfileEvent(CraftPlayerProfile.asBukkitCopy(result.profile()));
+            final FillProfileEvent event = new PaperFillProfileEvent(CraftPlayerProfile.asBukkitCopy(result.profile()));
             event.callEvent();
             result = new ProfileResult(CraftPlayerProfile.asAuthlibCopy(event.getPlayerProfile()), result.actions());
         }
