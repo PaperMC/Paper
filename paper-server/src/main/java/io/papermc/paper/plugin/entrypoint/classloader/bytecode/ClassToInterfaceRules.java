@@ -553,7 +553,8 @@ public final class ClassToInterfaceRules {
             FillProfileEvent.class,
             LookupProfileEvent.class,
             PreFillProfileEvent.class,
-            PreLookupProfileEvent.class
+            PreLookupProfileEvent.class,
+            ProfileWhitelistVerifyEvent.class
             //</editor-fold>
         );
     }
