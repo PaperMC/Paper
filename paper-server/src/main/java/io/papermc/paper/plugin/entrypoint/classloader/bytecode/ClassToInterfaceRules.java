@@ -485,7 +485,9 @@ public final class ClassToInterfaceRules {
             RemoteServerCommandEvent.class,
             ServiceRegisterEvent.class,
             ServiceUnregisterEvent.class,
-            ServerLoadEvent.class
+            ServerLoadEvent.class,
+            AsyncChatDecorateEvent.class,
+            AsyncChatCommandDecorateEvent.class
             //</editor-fold>
         );
     }
