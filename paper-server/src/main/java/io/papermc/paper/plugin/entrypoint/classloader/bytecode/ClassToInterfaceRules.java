@@ -17,6 +17,7 @@ import io.papermc.paper.event.world.StructuresLocateEvent;
 import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
 import io.papermc.paper.event.world.WorldGameRuleChangeEvent;
 import io.papermc.paper.event.world.border.*;
+import io.papermc.paper.threadedregions.RegionizedServerInitEvent;
 import java.util.Map;
 import java.util.Set;
 import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
@@ -488,7 +489,8 @@ public final class ClassToInterfaceRules {
             ServerLoadEvent.class,
             AsyncChatDecorateEvent.class,
             AsyncChatCommandDecorateEvent.class,
-            CommandRegisteredEvent.class
+            CommandRegisteredEvent.class,
+            RegionizedServerInitEvent.class
             //</editor-fold>
         );
     }
