@@ -47,6 +47,7 @@ import org.bukkit.craftbukkit.event.weather.CraftWeatherEvent;
 import org.bukkit.craftbukkit.event.world.CraftChunkEvent;
 import org.bukkit.craftbukkit.event.world.CraftWorldEvent;
 import org.bukkit.event.block.*;
+import org.bukkit.event.command.UnknownCommandEvent;
 import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
 import org.bukkit.event.entity.*;
@@ -542,7 +543,8 @@ public final class ClassToInterfaceRules {
             EntityCollideWithEntityEvent.class,
             ItemCraftedEvent.class,
             AsyncServerDataFixerRemoveBlockEntityEvent.class,
-            WhitelistStateUpdateEvent.class
+            WhitelistStateUpdateEvent.class,
+            UnknownCommandEvent.class
             //</editor-fold>
         );
     }
