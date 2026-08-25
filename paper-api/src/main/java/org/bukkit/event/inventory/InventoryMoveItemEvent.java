@@ -1,14 +1,10 @@
 package org.bukkit.event.inventory;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when some entity or block (e.g. hopper) tries to move items directly
@@ -26,35 +22,14 @@ import org.jetbrains.annotations.NotNull;
  * has not been modified, the source inventory slot will be restored to its
  * former state. Otherwise any additional items will be discarded.
  */
-public class InventoryMoveItemEvent extends EventTmp implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Inventory sourceInventory;
-    private final Inventory destinationInventory;
-    private ItemStack itemStack;
-    private final boolean didSourceInitiate;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public InventoryMoveItemEvent(@NotNull final Inventory sourceInventory, @NotNull final ItemStack itemStack, @NotNull final Inventory destinationInventory, final boolean didSourceInitiate) {
-        Preconditions.checkArgument(itemStack != null, "ItemStack cannot be null");
-        this.sourceInventory = sourceInventory;
-        this.itemStack = itemStack;
-        this.destinationInventory = destinationInventory;
-        this.didSourceInitiate = didSourceInitiate;
-    }
+public interface InventoryMoveItemEvent extends Event, Cancellable {
 
     /**
      * Gets the Inventory that the ItemStack is being taken from
      *
      * @return Inventory that the ItemStack is being taken from
      */
-    @NotNull
-    public Inventory getSource() {
-        return this.sourceInventory;
-    }
+    Inventory getSource();
 
     /**
      * Gets the ItemStack being moved; if modified, the original item will not
@@ -62,10 +37,7 @@ public class InventoryMoveItemEvent extends EventTmp implements Cancellable {
      *
      * @return ItemStack
      */
-    @NotNull
-    public ItemStack getItem() {
-        return this.itemStack;
-    }
+    ItemStack getItem();
 
     /**
      * Sets the ItemStack being moved; if this is different from the original
@@ -74,20 +46,14 @@ public class InventoryMoveItemEvent extends EventTmp implements Cancellable {
      *
      * @param itemStack The ItemStack
      */
-    public void setItem(@NotNull ItemStack itemStack) {
-        Preconditions.checkArgument(itemStack != null, "ItemStack cannot be null. Cancel the event if you want nothing to be transferred.");
-        this.itemStack = itemStack.clone();
-    }
+    void setItem(ItemStack itemStack);
 
     /**
      * Gets the Inventory that the ItemStack is being put into
      *
      * @return Inventory that the ItemStack is being put into
      */
-    @NotNull
-    public Inventory getDestination() {
-        return this.destinationInventory;
-    }
+    Inventory getDestination();
 
     /**
      * Gets the Inventory that initiated the transfer. This will always be
@@ -95,29 +61,12 @@ public class InventoryMoveItemEvent extends EventTmp implements Cancellable {
      *
      * @return Inventory that initiated the transfer
      */
-    @NotNull
-    public Inventory getInitiator() {
-        return this.didSourceInitiate ? this.sourceInventory : this.destinationInventory;
-    }
+    Inventory getInitiator();
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

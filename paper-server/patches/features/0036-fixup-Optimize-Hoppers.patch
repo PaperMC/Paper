@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Mon, 24 Aug 2026 18:20:10 +0200
+Subject: [PATCH] fixup! Optimize Hoppers
+
+
+diff --git a/io/papermc/paper/event/inventory/PaperInventoryMoveItemEvent.java b/io/papermc/paper/event/inventory/PaperInventoryMoveItemEvent.java
+deleted file mode 100644
+index 24a2090e068ad3c0d08705050944abdfe19136a2..0000000000000000000000000000000000000000
+--- a/io/papermc/paper/event/inventory/PaperInventoryMoveItemEvent.java
++++ /dev/null
+@@ -1,29 +0,0 @@
+-package io.papermc.paper.event.inventory;
+-
+-import org.bukkit.event.inventory.InventoryMoveItemEvent;
+-import org.bukkit.inventory.Inventory;
+-import org.bukkit.inventory.ItemStack;
+-import org.jspecify.annotations.NullMarked;
+-
+-@NullMarked
+-public class PaperInventoryMoveItemEvent extends InventoryMoveItemEvent {
+-
+-    public boolean calledSetItem;
+-    public boolean calledGetItem;
+-
+-    public PaperInventoryMoveItemEvent(final Inventory sourceInventory, final ItemStack itemStack, final Inventory destinationInventory, final boolean didSourceInitiate) {
+-        super(sourceInventory, itemStack, destinationInventory, didSourceInitiate);
+-    }
+-
+-    @Override
+-    public ItemStack getItem() {
+-        this.calledGetItem = true;
+-        return super.getItem();
+-    }
+-
+-    @Override
+-    public void setItem(final ItemStack itemStack) {
+-        super.setItem(itemStack);
+-        this.calledSetItem = true;
+-    }
+-}
+diff --git a/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+index fef616d7b92454a721f7a14941b62a8963080cc5..1a0649836c02f20a5651953edab00a8c423b3fa3 100644
+--- a/net/minecraft/world/level/block/entity/HopperBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+@@ -312,7 +312,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+     @Nullable
+     private static ItemStack callPushMoveEvent(Container destination, ItemStack itemStack, HopperBlockEntity hopper) {
+         final org.bukkit.inventory.Inventory destinationInventory = getInventory(destination);
+-        final io.papermc.paper.event.inventory.PaperInventoryMoveItemEvent event = new io.papermc.paper.event.inventory.PaperInventoryMoveItemEvent(
++        final org.bukkit.craftbukkit.event.inventory.CraftInventoryMoveItemEvent event = new org.bukkit.craftbukkit.event.inventory.CraftInventoryMoveItemEvent(
+             hopper.getOwner(false).getInventory(),
+             org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack),
+             destinationInventory,
+@@ -340,7 +340,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+         final org.bukkit.inventory.Inventory destination = getInventory(hopper);
+ 
+         // Mirror is safe as no plugins ever use this item
+-        final io.papermc.paper.event.inventory.PaperInventoryMoveItemEvent event = new io.papermc.paper.event.inventory.PaperInventoryMoveItemEvent(sourceInventory, org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), destination, false);
++        final org.bukkit.craftbukkit.event.inventory.CraftInventoryMoveItemEvent event = new org.bukkit.craftbukkit.event.inventory.CraftInventoryMoveItemEvent(sourceInventory, org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), destination, false);
+         final boolean result = event.callEvent();
+         if (!event.calledGetItem && !event.calledSetItem) {
+             skipPullModeEventFire = true;
