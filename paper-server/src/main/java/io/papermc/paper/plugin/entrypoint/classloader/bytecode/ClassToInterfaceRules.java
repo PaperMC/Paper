@@ -20,6 +20,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftInventoryInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.event.block.*;
+import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
@@ -426,7 +427,8 @@ public final class ClassToInterfaceRules {
             org.bukkit.event.inventory.PrepareGrindstoneEvent.class,
             PrepareSmithingEvent.class,
             PrepareAnvilEvent.class,
-            AnvilDamagedEvent.class
+            AnvilDamagedEvent.class,
+            EnchantItemEvent.class
             //</editor-fold>
         );
     }
