@@ -25,13 +25,9 @@ package com.destroystokyo.paper.event.profile;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -40,102 +36,64 @@ import org.jspecify.annotations.Nullable;
  * Plugins may override/control the servers whitelist with this event,
  * and dynamically change the kick message.
  */
-@NullMarked
-public class ProfileWhitelistVerifyEvent extends EventTmp {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final PlayerProfile profile;
-    private final boolean whitelistEnabled;
-    private final boolean isOp;
-    private boolean whitelisted;
-    private @Nullable Component kickMessage;
-
-    @ApiStatus.Internal
-    public ProfileWhitelistVerifyEvent(final PlayerProfile profile, final boolean whitelistEnabled, final boolean whitelisted, final boolean isOp, final @Nullable Component kickMessage) {
-        this.profile = profile;
-        this.whitelistEnabled = whitelistEnabled;
-        this.whitelisted = whitelisted;
-        this.isOp = isOp;
-        this.kickMessage = kickMessage;
-    }
+public interface ProfileWhitelistVerifyEvent extends Event {
 
     /**
      * @return the currently planned message to send to the user if they are not whitelisted
      * @deprecated use {@link #kickMessage()}
      */
     @Deprecated
-    public @Nullable String getKickMessage() {
-        return this.kickMessage == null ? null : LegacyComponentSerializer.legacySection().serialize(this.kickMessage);
-    }
+    @Nullable String getKickMessage();
 
     /**
      * @param kickMessage The message to send to the player on kick if not whitelisted. May set to {@code null} to use the server configured default
      * @deprecated Use {@link #kickMessage(Component)}
      */
     @Deprecated
-    public void setKickMessage(final @Nullable String kickMessage) {
-        this.kickMessage(kickMessage == null ? null : LegacyComponentSerializer.legacySection().deserialize(kickMessage));
-    }
+    void setKickMessage(@Nullable String kickMessage);
 
     /**
      * @return the currently planned message to send to the user if they are not whitelisted
      */
     @Contract(pure = true)
-    public @Nullable Component kickMessage() {
-        return this.kickMessage;
-    }
+    @Nullable Component kickMessage();
 
     /**
      * @param kickMessage The message to send to the player on kick if not whitelisted. May set to {@code null} to use the server configured default
      */
-    public void kickMessage(final @Nullable Component kickMessage) {
-        this.kickMessage = kickMessage;
-    }
+    void kickMessage(@Nullable Component kickMessage);
 
     /**
      * @return The profile of the player trying to connect
      */
-    public PlayerProfile getPlayerProfile() {
-        return this.profile;
-    }
+    PlayerProfile getPlayerProfile();
 
     /**
      * @return Whether the player is whitelisted to play on this server (whitelist may be off is why it's true)
      */
-    public boolean isWhitelisted() {
-        return this.whitelisted;
-    }
+    boolean isWhitelisted();
 
     /**
      * Changes the players whitelisted state. {@code false} will deny the login
      *
      * @param whitelisted The new whitelisted state
      */
-    public void setWhitelisted(final boolean whitelisted) {
-        this.whitelisted = whitelisted;
-    }
+    void setWhitelisted(boolean whitelisted);
 
     /**
      * @return if the player obtained whitelist status by having op
      */
-    public boolean isOp() {
-        return this.isOp;
-    }
+    boolean isOp();
 
     /**
      * @return if the server even has whitelist on
      */
-    public boolean isWhitelistEnabled() {
-        return this.whitelistEnabled;
-    }
+    boolean isWhitelistEnabled();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
