@@ -25,6 +25,7 @@ import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
+import org.bukkit.event.world.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -430,7 +431,8 @@ public final class ClassToInterfaceRules {
             PrepareAnvilEvent.class,
             AnvilDamagedEvent.class,
             EnchantItemEvent.class,
-            PrepareItemEnchantEvent.class
+            PrepareItemEnchantEvent.class,
+            GenericGameEvent.class
             //</editor-fold>
         );
     }

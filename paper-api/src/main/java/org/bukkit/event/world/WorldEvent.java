@@ -1,14 +1,13 @@
 package org.bukkit.event.world;
 
 import org.bukkit.World;
-import org.bukkit.event.Event;
 import org.bukkit.event.EventTmp;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents events within a world
  */
-public abstract class WorldEvent extends EventTmp {
+public abstract class WorldEvent extends EventTmp implements WorldEventNew {
 
     protected final World world;
 
