@@ -12,6 +12,7 @@ import io.papermc.asm.RewriteRuleVisitorFactory;
 import io.papermc.asm.rules.classes.ClassToInterfaceRule;
 import io.papermc.paper.event.block.*;
 import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
+import io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent;
 import io.papermc.paper.event.entity.*;
 import io.papermc.paper.event.packet.*;
 import io.papermc.paper.event.player.*;
@@ -527,7 +528,8 @@ public final class ClassToInterfaceRules {
             HangingPlaceEvent.class,
             HangingBreakEvent.class,
             HangingBreakByEntityEvent.class,
-            AsyncPlayerConnectionConfigureEvent.class
+            AsyncPlayerConnectionConfigureEvent.class,
+            PlayerCodeOfConductSendEvent.class
             //</editor-fold>
         );
     }
