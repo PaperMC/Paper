@@ -1,6 +1,7 @@
 package com.destroystokyo.paper.event.brigadier;
 
 import com.destroystokyo.paper.brigadier.BukkitBrigadierCommand;
+import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
@@ -8,8 +9,7 @@ import org.bukkit.Warning;
 import org.bukkit.command.Command;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.server.ServerEvent;
-import org.jetbrains.annotations.NotNull;
+import org.bukkit.event.server.ServerEventNew;
 
 /**
  * Fired anytime the server synchronizes Bukkit commands to Brigadier.
@@ -22,37 +22,14 @@ import org.jetbrains.annotations.NotNull;
  */
 @Deprecated(since = "1.20.6")
 @Warning(reason = "This event has been superseded by the Commands API and will be removed in a future release. Listen to LifecycleEvents.COMMANDS instead.", value = true)
-public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource> extends ServerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final String commandLabel;
-    private final Command command;
-    private final com.destroystokyo.paper.brigadier.BukkitBrigadierCommand<S> brigadierCommand;
-    private final RootCommandNode<S> root;
-    private final ArgumentCommandNode<S, String> defaultArgs;
-    private LiteralCommandNode<S> literal;
-    private boolean rawCommand = false;
-
-    private boolean cancelled;
-
-    public CommandRegisteredEvent(String commandLabel, com.destroystokyo.paper.brigadier.BukkitBrigadierCommand<S> brigadierCommand, Command command, RootCommandNode<S> root, LiteralCommandNode<S> literal, ArgumentCommandNode<S, String> defaultArgs) {
-        this.commandLabel = commandLabel;
-        this.brigadierCommand = brigadierCommand;
-        this.command = command;
-        this.root = root;
-        this.literal = literal;
-        this.defaultArgs = defaultArgs;
-    }
+public interface CommandRegisteredEvent<S extends BukkitBrigadierCommandSource> extends ServerEventNew, Cancellable {
 
     /**
      * Gets the command label of the {@link Command} being registered.
      *
      * @return the command label
      */
-    public String getCommandLabel() {
-        return this.commandLabel;
-    }
+    String getCommandLabel();
 
     /**
      * Gets the {@link BukkitBrigadierCommand} for the {@link Command} being registered. This can be used
@@ -62,46 +39,28 @@ public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.
      *
      * @return the {@link BukkitBrigadierCommand}
      */
-    public BukkitBrigadierCommand<S> getBrigadierCommand() {
-        return this.brigadierCommand;
-    }
+    BukkitBrigadierCommand<S> getBrigadierCommand();
 
     /**
      * Gets the {@link Command} being registered.
      *
      * @return the {@link Command}
      */
-    public Command getCommand() {
-        return this.command;
-    }
+    Command getCommand();
 
     /**
      * Gets the {@link RootCommandNode} which is being registered to.
      *
      * @return the {@link RootCommandNode}
      */
-    public RootCommandNode<S> getRoot() {
-        return this.root;
-    }
-
-    /**
-     * Gets the Bukkit APIs default arguments node (greedy string), for if
-     * you wish to reuse it.
-     *
-     * @return default arguments node
-     */
-    public ArgumentCommandNode<S, String> getDefaultArgs() {
-        return this.defaultArgs;
-    }
+    RootCommandNode<S> getRoot();
 
     /**
      * Gets the {@link LiteralCommandNode} to be registered for the {@link Command}.
      *
      * @return the {@link LiteralCommandNode}
      */
-    public LiteralCommandNode<S> getLiteral() {
-        return this.literal;
-    }
+    LiteralCommandNode<S> getLiteral();
 
     /**
      * Sets the {@link LiteralCommandNode} used to register this command. The default literal is mutable, so
@@ -109,9 +68,15 @@ public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.
      *
      * @param literal new node
      */
-    public void setLiteral(LiteralCommandNode<S> literal) {
-        this.literal = literal;
-    }
+    void setLiteral(LiteralCommandNode<S> literal);
+
+    /**
+     * Gets the Bukkit APIs default arguments node (greedy string), for if
+     * you wish to reuse it.
+     *
+     * @return default arguments node
+     */
+    ArgumentCommandNode<S, String> getDefaultArgs();
 
     /**
      * Gets whether this command should is treated as "raw".
@@ -119,9 +84,7 @@ public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.
      * @see #setRawCommand(boolean)
      * @return whether this command is treated as "raw"
      */
-    public boolean isRawCommand() {
-        return this.rawCommand;
-    }
+    boolean isRawCommand();
 
     /**
      * Sets whether this command should be treated as "raw".
@@ -135,14 +98,7 @@ public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.
      *
      * @param rawCommand whether this command should be treated as "raw"
      */
-    public void setRawCommand(final boolean rawCommand) {
-        this.rawCommand = rawCommand;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    void setRawCommand(boolean rawCommand);
 
     /**
      * Cancels registering this command to Brigadier, but will remain in Bukkit Command Map. Can be used to hide a
@@ -151,17 +107,12 @@ public class CommandRegisteredEvent<S extends com.destroystokyo.paper.brigadier.
      * {@inheritDoc}
      */
     @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @NotNull
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
