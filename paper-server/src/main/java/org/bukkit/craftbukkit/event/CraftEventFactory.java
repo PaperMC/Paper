@@ -230,6 +230,7 @@ import org.bukkit.craftbukkit.event.raid.CraftRaidFinishEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidSpawnWaveEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidStopEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidTriggerEvent;
+import org.bukkit.craftbukkit.event.vehicle.CraftVehicleCreateEvent;
 import org.bukkit.craftbukkit.event.world.CraftEntitiesLoadEvent;
 import org.bukkit.craftbukkit.event.world.CraftEntitiesUnloadEvent;
 import org.bukkit.craftbukkit.event.world.CraftLootGenerateEvent;
@@ -1963,7 +1964,7 @@ public class CraftEventFactory {
 
     public static VehicleCreateEvent callVehicleCreateEvent(Entity entity) {
         Vehicle bukkitEntity = (Vehicle) entity.getBukkitEntity();
-        VehicleCreateEvent event = new VehicleCreateEvent(bukkitEntity);
+        VehicleCreateEvent event = new CraftVehicleCreateEvent(bukkitEntity);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }

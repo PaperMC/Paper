@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a vehicle-related event.
  */
-public abstract class VehicleEvent extends EventTmp {
+public abstract class VehicleEvent extends EventTmp implements VehicleEventNew {
 
     protected Vehicle vehicle;
 

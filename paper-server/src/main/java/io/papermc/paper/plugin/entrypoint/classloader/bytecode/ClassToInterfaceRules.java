@@ -42,6 +42,7 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.raid.*;
 import org.bukkit.event.server.*;
+import org.bukkit.event.vehicle.VehicleCreateEvent;
 import org.bukkit.event.world.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -499,7 +500,8 @@ public final class ClassToInterfaceRules {
             RegionizedServerInitEvent.class,
             ServerResourcesReloadedEvent.class,
             ServerListPingEvent.class,
-            PaperServerListPingEvent.class
+            PaperServerListPingEvent.class,
+            VehicleCreateEvent.class
             //</editor-fold>
         );
     }
