@@ -433,7 +433,8 @@ public final class ClassToInterfaceRules {
             EnchantItemEvent.class,
             PrepareItemEnchantEvent.class,
             GenericGameEvent.class,
-            LootGenerateEvent.class
+            LootGenerateEvent.class,
+            PortalCreateEvent.class
             //</editor-fold>
         );
     }
