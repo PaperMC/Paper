@@ -437,7 +437,8 @@ public final class ClassToInterfaceRules {
             PortalCreateEvent.class,
             SpawnChangeEvent.class,
             StructureGrowEvent.class,
-            WorldInitEvent.class
+            WorldInitEvent.class,
+            WorldLoadEvent.class
             //</editor-fold>
         );
     }
