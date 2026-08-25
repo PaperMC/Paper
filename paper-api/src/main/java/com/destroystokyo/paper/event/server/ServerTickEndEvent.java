@@ -1,43 +1,22 @@
 package com.destroystokyo.paper.event.server;
 
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when the server has finished ticking the main loop
  */
-@NullMarked
-public class ServerTickEndEvent extends EventTmp {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final int tickNumber;
-    private final double tickDuration;
-    private final long timeEnd;
-
-    @ApiStatus.Internal
-    public ServerTickEndEvent(final int tickNumber, final double tickDuration, final long timeRemaining) {
-        this.tickNumber = tickNumber;
-        this.tickDuration = tickDuration;
-        this.timeEnd = System.nanoTime() + timeRemaining;
-    }
+public interface ServerTickEndEvent extends Event {
 
     /**
      * @return What tick this was since start (first tick = 1)
      */
-    public int getTickNumber() {
-        return this.tickNumber;
-    }
+    int getTickNumber();
 
     /**
      * @return Time in milliseconds of how long this tick took
      */
-    public double getTickDuration() {
-        return this.tickDuration;
-    }
+    double getTickDuration();
 
     /**
      * Amount of nanoseconds remaining before the next tick should start.
@@ -48,16 +27,12 @@ public class ServerTickEndEvent extends EventTmp {
      *
      * @return Amount of nanoseconds remaining before the next tick should start
      */
-    public long getTimeRemaining() {
-        return this.timeEnd - System.nanoTime();
-    }
+    long getTimeRemaining();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
