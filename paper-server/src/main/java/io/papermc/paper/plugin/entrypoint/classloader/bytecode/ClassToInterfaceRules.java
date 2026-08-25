@@ -551,7 +551,10 @@ public final class ClassToInterfaceRules {
             AsyncPlayerPreLoginEvent.class,
             TabCompleteEvent.class,
             ClockTimeSkipEvent.class,
-            TimeSkipEvent.class
+            TimeSkipEvent.class,
+            PreCreatureSpawnEvent.class,
+            PreSpawnerSpawnEvent.class,
+            PhantomPreSpawnEvent.class
             //</editor-fold>
         );
     }
