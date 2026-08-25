@@ -535,6 +535,28 @@ index 27bdb82793250b33b457fe027c003948000857c9..c36d9fffbba15ee21ff5cdd29392e74d
  
              // Sword + Creative mode pre-cancel
              event.setCancelled(canAttackBlock);
+diff --git a/net/minecraft/server/network/PlayerChunkSender.java b/net/minecraft/server/network/PlayerChunkSender.java
+index 196c01fe5f200ed57e6f23e0939cac616305571a..adf985b56b8bc57f43db00927b066f59700a1e15 100644
+--- a/net/minecraft/server/network/PlayerChunkSender.java
++++ b/net/minecraft/server/network/PlayerChunkSender.java
+@@ -46,7 +46,7 @@ public class PlayerChunkSender {
+             player.connection.send(new ClientboundForgetLevelChunkPacket(pos));
+             // Paper start - PlayerChunkUnloadEvent
+             if (io.papermc.paper.event.packet.PlayerChunkUnloadEvent.getHandlerList().getRegisteredListeners().length > 0) {
+-                new io.papermc.paper.event.packet.PlayerChunkUnloadEvent(player.getBukkitEntity().getWorld().getChunkAt(pos.pack()), player.getBukkitEntity()).callEvent();
++                new io.papermc.paper.event.network.PaperPlayerChunkUnloadEvent(player.getBukkitEntity().getWorld().getChunkAt(pos.pack()), player.getBukkitEntity()).callEvent();
+             }
+             // Paper end - PlayerChunkUnloadEvent
+         }
+@@ -85,7 +85,7 @@ public class PlayerChunkSender {
+         // Paper end - Anti-Xray
+         // Paper start - PlayerChunkLoadEvent
+         if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
+-            new io.papermc.paper.event.packet.PlayerChunkLoadEvent(new org.bukkit.craftbukkit.CraftChunk(chunk), connection.getPlayer().getBukkitEntity()).callEvent();
++            new io.papermc.paper.event.network.PaperPlayerChunkLoadEvent(new org.bukkit.craftbukkit.CraftChunk(chunk), connection.getPlayer().getBukkitEntity()).callEvent();
+         }
+         // Paper end - PlayerChunkLoadEvent
+         ChunkPos pos = chunk.getPos();
 diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 index 5dbb2849f32ac3418f8fdf76c04022d7e9dc165b..b384207a95b189a1b745e933e8e089489abca951 100644
 --- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
@@ -3842,6 +3864,37 @@ index 1624d73d63a848b1eced1964193f14f7ab9c1bc2..eca2d875eea73e7c811dbbc853ca9886
              org.bukkit.Bukkit.getPluginManager().callEvent(event);
              if (event.isCancelled()) {
                  return true;
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index 681563230061212afa7994c8eb16c068754db5dd..167579787111210484346a860bbf7aedb07463fe 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -642,7 +642,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+              * no way of creating a CraftWorld/CraftServer at that point.
+              */
+             org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
+-            server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(bukkitChunk, this.needsDecoration));
++            server.getPluginManager().callEvent(new org.bukkit.craftbukkit.event.world.CraftChunkLoadEvent(bukkitChunk, this.needsDecoration));
+             org.bukkit.craftbukkit.event.CraftEventFactory.callEntitiesLoadEvent(this.level, this.chunkPos, ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(this.locX, this.locZ).getEntityChunk().getAllEntities()); // Paper - rewrite chunk system
+ 
+             if (this.needsDecoration) {
+@@ -664,7 +664,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+                         this.level.populating = false;
+                     }
+                 }
+-                server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
++                server.getPluginManager().callEvent(new org.bukkit.craftbukkit.event.world.CraftChunkPopulateEvent(bukkitChunk));
+             }
+         }
+     }
+@@ -674,7 +674,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+         org.bukkit.Server server = this.level.getCraftServer();
+         org.bukkit.craftbukkit.event.CraftEventFactory.callEntitiesUnloadEvent(this.level, this.chunkPos, ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(this.locX, this.locZ).getEntityChunk().getAllEntities()); // Paper - rewrite chunk system
+         org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
+-        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(bukkitChunk, true); // Paper - rewrite chunk system - force save to true so that mustNotSave is correctly set below
++        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.craftbukkit.event.world.CraftChunkUnloadEvent(bukkitChunk, true); // Paper - rewrite chunk system - force save to true so that mustNotSave is correctly set below
+         server.getPluginManager().callEvent(unloadEvent);
+         // note: saving can be prevented, but not forced if no saving is actually required
+         this.mustNotSave = !unloadEvent.isSaveChunk();
 diff --git a/net/minecraft/world/level/dimension/end/EnderDragonFight.java b/net/minecraft/world/level/dimension/end/EnderDragonFight.java
 index 26926083cbb2722bb5fbcbc81bcc44a99799ad9e..b2c96477d23ea3b4299f7215d048b8b344b49234 100644
 --- a/net/minecraft/world/level/dimension/end/EnderDragonFight.java

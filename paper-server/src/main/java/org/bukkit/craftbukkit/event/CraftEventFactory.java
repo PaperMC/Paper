@@ -225,6 +225,8 @@ import org.bukkit.craftbukkit.event.raid.CraftRaidFinishEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidSpawnWaveEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidStopEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidTriggerEvent;
+import org.bukkit.craftbukkit.event.world.CraftEntitiesLoadEvent;
+import org.bukkit.craftbukkit.event.world.CraftEntitiesUnloadEvent;
 import org.bukkit.craftbukkit.event.world.CraftLootGenerateEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -2132,13 +2134,13 @@ public class CraftEventFactory {
 
     public static void callEntitiesLoadEvent(Level level, ChunkPos pos, List<Entity> entities) {
         List<org.bukkit.entity.Entity> bukkitEntities = entities.stream().map(Entity::getBukkitEntity).collect(Collectors.toUnmodifiableList());
-        EntitiesLoadEvent event = new EntitiesLoadEvent(new CraftChunk((ServerLevel) level, pos.x(), pos.z()), bukkitEntities);
+        EntitiesLoadEvent event = new CraftEntitiesLoadEvent(new CraftChunk((ServerLevel) level, pos.x(), pos.z()), bukkitEntities);
         Bukkit.getPluginManager().callEvent(event);
     }
 
     public static void callEntitiesUnloadEvent(Level level, ChunkPos pos, List<Entity> entities) {
         List<org.bukkit.entity.Entity> bukkitEntities = entities.stream().map(Entity::getBukkitEntity).collect(Collectors.toUnmodifiableList());
-        EntitiesUnloadEvent event = new EntitiesUnloadEvent(new CraftChunk((ServerLevel) level, pos.x(), pos.z()), bukkitEntities);
+        EntitiesUnloadEvent event = new CraftEntitiesUnloadEvent(new CraftChunk((ServerLevel) level, pos.x(), pos.z()), bukkitEntities);
         Bukkit.getPluginManager().callEvent(event);
     }
 
