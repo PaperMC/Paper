@@ -159,6 +159,7 @@ import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.entity.CraftEntityFactory;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.event.server.CraftBroadcastMessageEvent;
 import org.bukkit.craftbukkit.event.world.CraftWorldUnloadEvent;
 import org.bukkit.craftbukkit.generator.CraftWorldInfo;
 import org.bukkit.craftbukkit.generator.OldCraftChunkData;
@@ -1899,7 +1900,7 @@ public final class CraftServer implements Server {
             }
         }
 
-        BroadcastMessageEvent broadcastMessageEvent = new BroadcastMessageEvent(!Bukkit.isPrimaryThread(), message, recipients); // Paper - Adventure
+        BroadcastMessageEvent broadcastMessageEvent = new CraftBroadcastMessageEvent(!Bukkit.isPrimaryThread(), message, recipients); // Paper - Adventure
         if (!broadcastMessageEvent.callEvent()) {
             return 0;
         }
