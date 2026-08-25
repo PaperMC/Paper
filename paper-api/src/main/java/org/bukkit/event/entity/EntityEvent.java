@@ -21,5 +21,7 @@ public interface EntityEvent extends Event {
      *
      * @return type of the Entity involved in this event
      */
-    EntityType getEntityType();
+    default EntityType getEntityType() {
+        return this.getEntity().getType();
+    }
 }

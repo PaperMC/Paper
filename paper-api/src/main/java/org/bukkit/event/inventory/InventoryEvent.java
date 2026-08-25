@@ -3,7 +3,6 @@ package org.bukkit.event.inventory;
 import java.util.List;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.Event;
-import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 
@@ -33,11 +32,4 @@ public interface InventoryEvent extends Event {
      * @return InventoryView
      */
     InventoryView getView();
-
-    static HandlerList getHandlerList() {
-        final class Holder {
-            private static final HandlerList HANDLER_LIST = new HandlerList();
-        }
-        return Holder.HANDLER_LIST;
-    }
 }

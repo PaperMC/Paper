@@ -2,12 +2,10 @@ package org.bukkit.event.block;
 
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.Cancellable;
-import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Called when a piston block is triggered
  */
-@ApiStatus.NonExtendable
 public interface BlockPistonEvent extends BlockEvent, Cancellable {
 
     /**

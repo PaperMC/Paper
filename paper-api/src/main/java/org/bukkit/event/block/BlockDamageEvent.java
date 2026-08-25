@@ -1,9 +1,9 @@
 package org.bukkit.event.block;
 
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -13,14 +13,7 @@ import org.bukkit.inventory.ItemStack;
  *
  * @see BlockDamageAbortEvent
  */
-public interface BlockDamageEvent extends BlockEvent, Cancellable {
-
-    /**
-     * Gets the player damaging the block involved in this event.
-     *
-     * @return The player damaging the block involved in this event
-     */
-    Player getPlayer();
+public interface BlockDamageEvent extends BlockEvent, PlayerEvent, Cancellable {
 
     /**
      * Gets the item currently in the player's hand.

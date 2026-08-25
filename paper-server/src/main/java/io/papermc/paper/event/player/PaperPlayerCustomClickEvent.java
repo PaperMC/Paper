@@ -4,26 +4,25 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.connection.PlayerCommonConnection;
 import io.papermc.paper.dialog.DialogResponseView;
 import io.papermc.paper.dialog.PaperDialogResponseView;
+import io.papermc.paper.event.network.connection.PaperConnectionEvent;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.event.HandlerList;
 import org.jspecify.annotations.Nullable;
 
-public class PaperPlayerCustomClickEvent extends CraftEvent implements PlayerCustomClickEvent {
+public class PaperPlayerCustomClickEvent extends PaperConnectionEvent implements PlayerCustomClickEvent {
 
     private final Key identifier;
-    private final PlayerCommonConnection commonConnection;
     private final @Nullable Tag payload;
     private @Nullable BinaryTagHolder apiPayload;
 
     private @Nullable DialogResponseView rawResponse;
 
     public PaperPlayerCustomClickEvent(final Key identifier, final PlayerCommonConnection commonConnection, final @Nullable Tag payload) {
+        super(commonConnection);
         this.identifier = identifier;
-        this.commonConnection = commonConnection;
         this.payload = payload;
     }
 
@@ -52,8 +51,8 @@ public class PaperPlayerCustomClickEvent extends CraftEvent implements PlayerCus
     }
 
     @Override
-    public PlayerCommonConnection getCommonConnection() {
-        return this.commonConnection;
+    public PlayerCommonConnection getConnection() {
+        return (PlayerCommonConnection) this.connection;
     }
 
     @Override

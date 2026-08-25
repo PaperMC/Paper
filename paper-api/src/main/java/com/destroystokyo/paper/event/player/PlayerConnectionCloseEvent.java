@@ -1,5 +1,6 @@
 package com.destroystokyo.paper.event.player;
 
+import io.papermc.paper.event.connection.ConnectionEvent;
 import java.net.InetAddress;
 import java.util.UUID;
 import org.bukkit.event.Event;
@@ -31,7 +32,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
  * The event may be invoked asynchronously or synchronously. Plugins should check
  * {@link Event#isAsynchronous()} and handle accordingly.
  */
-public interface PlayerConnectionCloseEvent extends Event {
+public interface PlayerConnectionCloseEvent extends ConnectionEvent {
 
     /**
      * Returns the {@link UUID} of the player disconnecting.

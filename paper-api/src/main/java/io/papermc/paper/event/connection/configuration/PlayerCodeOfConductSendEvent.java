@@ -1,20 +1,16 @@
 package io.papermc.paper.event.connection.configuration;
 
 import io.papermc.paper.connection.PlayerCommonConnection;
-import org.bukkit.event.Event;
+import io.papermc.paper.event.connection.ConnectionEvent;
 import org.bukkit.event.HandlerList;
 import org.jspecify.annotations.Nullable;
 
 /**
  * This event is called when the code of conduct is potentially sent to the player.
  */
-public interface PlayerCodeOfConductSendEvent extends Event {
+public interface PlayerCodeOfConductSendEvent extends ConnectionEvent {
 
-    /**
-     * Gets the connection that will receive the code of conduct.
-     *
-     * @return connection
-     */
+    @Override
     PlayerCommonConnection getConnection();
 
     /**

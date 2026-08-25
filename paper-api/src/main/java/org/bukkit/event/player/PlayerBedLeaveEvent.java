@@ -5,18 +5,23 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 
 /**
  * This event is fired when the player is leaving a bed.
  */
-public interface PlayerBedLeaveEvent extends PlayerEvent, Cancellable {
+public interface PlayerBedLeaveEvent extends PlayerEvent, BlockEvent, Cancellable {
 
     /**
      * Returns the bed block involved in this event.
      *
      * @return the bed block involved in this event
+     * @deprecated use {@link #getBlock()}
      */
-    Block getBed();
+    @Deprecated(forRemoval = true)
+    default Block getBed() {
+        return this.getBlock();
+    }
 
     /**
      * Get if this event should set the new spawn location for the

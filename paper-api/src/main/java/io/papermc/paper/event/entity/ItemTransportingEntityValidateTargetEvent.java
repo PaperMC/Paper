@@ -3,6 +3,7 @@ package io.papermc.paper.event.entity;
 import org.bukkit.block.Block;
 import org.bukkit.entity.CopperGolem;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.entity.EntityEvent;
 
 /**
@@ -14,13 +15,14 @@ import org.bukkit.event.entity.EntityEvent;
  * This may be called multiple times per entity per tick, so listeners
  * should be careful to implement checks in an efficient manner.
  */
-public interface ItemTransportingEntityValidateTargetEvent extends EntityEvent {
+public interface ItemTransportingEntityValidateTargetEvent extends EntityEvent, BlockEvent {
 
     /**
      * Gets the target block the entity is validating.
      *
      * @return the target block
      */
+    @Override
     Block getBlock();
 
     /**

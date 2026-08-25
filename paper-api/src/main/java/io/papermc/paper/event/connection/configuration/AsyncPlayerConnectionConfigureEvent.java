@@ -1,7 +1,7 @@
 package io.papermc.paper.event.connection.configuration;
 
 import io.papermc.paper.connection.PlayerConfigurationConnection;
-import org.bukkit.event.Event;
+import io.papermc.paper.event.connection.ConnectionEvent;
 import org.bukkit.event.HandlerList;
 
 /**
@@ -11,8 +11,9 @@ import org.bukkit.event.HandlerList;
  * <p>
  * This occurs after configuration, but before the player has entered the world.
  */
-public interface AsyncPlayerConnectionConfigureEvent extends Event {
+public interface AsyncPlayerConnectionConfigureEvent extends ConnectionEvent {
 
+    @Override
     PlayerConfigurationConnection getConnection();
 
     static HandlerList getHandlerList() {

@@ -1,23 +1,16 @@
 package org.bukkit.event.block;
 
 import java.util.List;
-import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Event fired when a dispenser shears a nearby entity.
  */
-public interface BlockShearEntityEvent extends BlockEvent, Cancellable {
-
-    /**
-     * Gets the entity that was sheared.
-     *
-     * @return the entity that was sheared.
-     */
-    Entity getEntity();
+public interface BlockShearEntityEvent extends BlockEvent, EntityEvent, Cancellable {
 
     /**
      * Gets the item used to shear this entity.

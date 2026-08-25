@@ -1,25 +1,25 @@
-package org.bukkit.craftbukkit.event.weather;
+package org.bukkit.craftbukkit.event.world.weather;
 
 import org.bukkit.World;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.weather.WeatherChangeEvent;
+import org.bukkit.event.weather.ThunderChangeEvent;
 
-public class CraftWeatherChangeEvent extends CraftWeatherEvent implements WeatherChangeEvent {
+public class CraftThunderChangeEvent extends CraftWeatherEvent implements ThunderChangeEvent {
 
-    private final boolean newWeatherState;
+    private final boolean newThunderState;
     private final Cause cause;
 
     private boolean cancelled;
 
-    public CraftWeatherChangeEvent(final World world, final boolean newWeatherState, final Cause cause) {
+    public CraftThunderChangeEvent(final World world, final boolean newThunderState, final Cause cause) {
         super(world);
-        this.newWeatherState = newWeatherState;
+        this.newThunderState = newThunderState;
         this.cause = cause;
     }
 
     @Override
-    public boolean toWeatherState() {
-        return this.newWeatherState;
+    public boolean toThunderState() {
+        return this.newThunderState;
     }
 
     @Override
@@ -39,6 +39,6 @@ public class CraftWeatherChangeEvent extends CraftWeatherEvent implements Weathe
 
     @Override
     public HandlerList getHandlers() {
-        return WeatherChangeEvent.getHandlerList();
+        return ThunderChangeEvent.getHandlerList();
     }
 }

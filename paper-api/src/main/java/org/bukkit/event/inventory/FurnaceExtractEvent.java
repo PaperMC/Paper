@@ -1,8 +1,8 @@
 package org.bukkit.event.inventory;
 
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockExpEvent;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -10,14 +10,7 @@ import org.bukkit.inventory.ItemStack;
  * {@link org.bukkit.block.Furnace}, {@link org.bukkit.block.Smoker}, or
  * {@link org.bukkit.block.BlastFurnace}.
  */
-public interface FurnaceExtractEvent extends BlockExpEvent {
-
-    /**
-     * Get the player that triggered the event
-     *
-     * @return the relevant player
-     */
-    Player getPlayer();
+public interface FurnaceExtractEvent extends BlockExpEvent, PlayerEvent {
 
     /**
      * Get the ItemStack of the item triggering the event

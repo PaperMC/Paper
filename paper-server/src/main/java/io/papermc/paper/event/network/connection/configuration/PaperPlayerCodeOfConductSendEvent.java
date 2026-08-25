@@ -1,24 +1,24 @@
-package io.papermc.paper.event.connection.configuration;
+package io.papermc.paper.event.network.connection.configuration;
 
 import io.papermc.paper.connection.PlayerCommonConnection;
 import io.papermc.paper.connection.PlayerConfigurationConnection;
-import org.bukkit.craftbukkit.event.CraftEvent;
+import io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent;
+import io.papermc.paper.event.network.connection.PaperConnectionEvent;
 import org.bukkit.event.HandlerList;
 import org.jspecify.annotations.Nullable;
 
-public class PaperPlayerCodeOfConductSendEvent extends CraftEvent implements PlayerCodeOfConductSendEvent {
+public class PaperPlayerCodeOfConductSendEvent extends PaperConnectionEvent implements PlayerCodeOfConductSendEvent {
 
     private @Nullable String codeOfConduct;
-    private final PlayerCommonConnection connection;
 
     public PaperPlayerCodeOfConductSendEvent(final PlayerConfigurationConnection connection, final @Nullable String codeOfConduct) {
-        this.connection = connection;
+        super(connection);
         this.codeOfConduct = codeOfConduct;
     }
 
     @Override
     public PlayerCommonConnection getConnection() {
-        return this.connection;
+        return (PlayerCommonConnection) this.connection;
     }
 
     @Override

@@ -2,21 +2,23 @@ package com.destroystokyo.paper.event.entity;
 
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.EntityType;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Called when a thrown egg might hatch.
  * <p>
  * This event fires for all thrown eggs that may hatch, players, dispensers, etc.
  */
-public interface ThrownEggHatchEvent extends Event {
+public interface ThrownEggHatchEvent extends EntityEvent {
 
     /**
      * Gets the egg involved in this event.
      *
      * @return the egg involved in this event
+     * @deprecated use {@link #getEntity()}
      */
+    @Deprecated(forRemoval = true)
     Egg getEgg();
 
     /**

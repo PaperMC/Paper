@@ -1,6 +1,6 @@
 package org.bukkit.event.block;
 
-import org.bukkit.entity.Entity;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Called when a block is formed by entities.
@@ -11,12 +11,5 @@ import org.bukkit.entity.Entity;
  * <li>Frosted Ice formed by the Frost Walker enchantment.
  * </ul>
  */
-public interface EntityBlockFormEvent extends BlockFormEvent {
-
-    /**
-     * Get the entity that formed the block.
-     *
-     * @return Entity involved in event
-     */
-    Entity getEntity();
+public interface EntityBlockFormEvent extends BlockFormEvent, EntityEvent {
 }

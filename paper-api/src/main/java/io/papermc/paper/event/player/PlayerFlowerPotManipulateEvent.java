@@ -3,20 +3,25 @@ package io.papermc.paper.event.player;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
  * Called when a player places an item in or takes an item out of a flowerpot.
  */
-public interface PlayerFlowerPotManipulateEvent extends PlayerEvent, Cancellable {
+public interface PlayerFlowerPotManipulateEvent extends PlayerEvent, BlockEvent, Cancellable {
 
     /**
      * Gets the flowerpot that is involved in this event.
      *
      * @return the flowerpot that is involved with this event
+     * @deprecated use {@link #getBlock()}
      */
-    Block getFlowerpot();
+    @Deprecated(forRemoval = true)
+    default Block getFlowerpot() {
+        return this.getBlock();
+    }
 
     /**
      * Gets the item being placed, or taken from, the flower pot.

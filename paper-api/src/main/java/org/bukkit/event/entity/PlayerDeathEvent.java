@@ -3,16 +3,22 @@ package org.bukkit.event.entity;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Thrown whenever a {@link Player} dies
  */
-public interface PlayerDeathEvent extends EntityDeathEvent {
+public interface PlayerDeathEvent extends EntityDeathEvent, PlayerEvent {
 
     @Override
     Player getEntity();
+
+    @Override
+    default Player getPlayer() {
+        return this.getEntity();
+    }
 
     /**
      * Get whether the death message should be shown.
@@ -33,16 +39,6 @@ public interface PlayerDeathEvent extends EntityDeathEvent {
      * @see #deathScreenMessageOverride()
      */
     void setShowDeathMessages(boolean displayDeathMessage);
-
-    /**
-     * Clarity method for getting the player. Not really needed except
-     * for reasons of clarity.
-     *
-     * @return Player who is involved in this event
-     */
-    default Player getPlayer() {
-        return this.getEntity();
-    }
 
     /**
      * Gets how much EXP the Player should have at respawn.

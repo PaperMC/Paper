@@ -22,7 +22,7 @@ public class CraftPlayerBedEnterEvent extends CraftPlayerEvent implements Player
     }
 
     @Override
-    public Block getBed() {
+    public Block getBlock() {
         return this.bed;
     }
 

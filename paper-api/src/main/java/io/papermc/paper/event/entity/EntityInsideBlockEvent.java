@@ -1,8 +1,8 @@
 package io.papermc.paper.event.entity;
 
-import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.entity.EntityEvent;
 
 /**
@@ -39,14 +39,7 @@ import org.bukkit.event.entity.EntityEvent;
  *     <li>Wither rose</li>
  * </ul>
  */
-public interface EntityInsideBlockEvent extends EntityEvent, Cancellable {
-
-    /**
-     * Gets the block.
-     *
-     * @return the block
-     */
-    Block getBlock();
+public interface EntityInsideBlockEvent extends EntityEvent, BlockEvent, Cancellable {
 
     static HandlerList getHandlerList() {
         final class Holder {

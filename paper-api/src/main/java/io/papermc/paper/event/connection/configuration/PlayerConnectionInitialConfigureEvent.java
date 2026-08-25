@@ -1,14 +1,15 @@
 package io.papermc.paper.event.connection.configuration;
 
 import io.papermc.paper.connection.PlayerConfigurationConnection;
-import org.bukkit.event.Event;
+import io.papermc.paper.event.connection.ConnectionEvent;
 import org.bukkit.event.HandlerList;
 
 /**
  * Indicates that this player is being configured for the first time, meaning that the connection will start being configured automatically
  */
-public interface PlayerConnectionInitialConfigureEvent extends Event {
+public interface PlayerConnectionInitialConfigureEvent extends ConnectionEvent {
 
+    @Override
     PlayerConfigurationConnection getConnection();
 
     static HandlerList getHandlerList() {

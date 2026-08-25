@@ -28,8 +28,10 @@ import java.util.Set;
 import net.minecraft.util.Util;
 import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
+import org.bukkit.craftbukkit.event.block.CraftBlockPistonEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.craftbukkit.event.hanging.CraftHangingEvent;
+import org.bukkit.craftbukkit.event.inventory.CraftInventoryEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftInventoryInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidEvent;
@@ -38,9 +40,9 @@ import org.bukkit.craftbukkit.event.server.CraftServerEvent;
 import org.bukkit.craftbukkit.event.server.CraftServiceEvent;
 import org.bukkit.craftbukkit.event.vehicle.CraftVehicleCollisionEvent;
 import org.bukkit.craftbukkit.event.vehicle.CraftVehicleEvent;
-import org.bukkit.craftbukkit.event.weather.CraftWeatherEvent;
 import org.bukkit.craftbukkit.event.world.CraftChunkEvent;
 import org.bukkit.craftbukkit.event.world.CraftWorldEvent;
+import org.bukkit.craftbukkit.event.world.weather.CraftWeatherEvent;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.*;
 import org.bukkit.event.command.UnknownCommandEvent;
@@ -98,10 +100,13 @@ public final class ClassToInterfaceRules {
         return Util.make(new HashMap<>(), map -> {
             //<editor-fold desc="event classes" defaultstate="collapsed">
             map.put(Event.class, CraftEvent.class);
+            map.put(AbstractRespawnEvent.class, PaperAbstractRespawnEvent.class);
             map.put(PlayerEvent.class, CraftPlayerEvent.class);
+            map.put(BlockPistonEvent.class, CraftBlockPistonEvent.class);
             map.put(BlockEvent.class, CraftBlockEvent.class);
             map.put(EntityEvent.class, CraftEntityEvent.class);
             map.put(InventoryInteractEvent.class, CraftInventoryInteractEvent.class);
+            map.put(InventoryEvent.class, CraftInventoryEvent.class);
             map.put(RaidEvent.class, CraftRaidEvent.class);
             map.put(WorldBorderEvent.class, PaperWorldBorderEvent.class);
             map.put(ChunkEvent.class, CraftChunkEvent.class);
@@ -296,7 +301,6 @@ public final class ClassToInterfaceRules {
             BlockPlaceEvent.class,
             BlockMultiPlaceEvent.class,
             BlockPhysicsEvent.class,
-            BlockPistonEvent.class,
             BlockPistonExtendEvent.class,
             BlockPistonRetractEvent.class,
             BlockReceiveGameEvent.class,
@@ -452,7 +456,6 @@ public final class ClassToInterfaceRules {
             WitchConsumePotionEvent.class,
             WitchReadyPotionEvent.class,
             WitchThrowPotionEvent.class,
-            InventoryEvent.class,
             InventoryDragEvent.class,
             InventoryClickEvent.class,
             SmithItemEvent.class,

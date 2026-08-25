@@ -46,13 +46,13 @@ public interface HopperInventorySearchEvent extends BlockEvent {
 
         /**
          * The source container the hopper is looking for.
-         *
+         * <br>
          * This is the Inventory above the Hopper where it extracts items from.
          */
         SOURCE,
         /**
          * The container the hopper is attached to.
-         *
+         * <br>
          * This is the Inventory the Hopper pushes items into.
          */
         DESTINATION

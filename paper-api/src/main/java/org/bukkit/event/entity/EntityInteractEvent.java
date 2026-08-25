@@ -1,20 +1,13 @@
 package org.bukkit.event.entity;
 
-import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 
 /**
  * Called when an entity interacts with an object
  */
-public interface EntityInteractEvent extends EntityEvent, Cancellable {
-
-    /**
-     * Returns the involved block
-     *
-     * @return the block clicked with this item.
-     */
-    Block getBlock();
+public interface EntityInteractEvent extends EntityEvent, BlockEvent, Cancellable {
 
     static HandlerList getHandlerList() {
         final class Holder {

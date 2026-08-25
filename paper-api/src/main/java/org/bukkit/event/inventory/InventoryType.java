@@ -2,7 +2,6 @@ package org.bukkit.event.inventory;
 
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.MenuType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

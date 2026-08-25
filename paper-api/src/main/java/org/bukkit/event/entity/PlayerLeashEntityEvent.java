@@ -1,16 +1,15 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
 /**
  * Called immediately prior to a creature being leashed by a player.
  */
-public interface PlayerLeashEntityEvent extends Event, Cancellable {
+public interface PlayerLeashEntityEvent extends PlayerEvent, Cancellable {
 
     /**
      * Returns the entity that is holding the leash.
@@ -25,13 +24,6 @@ public interface PlayerLeashEntityEvent extends Event, Cancellable {
      * @return The entity
      */
     Entity getEntity();
-
-    /**
-     * Returns the player involved in this event
-     *
-     * @return Player who is involved in this event
-     */
-    Player getPlayer();
 
     /**
      * Returns the hand used by the player to leash the entity.

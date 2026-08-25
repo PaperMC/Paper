@@ -1,4 +1,4 @@
 @NullMarked
-package io.papermc.paper.event.connection.configuration;
+package io.papermc.paper.event.network.connection;
 
 import org.jspecify.annotations.NullMarked;

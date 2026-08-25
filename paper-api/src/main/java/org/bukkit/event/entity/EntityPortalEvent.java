@@ -61,8 +61,20 @@ public interface EntityPortalEvent extends EntityTeleportEvent {
      * not.
      *
      * @return whether there should create be a destination portal created
+     * @deprecated use {@link #canCreatePortal()}
      */
-    boolean getCanCreatePortal();
+    @Deprecated(forRemoval = true)
+    default boolean getCanCreatePortal() {
+        return this.canCreatePortal();
+    }
+
+    /**
+     * Returns whether the server will attempt to create a destination portal or
+     * not.
+     *
+     * @return whether there should create be a destination portal created
+     */
+    boolean canCreatePortal();
 
     /**
      * Sets whether the server should attempt to create a destination portal or

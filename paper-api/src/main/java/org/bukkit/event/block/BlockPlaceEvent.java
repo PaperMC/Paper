@@ -2,9 +2,9 @@ package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
@@ -13,7 +13,7 @@ import org.bukkit.inventory.ItemStack;
  * <p>
  * If this event is cancelled, the block will not be placed.
  */
-public interface BlockPlaceEvent extends BlockEvent, Cancellable {
+public interface BlockPlaceEvent extends BlockEvent, PlayerEvent, Cancellable {
 
     /**
      * Gets the block that this block was placed against
@@ -29,13 +29,6 @@ public interface BlockPlaceEvent extends BlockEvent, Cancellable {
      *     placed the block
      */
     ItemStack getItemInHand();
-
-    /**
-     * Gets the player who placed the block involved in this event.
-     *
-     * @return The Player who placed the block involved in this event
-     */
-    Player getPlayer();
 
     /**
      * Clarity method for getting the placed block. Not really needed except

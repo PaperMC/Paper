@@ -1,6 +1,5 @@
 package io.papermc.paper.connection;
 
-import com.destroystokyo.paper.profile.PlayerProfile;
 import net.kyori.adventure.audience.Audience;
 
 public interface PlayerConfigurationConnection extends PlayerCommonConnection {
@@ -13,13 +12,6 @@ public interface PlayerConfigurationConnection extends PlayerCommonConnection {
      * @return the configuring player audience
      */
     Audience getAudience();
-
-    /**
-     * Gets the profile for this connection.
-     *
-     * @return profile
-     */
-    PlayerProfile getProfile();
 
     /**
      * Clears the players chat history and their local chat.

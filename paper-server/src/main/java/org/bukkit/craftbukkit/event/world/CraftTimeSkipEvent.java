@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.event.world;
 
 import org.bukkit.World;
-import org.bukkit.event.HandlerList;
 import org.bukkit.event.world.TimeSkipEvent;
 
 public class CraftTimeSkipEvent extends CraftClockTimeSkipEvent implements TimeSkipEvent {
@@ -16,10 +15,5 @@ public class CraftTimeSkipEvent extends CraftClockTimeSkipEvent implements TimeS
     @Override
     public World getWorld() {
         return this.world;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return TimeSkipEvent.getHandlerList();
     }
 }

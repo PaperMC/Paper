@@ -1,10 +1,5 @@
 package io.papermc.paper.event.executor;
 
-import org.bukkit.event.Event;
-import org.bukkit.event.Listener;
-import org.bukkit.plugin.EventExecutor;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.constant.ConstantDescs;
@@ -15,6 +10,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Objects;
+import org.bukkit.event.Event;
+import org.bukkit.event.Listener;
+import org.bukkit.plugin.EventExecutor;
+import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 @ApiStatus.Internal
 @NullMarked

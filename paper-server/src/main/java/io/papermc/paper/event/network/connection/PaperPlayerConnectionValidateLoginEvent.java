@@ -1,25 +1,18 @@
-package io.papermc.paper.event.connection;
+package io.papermc.paper.event.network.connection;
 
 import io.papermc.paper.connection.PlayerConnection;
+import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import net.kyori.adventure.text.Component;
-import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.event.HandlerList;
 import org.jspecify.annotations.Nullable;
 
-public class PaperPlayerConnectionValidateLoginEvent extends CraftEvent implements PlayerConnectionValidateLoginEvent {
+public class PaperPlayerConnectionValidateLoginEvent extends PaperConnectionEvent implements PlayerConnectionValidateLoginEvent {
 
-    private final PlayerConnection connection;
     private @Nullable Component kickMessage;
 
     public PaperPlayerConnectionValidateLoginEvent(final PlayerConnection connection, final @Nullable Component kickMessage) {
-        super(false);
-        this.connection = connection;
+        super(connection);
         this.kickMessage = kickMessage;
-    }
-
-    @Override
-    public PlayerConnection getConnection() {
-        return this.connection;
     }
 
     @Override

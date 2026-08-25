@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
-public final class PaperPlayerPostRespawnEvent extends PaperAbstractRespawnEvent implements PlayerPostRespawnEvent {
+public class PaperPlayerPostRespawnEvent extends PaperAbstractRespawnEvent implements PlayerPostRespawnEvent {
 
     public PaperPlayerPostRespawnEvent(
         final Player respawnPlayer, final Location respawnLocation,
