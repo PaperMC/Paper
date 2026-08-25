@@ -14,6 +14,7 @@ import io.papermc.paper.event.entity.*;
 import io.papermc.paper.event.packet.*;
 import io.papermc.paper.event.player.*;
 import io.papermc.paper.event.world.StructuresLocateEvent;
+import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
 import java.util.Map;
 import java.util.Set;
 import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
@@ -449,7 +450,8 @@ public final class ClassToInterfaceRules {
             RaidSpawnWaveEvent.class,
             RaidStopEvent.class,
             RaidTriggerEvent.class,
-            StructuresLocateEvent.class
+            StructuresLocateEvent.class,
+            WorldDifficultyChangeEvent.class
             //</editor-fold>
         );
     }
