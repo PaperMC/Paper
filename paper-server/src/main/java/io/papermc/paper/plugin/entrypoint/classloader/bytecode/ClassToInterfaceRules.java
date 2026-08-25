@@ -435,7 +435,8 @@ public final class ClassToInterfaceRules {
             GenericGameEvent.class,
             LootGenerateEvent.class,
             PortalCreateEvent.class,
-            SpawnChangeEvent.class
+            SpawnChangeEvent.class,
+            StructureGrowEvent.class
             //</editor-fold>
         );
     }
