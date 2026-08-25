@@ -535,7 +535,8 @@ public final class ClassToInterfaceRules {
             PlayerCodeOfConductSendEvent.class,
             PlayerConnectionInitialConfigureEvent.class,
             PlayerConnectionReconfigureEvent.class,
-            PlayerConnectionValidateLoginEvent.class
+            PlayerConnectionValidateLoginEvent.class,
+            EntityCollideWithEntityEvent.class
             //</editor-fold>
         );
     }
