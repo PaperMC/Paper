@@ -34,11 +34,7 @@ import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.raid.*;
-import org.bukkit.event.server.BroadcastMessageEvent;
-import org.bukkit.event.server.MapInitializeEvent;
-import org.bukkit.event.server.PluginDisableEvent;
-import org.bukkit.event.server.PluginEnableEvent;
-import org.bukkit.event.server.PluginEvent;
+import org.bukkit.event.server.*;
 import org.bukkit.event.world.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -482,7 +478,9 @@ public final class ClassToInterfaceRules {
             BroadcastMessageEvent.class,
             MapInitializeEvent.class,
             PluginEnableEvent.class,
-            PluginDisableEvent.class
+            PluginDisableEvent.class,
+            ServerCommandEvent.class,
+            RemoteServerCommandEvent.class
             //</editor-fold>
         );
     }
