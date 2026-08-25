@@ -5,34 +5,19 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.InventoryView;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a player opens an inventory
  */
-public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private Component titleOverride;
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public InventoryOpenEvent(@NotNull InventoryView transaction) {
-        super(transaction);
-    }
+public interface InventoryOpenEvent extends InventoryEventNew, Cancellable {
 
     /**
      * Returns the player involved in this event
      *
      * @return Player who is involved in this event
      */
-    @NotNull
-    public final HumanEntity getPlayer() {
-        return this.transaction.getPlayer();
-    }
+    HumanEntity getPlayer();
 
     /**
      * Gets the title override set by another event or {@code null}
@@ -40,9 +25,7 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
      *
      * @return the title override or {@code null}
      */
-    public @Nullable Component titleOverride() {
-        return this.titleOverride;
-    }
+    @Nullable Component titleOverride();
 
     /**
      * Sets the title override or clears the override.
@@ -55,9 +38,7 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
      *
      * @param titleOverride the title override or {@code null}
      */
-    public void titleOverride(@Nullable Component titleOverride) {
-        this.titleOverride = titleOverride;
-    }
+    void titleOverride(@Nullable Component titleOverride);
 
     /**
      * {@inheritDoc}
@@ -66,9 +47,7 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
      * show.
      */
     @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
+    boolean isCancelled();
 
     /**
      * {@inheritDoc}
@@ -77,18 +56,12 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
      * show.
      */
     @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
