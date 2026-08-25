@@ -32,6 +32,7 @@ import org.bukkit.craftbukkit.event.raid.CraftRaidEvent;
 import org.bukkit.craftbukkit.event.server.CraftPluginEvent;
 import org.bukkit.craftbukkit.event.server.CraftServerEvent;
 import org.bukkit.craftbukkit.event.server.CraftServiceEvent;
+import org.bukkit.craftbukkit.event.vehicle.CraftVehicleCollisionEvent;
 import org.bukkit.craftbukkit.event.world.CraftChunkEvent;
 import org.bukkit.craftbukkit.event.world.CraftWorldEvent;
 import org.bukkit.event.block.*;
@@ -98,6 +99,7 @@ public final class ClassToInterfaceRules {
             map.put(PluginEvent.class, CraftPluginEvent.class);
             map.put(ServiceEvent.class, CraftServiceEvent.class);
             map.put(ServerEvent.class, CraftServerEvent.class);
+            map.put(VehicleCollisionEvent.class, CraftVehicleCollisionEvent.class);
             //</editor-fold>
         });
     }
@@ -501,6 +503,8 @@ public final class ClassToInterfaceRules {
             ServerResourcesReloadedEvent.class,
             ServerListPingEvent.class,
             PaperServerListPingEvent.class,
+            VehicleBlockCollisionEvent.class,
+            VehicleEntityCollisionEvent.class,
             VehicleCreateEvent.class,
             VehicleDamageEvent.class,
             VehicleDestroyEvent.class,
