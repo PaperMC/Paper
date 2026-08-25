@@ -37,9 +37,9 @@ class PaperEventManager {
     // SimplePluginManager
     public void callEvent(@NotNull Event event) {
         if (event.isAsynchronous() && this.server.isPrimaryThread()) {
-            throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
+            throw new IllegalStateException(event.getClass().getSimpleName() + " may only be triggered asynchronously.");
         } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
-            throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
+            throw new IllegalStateException(event.getClass().getSimpleName() + " may only be triggered synchronously.");
         }
 
         HandlerList handlers = event.getHandlers();
@@ -66,7 +66,7 @@ class PaperEventManager {
                     ));
                 }
             } catch (Throwable ex) {
-                String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getPluginMeta().getDisplayName();
+                String msg = "Could not pass event " + event.getClass().getSimpleName() + " to " + registration.getPlugin().getPluginMeta().getDisplayName();
                 this.server.getLogger().log(Level.SEVERE, msg, ex);
                 if (!(event instanceof ServerExceptionEvent)) { // We don't want to cause an endless event loop
                     this.callEvent(new PaperServerExceptionEvent(new ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));

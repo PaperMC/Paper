@@ -3,6 +3,7 @@ package org.bukkit.event;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents an event.
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
  * @see PluginManager#callEvent(Event)
  * @see PluginManager#registerEvents(Listener,Plugin)
  */
+@NullMarked
 public interface Event {
 
     /**
@@ -29,7 +31,6 @@ public interface Event {
      *
      * @return name of this event
      */
-    @ApiStatus.Internal
     String getEventName();
 
     HandlerList getHandlers();

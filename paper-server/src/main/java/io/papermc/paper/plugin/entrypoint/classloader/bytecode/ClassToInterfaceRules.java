@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.util.Util;
+import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.craftbukkit.event.hanging.CraftHangingEvent;
@@ -40,6 +41,7 @@ import org.bukkit.craftbukkit.event.vehicle.CraftVehicleEvent;
 import org.bukkit.craftbukkit.event.weather.CraftWeatherEvent;
 import org.bukkit.craftbukkit.event.world.CraftChunkEvent;
 import org.bukkit.craftbukkit.event.world.CraftWorldEvent;
+import org.bukkit.event.Event;
 import org.bukkit.event.block.*;
 import org.bukkit.event.command.UnknownCommandEvent;
 import org.bukkit.event.enchantment.EnchantItemEvent;
@@ -95,7 +97,7 @@ public final class ClassToInterfaceRules {
     private static Map<Class<?>, Class<?>> classesWithRedirections() {
         return Util.make(new HashMap<>(), map -> {
             //<editor-fold desc="event classes" defaultstate="collapsed">
-            //map.put(Event.class, CraftEvent.class);
+            map.put(Event.class, CraftEvent.class);
             map.put(PlayerEvent.class, CraftPlayerEvent.class);
             map.put(BlockEvent.class, CraftBlockEvent.class);
             map.put(EntityEvent.class, CraftEntityEvent.class);

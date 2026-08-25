@@ -628,14 +628,14 @@ public final class SimplePluginManager implements PluginManager {
         if (true) {this.paperPluginManager.callEvent(event); return;} // Paper
         if (event.isAsynchronous()) {
             if (Thread.holdsLock(this)) {
-                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from inside synchronized code.");
+                throw new IllegalStateException(event.getClass().getSimpleName() + " cannot be triggered asynchronously from inside synchronized code.");
             }
             if (server.isPrimaryThread()) {
-                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from primary server thread.");
+                throw new IllegalStateException(event.getClass().getSimpleName() + " cannot be triggered asynchronously from primary server thread.");
             }
         } else {
             if (!server.isPrimaryThread()) {
-                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from another thread.");
+                throw new IllegalStateException(event.getClass().getSimpleName() + " cannot be triggered asynchronously from another thread.");
             }
         }
 
@@ -668,7 +668,7 @@ public final class SimplePluginManager implements PluginManager {
                 }
             } catch (Throwable ex) {
                 // Paper start - error reporting
-                String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName();
+                String msg = "Could not pass event " + event.getClass().getSimpleName() + " to " + registration.getPlugin().getDescription().getFullName();
                 server.getLogger().log(Level.SEVERE, msg, ex);
                 if (!(event instanceof com.destroystokyo.paper.event.server.ServerExceptionEvent)) { // We don't want to cause an endless event loop
                     // TODO - callEvent(new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerEventException(msg, ex, registration.getPlugin(), registration.getListener(), event)));

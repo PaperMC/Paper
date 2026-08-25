@@ -3,10 +3,13 @@ package org.bukkit.craftbukkit.event;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public abstract class CraftEvent implements Event {
 
-    private String name;
+    private @Nullable String name;
     private final boolean isAsync;
 
     protected CraftEvent() {
@@ -18,10 +21,10 @@ public abstract class CraftEvent implements Event {
     }
 
     @Override
-    public boolean callEvent() {
+    public final boolean callEvent() {
         Bukkit.getPluginManager().callEvent(this);
-        if (this instanceof Cancellable) {
-            return !((Cancellable) this).isCancelled();
+        if (this instanceof final Cancellable cancellable) {
+            return !cancellable.isCancelled();
         } else {
             return true;
         }
