@@ -602,6 +602,54 @@ index 27bdb82793250b33b457fe027c003948000857c9..c36d9fffbba15ee21ff5cdd29392e74d
  
              // Sword + Creative mode pre-cancel
              event.setCancelled(canAttackBlock);
+diff --git a/net/minecraft/server/network/LegacyQueryHandler.java b/net/minecraft/server/network/LegacyQueryHandler.java
+index a17ee0e63b34f3adadc3ae3d09da13c8a37b65c1..e60d2e670d9a24691eaff342a361d409c69400e0 100644
+--- a/net/minecraft/server/network/LegacyQueryHandler.java
++++ b/net/minecraft/server/network/LegacyQueryHandler.java
+@@ -49,14 +49,14 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+                 if (length == 0) {
+                     LOGGER.debug("Ping: (<1.3.x) from {}", net.minecraft.server.MinecraftServer.getServer().logIPs() ? socket : "<ip address withheld>"); // Paper - Respect logIPs option
+                     // Paper start - Call PaperServerListPingEvent and use results
+-                    com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socket, 39, null);
++                    com.destroystokyo.paper.event.server.PaperServerListPingEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLegacyServerListPingEvent(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socket, 39, null);
+                     if (event == null) {
+                         ctx.close();
+                         in.release();
+                         connectNormally = false;
+                         return;
+                     }
+-                    body = String.format(Locale.ROOT, "%s§%d§%d", com.destroystokyo.paper.network.PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
++                    body = String.format(Locale.ROOT, "%s§%d§%d", io.papermc.paper.network.PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
+                     // Paper end - Call PaperServerListPingEvent and use results
+                     sendFlushAndClose(ctx, createLegacyDisconnectPacket(ctx.alloc(), body));
+                 } else {
+@@ -79,7 +79,7 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+ 
+                     // Paper start - Call PaperServerListPingEvent and use results
+                     if (body == null) {
+-                        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socket, 127, null); // Paper
++                        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLegacyServerListPingEvent(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socket, 127, null); // Paper
+                         if (event == null) {
+                             ctx.close();
+                             in.release();
+@@ -217,14 +217,14 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
+         LOGGER.debug("Ping: (1.6) from {}", net.minecraft.server.MinecraftServer.getServer().logIPs() ? ctx.channel().remoteAddress() : "<ip address withheld>"); // Paper - Respect logIPs option
+ 
+         net.minecraft.server.MinecraftServer server = net.minecraft.server.MinecraftServer.getServer();
+-        java.net.InetSocketAddress virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(host, port);
+-        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(server, (java.net.InetSocketAddress) ctx.channel().remoteAddress(), protocolVersion, virtualHost);
++        java.net.InetSocketAddress virtualHost = io.papermc.paper.network.PaperNetworkClient.prepareVirtualHost(host, port);
++        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callLegacyServerListPingEvent(server, (java.net.InetSocketAddress) ctx.channel().remoteAddress(), protocolVersion, virtualHost);
+         if (event == null) {
+             ctx.close();
+             return null;
+         }
+ 
+-        String response = String.format("§1\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", event.getProtocolVersion(), event.getVersion(), com.destroystokyo.paper.network.PaperLegacyStatusClient.getMotd(event), event.getNumPlayers(), event.getMaxPlayers());
++        String response = String.format("§1\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", event.getProtocolVersion(), event.getVersion(), io.papermc.paper.network.PaperLegacyStatusClient.getMotd(event), event.getNumPlayers(), event.getMaxPlayers());
+         return response;
+     }
+ 
 diff --git a/net/minecraft/server/network/PlayerChunkSender.java b/net/minecraft/server/network/PlayerChunkSender.java
 index 196c01fe5f200ed57e6f23e0939cac616305571a..adf985b56b8bc57f43db00927b066f59700a1e15 100644
 --- a/net/minecraft/server/network/PlayerChunkSender.java
@@ -929,9 +977,18 @@ index c2aba28916da7f8b0bc8a325cddaa9bb7ecfb251..03ba7ee1ca6487eab873e47dcada2ae4
      }
  
 diff --git a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
-index 649f9646abb1bd84f1f22409aee09d2a4d27e581..be93b918470327fececade923d1184ee93dae077 100644
+index 649f9646abb1bd84f1f22409aee09d2a4d27e581..7ab29be125589482cbf410b957bae5f9b28d73ad 100644
 --- a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+@@ -65,7 +65,7 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+ 
+         // Paper start - NetworkClient implementation
+         this.connection.protocolVersion = packet.protocolVersion();
+-        this.connection.virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(packet.hostName(), packet.port());
++        this.connection.virtualHost = io.papermc.paper.network.PaperNetworkClient.prepareVirtualHost(packet.hostName(), packet.port());
+         // Paper end
+     }
+ 
 @@ -122,7 +122,7 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
              if (com.destroystokyo.paper.event.player.PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
                  java.net.SocketAddress socketAddress = this.connection.getRemoteAddress();
@@ -954,6 +1011,19 @@ index 1d892a8c905496af9d56cec86941e82ec48505db..78bfb5700bc971c11953d19c19e4c9e8
              if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
                  event.disallow(asyncEvent.getResult(), asyncEvent.kickMessage()); // Paper - Adventure
              }
+diff --git a/net/minecraft/server/network/ServerStatusPacketListenerImpl.java b/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
+index fc7b0b1dd054bddd830983b7f07a92169c886518..e6dede6ceb08487f99399df404cce4140a47ac62 100644
+--- a/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
+@@ -37,7 +37,7 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
+         } else {
+             this.hasRequestedStatus = true;
+             // this.connection.send(new ClientboundStatusResponsePacket(this.status)); // Paper
+-            com.destroystokyo.paper.network.StandardPaperServerListPingEventImpl.processRequest(net.minecraft.server.MinecraftServer.getServer(), this.connection); // Paper - handle status request
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleModernServerListPingEvent(net.minecraft.server.MinecraftServer.getServer(), this.connection); // Paper - handle status request
+         }
+     }
+ 
 diff --git a/net/minecraft/server/network/config/PrepareSpawnTask.java b/net/minecraft/server/network/config/PrepareSpawnTask.java
 index f6601bc30fa37a309923ea9883b04233f83b2c0b..7ea2a4bedda24d5f116f0537ecbb337bf8995492 100644
 --- a/net/minecraft/server/network/config/PrepareSpawnTask.java

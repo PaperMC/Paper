@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.event;
 
 import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
+import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
@@ -17,10 +18,13 @@ import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.entity.PaperEntityIgniteEvent;
 import io.papermc.paper.event.entity.PaperItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.inventory.PaperPrepareResultEvent;
+import io.papermc.paper.event.network.PaperServerListPingEventImpl;
 import io.papermc.paper.event.player.PaperPlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PaperPlayerToggleEntityAgeLockEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
+import io.papermc.paper.network.PaperLegacyStatusClient;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -37,6 +41,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.network.protocol.status.ClientboundStatusResponsePacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -2522,5 +2527,30 @@ public class CraftEventFactory {
             return PrimedTnt.NO_FUSE;
         }
         return event.getFuseTime();
+    }
+
+    public static void handleModernServerListPingEvent(MinecraftServer server, Connection connection) {
+        PaperServerListPingEventImpl.Standard event = new PaperServerListPingEventImpl.Standard(server, connection, server.getStatus());
+
+        // Close connection immediately if event is cancelled
+        if (!event.callEvent()) {
+            connection.disconnect((Component) null); // todo check
+            return;
+        }
+
+        // Send response
+        connection.send(new ClientboundStatusResponsePacket(event.packStatus()));
+    }
+
+    public static PaperServerListPingEvent callLegacyServerListPingEvent(MinecraftServer server, InetSocketAddress address, int protocolVersion, @javax.annotation.Nullable InetSocketAddress virtualHost) {
+        PaperServerListPingEvent event = new PaperServerListPingEventImpl(
+            server, new PaperLegacyStatusClient(address, protocolVersion, virtualHost), Byte.MAX_VALUE, null
+        );
+
+        if (!event.callEvent()) {
+            return null;
+        }
+
+        return event;
     }
 }

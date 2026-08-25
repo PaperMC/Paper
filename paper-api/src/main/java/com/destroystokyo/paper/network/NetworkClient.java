@@ -15,7 +15,7 @@ public interface NetworkClient {
      *
      * @return The client's socket address
      */
-    InetSocketAddress getAddress();
+    InetSocketAddress address();
 
     /**
      * Returns the protocol version of the client.
@@ -24,7 +24,7 @@ public interface NetworkClient {
      * @see <a href="https://minecraft.wiki/w/Minecraft_Wiki:Projects/wiki.vg_merge/Protocol_version_numbers">List of protocol
      *     version numbers</a>
      */
-    int getProtocolVersion();
+    int protocolVersion();
 
     /**
      * Returns the virtual host the client is connected to.
@@ -34,6 +34,6 @@ public interface NetworkClient {
      *
      * @return The client's virtual host, or {@code null} if unknown
      */
-    @Nullable InetSocketAddress getVirtualHost();
+    @Nullable InetSocketAddress virtualHost();
 
 }

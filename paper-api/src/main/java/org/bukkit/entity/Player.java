@@ -64,7 +64,6 @@ import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Scoreboard;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -275,7 +274,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return the player's address
      */
     @Nullable
-    public InetSocketAddress getAddress();
+    public InetSocketAddress address();
 
     // Paper start - Add API to get player's proxy address
     /**
@@ -421,7 +420,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
 
     /**
      * Adds this user's current IP address to the {@link IpBanList}. If a previous ban exists, this will
-     * update the entry. If {@link #getAddress()} is null this method will throw an exception.
+     * update the entry. If {@link #address()} is null this method will throw an exception.
      *
      * @param reason reason for the ban, null indicates implementation default
      * @param expires date for the ban's expiration (unban), or null to imply
@@ -437,7 +436,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
 
     /**
      * Adds this user's current IP address to the {@link IpBanList}. If a previous ban exists, this will
-     * update the entry. If {@link #getAddress()} is null this method will throw an exception.
+     * update the entry. If {@link #address()} is null this method will throw an exception.
      *
      * @param reason reason for the ban, null indicates implementation default
      * @param expires date for the ban's expiration (unban), or null to imply
@@ -453,7 +452,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
 
     /**
      * Adds this user's current IP address to the {@link IpBanList}. If a previous ban exists, this will
-     * update the entry. If {@link #getAddress()} is null this method will throw an exception.
+     * update the entry. If {@link #address()} is null this method will throw an exception.
      *
      * @param reason reason for the ban, null indicates implementation default
      * @param duration the duration how long the ban lasts, or null to imply
@@ -1535,7 +1534,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Deprecated(since = "1.20.4")
     public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, java.util.@Nullable Date expires, @Nullable String source, boolean kickPlayer) {
-        org.bukkit.BanEntry banEntry = org.bukkit.Bukkit.getServer().getBanList(org.bukkit.BanList.Type.IP).addBan(getAddress().getAddress().getHostAddress(), reason, expires, source);
+        org.bukkit.BanEntry banEntry = org.bukkit.Bukkit.getServer().getBanList(org.bukkit.BanList.Type.IP).addBan(address().getAddress().getHostAddress(), reason, expires, source);
         if (kickPlayer && isOnline()) {
             this.getPlayer().kickPlayer(reason);
         }
