@@ -1,7 +1,7 @@
 package io.papermc.paper.threadedregions;
 
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.server.ServerEvent;
+import org.bukkit.event.server.ServerEventNew;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -10,16 +10,12 @@ import org.jspecify.annotations.NullMarked;
  * regions are ticking in parallel.
  */
 @NullMarked
-public class RegionizedServerInitEvent extends ServerEvent {
+public interface RegionizedServerInitEvent extends ServerEventNew {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
