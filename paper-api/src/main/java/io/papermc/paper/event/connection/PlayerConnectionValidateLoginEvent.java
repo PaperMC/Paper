@@ -5,9 +5,7 @@ import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.connection.PlayerLoginConnection;
 import net.kyori.adventure.text.Component;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -22,19 +20,7 @@ import org.jspecify.annotations.Nullable;
  * is either {@link PlayerLoginConnection} or {@link PlayerConfigurationConnection},
  * allowing access to phase-specific API.
  */
-public class PlayerConnectionValidateLoginEvent extends EventTmp {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final PlayerConnection connection;
-    private @Nullable Component kickMessage;
-
-    @ApiStatus.Internal
-    public PlayerConnectionValidateLoginEvent(final PlayerConnection connection, final @Nullable Component kickMessage) {
-        super(false);
-        this.connection = connection;
-        this.kickMessage = kickMessage;
-    }
+public interface PlayerConnectionValidateLoginEvent extends Event {
 
     /**
      * Gets the connection of the player in this event.
@@ -49,26 +35,7 @@ public class PlayerConnectionValidateLoginEvent extends EventTmp {
      * @apiNote disconnecting the player through this connection
      * or using any methods that may send packets is not supported
      */
-    public PlayerConnection getConnection() {
-        return this.connection;
-    }
-
-    /**
-     * Allows the player to log in.
-     * This skips any login validation checks.
-     */
-    public void allow() {
-        this.kickMessage = null;
-    }
-
-    /**
-     * Disallows the player from logging in, with the given reason
-     *
-     * @param message Kick message to display to the user
-     */
-    public void kickMessage(final Component message) {
-        this.kickMessage = message;
-    }
+    PlayerConnection getConnection();
 
     /**
      * Gets the reason for why a player is not allowed to join the server.
@@ -76,25 +43,32 @@ public class PlayerConnectionValidateLoginEvent extends EventTmp {
      *
      * @return disallow reason
      */
-    public @Nullable Component getKickMessage() {
-        return this.kickMessage;
-    }
+    @Nullable Component getKickMessage();
+
+    /**
+     * Disallows the player from logging in, with the given reason
+     *
+     * @param message Kick message to display to the user
+     */
+    void kickMessage(Component message);
 
     /**
      * Gets if the player is allowed to enter the next stage.
      *
      * @return if allowed
      */
-    public boolean isAllowed() {
-        return this.kickMessage == null;
-    }
+    boolean isAllowed();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
+    /**
+     * Allows the player to log in.
+     * This skips any login validation checks.
+     */
+    void allow();
 
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

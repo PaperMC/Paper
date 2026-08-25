@@ -12,6 +12,7 @@ import io.papermc.paper.block.bed.BedEnterProblem;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
+import io.papermc.paper.event.connection.PaperPlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
@@ -2396,7 +2397,7 @@ public class CraftEventFactory {
 
     @SuppressWarnings("OptionalAssignedToNull")
     public static Component handleLoginResult(PlayerList.LoginResult result, PlayerConnection paperConnection, Connection connection, GameProfile profile, MinecraftServer server, boolean loginPhase) {
-        PlayerConnectionValidateLoginEvent event = new PlayerConnectionValidateLoginEvent(
+        PlayerConnectionValidateLoginEvent event = new PaperPlayerConnectionValidateLoginEvent(
             paperConnection, result.isAllowed() ? null : PaperAdventure.asAdventure(result.message())
         );
         event.callEvent();
