@@ -4,7 +4,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.server.ServerEventNew;
+import org.bukkit.event.server.ServerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
@@ -18,7 +18,7 @@ import org.jspecify.annotations.Nullable;
  * See {@link AsyncChatCommandDecorateEvent} for the decoration of messages sent via commands
  */
 @ApiStatus.Experimental
-public interface AsyncChatDecorateEvent extends ServerEventNew, Cancellable {
+public interface AsyncChatDecorateEvent extends ServerEvent, Cancellable {
 
     /**
      * Gets the player (if available) associated with this event.

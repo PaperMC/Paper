@@ -6,7 +6,7 @@ import org.bukkit.map.MapView;
 /**
  * Called when a map is initialized.
  */
-public interface MapInitializeEvent extends ServerEventNew {
+public interface MapInitializeEvent extends ServerEvent {
 
     /**
      * Gets the map initialized in this event.

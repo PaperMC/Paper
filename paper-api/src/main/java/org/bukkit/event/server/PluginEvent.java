@@ -5,7 +5,7 @@ import org.bukkit.plugin.Plugin;
 /**
  * Used for plugin enable and disable events
  */
-public interface PluginEvent extends ServerEventNew {
+public interface PluginEvent extends ServerEvent {
 
     /**
      * Gets the plugin involved in this event

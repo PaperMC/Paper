@@ -1,14 +1,14 @@
 package io.papermc.paper.event.server;
 
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.server.ServerEventNew;
+import org.bukkit.event.server.ServerEvent;
 
 /**
  * Called when resources such as datapacks are reloaded (e.g. /minecraft:reload)
  * <p>
  * Intended for use to re-register custom recipes, advancements that may be lost during a reload like this.
  */
-public interface ServerResourcesReloadedEvent extends ServerEventNew {
+public interface ServerResourcesReloadedEvent extends ServerEvent {
 
     /**
      * Gets the cause of the resource reload.

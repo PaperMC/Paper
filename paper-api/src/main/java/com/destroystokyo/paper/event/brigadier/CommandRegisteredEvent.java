@@ -9,7 +9,7 @@ import org.bukkit.Warning;
 import org.bukkit.command.Command;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.server.ServerEventNew;
+import org.bukkit.event.server.ServerEvent;
 
 /**
  * Fired anytime the server synchronizes Bukkit commands to Brigadier.
@@ -22,7 +22,7 @@ import org.bukkit.event.server.ServerEventNew;
  */
 @Deprecated(since = "1.20.6")
 @Warning(reason = "This event has been superseded by the Commands API and will be removed in a future release. Listen to LifecycleEvents.COMMANDS instead.", value = true)
-public interface CommandRegisteredEvent<S extends BukkitBrigadierCommandSource> extends ServerEventNew, Cancellable {
+public interface CommandRegisteredEvent<S extends BukkitBrigadierCommandSource> extends ServerEvent, Cancellable {
 
     /**
      * Gets the command label of the {@link Command} being registered.

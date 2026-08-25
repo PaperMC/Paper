@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Contract;
  * <b>Note:</b> The players in {@link #iterator()} will not be shown in the
  * server info if {@link Bukkit#getHideOnlinePlayers()} is {@code true}.
  */
-public interface ServerListPingEvent extends ServerEventNew, Iterable<Player> {
+public interface ServerListPingEvent extends ServerEvent, Iterable<Player> {
 
     /**
      * Gets the hostname that the player used to connect to the server, or

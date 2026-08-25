@@ -20,14 +20,17 @@ import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
 import io.papermc.paper.event.world.WorldGameRuleChangeEvent;
 import io.papermc.paper.event.world.border.*;
 import io.papermc.paper.threadedregions.RegionizedServerInitEvent;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import net.minecraft.util.Util;
 import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftInventoryInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidEvent;
 import org.bukkit.craftbukkit.event.server.CraftPluginEvent;
+import org.bukkit.craftbukkit.event.server.CraftServerEvent;
 import org.bukkit.craftbukkit.event.server.CraftServiceEvent;
 import org.bukkit.craftbukkit.event.world.CraftChunkEvent;
 import org.bukkit.craftbukkit.event.world.CraftWorldEvent;
@@ -80,21 +83,22 @@ public final class ClassToInterfaceRules {
     }
 
     private static Map<Class<?>, Class<?>> classesWithRedirections() {
-        return Map.of(
+        return Util.make(new HashMap<>(), map -> {
             //<editor-fold desc="event classes" defaultstate="collapsed">
-            //Event.class, CraftEvent.class,
-            PlayerEvent.class, CraftPlayerEvent.class,
-            BlockEvent.class, CraftBlockEvent.class,
-            EntityEvent.class, CraftEntityEvent.class,
-            InventoryInteractEvent.class, CraftInventoryInteractEvent.class,
-            RaidEvent.class, CraftRaidEvent.class,
-            WorldBorderEvent.class, PaperWorldBorderEvent.class,
-            ChunkEvent.class, CraftChunkEvent.class,
-            WorldEvent.class, CraftWorldEvent.class,
-            PluginEvent.class, CraftPluginEvent.class,
-            ServiceEvent.class, CraftServiceEvent.class
+            //map.put(Event.class, CraftEvent.class);
+            map.put(PlayerEvent.class, CraftPlayerEvent.class);
+            map.put(BlockEvent.class, CraftBlockEvent.class);
+            map.put(EntityEvent.class, CraftEntityEvent.class);
+            map.put(InventoryInteractEvent.class, CraftInventoryInteractEvent.class);
+            map.put(RaidEvent.class, CraftRaidEvent.class);
+            map.put(WorldBorderEvent.class, PaperWorldBorderEvent.class);
+            map.put(ChunkEvent.class, CraftChunkEvent.class);
+            map.put(WorldEvent.class, CraftWorldEvent.class);
+            map.put(PluginEvent.class, CraftPluginEvent.class);
+            map.put(ServiceEvent.class, CraftServiceEvent.class);
+            map.put(ServerEvent.class, CraftServerEvent.class);
             //</editor-fold>
-        );
+        });
     }
 
     private static Set<Class<?>> classes() {

@@ -5,7 +5,7 @@ import org.bukkit.event.HandlerList;
 /**
  * This event is called when either the server startup or reload has completed.
  */
-public interface ServerLoadEvent extends ServerEventNew {
+public interface ServerLoadEvent extends ServerEvent {
 
     /**
      * Gets the context in which the server was loaded.
