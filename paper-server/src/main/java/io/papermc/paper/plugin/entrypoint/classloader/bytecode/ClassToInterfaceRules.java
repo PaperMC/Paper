@@ -554,7 +554,8 @@ public final class ClassToInterfaceRules {
             TimeSkipEvent.class,
             PreCreatureSpawnEvent.class,
             PreSpawnerSpawnEvent.class,
-            PhantomPreSpawnEvent.class
+            PhantomPreSpawnEvent.class,
+            ThrownEggHatchEvent.class
             //</editor-fold>
         );
     }
