@@ -547,7 +547,8 @@ public final class ClassToInterfaceRules {
             UnknownCommandEvent.class,
             PlayerLeashEntityEvent.class,
             InventoryMoveItemEvent.class,
-            InventoryPickupItemEvent.class
+            InventoryPickupItemEvent.class,
+            AsyncPlayerPreLoginEvent.class
             //</editor-fold>
         );
     }
