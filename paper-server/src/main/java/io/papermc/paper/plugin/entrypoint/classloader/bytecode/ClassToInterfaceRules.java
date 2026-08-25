@@ -19,12 +19,14 @@ import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftInventoryInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.event.raid.CraftRaidEvent;
 import org.bukkit.event.block.*;
 import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
+import org.bukkit.event.raid.*;
 import org.bukkit.event.world.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -72,7 +74,8 @@ public final class ClassToInterfaceRules {
             PlayerEvent.class, CraftPlayerEvent.class,
             BlockEvent.class, CraftBlockEvent.class,
             EntityEvent.class, CraftEntityEvent.class,
-            InventoryInteractEvent.class, CraftInventoryInteractEvent.class
+            InventoryInteractEvent.class, CraftInventoryInteractEvent.class,
+            RaidEvent.class, CraftRaidEvent.class
             //</editor-fold>
         );
     }
@@ -440,7 +443,11 @@ public final class ClassToInterfaceRules {
             WorldInitEvent.class,
             WorldLoadEvent.class,
             WorldSaveEvent.class,
-            WorldUnloadEvent.class
+            WorldUnloadEvent.class,
+            RaidFinishEvent.class,
+            RaidSpawnWaveEvent.class,
+            RaidStopEvent.class,
+            RaidTriggerEvent.class
             //</editor-fold>
         );
     }
