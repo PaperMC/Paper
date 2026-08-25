@@ -27,33 +27,17 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import java.util.Set;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired once a profiles additional properties (such as textures) has been filled
  */
-@NullMarked
-public class FillProfileEvent extends EventTmp {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final PlayerProfile profile;
-
-    @ApiStatus.Internal
-    public FillProfileEvent(final PlayerProfile profile) {
-        super(!org.bukkit.Bukkit.isPrimaryThread());
-        this.profile = profile;
-    }
+public interface FillProfileEvent extends Event {
 
     /**
      * @return The Profile that had properties filled
      */
-    public PlayerProfile getPlayerProfile() {
-        return this.profile;
-    }
+    PlayerProfile getPlayerProfile();
 
     /**
      * Same as .getPlayerProfile().getProperties()
@@ -61,16 +45,12 @@ public class FillProfileEvent extends EventTmp {
      * @return The new properties on the profile.
      * @see PlayerProfile#getProperties()
      */
-    public Set<ProfileProperty> getProperties() {
-        return this.profile.getProperties();
-    }
+    Set<ProfileProperty> getProperties();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
