@@ -13,6 +13,7 @@ import io.papermc.paper.event.block.*;
 import io.papermc.paper.event.entity.*;
 import io.papermc.paper.event.packet.*;
 import io.papermc.paper.event.player.*;
+import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
 import io.papermc.paper.event.world.StructuresLocateEvent;
 import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
 import io.papermc.paper.event.world.WorldGameRuleChangeEvent;
@@ -490,7 +491,8 @@ public final class ClassToInterfaceRules {
             AsyncChatDecorateEvent.class,
             AsyncChatCommandDecorateEvent.class,
             CommandRegisteredEvent.class,
-            RegionizedServerInitEvent.class
+            RegionizedServerInitEvent.class,
+            ServerResourcesReloadedEvent.class
             //</editor-fold>
         );
     }
