@@ -5,74 +5,40 @@ import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.inventory.InventoryEvent;
+import org.bukkit.event.inventory.InventoryEventNew;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.view.EnchantmentView;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when an ItemStack is inserted in an enchantment table - can be
  * called multiple times
  */
-public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellable {
+public interface PrepareItemEnchantEvent extends InventoryEventNew, Cancellable {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Player enchanter;
-    private final Block table;
-    private final ItemStack item;
-    private final EnchantmentOffer[] offers;
-    private final int bonus;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public PrepareItemEnchantEvent(@NotNull final Player enchanter, @NotNull EnchantmentView view, @NotNull final Block table, @NotNull final ItemStack item, @org.jetbrains.annotations.Nullable final EnchantmentOffer @NotNull [] offers, final int bonus) { // Paper - offers can contain null values
-        super(view);
-        this.enchanter = enchanter;
-        this.table = table;
-        this.item = item;
-        this.offers = offers;
-        this.bonus = bonus;
-    }
-
-    @NotNull
     @Override
-    public EnchantmentView getView() {
-        return (EnchantmentView) super.getView();
-    }
+    EnchantmentView getView();
 
     /**
      * Gets the player enchanting the item
      *
      * @return enchanting player
      */
-    @NotNull
-    public Player getEnchanter() {
-        return this.enchanter;
-    }
+    Player getEnchanter();
 
     /**
      * Gets the block being used to enchant the item
      *
      * @return the block used for enchanting
      */
-    @NotNull
-    public Block getEnchantBlock() {
-        return this.table;
-    }
+    Block getEnchantBlock();
 
     /**
      * Gets the item to be enchanted.
      *
      * @return ItemStack of item
      */
-    @NotNull
-    public ItemStack getItem() {
-        return this.item;
-    }
+    ItemStack getItem();
 
     /**
      * Get a list of offered experience level costs of the enchantment.
@@ -80,15 +46,8 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
      * @return experience level costs offered
      * @deprecated Use {@link #getOffers()} instead of this method
      */
-    @NotNull
     @Deprecated(since = "1.20.5")
-    public int[] getExpLevelCostsOffered() {
-        int[] levelOffers = new int[this.offers.length];
-        for (int i = 0; i < this.offers.length; i++) {
-            levelOffers[i] = this.offers[i] != null ? this.offers[i].getCost() : 0;
-        }
-        return levelOffers;
-    }
+    int[] getExpLevelCostsOffered();
 
     /**
      * Get a list of available {@link EnchantmentOffer} for the player. You can
@@ -98,37 +57,19 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
      *
      * @return list of available enchantment offers
      */
-    public @Nullable EnchantmentOffer @NotNull[] getOffers() {
-        return this.offers;
-    }
+    @Nullable EnchantmentOffer[] getOffers();
 
     /**
      * Get enchantment bonus in effect - corresponds to number of bookshelves
      *
      * @return enchantment bonus
      */
-    public int getEnchantmentBonus() {
-        return this.bonus;
-    }
+    int getEnchantmentBonus();
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
