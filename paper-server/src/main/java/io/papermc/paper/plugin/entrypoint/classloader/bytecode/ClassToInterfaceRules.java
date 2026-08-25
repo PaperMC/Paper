@@ -14,6 +14,7 @@ import io.papermc.paper.event.block.*;
 import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
 import io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent;
 import io.papermc.paper.event.connection.configuration.PlayerConnectionInitialConfigureEvent;
+import io.papermc.paper.event.connection.configuration.PlayerConnectionReconfigureEvent;
 import io.papermc.paper.event.entity.*;
 import io.papermc.paper.event.packet.*;
 import io.papermc.paper.event.player.*;
@@ -531,7 +532,8 @@ public final class ClassToInterfaceRules {
             HangingBreakByEntityEvent.class,
             AsyncPlayerConnectionConfigureEvent.class,
             PlayerCodeOfConductSendEvent.class,
-            PlayerConnectionInitialConfigureEvent.class
+            PlayerConnectionInitialConfigureEvent.class,
+            PlayerConnectionReconfigureEvent.class
             //</editor-fold>
         );
     }
