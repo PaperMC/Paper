@@ -940,11 +940,11 @@ public final class CraftServer implements Server {
             commands.performCommand(results, command, true);
             return true;
         } catch (CommandException ex) {
-            new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args)).callEvent(); // Paper
+            new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args)).callEvent(); // Paper
             throw ex;
         } catch (Throwable ex) {
             String msg = "Unhandled exception executing '" + command + "' in " + target;
-            new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args)).callEvent(); // Paper
+            new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args)).callEvent(); // Paper
             throw new CommandException(msg, ex);
         }
     }

@@ -483,7 +483,7 @@ public class CraftScheduler implements BukkitScheduler {
                         logMessage,
                             throwable);
                     org.bukkit.Bukkit.getServer().getPluginManager().callEvent(
-                        new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerSchedulerException(logMessage, throwable, task)));
+                        new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerSchedulerException(logMessage, throwable, task)));
                     // Paper end
                 } finally {
                     this.currentTask = null;

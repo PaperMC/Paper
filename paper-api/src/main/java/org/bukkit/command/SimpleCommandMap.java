@@ -160,13 +160,13 @@ public class SimpleCommandMap implements CommandMap {
             target.execute(sender, sentCommandLabel, Arrays.copyOfRange(args, 1, args.length));
             } // target.timings.stopTiming(); // Spigot // Paper
         } catch (CommandException ex) {
-            server.getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
+            // TODO - server.getPluginManager().callEvent(new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
             //target.timings.stopTiming(); // Spigot // Paper
             throw ex;
         } catch (Throwable ex) {
             //target.timings.stopTiming(); // Spigot // Paper
             String msg = "Unhandled exception executing '" + commandLine + "' in " + target;
-            server.getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
+            // TODO - server.getPluginManager().callEvent(new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
             throw new CommandException(msg, ex);
         }
 
@@ -247,7 +247,7 @@ public class SimpleCommandMap implements CommandMap {
             throw ex;
         } catch (Throwable ex) {
             String msg = "Unhandled exception executing tab-completer for '" + cmdLine + "' in " + target;
-            server.getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerTabCompleteException(msg, ex, target, sender, args))); // Paper
+            // TODO - server.getPluginManager().callEvent(new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerTabCompleteException(msg, ex, target, sender, args))); // Paper
             throw new CommandException(msg, ex);
         }
     }
