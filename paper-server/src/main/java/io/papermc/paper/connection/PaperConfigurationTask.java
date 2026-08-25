@@ -2,6 +2,7 @@ package io.papermc.paper.connection;
 
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
+import io.papermc.paper.event.connection.configuration.PaperAsyncPlayerConnectionConfigureEvent;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -33,7 +34,7 @@ public class PaperConfigurationTask implements ConfigurationTask {
             return;
         }
         CONFIGURATION_POOL.execute(() -> {
-            AsyncPlayerConnectionConfigureEvent event = new AsyncPlayerConnectionConfigureEvent(this.packetListener.paperConnection);
+            AsyncPlayerConnectionConfigureEvent event = new PaperAsyncPlayerConnectionConfigureEvent(this.packetListener.paperConnection);
             event.callEvent();
             this.packetListener.finishCurrentTask(TYPE);
         });
