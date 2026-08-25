@@ -1154,7 +1154,7 @@ index 5dd64fb6e88629c7cc9f110842d1825365113b3b..77078d0eaabb158148f269ee663f205a
              return false;
          }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index d958c4717739e588c5f8985dec5d215c745f49fc..3f1b2a29d170055bb5c075b9d5fc8b22342e9766 100644
+index d958c4717739e588c5f8985dec5d215c745f49fc..64725bb5463a28ee30467f85eb11cf18f2f59749 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -761,7 +761,7 @@ public abstract class Entity
@@ -1184,6 +1184,15 @@ index d958c4717739e588c5f8985dec5d215c745f49fc..3f1b2a29d170055bb5c075b9d5fc8b22
              if (!event.callEvent()) {
                  return;
              }
+@@ -1250,7 +1250,7 @@ public abstract class Entity
+                     }
+ 
+                     if (!block.getType().isAir()) {
+-                        org.bukkit.event.vehicle.VehicleBlockCollisionEvent event = new org.bukkit.event.vehicle.VehicleBlockCollisionEvent(vehicle, block, org.bukkit.craftbukkit.util.CraftVector.toBukkit(originalMovement)); // Paper - Expose pre-collision velocity
++                        org.bukkit.event.vehicle.VehicleBlockCollisionEvent event = new org.bukkit.craftbukkit.event.vehicle.CraftVehicleBlockCollisionEvent(vehicle, block, org.bukkit.craftbukkit.util.CraftVector.toBukkit(originalMovement)); // Paper - Expose pre-collision velocity
+                         event.callEvent();
+                     }
+                 }
 @@ -2450,7 +2450,7 @@ public abstract class Entity
              // Paper start - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
              org.bukkit.util.Vector delta = new org.bukkit.util.Vector(xa, ya, za);
@@ -2418,9 +2427,27 @@ index 96b0fa2ebab15a939a5162d23b3ad9b92365d818..faa3dc0eb1df5589ddbf3710bbefe1cc
                  this.setDamage(40.0F); // Maximize damage so this doesn't get triggered again right away
                  return true;
 diff --git a/net/minecraft/world/entity/vehicle/boat/AbstractBoat.java b/net/minecraft/world/entity/vehicle/boat/AbstractBoat.java
-index 3fcd534cee1f605a710ffc43eff4b5106c7dd40c..84a802d962fec70dd5b23e1252ad832bb371266d 100644
+index 3fcd534cee1f605a710ffc43eff4b5106c7dd40c..619346186527e7314e4552de237624308ae551ba 100644
 --- a/net/minecraft/world/entity/vehicle/boat/AbstractBoat.java
 +++ b/net/minecraft/world/entity/vehicle/boat/AbstractBoat.java
+@@ -189,7 +189,7 @@ public abstract class AbstractBoat extends VehicleEntity implements Leashable {
+             if (entity.getBoundingBox().minY < this.getBoundingBox().maxY) {
+                 // CraftBukkit start
+                 if (!this.isPassengerOfSameVehicle(entity)) {
+-                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent event = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent event = new org.bukkit.craftbukkit.event.vehicle.CraftVehicleEntityCollisionEvent(
+                         (org.bukkit.entity.Vehicle) this.getBukkitEntity(),
+                         entity.getBukkitEntity()
+                     );
+@@ -201,7 +201,7 @@ public abstract class AbstractBoat extends VehicleEntity implements Leashable {
+         } else if (entity.getBoundingBox().minY <= this.getBoundingBox().minY) {
+             // CraftBukkit start
+             if (!this.isPassengerOfSameVehicle(entity)) {
+-                org.bukkit.event.vehicle.VehicleEntityCollisionEvent event = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                org.bukkit.event.vehicle.VehicleEntityCollisionEvent event = new org.bukkit.craftbukkit.event.vehicle.CraftVehicleEntityCollisionEvent(
+                     (org.bukkit.entity.Vehicle) this.getBukkitEntity(),
+                     entity.getBukkitEntity()
+                 );
 @@ -750,7 +750,7 @@ public abstract class AbstractBoat extends VehicleEntity implements Leashable {
      public void remove(final Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.@Nullable Cause eventCause) { // CraftBukkit - add Bukkit remove cause
          if (!this.level().isClientSide() && reason.shouldDestroy() && this.isLeashed()) {
@@ -2430,6 +2457,28 @@ index 3fcd534cee1f605a710ffc43eff4b5106c7dd40c..84a802d962fec70dd5b23e1252ad832b
              event.callEvent();
              if (event.isDropLeash()) {
                  this.dropLeash();
+diff --git a/net/minecraft/world/entity/vehicle/minecart/AbstractMinecart.java b/net/minecraft/world/entity/vehicle/minecart/AbstractMinecart.java
+index 30b99d9d0944399e6f3a74c4310cbf8f15cc5adc..0f907e9d61dd7cd6da66041f05b6e82dfc80a4f1 100644
+--- a/net/minecraft/world/entity/vehicle/minecart/AbstractMinecart.java
++++ b/net/minecraft/world/entity/vehicle/minecart/AbstractMinecart.java
+@@ -178,7 +178,7 @@ public abstract class AbstractMinecart extends VehicleEntity {
+             return false;
+         }
+ 
+-        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent((org.bukkit.entity.Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
++        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.craftbukkit.event.vehicle.CraftVehicleEntityCollisionEvent((org.bukkit.entity.Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
+         return collisionEvent.callEvent();
+         // Paper end - fix VehicleEntityCollisionEvent not called when colliding with player
+     }
+@@ -564,7 +564,7 @@ public abstract class AbstractMinecart extends VehicleEntity {
+                     if (io.papermc.paper.event.entity.EntityCollideWithEntityEvent.getHandlerList().getRegisteredListeners().length != 0 &&
+                             !new io.papermc.paper.event.entity.EntityCollideWithEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity()).callEvent()) return;
+ 
+-                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.craftbukkit.event.vehicle.CraftVehicleEntityCollisionEvent(
+                         (org.bukkit.entity.Vehicle) this.getBukkitEntity(),
+                         entity.getBukkitEntity()
+                     );
 diff --git a/net/minecraft/world/entity/vehicle/minecart/MinecartTNT.java b/net/minecraft/world/entity/vehicle/minecart/MinecartTNT.java
 index c1b3e93910b2ac2b89f9662e23eb0d36c6ef96d3..5119a186d5e709c8a6251a81e9a7b0a9d229ba68 100644
 --- a/net/minecraft/world/entity/vehicle/minecart/MinecartTNT.java
@@ -2443,6 +2492,68 @@ index c1b3e93910b2ac2b89f9662e23eb0d36c6ef96d3..5119a186d5e709c8a6251a81e9a7b0a9
                      this.getBukkitEntity(),
                      (float) (this.explosionPowerBase + this.explosionSpeedFactor * this.random.nextDouble() * 1.5 * speed),
                      this.isIncendiary
+diff --git a/net/minecraft/world/entity/vehicle/minecart/NewMinecartBehavior.java b/net/minecraft/world/entity/vehicle/minecart/NewMinecartBehavior.java
+index eacf2358d0eeb9a4b07181bb01e78e781c2d069d..06f7d8c4282b390b9cdc546ee996cfc960ad80de 100644
+--- a/net/minecraft/world/entity/vehicle/minecart/NewMinecartBehavior.java
++++ b/net/minecraft/world/entity/vehicle/minecart/NewMinecartBehavior.java
+@@ -531,7 +531,7 @@ public class NewMinecartBehavior extends MinecartBehavior {
+                         && !this.minecart.isVehicle()
+                         && !entity.isPassenger()) {
+                         // CraftBukkit start
+-                        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.craftbukkit.event.vehicle.CraftVehicleEntityCollisionEvent(
+                             (org.bukkit.entity.Vehicle) this.minecart.getBukkitEntity(),
+                             entity.getBukkitEntity()
+                         );
+@@ -562,7 +562,7 @@ public class NewMinecartBehavior extends MinecartBehavior {
+                         || entity.isPassenger()) {
+                         // CraftBukkit start
+                         if (!this.minecart.isPassengerOfSameVehicle(entity)) {
+-                            org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                            org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.craftbukkit.event.vehicle.CraftVehicleEntityCollisionEvent(
+                                 (org.bukkit.entity.Vehicle) this.minecart.getBukkitEntity(),
+                                 entity.getBukkitEntity()
+                             );
+@@ -580,7 +580,7 @@ public class NewMinecartBehavior extends MinecartBehavior {
+             for (Entity entity : this.level().getEntities(this.minecart, hitbox)) {
+                 if (!this.minecart.hasPassenger(entity) && entity.isPushable() && entity instanceof AbstractMinecart) {
+                     // CraftBukkit start
+-                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.craftbukkit.event.vehicle.CraftVehicleEntityCollisionEvent(
+                         (org.bukkit.entity.Vehicle) this.minecart.getBukkitEntity(),
+                         entity.getBukkitEntity()
+                     );
+diff --git a/net/minecraft/world/entity/vehicle/minecart/OldMinecartBehavior.java b/net/minecraft/world/entity/vehicle/minecart/OldMinecartBehavior.java
+index 3c8694e75cabd68690d9139ecedc9e079db482c5..00ee3fddc905c0b05cd091c173d88b2035f9ed13 100644
+--- a/net/minecraft/world/entity/vehicle/minecart/OldMinecartBehavior.java
++++ b/net/minecraft/world/entity/vehicle/minecart/OldMinecartBehavior.java
+@@ -376,7 +376,7 @@ public class OldMinecartBehavior extends MinecartBehavior {
+                         && !this.minecart.isVehicle()
+                         && !entity.isPassenger()) {
+                         // CraftBukkit start
+-                        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.craftbukkit.event.vehicle.CraftVehicleEntityCollisionEvent(
+                             (org.bukkit.entity.Vehicle) this.minecart.getBukkitEntity(), entity.getBukkitEntity()
+                         );
+                         if (!collisionEvent.callEvent()) continue;
+@@ -385,7 +385,7 @@ public class OldMinecartBehavior extends MinecartBehavior {
+                     } else {
+                         // CraftBukkit start
+                         if (!this.minecart.isPassengerOfSameVehicle(entity)) {
+-                            org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                            org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.craftbukkit.event.vehicle.CraftVehicleEntityCollisionEvent(
+                                 (org.bukkit.entity.Vehicle) this.minecart.getBukkitEntity(), entity.getBukkitEntity()
+                             );
+                             if (!collisionEvent.callEvent()) continue;
+@@ -399,7 +399,7 @@ public class OldMinecartBehavior extends MinecartBehavior {
+             for (Entity entity : this.level().getEntities(this.minecart, hitbox)) {
+                 if (!this.minecart.hasPassenger(entity) && entity.isPushable() && entity instanceof AbstractMinecart) {
+                     // CraftBukkit start
+-                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.craftbukkit.event.vehicle.CraftVehicleEntityCollisionEvent(
+                         (org.bukkit.entity.Vehicle) this.minecart.getBukkitEntity(), entity.getBukkitEntity()
+                     );
+                     if (!collisionEvent.callEvent()) continue;
 diff --git a/net/minecraft/world/inventory/AbstractContainerMenu.java b/net/minecraft/world/inventory/AbstractContainerMenu.java
 index b37618125e85c1c6f284c7287202aae814c1ecfe..aa2a9f64e136dd70a4109977be2064b87469cd63 100644
 --- a/net/minecraft/world/inventory/AbstractContainerMenu.java
