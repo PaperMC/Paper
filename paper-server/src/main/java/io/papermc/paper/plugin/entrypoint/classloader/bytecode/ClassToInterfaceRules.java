@@ -34,6 +34,7 @@ import org.bukkit.craftbukkit.event.server.CraftServerEvent;
 import org.bukkit.craftbukkit.event.server.CraftServiceEvent;
 import org.bukkit.craftbukkit.event.vehicle.CraftVehicleCollisionEvent;
 import org.bukkit.craftbukkit.event.vehicle.CraftVehicleEvent;
+import org.bukkit.craftbukkit.event.weather.CraftWeatherEvent;
 import org.bukkit.craftbukkit.event.world.CraftChunkEvent;
 import org.bukkit.craftbukkit.event.world.CraftWorldEvent;
 import org.bukkit.event.block.*;
@@ -45,6 +46,7 @@ import org.bukkit.event.player.*;
 import org.bukkit.event.raid.*;
 import org.bukkit.event.server.*;
 import org.bukkit.event.vehicle.*;
+import org.bukkit.event.weather.*;
 import org.bukkit.event.world.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -102,6 +104,7 @@ public final class ClassToInterfaceRules {
             map.put(ServerEvent.class, CraftServerEvent.class);
             map.put(VehicleCollisionEvent.class, CraftVehicleCollisionEvent.class);
             map.put(VehicleEvent.class, CraftVehicleEvent.class);
+            map.put(WeatherEvent.class, CraftWeatherEvent.class);
             //</editor-fold>
         });
     }
@@ -513,7 +516,10 @@ public final class ClassToInterfaceRules {
             VehicleEnterEvent.class,
             VehicleExitEvent.class,
             VehicleMoveEvent.class,
-            VehicleUpdateEvent.class
+            VehicleUpdateEvent.class,
+            LightningStrikeEvent.class,
+            ThunderChangeEvent.class,
+            WeatherChangeEvent.class
             //</editor-fold>
         );
     }

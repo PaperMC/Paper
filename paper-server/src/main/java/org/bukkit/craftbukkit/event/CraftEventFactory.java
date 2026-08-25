@@ -231,6 +231,7 @@ import org.bukkit.craftbukkit.event.raid.CraftRaidSpawnWaveEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidStopEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidTriggerEvent;
 import org.bukkit.craftbukkit.event.vehicle.CraftVehicleCreateEvent;
+import org.bukkit.craftbukkit.event.weather.CraftLightningStrikeEvent;
 import org.bukkit.craftbukkit.event.world.CraftEntitiesLoadEvent;
 import org.bukkit.craftbukkit.event.world.CraftEntitiesUnloadEvent;
 import org.bukkit.craftbukkit.event.world.CraftLootGenerateEvent;
@@ -2063,7 +2064,7 @@ public class CraftEventFactory {
     }
 
     public static LightningStrikeEvent callLightningStrikeEvent(LightningStrike entity, LightningStrikeEvent.Cause cause) {
-        LightningStrikeEvent event = new LightningStrikeEvent(entity.getWorld(), entity, cause);
+        LightningStrikeEvent event = new CraftLightningStrikeEvent(entity.getWorld(), entity, cause);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
