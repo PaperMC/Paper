@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event;
 
+import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
@@ -15,6 +16,7 @@ import io.papermc.paper.event.entity.EntityIgniteEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.entity.PaperEntityIgniteEvent;
 import io.papermc.paper.event.entity.PaperItemTransportingEntityValidateTargetEvent;
+import io.papermc.paper.event.inventory.PaperPrepareResultEvent;
 import io.papermc.paper.event.player.PaperPlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PaperPlayerToggleEntityAgeLockEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
@@ -192,7 +194,10 @@ import org.bukkit.craftbukkit.event.entity.CraftStriderTemperatureChangeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftTrialSpawnerSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftVillagerCareerChangeEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftInventoryOpenEvent;
+import org.bukkit.craftbukkit.event.inventory.CraftPrepareAnvilEvent;
+import org.bukkit.craftbukkit.event.inventory.CraftPrepareGrindstoneEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftPrepareItemCraftEvent;
+import org.bukkit.craftbukkit.event.inventory.CraftPrepareSmithingEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftTradeSelectEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
@@ -1870,18 +1875,18 @@ public class CraftEventFactory {
     }
 
     public static void callPrepareResultEvent(AbstractContainerMenu container, int resultSlot) {
-        final com.destroystokyo.paper.event.inventory.PrepareResultEvent event;
+        final PrepareResultEvent event;
         InventoryView view = container.getBukkitView();
         org.bukkit.inventory.ItemStack origItem = view.getTopInventory().getItem(resultSlot);
         CraftItemStack result = origItem != null ? CraftItemStack.asCraftCopy(origItem) : null;
         if (view.getTopInventory() instanceof org.bukkit.inventory.AnvilInventory && view instanceof AnvilView anvilView) {
-            event = new PrepareAnvilEvent(anvilView, result);
+            event = new CraftPrepareAnvilEvent(anvilView, result);
         } else if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
-            event = new PrepareGrindstoneEvent(view, result);
+            event = new CraftPrepareGrindstoneEvent(view, result);
         } else if (view.getTopInventory() instanceof org.bukkit.inventory.SmithingInventory) {
-            event = new PrepareSmithingEvent(view, result);
+            event = new CraftPrepareSmithingEvent(view, result);
         } else {
-            event = new com.destroystokyo.paper.event.inventory.PrepareResultEvent(view, result);
+            event = new PaperPrepareResultEvent(view, result);
         }
         event.callEvent();
         event.getInventory().setItem(resultSlot, event.getResult());
