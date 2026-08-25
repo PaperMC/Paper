@@ -2,25 +2,10 @@ package org.bukkit.event.inventory;
 
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.CraftingInventory;
-import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Recipe;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
-public class PrepareItemCraftEvent extends InventoryEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final boolean repair;
-    private final CraftingInventory matrix;
-
-    @ApiStatus.Internal
-    public PrepareItemCraftEvent(@NotNull CraftingInventory matrix, @NotNull InventoryView view, boolean isRepair) {
-        super(view);
-        this.matrix = matrix;
-        this.repair = isRepair;
-    }
+public interface PrepareItemCraftEvent extends InventoryEventNew {
 
     /**
      * Get the recipe that has been formed. If this event was triggered by a
@@ -29,19 +14,13 @@ public class PrepareItemCraftEvent extends InventoryEvent {
      *
      * @return The recipe being crafted.
      */
-    @Nullable
-    public Recipe getRecipe() {
-        return this.matrix.getRecipe();
-    }
+    @Nullable Recipe getRecipe();
 
     /**
      * @return The crafting inventory on which the recipe was formed.
      */
-    @NotNull
     @Override
-    public CraftingInventory getInventory() {
-        return this.matrix;
-    }
+    CraftingInventory getInventory();
 
     /**
      * Check if this event was triggered by a tool repair operation rather
@@ -49,18 +28,12 @@ public class PrepareItemCraftEvent extends InventoryEvent {
      *
      * @return {@code true} if this is a repair.
      */
-    public boolean isRepair() {
-        return this.repair;
-    }
+    boolean isRepair();
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

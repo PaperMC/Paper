@@ -417,7 +417,8 @@ public final class ClassToInterfaceRules {
             CraftItemEvent.class,
             CartographyItemEvent.class,
             InventoryCloseEvent.class,
-            InventoryOpenEvent.class
+            InventoryOpenEvent.class,
+            PrepareItemCraftEvent.class
             //</editor-fold>
         );
     }
