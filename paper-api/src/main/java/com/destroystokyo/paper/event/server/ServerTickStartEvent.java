@@ -1,36 +1,22 @@
 package com.destroystokyo.paper.event.server;
 
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
-public class ServerTickStartEvent extends EventTmp {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final int tickNumber;
-
-    @ApiStatus.Internal
-    public ServerTickStartEvent(final int tickNumber) {
-        this.tickNumber = tickNumber;
-    }
+/**
+ * Called when the server has started ticking the main loop
+ */
+public interface ServerTickStartEvent extends Event {
 
     /**
      * @return What tick this is going be since start (first tick = 1)
      */
-    public int getTickNumber() {
-        return this.tickNumber;
-    }
+    int getTickNumber();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
