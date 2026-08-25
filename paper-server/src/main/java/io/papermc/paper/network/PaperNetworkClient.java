@@ -1,39 +1,38 @@
-package com.destroystokyo.paper.network;
+package io.papermc.paper.network;
 
+import com.destroystokyo.paper.network.NetworkClient;
 import java.net.InetSocketAddress;
-
-import javax.annotation.Nullable;
 import net.minecraft.network.Connection;
+import org.jspecify.annotations.Nullable;
 
 public class PaperNetworkClient implements NetworkClient {
 
     private final Connection connection;
 
-    PaperNetworkClient(Connection connection) {
+    public PaperNetworkClient(final Connection connection) {
         this.connection = connection;
     }
 
     @Override
-    public InetSocketAddress getAddress() {
+    public InetSocketAddress address() {
         return (InetSocketAddress) this.connection.getRemoteAddress();
     }
 
     @Override
-    public int getProtocolVersion() {
+    public int protocolVersion() {
         return this.connection.protocolVersion;
     }
 
-    @Nullable
     @Override
-    public InetSocketAddress getVirtualHost() {
+    public @Nullable InetSocketAddress virtualHost() {
         return this.connection.virtualHost;
     }
 
-    public static InetSocketAddress prepareVirtualHost(String host, int port) {
+    public static InetSocketAddress prepareVirtualHost(final String host, final int port) {
         int len = host.length();
 
         // FML appends a marker to the host to recognize FML clients (\0FML\0)
-        int pos = host.indexOf('\0');
+        final int pos = host.indexOf('\0');
         if (pos >= 0) {
             len = pos;
         }
@@ -45,5 +44,4 @@ public class PaperNetworkClient implements NetworkClient {
 
         return InetSocketAddress.createUnresolved(host.substring(0, len), port);
     }
-
 }

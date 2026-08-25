@@ -5,6 +5,7 @@ import com.destroystokyo.paper.event.brigadier.*;
 import com.destroystokyo.paper.event.entity.*;
 import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
 import com.destroystokyo.paper.event.player.*;
+import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
 import com.destroystokyo.paper.loottable.*;
 import io.papermc.asm.ClassInfoProvider;
 import io.papermc.asm.RewriteRuleVisitorFactory;
@@ -492,7 +493,9 @@ public final class ClassToInterfaceRules {
             AsyncChatCommandDecorateEvent.class,
             CommandRegisteredEvent.class,
             RegionizedServerInitEvent.class,
-            ServerResourcesReloadedEvent.class
+            ServerResourcesReloadedEvent.class,
+            ServerListPingEvent.class,
+            PaperServerListPingEvent.class
             //</editor-fold>
         );
     }

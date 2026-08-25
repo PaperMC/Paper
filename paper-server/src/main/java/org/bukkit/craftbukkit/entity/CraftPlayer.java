@@ -207,8 +207,6 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
-import org.bukkit.event.player.PlayerHideEntityEvent;
-import org.bukkit.event.player.PlayerShowEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView.Property;
 import org.bukkit.inventory.ItemStack;
@@ -322,7 +320,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     // Paper end
 
     @Override
-    public InetSocketAddress getAddress() {
+    public InetSocketAddress address() {
         if (this.getHandle().connection == null) return null;
 
         SocketAddress addr = this.getHandle().connection.getRemoteAddress();
@@ -363,13 +361,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     // Paper start - Implement NetworkClient
     @Override
-    public int getProtocolVersion() {
+    public int protocolVersion() {
         if (this.getHandle().connection == null) return -1;
         return this.getHandle().connection.connection.protocolVersion;
     }
 
     @Override
-    public InetSocketAddress getVirtualHost() {
+    public InetSocketAddress virtualHost() {
         if (this.getHandle().connection == null) return null;
         return this.getHandle().connection.connection.virtualHost;
     }
@@ -1635,8 +1633,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public BanEntry<InetAddress> banIp(String reason, Date expires, String source, boolean kickPlayer) {
-        Preconditions.checkArgument(this.getAddress() != null, "The Address of this Player is null");
-        BanEntry<InetAddress> banEntry = ((IpBanList) this.server.getBanList(BanList.Type.IP)).addBan(this.getAddress().getAddress(), reason, expires, source);
+        Preconditions.checkArgument(this.address() != null, "The Address of this Player is null");
+        BanEntry<InetAddress> banEntry = ((IpBanList) this.server.getBanList(BanList.Type.IP)).addBan(this.address().getAddress(), reason, expires, source);
         if (kickPlayer) {
             this.kickPlayer(reason);
         }
