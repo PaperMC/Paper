@@ -234,9 +234,11 @@ import org.bukkit.craftbukkit.event.raid.CraftRaidStopEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidTriggerEvent;
 import org.bukkit.craftbukkit.event.vehicle.CraftVehicleCreateEvent;
 import org.bukkit.craftbukkit.event.weather.CraftLightningStrikeEvent;
+import org.bukkit.craftbukkit.event.world.CraftClockTimeSkipEvent;
 import org.bukkit.craftbukkit.event.world.CraftEntitiesLoadEvent;
 import org.bukkit.craftbukkit.event.world.CraftEntitiesUnloadEvent;
 import org.bukkit.craftbukkit.event.world.CraftLootGenerateEvent;
+import org.bukkit.craftbukkit.event.world.CraftTimeSkipEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -2516,9 +2518,9 @@ public class CraftEventFactory {
 
     public static ClockTimeSkipEvent createTimeSkipEvent(final CommandSourceStack source, final long skipAmount) {
         if (io.papermc.paper.configuration.GlobalConfiguration.get().time.affectsAllWorlds) {
-            return new ClockTimeSkipEvent(ClockTimeSkipEvent.SkipReason.COMMAND, skipAmount);
+            return new CraftClockTimeSkipEvent(ClockTimeSkipEvent.SkipReason.COMMAND, skipAmount);
         }
-        return new TimeSkipEvent(source.getLevel().getWorld(), ClockTimeSkipEvent.SkipReason.COMMAND, skipAmount);
+        return new CraftTimeSkipEvent(source.getLevel().getWorld(), ClockTimeSkipEvent.SkipReason.COMMAND, skipAmount);
     }
 
     public static int callEntityIgniteEvent(Entity entity, int fuseTime) {

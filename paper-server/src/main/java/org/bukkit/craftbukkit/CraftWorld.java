@@ -113,6 +113,7 @@ import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.event.world.CraftSpawnChangeEvent;
+import org.bukkit.craftbukkit.event.world.CraftTimeSkipEvent;
 import org.bukkit.craftbukkit.generator.structure.CraftGeneratedStructure;
 import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -140,8 +141,6 @@ import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.weather.ThunderChangeEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.world.ClockTimeSkipEvent;
-import org.bukkit.event.world.SpawnChangeEvent;
-import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
@@ -811,7 +810,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         final long currentClockTime = this.world.getDefaultClockTime();
-        final ClockTimeSkipEvent event = new TimeSkipEvent(this, ClockTimeSkipEvent.SkipReason.CUSTOM, time - currentClockTime);
+        final ClockTimeSkipEvent event = new CraftTimeSkipEvent(this, ClockTimeSkipEvent.SkipReason.CUSTOM, time - currentClockTime);
         this.server.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             return;
