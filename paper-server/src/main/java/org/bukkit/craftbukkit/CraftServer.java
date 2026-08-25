@@ -159,6 +159,7 @@ import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.entity.CraftEntityFactory;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.event.world.CraftWorldUnloadEvent;
 import org.bukkit.craftbukkit.generator.CraftWorldInfo;
 import org.bukkit.craftbukkit.generator.OldCraftChunkData;
 import org.bukkit.craftbukkit.help.SimpleHelpMap;
@@ -1340,7 +1341,7 @@ public final class CraftServer implements Server {
             return false;
         }
 
-        WorldUnloadEvent event = new WorldUnloadEvent(handle.getWorld());
+        WorldUnloadEvent event = new CraftWorldUnloadEvent(handle.getWorld());
         if (!event.callEvent()) {
             return false;
         }
