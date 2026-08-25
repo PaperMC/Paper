@@ -1,18 +1,15 @@
 package io.papermc.paper.event.world;
 
 import io.papermc.paper.math.Position;
-import java.util.Collections;
 import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.world.WorldEvent;
+import org.bukkit.event.world.WorldEventNew;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -28,36 +25,14 @@ import org.jspecify.annotations.Nullable;
  *     <li>{@link World#locateNearestStructure(Location, Structure, int, boolean)} is invoked.</li>
  * </ul>
  */
-@NullMarked
-public class StructuresLocateEvent extends WorldEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Location origin;
-    private @Nullable Result result;
-    private List<Structure> structures;
-    private int radius;
-    private boolean findUnexplored;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public StructuresLocateEvent(final World world, final Location origin, final List<Structure> structures, final int radius, final boolean findUnexplored) {
-        super(world);
-        this.origin = origin;
-        this.structures = structures;
-        this.radius = radius;
-        this.findUnexplored = findUnexplored;
-    }
+public interface StructuresLocateEvent extends WorldEventNew, Cancellable {
 
     /**
      * Gets the {@link Location} from which the search is to be conducted.
      *
      * @return {@link Location} where search begins
      */
-    public Location getOrigin() {
-        return this.origin.clone();
-    }
+    Location getOrigin();
 
     /**
      * Gets the {@link Location} and {@link Structure} set as the result, if it was defined.
@@ -68,9 +43,7 @@ public class StructuresLocateEvent extends WorldEvent implements Cancellable {
      * @return The result location and structure, if it has been set. {@code null} if it has not.
      * @see World#locateNearestStructure(Location, StructureType, int, boolean)
      */
-    public @Nullable Result getResult() {
-        return this.result;
-    }
+    @Nullable Result getResult();
 
     /**
      * Sets the result {@link Location} and {@link Structure}. This causes the search to be
@@ -78,27 +51,21 @@ public class StructuresLocateEvent extends WorldEvent implements Cancellable {
      *
      * @param result the {@link Location} and {@link Structure} of the search.
      */
-    public void setResult(final @Nullable Result result) {
-        this.result = result;
-    }
+    void setResult(@Nullable Result result);
 
     /**
      * Gets an unmodifiable list of Structures that are valid targets for the search.
      *
      * @return an unmodifiable list of Structures
      */
-    public @UnmodifiableView List<Structure> getStructures() {
-        return Collections.unmodifiableList(this.structures);
-    }
+    @UnmodifiableView List<Structure> getStructures();
 
     /**
      * Sets the list of Structures that are valid targets for the search.
      *
      * @param structures a list of Structures targets
      */
-    public void setStructures(final List<Structure> structures) {
-        this.structures = structures;
-    }
+    void setStructures(List<Structure> structures);
 
     /**
      * Gets the search radius in which to attempt locating the structure.
@@ -107,9 +74,7 @@ public class StructuresLocateEvent extends WorldEvent implements Cancellable {
      *
      * @return the search radius (in chunks)
      */
-    public int getRadius() {
-        return this.radius;
-    }
+    int getRadius();
 
     /**
      * Sets the search radius in which to attempt locating the structure.
@@ -118,9 +83,7 @@ public class StructuresLocateEvent extends WorldEvent implements Cancellable {
      *
      * @param radius the search radius (in chunks)
      */
-    public void setRadius(final int radius) {
-        this.radius = radius;
-    }
+    void setRadius(int radius);
 
     /**
      * Gets whether to search exclusively for unexplored structures.
@@ -129,9 +92,7 @@ public class StructuresLocateEvent extends WorldEvent implements Cancellable {
      *
      * @return Whether to search for only unexplored structures.
      */
-    public boolean shouldFindUnexplored() {
-        return this.findUnexplored;
-    }
+    boolean shouldFindUnexplored();
 
     /**
      * Sets whether to search exclusively for unexplored structures.
@@ -140,38 +101,18 @@ public class StructuresLocateEvent extends WorldEvent implements Cancellable {
      *
      * @param findUnexplored Whether to search for only unexplored structures.
      */
-    public void setFindUnexplored(final boolean findUnexplored) {
-        this.findUnexplored = findUnexplored;
-    }
+    void setFindUnexplored(boolean findUnexplored);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
      * Result for {@link StructuresLocateEvent}.
      */
-    public record Result(Position pos, Structure structure) {
-
-        @Deprecated(forRemoval = true)
-        public Location position() {
-            //noinspection DataFlowIssue
-            return this.pos.toLocation(null);
-        }
+    record Result(Position pos, Structure structure) { // todo this is not really nice
     }
 }
