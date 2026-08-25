@@ -484,7 +484,8 @@ public final class ClassToInterfaceRules {
             ServerCommandEvent.class,
             RemoteServerCommandEvent.class,
             ServiceRegisterEvent.class,
-            ServiceUnregisterEvent.class
+            ServiceUnregisterEvent.class,
+            ServerLoadEvent.class
             //</editor-fold>
         );
     }
