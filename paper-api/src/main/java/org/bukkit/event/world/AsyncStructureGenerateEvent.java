@@ -31,7 +31,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  */
 @ApiStatus.Experimental
-public interface AsyncStructureGenerateEvent extends WorldEventNew {
+public interface AsyncStructureGenerateEvent extends WorldEvent {
 
     /**
      * Gets the event cause.

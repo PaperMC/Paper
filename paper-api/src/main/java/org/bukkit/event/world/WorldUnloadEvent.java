@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a World is unloaded
  */
-public interface WorldUnloadEvent extends WorldEventNew, Cancellable {
+public interface WorldUnloadEvent extends WorldEvent, Cancellable {
 
     static HandlerList getHandlerList() {
         final class Holder {

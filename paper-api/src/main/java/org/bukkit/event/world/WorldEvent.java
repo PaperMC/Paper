@@ -1,32 +1,17 @@
 package org.bukkit.event.world;
 
 import org.bukkit.World;
-import org.bukkit.event.EventTmp;
-import org.jetbrains.annotations.NotNull;
+import org.bukkit.event.Event;
 
 /**
  * Represents events within a world
  */
-public abstract class WorldEvent extends EventTmp implements WorldEventNew {
-
-    protected final World world;
-
-    protected WorldEvent(@NotNull final World world) {
-        this(world, false);
-    }
-
-    protected WorldEvent(@NotNull World world, boolean isAsync) {
-        super(isAsync);
-        this.world = world;
-    }
+public interface WorldEvent extends Event {
 
     /**
      * Gets the world primarily involved with this event
      *
      * @return World which caused this event
      */
-    @NotNull
-    public World getWorld() {
-        return this.world;
-    }
+    World getWorld();
 }

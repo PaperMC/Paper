@@ -21,7 +21,7 @@ import org.jspecify.annotations.Nullable;
  * plugins invoking
  * {@link LootTable#fillInventory(org.bukkit.inventory.Inventory, java.util.Random, LootContext)}.
  */
-public interface LootGenerateEvent extends WorldEventNew, Cancellable {
+public interface LootGenerateEvent extends WorldEvent, Cancellable {
 
     /**
      * Get the entity used as context for loot generation (if applicable).

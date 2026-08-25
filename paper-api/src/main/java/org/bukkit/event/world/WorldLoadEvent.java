@@ -5,7 +5,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a World is loaded
  */
-public interface WorldLoadEvent extends WorldEventNew {
+public interface WorldLoadEvent extends WorldEvent {
 
     static HandlerList getHandlerList() {
         final class Holder {

@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  * Specific Bukkit events should be used where possible, this event is mainly
  * used internally by Sculk sensors.
  */
-public interface GenericGameEvent extends WorldEventNew, Cancellable {
+public interface GenericGameEvent extends WorldEvent, Cancellable {
 
     /**
      * Get the underlying event.

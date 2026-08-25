@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a portal is created
  */
-public interface PortalCreateEvent extends WorldEventNew, Cancellable {
+public interface PortalCreateEvent extends WorldEvent, Cancellable {
 
     /**
      * Gets an array list of all the blocks associated with the created portal
