@@ -13,6 +13,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.event.world.CraftAsyncStructureGenerateEvent;
 import org.bukkit.craftbukkit.generator.CraftLimitedRegion;
 import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.event.world.AsyncStructureGenerateEvent;
@@ -64,7 +65,7 @@ public class CraftStructureTransformer {
     private EntityTransformer[] entityTransformers;
 
     public CraftStructureTransformer(Cause cause, WorldGenLevel level, StructureManager structuremanager, Structure structure, BoundingBox box, ChunkPos center) {
-        AsyncStructureGenerateEvent event = new AsyncStructureGenerateEvent(structuremanager.level.getMinecraftWorld().getWorld(), !Bukkit.isPrimaryThread(), cause, CraftStructure.minecraftToBukkit(structure), new org.bukkit.util.BoundingBox(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ()), center.x(), center.z());
+        AsyncStructureGenerateEvent event = new CraftAsyncStructureGenerateEvent(structuremanager.level.getMinecraftWorld().getWorld(), !Bukkit.isPrimaryThread(), cause, CraftStructure.minecraftToBukkit(structure), new org.bukkit.util.BoundingBox(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ()), center.x(), center.z());
         Bukkit.getPluginManager().callEvent(event);
         this.blockTransformers = event.getBlockTransformers().values().toArray(BlockTransformer[]::new);
         this.entityTransformers = event.getEntityTransformers().values().toArray(EntityTransformer[]::new);
