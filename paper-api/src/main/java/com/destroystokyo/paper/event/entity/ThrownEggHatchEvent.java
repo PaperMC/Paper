@@ -1,45 +1,23 @@
 package com.destroystokyo.paper.event.entity;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a thrown egg might hatch.
  * <p>
  * This event fires for all thrown eggs that may hatch, players, dispensers, etc.
  */
-@NullMarked
-public class ThrownEggHatchEvent extends EventTmp {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Egg egg;
-    private boolean hatching;
-    private byte numHatches;
-    private EntityType hatchType;
-
-    @ApiStatus.Internal
-    public ThrownEggHatchEvent(final Egg egg, final boolean hatching, final byte numHatches, final EntityType hatchingType) {
-        this.egg = egg;
-        this.hatching = hatching;
-        this.numHatches = numHatches;
-        this.hatchType = hatchingType;
-    }
+public interface ThrownEggHatchEvent extends Event {
 
     /**
      * Gets the egg involved in this event.
      *
      * @return the egg involved in this event
      */
-    public Egg getEgg() {
-        return this.egg;
-    }
+    Egg getEgg();
 
     /**
      * Gets whether the egg is hatching or not. Will be what the server
@@ -47,9 +25,7 @@ public class ThrownEggHatchEvent extends EventTmp {
      *
      * @return boolean Whether the egg is going to hatch or not
      */
-    public boolean isHatching() {
-        return this.hatching;
-    }
+    boolean isHatching();
 
     /**
      * Sets whether the egg will hatch or not.
@@ -57,28 +33,7 @@ public class ThrownEggHatchEvent extends EventTmp {
      * @param hatching {@code true} if you want the egg to hatch, {@code false} if you want it
      *                 not to
      */
-    public void setHatching(final boolean hatching) {
-        this.hatching = hatching;
-    }
-
-    /**
-     * Get the type of the mob being hatched ({@link EntityType#CHICKEN} by default)
-     *
-     * @return The type of the mob being hatched by the egg
-     */
-    public EntityType getHatchingType() {
-        return this.hatchType;
-    }
-
-    /**
-     * Change the type of mob being hatched by the egg
-     *
-     * @param hatchType The type of the mob being hatched by the egg
-     */
-    public void setHatchingType(final EntityType hatchType) {
-        Preconditions.checkArgument(hatchType.isSpawnable(), "Can't spawn that entity type from an egg!");
-        this.hatchType = hatchType;
-    }
+    void setHatching(boolean hatching);
 
     /**
      * Get the number of mob hatches from the egg. By default, the number will
@@ -91,9 +46,7 @@ public class ThrownEggHatchEvent extends EventTmp {
      *
      * @return The number of mobs going to be hatched by the egg
      */
-    public byte getNumHatches() {
-        return this.numHatches;
-    }
+    byte getNumHatches();
 
     /**
      * Change the number of mobs coming out of the hatched egg
@@ -103,16 +56,26 @@ public class ThrownEggHatchEvent extends EventTmp {
      *
      * @param numHatches The number of mobs coming out of the egg
      */
-    public void setNumHatches(final byte numHatches) {
-        this.numHatches = numHatches;
-    }
+    void setNumHatches(byte numHatches);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
+    /**
+     * Get the type of the mob being hatched ({@link EntityType#CHICKEN} by default)
+     *
+     * @return The type of the mob being hatched by the egg
+     */
+    EntityType getHatchingType();
 
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    /**
+     * Change the type of mob being hatched by the egg
+     *
+     * @param hatchType The type of the mob being hatched by the egg
+     */
+    void setHatchingType(EntityType hatchType);
+
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
