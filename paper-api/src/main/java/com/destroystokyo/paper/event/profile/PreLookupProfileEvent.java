@@ -1,15 +1,10 @@
 package com.destroystokyo.paper.event.profile;
 
 import com.destroystokyo.paper.profile.ProfileProperty;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -22,28 +17,12 @@ import org.jspecify.annotations.Nullable;
  * No guarantees are made about thread execution context for this event. If you need to know, check
  * {@link Event#isAsynchronous()}
  */
-@NullMarked
-public class PreLookupProfileEvent extends EventTmp {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final String name;
-
-    private @Nullable UUID uuid;
-    private Set<ProfileProperty> properties = new HashSet<>();
-
-    @ApiStatus.Internal
-    public PreLookupProfileEvent(final String name) {
-        super(!Bukkit.isPrimaryThread());
-        this.name = name;
-    }
+public interface PreLookupProfileEvent extends Event {
 
     /**
      * @return Name of the profile
      */
-    public String getName() {
-        return this.name;
-    }
+    String getName();
 
     /**
      * If this value is left {@code null} by the completion of the event call, then the server will
@@ -52,9 +31,7 @@ public class PreLookupProfileEvent extends EventTmp {
      *
      * @return The UUID of the profile if it has already been provided by a plugin
      */
-    public @Nullable UUID getUUID() {
-        return this.uuid;
-    }
+    @Nullable UUID getUUID();
 
     /**
      * Sets the UUID for this player name. This will skip the initial API call to find the players UUID.
@@ -63,9 +40,7 @@ public class PreLookupProfileEvent extends EventTmp {
      *
      * @param uuid the UUID to set for the profile or {@code null} to reset
      */
-    public void setUUID(final @Nullable UUID uuid) {
-        this.uuid = uuid;
-    }
+    void setUUID(@Nullable UUID uuid);
 
     /**
      * @return The currently pending pre-populated properties.
@@ -73,9 +48,7 @@ public class PreLookupProfileEvent extends EventTmp {
      * @deprecated This event is only called for UUID lookups, properties set here will be ignored. Use {@link PreFillProfileEvent} for setting properties.
      */
     @Deprecated(forRemoval = true, since = "1.21.9")
-    public Set<ProfileProperty> getProfileProperties() {
-        return this.properties;
-    }
+    Set<ProfileProperty> getProfileProperties();
 
     /**
      * Clears any existing pre-populated properties and uses the supplied properties
@@ -85,10 +58,7 @@ public class PreLookupProfileEvent extends EventTmp {
      * @deprecated This event is only called for UUID lookups, properties set here will be ignored. Use {@link PreFillProfileEvent} for setting properties.
      */
     @Deprecated(forRemoval = true, since = "1.21.9")
-    public void setProfileProperties(final Set<ProfileProperty> properties) {
-        this.properties = new HashSet<>();
-        this.properties.addAll(properties);
-    }
+    void setProfileProperties(Set<ProfileProperty> properties);
 
     /**
      * Adds any properties currently missing to the pre-populated properties set, replacing any that already were set. Use {@link PreFillProfileEvent} for setting properties.
@@ -98,17 +68,12 @@ public class PreLookupProfileEvent extends EventTmp {
      * @deprecated This event is only called for UUID lookups, properties set here will be ignored.
      */
     @Deprecated(forRemoval = true, since = "1.21.9")
-    public void addProfileProperties(final Set<ProfileProperty> properties) {
-        this.properties.addAll(properties);
-    }
+    void addProfileProperties(Set<ProfileProperty> properties);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
-    }
-
 }
