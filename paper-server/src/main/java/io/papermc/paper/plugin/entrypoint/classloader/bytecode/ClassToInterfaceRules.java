@@ -24,6 +24,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftInventoryInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidEvent;
+import org.bukkit.craftbukkit.event.server.CraftPluginEvent;
 import org.bukkit.craftbukkit.event.world.CraftChunkEvent;
 import org.bukkit.craftbukkit.event.world.CraftWorldEvent;
 import org.bukkit.event.block.*;
@@ -35,6 +36,9 @@ import org.bukkit.event.player.*;
 import org.bukkit.event.raid.*;
 import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.event.server.MapInitializeEvent;
+import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.event.server.PluginEnableEvent;
+import org.bukkit.event.server.PluginEvent;
 import org.bukkit.event.world.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -86,7 +90,8 @@ public final class ClassToInterfaceRules {
             RaidEvent.class, CraftRaidEvent.class,
             WorldBorderEvent.class, PaperWorldBorderEvent.class,
             ChunkEvent.class, CraftChunkEvent.class,
-            WorldEvent.class, CraftWorldEvent.class
+            WorldEvent.class, CraftWorldEvent.class,
+            PluginEvent.class, CraftPluginEvent.class
             //</editor-fold>
         );
     }
@@ -475,7 +480,9 @@ public final class ClassToInterfaceRules {
             PlayerChunkLoadEvent.class,
             PlayerChunkUnloadEvent.class,
             BroadcastMessageEvent.class,
-            MapInitializeEvent.class
+            MapInitializeEvent.class,
+            PluginEnableEvent.class,
+            PluginDisableEvent.class
             //</editor-fold>
         );
     }

@@ -28,7 +28,6 @@ import org.bukkit.event.EventException;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginDisableEvent;
-import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.AuthorNagException;
 import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.InvalidDescriptionException;
@@ -356,7 +355,7 @@ public final class JavaPluginLoader implements PluginLoader {
 
             // Perhaps abort here, rather than continue going, but as it stands,
             // an abort is not possible the way it's currently written
-            server.getPluginManager().callEvent(new PluginEnableEvent(plugin));
+            // TODO - server.getPluginManager().callEvent(new CraftPluginEnableEvent(plugin));
         }
     }
 
@@ -368,7 +367,7 @@ public final class JavaPluginLoader implements PluginLoader {
             String message = String.format("Disabling %s", plugin.getDescription().getFullName());
             plugin.getLogger().info(message);
 
-            server.getPluginManager().callEvent(new PluginDisableEvent(plugin));
+            // TODO - server.getPluginManager().callEvent(new CraftPluginDisableEvent(plugin));
 
             JavaPlugin jPlugin = (JavaPlugin) plugin;
             ClassLoader cloader = jPlugin.getClassLoader();

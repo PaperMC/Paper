@@ -29,10 +29,11 @@ import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandMap;
 import org.bukkit.command.PluginCommandYamlParser;
+import org.bukkit.craftbukkit.event.server.CraftPluginDisableEvent;
+import org.bukkit.craftbukkit.event.server.CraftPluginEnableEvent;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.server.PluginDisableEvent;
-import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -209,7 +210,7 @@ class PaperPluginInstanceManager {
 
             // Perhaps abort here, rather than continue going, but as it stands,
             // an abort is not possible the way it's currently written
-            this.server.getPluginManager().callEvent(new PluginEnableEvent(plugin));
+            this.server.getPluginManager().callEvent(new CraftPluginEnableEvent(plugin));
         } catch (Throwable ex) {
             this.handlePluginException("Error occurred (in the plugin loader) while enabling "
                 + plugin.getPluginMeta().getDisplayName() + " (Is it up to date?)", ex, plugin);
@@ -231,7 +232,7 @@ class PaperPluginInstanceManager {
         try {
             plugin.getLogger().info("Disabling %s".formatted(pluginName));
 
-            this.server.getPluginManager().callEvent(new PluginDisableEvent(plugin));
+            this.server.getPluginManager().callEvent(new CraftPluginDisableEvent(plugin));
             try {
                 javaPlugin.setEnabled(false);
             } catch (Throwable ex) {
