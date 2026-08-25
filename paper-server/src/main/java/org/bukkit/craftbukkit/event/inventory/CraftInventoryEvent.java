@@ -5,11 +5,11 @@ import java.util.List;
 import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.inventory.InventoryEventNew;
+import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 
-public class CraftInventoryEvent extends CraftEvent implements InventoryEventNew {
+public class CraftInventoryEvent extends CraftEvent implements InventoryEvent {
 
     protected InventoryView transaction;
 
@@ -34,6 +34,6 @@ public class CraftInventoryEvent extends CraftEvent implements InventoryEventNew
 
     @Override
     public HandlerList getHandlers() {
-        return InventoryEventNew.getHandlerList();
+        return InventoryEvent.getHandlerList();
     }
 }

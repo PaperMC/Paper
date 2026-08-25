@@ -25,7 +25,7 @@ import org.bukkit.inventory.InventoryView;
  * on the next tick. Also be aware that this is not an exhaustive list, and
  * other methods could potentially create issues as well.
  */
-public interface InventoryCloseEvent extends InventoryEventNew {
+public interface InventoryCloseEvent extends InventoryEvent {
 
     /**
      * Returns the player involved in this event

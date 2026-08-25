@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a player opens an inventory
  */
-public interface InventoryOpenEvent extends InventoryEventNew, Cancellable {
+public interface InventoryOpenEvent extends InventoryEvent, Cancellable {
 
     /**
      * Returns the player involved in this event

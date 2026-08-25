@@ -6,7 +6,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.inventory.InventoryEventNew;
+import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.inventory.ItemStack;
 import org.checkerframework.checker.index.qual.Positive;
 
@@ -14,7 +14,7 @@ import org.checkerframework.checker.index.qual.Positive;
  * Called when an item is successfully enchanted (currently at
  * enchantment table)
  */
-public interface EnchantItemEvent extends InventoryEventNew, Cancellable {
+public interface EnchantItemEvent extends InventoryEvent, Cancellable {
 
     /**
      * Gets the player enchanting the item

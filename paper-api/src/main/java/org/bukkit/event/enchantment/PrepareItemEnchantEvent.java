@@ -5,7 +5,7 @@ import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.inventory.InventoryEventNew;
+import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.view.EnchantmentView;
 import org.jspecify.annotations.Nullable;
@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  * Called when an ItemStack is inserted in an enchantment table - can be
  * called multiple times
  */
-public interface PrepareItemEnchantEvent extends InventoryEventNew, Cancellable {
+public interface PrepareItemEnchantEvent extends InventoryEvent, Cancellable {
 
     @Override
     EnchantmentView getView();

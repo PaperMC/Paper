@@ -5,7 +5,7 @@ import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.Recipe;
 import org.jspecify.annotations.Nullable;
 
-public interface PrepareItemCraftEvent extends InventoryEventNew {
+public interface PrepareItemCraftEvent extends InventoryEvent {
 
     /**
      * Get the recipe that has been formed. If this event was triggered by a

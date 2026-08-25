@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
  * @deprecated use {@link com.destroystokyo.paper.event.inventory.PrepareResultEvent}
  */
 @Deprecated @Warning
-public interface PrepareInventoryResultEvent extends InventoryEventNew {
+public interface PrepareInventoryResultEvent extends InventoryEvent {
 
     /**
      * Get result item, may be {@code null}.
