@@ -134,6 +134,7 @@ import org.bukkit.craftbukkit.event.block.CraftCauldronLevelChangeEvent;
 import org.bukkit.craftbukkit.event.block.CraftCrafterCraftEvent;
 import org.bukkit.craftbukkit.event.block.CraftEntityBlockFormEvent;
 import org.bukkit.craftbukkit.event.block.CraftFluidLevelChangeEvent;
+import org.bukkit.craftbukkit.event.block.CraftInventoryCloseEvent;
 import org.bukkit.craftbukkit.event.block.CraftMoistureChangeEvent;
 import org.bukkit.craftbukkit.event.block.CraftNotePlayEvent;
 import org.bukkit.craftbukkit.event.block.CraftTNTPrimeEvent;
@@ -1682,7 +1683,7 @@ public class CraftEventFactory {
     }
 
     public static void handleInventoryCloseEvent(net.minecraft.world.entity.player.Player human, org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
-        InventoryCloseEvent event = new InventoryCloseEvent(human.containerMenu.getBukkitView(), reason); // Paper
+        InventoryCloseEvent event = new CraftInventoryCloseEvent(human.containerMenu.getBukkitView(), reason); // Paper
         human.level().getCraftServer().getPluginManager().callEvent(event);
         human.containerMenu.transferTo(human.inventoryMenu, human.getBukkitEntity());
     }
