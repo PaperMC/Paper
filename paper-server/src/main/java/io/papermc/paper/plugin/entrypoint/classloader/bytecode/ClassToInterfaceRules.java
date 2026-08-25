@@ -556,6 +556,8 @@ public final class ClassToInterfaceRules {
             PreLookupProfileEvent.class,
             ProfileWhitelistVerifyEvent.class,
             AsyncTabCompleteEvent.class,
+            GS4QueryEvent.class,
+            GS4QueryEvent.QueryResponse.PluginInformation.class,
             ServerExceptionEvent.class,
             ServerTickEndEvent.class,
             ServerTickStartEvent.class,
