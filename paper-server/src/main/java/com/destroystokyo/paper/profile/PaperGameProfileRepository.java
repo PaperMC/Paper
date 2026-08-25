@@ -7,6 +7,7 @@ import com.mojang.authlib.Environment;
 import com.mojang.authlib.ProfileLookupCallback;
 import com.mojang.authlib.yggdrasil.YggdrasilGameProfileRepository;
 import com.mojang.authlib.yggdrasil.response.NameAndId;
+import io.papermc.paper.event.profile.PaperLookupProfileEvent;
 import java.net.Proxy;
 import java.util.Optional;
 import java.util.Set;
@@ -53,7 +54,7 @@ public class PaperGameProfileRepository extends YggdrasilGameProfileRepository {
         @Override
         public void onProfileLookupSucceeded(final String  profileName, final UUID profileId) {
             PlayerProfile from = new CraftPlayerProfile(profileId, profileName);
-            new LookupProfileEvent(from).callEvent();
+            new PaperLookupProfileEvent(from).callEvent();
             this.callback.onProfileLookupSucceeded(profileName, profileId);
         }
 

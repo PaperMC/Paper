@@ -550,7 +550,8 @@ public final class ClassToInterfaceRules {
             PreSpawnerSpawnEvent.class,
             PhantomPreSpawnEvent.class,
             ThrownEggHatchEvent.class,
-            FillProfileEvent.class
+            FillProfileEvent.class,
+            LookupProfileEvent.class
             //</editor-fold>
         );
     }
