@@ -3,6 +3,7 @@ package io.papermc.paper.plugin.entrypoint.classloader.bytecode;
 import com.destroystokyo.paper.event.block.*;
 import com.destroystokyo.paper.event.brigadier.*;
 import com.destroystokyo.paper.event.entity.*;
+import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
 import com.destroystokyo.paper.event.player.*;
 import com.destroystokyo.paper.loottable.*;
 import io.papermc.asm.ClassInfoProvider;
@@ -418,7 +419,13 @@ public final class ClassToInterfaceRules {
             CartographyItemEvent.class,
             InventoryCloseEvent.class,
             InventoryOpenEvent.class,
-            PrepareItemCraftEvent.class
+            PrepareItemCraftEvent.class,
+            PrepareInventoryResultEvent.class,
+            PrepareResultEvent.class,
+            com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent.class,
+            org.bukkit.event.inventory.PrepareGrindstoneEvent.class,
+            PrepareSmithingEvent.class,
+            PrepareAnvilEvent.class
             //</editor-fold>
         );
     }
