@@ -503,7 +503,7 @@ index 6baa9d2a8af7901d47964e6d7ad53ea7963ceeef..ce2eaba3228f4c3e0512bac494e97491
              this.send(new ClientboundServerLinksPacket(links.getServerLinks().untrust()));
          // Paper end
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index c2aba28916da7f8b0bc8a325cddaa9bb7ecfb251..6039fd2f5bd9e6366b5af356f4afb46962ef9271 100644
+index c2aba28916da7f8b0bc8a325cddaa9bb7ecfb251..03ba7ee1ca6487eab873e47dcada2ae436579532 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -340,7 +340,7 @@ public class ServerGamePacketListenerImpl
@@ -661,6 +661,54 @@ index c2aba28916da7f8b0bc8a325cddaa9bb7ecfb251..6039fd2f5bd9e6366b5af356f4afb469
                              ServerGamePacketListenerImpl.this.getCraftPlayer(), target.getBukkitEntity(),
                              org.bukkit.craftbukkit.util.CraftVector.toBukkit(location), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand)
                          );
+@@ -3302,9 +3302,9 @@ public class ServerGamePacketListenerImpl
+                         }
+ 
+                         if (click == ClickType.NUMBER_KEY) {
+-                            event = new InventoryClickEvent(inventory, type, slotIndex, click, action, packet.buttonNum());
++                            event = new org.bukkit.craftbukkit.event.inventory.CraftInventoryClickEvent(inventory, type, slotIndex, click, action, packet.buttonNum());
+                         } else {
+-                            event = new InventoryClickEvent(inventory, type, slotIndex, click, action);
++                            event = new org.bukkit.craftbukkit.event.inventory.CraftInventoryClickEvent(inventory, type, slotIndex, click, action);
+                         }
+ 
+                         org.bukkit.inventory.Inventory top = inventory.getTopInventory();
+@@ -3312,9 +3312,9 @@ public class ServerGamePacketListenerImpl
+                             org.bukkit.inventory.Recipe recipe = craftingInv.getRecipe();
+                             if (recipe != null) {
+                                 if (click == ClickType.NUMBER_KEY) {
+-                                    event = new CraftItemEvent(recipe, inventory, type, slotIndex, click, action, packet.buttonNum());
++                                    event = new org.bukkit.craftbukkit.event.inventory.CraftCraftItemEvent(recipe, inventory, type, slotIndex, click, action, packet.buttonNum());
+                                 } else {
+-                                    event = new CraftItemEvent(recipe, inventory, type, slotIndex, click, action);
++                                    event = new org.bukkit.craftbukkit.event.inventory.CraftCraftItemEvent(recipe, inventory, type, slotIndex, click, action);
+                                 }
+                             }
+                         }
+@@ -3323,9 +3323,9 @@ public class ServerGamePacketListenerImpl
+                             org.bukkit.inventory.ItemStack result = smithingInv.getResult();
+                             if (result != null) {
+                                 if (click == ClickType.NUMBER_KEY) {
+-                                    event = new SmithItemEvent(inventory, type, slotIndex, click, action, packet.buttonNum());
++                                    event = new org.bukkit.craftbukkit.event.inventory.CraftSmithItemEvent(inventory, type, slotIndex, click, action, packet.buttonNum());
+                                 } else {
+-                                    event = new SmithItemEvent(inventory, type, slotIndex, click, action);
++                                    event = new org.bukkit.craftbukkit.event.inventory.CraftSmithItemEvent(inventory, type, slotIndex, click, action);
+                                 }
+                             }
+                         }
+@@ -3335,9 +3335,9 @@ public class ServerGamePacketListenerImpl
+                             org.bukkit.inventory.ItemStack result = cartographyInventory.getResult();
+                             if (result != null && !result.isEmpty()) {
+                                 if (click == ClickType.NUMBER_KEY) {
+-                                    event = new io.papermc.paper.event.player.CartographyItemEvent(inventory, type, slotIndex, click, action, packet.buttonNum());
++                                    event = new io.papermc.paper.event.inventory.PaperCartographyItemEvent(inventory, type, slotIndex, click, action, packet.buttonNum());
+                                 } else {
+-                                    event = new io.papermc.paper.event.player.CartographyItemEvent(inventory, type, slotIndex, click, action);
++                                    event = new io.papermc.paper.event.inventory.PaperCartographyItemEvent(inventory, type, slotIndex, click, action);
+                                 }
+                             }
+                         }
 @@ -3411,7 +3411,7 @@ public class ServerGamePacketListenerImpl
                              // Paper start - Add PlayerRecipeBookClickEvent
                              NamespacedKey recipeName = org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(recipe.id().identifier());
@@ -670,6 +718,15 @@ index c2aba28916da7f8b0bc8a325cddaa9bb7ecfb251..6039fd2f5bd9e6366b5af356f4afb469
                                  this.player.getBukkitEntity(), recipeName, makeAll
                              );
                              if (!paperEvent.callEvent()) {
+@@ -3501,7 +3501,7 @@ public class ServerGamePacketListenerImpl
+                         type = SlotType.CONTAINER;
+                     }
+                 }
+-                InventoryCreativeEvent event = new InventoryCreativeEvent(inventory, type, drop ? net.minecraft.world.inventory.AbstractContainerMenu.SLOT_CLICKED_OUTSIDE : packet.slotNum(), item);
++                InventoryCreativeEvent event = new org.bukkit.craftbukkit.event.inventory.CraftInventoryCreativeEvent(inventory, type, drop ? net.minecraft.world.inventory.AbstractContainerMenu.SLOT_CLICKED_OUTSIDE : packet.slotNum(), item);
+                 this.cserver.getPluginManager().callEvent(event);
+ 
+                 itemStack = CraftItemStack.asNMSCopy(event.getCursor());
 @@ -3564,7 +3564,7 @@ public class ServerGamePacketListenerImpl
          BlockPos pos = packet.getPos();
          if (level.hasChunkAt(pos)) {
@@ -2124,6 +2181,19 @@ index c1b3e93910b2ac2b89f9662e23eb0d36c6ef96d3..5119a186d5e709c8a6251a81e9a7b0a9
                      this.getBukkitEntity(),
                      (float) (this.explosionPowerBase + this.explosionSpeedFactor * this.random.nextDouble() * 1.5 * speed),
                      this.isIncendiary
+diff --git a/net/minecraft/world/inventory/AbstractContainerMenu.java b/net/minecraft/world/inventory/AbstractContainerMenu.java
+index b37618125e85c1c6f284c7287202aae814c1ecfe..aa2a9f64e136dd70a4109977be2064b87469cd63 100644
+--- a/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -470,7 +470,7 @@ public abstract class AbstractContainerMenu {
+                     ItemStack oldCarried = this.getCarried();
+                     this.setCarried(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(newCarried));
+ 
+-                    org.bukkit.event.inventory.InventoryDragEvent event = new org.bukkit.event.inventory.InventoryDragEvent(
++                    org.bukkit.event.inventory.InventoryDragEvent event = new org.bukkit.craftbukkit.event.inventory.CraftInventoryDragEvent(
+                         view,
+                         newCarried,
+                         org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(oldCarried),
 diff --git a/net/minecraft/world/inventory/BeaconMenu.java b/net/minecraft/world/inventory/BeaconMenu.java
 index ba9a752ec6cc608b006007da19d9e84386fe8f0b..cd462dec698e563199d95455364b35753c666152 100644
 --- a/net/minecraft/world/inventory/BeaconMenu.java
