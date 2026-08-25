@@ -1,19 +1,13 @@
 package org.bukkit.event.server;
 
-import com.google.common.base.Preconditions;
-import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerCommandSendEvent;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a {@link CommandSender} of any description (ie: player or
@@ -28,51 +22,21 @@ import org.jetbrains.annotations.Nullable;
  * @apiNote Only called for bukkit API commands {@link org.bukkit.command.Command} and
  * {@link org.bukkit.command.CommandExecutor} and not for brigadier commands ({@link io.papermc.paper.command.brigadier.Commands}).
  */
-public class TabCompleteEvent extends EventTmp implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final CommandSender sender;
-    private final String buffer;
-    private final boolean isCommand;
-    private final Location location;
-    private List<String> completions;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions) {
-        this(sender, buffer, completions, sender instanceof ConsoleCommandSender || buffer.startsWith("/"), null);
-    }
-
-    @ApiStatus.Internal
-    public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions, boolean isCommand, @Nullable Location location) {
-        this.sender = sender;
-        this.buffer = buffer;
-        this.completions = new ArrayList<>(completions);
-        this.isCommand = isCommand;
-        this.location = location;
-    }
+public interface TabCompleteEvent extends Event, Cancellable {
 
     /**
      * Get the sender completing this command.
      *
      * @return the {@link CommandSender} instance
      */
-    @NotNull
-    public CommandSender getSender() {
-        return this.sender;
-    }
+    CommandSender getSender();
 
     /**
      * Return the entire buffer which formed the basis of this completion.
      *
      * @return command buffer, as entered
      */
-    @NotNull
-    public String getBuffer() {
-        return this.buffer;
-    }
+    String getBuffer();
 
     /**
      * The list of completions which will be offered to the sender. Completions may be ordered alphanumerically later on in the tab completion process.
@@ -80,10 +44,7 @@ public class TabCompleteEvent extends EventTmp implements Cancellable {
      *
      * @return a list of offered completions
      */
-    @NotNull
-    public List<String> getCompletions() {
-        return this.completions;
-    }
+    List<String> getCompletions();
 
     /**
      * Set the completions offered, overriding any already set.
@@ -92,44 +53,22 @@ public class TabCompleteEvent extends EventTmp implements Cancellable {
      *
      * @param completions the new completions
      */
-    public void setCompletions(@NotNull List<String> completions) {
-        Preconditions.checkArgument(completions != null, "completions cannot be null");
-        this.completions = new ArrayList<>(completions);
-    }
+    void setCompletions(List<String> completions);
 
     /**
      * @return {@code true} if it is a command being tab completed, {@code false} if it is a chat message.
      */
-    public boolean isCommand() {
-        return this.isCommand;
-    }
+    boolean isCommand();
 
     /**
      * @return The position looked at by the sender, or {@code null} if none
      */
-    @Nullable
-    public Location getLocation() {
-        return this.location != null ? this.location.clone() : null;
-    }
+    @Nullable Location getLocation();
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancelled) {
-        this.cancelled = cancelled;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
