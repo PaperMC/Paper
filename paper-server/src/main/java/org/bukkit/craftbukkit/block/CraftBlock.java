@@ -49,6 +49,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.block.CraftBlockFertilizeEvent;
+import org.bukkit.craftbukkit.event.world.CraftStructureGrowEvent;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -540,7 +541,7 @@ public class CraftBlock implements Block {
             StructureGrowEvent structureEvent = null;
 
             if (treeType != null) {
-                structureEvent = new StructureGrowEvent(this.getLocation(), treeType, true, null, (List<org.bukkit.block.BlockState>) (List<? extends org.bukkit.block.BlockState>) capturedBlockStates);
+                structureEvent = new CraftStructureGrowEvent(this.getLocation(), treeType, true, null, (List<org.bukkit.block.BlockState>) (List<? extends org.bukkit.block.BlockState>) capturedBlockStates);
                 Bukkit.getPluginManager().callEvent(structureEvent);
             }
 
