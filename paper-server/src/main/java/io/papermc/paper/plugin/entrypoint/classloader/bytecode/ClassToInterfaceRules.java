@@ -459,7 +459,8 @@ public final class ClassToInterfaceRules {
             WorldBorderCenterChangeEvent.class,
             WorldBorderBoundsChangeFinishEvent.class,
             WorldBorderBoundsChangeEvent.class,
-            AsyncStructureGenerateEvent.class
+            AsyncStructureGenerateEvent.class,
+            AsyncStructureSpawnEvent.class
             //</editor-fold>
         );
     }
