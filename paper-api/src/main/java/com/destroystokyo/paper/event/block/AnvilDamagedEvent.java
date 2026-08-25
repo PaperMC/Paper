@@ -4,98 +4,57 @@ import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.inventory.InventoryEvent;
+import org.bukkit.event.inventory.InventoryEventNew;
 import org.bukkit.inventory.AnvilInventory;
-import org.bukkit.inventory.InventoryView;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Called when an anvil is damaged from being used
  */
-@NullMarked
-public class AnvilDamagedEvent extends InventoryEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private DamageState damageState;
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public AnvilDamagedEvent(final InventoryView inventory, final @Nullable BlockData blockData) {
-        super(inventory);
-        this.damageState = DamageState.getState(blockData);
-    }
+public interface AnvilDamagedEvent extends InventoryEventNew, Cancellable {
 
     @Override
-    public AnvilInventory getInventory() {
-        return (AnvilInventory) super.getInventory();
-    }
+    AnvilInventory getInventory();
 
     /**
      * Gets the new state of damage on the anvil
      *
      * @return Damage state
      */
-    public DamageState getDamageState() {
-        return this.damageState;
-    }
+    DamageState getDamageState();
 
     /**
      * Sets the new state of damage on the anvil
      *
      * @param damageState Damage state
      */
-    public void setDamageState(final DamageState damageState) {
-        this.damageState = damageState;
-    }
+    void setDamageState(DamageState damageState);
 
     /**
      * Gets if anvil is breaking on this use
      *
      * @return {@code true} if breaking
      */
-    public boolean isBreaking() {
-        return this.damageState == DamageState.BROKEN;
-    }
+    boolean isBreaking();
 
     /**
      * Sets if anvil is breaking on this use
      *
      * @param breaking {@code true} if breaking
      */
-    public void setBreaking(final boolean breaking) {
-        if (breaking) {
-            this.damageState = DamageState.BROKEN;
-        } else if (this.damageState == DamageState.BROKEN) {
-            this.damageState = DamageState.DAMAGED;
+    void setBreaking(boolean breaking);
+
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
         }
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+        return Holder.HANDLER_LIST;
     }
 
     /**
      * Represents the amount of damage on an anvil block
      */
-    public enum DamageState {
+    enum DamageState {
         FULL(Material.ANVIL),
         CHIPPED(Material.CHIPPED_ANVIL),
         DAMAGED(Material.DAMAGED_ANVIL),
