@@ -4,7 +4,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.server.ServerEvent;
+import org.bukkit.event.server.ServerEventNew;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
@@ -18,23 +18,7 @@ import org.jspecify.annotations.Nullable;
  * See {@link AsyncChatCommandDecorateEvent} for the decoration of messages sent via commands
  */
 @ApiStatus.Experimental
-public class AsyncChatDecorateEvent extends ServerEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final @Nullable Player player;
-    private final Component originalMessage;
-    private Component result;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public AsyncChatDecorateEvent(final @Nullable Player player, final Component originalMessage) {
-        super(true);
-        this.player = player;
-        this.originalMessage = originalMessage;
-        this.result = originalMessage;
-    }
+public interface AsyncChatDecorateEvent extends ServerEventNew, Cancellable {
 
     /**
      * Gets the player (if available) associated with this event.
@@ -44,18 +28,14 @@ public class AsyncChatDecorateEvent extends ServerEvent implements Cancellable {
      *
      * @return the player or {@code null}
      */
-    public @Nullable Player player() {
-        return this.player;
-    }
+    @Nullable Player player();
 
     /**
      * Gets the original decoration input
      *
      * @return the input
      */
-    public Component originalMessage() {
-        return this.originalMessage;
-    }
+    Component originalMessage();
 
     /**
      * Gets the decoration result. This may already be different from
@@ -64,23 +44,14 @@ public class AsyncChatDecorateEvent extends ServerEvent implements Cancellable {
      *
      * @return the result
      */
-    public Component result() {
-        return this.result;
-    }
+    Component result();
 
     /**
      * Sets the resulting decorated component.
      *
      * @param result the result
      */
-    public void result(final Component result) {
-        this.result = result;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
+    void result(Component result);
 
     /**
      * A cancelled decorating event means that no changes to the result component
@@ -88,16 +59,12 @@ public class AsyncChatDecorateEvent extends ServerEvent implements Cancellable {
      * component.
      */
     @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
-    }
+    void setCancelled(boolean cancel);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

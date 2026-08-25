@@ -2,6 +2,8 @@ package io.papermc.paper.adventure;
 
 import io.papermc.paper.event.player.AsyncChatCommandDecorateEvent;
 import io.papermc.paper.event.player.AsyncChatDecorateEvent;
+import io.papermc.paper.event.server.PaperAsyncChatCommandDecorateEvent;
+import io.papermc.paper.event.server.PaperAsyncChatDecorateEvent;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.ChatDecorator;
@@ -40,9 +42,9 @@ public final class ImprovedChatDecorator implements ChatDecorator {
             final AsyncChatDecorateEvent event;
             if (commandSourceStack != null) {
                 // TODO more command decorate context
-                event = new AsyncChatCommandDecorateEvent(craftPlayer, initialResult);
+                event = new PaperAsyncChatCommandDecorateEvent(craftPlayer, initialResult);
             } else {
-                event = new AsyncChatDecorateEvent(craftPlayer, initialResult);
+                event = new PaperAsyncChatDecorateEvent(craftPlayer, initialResult);
             }
 
             if (event.callEvent()) {
