@@ -2,90 +2,47 @@ package org.bukkit.event.vehicle;
 
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Raised when a vehicle receives damage.
  */
-public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final DamageSource damageSource;
-    private final Entity attacker;
-    private double damage;
-
-    private boolean cancelled;
-
-    @ApiStatus.Internal
-    public VehicleDamageEvent(final @NotNull Vehicle vehicle, final @NotNull DamageSource damageSource, final @Nullable Entity attacker, final double damage) {
-        super(vehicle);
-        this.damageSource = damageSource;
-        this.attacker = attacker;
-        this.damage = damage;
-    }
+public interface VehicleDamageEvent extends VehicleEventNew, Cancellable {
 
     /**
      * Gets the DamageSource that caused the damage.
      *
      * @return the DamageSource that caused the damage
      */
-    @NotNull
-    public DamageSource getDamageSource() {
-        return this.damageSource;
-    }
+    DamageSource getDamageSource();
 
     /**
      * Gets the Entity that is attacking the vehicle
      *
      * @return the Entity that is attacking the vehicle
      */
-    @Nullable
-    public Entity getAttacker() {
-        return this.attacker;
-    }
+    @Nullable Entity getAttacker();
 
     /**
      * Gets the damage done to the vehicle
      *
      * @return the damage done to the vehicle
      */
-    public double getDamage() {
-        return this.damage;
-    }
+    double getDamage();
 
     /**
      * Sets the damage done to the vehicle
      *
      * @param damage The damage
      */
-    public void setDamage(double damage) {
-        this.damage = damage;
-    }
+    void setDamage(double damage);
 
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
