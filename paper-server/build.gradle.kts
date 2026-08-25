@@ -110,7 +110,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:leafpile:1.1.0")
+    implementation("ca.spottedleaf:leafpile:1.2.0")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -156,7 +156,7 @@ dependencies {
 
     // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
-    implementation("me.lucko:spark-paper:1.10.177")
+    implementation("me.lucko:spark-paper:1.10.180")
 }
 
 tasks.jar {
