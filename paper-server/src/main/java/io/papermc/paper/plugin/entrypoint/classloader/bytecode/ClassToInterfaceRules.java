@@ -432,7 +432,8 @@ public final class ClassToInterfaceRules {
             AnvilDamagedEvent.class,
             EnchantItemEvent.class,
             PrepareItemEnchantEvent.class,
-            GenericGameEvent.class
+            GenericGameEvent.class,
+            LootGenerateEvent.class
             //</editor-fold>
         );
     }

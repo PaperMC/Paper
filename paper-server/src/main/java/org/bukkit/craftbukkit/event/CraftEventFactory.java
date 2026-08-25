@@ -221,6 +221,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerRiptideEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerShearEntityEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerSignOpenEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerStatisticIncrementEvent;
+import org.bukkit.craftbukkit.event.world.CraftLootGenerateEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -2086,7 +2087,7 @@ public class CraftEventFactory {
         Entity entity = lootInfo.getOptionalParameter(LootContextParams.THIS_ENTITY);
         List<org.bukkit.inventory.ItemStack> bukkitLoot = loot.stream().map(CraftItemStack::asCraftMirror).collect(Collectors.toCollection(ArrayList::new));
 
-        LootGenerateEvent event = new LootGenerateEvent(world, (entity != null ? entity.getBukkitEntity() : null), inventory.getOwner(), lootTable.craftLootTable, CraftLootTable.convertContext(lootInfo), bukkitLoot, plugin);
+        LootGenerateEvent event = new CraftLootGenerateEvent(world, (entity != null ? entity.getBukkitEntity() : null), inventory.getOwner(), lootTable.craftLootTable, CraftLootTable.convertContext(lootInfo), bukkitLoot, plugin);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
