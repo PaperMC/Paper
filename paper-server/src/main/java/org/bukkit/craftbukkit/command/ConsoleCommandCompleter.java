@@ -31,7 +31,7 @@ public class ConsoleCommandCompleter implements Completer {
         final String buffer = "/" + line.line();
         // Async Tab Complete
         final com.destroystokyo.paper.event.server.AsyncTabCompleteEvent event =
-            new com.destroystokyo.paper.event.server.AsyncTabCompleteEvent(server.getConsoleSender(), buffer, true, null);
+            new io.papermc.paper.event.server.PaperAsyncTabCompleteEvent(server.getConsoleSender(), buffer, true, null);
         event.callEvent();
         final List<com.destroystokyo.paper.event.server.AsyncTabCompleteEvent.Completion> completions = event.isCancelled() ? com.google.common.collect.ImmutableList.of() : event.completions();
 
