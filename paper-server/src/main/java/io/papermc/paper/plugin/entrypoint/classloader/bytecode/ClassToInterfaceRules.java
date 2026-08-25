@@ -552,7 +552,8 @@ public final class ClassToInterfaceRules {
             ThrownEggHatchEvent.class,
             FillProfileEvent.class,
             LookupProfileEvent.class,
-            PreFillProfileEvent.class
+            PreFillProfileEvent.class,
+            PreLookupProfileEvent.class
             //</editor-fold>
         );
     }

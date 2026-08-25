@@ -1,6 +1,5 @@
 package com.destroystokyo.paper.profile;
 
-import com.destroystokyo.paper.event.profile.LookupProfileEvent;
 import com.destroystokyo.paper.event.profile.PreLookupProfileEvent;
 import com.google.common.collect.Sets;
 import com.mojang.authlib.Environment;
@@ -8,6 +7,7 @@ import com.mojang.authlib.ProfileLookupCallback;
 import com.mojang.authlib.yggdrasil.YggdrasilGameProfileRepository;
 import com.mojang.authlib.yggdrasil.response.NameAndId;
 import io.papermc.paper.event.profile.PaperLookupProfileEvent;
+import io.papermc.paper.event.profile.PaperPreLookupProfileEvent;
 import java.net.Proxy;
 import java.util.Optional;
 import java.util.Set;
@@ -22,7 +22,7 @@ public class PaperGameProfileRepository extends YggdrasilGameProfileRepository {
     public void findProfilesByNames(String[] names, ProfileLookupCallback callback) {
         Set<String> unfoundNames = Sets.newHashSet();
         for (String name : names) {
-            PreLookupProfileEvent event = new PreLookupProfileEvent(name);
+            PreLookupProfileEvent event = new PaperPreLookupProfileEvent(name);
             event.callEvent();
             if (event.getUUID() != null) {
                 // Plugin provided UUID, we can skip network call.
@@ -41,7 +41,7 @@ public class PaperGameProfileRepository extends YggdrasilGameProfileRepository {
 
     @Override
     public Optional<NameAndId> findProfileByName(final String name) {
-        PreLookupProfileEvent event = new PreLookupProfileEvent(name);
+        PreLookupProfileEvent event = new PaperPreLookupProfileEvent(name);
         event.callEvent();
         if (event.getUUID() != null) {
             // Plugin provided UUID, we can skip network call.
