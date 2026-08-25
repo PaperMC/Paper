@@ -16,6 +16,7 @@ import io.papermc.paper.event.player.*;
 import io.papermc.paper.event.world.StructuresLocateEvent;
 import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
 import io.papermc.paper.event.world.WorldGameRuleChangeEvent;
+import io.papermc.paper.event.world.border.*;
 import java.util.Map;
 import java.util.Set;
 import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
@@ -78,7 +79,8 @@ public final class ClassToInterfaceRules {
             BlockEvent.class, CraftBlockEvent.class,
             EntityEvent.class, CraftEntityEvent.class,
             InventoryInteractEvent.class, CraftInventoryInteractEvent.class,
-            RaidEvent.class, CraftRaidEvent.class
+            RaidEvent.class, CraftRaidEvent.class,
+            WorldBorderEvent.class, PaperWorldBorderEvent.class
             //</editor-fold>
         );
     }
@@ -453,7 +455,10 @@ public final class ClassToInterfaceRules {
             RaidTriggerEvent.class,
             StructuresLocateEvent.class,
             WorldDifficultyChangeEvent.class,
-            WorldGameRuleChangeEvent.class
+            WorldGameRuleChangeEvent.class,
+            WorldBorderCenterChangeEvent.class,
+            WorldBorderBoundsChangeFinishEvent.class,
+            WorldBorderBoundsChangeEvent.class
             //</editor-fold>
         );
     }
