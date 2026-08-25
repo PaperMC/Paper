@@ -4,8 +4,6 @@ package org.bukkit.event.inventory;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.InventoryView;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called when a player closes an inventory.
@@ -27,50 +25,25 @@ import org.jetbrains.annotations.NotNull;
  * on the next tick. Also be aware that this is not an exhaustive list, and
  * other methods could potentially create issues as well.
  */
-public class InventoryCloseEvent extends InventoryEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final Reason reason;
-
-    @ApiStatus.Internal
-    public InventoryCloseEvent(@NotNull InventoryView transaction) {
-        this(transaction, Reason.UNKNOWN);
-    }
-
-    @ApiStatus.Internal
-    public InventoryCloseEvent(@NotNull InventoryView transaction, @NotNull Reason reason) {
-        super(transaction);
-        this.reason = reason;
-    }
+public interface InventoryCloseEvent extends InventoryEventNew {
 
     /**
      * Returns the player involved in this event
      *
      * @return Player who is involved in this event
      */
-    @NotNull
-    public final HumanEntity getPlayer() {
-        return this.transaction.getPlayer();
+    HumanEntity getPlayer();
+
+    Reason getReason();
+
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
-    @NotNull
-    public Reason getReason() {
-        return this.reason;
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
-    }
-
-    public enum Reason {
+    enum Reason {
         /**
          * Unknown reason
          */
