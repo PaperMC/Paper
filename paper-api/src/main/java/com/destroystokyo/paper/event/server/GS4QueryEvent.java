@@ -9,11 +9,8 @@ import java.util.Collection;
 import java.util.List;
 import org.bukkit.Server;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This event is fired if server is getting queried over GS4 Query protocol.
@@ -22,72 +19,47 @@ import org.jspecify.annotations.NullMarked;
  *
  * @author Mark Vainomaa
  */
-@NullMarked
-public final class GS4QueryEvent extends EventTmp {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final QueryType queryType;
-    private final InetAddress querierAddress;
-    private QueryResponse response;
-
-    @ApiStatus.Internal
-    public GS4QueryEvent(final QueryType queryType, final InetAddress querierAddress, final QueryResponse response) {
-        super(true); // should always be called async
-        this.queryType = queryType;
-        this.querierAddress = querierAddress;
-        this.response = response;
-    }
+public interface GS4QueryEvent extends Event { // todo javadocs?
 
     /**
      * Get query type
      *
      * @return query type
      */
-    public QueryType getQueryType() {
-        return this.queryType;
-    }
+    QueryType getQueryType();
 
     /**
      * Get querier address
      *
      * @return querier address
      */
-    public InetAddress getQuerierAddress() {
-        return this.querierAddress;
-    }
+    InetAddress getQuerierAddress();
 
     /**
      * Get query response
      *
      * @return query response
      */
-    public QueryResponse getResponse() {
-        return this.response;
-    }
+    QueryResponse getResponse();
 
     /**
      * Set query response
      *
      * @param response query response
      */
-    public void setResponse(final QueryResponse response) {
-        this.response = Preconditions.checkNotNull(response, "response");
-    }
+    void setResponse(QueryResponse response);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 
     /**
      * The type of query
      */
-    public enum QueryType {
+    enum QueryType {
         /**
          * Basic query asks only a subset of information, such as motd, game type (hardcoded to <pre>MINECRAFT</pre>), map,
          * current players, max players, server port and server motd
@@ -100,7 +72,7 @@ public final class GS4QueryEvent extends EventTmp {
         FULL
     }
 
-    public static final class QueryResponse {
+    final class QueryResponse {
 
         private final String motd;
         private final String gameVersion;
@@ -113,7 +85,18 @@ public final class GS4QueryEvent extends EventTmp {
         private final String serverVersion;
         private final Collection<PluginInformation> plugins;
 
-        private QueryResponse(final String motd, final String gameVersion, final String map, final int currentPlayers, final int maxPlayers, final String hostname, final int port, final Collection<String> players, final String serverVersion, final Collection<PluginInformation> plugins) {
+        private QueryResponse(
+            final String motd,
+            final String gameVersion,
+            final String map,
+            final int currentPlayers,
+            final int maxPlayers,
+            final String hostname,
+            final int port,
+            final Collection<String> players,
+            final String serverVersion,
+            final Collection<PluginInformation> plugins
+        ) {
             this.motd = motd;
             this.gameVersion = gameVersion;
             this.map = map;
@@ -249,11 +232,11 @@ public final class GS4QueryEvent extends EventTmp {
          */
         public static final class Builder {
 
-            private @MonotonicNonNull String motd;
-            private @MonotonicNonNull String gameVersion;
-            private @MonotonicNonNull String map;
-            private @MonotonicNonNull String hostname;
-            private @MonotonicNonNull String serverVersion;
+            private @Nullable String motd;
+            private @Nullable String gameVersion;
+            private @Nullable String map;
+            private @Nullable String hostname;
+            private @Nullable String serverVersion;
 
             private int currentPlayers;
             private int maxPlayers;
@@ -266,17 +249,20 @@ public final class GS4QueryEvent extends EventTmp {
             }
 
             public Builder motd(final String motd) {
-                this.motd = Preconditions.checkNotNull(motd, "motd");
+                Preconditions.checkArgument(motd != null, "motd cannot be null");
+                this.motd = motd;
                 return this;
             }
 
             public Builder gameVersion(final String gameVersion) {
-                this.gameVersion = Preconditions.checkNotNull(gameVersion, "gameVersion");
+                Preconditions.checkArgument(gameVersion != null, "gameVersion cannot be null");
+                this.gameVersion = gameVersion;
                 return this;
             }
 
             public Builder map(final String map) {
-                this.map = Preconditions.checkNotNull(map, "map");
+                Preconditions.checkArgument(map != null, "map cannot be null");
+                this.map = map;
                 return this;
             }
 
@@ -293,7 +279,8 @@ public final class GS4QueryEvent extends EventTmp {
             }
 
             public Builder hostname(final String hostname) {
-                this.hostname = Preconditions.checkNotNull(hostname, "hostname");
+                Preconditions.checkArgument(hostname != null, "hostname cannot be null");
+                this.hostname = hostname;
                 return this;
             }
 
@@ -304,12 +291,14 @@ public final class GS4QueryEvent extends EventTmp {
             }
 
             public Builder players(final Collection<String> players) {
-                this.players.addAll(Preconditions.checkNotNull(players, "players"));
+                Preconditions.checkArgument(players != null, "players cannot be null");
+                this.players.addAll(players);
                 return this;
             }
 
             public Builder players(final String... players) {
-                this.players.addAll(Arrays.asList(Preconditions.checkNotNull(players, "players")));
+                Preconditions.checkArgument(players != null, "players cannot be null");
+                this.players.addAll(Arrays.asList(players));
                 return this;
             }
 
@@ -319,17 +308,20 @@ public final class GS4QueryEvent extends EventTmp {
             }
 
             public Builder serverVersion(final String serverVersion) {
-                this.serverVersion = Preconditions.checkNotNull(serverVersion, "serverVersion");
+                Preconditions.checkArgument(serverVersion != null, "serverVersion cannot be null");
+                this.serverVersion = serverVersion;
                 return this;
             }
 
             public Builder plugins(final Collection<PluginInformation> plugins) {
-                this.plugins.addAll(Preconditions.checkNotNull(plugins, "plugins"));
+                Preconditions.checkArgument(plugins != null, "plugins cannot be null");
+                this.plugins.addAll(plugins);
                 return this;
             }
 
             public Builder plugins(final PluginInformation... plugins) {
-                this.plugins.addAll(Arrays.asList(Preconditions.checkNotNull(plugins, "plugins")));
+                Preconditions.checkArgument(plugins != null, "plugins cannot be null");
+                this.plugins.addAll(Arrays.asList(plugins));
                 return this;
             }
 
@@ -344,16 +336,21 @@ public final class GS4QueryEvent extends EventTmp {
              * @return response
              */
             public QueryResponse build() {
+                Preconditions.checkState(this.motd != null, "motd is required");
+                Preconditions.checkState(this.gameVersion != null, "gameVersion is required");
+                Preconditions.checkState(this.map != null, "map is required");
+                Preconditions.checkState(this.hostname != null, "hostname is required");
+                Preconditions.checkState(this.serverVersion != null, "serverVersion is required");
                 return new QueryResponse(
-                    Preconditions.checkNotNull(this.motd, "motd"),
-                    Preconditions.checkNotNull(this.gameVersion, "gameVersion"),
-                    Preconditions.checkNotNull(this.map, "map"),
+                    this.motd,
+                    this.gameVersion,
+                    this.map,
                     this.currentPlayers,
                     this.maxPlayers,
-                    Preconditions.checkNotNull(this.hostname, "hostname"),
+                    this.hostname,
                     this.port,
                     ImmutableList.copyOf(this.players),
-                    Preconditions.checkNotNull(this.serverVersion, "serverVersion"),
+                    this.serverVersion,
                     ImmutableList.copyOf(this.plugins)
                 );
             }
@@ -362,34 +359,66 @@ public final class GS4QueryEvent extends EventTmp {
         /**
          * Plugin information
          */
-        public static class PluginInformation {
+        public interface PluginInformation {
 
-            private String name;
-            private String version;
+            String name();
 
-            public PluginInformation(final String name, final String version) {
-                this.name = Preconditions.checkNotNull(name, "name");
-                this.version = Preconditions.checkNotNull(version, "version");
+            String version();
+
+            PluginInformation withName(String name);
+
+            PluginInformation withVersion(String version);
+
+            /**
+             * @deprecated use {@link #name()}
+             */
+            @Deprecated(forRemoval = true)
+            default String getName() {
+                return this.name();
             }
 
-            public String getName() {
-                return this.name;
+            /**
+             * @deprecated use {@link #withName(String)}
+             */
+            @Deprecated(forRemoval = true)
+            default void setName(String name) {
+                this.withName(name); // no op
             }
 
-            public void setName(final String name) {
-                this.name = name;
+            /**
+             * @deprecated use {@link #version()}
+             */
+            @Deprecated(forRemoval = true)
+            default String getVersion() {
+                return this.version();
             }
 
-            public void setVersion(final String version) {
-                this.version = version;
+            /**
+             * @deprecated use {@link #withVersion(String)}
+             */
+            @Deprecated(forRemoval = true)
+            default void setVersion(String version) {
+                this.withVersion(version); // no op
             }
 
-            public String getVersion() {
-                return this.version;
-            }
+            static PluginInformation of(final String name, final String version) {
+                record PluginInformationImpl(String name, String version) implements PluginInformation {
+                    PluginInformationImpl {
+                        Preconditions.checkArgument(name != null, "name cannot be null");
+                        Preconditions.checkArgument(version != null, "version cannot be null");
+                    }
 
-            public static PluginInformation of(final String name, final String version) {
-                return new PluginInformation(name, version);
+                    @Override
+                    public PluginInformation withName(final String name) {
+                        return new PluginInformationImpl(name, this.version);
+                    }
+
+                    @Override
+                    public PluginInformation withVersion(final String version) {
+                        return new PluginInformationImpl(this.name, version);
+                    }
+                }
+                return new PluginInformationImpl(name, version);
             }
         }
     }
