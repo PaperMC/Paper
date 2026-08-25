@@ -191,6 +191,7 @@ import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPigZapEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPiglinBarterEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPlayerDeathEvent;
+import org.bukkit.craftbukkit.event.entity.CraftPlayerLeashEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPlayerUnleashEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftProjectileHitEvent;
@@ -1788,7 +1789,7 @@ public class CraftEventFactory {
     }
 
     public static PlayerLeashEntityEvent callPlayerLeashEntityEvent(Entity entity, Entity leashHolder, net.minecraft.world.entity.player.Player player, InteractionHand hand) {
-        PlayerLeashEntityEvent event = new PlayerLeashEntityEvent(entity.getBukkitEntity(), leashHolder.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(hand));
+        PlayerLeashEntityEvent event = new CraftPlayerLeashEntityEvent(entity.getBukkitEntity(), leashHolder.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(hand));
         entity.level().getCraftServer().getPluginManager().callEvent(event);
         return event;
     }
