@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a player related inventory event
  */
-public class InventoryEvent extends EventTmp {
+public class InventoryEvent extends EventTmp implements InventoryEventNew {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 

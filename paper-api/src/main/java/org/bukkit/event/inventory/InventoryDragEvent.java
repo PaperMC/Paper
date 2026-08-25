@@ -1,10 +1,7 @@
 package org.bukkit.event.inventory;
 
-import com.google.common.collect.ImmutableSet;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import org.bukkit.Location;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -13,9 +10,7 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This event is called when the player drags an item in their cursor across
@@ -52,30 +47,7 @@ import org.jetbrains.annotations.Nullable;
  * task using {@link BukkitScheduler#runTask(Plugin, Runnable)}, which would
  * execute the task on the next tick, would work as well.
  */
-public class InventoryDragEvent extends InventoryInteractEvent {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final DragType type;
-    private final Map<Integer, ItemStack> addedItems;
-    private final Set<Integer> containerSlots;
-    private final ItemStack oldCursor;
-    private ItemStack newCursor;
-
-    @ApiStatus.Internal
-    public InventoryDragEvent(@NotNull InventoryView view, @Nullable ItemStack newCursor, @NotNull ItemStack oldCursor, boolean right, @NotNull Map<Integer, ItemStack> slots) {
-        super(view);
-
-        this.type = right ? DragType.SINGLE : DragType.EVEN;
-        this.newCursor = newCursor;
-        this.oldCursor = oldCursor;
-        this.addedItems = slots;
-        ImmutableSet.Builder<Integer> b = ImmutableSet.builder();
-        for (Integer slot : slots.keySet()) {
-            b.add(view.convertSlot(slot));
-        }
-        this.containerSlots = b.build();
-    }
+public interface InventoryDragEvent extends InventoryInteractEvent {
 
     /**
      * Gets the DragType that describes the behavior of ItemStacks placed
@@ -86,10 +58,7 @@ public class InventoryDragEvent extends InventoryInteractEvent {
      *
      * @return the DragType of this InventoryDragEvent
      */
-    @NotNull
-    public DragType getType() {
-        return this.type;
-    }
+    DragType getType();
 
     /**
      * Gets the result cursor after the drag is done. The returned value is
@@ -97,10 +66,7 @@ public class InventoryDragEvent extends InventoryInteractEvent {
      *
      * @return the result cursor
      */
-    @Nullable
-    public ItemStack getCursor() {
-        return this.newCursor;
-    }
+    @Nullable ItemStack getCursor();
 
     /**
      * Sets the result cursor after the drag is done.
@@ -111,9 +77,7 @@ public class InventoryDragEvent extends InventoryInteractEvent {
      *
      * @param newCursor the new cursor ItemStack
      */
-    public void setCursor(@Nullable ItemStack newCursor) {
-        this.newCursor = newCursor;
-    }
+    void setCursor(@Nullable ItemStack newCursor);
 
     /**
      * Gets an ItemStack representing the cursor prior to any modifications
@@ -121,30 +85,21 @@ public class InventoryDragEvent extends InventoryInteractEvent {
      *
      * @return the original cursor
      */
-    @NotNull
-    public ItemStack getOldCursor() {
-        return this.oldCursor.clone();
-    }
+    ItemStack getOldCursor();
 
     /**
      * Gets all items to be added to the inventory in this drag.
      *
      * @return map from raw slot id to new ItemStack
      */
-    @NotNull
-    public Map<Integer, ItemStack> getNewItems() {
-        return Collections.unmodifiableMap(this.addedItems);
-    }
+    Map<Integer, ItemStack> getNewItems();
 
     /**
      * Gets the raw slot ids to be changed in this drag.
      *
      * @return list of raw slot ids, suitable for getView().getItem(int)
      */
-    @NotNull
-    public Set<Integer> getRawSlots() {
-        return Collections.unmodifiableSet(this.addedItems.keySet());
-    }
+    Set<Integer> getRawSlots();
 
     /**
      * Gets the slots to be changed in this drag.
@@ -152,19 +107,12 @@ public class InventoryDragEvent extends InventoryInteractEvent {
      * @return list of converted slot ids, suitable for {@link
      *     org.bukkit.inventory.Inventory#getItem(int)}.
      */
-    @NotNull
-    public Set<Integer> getInventorySlots() {
-        return this.containerSlots;
-    }
+    Set<Integer> getInventorySlots();
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

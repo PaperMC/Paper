@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
+import org.bukkit.craftbukkit.event.inventory.CraftInventoryInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.*;
@@ -66,7 +67,8 @@ public final class ClassToInterfaceRules {
             //Event.class, CraftEvent.class,
             PlayerEvent.class, CraftPlayerEvent.class,
             BlockEvent.class, CraftBlockEvent.class,
-            EntityEvent.class, CraftEntityEvent.class
+            EntityEvent.class, CraftEntityEvent.class,
+            InventoryInteractEvent.class, CraftInventoryInteractEvent.class
             //</editor-fold>
         );
     }
@@ -405,7 +407,15 @@ public final class ClassToInterfaceRules {
             TurtleStartDiggingEvent.class,
             WitchConsumePotionEvent.class,
             WitchReadyPotionEvent.class,
-            WitchThrowPotionEvent.class
+            WitchThrowPotionEvent.class,
+            InventoryEvent.class,
+            InventoryDragEvent.class,
+            InventoryClickEvent.class,
+            SmithItemEvent.class,
+            TradeSelectEvent.class,
+            InventoryCreativeEvent.class,
+            CraftItemEvent.class,
+            CartographyItemEvent.class
             //</editor-fold>
         );
     }

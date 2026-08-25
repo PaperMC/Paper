@@ -190,6 +190,7 @@ import org.bukkit.craftbukkit.event.entity.CraftSpawnerSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftStriderTemperatureChangeEvent;
 import org.bukkit.craftbukkit.event.entity.CraftTrialSpawnerSpawnEvent;
 import org.bukkit.craftbukkit.event.entity.CraftVillagerCareerChangeEvent;
+import org.bukkit.craftbukkit.event.inventory.CraftTradeSelectEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBedEnterEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEmptyEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerBucketEntityEvent;
@@ -574,7 +575,7 @@ public class CraftEventFactory {
     }
 
     public static TradeSelectEvent callTradeSelectEvent(int newIndex, MerchantMenu merchant) {
-        TradeSelectEvent tradeSelectEvent = new TradeSelectEvent(merchant.getBukkitView(), newIndex);
+        TradeSelectEvent tradeSelectEvent = new CraftTradeSelectEvent(merchant.getBukkitView(), newIndex);
         Bukkit.getPluginManager().callEvent(tradeSelectEvent);
         return tradeSelectEvent;
     }

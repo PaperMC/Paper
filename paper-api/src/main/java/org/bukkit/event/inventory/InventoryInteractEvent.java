@@ -2,30 +2,19 @@ package org.bukkit.event.inventory;
 
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.Cancellable;
-import org.bukkit.inventory.InventoryView;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
- * An abstract base class for events that describe an interaction between a
+ * A base class for events that describe an interaction between a
  * HumanEntity and the contents of an Inventory.
  */
-public abstract class InventoryInteractEvent extends InventoryEvent implements Cancellable {
-
-    private Result result = Result.DEFAULT;
-
-    @ApiStatus.Internal
-    public InventoryInteractEvent(@NotNull InventoryView transaction) {
-        super(transaction);
-    }
+public interface InventoryInteractEvent extends InventoryEventNew, Cancellable {
 
     /**
      * Gets the player who performed the click.
      *
      * @return The clicking player.
      */
-    @NotNull
-    public HumanEntity getWhoClicked() {
+    default HumanEntity getWhoClicked() {
         return this.getView().getPlayer();
     }
 
@@ -36,9 +25,7 @@ public abstract class InventoryInteractEvent extends InventoryEvent implements C
      * @param newResult the new {@link org.bukkit.event.Event.Result} for this event
      * @see #isCancelled()
      */
-    public void setResult(@NotNull Result newResult) {
-        this.result = newResult;
-    }
+    void setResult(Result newResult);
 
     /**
      * Gets the {@link org.bukkit.event.Event.Result} of this event. The Result describes the
@@ -47,10 +34,7 @@ public abstract class InventoryInteractEvent extends InventoryEvent implements C
      *
      * @return the Result of this event.
      */
-    @NotNull
-    public Result getResult() {
-        return this.result;
-    }
+    Result getResult();
 
     /**
      * Gets whether this event is cancelled. This is based off of the
@@ -63,7 +47,7 @@ public abstract class InventoryInteractEvent extends InventoryEvent implements C
      * @return whether the event is cancelled
      */
     @Override
-    public boolean isCancelled() {
+    default boolean isCancelled() {
         return this.getResult() == Result.DENY;
     }
 
@@ -77,7 +61,7 @@ public abstract class InventoryInteractEvent extends InventoryEvent implements C
      * @param cancel result becomes {@link Result#DENY} if {@code true}, {@link Result#ALLOW} if {@code false}
      */
     @Override
-    public void setCancelled(boolean cancel) {
+    default void setCancelled(final boolean cancel) {
         this.setResult(cancel ? Result.DENY : Result.ALLOW);
     }
 }
