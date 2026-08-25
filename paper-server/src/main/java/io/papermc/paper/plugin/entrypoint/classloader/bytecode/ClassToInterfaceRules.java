@@ -34,6 +34,7 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.bukkit.event.raid.*;
 import org.bukkit.event.server.BroadcastMessageEvent;
+import org.bukkit.event.server.MapInitializeEvent;
 import org.bukkit.event.world.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -473,7 +474,8 @@ public final class ClassToInterfaceRules {
             EntitiesUnloadEvent.class,
             PlayerChunkLoadEvent.class,
             PlayerChunkUnloadEvent.class,
-            BroadcastMessageEvent.class
+            BroadcastMessageEvent.class,
+            MapInitializeEvent.class
             //</editor-fold>
         );
     }
