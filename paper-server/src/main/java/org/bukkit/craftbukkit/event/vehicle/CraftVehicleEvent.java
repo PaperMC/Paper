@@ -2,9 +2,9 @@ package org.bukkit.craftbukkit.event.vehicle;
 
 import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.entity.Vehicle;
-import org.bukkit.event.vehicle.VehicleEventNew;
+import org.bukkit.event.vehicle.VehicleEvent;
 
-public abstract class CraftVehicleEvent extends CraftEvent implements VehicleEventNew {
+public abstract class CraftVehicleEvent extends CraftEvent implements VehicleEvent {
 
     protected Vehicle vehicle;
 

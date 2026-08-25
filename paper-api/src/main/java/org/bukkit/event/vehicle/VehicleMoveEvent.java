@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Raised when a vehicle moves.
  */
-public interface VehicleMoveEvent extends VehicleEventNew {
+public interface VehicleMoveEvent extends VehicleEvent {
 
     /**
      * Get the previous position.

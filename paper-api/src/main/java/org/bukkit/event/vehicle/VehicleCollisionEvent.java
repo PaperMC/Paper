@@ -5,7 +5,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Raised when a vehicle collides.
  */
-public interface VehicleCollisionEvent extends VehicleEventNew {
+public interface VehicleCollisionEvent extends VehicleEvent {
 
     static HandlerList getHandlerList() {
         final class Holder {

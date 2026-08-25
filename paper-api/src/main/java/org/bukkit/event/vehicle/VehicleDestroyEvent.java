@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
  * player or the environment. This is not raised if the boat is simply
  * 'removed' due to other means.
  */
-public interface VehicleDestroyEvent extends VehicleEventNew, Cancellable {
+public interface VehicleDestroyEvent extends VehicleEvent, Cancellable {
 
     /**
      * Gets the DamageSource that has destroyed the vehicle.
