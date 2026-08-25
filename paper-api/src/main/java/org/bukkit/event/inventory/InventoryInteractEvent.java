@@ -7,7 +7,7 @@ import org.bukkit.event.Cancellable;
  * A base class for events that describe an interaction between a
  * HumanEntity and the contents of an Inventory.
  */
-public interface InventoryInteractEvent extends InventoryEventNew, Cancellable {
+public interface InventoryInteractEvent extends InventoryEvent, Cancellable {
 
     /**
      * Gets the player who performed the click.

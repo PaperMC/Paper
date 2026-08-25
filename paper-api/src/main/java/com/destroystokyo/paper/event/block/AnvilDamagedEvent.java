@@ -4,14 +4,14 @@ import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.inventory.InventoryEventNew;
+import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.inventory.AnvilInventory;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Called when an anvil is damaged from being used
  */
-public interface AnvilDamagedEvent extends InventoryEventNew, Cancellable {
+public interface AnvilDamagedEvent extends InventoryEvent, Cancellable {
 
     @Override
     AnvilInventory getInventory();
