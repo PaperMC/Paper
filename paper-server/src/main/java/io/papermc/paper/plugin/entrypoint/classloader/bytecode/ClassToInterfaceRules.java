@@ -558,7 +558,8 @@ public final class ClassToInterfaceRules {
             AsyncTabCompleteEvent.class,
             ServerExceptionEvent.class,
             ServerTickEndEvent.class,
-            ServerTickStartEvent.class
+            ServerTickStartEvent.class,
+            WhitelistToggleEvent.class
             //</editor-fold>
         );
     }

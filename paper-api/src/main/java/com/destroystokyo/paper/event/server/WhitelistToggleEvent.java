@@ -1,43 +1,26 @@
 package com.destroystokyo.paper.event.server;
 
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * This event is fired when whitelist is toggled
  *
  * @author Mark Vainomaa
  */
-@NullMarked
-public class WhitelistToggleEvent extends EventTmp {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final boolean enabled;
-
-    @ApiStatus.Internal
-    public WhitelistToggleEvent(final boolean enabled) {
-        this.enabled = enabled;
-    }
+public interface WhitelistToggleEvent extends Event {
 
     /**
      * Gets whether whitelist is going to be enabled or not
      *
      * @return Whether whitelist is going to be enabled or not
      */
-    public boolean isEnabled() {
-        return this.enabled;
-    }
+    boolean isEnabled();
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
