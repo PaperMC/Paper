@@ -509,7 +509,8 @@ public final class ClassToInterfaceRules {
             VehicleDamageEvent.class,
             VehicleDestroyEvent.class,
             VehicleEnterEvent.class,
-            VehicleExitEvent.class
+            VehicleExitEvent.class,
+            VehicleMoveEvent.class
             //</editor-fold>
         );
     }
