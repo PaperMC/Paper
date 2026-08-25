@@ -160,6 +160,7 @@ import org.bukkit.craftbukkit.entity.CraftEntityFactory;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.event.server.CraftBroadcastMessageEvent;
+import org.bukkit.craftbukkit.event.server.CraftServerLoadEvent;
 import org.bukkit.craftbukkit.event.world.CraftWorldUnloadEvent;
 import org.bukkit.craftbukkit.generator.CraftWorldInfo;
 import org.bukkit.craftbukkit.generator.OldCraftChunkData;
@@ -1054,7 +1055,7 @@ public final class CraftServer implements Server {
         this.helpMap.initializeCommands();
         this.syncCommands(); // Refresh commands after event
         // Paper end - brigadier command API
-        new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD).callEvent();
+        new CraftServerLoadEvent(ServerLoadEvent.LoadType.RELOAD).callEvent();
         org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
     }
 
