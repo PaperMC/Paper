@@ -4,6 +4,7 @@ import java.util.List;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
@@ -17,14 +18,18 @@ import org.bukkit.inventory.ItemStack;
  * for {@link org.bukkit.event.block.BlockBreakEvent} and
  * {@link org.bukkit.event.block.BlockDropItemEvent}.
  */
-public interface PlayerHarvestBlockEvent extends PlayerEvent, Cancellable {
+public interface PlayerHarvestBlockEvent extends PlayerEvent, BlockEvent, Cancellable {
 
     /**
      * Gets the block that is being harvested.
      *
      * @return The block that is being harvested
+     * @deprecated use {@link #getBlock()}
      */
-    Block getHarvestedBlock();
+    @Deprecated(forRemoval = true)
+    default Block getHarvestedBlock() {
+        return this.getBlock();
+    }
 
     /**
      * Get the hand used to harvest the block.

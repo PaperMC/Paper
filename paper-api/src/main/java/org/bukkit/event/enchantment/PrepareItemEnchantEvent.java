@@ -5,7 +5,9 @@ import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.inventory.InventoryEvent;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.view.EnchantmentView;
 import org.jspecify.annotations.Nullable;
@@ -14,7 +16,7 @@ import org.jspecify.annotations.Nullable;
  * Called when an ItemStack is inserted in an enchantment table - can be
  * called multiple times
  */
-public interface PrepareItemEnchantEvent extends InventoryEvent, Cancellable {
+public interface PrepareItemEnchantEvent extends InventoryEvent, PlayerEvent, BlockEvent, Cancellable {
 
     @Override
     EnchantmentView getView();
@@ -23,15 +25,23 @@ public interface PrepareItemEnchantEvent extends InventoryEvent, Cancellable {
      * Gets the player enchanting the item
      *
      * @return enchanting player
+     * @deprecated use {@link #getPlayer()}
      */
-    Player getEnchanter();
+    @Deprecated(forRemoval = true)
+    default Player getEnchanter() {
+        return this.getPlayer();
+    }
 
     /**
      * Gets the block being used to enchant the item
      *
      * @return the block used for enchanting
+     * @deprecated use {@link #getBlock()}
      */
-    Block getEnchantBlock();
+    @Deprecated(forRemoval = true)
+    default Block getEnchantBlock() {
+        return this.getBlock();
+    }
 
     /**
      * Gets the item to be enchanted.

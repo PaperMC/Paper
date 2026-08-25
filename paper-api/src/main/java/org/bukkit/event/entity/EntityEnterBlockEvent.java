@@ -1,9 +1,9 @@
 package org.bukkit.event.entity;
 
-import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 
 /**
  * Called when an {@link Entity} enters a block and is stored in that block.
@@ -13,14 +13,7 @@ import org.bukkit.event.HandlerList;
  * It is not called when a silverfish "enters" a stone block. For that listen to
  * the {@link EntityChangeBlockEvent}.
  */
-public interface EntityEnterBlockEvent extends EntityEvent, Cancellable {
-
-    /**
-     * Get the block the entity will enter.
-     *
-     * @return the block
-     */
-    Block getBlock();
+public interface EntityEnterBlockEvent extends EntityEvent, BlockEvent, Cancellable {
 
     static HandlerList getHandlerList() {
         final class Holder {

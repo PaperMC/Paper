@@ -19,8 +19,6 @@ public interface PlayerClientLoadedWorldEvent extends PlayerEvent {
      */
     boolean isTimeout();
 
-    HandlerList getHandlers();
-
     static HandlerList getHandlerList() {
         final class Holder {
             private static final HandlerList HANDLER_LIST = new HandlerList();

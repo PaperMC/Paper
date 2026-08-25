@@ -1,12 +1,12 @@
 package com.destroystokyo.paper.event.server;
 
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.server.ServerEvent;
 
 /**
  * Called when the server has finished ticking the main loop
  */
-public interface ServerTickEndEvent extends Event {
+public interface ServerTickEndEvent extends ServerEvent {
 
     /**
      * @return What tick this was since start (first tick = 1)

@@ -4,6 +4,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
@@ -11,14 +12,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a player interacts with a Bucket
  */
-public interface PlayerBucketEvent extends PlayerEvent, Cancellable {
-
-    /**
-     * Gets the block involved in this event.
-     *
-     * @return The Block which block is involved in this event
-     */
-    Block getBlock();
+public interface PlayerBucketEvent extends PlayerEvent, BlockEvent, Cancellable {
 
     /**
      * Return the block clicked

@@ -28,11 +28,6 @@ public class CraftPotionSplashEvent extends CraftProjectileHitEvent implements P
     }
 
     @Override
-    public ThrownPotion getPotion() {
-        return this.getEntity();
-    }
-
-    @Override
     public Collection<LivingEntity> getAffectedEntities() {
         return new ArrayList<>(this.affectedEntities.keySet());
     }

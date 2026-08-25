@@ -26,7 +26,7 @@ public class PaperEntityPathfindEvent extends CraftEntityEvent implements Entity
     }
 
     @Override
-    public Location getLoc() {
+    public Location getLocation() {
         return this.location.clone();
     }
 

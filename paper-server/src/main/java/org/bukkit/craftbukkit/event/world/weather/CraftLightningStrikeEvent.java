@@ -1,4 +1,4 @@
-package org.bukkit.craftbukkit.event.weather;
+package org.bukkit.craftbukkit.event.world.weather;
 
 import org.bukkit.World;
 import org.bukkit.entity.LightningStrike;

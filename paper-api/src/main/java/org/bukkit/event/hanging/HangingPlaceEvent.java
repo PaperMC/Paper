@@ -5,6 +5,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
@@ -12,26 +13,21 @@ import org.jspecify.annotations.Nullable;
 /**
  * Triggered when a hanging entity is created in the world
  */
-public interface HangingPlaceEvent extends HangingEvent, Cancellable {
+public interface HangingPlaceEvent extends HangingEvent, BlockEvent, Cancellable {
 
     /**
-     * Returns the player placing the hanging entity
-     *
-     * @return the player placing the hanging entity
+     * {@return the player placing the hanging entity}
      */
     @Nullable Player getPlayer();
 
     /**
-     * Returns the block that the hanging entity was placed on
-     *
-     * @return the block that the hanging entity was placed on
+     * {@return the block that the hanging entity was placed on}
      */
+    @Override
     Block getBlock();
 
     /**
-     * Returns the face of the block that the hanging entity was placed on
-     *
-     * @return the face of the block that the hanging entity was placed on
+     * {@return the face of the block that the hanging entity was placed on}
      */
     BlockFace getBlockFace();
 
@@ -44,9 +40,7 @@ public interface HangingPlaceEvent extends HangingEvent, Cancellable {
     @Nullable EquipmentSlot getHand();
 
     /**
-     * Gets the item from which the hanging entity originated
-     *
-     * @return the item from which the hanging entity originated
+     * {@return the item from which the hanging entity originated}
      */
     @Nullable ItemStack getItemStack();
 

@@ -6,7 +6,7 @@ import java.net.InetAddress;
 import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.event.HandlerList;
 
-public final class PaperGS4QueryEvent extends CraftEvent implements GS4QueryEvent {
+public class PaperGS4QueryEvent extends CraftEvent implements GS4QueryEvent {
 
     private final QueryType queryType;
     private final InetAddress querierAddress;

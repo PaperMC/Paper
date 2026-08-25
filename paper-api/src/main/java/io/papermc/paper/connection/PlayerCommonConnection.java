@@ -1,5 +1,6 @@
 package io.papermc.paper.connection;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
 import java.util.Map;
 
 import com.destroystokyo.paper.ClientOption;
@@ -11,6 +12,13 @@ import org.jspecify.annotations.Nullable;
  * Represents a connection that has properties shared between the GAME and CONFIG stage.
  */
 public interface PlayerCommonConnection extends WritablePlayerCookieConnection, ReadablePlayerCookieConnection, PluginMessageRecipient {
+
+    /**
+     * Gets the profile for this connection.
+     *
+     * @return profile
+     */
+    PlayerProfile getProfile();
 
     /**
      * Sends data to appear in this connection's report logs.

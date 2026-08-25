@@ -1,20 +1,16 @@
 package org.bukkit.event.player;
 
 import io.papermc.paper.connection.PlayerCommonConnection;
+import io.papermc.paper.event.connection.ConnectionEvent;
 import org.bukkit.ServerLinks;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
 /**
  * This event is called when the list of links is sent to the player.
  */
-public interface PlayerLinksSendEvent extends Event {
+public interface PlayerLinksSendEvent extends ConnectionEvent {
 
-    /**
-     * Gets the connection that received the links.
-     *
-     * @return connection
-     */
+    @Override
     PlayerCommonConnection getConnection();
 
     /**

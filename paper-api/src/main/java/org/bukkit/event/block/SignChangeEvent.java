@@ -3,9 +3,9 @@ package org.bukkit.event.block;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.bukkit.block.sign.Side;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.PlayerEvent;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -13,14 +13,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * If this event is cancelled, the sign will not be changed.
  */
-public interface SignChangeEvent extends BlockEvent, Cancellable {
-
-    /**
-     * Gets the player changing the sign involved in this event.
-     *
-     * @return the Player involved in this event
-     */
-    Player getPlayer();
+public interface SignChangeEvent extends BlockEvent, PlayerEvent, Cancellable {
 
     /**
      * Gets all of the lines of text from the sign involved in this event.

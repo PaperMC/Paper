@@ -1,7 +1,5 @@
 package io.papermc.paper.connection;
 
-import com.destroystokyo.paper.profile.CraftPlayerProfile;
-import com.destroystokyo.paper.profile.PlayerProfile;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
@@ -126,11 +124,6 @@ public class PaperPlayerConfigurationConnection extends PaperCommonConnection<Se
     @Override
     public Audience getAudience() {
         return this;
-    }
-
-    @Override
-    public PlayerProfile getProfile() {
-        return CraftPlayerProfile.asBukkitCopy(this.packetListener.getOwner());
     }
 
     @Override

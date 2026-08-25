@@ -44,7 +44,7 @@ public class PaperPlayerChangeBeaconEffectEvent extends CraftPlayerEvent impleme
     }
 
     @Override
-    public Block getBeacon() {
+    public Block getBlock() {
         return this.beacon;
     }
 

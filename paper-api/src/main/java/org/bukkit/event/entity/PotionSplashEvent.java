@@ -18,7 +18,9 @@ public interface PotionSplashEvent extends ProjectileHitEvent {
      *
      * @return The thrown potion entity
      */
-    ThrownPotion getPotion();
+    default ThrownPotion getPotion() {
+        return this.getEntity();
+    }
 
     /**
      * Retrieves a list of all effected entities

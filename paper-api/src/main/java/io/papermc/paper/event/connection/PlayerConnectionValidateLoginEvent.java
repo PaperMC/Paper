@@ -4,7 +4,6 @@ import io.papermc.paper.connection.PlayerConfigurationConnection;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.connection.PlayerLoginConnection;
 import net.kyori.adventure.text.Component;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jspecify.annotations.Nullable;
 
@@ -20,7 +19,7 @@ import org.jspecify.annotations.Nullable;
  * is either {@link PlayerLoginConnection} or {@link PlayerConfigurationConnection},
  * allowing access to phase-specific API.
  */
-public interface PlayerConnectionValidateLoginEvent extends Event {
+public interface PlayerConnectionValidateLoginEvent extends ConnectionEvent {
 
     /**
      * Gets the connection of the player in this event.
@@ -35,6 +34,7 @@ public interface PlayerConnectionValidateLoginEvent extends Event {
      * @apiNote disconnecting the player through this connection
      * or using any methods that may send packets is not supported
      */
+    @Override
     PlayerConnection getConnection();
 
     /**

@@ -30,7 +30,7 @@ public class CraftPlayerPortalEvent extends CraftPlayerTeleportEvent implements 
     }
 
     @Override
-    public boolean getCanCreatePortal() {
+    public boolean canCreatePortal() {
         return this.canCreatePortal;
     }
 

@@ -50,9 +50,9 @@ public abstract class CraftPlayerBucketEvent extends CraftPlayerEvent implements
     }
 
     public static <EVENT extends PlayerBucketEvent> EVENT create(
-        Factory<? extends EVENT> factory, Level level, net.minecraft.world.entity.player.Player player, BlockPos changedPos,
-        BlockPos clickedPos, Direction clickedFace, net.minecraft.world.item.ItemStack bucket, net.minecraft.world.item.Item itemInHand,
-        InteractionHand hand
+        final Factory<? extends EVENT> factory, final Level level, final net.minecraft.world.entity.player.Player player, final BlockPos changedPos,
+        final BlockPos clickedPos, final Direction clickedFace, final net.minecraft.world.item.ItemStack bucket, final net.minecraft.world.item.Item itemInHand,
+        final InteractionHand hand
     ) {
         return factory.create(
             (Player) player.getBukkitEntity(),

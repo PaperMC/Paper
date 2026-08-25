@@ -16,7 +16,7 @@ public class PaperElderGuardianAppearanceEvent extends CraftEntityEvent implemen
     }
 
     @Override
-    public Player getAffectedPlayer() {
+    public Player getPlayer() {
         return this.affectedPlayer;
     }
 

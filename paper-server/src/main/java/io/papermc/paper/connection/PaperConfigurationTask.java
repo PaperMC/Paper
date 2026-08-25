@@ -2,7 +2,7 @@ package io.papermc.paper.connection;
 
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
-import io.papermc.paper.event.connection.configuration.PaperAsyncPlayerConnectionConfigureEvent;
+import io.papermc.paper.event.network.connection.configuration.PaperAsyncPlayerConnectionConfigureEvent;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;

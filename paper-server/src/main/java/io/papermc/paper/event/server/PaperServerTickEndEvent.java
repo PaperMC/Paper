@@ -1,10 +1,10 @@
 package io.papermc.paper.event.server;
 
 import com.destroystokyo.paper.event.server.ServerTickEndEvent;
-import org.bukkit.craftbukkit.event.CraftEvent;
+import org.bukkit.craftbukkit.event.server.CraftServerEvent;
 import org.bukkit.event.HandlerList;
 
-public class PaperServerTickEndEvent extends CraftEvent implements ServerTickEndEvent {
+public class PaperServerTickEndEvent extends CraftServerEvent implements ServerTickEndEvent {
 
     private final int tickNumber;
     private final double tickDuration;

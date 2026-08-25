@@ -2,18 +2,18 @@ package io.papermc.paper.event.player;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.connection.PlayerConfigurationConnection;
+import io.papermc.paper.event.network.connection.PaperConnectionEvent;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.event.HandlerList;
 
-public class PaperAsyncPlayerSpawnLocationEvent extends CraftEvent implements AsyncPlayerSpawnLocationEvent {
+public class PaperAsyncPlayerSpawnLocationEvent extends PaperConnectionEvent implements AsyncPlayerSpawnLocationEvent {
 
     private final PlayerConfigurationConnection connection;
     private final boolean newPlayer;
     private Location spawnLocation;
 
     public PaperAsyncPlayerSpawnLocationEvent(final PlayerConfigurationConnection connection, final Location spawnLocation, final boolean newPlayer) {
-        super(true);
+        super(connection, true);
         this.connection = connection;
         this.spawnLocation = spawnLocation;
         this.newPlayer = newPlayer;

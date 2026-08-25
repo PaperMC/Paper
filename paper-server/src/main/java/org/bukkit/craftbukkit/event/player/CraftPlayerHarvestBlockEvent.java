@@ -24,7 +24,7 @@ public class CraftPlayerHarvestBlockEvent extends CraftPlayerEvent implements Pl
     }
 
     @Override
-    public Block getHarvestedBlock() {
+    public Block getBlock() {
         return this.harvestedBlock;
     }
 

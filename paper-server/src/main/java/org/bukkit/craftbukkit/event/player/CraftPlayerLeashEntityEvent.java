@@ -1,25 +1,23 @@
-package org.bukkit.craftbukkit.event.entity;
+package org.bukkit.craftbukkit.event.player;
 
-import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.PlayerLeashEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
-public class CraftPlayerLeashEntityEvent extends CraftEvent implements PlayerLeashEntityEvent {
+public class CraftPlayerLeashEntityEvent extends CraftPlayerEvent implements PlayerLeashEntityEvent {
 
     private final Entity leashHolder;
     private final Entity entity;
-    private final Player player;
     private final EquipmentSlot hand;
 
     private boolean cancelled;
 
     public CraftPlayerLeashEntityEvent(final Entity entity, final Entity leashHolder, final Player leasher, final EquipmentSlot hand) {
+        super(leasher);
         this.leashHolder = leashHolder;
         this.entity = entity;
-        this.player = leasher;
         this.hand = hand;
     }
 
@@ -31,11 +29,6 @@ public class CraftPlayerLeashEntityEvent extends CraftEvent implements PlayerLea
     @Override
     public Entity getEntity() {
         return this.entity;
-    }
-
-    @Override
-    public Player getPlayer() {
-        return this.player;
     }
 
     @Override

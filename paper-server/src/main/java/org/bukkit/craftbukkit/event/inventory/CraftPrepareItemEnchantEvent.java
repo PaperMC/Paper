@@ -34,12 +34,12 @@ public class CraftPrepareItemEnchantEvent extends CraftInventoryEvent implements
     }
 
     @Override
-    public Player getEnchanter() {
+    public Player getPlayer() {
         return this.enchanter;
     }
 
     @Override
-    public Block getEnchantBlock() {
+    public Block getBlock() {
         return this.table;
     }
 

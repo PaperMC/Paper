@@ -4,19 +4,24 @@ import io.papermc.paper.block.bed.BedEnterAction;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
  * This event is fired when the player is almost about to enter the bed.
  */
-public interface PlayerBedEnterEvent extends PlayerEvent, Cancellable {
+public interface PlayerBedEnterEvent extends PlayerEvent, BlockEvent, Cancellable {
 
     /**
      * Returns the bed block involved in this event.
      *
      * @return the bed block involved in this event
+     * @deprecated use {@link #getBlock()}
      */
-    Block getBed();
+    @Deprecated(forRemoval = true)
+    default Block getBed() {
+        return this.getBlock();
+    }
 
     /**
      * This describes the default outcome of this event.

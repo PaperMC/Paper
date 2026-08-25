@@ -221,27 +221,31 @@ index 94b4e9e5e37903a6801a26aa82531899af44d576..fb5809ca1672b177cbb4ead9e5ddf873
              eventItemCopy,
              new org.bukkit.util.Vector(0, 0, 0)
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index 9fbc7e93712672dbab67f931e2aee447d803607b..a166dfe1300841fceff3a1081d13445d5623f1f5 100644
+index 9fbc7e93712672dbab67f931e2aee447d803607b..c2b2078ed4790c69fa728f83b312453a7f4a2d11 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -880,7 +880,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -879,9 +879,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+                 // Paper start - Add PlayerConnectionCloseEvent
                  if (packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl commonPacketListener) {
                      /* Player was logged in, either game listener or configuration listener */
-                     final com.mojang.authlib.GameProfile profile = commonPacketListener.getOwner();
+-                    final com.mojang.authlib.GameProfile profile = commonPacketListener.getOwner();
 -                    new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.id(),
-+                    new io.papermc.paper.event.player.PaperPlayerConnectionCloseEvent(profile.id(),
-                         profile.name(), ((InetSocketAddress) this.address).getAddress(), false).callEvent();
+-                        profile.name(), ((InetSocketAddress) this.address).getAddress(), false).callEvent();
++                    new io.papermc.paper.event.network.connection.PaperPlayerConnectionCloseEvent(commonPacketListener.paperConnection(), ((InetSocketAddress) this.address).getAddress(), false).callEvent();
                  } else if (packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginListener) {
                      /* Player is login stage */
-@@ -890,7 +890,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+                     switch (loginListener.state) {
+@@ -889,9 +887,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+                         case WAITING_FOR_DUPE_DISCONNECT:
                          case PROTOCOL_SWITCHING:
                          case ACCEPTED:
-                             final com.mojang.authlib.GameProfile profile = loginListener.authenticatedProfile; /* Should be non-null at this stage */
+-                            final com.mojang.authlib.GameProfile profile = loginListener.authenticatedProfile; /* Should be non-null at this stage */
 -                            new com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent(profile.id(), profile.name(),
-+                            new io.papermc.paper.event.player.PaperPlayerConnectionCloseEvent(profile.id(), profile.name(),
-                                 ((InetSocketAddress) this.address).getAddress(), false).callEvent();
+-                                ((InetSocketAddress) this.address).getAddress(), false).callEvent();
++                            new io.papermc.paper.event.network.connection.PaperPlayerConnectionCloseEvent(loginListener.paperConnection(), ((InetSocketAddress) this.address).getAddress(), false).callEvent();
                      }
                  }
+                 // Paper end - Add PlayerConnectionCloseEvent
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
 index 879f53a64e3070aca5f6c58a0e200b62c3e51117..94281a2eb7f70d67ab129091afc11219af03b7c7 100644
 --- a/net/minecraft/server/MinecraftServer.java
@@ -735,7 +739,7 @@ index 5dbb2849f32ac3418f8fdf76c04022d7e9dc165b..b384207a95b189a1b745e933e8e08948
  
              if (this.cserver.getServer().isRunning()) {
 diff --git a/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java b/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
-index 6baa9d2a8af7901d47964e6d7ad53ea7963ceeef..9162320bd3521acbb6e0cf1150a3c3d8f5939a45 100644
+index 6baa9d2a8af7901d47964e6d7ad53ea7963ceeef..ba011ee97549963abfb31d6a8146235636918c6b 100644
 --- a/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
 @@ -100,12 +100,12 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
@@ -743,7 +747,7 @@ index 6baa9d2a8af7901d47964e6d7ad53ea7963ceeef..9162320bd3521acbb6e0cf1150a3c3d8
  
      public void startConfiguration() {
 -        new io.papermc.paper.event.connection.configuration.PlayerConnectionInitialConfigureEvent(this.paperConnection).callEvent(); // Paper
-+        new io.papermc.paper.event.connection.configuration.PaperPlayerConnectionInitialConfigureEvent(this.paperConnection).callEvent(); // Paper
++        new io.papermc.paper.event.network.connection.configuration.PaperPlayerConnectionInitialConfigureEvent(this.paperConnection).callEvent(); // Paper
          this.send(new ClientboundCustomPayloadPacket(new BrandPayload(this.server.getServerModName())));
          ServerLinks serverLinks = this.server.serverLinks();
          // Paper start
@@ -758,12 +762,12 @@ index 6baa9d2a8af7901d47964e6d7ad53ea7963ceeef..9162320bd3521acbb6e0cf1150a3c3d8
  
                  // Paper start - Code of Conduct event
 -                io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent event = new io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent(this.paperConnection, codeOfConduct);
-+                io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent event = new io.papermc.paper.event.connection.configuration.PaperPlayerCodeOfConductSendEvent(this.paperConnection, codeOfConduct);
++                io.papermc.paper.event.connection.configuration.PlayerCodeOfConductSendEvent event = new io.papermc.paper.event.network.connection.configuration.PaperPlayerCodeOfConductSendEvent(this.paperConnection, codeOfConduct);
                  event.callEvent();
                  codeOfConduct = event.getCodeOfConduct();
                  if (codeOfConduct == null) {
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index c2aba28916da7f8b0bc8a325cddaa9bb7ecfb251..952e5bc326a7993c70bde55d6640ecb054e05876 100644
+index c2aba28916da7f8b0bc8a325cddaa9bb7ecfb251..1513ba6b3e53a661752291946d723626a447cea5 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -340,7 +340,7 @@ public class ServerGamePacketListenerImpl
@@ -1019,7 +1023,7 @@ index c2aba28916da7f8b0bc8a325cddaa9bb7ecfb251..952e5bc326a7993c70bde55d6640ecb0
                  listener // Paper
              );
 -        new io.papermc.paper.event.connection.configuration.PlayerConnectionReconfigureEvent(listener.paperConnection).callEvent(); // Paper
-+        new io.papermc.paper.event.connection.configuration.PaperPlayerConnectionReconfigureEvent(listener.paperConnection).callEvent(); // Paper
++        new io.papermc.paper.event.network.connection.configuration.PaperPlayerConnectionReconfigureEvent(listener.paperConnection).callEvent(); // Paper
      }
  
      @Override
@@ -1077,7 +1081,7 @@ index 649f9646abb1bd84f1f22409aee09d2a4d27e581..7ab29be125589482cbf410b957bae5f9
                      // If we've failed somehow, let the client know so and go no further.
                      if (event.isFailed()) {
 diff --git a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 1d892a8c905496af9d56cec86941e82ec48505db..4170663c090beddb77f36b71f4127da86dc33dd7 100644
+index 1d892a8c905496af9d56cec86941e82ec48505db..6de312d0a7ae9fbd03902b682f263559b4a2e2e5 100644
 --- a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -335,7 +335,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
@@ -1098,6 +1102,19 @@ index 1d892a8c905496af9d56cec86941e82ec48505db..4170663c090beddb77f36b71f4127da8
              if (asyncEvent.getResult() != PlayerPreLoginEvent.Result.ALLOWED) {
                  event.disallow(asyncEvent.getResult(), asyncEvent.kickMessage()); // Paper - Adventure
              }
+@@ -474,6 +474,12 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+     }
+     // Spigot end
+ 
++    // Paper start - expose connection
++    public io.papermc.paper.connection.PaperPlayerLoginConnection paperConnection() {
++        return this.paperLoginConnection;
++    }
++    // Paper end - expose connection
++
+     public enum State {
+         HELLO,
+         KEY,
 diff --git a/net/minecraft/server/network/ServerStatusPacketListenerImpl.java b/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
 index fc7b0b1dd054bddd830983b7f07a92169c886518..e6dede6ceb08487f99399df404cce4140a47ac62 100644
 --- a/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
@@ -4840,7 +4857,7 @@ index 041ed95948ff6bb4cf3610ce4522a6ba105b6812..a3b3f72a7bb0a128a61377de73c9b424
  
              if (event.isCancelled()) {
 diff --git a/net/minecraft/world/level/saveddata/WeatherData.java b/net/minecraft/world/level/saveddata/WeatherData.java
-index 93adfc0e79dc52c602f5b9f258b4ee1d8b852eb8..82e2fc25e66f45cd88615ec6c6ff4c47f598b420 100644
+index 93adfc0e79dc52c602f5b9f258b4ee1d8b852eb8..1e1d5d41f003fd2bd29993659fd98e2ab833fa4c 100644
 --- a/net/minecraft/world/level/saveddata/WeatherData.java
 +++ b/net/minecraft/world/level/saveddata/WeatherData.java
 @@ -62,7 +62,7 @@ public final class WeatherData extends SavedData {
@@ -4848,7 +4865,7 @@ index 93adfc0e79dc52c602f5b9f258b4ee1d8b852eb8..82e2fc25e66f45cd88615ec6c6ff4c47
          org.bukkit.World world = this.level == null ? null : this.level.getWorld();
          if (world != null) {
 -            org.bukkit.event.weather.ThunderChangeEvent thunder = new org.bukkit.event.weather.ThunderChangeEvent(world, thundering, cause); // Paper - Add cause to Weather/ThunderChangeEvents
-+            org.bukkit.event.weather.ThunderChangeEvent thunder = new org.bukkit.craftbukkit.event.weather.CraftThunderChangeEvent(world, thundering, cause); // Paper - Add cause to Weather/ThunderChangeEvents
++            org.bukkit.event.weather.ThunderChangeEvent thunder = new org.bukkit.craftbukkit.event.world.weather.CraftThunderChangeEvent(world, thundering, cause); // Paper - Add cause to Weather/ThunderChangeEvents
              org.bukkit.Bukkit.getServer().getPluginManager().callEvent(thunder);
              if (thunder.isCancelled()) {
                  return;
@@ -4857,7 +4874,7 @@ index 93adfc0e79dc52c602f5b9f258b4ee1d8b852eb8..82e2fc25e66f45cd88615ec6c6ff4c47
          org.bukkit.World world = this.level == null ? null : this.level.getWorld();
          if (world != null) {
 -            org.bukkit.event.weather.WeatherChangeEvent weather = new org.bukkit.event.weather.WeatherChangeEvent(world, raining, cause); // Paper - Add cause to Weather/ThunderChangeEvents
-+            org.bukkit.event.weather.WeatherChangeEvent weather = new org.bukkit.craftbukkit.event.weather.CraftWeatherChangeEvent(world, raining, cause); // Paper - Add cause to Weather/ThunderChangeEvents
++            org.bukkit.event.weather.WeatherChangeEvent weather = new org.bukkit.craftbukkit.event.world.weather.CraftWeatherChangeEvent(world, raining, cause); // Paper - Add cause to Weather/ThunderChangeEvents
              org.bukkit.Bukkit.getServer().getPluginManager().callEvent(weather);
              if (weather.isCancelled()) {
                  return;

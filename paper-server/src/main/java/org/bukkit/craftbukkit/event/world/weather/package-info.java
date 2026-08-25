@@ -1,4 +1,4 @@
 @NullMarked
-package io.papermc.paper.event.connection;
+package org.bukkit.craftbukkit.event.world.weather;
 
 import org.jspecify.annotations.NullMarked;

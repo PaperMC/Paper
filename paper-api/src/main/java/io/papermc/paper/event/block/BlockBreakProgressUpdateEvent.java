@@ -1,13 +1,13 @@
 package io.papermc.paper.event.block;
 
-import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
+import org.bukkit.event.entity.EntityEvent;
 
 /**
  * Called when the progress of a block break is updated.
  */
-public interface BlockBreakProgressUpdateEvent extends BlockEvent {
+public interface BlockBreakProgressUpdateEvent extends BlockEvent, EntityEvent {
 
     /**
      * The progress of the block break
@@ -18,13 +18,6 @@ public interface BlockBreakProgressUpdateEvent extends BlockEvent {
      * @return The progress of the block break
      */
     float getProgress();
-
-    /**
-     * The entity breaking the block.
-     *
-     * @return The entity breaking the block
-     */
-    Entity getEntity();
 
     static HandlerList getHandlerList() {
         final class Holder {

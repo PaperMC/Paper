@@ -5,6 +5,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.jspecify.annotations.Nullable;
 
@@ -15,26 +16,21 @@ import org.jspecify.annotations.Nullable;
  * Note that this event is currently only fired for four specific placements:
  * armor stands, boats, minecarts, and end crystals.
  */
-public interface EntityPlaceEvent extends EntityEvent, Cancellable {
+public interface EntityPlaceEvent extends EntityEvent, BlockEvent, Cancellable {
 
     /**
-     * Returns the player placing the entity
-     *
-     * @return the player placing the entity
+     * {@return the player placing the entity}
      */
     @Nullable Player getPlayer();
 
     /**
-     * Returns the block that the entity was placed on
-     *
-     * @return the block that the entity was placed on
+     * {@return the block that the entity was placed on}
      */
+    @Override
     Block getBlock();
 
     /**
-     * Returns the face of the block that the entity was placed on
-     *
-     * @return the face of the block that the entity was placed on
+     * {@return the face of the block that the entity was placed on}
      */
     BlockFace getBlockFace();
 

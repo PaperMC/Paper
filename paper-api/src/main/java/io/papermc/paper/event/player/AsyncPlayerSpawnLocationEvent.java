@@ -1,10 +1,10 @@
 package io.papermc.paper.event.player;
 
 import io.papermc.paper.connection.PlayerConfigurationConnection;
+import io.papermc.paper.event.connection.ConnectionEvent;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jspecify.annotations.NullMarked;
 
@@ -15,13 +15,9 @@ import org.jspecify.annotations.NullMarked;
  * the spawn location is loaded.</p>
  */
 @NullMarked
-public interface AsyncPlayerSpawnLocationEvent extends Event {
+public interface AsyncPlayerSpawnLocationEvent extends ConnectionEvent {
 
-    /**
-     * Gets the spawning player's connection.
-     *
-     * @return the player connection
-     */
+    @Override
     PlayerConfigurationConnection getConnection();
 
     /**

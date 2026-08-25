@@ -38,7 +38,7 @@ public class PaperPlayerBedFailEnterEvent extends CraftPlayerEvent implements Pl
     }
 
     @Override
-    public Block getBed() {
+    public Block getBlock() {
         return this.bed;
     }
 

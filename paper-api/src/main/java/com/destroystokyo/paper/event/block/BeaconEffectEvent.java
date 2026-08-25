@@ -4,12 +4,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.potion.PotionEffect;
 
 /**
  * Called when a beacon effect is being applied to a player.
  */
-public interface BeaconEffectEvent extends BlockEvent, Cancellable {
+public interface BeaconEffectEvent extends BlockEvent, PlayerEvent, Cancellable {
 
     /**
      * Gets the potion effect being applied.
@@ -30,6 +31,7 @@ public interface BeaconEffectEvent extends BlockEvent, Cancellable {
      *
      * @return Affected player
      */
+    @Override
     Player getPlayer();
 
     /**

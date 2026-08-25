@@ -1,10 +1,10 @@
 package io.papermc.paper.event.entity;
 
-import org.bukkit.entity.Player;
 import org.bukkit.entity.SulfurCube;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -16,14 +16,7 @@ import org.bukkit.inventory.ItemStack;
  * If the event is cancelled, the SulfurCube will not swallow the item, and
  * it will not be removed from the player's inventory.
  */
-public interface SulfurCubeSwallowItemEvent extends EntityEvent, Cancellable {
-
-    /**
-     * Gets the player interacting with the SulfurCube.
-     *
-     * @return the player that interacted with the SulfurCube
-     */
-    Player getPlayer();
+public interface SulfurCubeSwallowItemEvent extends EntityEvent, PlayerEvent, Cancellable {
 
     /**
      * Gets the item that is currently swallowed by the SulfurCube.

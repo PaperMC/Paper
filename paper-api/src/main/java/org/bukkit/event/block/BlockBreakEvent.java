@@ -1,7 +1,7 @@
 package org.bukkit.event.block;
 
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.player.PlayerEvent;
 
 /**
  * Called when a block is broken by a player.
@@ -24,14 +24,7 @@ import org.bukkit.event.Cancellable;
  * If this event is cancelled, the block will not break and
  * experience will not drop.
  */
-public interface BlockBreakEvent extends BlockExpEvent, Cancellable {
-
-    /**
-     * Gets the Player that is breaking the block involved in this event.
-     *
-     * @return The Player that is breaking the block involved in this event
-     */
-    Player getPlayer();
+public interface BlockBreakEvent extends BlockExpEvent, PlayerEvent, Cancellable {
 
     /**
      * Sets whether the block will attempt to drop items as it normally

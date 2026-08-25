@@ -1,9 +1,9 @@
 package io.papermc.paper.event.block;
 
 import java.util.List;
-import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -16,14 +16,7 @@ import org.bukkit.inventory.ItemStack;
  * <p>
  * Examples include shearing a pumpkin to turn it into a carved pumpkin or shearing a beehive to get honeycomb.
  */
-public interface PlayerShearBlockEvent extends PlayerEvent, Cancellable {
-
-    /**
-     * Gets the block being sheared in this event.
-     *
-     * @return The {@link Block} which block is being sheared in this event.
-     */
-    Block getBlock();
+public interface PlayerShearBlockEvent extends PlayerEvent, BlockEvent, Cancellable {
 
     /**
      * Gets the item used to shear the block.

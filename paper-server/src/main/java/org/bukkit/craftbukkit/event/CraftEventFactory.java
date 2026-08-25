@@ -13,7 +13,6 @@ import io.papermc.paper.block.bed.BedEnterProblem;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
 import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
-import io.papermc.paper.event.connection.PaperPlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
@@ -21,6 +20,7 @@ import io.papermc.paper.event.entity.PaperEntityIgniteEvent;
 import io.papermc.paper.event.entity.PaperItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.inventory.PaperPrepareResultEvent;
 import io.papermc.paper.event.network.PaperServerListPingEventImpl;
+import io.papermc.paper.event.network.connection.PaperPlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.player.PaperPlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PaperPlayerToggleEntityAgeLockEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
@@ -193,7 +193,6 @@ import org.bukkit.craftbukkit.event.entity.CraftLingeringPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPigZapEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPiglinBarterEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPlayerDeathEvent;
-import org.bukkit.craftbukkit.event.entity.CraftPlayerLeashEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPlayerUnleashEntityEvent;
 import org.bukkit.craftbukkit.event.entity.CraftPotionSplashEvent;
 import org.bukkit.craftbukkit.event.entity.CraftProjectileHitEvent;
@@ -221,6 +220,7 @@ import org.bukkit.craftbukkit.event.player.CraftPlayerHarvestBlockEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerItemBreakEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerItemMendEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerLeashEntityEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerLevelChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerPortalEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerRecipeBookClickEvent;
@@ -235,12 +235,12 @@ import org.bukkit.craftbukkit.event.raid.CraftRaidSpawnWaveEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidStopEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidTriggerEvent;
 import org.bukkit.craftbukkit.event.vehicle.CraftVehicleCreateEvent;
-import org.bukkit.craftbukkit.event.weather.CraftLightningStrikeEvent;
 import org.bukkit.craftbukkit.event.world.CraftClockTimeSkipEvent;
 import org.bukkit.craftbukkit.event.world.CraftEntitiesLoadEvent;
 import org.bukkit.craftbukkit.event.world.CraftEntitiesUnloadEvent;
 import org.bukkit.craftbukkit.event.world.CraftLootGenerateEvent;
 import org.bukkit.craftbukkit.event.world.CraftTimeSkipEvent;
+import org.bukkit.craftbukkit.event.world.weather.CraftLightningStrikeEvent;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
@@ -2226,7 +2226,7 @@ public class CraftEventFactory {
             event.getTo(),
             event.getSearchRadius(),
             event.getCreationRadius(),
-            event.getCanCreatePortal()
+            event.canCreatePortal()
         );
     }
 
@@ -2248,7 +2248,7 @@ public class CraftEventFactory {
             event.getTo(),
             event.getSearchRadius(),
             event.getCreationRadius(),
-            event.getCanCreatePortal()
+            event.canCreatePortal()
         );
     }
 

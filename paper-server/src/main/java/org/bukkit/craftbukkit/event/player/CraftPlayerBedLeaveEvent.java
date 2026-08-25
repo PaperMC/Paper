@@ -17,7 +17,7 @@ public class CraftPlayerBedLeaveEvent extends CraftPlayerEvent implements Player
     }
 
     @Override
-    public Block getBed() {
+    public Block getBlock() {
         return this.bed;
     }
 

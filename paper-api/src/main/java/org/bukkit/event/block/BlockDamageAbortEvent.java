@@ -1,7 +1,7 @@
 package org.bukkit.event.block;
 
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -9,14 +9,7 @@ import org.bukkit.inventory.ItemStack;
  *
  * @see BlockDamageEvent
  */
-public interface BlockDamageAbortEvent extends BlockEvent {
-
-    /**
-     * Gets the player that stopped damaging the block involved in this event.
-     *
-     * @return The player that stopped damaging the block
-     */
-    Player getPlayer();
+public interface BlockDamageAbortEvent extends BlockEvent, PlayerEvent {
 
     /**
      * Gets the item currently in the player's hand.

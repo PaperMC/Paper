@@ -6,7 +6,9 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.inventory.InventoryEvent;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 import org.checkerframework.checker.index.qual.Positive;
 
@@ -14,21 +16,29 @@ import org.checkerframework.checker.index.qual.Positive;
  * Called when an item is successfully enchanted (currently at
  * enchantment table)
  */
-public interface EnchantItemEvent extends InventoryEvent, Cancellable {
+public interface EnchantItemEvent extends InventoryEvent, PlayerEvent, BlockEvent, Cancellable {
 
     /**
      * Gets the player enchanting the item
      *
      * @return enchanting player
+     * @deprecated use {@link #getPlayer()}
      */
-    Player getEnchanter();
+    @Deprecated(forRemoval = true)
+    default Player getEnchanter() {
+        return this.getPlayer();
+    }
 
     /**
      * Gets the block being used to enchant the item
      *
      * @return the block used for enchanting
+     * @deprecated use {@link #getBlock()}
      */
-    Block getEnchantBlock();
+    @Deprecated(forRemoval = true)
+    default Block getEnchantBlock() {
+        return this.getBlock();
+    }
 
     /**
      * Gets the item to be enchanted (can be modified)

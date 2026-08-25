@@ -22,7 +22,7 @@ public class PaperPlayerFlowerPotManipulateEvent extends CraftPlayerEvent implem
     }
 
     @Override
-    public Block getFlowerpot() {
+    public Block getBlock() {
         return this.flowerpot;
     }
 

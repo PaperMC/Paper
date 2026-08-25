@@ -2,11 +2,11 @@ package io.papermc.paper.event.player;
 
 import io.papermc.paper.connection.PlayerCommonConnection;
 import io.papermc.paper.dialog.DialogResponseView;
+import io.papermc.paper.event.connection.ConnectionEvent;
 import io.papermc.paper.registry.data.dialog.action.DialogActionCallback;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.event.ClickCallback;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
@@ -18,7 +18,7 @@ import org.jspecify.annotations.Nullable;
  * @see io.papermc.paper.registry.data.dialog.action.DialogAction#customClick(DialogActionCallback, ClickCallback.Options)
  */
 @ApiStatus.NonExtendable
-public interface PlayerCustomClickEvent extends Event {
+public interface PlayerCustomClickEvent extends ConnectionEvent {
 
     /**
      * The identifier of the custom click event.
@@ -45,8 +45,15 @@ public interface PlayerCustomClickEvent extends Event {
      * The common connection of the player.
      *
      * @return the common connection
+     * @deprecated use {@link #getConnection()}
      */
-    PlayerCommonConnection getCommonConnection();
+    @Deprecated(forRemoval = true)
+    default PlayerCommonConnection getCommonConnection() {
+        return this.getConnection();
+    }
+
+    @Override
+    PlayerCommonConnection getConnection();
 
     static HandlerList getHandlerList() {
         final class Holder {

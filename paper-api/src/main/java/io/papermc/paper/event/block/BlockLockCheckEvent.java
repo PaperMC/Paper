@@ -3,9 +3,9 @@ package io.papermc.paper.event.block;
 import io.papermc.paper.block.LockableTileState;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
+import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  * <br>
  * See {@link #setResult(Result)} to change behavior
  */
-public interface BlockLockCheckEvent extends BlockEvent {
+public interface BlockLockCheckEvent extends BlockEvent, PlayerEvent {
 
     /**
      * Gets the snapshot {@link LockableTileState} of the block entity
@@ -23,13 +23,6 @@ public interface BlockLockCheckEvent extends BlockEvent {
      * @return the snapshot block state.
      */
     LockableTileState getBlockState();
-
-    /**
-     * Get the player involved this lock check.
-     *
-     * @return the player
-     */
-    Player getPlayer();
 
     /**
      * Gets the itemstack that will be used as the key itemstack. Initially

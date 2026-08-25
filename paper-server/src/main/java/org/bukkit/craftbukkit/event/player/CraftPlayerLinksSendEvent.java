@@ -2,24 +2,23 @@ package org.bukkit.craftbukkit.event.player;
 
 import io.papermc.paper.connection.PlayerCommonConnection;
 import io.papermc.paper.connection.PlayerConfigurationConnection;
+import io.papermc.paper.event.network.connection.PaperConnectionEvent;
 import org.bukkit.ServerLinks;
-import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerLinksSendEvent;
 
-public class CraftPlayerLinksSendEvent extends CraftEvent implements PlayerLinksSendEvent {
+public class CraftPlayerLinksSendEvent extends PaperConnectionEvent implements PlayerLinksSendEvent {
 
     private final ServerLinks links;
-    private final PlayerCommonConnection connection;
 
     public CraftPlayerLinksSendEvent(final PlayerConfigurationConnection connection, final ServerLinks links) {
-        this.connection = connection;
+        super(connection);
         this.links = links;
     }
 
     @Override
     public PlayerCommonConnection getConnection() {
-        return this.connection;
+        return (PlayerCommonConnection) this.connection;
     }
 
     @Override

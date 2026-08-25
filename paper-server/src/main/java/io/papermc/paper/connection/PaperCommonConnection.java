@@ -2,6 +2,8 @@ package io.papermc.paper.connection;
 
 import com.destroystokyo.paper.ClientOption;
 import com.destroystokyo.paper.PaperSkinParts;
+import com.destroystokyo.paper.profile.CraftPlayerProfile;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.net.InetSocketAddress;
@@ -27,6 +29,11 @@ public abstract class PaperCommonConnection<T extends ServerCommonPacketListener
     public PaperCommonConnection(final T packetListener) {
         super(packetListener.connection);
         this.packetListener = packetListener;
+    }
+
+    @Override
+    public PlayerProfile getProfile() {
+        return CraftPlayerProfile.asBukkitCopy(this.packetListener.getOwner());
     }
 
     @Override

@@ -21,16 +21,19 @@ public class CraftPlayerCommandPreprocessEvent extends CraftPlayerEvent implemen
         this.message = message;
     }
 
+    @Override
     public String getMessage() {
         return this.message;
     }
 
+    @Override
     public void setMessage(final String command) {
         Preconditions.checkArgument(command != null, "Command cannot be null");
         Preconditions.checkArgument(!command.isEmpty(), "Command cannot be empty");
         this.message = command;
     }
 
+    @Override
     @Deprecated(since = "1.3.1", forRemoval = true)
     public Set<Player> getRecipients() {
         return this.recipients;
@@ -41,6 +44,7 @@ public class CraftPlayerCommandPreprocessEvent extends CraftPlayerEvent implemen
         return this.mutablePlayer;
     }
 
+    @Override
     @Deprecated(forRemoval = true)
     public void setPlayer(final Player player) {
         Preconditions.checkArgument(player != null, "Player cannot be null");

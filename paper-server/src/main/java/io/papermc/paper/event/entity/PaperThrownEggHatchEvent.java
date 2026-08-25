@@ -2,20 +2,19 @@ package io.papermc.paper.event.entity;
 
 import com.destroystokyo.paper.event.entity.ThrownEggHatchEvent;
 import com.google.common.base.Preconditions;
-import org.bukkit.craftbukkit.event.CraftEvent;
+import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.HandlerList;
 
-public class PaperThrownEggHatchEvent extends CraftEvent implements ThrownEggHatchEvent {
+public class PaperThrownEggHatchEvent extends CraftEntityEvent implements ThrownEggHatchEvent {
 
-    private final Egg egg;
     private boolean hatching;
     private byte numHatches;
     private EntityType hatchType;
 
     public PaperThrownEggHatchEvent(final Egg egg, final boolean hatching, final byte numHatches, final EntityType hatchType) {
-        this.egg = egg;
+        super(egg);
         this.hatching = hatching;
         this.numHatches = numHatches;
         this.hatchType = hatchType;
@@ -23,7 +22,12 @@ public class PaperThrownEggHatchEvent extends CraftEvent implements ThrownEggHat
 
     @Override
     public Egg getEgg() {
-        return this.egg;
+        return this.getEntity();
+    }
+
+    @Override
+    public Egg getEntity() {
+        return (Egg) this.entity;
     }
 
     @Override

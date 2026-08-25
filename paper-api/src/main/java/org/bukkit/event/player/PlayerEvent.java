@@ -9,9 +9,7 @@ import org.bukkit.event.Event;
 public interface PlayerEvent extends Event {
 
     /**
-     * Returns the player involved in this event
-     *
-     * @return player who is involved in this event
+     * {@return the player involved in this event}
      */
     Player getPlayer();
 }

@@ -11,7 +11,6 @@ import org.bukkit.entity.LivingEntity;
  */
 public interface BlockDispenseArmorEvent extends BlockDispenseEvent {
 
-
     /**
      * Get the living entity on which the armor was dispensed.
      *

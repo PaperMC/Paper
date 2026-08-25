@@ -4,16 +4,12 @@ import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.entity.EntityEvent;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jspecify.annotations.Nullable;
 
-public interface CauldronLevelChangeEvent extends BlockEvent, Cancellable {
+public interface CauldronLevelChangeEvent extends BlockEvent, EntityEvent, Cancellable {
 
-    /**
-     * Get entity which did this. May be {@code null}.
-     *
-     * @return acting entity
-     */
     @Nullable Entity getEntity();
 
     // todo javadocs?
