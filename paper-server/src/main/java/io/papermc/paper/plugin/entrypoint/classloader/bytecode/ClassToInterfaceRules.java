@@ -25,6 +25,7 @@ import org.bukkit.craftbukkit.event.inventory.CraftInventoryInteractEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidEvent;
 import org.bukkit.craftbukkit.event.server.CraftPluginEvent;
+import org.bukkit.craftbukkit.event.server.CraftServiceEvent;
 import org.bukkit.craftbukkit.event.world.CraftChunkEvent;
 import org.bukkit.craftbukkit.event.world.CraftWorldEvent;
 import org.bukkit.event.block.*;
@@ -87,7 +88,8 @@ public final class ClassToInterfaceRules {
             WorldBorderEvent.class, PaperWorldBorderEvent.class,
             ChunkEvent.class, CraftChunkEvent.class,
             WorldEvent.class, CraftWorldEvent.class,
-            PluginEvent.class, CraftPluginEvent.class
+            PluginEvent.class, CraftPluginEvent.class,
+            ServiceEvent.class, CraftServiceEvent.class
             //</editor-fold>
         );
     }
@@ -480,7 +482,9 @@ public final class ClassToInterfaceRules {
             PluginEnableEvent.class,
             PluginDisableEvent.class,
             ServerCommandEvent.class,
-            RemoteServerCommandEvent.class
+            RemoteServerCommandEvent.class,
+            ServiceRegisterEvent.class,
+            ServiceUnregisterEvent.class
             //</editor-fold>
         );
     }

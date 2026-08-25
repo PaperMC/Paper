@@ -56,7 +56,7 @@ public class SimpleServicesManager implements ServicesManager {
             }
 
         }
-        Bukkit.getServer().getPluginManager().callEvent(new ServiceRegisterEvent(registeredProvider));
+       // TODO - Bukkit.getServer().getPluginManager().callEvent(new CraftServiceRegisterEvent(registeredProvider));
     }
 
     /**
@@ -83,7 +83,7 @@ public class SimpleServicesManager implements ServicesManager {
 
                             if (registered.getPlugin().equals(plugin)) {
                                 it2.remove();
-                                unregisteredEvents.add(new ServiceUnregisterEvent(registered));
+                                // TODO - unregisteredEvents.add(new CraftServiceUnregisterEvent(registered));
                             }
                         }
                     } catch (NoSuchElementException e) { // Why does Java suck
@@ -132,7 +132,7 @@ public class SimpleServicesManager implements ServicesManager {
 
                             if (registered.getProvider() == provider) {
                                 it2.remove();
-                                unregisteredEvents.add(new ServiceUnregisterEvent(registered));
+                                // TODO - unregisteredEvents.add(new CraftServiceUnregisterEvent(registered));
                             }
                         }
                     } catch (NoSuchElementException e) { // Why does Java suck
@@ -174,7 +174,7 @@ public class SimpleServicesManager implements ServicesManager {
 
                             if (registered.getProvider().equals(provider)) {
                                 it2.remove();
-                                unregisteredEvents.add(new ServiceUnregisterEvent(registered));
+                                // TODO - unregisteredEvents.add(new CraftServiceUnregisterEvent(registered));
                             }
                         }
                     } catch (NoSuchElementException e) { // Why does Java suck
