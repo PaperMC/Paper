@@ -551,7 +551,8 @@ public final class ClassToInterfaceRules {
             PhantomPreSpawnEvent.class,
             ThrownEggHatchEvent.class,
             FillProfileEvent.class,
-            LookupProfileEvent.class
+            LookupProfileEvent.class,
+            PreFillProfileEvent.class
             //</editor-fold>
         );
     }

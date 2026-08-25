@@ -27,35 +27,19 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import java.util.Collection;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when the server is requesting to fill in properties of an incomplete profile, such as textures.
  * <p>
  * Allows plugins to pre-populate cached properties and avoid a call to the Mojang API
  */
-@NullMarked
-public class PreFillProfileEvent extends EventTmp {
-
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    private final PlayerProfile profile;
-
-    @ApiStatus.Internal
-    public PreFillProfileEvent(final PlayerProfile profile) {
-        super(!org.bukkit.Bukkit.isPrimaryThread());
-        this.profile = profile;
-    }
+public interface PreFillProfileEvent extends Event {
 
     /**
      * @return The profile that needs its properties filled
      */
-    public PlayerProfile getPlayerProfile() {
-        return this.profile;
-    }
+    PlayerProfile getPlayerProfile();
 
     /**
      * Sets the properties on the profile, avoiding the call to the Mojang API
@@ -64,16 +48,12 @@ public class PreFillProfileEvent extends EventTmp {
      * @param properties The properties to set/append
      * @see PlayerProfile#setProperties(Collection)
      */
-    public void setProperties(final Collection<ProfileProperty> properties) {
-        this.profile.setProperties(properties);
-    }
+    void setProperties(Collection<ProfileProperty> properties);
 
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }
