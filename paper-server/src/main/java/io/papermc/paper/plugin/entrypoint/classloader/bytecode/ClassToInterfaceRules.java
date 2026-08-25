@@ -6,7 +6,7 @@ import com.destroystokyo.paper.event.entity.*;
 import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
 import com.destroystokyo.paper.event.player.*;
 import com.destroystokyo.paper.event.profile.*;
-import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
+import com.destroystokyo.paper.event.server.*;
 import com.destroystokyo.paper.loottable.*;
 import io.papermc.asm.ClassInfoProvider;
 import io.papermc.asm.RewriteRuleVisitorFactory;
@@ -554,7 +554,8 @@ public final class ClassToInterfaceRules {
             LookupProfileEvent.class,
             PreFillProfileEvent.class,
             PreLookupProfileEvent.class,
-            ProfileWhitelistVerifyEvent.class
+            ProfileWhitelistVerifyEvent.class,
+            AsyncTabCompleteEvent.class
             //</editor-fold>
         );
     }
