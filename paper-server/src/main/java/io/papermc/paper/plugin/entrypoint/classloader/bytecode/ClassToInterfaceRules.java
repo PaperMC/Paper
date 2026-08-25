@@ -425,7 +425,8 @@ public final class ClassToInterfaceRules {
             com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent.class,
             org.bukkit.event.inventory.PrepareGrindstoneEvent.class,
             PrepareSmithingEvent.class,
-            PrepareAnvilEvent.class
+            PrepareAnvilEvent.class,
+            AnvilDamagedEvent.class
             //</editor-fold>
         );
     }
