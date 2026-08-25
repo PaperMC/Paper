@@ -1,30 +1,16 @@
 package org.bukkit.event.world;
 
-import org.bukkit.World;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a World is saved.
  */
-public class WorldSaveEvent extends WorldEvent {
+public interface WorldSaveEvent extends WorldEventNew {
 
-    private static final HandlerList HANDLER_LIST = new HandlerList();
-
-    @ApiStatus.Internal
-    public WorldSaveEvent(@NotNull final World world) {
-        super(world);
-    }
-
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return HANDLER_LIST;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return HANDLER_LIST;
+    static HandlerList getHandlerList() {
+        final class Holder {
+            private static final HandlerList HANDLER_LIST = new HandlerList();
+        }
+        return Holder.HANDLER_LIST;
     }
 }

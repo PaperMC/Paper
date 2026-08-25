@@ -438,7 +438,8 @@ public final class ClassToInterfaceRules {
             SpawnChangeEvent.class,
             StructureGrowEvent.class,
             WorldInitEvent.class,
-            WorldLoadEvent.class
+            WorldLoadEvent.class,
+            WorldSaveEvent.class
             //</editor-fold>
         );
     }
