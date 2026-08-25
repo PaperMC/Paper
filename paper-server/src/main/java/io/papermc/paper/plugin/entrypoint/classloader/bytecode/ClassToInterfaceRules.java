@@ -487,7 +487,8 @@ public final class ClassToInterfaceRules {
             ServiceUnregisterEvent.class,
             ServerLoadEvent.class,
             AsyncChatDecorateEvent.class,
-            AsyncChatCommandDecorateEvent.class
+            AsyncChatCommandDecorateEvent.class,
+            CommandRegisteredEvent.class
             //</editor-fold>
         );
     }
