@@ -544,7 +544,8 @@ public final class ClassToInterfaceRules {
             ItemCraftedEvent.class,
             AsyncServerDataFixerRemoveBlockEntityEvent.class,
             WhitelistStateUpdateEvent.class,
-            UnknownCommandEvent.class
+            UnknownCommandEvent.class,
+            PlayerLeashEntityEvent.class
             //</editor-fold>
         );
     }
