@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Raised when a living entity exits a vehicle.
  */
-public interface VehicleExitEvent extends VehicleEventNew, Cancellable { // todo javadocs?
+public interface VehicleExitEvent extends VehicleEvent, Cancellable { // todo javadocs?
 
     /**
      * Get the living entity that exited the vehicle.

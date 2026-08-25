@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Raised when an entity enters a vehicle.
  */
-public interface VehicleEnterEvent extends VehicleEventNew, Cancellable {
+public interface VehicleEnterEvent extends VehicleEvent, Cancellable {
 
     /**
      * Gets the Entity that entered the vehicle.

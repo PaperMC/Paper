@@ -2,27 +2,13 @@ package org.bukkit.event.vehicle;
 
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Event;
-import org.bukkit.event.EventTmp;
-import org.jetbrains.annotations.NotNull;
 
-/**
- * Represents a vehicle-related event.
- */
-public abstract class VehicleEvent extends EventTmp implements VehicleEventNew {
-
-    protected Vehicle vehicle;
-
-    protected VehicleEvent(@NotNull final Vehicle vehicle) {
-        this.vehicle = vehicle;
-    }
+public interface VehicleEvent extends Event {
 
     /**
      * Get the vehicle.
      *
      * @return the vehicle
      */
-    @NotNull
-    public final Vehicle getVehicle() {
-        return this.vehicle;
-    }
+    Vehicle getVehicle();
 }

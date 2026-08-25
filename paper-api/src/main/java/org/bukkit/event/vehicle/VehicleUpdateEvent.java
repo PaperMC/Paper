@@ -5,7 +5,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Called when a vehicle updates
  */
-public interface VehicleUpdateEvent extends VehicleEventNew {
+public interface VehicleUpdateEvent extends VehicleEvent {
 
     static HandlerList getHandlerList() {
         final class Holder {

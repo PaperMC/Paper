@@ -4,12 +4,12 @@ import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Raised when a vehicle receives damage.
  */
-public interface VehicleDamageEvent extends VehicleEventNew, Cancellable {
+public interface VehicleDamageEvent extends VehicleEvent, Cancellable {
 
     /**
      * Gets the DamageSource that caused the damage.

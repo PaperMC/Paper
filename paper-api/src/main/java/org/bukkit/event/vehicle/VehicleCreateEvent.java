@@ -6,7 +6,7 @@ import org.bukkit.event.HandlerList;
 /**
  * Raised when a vehicle is created.
  */
-public interface VehicleCreateEvent extends VehicleEventNew, Cancellable {
+public interface VehicleCreateEvent extends VehicleEvent, Cancellable {
 
     static HandlerList getHandlerList() {
         final class Holder {
