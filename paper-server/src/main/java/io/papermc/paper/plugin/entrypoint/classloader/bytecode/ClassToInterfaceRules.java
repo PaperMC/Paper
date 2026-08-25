@@ -546,7 +546,8 @@ public final class ClassToInterfaceRules {
             WhitelistStateUpdateEvent.class,
             UnknownCommandEvent.class,
             PlayerLeashEntityEvent.class,
-            InventoryMoveItemEvent.class
+            InventoryMoveItemEvent.class,
+            InventoryPickupItemEvent.class
             //</editor-fold>
         );
     }
