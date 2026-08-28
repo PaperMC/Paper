@@ -1,20 +1,32 @@
 --- a/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
 +++ b/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
-@@ -273,7 +_,7 @@
-         final Set<Holder<Biome>> possibleBiomes
+@@ -220,9 +_,10 @@
+         final BiomeManager biomeManager,
+         final Set<Holder<Biome>> possibleBiomes,
+         final MaterialRule materialRule
++        , final net.minecraft.server.level.ServerLevel serverLevel // Paper - Flat bedrock generator settings
      ) {
          if (!SharedConstants.debugVoidTerrain(protoChunk.getPos()) && !SharedConstants.DEBUG_DISABLE_SURFACE) {
 -            WorldGenerationContext context = new WorldGenerationContext(this, protoChunk.getHeightAccessorForGeneration());
-+            WorldGenerationContext context = new WorldGenerationContext(this, protoChunk.getHeightAccessorForGeneration(), structureManager.level.getMinecraftWorld()); // Paper - Flat bedrock generator settings
-             this.buildSurface(protoChunk, context, randomState, structureManager, biomeManager, blender, possibleBiomes);
++            WorldGenerationContext context = new WorldGenerationContext(this, protoChunk.getHeightAccessorForGeneration(), serverLevel); // Paper - Flat bedrock generator settings
+             randomState.surfaceSystem().buildSurface(randomState, biomeManager, context, protoChunk, noiseChunk, materialRule, possibleBiomes);
          }
      }
-@@ -308,7 +_,7 @@
+@@ -241,7 +_,7 @@
+             WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(RandomSupport.generateUniqueSeed()));
              int range = 8;
              ChunkPos pos = chunk.getPos();
-             NoiseChunk noiseChunk = chunk.getOrCreateNoiseChunk(c -> this.createNoiseChunk(c, structureManager, blender, randomState));
 -            WorldGenerationContext context = new WorldGenerationContext(this, chunk.getHeightAccessorForGeneration());
-+            WorldGenerationContext context = new WorldGenerationContext(this, chunk.getHeightAccessorForGeneration(), biomeRegion.getMinecraftWorld());  // Paper - Flat bedrock generator settings
++            WorldGenerationContext context = new WorldGenerationContext(this, chunk.getHeightAccessorForGeneration(), carverBiomeRegion.getMinecraftWorld());  // Paper - Flat bedrock generator settings
              int protectedBlocksOnTop = chunk.isUpgrading() ? 0 : 7;
              int maxY = context.getMinGenY() + context.getGenDepth() - 1 - protectedBlocksOnTop;
              CarvingMask mask = new CarvingMask(context.getMinGenY() + 1, maxY);
+@@ -392,7 +_,7 @@
+                 MaterialRule materialRule = this.settings.value().materialRule().value();
+ 
+                 try (Zone var41 = profiler.zone("buildSurface")) {
+-                    this.buildSurface(chunk, noiseChunk, randomState, biomeManager, possibleBiomes, materialRule);
++                    this.buildSurface(chunk, noiseChunk, randomState, biomeManager, possibleBiomes, materialRule, structureManager.level.getMinecraftWorld()); // Paper - Flat bedrock generator settings
+                 }
+ 
+                 try (Zone var42 = profiler.zone("generateCarvers")) {

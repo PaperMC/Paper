@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-@@ -53,8 +_,12 @@
-     private final DataFixer fixerUpper;
+@@ -59,8 +_,12 @@
      private final Long2ObjectMap<Object2IntMap<Structure>> loadedChunks = new Long2ObjectOpenHashMap<>();
      private final Map<Structure, Long2BooleanMap> featureChecks = new HashMap<>();
+     private final LongSet chunksWithoutStartsInStorage = new LongOpenHashSet();
 +    // Paper start - also store level stem
 +    private final ResourceKey<net.minecraft.world.level.dimension.LevelStem> levelStem;
  
@@ -13,8 +13,8 @@
          final ChunkScanAccess storageAccess,
          final RegistryAccess registryAccess,
          final StructureTemplateManager structureTemplateManager,
-@@ -76,7 +_,22 @@
-         this.biomeResolver = biomeSource.createResolver(randomState.sampler());
+@@ -83,7 +_,22 @@
+         this.climateSampler = randomState.createClimateSampler(SamplerContext.builder().enableCaches().build());
          this.seed = seed;
          this.fixerUpper = fixerUpper;
 -    }
@@ -37,8 +37,8 @@
  
      public StructureCheckResult checkStart(final ChunkPos pos, final Structure structure, final StructurePlacement placement, final boolean requireUnreferenced) {
          long posKey = pos.pack();
-@@ -90,7 +_,7 @@
-             return storageCheckResult;
+@@ -105,7 +_,7 @@
+             this.chunksWithoutStartsInStorage.add(posKey);
          }
  
 -        if (!placement.applyAdditionalChunkRestrictions(pos.x(), pos.z(), this.seed)) {
@@ -46,7 +46,7 @@
              return StructureCheckResult.START_NOT_PRESENT;
          }
  
-@@ -136,7 +_,7 @@
+@@ -150,7 +_,7 @@
          if (collectFields.getResult() instanceof CompoundTag chunkTag) {
              int version = NbtUtils.getDataVersion(chunkTag);
              SimpleRegionStorage.injectDatafixingContext(

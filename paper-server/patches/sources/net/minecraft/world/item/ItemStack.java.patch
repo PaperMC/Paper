@@ -174,15 +174,15 @@
          return this.isDamageableItem() && this.getDamageValue() >= this.getMaxDamage() - 1;
      }
  
--    public void hurtAndBreak(final int amount, final ServerLevel level, final @Nullable ServerPlayer player, final Consumer<Item> onBreak) {
+-    public void hurtAndBreak(final int amount, final ServerLevel level, final @Nullable ServerPlayer player, final Consumer<ItemStack> onBreak) {
 -        int newAmount = this.processDurabilityChange(amount, level, player);
 -        if (newAmount != 0) {
-+    public void hurtAndBreak(final int amount, final ServerLevel level, final @Nullable LivingEntity player, final Consumer<Item> onBreak) { // Paper - Add EntityDamageItemEvent
++    public void hurtAndBreak(final int amount, final ServerLevel level, final @Nullable LivingEntity player, final Consumer<ItemStack> onBreak) { // Paper - Add EntityDamageItemEvent
 +        // Paper start - add force boolean overload
 +        this.hurtAndBreak(amount, level, player, onBreak, false);
 +    }
 +
-+    public void hurtAndBreak(final int amount, final ServerLevel level, final @Nullable LivingEntity player, final Consumer<Item> onBreak, final boolean force) { // Paper - Add EntityDamageItemEvent
++    public void hurtAndBreak(final int amount, final ServerLevel level, final @Nullable LivingEntity player, final Consumer<ItemStack> onBreak, final boolean force) { // Paper - Add EntityDamageItemEvent
 +        // Paper end
 +        final int originalDamage = amount; // Paper - Expand PlayerItemDamageEvent
 +        int newAmount = this.processDurabilityChange(amount, level, player, force); // Paper
@@ -227,24 +227,24 @@
          }
      }
  
--    private void applyDamage(final int newDamage, final @Nullable ServerPlayer player, final Consumer<Item> onBreak) {
+-    private void applyDamage(final int newDamage, final @Nullable ServerPlayer player, final Consumer<ItemStack> onBreak) {
 -        if (player != null) {
 -            CriteriaTriggers.ITEM_DURABILITY_CHANGED.trigger(player, this, newDamage);
-+    private void applyDamage(final int newDamage, final @Nullable LivingEntity player, final Consumer<Item> onBreak) { // Paper - Add EntityDamageItemEvent
++    private void applyDamage(final int newDamage, final @Nullable LivingEntity player, final Consumer<ItemStack> onBreak) { // Paper - Add EntityDamageItemEvent
 +        if (player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
 +            CriteriaTriggers.ITEM_DURABILITY_CHANGED.trigger(serverPlayer, this, newDamage); // Paper - Add EntityDamageItemEvent
          }
  
          this.setDamageValue(newDamage);
          if (this.isBroken()) {
-             Item item = this.getItem();
+             ItemStack broken = this.copy();
 +            // CraftBukkit start - Check for item breaking
 +            if (this.getCount() == 1 && player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
 +                org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent(serverPlayer, this); // Paper - Add EntityDamageItemEvent
 +            }
 +            // CraftBukkit end
              this.shrink(1);
-             onBreak.accept(item);
+             onBreak.accept(broken);
          }
 @@ -485,7 +_,26 @@
                  return;

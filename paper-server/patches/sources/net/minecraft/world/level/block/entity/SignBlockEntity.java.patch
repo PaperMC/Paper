@@ -110,12 +110,12 @@
                      }
  
                      hasAnyClickCommand = true;
-@@ -220,11 +_,55 @@
+@@ -220,11 +_,51 @@
          return hasAnyClickCommand;
      }
  
 -    private static CommandSourceStack createCommandSourceStack(final @Nullable Player player, final ServerLevel level, final BlockPos pos) {
-+    // CraftBukkit start
++    // Paper start - Fix commands from signs not firing command events
 +    private final CommandSource commandSource = new CommandSource() {
 +
 +        @Override
@@ -141,13 +141,8 @@
 +            return false;
 +        }
 +    };
-+
 +    private CommandSourceStack createCommandSourceStack(final @Nullable Player player, final ServerLevel level, final BlockPos pos) {
-+        // CraftBukkit end
-         String textName = player == null ? "Sign" : player.getPlainTextName();
-         Component displayName = player == null ? Component.literal("Sign") : player.getDisplayName();
-+        // Paper start - Fix commands from signs not firing command events
-+        CommandSource commandSource = level.paperConfig().misc.showSignClickCommandFailureMsgsToPlayer ? new io.papermc.paper.commands.DelegatingCommandSource(this.commandSource) {
++        final CommandSource commandSource = level.paperConfig().misc.showSignClickCommandFailureMsgsToPlayer ? new io.papermc.paper.commands.DelegatingCommandSource(this.commandSource) {
 +            @Override
 +            public void sendSystemMessage(Component message) {
 +                if (player instanceof final net.minecraft.server.level.ServerPlayer serverPlayer) {
@@ -161,11 +156,13 @@
 +            }
 +        } : this.commandSource;
 +        // Paper end - Fix commands from signs not firing command events
-+        // CraftBukkit - this
-         return new CommandSourceStack(
--            CommandSource.NULL, Vec3.atCenterOf(pos), Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, textName, displayName, level.getServer(), player
-+            commandSource, Vec3.atCenterOf(pos), Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, textName, displayName, level.getServer(), player // Paper - Fix commands from signs not firing command events
-         );
+         return player != null
+-            ? new CommandSourceStack(CommandSource.NULL, Vec3.atCenterOf(pos), Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, level.getServer(), player)
++            ? new CommandSourceStack(commandSource, Vec3.atCenterOf(pos), Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, level.getServer(), player)  // Paper - Fix commands from signs not firing command events
+             : new CommandSourceStack(
+-                CommandSource.NULL, Vec3.atCenterOf(pos), Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, Component.literal("Sign"), level.getServer()
++                commandSource, Vec3.atCenterOf(pos), Vec2.ZERO, level, LevelBasedPermissionSet.GAMEMASTER, Component.literal("Sign"), level.getServer()  // Paper - Fix commands from signs not firing command events
+             );
      }
  
 @@ -243,12 +_,17 @@
