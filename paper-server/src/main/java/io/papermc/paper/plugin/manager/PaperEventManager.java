@@ -24,12 +24,21 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 import org.jetbrains.annotations.NotNull;
 
-class PaperEventManager {
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
+public class PaperEventManager {
 
     private final Server server;
 
     public PaperEventManager(Server server) {
         this.server = server;
+        try {
+            Event.setEventCaller(MethodHandles.lookup()
+                .bind(this, "callEvent", MethodType.methodType(void.class, Event.class)));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // SimplePluginManager
