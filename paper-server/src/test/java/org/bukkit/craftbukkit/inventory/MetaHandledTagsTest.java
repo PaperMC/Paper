@@ -17,7 +17,7 @@ class MetaHandledTagsTest {
     @Test
     public void checkAllMetasHaveHandledTags() {
         try (final ScanResult result = new ClassGraph()
-            .whitelistPackages("org.bukkit.craftbukkit.inventory")
+            .acceptPackages("org.bukkit.craftbukkit.inventory")
             .enableClassInfo().scan()) {
             final ClassInfoList subclasses = result.getSubclasses(CraftMetaItem.class.getName());
             assertFalse(subclasses.isEmpty(), "found 0 sub types");

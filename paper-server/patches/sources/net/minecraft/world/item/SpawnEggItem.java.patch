@@ -8,6 +8,50 @@
                      spawnerHolder.setEntityId(type, level.getRandom());
                      level.sendBlockUpdated(pos, blockState, blockState, Block.UPDATE_ALL);
                      level.gameEvent(context.getPlayer(), GameEvent.BLOCK_CHANGE, pos);
+@@ -75,7 +_,7 @@
+                 }
+ 
+                 return spawnMob(
+-                    type, context.getPlayer(), itemStack, serverLevel, spawnPos, true, !Objects.equals(pos, spawnPos) && clickedFace == Direction.UP
++                    type, context.getPlayer(), itemStack, serverLevel, spawnPos, true, !Objects.equals(pos, spawnPos) && clickedFace == Direction.UP, clickedFace, context.getHand() // Paper - pass clickedFace and hand
+                 );
+             }
+         }
+@@ -83,14 +_,22 @@
+ 
+     private static InteractionResult spawnMob(
+         final EntityType<?> type,
+-        final @Nullable LivingEntity user,
++        final @Nullable Player user, // Paper - LivingEntity -> Player
+         final ItemStack itemStack,
+         final ServerLevel level,
+         final BlockPos spawnPos,
+         final boolean tryMoveDown,
+-        final boolean movedUp
++        final boolean movedUp,
++        final Direction clickedFace, // Paper
++        final InteractionHand hand // Paper
+     ) {
+-        if (type.spawn(level, itemStack, user, spawnPos, EntitySpawnReason.SPAWN_ITEM_USE, tryMoveDown, movedUp) != null) {
++        // Paper start - Call EntityPlaceEvent
++        if (type.spawn(level, itemStack, user, spawnPos, EntitySpawnReason.SPAWN_ITEM_USE, tryMoveDown, movedUp, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG, e -> {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(level, spawnPos, clickedFace, user, e, hand, itemStack).isCancelled()) {
++                e.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
++            }
++        }) != null) {
++            // Paper end - Call EntityPlaceEvent
+             itemStack.consume(1, user);
+             level.gameEvent(user, GameEvent.ENTITY_PLACE, spawnPos);
+             return InteractionResult.SUCCESS;
+@@ -119,7 +_,7 @@
+             }
+ 
+             if (level.mayInteract(player, pos) && player.mayUseItemAt(pos, hitResult.getDirection(), itemStack)) {
+-                InteractionResult result = spawnMob(type, player, itemStack, serverLevel, pos, false, false);
++                InteractionResult result = spawnMob(type, player, itemStack, serverLevel, pos, false, false, hitResult.getDirection(), hand); // Paper
+                 if (result == InteractionResult.SUCCESS) {
+                     player.awardStat(Stats.ITEM_USED.get(this));
+                 }
 @@ -171,7 +_,7 @@
  
          offspring.snapTo(pos.x(), pos.y(), pos.z(), 0.0F, 0.0F);
