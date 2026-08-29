@@ -1,29 +1,9 @@
 --- a/net/minecraft/world/item/component/Consumable.java
 +++ b/net/minecraft/world/item/component/Consumable.java
-@@ -84,13 +_,35 @@
- 
-         stack.getAllOfType(ConsumableListener.class).forEach(component -> component.onConsume(level, user, stack, this));
-         if (!level.isClientSide()) {
--            this.onConsumeEffects.forEach(action -> action.apply(level, stack, user));
-+            // CraftBukkit start
-+            org.bukkit.event.entity.EntityPotionEffectEvent.Cause cause;
-+            if (stack.is(net.minecraft.world.item.Items.MILK_BUCKET)) {
-+                cause = org.bukkit.event.entity.EntityPotionEffectEvent.Cause.MILK;
-+            } else if (stack.is(net.minecraft.world.item.Items.POTION)) {
-+                cause = org.bukkit.event.entity.EntityPotionEffectEvent.Cause.POTION_DRINK;
-+            } else {
-+                cause = org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD;
-+            }
-+
-+            this.onConsumeEffects.forEach(consumeEffect -> consumeEffect.apply(level, stack, user, cause));
-+            // CraftBukkit end
-         }
- 
-         user.gameEvent(this.animation == ItemUseAnimation.DRINK ? GameEvent.DRINK : GameEvent.EAT);
-         stack.consume(1, user);
+@@ -92,6 +_,17 @@
          return stack;
      }
-+
+ 
 +    // CraftBukkit start
 +    public void cancelUsingItem(ServerPlayer player, ItemStack stack) {
 +        final java.util.List<net.minecraft.network.protocol.Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> packets = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>(); // Paper - properly resend entities - collect packets for bundle
@@ -34,6 +14,7 @@
 +        player.connection.send(new net.minecraft.network.protocol.game.ClientboundBundlePacket(packets));
 +    }
 +    // CraftBukkit end
- 
++
      public boolean canConsume(final LivingEntity user, final ItemStack stack) {
          FoodProperties foodProperties = stack.get(DataComponents.FOOD);
+         return !(foodProperties != null && user instanceof Player player) || player.canEat(foodProperties.canAlwaysEat());
