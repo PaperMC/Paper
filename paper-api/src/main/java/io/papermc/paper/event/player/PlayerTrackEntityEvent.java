@@ -15,6 +15,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * Adding or removing entities from the world at the point in time this event is called is completely
  * unsupported and should be avoided.
+ * Teleporting entities in the world at the point in time this event is called yields an undefined tracker
+ * behavior and should be avoided.
  */
 @NullMarked
 public class PlayerTrackEntityEvent extends PlayerEvent implements Cancellable {
