@@ -104,6 +104,13 @@ public enum BlockFace {
         }
     }
 
+    public boolean isCardinal() {
+        return switch (this) {
+            case NORTH, SOUTH, EAST, WEST -> true;
+            default -> false;
+        };
+    }
+
     @NotNull
     public BlockFace getOppositeFace() {
         switch (this) {

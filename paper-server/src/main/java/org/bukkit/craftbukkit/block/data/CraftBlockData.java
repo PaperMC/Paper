@@ -5,6 +5,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.papermc.paper.block.property.PaperBlockProperties;
+import io.papermc.paper.block.property.PaperBlockPropertyHolder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +30,7 @@ import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.StateHolder;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Property;
@@ -56,12 +59,14 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftVoxelShape;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-public class CraftBlockData implements BlockData {
+@NullMarked
+public class CraftBlockData implements BlockData, PaperBlockPropertyHolder.PaperMutable<Block, BlockState> {
 
     private BlockState state;
-    private List<Property.Value<?>> parsedStates;
+    private @Nullable List<Property.Value<?>> parsedStates;
 
     protected CraftBlockData(BlockState state) {
         this.state = state;
@@ -72,8 +77,14 @@ public class CraftBlockData implements BlockData {
         return this.state.getBukkitMaterial();
     }
 
+    @Override
     public BlockState getState() {
         return this.state;
+    }
+
+    @Override
+    public StateDefinition<Block, BlockState> getStateDefinition() {
+        return this.state.getBlock().getStateDefinition();
     }
 
     @Override
@@ -101,7 +112,7 @@ public class CraftBlockData implements BlockData {
     }
 
     @Override
-    public boolean matches(BlockData data) {
+    public boolean matches(@Nullable BlockData data) {
         if (!(data instanceof final CraftBlockData craft)) {
             return false;
         }
@@ -148,7 +159,8 @@ public class CraftBlockData implements BlockData {
         return internalClass.cast(rawValue);
     }
 
-    protected <A extends Enum<A>> A get(EnumProperty<?> property, Class<A> bukkitClass) {
+    @Override
+    public <A extends Enum<A>> A get(EnumProperty<?> property, Class<A> bukkitClass) {
         return fromVanilla(this.state.getValue(property), bukkitClass);
     }
 
@@ -163,17 +175,20 @@ public class CraftBlockData implements BlockData {
         return result.build();
     }
 
-    protected <A extends Enum<A>, M extends Enum<M> & StringRepresentable> void set(EnumProperty<M> property, A bukkit) {
+    @Override
+    public <M extends Enum<M> & StringRepresentable> void set(EnumProperty<M> property, Enum<?> bukkit) {
         this.parsedStates = null;
         this.state = this.state.setValue(property, toVanilla(bukkit, property.getValueClass()));
     }
 
     // Straight integer or boolean getter
-    protected <T extends Comparable<T>> T get(Property<T> property) {
+    @Override
+    public <T extends Comparable<T>> T get(Property<T> property) {
         return this.state.getValue(property);
     }
 
     // Straight integer or boolean setter
+    @Override
     public <T extends Comparable<T>, V extends T> void set(Property<T> property, V value) {
         this.parsedStates = null;
         this.state = this.state.setValue(property, value);
@@ -438,6 +453,7 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.world.level.block.piston.PistonHeadBlock.class, org.bukkit.craftbukkit.block.impl.CraftPistonHead::new);
         // End generate - CraftBlockData#INSTANCE_CREATOR
         //</editor-fold>
+        PaperBlockProperties.setup();
     }
 
     private static void register(Class<? extends Block> blockClass, Function<BlockState, CraftBlockData> newInstance) {

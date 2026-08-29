@@ -26,5 +26,11 @@ public final class Types {
 
     public static final ClassNamed PAPER_SIMPLE_REGISTRY = ClassNamed.of("io.papermc.paper.registry", "PaperSimpleRegistry");
 
+    public static final ClassNamed PAPER_BLOCK_PROPERTIES = ClassNamed.of("io.papermc.paper.block.property", "PaperBlockProperties");
+
+    public static final ClassNamed ROTATION_BLOCK_PROPERTY = ClassNamed.of("io.papermc.paper.block.property", "RotationBlockProperty");
+
+    public static final ClassNamed NOTE_BLOCK_PROPERTY = ClassNamed.of("io.papermc.paper.block.property", "NoteBlockProperty");
+
     public static final ClassNamed MOB_GOAL_HELPER = ClassNamed.of("com.destroystokyo.paper.entity.ai", "MobGoalHelper");
 }

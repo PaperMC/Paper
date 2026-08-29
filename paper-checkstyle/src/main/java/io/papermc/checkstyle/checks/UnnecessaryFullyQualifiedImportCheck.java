@@ -8,7 +8,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Requires that the codebase be set up to follow standard naming conventions.
+ * Requires that the codebase be set up to follow standard naming conventions:
  * <ul>
  *     <li>packages are always all lowercase</li>
  *     <li>class names start with a capital letter</li>
