@@ -13,6 +13,7 @@ import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
+import io.papermc.paper.event.inventory.PlayerBundleItemSelectEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
 import java.util.ArrayList;
@@ -1602,6 +1603,60 @@ public class CraftEventFactory {
         InventoryCloseEvent event = new InventoryCloseEvent(human.containerMenu.getBukkitView(), reason); // Paper
         human.level().getCraftServer().getPluginManager().callEvent(event);
         human.containerMenu.transferTo(human.inventoryMenu, human.getBukkitEntity());
+    }
+
+    public static void callPlayerBundleItemSelectEvent(final net.minecraft.world.entity.player.Player player, final int slotId, final int selectedIndex) {
+        if (player.isCreative() && player.containerMenu instanceof net.minecraft.world.inventory.InventoryMenu) {
+            // The packet's slotId will always be 0 if this packet is sent for a player selecting an item in a bundle in their creative inventory,
+            // making it unfit for firing an event.
+            return;
+        }
+
+        if (slotId < 0 || slotId >= player.containerMenu.slots.size() || selectedIndex <= net.minecraft.world.item.component.BundleContents.NO_SELECTED_ITEM_INDEX) {
+            return;
+        }
+
+        final net.minecraft.world.item.ItemStack item = player.containerMenu.slots.get(slotId).getItem();
+        if (!item.is(net.minecraft.tags.ItemTags.BUNDLES)) {
+            return;
+        }
+
+        final net.minecraft.world.item.component.BundleContents contents = item.get(net.minecraft.core.component.DataComponents.BUNDLE_CONTENTS);
+        if (contents == null) {
+            return;
+        }
+
+        final int previousIndex = contents.getSelectedItemIndex();
+        if (selectedIndex >= contents.size() || selectedIndex == previousIndex) {
+            return;
+        }
+
+        int delta = 0;
+        // Scroll direction can only be reliably determined if three or more item stacks are in the bundle,
+        // because we only have access to the before and after selection index.
+        if (contents.size() >= 3) {
+            if (previousIndex == net.minecraft.world.item.component.BundleContents.NO_SELECTED_ITEM_INDEX) {
+                delta = selectedIndex == 0 ? 1 : -1;
+            } else {
+                int diff = selectedIndex - previousIndex;
+                delta = diff > 0 ? 1 : -1;
+
+                if (Math.abs(diff) == contents.size() - 1) {
+                    delta = -delta;
+                }
+            }
+        }
+
+        new PlayerBundleItemSelectEvent(
+            player.containerMenu.getBukkitView(),
+            item.asBukkitMirror(),
+            slotId,
+            contents.getSelectedItem() != null ? contents.getSelectedItem().create().asBukkitMirror() : org.bukkit.inventory.ItemStack.empty(),
+            contents.items().get(selectedIndex).create().asBukkitMirror(),
+            previousIndex,
+            selectedIndex,
+            PlayerBundleItemSelectEvent.Direction.ofDelta(delta)
+        ).callEvent();
     }
 
     public static ItemStack handleEditBookEvent(ServerPlayer player, int itemInHandIndex, ItemStack itemInHand, ItemStack newBookItem) {
