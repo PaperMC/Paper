@@ -6,6 +6,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeContext;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import java.io.IOException;
@@ -121,4 +122,6 @@ public interface InternalAPIBridge {
     Component resolveWithContext(Component component, @Nullable CommandSender context, @Nullable Entity scoreboardSubject, boolean bypassPermissions) throws IOException;
 
     ComponentFlattener componentFlattener();
+
+    EnvironmentalAttributeContext.Builder environmentalAttributeContextBuilder();
 }
