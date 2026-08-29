@@ -3,7 +3,6 @@ package io.papermc.paper.datacomponent.item;
 import net.minecraft.world.item.SwingAnimationType;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.checkerframework.checker.index.qual.NonNegative;
-import org.checkerframework.checker.index.qual.Positive;
 
 import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
@@ -38,7 +37,7 @@ public record PaperSwingAnimation(
         }
 
         @Override
-        public SwingAnimation.Builder duration(final @Positive int duration) {
+        public SwingAnimation.Builder duration(final @NonNegative int duration) {
             this.duration = requireNonNegative(duration, "duration");
             return this;
         }
