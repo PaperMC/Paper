@@ -28,6 +28,14 @@ public record PaperUseEffects(
         return this.impl.speedMultiplier();
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .canSprint(this.canSprint())
+            .interactVibrations(this.interactVibrations())
+            .speedMultiplier(this.speedMultiplier());
+    }
+
     static final class BuilderImpl implements UseEffects.Builder {
 
         private boolean canSprint = net.minecraft.world.item.component.UseEffects.DEFAULT.canSprint();

@@ -60,6 +60,17 @@ public record PaperWrittenBookContent(
     }
 
     @Override
+    public Builder toBuilder() {
+        return new BuilderImpl(this.title(), this.author())
+            .generation(this.generation())
+            .resolved(this.resolved())
+            .pages(this.pages().stream() // todo check seems wrong
+                .map(Filtered::filtered)
+                .filter(Objects::nonNull)
+                .toList());
+    }
+
+    @Override
     public Book asBook() {
         final Filtered<String> title = this.title();
         return Book.book(
@@ -138,12 +149,6 @@ public record PaperWrittenBookContent(
         }
 
         @Override
-        public WrittenBookContent.Builder resolved(final boolean resolved) {
-            this.resolved = resolved;
-            return this;
-        }
-
-        @Override
         public WrittenBookContent.Builder addPage(final ComponentLike page) {
             final Component component = page.asComponent();
             validatePageLength(component);
@@ -158,6 +163,13 @@ public record PaperWrittenBookContent(
                 validatePageLength(component);
                 this.pages.add(Filterable.passThrough(asVanilla(component)));
             }
+            return this;
+        }
+
+        @Override
+        public Builder pages(final List<? extends ComponentLike> pages) {
+            this.pages.clear();
+            this.addPages(pages);
             return this;
         }
 
@@ -177,6 +189,19 @@ public record PaperWrittenBookContent(
         @Override
         public WrittenBookContent.Builder addFilteredPages(final List<Filtered<? extends ComponentLike>> pages) {
             pages.forEach(this::addFilteredPage);
+            return this;
+        }
+
+        @Override
+        public Builder filteredPages(final List<Filtered<? extends ComponentLike>> pages) {
+            this.pages.clear();
+            this.addFilteredPages(pages);
+            return this;
+        }
+
+        @Override
+        public WrittenBookContent.Builder resolved(final boolean resolved) {
+            this.resolved = resolved;
             return this;
         }
 

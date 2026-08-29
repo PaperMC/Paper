@@ -2,12 +2,12 @@ package io.papermc.paper.datacomponent.item;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import io.papermc.paper.registry.set.RegistryKeySet;
-import io.papermc.paper.registry.tag.TagKey;
 import io.papermc.paper.text.Filtered;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.TriState;
+import org.bukkit.Color;
 import org.bukkit.JukeboxSong;
 import org.bukkit.block.BlockType;
 import org.bukkit.damage.DamageType;
@@ -51,6 +51,8 @@ interface ItemComponentTypesBridge {
     SuspiciousStewEffects.Builder suspiciousStewEffects();
 
     MapItemColor.Builder mapItemColor();
+
+    MapItemColor mapItemColor(Color color);
 
     MapDecorations.Builder mapDecorations();
 

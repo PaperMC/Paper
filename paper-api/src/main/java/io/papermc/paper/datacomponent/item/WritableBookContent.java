@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.text.Filtered;
 import java.util.List;
@@ -15,7 +16,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @ApiStatus.NonExtendable
-public interface WritableBookContent extends BookLike {
+public interface WritableBookContent extends BookLike, BuildableDataComponent<WritableBookContent, WritableBookContent.Builder> {
 
     @Contract(value = "-> new", pure = true)
     static WritableBookContent.Builder writeableBookContent() {
@@ -57,6 +58,16 @@ public interface WritableBookContent extends BookLike {
         Builder addPages(List<String> pages);
 
         /**
+         * Sets pages that can be written to for this builder.
+         *
+         * @param pages pages
+         * @return the builder for chaining
+         * @see #pages()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder pages(List<String> pages);
+
+        /**
          * Adds a filterable page that can be written to for this builder.
          *
          * @param page page
@@ -75,5 +86,15 @@ public interface WritableBookContent extends BookLike {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addFilteredPages(List<Filtered<String>> pages);
+
+        /**
+         * Sets filterable pages that can be written to for this builder.
+         *
+         * @param pages pages
+         * @return the builder for chaining
+         * @see #pages()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder filteredPages(List<Filtered<String>> pages);
     }
 }

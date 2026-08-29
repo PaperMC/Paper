@@ -12,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @ApiStatus.NonExtendable
-public interface JukeboxPlayable  {
+public interface JukeboxPlayable {
 
     @Contract(value = "_ -> new", pure = true)
     static JukeboxPlayable.Builder jukeboxPlayable(final JukeboxSong song) {

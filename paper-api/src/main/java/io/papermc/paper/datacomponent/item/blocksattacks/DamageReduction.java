@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item.blocksattacks;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import org.bukkit.damage.DamageType;
@@ -17,7 +18,7 @@ import org.jspecify.annotations.Nullable;
  */
 @NullMarked
 @ApiStatus.NonExtendable
-public interface DamageReduction {
+public interface DamageReduction extends BuildableDataComponent<DamageReduction, DamageReduction.Builder> {
 
     @Contract(value = "-> new", pure = true)
     static DamageReduction.Builder damageReduction() {

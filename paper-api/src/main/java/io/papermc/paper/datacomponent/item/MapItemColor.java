@@ -19,6 +19,11 @@ public interface MapItemColor {
         return ItemComponentTypesBridge.bridge().mapItemColor();
     }
 
+    @Contract(value = "_ -> new", pure = true)
+    static MapItemColor mapItemColor(Color color) {
+        return ItemComponentTypesBridge.bridge().mapItemColor(color);
+    }
+
     /**
      * The tint to apply.
      *

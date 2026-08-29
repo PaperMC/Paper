@@ -30,6 +30,11 @@ public record PaperItemLore(
         return MCUtil.transformUnmodifiable(this.impl.styledLines(), PaperAdventure::asAdventure);
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().lines(this.lines());
+    }
+
     static final class BuilderImpl implements ItemLore.Builder {
 
         private List<Component> lines = new ObjectArrayList<>();

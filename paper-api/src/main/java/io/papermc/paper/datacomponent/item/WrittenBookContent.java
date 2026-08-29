@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.text.Filtered;
 import java.util.List;
@@ -18,7 +19,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @ApiStatus.NonExtendable
-public interface WrittenBookContent extends BookLike {
+public interface WrittenBookContent extends BookLike, BuildableDataComponent<WrittenBookContent, WrittenBookContent.Builder> {
 
     @Contract(value = "_, _ -> new", pure = true)
     static WrittenBookContent.Builder writtenBookContent(final String title, final String author) {
@@ -118,17 +119,6 @@ public interface WrittenBookContent extends BookLike {
         Builder generation(@IntRange(from = 0, to = 3) int generation);
 
         /**
-         * Sets if the chat components in this book have already been resolved (entity selectors, scores substituted).
-         * If {@code false}, will be resolved when opened by a player.
-         *
-         * @param resolved resolved
-         * @return the builder for chaining
-         * @see #resolved()
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder resolved(boolean resolved);
-
-        /**
          * Adds a page to this book.
          *
          * @param page the page
@@ -141,12 +131,22 @@ public interface WrittenBookContent extends BookLike {
         /**
          * Adds pages to this book.
          *
-         * @param page the pages
+         * @param pages the pages
          * @return the builder for chaining
          * @see #pages()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder addPages(List<? extends ComponentLike> page);
+        Builder addPages(List<? extends ComponentLike> pages);
+
+        /**
+         * Sets pages to this book.
+         *
+         * @param pages the pages
+         * @return the builder for chaining
+         * @see #pages()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder pages(List<? extends ComponentLike> pages);
 
         /**
          * Adds a filterable page to this book.
@@ -167,5 +167,26 @@ public interface WrittenBookContent extends BookLike {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder addFilteredPages(List<Filtered<? extends ComponentLike>> pages);
+
+        /**
+         * Sets filterable pages to this book.
+         *
+         * @param pages the pages
+         * @return the builder for chaining
+         * @see #pages()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder filteredPages(List<Filtered<? extends ComponentLike>> pages);
+
+        /**
+         * Sets if the chat components in this book have already been resolved (entity selectors, scores substituted).
+         * If {@code false}, will be resolved when opened by a player.
+         *
+         * @param resolved resolved
+         * @return the builder for chaining
+         * @see #resolved()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder resolved(boolean resolved);
     }
 }

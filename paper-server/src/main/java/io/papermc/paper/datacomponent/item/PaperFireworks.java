@@ -29,17 +29,17 @@ public record PaperFireworks(
         return this.impl.flightDuration();
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .effects(this.effects())
+            .flightDuration(this.flightDuration());
+    }
+
     static final class BuilderImpl implements Fireworks.Builder {
 
         private final List<FireworkExplosion> effects = new ObjectArrayList<>();
         private int duration = 0; // default set from nms Fireworks component
-
-        @Override
-        public Fireworks.Builder flightDuration(final int duration) {
-            Preconditions.checkArgument(duration >= 0 && duration <= 0xFF, "duration must be an unsigned byte ([%s, %s]), was %s", 0, 0xFF, duration);
-            this.duration = duration;
-            return this;
-        }
 
         @Override
         public Fireworks.Builder addEffect(final FireworkEffect effect) {
@@ -62,6 +62,20 @@ public record PaperFireworks(
                 this.effects.size() + effects.size()
             );
             MCUtil.addAndConvert(this.effects, effects, CraftMetaFirework::getExplosion);
+            return this;
+        }
+
+        @Override
+        public Builder effects(final List<FireworkEffect> effects) {
+            this.effects.clear();
+            this.addEffects(effects);
+            return this;
+        }
+
+        @Override
+        public Fireworks.Builder flightDuration(final int duration) {
+            Preconditions.checkArgument(duration >= 0 && duration <= 0xFF, "duration must be an unsigned byte ([%s, %s]), was %s", 0, 0xFF, duration);
+            this.duration = duration;
             return this;
         }
 
