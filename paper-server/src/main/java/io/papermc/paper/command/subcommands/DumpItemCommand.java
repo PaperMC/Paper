@@ -1,8 +1,11 @@
 package io.papermc.paper.command.subcommands;
 
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.adventure.PaperAdventure;
-import io.papermc.paper.command.CommandUtil;
-import io.papermc.paper.command.PaperSubcommand;
+import io.papermc.paper.command.PaperCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -29,8 +32,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.framework.qual.DefaultQualifier;
 
 import static java.util.Objects.requireNonNull;
 import static net.kyori.adventure.text.Component.join;
@@ -45,20 +46,31 @@ import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
 import static net.kyori.adventure.text.format.TextColor.color;
 import static net.kyori.adventure.text.format.TextDecoration.ITALIC;
 
-@DefaultQualifier(NonNull.class)
-public final class DumpItemCommand implements PaperSubcommand {
-    @Override
-    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
-        this.doDumpItem(sender, args.length > 0 && "all".equals(args[0]));
-        return true;
+public final class DumpItemCommand {
+
+    public static LiteralArgumentBuilder<CommandSourceStack> create() {
+        return Commands.literal("dumpitem")
+            .requires(PaperCommand.hasPermission("dumpitem"))
+            .executes(context -> {
+                if (!(context.getSource().getExecutor() instanceof Player player)) {
+                    throw net.minecraft.commands.CommandSourceStack.ERROR_NOT_PLAYER.create();
+                }
+                doDumpItem(player, false, context.getSource().getSender());
+                return Command.SINGLE_SUCCESS;
+            })
+            .then(Commands.literal("all")
+                .executes(context -> {
+                    if (!(context.getSource().getExecutor() instanceof Player player)) {
+                        throw net.minecraft.commands.CommandSourceStack.ERROR_NOT_PLAYER.create();
+                    }
+                    doDumpItem(player, true, context.getSource().getSender());
+                    return Command.SINGLE_SUCCESS;
+                })
+            );
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private void doDumpItem(final CommandSender sender, final boolean includeAllComponents) {
-        if (!(sender instanceof final Player player)) {
-            sender.sendMessage("Only players can use this command");
-            return;
-        }
+    @SuppressWarnings({"unchecked" , "rawtypes"})
+    private static void doDumpItem(final Player player, final boolean includeAllComponents, final CommandSender sender) {
         final TextComponent.Builder output = Component.text();
         final StringBuilder itemToCopy = new StringBuilder();
         final ItemStack item = CraftItemStack.asNMSCopy(player.getInventory().getItemInMainHand());
@@ -103,34 +115,26 @@ public final class DumpItemCommand implements PaperSubcommand {
 
         if (!writtenComponents.isEmpty()) {
             output.append(
-                text("[", color(0x8910CE)),
-                join(JoinConfiguration.separator(text(",", GRAY)), writtenComponents),
-                text("]", color(0x8910CE))
+                text("[" , color(0x8910CE)),
+                join(JoinConfiguration.separator(text("," , GRAY)), writtenComponents),
+                text("]" , color(0x8910CE))
             );
             itemToCopy
                 .append("[")
-                .append(String.join(",", componentsToCopy))
+                .append(String.join("," , componentsToCopy))
                 .append("]");
         }
         player.sendMessage(output.build().compact());
-        final Component copyMsg = text("Click to copy item definition to clipboard for use with /give", GRAY, ITALIC);
+        final Component copyMsg = text("Click to copy item definition to clipboard for use with /give" , GRAY, ITALIC);
         sender.sendMessage(copyMsg.clickEvent(copyToClipboard(itemToCopy.toString())));
     }
 
     private static void writeComponentValue(final Consumer<Component> output, final Consumer<String> copyOutput, final String path, final Tag serialized) {
         output.accept(textOfChildren(
             text(path, color(0xFF7FD7)),
-            text("=", WHITE),
+            text("=" , WHITE),
             PaperAdventure.asAdventure(NbtUtils.toPrettyComponent(serialized))
         ));
-        copyOutput.accept(path + "=" + new SnbtPrinterTagVisitor("", 0, new ArrayList<>()).visit(serialized));
-    }
-
-    @Override
-    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
-        if (args.length == 1) {
-            return CommandUtil.getListMatchingLast(sender, args, "all");
-        }
-        return Collections.emptyList();
+        copyOutput.accept(path + "=" + new SnbtPrinterTagVisitor("" , 0, new ArrayList<>()).visit(serialized));
     }
 }
