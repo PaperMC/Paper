@@ -400,7 +400,7 @@ public final class CraftServer implements Server {
         this.playerList = (DedicatedPlayerList) playerList;
         this.playerView = MCUtil.transformUnmodifiable(playerList.getPlayers(), ServerPlayer::getBukkitEntity);
         this.serverVersion = io.papermc.paper.ServerBuildInfo.buildInfo().asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_SIMPLE); // Paper - improve version
-        this.structureManager = new CraftStructureManager(console.getStructureManager(), console.registryAccess());
+        this.structureManager = new CraftStructureManager(console.getStructureTemplateManager(), console.registryAccess());
         this.serverTickManager = new CraftServerTickManager(console.tickRateManager());
         this.serverLinks = new CraftServerLinks(console);
 
