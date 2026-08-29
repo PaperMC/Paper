@@ -2,7 +2,9 @@ package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.FrogVariantRegistryEntry;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -51,7 +53,7 @@ public interface Frog extends Animals {
     /**
      * Represents the variant of a frog - ie its color.
      */
-    interface Variant extends OldEnum<Variant>, Keyed {
+    interface Variant extends RegistryElement.Buildable<Variant, FrogVariantRegistryEntry, FrogVariantRegistryEntry.Builder>, OldEnum<Variant>, Keyed {
 
         // Start generate - FrogVariant
         Variant COLD = getVariant("cold");

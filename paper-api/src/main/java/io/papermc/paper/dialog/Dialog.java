@@ -2,8 +2,9 @@ package io.papermc.paper.dialog;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
+import io.papermc.paper.registry.data.RegistryBuilderProvider;
 import io.papermc.paper.registry.data.dialog.DialogRegistryEntry;
 import java.util.function.Consumer;
 import net.kyori.adventure.dialog.DialogLike;
@@ -19,7 +20,7 @@ import org.jetbrains.annotations.ApiStatus;
  * Can also be created during bootstrap via {@link io.papermc.paper.registry.event.RegistryEvents#DIALOG}.
  */
 @ApiStatus.NonExtendable
-public interface Dialog extends Keyed, DialogLike {
+public interface Dialog extends RegistryElement.Inlineable<Dialog, DialogRegistryEntry, DialogRegistryEntry.Builder>, Keyed, DialogLike {
 
     /**
      * Creates a new dialog using the provided builder.
@@ -28,7 +29,7 @@ public interface Dialog extends Keyed, DialogLike {
      * @return a new dialog instance
      */
     static Dialog create(final Consumer<RegistryBuilderFactory<Dialog, ? extends DialogRegistryEntry.Builder>> value) {
-        return InlinedRegistryBuilderProvider.instance().createDialog(value);
+        return RegistryBuilderProvider.instance().create(RegistryKey.DIALOG, value);
     }
 
     // Start generate - Dialog

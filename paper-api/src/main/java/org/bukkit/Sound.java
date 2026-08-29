@@ -1,12 +1,18 @@
 package org.bukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.data.RegistryBuilderProvider;
+import io.papermc.paper.registry.data.SoundEventRegistryEntry;
 import java.util.Locale;
+import java.util.function.Consumer;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.util.OldEnum;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An interface of Sounds the server is able to send to players.
@@ -21,7 +27,29 @@ import org.jetbrains.annotations.NotNull;
  * guarantee values will not be removed from this interface. As such, you should not
  * depend on the ordinal values of this class.
  */
-public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
+@NullMarked
+public interface Sound extends RegistryElement.Inlineable<Sound, SoundEventRegistryEntry, SoundEventRegistryEntry.Builder>, OldEnum<Sound>, Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
+
+    /**
+     * Creates an inlined sound event.
+     *
+     * @param key the sound location
+     * @param range an optional fixed range
+     * @return the created sound
+     */
+    static Sound create(final Key key, final @Nullable Float range) {
+        return create(builder -> builder.empty().location(key).fixedRange(range));
+    }
+
+    /**
+     * Creates an inlined sound event.
+     *
+     * @param value a consumer for the builder factory
+     * @return the created sound
+     */
+    static Sound create(final Consumer<RegistryBuilderFactory<Sound, ? extends SoundEventRegistryEntry.Builder>> value) {
+        return RegistryBuilderProvider.instance().create(RegistryKey.SOUND_EVENT, value);
+    }
 
     // Start generate - Sound
     Sound AMBIENT_BASALT_DELTAS_ADDITIONS = getSound("ambient.basalt_deltas.additions");
@@ -3961,8 +3989,7 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound WEATHER_RAIN_ABOVE = getSound("weather.rain.above");
     // End generate - Sound
 
-    @NotNull
-    private static Sound getSound(@NotNull @KeyPattern.Value String key) {
+    private static Sound getSound(@KeyPattern.Value String key) {
         return Registry.SOUNDS.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
     }
 
@@ -3971,9 +3998,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
      * @return the sound with the given name.
      * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
      */
-    @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
-    static Sound valueOf(@NotNull String name) {
+    static Sound valueOf(String name) {
         final NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
         Sound sound;
 
@@ -4003,14 +4029,13 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     @Override
-    @NotNull NamespacedKey getKey();
+    NamespacedKey getKey();
     // Paper end - deprecate getKey
 
     /**
      * @return an array of all known sounds.
      * @deprecated use {@link Registry#stream()}.
      */
-    @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Sound[] values() {
         return Registry.SOUNDS.stream().toArray(Sound[]::new);
@@ -4023,7 +4048,7 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     @Override
-    default net.kyori.adventure.key.@NotNull Key key() {
+    default net.kyori.adventure.key.Key key() {
         return this.getKey();
     }
     // Paper end

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.bukkit.Keyed;
 
+@Deprecated(forRemoval = true)
 public class RegistryValueSetBuilderImpl<M, API extends Keyed, BUILDER extends RegistryBuilder<API>> implements RegistryValueSetBuilder<API, BUILDER> { // TODO remove Keyed
 
     private final RegistryKey<API> registryKey;

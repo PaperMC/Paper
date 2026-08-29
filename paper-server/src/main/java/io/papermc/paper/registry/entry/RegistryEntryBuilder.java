@@ -73,20 +73,20 @@ public class RegistryEntryBuilder<M, A extends Keyed> { // TODO remove Keyed
             return new RegistryEntryImpl<>(new RegistryEntryMeta.Craft<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit, this.serializationUpdater));
         }
 
-        public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> modifiable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
-            return this.create(filler, MODIFIABLE);
+        public <E, B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> modifiable(final EntryFactory<M, E> entryFactory, final PaperRegistryBuilder.Filler<M, A, B> filler) {
+            return this.create(entryFactory, filler, MODIFIABLE);
         }
 
-        public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> addable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
-            return this.create(filler, ADDABLE);
+        public <E, B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> addable(final EntryFactory<M, E> entryFactory, final PaperRegistryBuilder.Filler<M, A, B> filler) {
+            return this.create(entryFactory, filler, ADDABLE);
         }
 
-        public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> writable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
-            return this.create(filler, WRITABLE);
+        public <E, B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> writable(final EntryFactory<M, E> entryFactory, final PaperRegistryBuilder.Filler<M, A, B> filler) {
+            return this.create(entryFactory, filler, WRITABLE);
         }
 
-        public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> create(final PaperRegistryBuilder.Filler<M, A, B> filler, final RegistryEntryMeta.RegistryModificationApiSupport support) {
-            return new RegistryEntryImpl<>(new RegistryEntryMeta.Buildable<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit, this.serializationUpdater, filler, support));
+        public <E, B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> create(final EntryFactory<M, E> entryFactory, final PaperRegistryBuilder.Filler<M, A, B> filler, final RegistryEntryMeta.RegistryModificationApiSupport support) {
+            return new RegistryEntryImpl<>(new RegistryEntryMeta.Buildable<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit, this.serializationUpdater, entryFactory, filler, support));
         }
     }
 }

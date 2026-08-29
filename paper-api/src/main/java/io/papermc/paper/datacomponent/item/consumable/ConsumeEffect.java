@@ -3,6 +3,7 @@ package io.papermc.paper.datacomponent.item.consumable;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.List;
 import net.kyori.adventure.key.Key;
+import org.bukkit.Sound;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.ApiStatus;
@@ -41,12 +42,12 @@ public interface ConsumeEffect {
     /**
      * Creates a consume effect that plays a sound on consumption.
      *
-     * @param key the key sound effect to play
+     * @param sound the sound effect to play
      * @return the effect instance
      */
     @Contract(value = "_ -> new", pure = true)
-    static PlaySound playSoundConsumeEffect(final Key key) {
-        return ConsumableTypesBridge.bridge().playSoundEffect(key);
+    static PlaySound playSoundConsumeEffect(final Sound sound) {
+        return ConsumableTypesBridge.bridge().playSoundEffect(sound);
     }
 
     /**
@@ -110,7 +111,7 @@ public interface ConsumeEffect {
          *
          * @return sound effect
          */
-        Key sound();
+        Sound sound();
     }
 
     /**

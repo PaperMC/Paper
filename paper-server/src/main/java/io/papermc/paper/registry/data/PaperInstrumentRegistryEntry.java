@@ -45,7 +45,7 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
     @Override
     public RegistryHolder<Sound, SoundEventRegistryEntry> soundEvent() {
         final Holder<SoundEvent> current = asConfigured(this.soundEvent, "soundEvent");
-        return PaperRegistryHolders.create(current, e -> new PaperSoundEventRegistryEntry(this.conversions, e));
+        return PaperRegistryHolders.create(RegistryKey.SOUND_EVENT, current, this.conversions);
     }
 
     @Override

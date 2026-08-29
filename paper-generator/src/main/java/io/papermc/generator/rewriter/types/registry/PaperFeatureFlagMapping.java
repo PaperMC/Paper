@@ -18,9 +18,9 @@ public class PaperFeatureFlagMapping extends SearchReplaceRewriter {
 
         while (flagIterator.hasNext()) {
             Identifier name = flagIterator.next();
-            String keyedName = Formatting.formatKeyAsField(name.getPath());
+            String fieldName = Formatting.formatKeyAsField(name.getPath());
             builder.append(metadata.indent());
-            builder.append("%s.%s, %s.%s".formatted(FeatureFlag.class.getSimpleName(), keyedName, FeatureFlags.class.getSimpleName(), keyedName));
+            builder.append("%s.%s, %s.%s".formatted(FeatureFlag.class.getSimpleName(), fieldName, FeatureFlags.class.getSimpleName(), fieldName));
             if (flagIterator.hasNext()) {
                 builder.append(',');
             }

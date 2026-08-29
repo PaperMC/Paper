@@ -18,7 +18,7 @@ public class MapPaletteRewriter extends SearchReplaceRewriter {
         int count = 0;
         for (@Nullable MapColor mapColor : MapColor.MATERIAL_COLORS) {
             if (mapColor == null) {
-                continue;
+                break;
             }
 
             for (MapColor.Brightness brightness : MapColor.Brightness.values()) {

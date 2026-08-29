@@ -32,7 +32,7 @@ public final class PaperDialogs {
             case final ConfirmationDialog conf ->
                 DialogType.confirmation(convertButton.apply(conf.yesButton()), convertButton.apply(conf.noButton()));
             case final DialogListDialog list -> {
-                final RegistrySet<io.papermc.paper.dialog.Dialog> apiSet = PaperRegistrySets.convertToApiWithDirects(RegistryKey.DIALOG, list.dialogs());
+                final RegistrySet<io.papermc.paper.dialog.Dialog> apiSet = PaperRegistrySets.convertToApiWithDirects(RegistryKey.DIALOG, list.dialogs(), conversions);
                 yield DialogType.dialogList(
                     apiSet,
                     list.exitAction().map(convertButton).orElse(null),
@@ -59,7 +59,7 @@ public final class PaperDialogs {
             case final DialogListType list -> {
                 return new DialogListDialog(
                     common,
-                    PaperRegistrySets.convertToNmsWithDirects(Registries.DIALOG, conversions.lookup(), list.dialogs()),
+                    PaperRegistrySets.convertToNmsWithDirects(Registries.DIALOG, conversions, list.dialogs()),
                     Optional.ofNullable(list.exitAction()).map(convertButton),
                     list.columns(),
                     list.buttonWidth()

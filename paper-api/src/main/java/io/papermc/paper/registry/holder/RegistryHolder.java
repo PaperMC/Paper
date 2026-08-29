@@ -1,5 +1,7 @@
 package io.papermc.paper.registry.holder;
 
+import io.papermc.paper.registry.RegistryElement;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -12,7 +14,28 @@ import org.jetbrains.annotations.ApiStatus;
  * @param <ENTRY> the type of the registry entry (for inlined values)
  */
 @ApiStatus.Experimental
-public sealed interface RegistryHolder<API, ENTRY> permits RegistryHolder.Reference, RegistryHolder.Inlined {
+public sealed interface RegistryHolder<API extends RegistryElement.Buildable<API, ENTRY, ?>, ENTRY> permits RegistryHolder.Reference, RegistryHolder.Inlined {
+
+    /**
+     * Gets the registry key of the registry this holder's value belongs to.
+     *
+     * @return the registry key
+     */
+    RegistryKey<API> registryKey();
+
+    /**
+     * Gets the value held by this holder.
+     *
+     * @return the value
+     */
+    API value();
+
+    /**
+     * Gets the registry entry held by this holder.
+     *
+     * @return the entry
+     */
+    ENTRY entry();
 
     /**
      * A holder that references a registry value by key, but does not have the entry itself.
@@ -22,7 +45,7 @@ public sealed interface RegistryHolder<API, ENTRY> permits RegistryHolder.Refere
      * @param <ENTRY> the type of the registry entry
      */
     @ApiStatus.NonExtendable
-    non-sealed interface Reference<API, ENTRY> extends RegistryHolder<API, ENTRY> {
+    non-sealed interface Reference<API extends RegistryElement.Buildable<API, ENTRY, ?>, ENTRY> extends RegistryHolder<API, ENTRY> {
 
         /**
          * The key of the referenced value.
@@ -39,13 +62,14 @@ public sealed interface RegistryHolder<API, ENTRY> permits RegistryHolder.Refere
      * @param <ENTRY> the type of the registry entry
      */
     @ApiStatus.NonExtendable
-    non-sealed interface Inlined<API, ENTRY> extends RegistryHolder<API, ENTRY> {
+    non-sealed interface Inlined<API extends RegistryElement.Buildable<API, ENTRY, ?>, ENTRY> extends RegistryHolder<API, ENTRY> {
 
         /**
          * The inlined entry.
          *
          * @return the inlined entry
          */
+        @Override
         ENTRY entry();
     }
 }

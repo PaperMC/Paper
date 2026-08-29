@@ -114,7 +114,7 @@ public non-sealed interface TextDialogInput extends DialogInput {
          * @return this builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder width(final @Range(from = 1, to = 1024) int width);
+        Builder width(@Range(from = 1, to = 1024) int width);
 
         /**
          * Sets whether the label should be visible.
@@ -123,7 +123,7 @@ public non-sealed interface TextDialogInput extends DialogInput {
          * @return this builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder labelVisible(final boolean labelVisible);
+        Builder labelVisible(boolean labelVisible);
 
         /**
          * Sets the initial value of the input.
@@ -132,7 +132,7 @@ public non-sealed interface TextDialogInput extends DialogInput {
          * @return this builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder initial(final String initial);
+        Builder initial(String initial);
 
         /**
          * Sets the maximum length of the input.
@@ -141,7 +141,7 @@ public non-sealed interface TextDialogInput extends DialogInput {
          * @return this builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder maxLength(final @Positive int maxLength);
+        Builder maxLength(@Positive int maxLength);
 
         /**
          * Sets the multiline options for the input.
@@ -150,7 +150,7 @@ public non-sealed interface TextDialogInput extends DialogInput {
          * @return this builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder multiline(final @Nullable MultilineOptions multiline);
+        Builder multiline(@Nullable MultilineOptions multiline);
 
         /**
          * Builds the text dialog input.

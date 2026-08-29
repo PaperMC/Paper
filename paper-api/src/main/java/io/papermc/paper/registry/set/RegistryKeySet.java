@@ -48,7 +48,7 @@ public non-sealed interface RegistryKeySet<T extends Keyed> extends Iterable<Typ
      * @see RegistryKeySet#values()
      * @see Registry#getTagValues(TagKey)
      */
-    @Unmodifiable Collection<T> resolve(final Registry<T> registry);
+    @Unmodifiable Collection<T> resolve(Registry<T> registry);
 
     /**
      * Checks if this set contains the value with the given key.
