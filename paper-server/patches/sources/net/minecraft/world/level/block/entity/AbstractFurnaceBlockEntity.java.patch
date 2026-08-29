@@ -1,5 +1,13 @@
 --- a/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+@@ -108,6 +_,7 @@
+     };
+     public final Reference2IntOpenHashMap<ResourceKey<Recipe<?>>> recipesUsed = new Reference2IntOpenHashMap<>();
+     public final RecipeManager.CachedCheck<SingleRecipeInput, ? extends AbstractCookingRecipe> quickCheck;
++    public double cookSpeedMultiplier = 1.0; // Paper - cook speed multiplier API
+ 
+     protected AbstractFurnaceBlockEntity(
+         final BlockEntityType<?> type, final BlockPos worldPosition, final BlockState blockState, final RecipeType<? extends AbstractCookingRecipe> recipeType
 @@ -116,6 +_,41 @@
          this.quickCheck = RecipeManager.createCheck(recipeType);
      }
@@ -42,15 +50,22 @@
      @Override
      protected void loadAdditional(final ValueInput input) {
          super.loadAdditional(input);
-@@ -125,7 +_,7 @@
-         this.cookingTotalTime = input.getIntOr("cooking_total_time", 0);
-         this.litTimeRemaining = input.getIntOr("lit_time_remaining", 0);
-         this.litTotalTime = input.getIntOr("lit_total_time", 0);
--        this.speedMultiplier = input.getFloatOr("speed_multiplier", 1.0F);
-+        this.speedMultiplier = input.getFloatOr("speed_multiplier", (float) input.getDoubleOr("Paper.CookSpeedMultiplier", 1)); // Paper - cook speed multiplier API - read legacy values
+@@ -128,6 +_,7 @@
+         this.speedMultiplier = input.getFloatOr("speed_multiplier", 1.0F);
          this.recipesUsed.clear();
          this.recipesUsed.putAll(input.read("RecipesUsed", RECIPES_USED_CODEC).orElse(Map.of()));
++        this.cookSpeedMultiplier = input.getDoubleOr("Paper.CookSpeedMultiplier", 1); // Paper - cook speed multiplier API
      }
+ 
+     @Override
+@@ -140,6 +_,7 @@
+         output.putFloat("speed_multiplier", this.speedMultiplier);
+         ContainerHelper.saveAllItems(output, this.items);
+         output.store("RecipesUsed", RECIPES_USED_CODEC, this.recipesUsed);
++        output.putDouble("Paper.CookSpeedMultiplier", this.cookSpeedMultiplier); // Paper - cook speed multiplier API
+     }
+ 
+     public static void serverTick(final ServerLevel level, final BlockPos pos, BlockState state, final AbstractFurnaceBlockEntity entity) {
 @@ -169,6 +_,15 @@
                      if (!burnResult.isEmpty() && canBurn(entity.items, maxStackSize, burnResult)) {
                          if (!isLit) {
@@ -88,7 +103,7 @@
 +                                    org.bukkit.craftbukkit.block.CraftBlock.at(level, pos),
 +                                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(ingredient),
 +                                    (org.bukkit.inventory.CookingRecipe<?>) recipe.toBukkitRecipe(),
-+                                    getTotalCookTime(level, entity) // Paper - cook speed multiplier API
++                                    getTotalCookTime(level, entity)
 +                                );
 +                                smeltEvent.callEvent();
 +
@@ -155,6 +170,15 @@
      }
  
      public int getBurnDuration(final ServerLevel level, final ItemStack fuelItem) {
+@@ -264,7 +_,7 @@
+     }
+ 
+     public float getSpeedMultiplier(final ServerLevel level, final ItemStack fuelItem) {
+-        return ResolvableNumber.getFloatFromItem(fuelItem, DataComponents.COOKING_FUEL, CookingFuel::speedMultiplier, this.getLootContext(level), 1.0F);
++        return ResolvableNumber.getFloatFromItem(fuelItem, DataComponents.COOKING_FUEL, CookingFuel::speedMultiplier, this.getLootContext(level), 1.0F) / (float) this.cookSpeedMultiplier; // Paper - cook speed multiplier API
+     }
+ 
+     private static int getTotalCookTime(final RecipeHolder<? extends AbstractCookingRecipe> recipe, final AbstractFurnaceBlockEntity entity) {
 @@ -358,8 +_,8 @@
      public void awardUsedRecipes(final Player player, final List<ItemStack> itemStacks) {
      }

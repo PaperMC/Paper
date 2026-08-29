@@ -77,21 +77,11 @@ public interface Furnace extends Container {
 
     // Paper start
     /**
-     * Gets the cook speed multiplier that this {@link Furnace} will cook.
-     *
-     * @param fuel the fuel to use for the calculation
-     * @return the multiplier, a value between 0 and 200
-     */
-    double getCookSpeedMultiplier(ItemStack fuel);
-
-    /**
      * Gets the cook speed multiplier that this {@link Furnace} will cook
      * compared to vanilla.
      *
      * @return the multiplier, a value between 0 and 200
-     * @deprecated the furnace speed multiplier now is based in {@link io.papermc.paper.datacomponent.DataComponentTypes#COOKING_FUEL}
      */
-    @Deprecated(forRemoval = true, since = "26.3")
     double getCookSpeedMultiplier();
 
     /**
@@ -101,9 +91,7 @@ public interface Furnace extends Container {
      * @param multiplier the multiplier to set, a value between 0 and 200
      * @throws IllegalArgumentException if value is less than 0
      * @throws IllegalArgumentException if value is more than 200
-     * @deprecated no longer works
      */
-    @Deprecated(forRemoval = true, since = "26.3")
     void setCookSpeedMultiplier(double multiplier);
 
     /**

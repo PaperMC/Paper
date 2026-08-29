@@ -92,22 +92,16 @@ public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends
     public abstract CraftFurnace<T> copy(Location location);
 
     @Override
-    public double getCookSpeedMultiplier(ItemStack fuel) {
-        final net.minecraft.server.level.ServerLevel world = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorlds().getFirst()).getHandle();
-        return this.getSnapshot().getSpeedMultiplier(world, CraftItemStack.asNMSCopy(fuel));
-    }
-
-    @Override
     public double getCookSpeedMultiplier() {
-        return 0;
+        return this.getSnapshot().cookSpeedMultiplier;
     }
 
     @Override
     public void setCookSpeedMultiplier(double multiplier) {
-        // TODO - snapshot - maybe better remove all this
         com.google.common.base.Preconditions.checkArgument(multiplier >= 0, "Furnace speed multiplier cannot be negative");
         com.google.common.base.Preconditions.checkArgument(multiplier <= 200, "Furnace speed multiplier cannot more than 200");
         T snapshot = this.getSnapshot();
+        snapshot.cookSpeedMultiplier = multiplier;
         snapshot.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.isPlaced() ? this.world.getHandle() : null, snapshot); // Update the snapshot's current total cook time to scale with the newly set multiplier
     }
 
