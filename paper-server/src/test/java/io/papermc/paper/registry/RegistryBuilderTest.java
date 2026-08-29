@@ -22,7 +22,7 @@ class RegistryBuilderTest {
     static Stream<Arguments> registries() {
         return PaperRegistries.REGISTRY_ENTRIES.stream()
             .map(RegistryEntry::meta)
-            .filter(RegistryEntryMeta.Buildable.class::isInstance)
+            .filter(b -> b.modificationApiSupport().canModify())
             .map(Arguments::arguments);
     }
 

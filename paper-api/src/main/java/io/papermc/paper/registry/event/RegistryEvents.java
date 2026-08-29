@@ -1,11 +1,13 @@
 package io.papermc.paper.registry.event;
 
+import io.papermc.paper.advancement.CriteriaTrigger;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
 import io.papermc.paper.registry.data.CowVariantRegistryEntry;
+import io.papermc.paper.registry.data.CriteriaTriggerRegistryEntry;
 import io.papermc.paper.registry.data.DamageTypeRegistryEntry;
 import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.FrogVariantRegistryEntry;
@@ -48,6 +50,7 @@ public final class RegistryEvents {
 
     // Start generate - RegistryEvents
     public static final RegistryEventProvider<GameEvent, GameEventRegistryEntry.Builder> GAME_EVENT = create(RegistryKey.GAME_EVENT);
+    public static final RegistryEventProvider<CriteriaTrigger<?>, CriteriaTriggerRegistryEntry.Builder<?>> TRIGGER_TYPE = create(RegistryKey.TRIGGER_TYPE);
     public static final RegistryEventProvider<TrimMaterial, TrimMaterialRegistryEntry.Builder> TRIM_MATERIAL = create(RegistryKey.TRIM_MATERIAL);
     public static final RegistryEventProvider<TrimPattern, TrimPatternRegistryEntry.Builder> TRIM_PATTERN = create(RegistryKey.TRIM_PATTERN);
     public static final RegistryEventProvider<DamageType, DamageTypeRegistryEntry.Builder> DAMAGE_TYPE = create(RegistryKey.DAMAGE_TYPE);

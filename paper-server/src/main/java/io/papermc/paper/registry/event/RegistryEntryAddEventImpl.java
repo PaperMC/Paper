@@ -13,7 +13,7 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.resources.RegistryOps;
 import org.bukkit.Keyed;
 
-public record RegistryEntryAddEventImpl<T, B extends RegistryBuilder<T>>(
+public record RegistryEntryAddEventImpl<T, B extends RegistryBuilder<? extends T>>(
     TypedKey<T> key,
     B builder,
     RegistryKey<T> registryKey,
