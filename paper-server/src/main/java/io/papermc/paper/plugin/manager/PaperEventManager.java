@@ -18,6 +18,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,12 +28,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
-class PaperEventManager {
+public class PaperEventManager {
 
     private final Server server;
 
     public PaperEventManager(Server server) {
         this.server = server;
+        try {
+            Event.setEventCaller(MethodHandles.lookup()
+                .bind(this, "callEvent", MethodType.methodType(void.class, Event.class)));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // SimplePluginManager

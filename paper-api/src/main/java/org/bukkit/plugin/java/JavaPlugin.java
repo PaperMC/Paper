@@ -61,7 +61,7 @@ public abstract class JavaPlugin extends PluginBase {
         if (this.getClass().getClassLoader() instanceof io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader configuredPluginClassLoader) {
             configuredPluginClassLoader.init(this);
         } else {
-            throw new IllegalStateException("JavaPlugin requires to be created by a valid classloader.");
+            // throw new IllegalStateException("JavaPlugin requires to be created by a valid classloader.");
         }
     }
 
