@@ -117,6 +117,10 @@ public class GeneratedKeyType<T> extends SimpleGenerator {
             typeBuilder.addField(fieldBuilder.build());
         }
 
+        if (allExperimental && typeBuilder.fieldSpecs.isEmpty()) {
+            allExperimental = false;
+        }
+
         if (allExperimental) {
             typeBuilder.addAnnotation(EXPERIMENTAL_API_ANNOTATION);
             createMethod.addAnnotation(EXPERIMENTAL_API_ANNOTATION);
