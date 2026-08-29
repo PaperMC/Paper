@@ -6,6 +6,7 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.WritableCraftRegistry;
 import io.papermc.paper.registry.data.util.Conversions;
+import io.papermc.paper.registry.event.PaperRegistryRetriever;
 import io.papermc.paper.registry.event.RegistryEntryAddEventImpl;
 import io.papermc.paper.registry.event.RegistryComposeEventImpl;
 import java.util.function.BiFunction;
@@ -103,11 +104,11 @@ public sealed interface RegistryEntryMeta<M, A extends Keyed> permits RegistryEn
     ) implements ServerSide<M, A> {
 
         public RegistryEntryAddEventImpl<A, B> createEntryAddEvent(final TypedKey<A> key, final B initialBuilder, final Conversions conversions) {
-            return new RegistryEntryAddEventImpl<>(key, initialBuilder, this.apiKey(), conversions);
+            return new RegistryEntryAddEventImpl<>(key, initialBuilder, this.apiKey(), conversions, new PaperRegistryRetriever(conversions));
         }
 
         public RegistryComposeEventImpl<A, B> createPostLoadEvent(final WritableCraftRegistry<M, A, B> writableRegistry, final Conversions conversions) {
-            return new RegistryComposeEventImpl<>(this.apiKey(), writableRegistry.createApiWritableRegistry(conversions), conversions);
+            return new RegistryComposeEventImpl<>(this.apiKey(), writableRegistry.createApiWritableRegistry(conversions), conversions, new PaperRegistryRetriever(conversions));
         }
 
         @Override
