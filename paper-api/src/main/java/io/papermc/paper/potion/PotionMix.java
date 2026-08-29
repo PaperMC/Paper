@@ -12,8 +12,11 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a potion mix made in a Brewing Stand.
+ *
+ * @deprecated Fully replaced by {@link org.bukkit.inventory.BrewingRecipe}.
  */
 @NullMarked
+@Deprecated(since = "26.3", forRemoval = true)
 public final class PotionMix implements Keyed {
 
     private final NamespacedKey key;

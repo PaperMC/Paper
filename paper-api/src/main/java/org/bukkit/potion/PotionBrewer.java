@@ -1,11 +1,16 @@
 package org.bukkit.potion;
 
 import java.util.Collection;
+import org.bukkit.Bukkit;
+import org.bukkit.inventory.BrewingRecipe;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Used to manage custom {@link io.papermc.paper.potion.PotionMix}s.
+ * @deprecated since mojang introduced data driven brewing recipes, this type no longer offers anything that isnt
+ * covered by existing recipe and potion type api.
  */
+@Deprecated(since = "26.3", forRemoval = true)
 public interface PotionBrewer {
 
     // Paper start
@@ -13,19 +18,34 @@ public interface PotionBrewer {
      * Adds a new potion mix recipe.
      *
      * @param potionMix the potion mix to add
+     * @deprecated fully replaced by {@link org.bukkit.inventory.BrewingRecipe}
      */
-    void addPotionMix(@NotNull io.papermc.paper.potion.PotionMix potionMix);
+    @Deprecated(since = "26.3", forRemoval = true)
+    default void addPotionMix(@NotNull io.papermc.paper.potion.PotionMix potionMix) {
+        Bukkit.getServer().addRecipe(new BrewingRecipe(
+            potionMix.getKey(),
+            potionMix.getResult(),
+            potionMix.getInput(),
+            potionMix.getIngredient()
+        ));
+    }
 
     /**
      * Removes a potion mix recipe.
      *
      * @param key the key of the mix to remove
+     * @deprecated fully replaced by {@link org.bukkit.inventory.BrewingRecipe}
      */
-    void removePotionMix(@NotNull org.bukkit.NamespacedKey key);
+    @Deprecated(since = "26.3", forRemoval = true)
+    default void removePotionMix(@NotNull org.bukkit.NamespacedKey key) {
+        Bukkit.getServer().removeRecipe(key);
+    }
 
     /**
      * Resets potion mixes to their default, removing all custom ones.
+     * @deprecated fully replaced by {@link org.bukkit.inventory.BrewingRecipe}
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     void resetPotionMixes();
     // Paper end
 

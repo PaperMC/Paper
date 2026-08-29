@@ -2,7 +2,16 @@ package io.papermc.paper.potion;
 
 import com.google.common.base.Preconditions;
 import java.util.Collection;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.item.crafting.BrewingRecipe;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.RecipeType;
 import org.bukkit.NamespacedKey;
 import org.bukkit.potion.PotionBrewer;
 import org.bukkit.potion.PotionEffect;
@@ -40,17 +49,23 @@ public class PaperPotionBrewer implements PotionBrewer {
     }
 
     @Override
-    public void addPotionMix(final PotionMix potionMix) {
-        this.minecraftServer.potionBrewing().addPotionMix(potionMix);
-    }
-
-    @Override
-    public void removePotionMix(final NamespacedKey key) {
-        this.minecraftServer.potionBrewing().removePotionMix(key);
-    }
-
-    @Override
     public void resetPotionMixes() {
-        this.minecraftServer.potionBrewing = this.minecraftServer.potionBrewing().reload(this.minecraftServer.getWorldData().enabledFeatures());
+        final RecipeManager recipeManager = MinecraftServer.getServer().getRecipeManager();
+        final RegistryAccess.Frozen registryAccess = MinecraftServer.getServer().registryAccess();
+
+        final Collection<RecipeHolder<BrewingRecipe>> brewingRecipes = recipeManager.recipes.byType(RecipeType.BREWING);
+
+        // Completely clear brewing recipes.
+        brewingRecipes.forEach(r -> recipeManager.recipes.byKey.remove(r.id()));
+        brewingRecipes.clear();
+
+        // Restore recipe manager state for brewing from registries.
+        registryAccess.get(Registries.RECIPE)
+            .map(Holder.Reference::value)
+            .stream()
+            .flatMap(HolderLookup::listElements)
+            .filter(r -> r.value().getType() == RecipeType.BREWING)
+            .forEach(r -> recipeManager.recipes.addRecipe(new RecipeHolder<>(r.key(), r.value())));
+        recipeManager.finalizeRecipeLoading();
     }
 }
