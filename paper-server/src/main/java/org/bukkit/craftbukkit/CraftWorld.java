@@ -77,6 +77,7 @@ import net.minecraft.world.level.chunk.ImposterProtoChunk;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.gamerules.GameRule;
+import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.phys.AABB;
@@ -264,8 +265,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (biomeSource instanceof org.bukkit.craftbukkit.generator.CustomWorldChunkManager customBiomeSource) {
             biomeSource = customBiomeSource.vanillaBiomeSource;
         }
-        final net.minecraft.world.level.biome.Climate.Sampler sampler = serverCache.randomState().sampler();
-        final net.minecraft.world.level.biome.BiomeResolver resolver = biomeSource.createResolver(sampler);
+        // TODO - snapshot - not sure about createCachingResolver or createUncachedResolver
+        final net.minecraft.world.level.biome.BiomeResolver resolver = biomeSource.createCachingResolver(serverCache.randomState()); //biomeSource.createResolver(sampler);
 
         final List<Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
             .map(CraftBiome::minecraftHolderToBukkit)
@@ -287,7 +288,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public boolean hasStructureAt(final io.papermc.paper.math.Position position, final Structure structure) {
         return this.world.structureManager().getStructureWithPieceAt(
-            io.papermc.paper.util.MCUtil.toBlockPos(position),
+            position.blockX(),
+            position.blockY(),
+            position.blockZ(),
             CraftStructure.bukkitToMinecraft(structure)
         ).isValid();
     }
@@ -1876,9 +1879,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             holders.add(CraftBiome.bukkitToMinecraftHolder(biome));
         }
 
-        Climate.Sampler sampler = this.getHandle().getChunkSource().randomState().sampler();
+        final RandomState randomState = this.getHandle().getChunkSource().randomState();
         // The given predicate is evaluated once at the start of the search, so performance isn't a large concern.
-        Pair<BlockPos, Holder<net.minecraft.world.level.biome.Biome>> found = this.getHandle().getChunkSource().getGenerator().getBiomeSource().findClosestBiome3d(originPos, radius, horizontalInterval, verticalInterval, holders::contains, sampler, this.getHandle());
+        Pair<BlockPos, Holder<net.minecraft.world.level.biome.Biome>> found = this.getHandle().getChunkSource().getGenerator().getBiomeSource().findClosestBiome3d(originPos, radius, horizontalInterval, verticalInterval, holders::contains, randomState, this.getHandle());
         if (found == null) {
             return null;
         }
@@ -1966,7 +1969,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     private List<GeneratedStructure> getStructures(int x, int z, Predicate<net.minecraft.world.level.levelgen.structure.Structure> predicate) {
         List<GeneratedStructure> structures = new ArrayList<>();
-        for (StructureStart start : this.getHandle().structureManager().startsForStructure(new ChunkPos(x, z), predicate)) {
+        for (StructureStart start : this.getHandle().structureManager().startsForStructure(x, z, predicate)) {
             structures.add(new CraftGeneratedStructure(start));
         }
 
