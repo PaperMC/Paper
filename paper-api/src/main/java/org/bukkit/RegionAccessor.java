@@ -1,6 +1,8 @@
 package org.bukkit;
 
 import io.papermc.paper.world.MoonPhase;
+import io.papermc.paper.world.attribute.EnvironmentalAttribute;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
@@ -562,9 +564,10 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
 
     /**
      * @return the current moon phase at the current time in the world
-     * @apiNote the returned value may be inaccurate in custom biome using environmental attribute override
+     * @deprecated use {@link #getEnvironmentalAttribute(EnvironmentalAttributeType)} with {@link io.papermc.paper.world.attribute.EnvironmentalAttributeTypes#MOON_PHASE}
      */
     @NotNull
+    @Deprecated(since = "26.2")
     MoonPhase getMoonPhase();
 
     /**
@@ -593,4 +596,6 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @return collides or not
      */
     boolean hasCollisionsIn(@NotNull org.bukkit.util.BoundingBox boundingBox);
+
+    <T> @NotNull EnvironmentalAttribute<T> getEnvironmentalAttribute(@NotNull EnvironmentalAttributeType<T> type);
 }

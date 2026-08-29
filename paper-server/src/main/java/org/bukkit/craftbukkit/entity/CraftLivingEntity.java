@@ -3,13 +3,17 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.entity.ai.PaperMemoryKey;
 import io.papermc.paper.world.damagesource.CombatTracker;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
@@ -29,6 +33,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
@@ -99,6 +104,7 @@ import org.bukkit.potion.PotionType;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NonNull;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
@@ -877,6 +883,76 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public float getSoundPitch() {
         return this.getHandle().getVoicePitch();
+    }
+
+    @Override
+    public @Unmodifiable Collection<io.papermc.paper.entity.ai.MemoryKey> getAvailableMemories() {
+        final Set<io.papermc.paper.entity.ai.MemoryKey> types = new HashSet<>();
+        this.getHandle().getBrain().forEach(new CraftMemoryKey.TypeVisitor() {
+            @Override
+            public <U> void visitType(final MemoryModuleType<U> type) {
+                types.add(PaperMemoryKey.minecraftToBukkit(type));
+            }
+        });
+        return Collections.unmodifiableCollection(types);
+    }
+
+    @Override
+    public boolean hasMemory(final io.papermc.paper.entity.ai.MemoryKey memoryKey) {
+        return this.getHandle().getBrain().hasMemoryValue(PaperMemoryKey.bukkitToMinecraft(memoryKey));
+    }
+
+    @Override
+    public <T> T getMemory(final io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey) {
+        return this.getMemory0((PaperMemoryKey.ValuedImpl<T, ?>) memoryKey);
+    }
+
+    @Override
+    public long getTimeRemaining(final io.papermc.paper.entity.ai.MemoryKey memoryKey) {
+        final MemoryModuleType<?> type = PaperMemoryKey.bukkitToMinecraft(memoryKey);
+        final Optional<?> currentMemory = this.getHandle().getBrain().getMemoryInternal(type);
+        if (currentMemory == null || currentMemory.isEmpty()) {
+            return 0L;
+        }
+        return this.getHandle().getBrain().getTimeUntilExpiry(type);
+    }
+
+    public <API, NMS> API getMemory0(io.papermc.paper.entity.ai.PaperMemoryKey.ValuedImpl<API, NMS> memoryKey) {
+        final Optional<NMS> memory = this.getHandle().getBrain().getMemoryInternal(memoryKey.getHandle());
+        return memory != null ? memory.map(a -> memoryKey.getConverter().fromVanilla(a)).orElse(null) : null;
+    }
+
+    @Override
+    public void setMemory(final io.papermc.paper.entity.ai.MemoryKey.NonValued memoryKey) {
+        this.setMemory0((PaperMemoryKey<?, ?>) memoryKey, null, OptionalLong.empty());
+    }
+
+    @Override
+    public void setMemory(final io.papermc.paper.entity.ai.MemoryKey.NonValued memoryKey, final long expirationTime) {
+        this.setMemory0((PaperMemoryKey<?, ?>) memoryKey, null, OptionalLong.of(expirationTime));
+    }
+
+    @Override
+    public <T> void setMemory(final io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey, final T value) {
+        this.setMemory0((PaperMemoryKey.ValuedImpl<T, ?>) memoryKey, value, OptionalLong.empty());
+    }
+
+    @Override
+    public <T> void setMemory(final io.papermc.paper.entity.ai.MemoryKey.Valued<T> memoryKey, final T value, final long expirationTime) {
+        this.setMemory0((PaperMemoryKey.ValuedImpl<T, ?>) memoryKey, value, OptionalLong.of(expirationTime));
+    }
+
+    private <API, NMS> void setMemory0(PaperMemoryKey<API, NMS> memoryKey, API value, final OptionalLong expirationTime) {
+        if (expirationTime.isPresent()) {
+            this.getHandle().getBrain().setMemoryWithExpiry(memoryKey.getHandle(), memoryKey.getConverter().toVanilla(value), expirationTime.getAsLong());
+        } else {
+            this.getHandle().getBrain().setMemory(memoryKey.getHandle(), memoryKey.getConverter().toVanilla(value));
+        }
+    }
+
+    @Override
+    public void forgetMemory(io.papermc.paper.entity.ai.MemoryKey memoryKey) {
+        this.getHandle().getBrain().eraseMemory(PaperMemoryKey.bukkitToMinecraft(memoryKey));
     }
 
     @Override
