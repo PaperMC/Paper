@@ -54,7 +54,7 @@ public class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMin
             this.getHandle().getSpawner().nextSpawnData = new SpawnData();
             return;
         }
-        Preconditions.checkArgument(entityType != EntityType.UNKNOWN, "Can't spawn EntityType %s from mob spawners!", entityType);
+        Preconditions.checkArgument(entityType != CraftEntityType.LegacyUnknownImpl.INSTANCE, "Can't spawn EntityType %s from mob spawners!", entityType);
 
         RandomSource rand = this.getHandle().level().getRandom();
         this.getHandle().getSpawner().setEntityId(CraftEntityType.bukkitToMinecraft(entityType), this.getHandle().level(), rand, this.getHandle().blockPosition());

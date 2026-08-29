@@ -26,9 +26,9 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.entity.poi.PoiTypes;
 import io.papermc.paper.item.MapPostProcessing;
-import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.world.WeatheringCopperState;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
@@ -116,11 +116,10 @@ public final class Rewriters {
     private static void bootstrapApi(PatternSourceSetRewriter sourceSet) {
         sourceSet
             .register("PotionType", PotionType.class, new EnumRegistryRewriter<>(Registries.POTION))
-            .register("EntityType", EntityType.class, new EntityTypeRewriter())
             .register("RemovalReason", RemovalReason.class, new EnumCloneRewriter<>(net.minecraft.world.entity.Entity.RemovalReason.class) {
                 @Override
                 protected EnumValue.Builder rewriteEnumValue(net.minecraft.world.entity.Entity.RemovalReason reason) {
-                    return super.rewriteEnumValue(reason).arguments(Boolean.toString(reason.shouldDestroy()), Boolean.toString(reason.shouldSave()));
+                    return super.rewriteEnumValue(reason).arguments(String.valueOf(reason.shouldDestroy()), String.valueOf(reason.shouldSave()));
                 }
             })
             .register("DisplaySlot", DisplaySlot.class, new EnumCloneRewriter<>(net.minecraft.world.scores.DisplaySlot.class) {
@@ -245,6 +244,7 @@ public final class Rewriters {
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
             // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) // - disable for now, lynx want the generic type
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
+            .register("EntityType", EntityType.class, new EntityTypeRewriter())
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
             .register("Tag", Tag.class, new TagRewriter())
             .register("MapPalette#colors", MapPalette.class, new MapPaletteRewriter());

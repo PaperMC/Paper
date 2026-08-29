@@ -135,10 +135,6 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         if (bukkit instanceof Registry.SimpleRegistry<?> simple) {
             Class<?> bClass = simple.getType();
 
-            if (bClass == EntityType.class) {
-                return bukkit.get(FieldRename.ENTITY_TYPE_RENAME.apply(namespacedKey, apiVersion));
-            }
-
             if (bClass == Particle.class) {
                 return bukkit.get(FieldRename.PARTICLE_TYPE_RENAME.apply(namespacedKey, apiVersion));
             }

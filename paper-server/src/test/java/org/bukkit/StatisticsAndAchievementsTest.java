@@ -1,8 +1,5 @@
 package org.bukkit;
 
-import static org.bukkit.support.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.collect.HashMultiset;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.stats.StatType;
@@ -11,6 +8,13 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
+import static org.bukkit.support.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 @AllFeatures
 public class StatisticsAndAchievementsTest {
 
@@ -18,10 +22,8 @@ public class StatisticsAndAchievementsTest {
     public void verifyEntityMapping() {
         for (Statistic statistic : Statistic.values()) {
             if (statistic.getType() == Statistic.Type.ENTITY) {
-                for (EntityType entity : EntityType.values()) {
-                    if (entity.getName() != null) {
-                        assertNotNull(CraftStatistic.getEntityStatistic(statistic, entity), statistic + " missing for " + entity);
-                    }
+                for (EntityType<?> type : Registry.ENTITY_TYPE) {
+                    assertNotNull(CraftStatistic.getEntityStatistic(statistic, type), statistic + " missing for " + type);
                 }
             }
         }
