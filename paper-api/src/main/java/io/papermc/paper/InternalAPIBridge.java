@@ -18,7 +18,6 @@ import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.kyori.adventure.util.Services;
 import org.bukkit.GameRule;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Statistic;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.block.Biome;
 import org.bukkit.command.CommandSender;
@@ -33,6 +32,7 @@ import org.bukkit.entity.SpawnCategory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scoreboard.Criteria;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
@@ -112,8 +112,6 @@ public interface InternalAPIBridge {
 
     Attributable getDefaultEntityAttributes(NamespacedKey entityKey);
 
-    String getStatisticCriteriaKey(Statistic statistic);
-
     LifecycleEventManager<Plugin> createPluginLifecycleEventManager(JavaPlugin plugin, BooleanSupplier registrationCheck);
 
     ItemStack createEmptyStack();
@@ -121,4 +119,9 @@ public interface InternalAPIBridge {
     Component resolveWithContext(Component component, @Nullable CommandSender context, @Nullable Entity scoreboardSubject, boolean bypassPermissions) throws IOException;
 
     ComponentFlattener componentFlattener();
+
+    /**
+     * Gets the criteria for the non-stat built-in scoreboard criteria.
+     */
+    Criteria getCriteria(String key);
 }

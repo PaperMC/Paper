@@ -13,7 +13,7 @@ import java.util.Objects;
 
 final class CraftObjective extends CraftScoreboardComponent implements Objective {
     private final net.minecraft.world.scores.Objective objective;
-    private final CraftCriteria criteria;
+    private final Criteria criteria;
 
     CraftObjective(CraftScoreboard scoreboard, net.minecraft.world.scores.Objective objective) {
         super(scoreboard);
@@ -66,7 +66,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     public String getCriteria() {
         this.checkState();
 
-        return this.criteria.name;
+        return this.criteria.getName();
     }
 
     @Override
@@ -80,7 +80,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     public boolean isModifiable() {
         this.checkState();
 
-        return !this.criteria.criteria.isReadOnly();
+        return !this.criteria.isReadOnly();
     }
 
     @Override
