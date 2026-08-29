@@ -373,6 +373,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public boolean isInvulnerableTo(final org.bukkit.damage.@NonNull DamageSource source) {
+        return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), ((CraftDamageSource) source).getHandle());
+    }
+
+    @Override
     public boolean isInvulnerable() {
         return this.getHandle().isInvulnerableTo((ServerLevel) this.getHandle().level(), this.getHandle().damageSources().generic());
     }
