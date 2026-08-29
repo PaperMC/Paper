@@ -463,7 +463,7 @@ index 271ed1128959287f6c1b6ca59ded377b88f5afff..f03fa06c0ba56f7f5e1e45bc1568a490
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index a5792bc27fdc85ecf388ab44c0b1b3055fc41d21..4a18f74c7513f0ac6a3415163165d9239ee5b567 100644
+index 4b74c91b47318d048abc53952ebeae7615f50524..f8f479bd0ce2498c0cf4beab07d961247735e23c 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -383,6 +383,15 @@ public abstract class Entity
@@ -541,19 +541,23 @@ index 2837e630ae414bd37c4afc72c83a78e4d38a945a..3a4da514c163e7565fc241835db52c46
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index fd17e62b99fd59130739b4c8c6c0c49122aec094..c2dd2da4bfb7d65ad2730ba1ce771e2b488beda4 100644
+index fd17e62b99fd59130739b4c8c6c0c49122aec094..8e11a693c94642ba005038acf746f49557ef3c18 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -215,6 +215,20 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+@@ -215,6 +215,24 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
          return this.lookControl;
      }
  
 +    // Paper start
++    private int inactiveTickDisableCounter;
++    private io.papermc.paper.configuration.type.number.IntOr.Disabled throttleRate = this.level().paperConfig().entities.behavior.inactiveMobGoalSelectorThrottleRate;
++
 +    @Override
 +    public void inactiveTick() {
 +        super.inactiveTick();
 +        if (!this.aware) return; // Paper - Do not tick AI for inactive unaware mobs
-+        if (this.goalSelector.inactiveTick()) {
++        boolean isThrottled = throttleRate.enabled() && inactiveTickDisableCounter++ % throttleRate.intValue() != 0; // Paper - Throttle inactive goal selector ticking
++        if (this.goalSelector.inactiveTick() && !isThrottled) {
 +            this.goalSelector.tick();
 +        }
 +        if (this.targetSelector.inactiveTick()) {
