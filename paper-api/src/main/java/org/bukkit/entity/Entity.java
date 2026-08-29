@@ -7,6 +7,8 @@ import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.math.Angle;
+import java.util.function.Predicate;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.event.HoverEventSource;
 import net.kyori.adventure.util.TriState;
@@ -1359,4 +1361,39 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     void broadcastHurtAnimation(@NotNull java.util.Collection<Player> players);
     // Paper end - broadcast hurt animation
+
+    /**
+     * Gets if the entity is allied to the given entity.
+     *
+     * @param other the other entity
+     * @return true if the entity is allied to the given entity
+     */
+    boolean isAlliedTo(@NotNull Entity other);
+
+    /**
+     * Gets the current additional rule of alliance with any entity.
+     * <br>
+     * This is an additional rule from the vanilla behaviour for any entity, like share a team.
+     * <br>
+     * This rule is not (currently) persistent.
+     *
+     * @return additional rule of alliance
+     * @see #addAdditionalAlliedRule(Key, Predicate)
+     */
+    @Nullable Predicate<Entity> getAdditionalAlliedRule(@NotNull Key key);
+
+    /**
+     * Sets the current additional rule of alliance with any entity.
+     *
+     * @param key the key of the additional rule
+     * @param predicate the additional rule of alliance with any entity
+     */
+    void addAdditionalAlliedRule(@NotNull Key key, @NotNull Predicate<Entity> predicate);
+
+    /**
+     * Remove the additional rule of alliance with any entity.
+     *
+     * @param key the key of the additional rule
+     */
+    void removeAdditionalAlliedRule(@NotNull Key key);
 }
