@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.Optionull;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
@@ -50,6 +51,7 @@ public class CraftPhantom extends CraftMob implements Phantom, CraftEnemy {
 
     @Override
     public void setAnchorLocation(Location location) {
+        Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Anchor location must be in same world");
         this.getHandle().anchorPoint = location == null ? null : CraftLocation.toBlockPos(location);
     }
 }

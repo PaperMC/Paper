@@ -32,7 +32,7 @@ public final class PluginConfigConstraints {
                 return value -> {
                     if (value != null) {
                         if (RESERVED_KEYS.contains(value.toLowerCase(Locale.ROOT))) {
-                            throw new SerializationException("Restricted name, cannot use '%s' as a plugin name.".formatted(data));
+                            throw new SerializationException("Restricted name, cannot use '%s' as a plugin name.".formatted(value));
                         } else if (value.indexOf(' ') != -1) {
                             // For legacy reasons, the space condition has a separate exception message.
                             throw new SerializationException("Restricted name, cannot use 0x20 (space character) in a plugin name.");

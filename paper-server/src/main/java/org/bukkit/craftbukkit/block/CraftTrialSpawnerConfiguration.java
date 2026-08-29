@@ -238,7 +238,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
             if (snapshot != null) {
                 SpawnRule rule = entry.value().customSpawnRules().map(CraftCreatureSpawner::fromMinecraftRule).orElse(null);
-                entries.add(new SpawnerEntry(snapshot, entry.weight(), rule));
+                entries.add(new SpawnerEntry(snapshot, entry.weight(), rule, CraftCreatureSpawner.getEquipment(entry.value().equipment())));
             }
         }
         return entries;

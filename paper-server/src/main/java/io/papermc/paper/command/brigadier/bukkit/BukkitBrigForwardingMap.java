@@ -69,8 +69,8 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
 
         for (CommandNode<CommandSourceStack> child : this.getDispatcher().getRoot().getChildren()) {
             // If child is a bukkit command node, we can convert it!
-            if (child instanceof BukkitCommandNode bukkitCommandNode) {
-                return bukkitCommandNode.getBukkitCommand().equals(value);
+            if (child instanceof BukkitCommandNode bukkitCommandNode && bukkitCommandNode.getBukkitCommand().equals(value)) {
+                return true;
             }
         }
 

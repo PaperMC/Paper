@@ -124,8 +124,7 @@ final class VanillaWorldMigration {
             targetStorage.set(PaperWorldPDC.TYPE, pdc);
             targetStorage.saveAndJoin();
 
-            WorldMigrationSupport.clearLegacyPdc(levelData);
-            context.rootAccess().saveLevelData(levelData);
+            context.rootAccess().saveLevelData(WorldMigrationSupport.clearLegacyPdc(levelData));
         }
     }
 

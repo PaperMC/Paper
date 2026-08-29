@@ -82,6 +82,9 @@ public class CraftPersistentDataContainer extends io.papermc.paper.persistence.P
         } else {
             this.customDataTags.forEach(target.customDataTags::putIfAbsent);
         }
+        if (target instanceof DirtyCraftPersistentDataContainer dirtyPDC) {
+            dirtyPDC.dirty(true);
+        }
     }
 
     @Override

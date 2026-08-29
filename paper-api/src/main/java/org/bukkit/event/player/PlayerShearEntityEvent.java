@@ -32,7 +32,7 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
         this.entity = entity;
         this.item = item;
         this.hand = hand;
-        this.drops = drops;
+        this.drops = List.copyOf(drops);
     }
 
     @ApiStatus.Internal

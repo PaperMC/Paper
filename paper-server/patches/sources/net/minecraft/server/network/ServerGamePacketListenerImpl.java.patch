@@ -388,7 +388,7 @@
          this.player.getRecipeBook().setBookSetting(packet.getBookType(), packet.isOpen(), packet.isFiltering());
      }
  
-@@ -591,25 +_,112 @@
+@@ -591,25 +_,107 @@
          }
      }
  
@@ -401,12 +401,7 @@
      public void handleCustomCommandSuggestions(final ServerboundCommandSuggestionPacket packet) {
 -        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
 +        // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level()); // Paper - AsyncTabCompleteEvent; run this async
-+        // CraftBukkit start
-+        if (!this.tabSpamThrottler.isIncrementAndUnderThreshold() && !this.server.getPlayerList().isOp(this.player.nameAndId()) && !this.server.isSingleplayerOwner(this.player.nameAndId())) { // Paper - configurable tab spam limits
-+            this.disconnectAsync(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - Kick event cause // Paper - add proper async disconnect
-+            return;
-+        }
-+        // CraftBukkit end
++        if (this.detectRateSpam(this.tabSpamThrottler)) return; // Paper
 +        // Paper start - Don't suggest if tab-complete is disabled
 +        if (org.spigotmc.SpigotConfig.tabComplete < 0) {
 +            return;
@@ -1563,7 +1558,7 @@
                  return Optional.empty();
              }
  
-@@ -1669,31 +_,91 @@
+@@ -1669,31 +_,94 @@
          return false;
      }
  
@@ -1610,6 +1605,9 @@
      private void broadcastChatMessage(final PlayerChatMessage message) {
 -        this.server.getPlayerList().broadcastChatMessage(message, this.player, ChatType.bind(ChatType.CHAT, this.player));
 -        this.detectChatRateSpam();
+-    }
+-
+-    private void detectRateSpam(final TickThrottler throttler) {
 +        // CraftBukkit start
 +        String rawMessage = message.signedContent();
 +        if (rawMessage.isEmpty()) {
@@ -1625,13 +1623,10 @@
 +        // this.server.getPlayerList().broadcastChatMessage(message, this.player, ChatType.bind(ChatType.CHAT, this.player));
 +        // CraftBukkit end
 +        this.detectChatRateSpam(rawMessage); // Spigot - spam exclusions
-     }
- 
--    private void detectRateSpam(final TickThrottler throttler) {
--        throttler.increment();
--        if (!throttler.isUnderThreshold()
-+    // Spigot start - spam exclusions
-+    private void detectRateSpam(final TickThrottler throttler, final String message) {
++    }
++
++    // Paper start - spam exclusions
++    private void detectRateMessageSpam(final TickThrottler throttler, final String message) {
 +        if (org.spigotmc.SpigotConfig.enableSpamExclusions) {
 +            for (String exclude : org.spigotmc.SpigotConfig.spamExclusions) {
 +                if (exclude != null && message.startsWith(exclude)) {
@@ -1639,29 +1634,36 @@
 +                }
 +            }
 +        }
-+        // Spigot end - spam exclusions
++        this.detectRateSpam(throttler);
++    }
++    // Paper end - spam exclusions
 +
-+        // CraftBukkit start - replaced with thread safe throttle
-+        // throttler.increment();
-+        if (!throttler.isIncrementAndUnderThreshold()
-+        // CraftBukkit end - replaced with thread safe throttle
++    private boolean detectRateSpam(final TickThrottler throttler) { // Paper - add result
+         throttler.increment();
+         if (!throttler.isUnderThreshold()
              && !this.server.getPlayerList().isOp(this.player.nameAndId())
              && !this.server.isSingleplayerOwner(this.player.nameAndId())) {
 -            this.disconnect(Component.translatable("disconnect.spam"));
 +            this.disconnectAsync(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause & add proper async disconnect
++            return true; // Paper
          }
-     }
- 
+-    }
+-
 -    private void detectCommandRateSpam() {
 -        this.detectRateSpam(this.commandSpamThrottler);
-+    private void detectCommandRateSpam(final String command) { // Spigot - spam exclusions
-+        this.detectRateSpam(this.commandSpamThrottler, "/" + command); // Spigot - spam exclusions
-     }
- 
+-    }
+-
 -    private void detectChatRateSpam() {
 -        this.detectRateSpam(this.chatSpamThrottler);
++        return false; // Paper
++    }
++
++    private void detectCommandRateSpam(final String command) { // Spigot - spam exclusions
++        this.detectRateMessageSpam(this.commandSpamThrottler, "/" + command); // Spigot - spam exclusions
++    }
++
 +    private void detectChatRateSpam(final String message) { // Spigot - spam exclusions
-+        this.detectRateSpam(this.chatSpamThrottler, message); // Spigot - spam exclusions
++        this.detectRateMessageSpam(this.chatSpamThrottler, message); // Spigot - spam exclusions
      }
  
      @Override
@@ -2290,18 +2292,11 @@
                  }
              }
          }
-@@ -1983,6 +_,14 @@
+@@ -1983,6 +_,7 @@
  
      @Override
      public void handlePlaceRecipe(final ServerboundPlaceRecipePacket packet) {
-+        // Paper start - auto recipe limit
-+        if (!org.bukkit.Bukkit.isPrimaryThread()) {
-+            if (!this.recipeSpamPackets.isIncrementAndUnderThreshold()) {
-+                this.disconnectAsync(net.minecraft.network.chat.Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause // Paper - add proper async disconnect
-+                return;
-+            }
-+        }
-+        // Paper end - auto recipe limit
++        if (!org.bukkit.Bukkit.isPrimaryThread() && this.detectRateSpam(this.recipeSpamPackets)) return; // Paper - auto recipe limit
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
          this.player.resetLastActionTime();
          if (!this.player.isSpectator() && this.player.containerMenu.containerId == packet.containerId()) {

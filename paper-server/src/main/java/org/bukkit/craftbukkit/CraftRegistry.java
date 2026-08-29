@@ -8,7 +8,6 @@ import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
 import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.util.Holderable;
-import io.papermc.paper.util.MCUtil;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -276,8 +275,6 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
     @Override
     public String toString() {
-        return "CraftRegistry{" +
-            "minecraftRegistry=" + minecraftRegistry.key() +
-            '}';
+        return "CraftRegistry{key=" + this.minecraftRegistry.key().identifier() + "}";
     }
 }

@@ -16,7 +16,7 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/net/minecraft/world/level/pathfinder/PathFinder.java b/net/minecraft/world/level/pathfinder/PathFinder.java
-index 53aa6995d18cae5663d392e606c049e2e9138a99..253074a0a14115cd3d18aaae6fa5822cf32346c9 100644
+index 53aa6995d18cae5663d392e606c049e2e9138a99..981b49d33e57c6399040eb5429d817cbd98f7d21 100644
 --- a/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/net/minecraft/world/level/pathfinder/PathFinder.java
 @@ -55,20 +55,24 @@ public class PathFinder {
@@ -90,12 +90,12 @@ index 53aa6995d18cae5663d392e606c049e2e9138a99..253074a0a14115cd3d18aaae6fa5822c
 -            return null;
 +        // Paper start - Perf: remove streams and optimize collection
 +        Path best = null;
-+        boolean entryListIsEmpty = reachedTargets.isEmpty();
-+        Comparator<Path> comparator = entryListIsEmpty
++        boolean emptyReachedTargets = reachedTargets.isEmpty();
++        Comparator<Path> comparator = !emptyReachedTargets
 +            ? Comparator.comparingInt(Path::getNodeCount)
 +            : Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount);
-+        for (Map.Entry<Target, BlockPos> entry : entryListIsEmpty ? targets : reachedTargets) {
-+            Path path = this.reconstructPath(entry.getKey().getBestNode(), entry.getValue(), !entryListIsEmpty);
++        for (Map.Entry<Target, BlockPos> entry : emptyReachedTargets ? targets : reachedTargets) {
++            Path path = this.reconstructPath(entry.getKey().getBestNode(), entry.getValue(), !emptyReachedTargets);
 +            if (best == null || comparator.compare(path, best) < 0) {
 +                best = path;
 +            }

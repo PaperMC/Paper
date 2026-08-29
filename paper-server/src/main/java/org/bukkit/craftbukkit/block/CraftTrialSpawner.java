@@ -29,8 +29,8 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
 
     protected CraftTrialSpawner(CraftTrialSpawner state, Location location) {
         super(state, location);
-        this.normalConfig = state.normalConfig;
-        this.ominousConfig = state.ominousConfig;
+        this.normalConfig = new CraftTrialSpawnerConfiguration(state.normalConfig.toMinecraft(), this.getSnapshot());
+        this.ominousConfig = new CraftTrialSpawnerConfiguration(state.ominousConfig.toMinecraft(), this.getSnapshot());
     }
 
     @Override

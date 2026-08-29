@@ -22,7 +22,7 @@ public class V31_AllowNetherPropertiesToConfig implements ConfigurationTransform
         final String raw = server.settings.getProperties().properties.getProperty("allow-nether");
         if (raw != null) {
             final ConfigurationNode node = root.node("misc", "enable-nether");
-            node.set(raw.equals("true"));
+            node.set(Boolean.parseBoolean(raw));
             server.settings.update((config) -> {
                 final Properties newProps = new Properties(config.properties);
                 newProps.remove("allow-nether");
