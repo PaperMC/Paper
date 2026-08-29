@@ -320,15 +320,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     // Paper end
 
     @Override
-    public InetSocketAddress getAddress() {
+    public SocketAddress getSocketAddress() {
         if (this.getHandle().connection == null) return null;
 
-        SocketAddress addr = this.getHandle().connection.getRemoteAddress();
-        if (addr instanceof InetSocketAddress) {
-            return (InetSocketAddress) addr;
-        } else {
-            return null;
-        }
+        return this.getHandle().connection.getRemoteAddress();
+    }
+
+    @Override
+    public InetSocketAddress getAddress() {
+        SocketAddress addr = this.getSocketAddress();
+        if (addr == null) return null;
+
+        if (addr instanceof InetSocketAddress inet) return inet;
+        return new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
     }
 
     // Paper start - Add API to get player's proxy address
