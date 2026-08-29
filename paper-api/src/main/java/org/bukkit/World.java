@@ -4,6 +4,8 @@ import io.papermc.paper.entity.poi.PoiSearchResult;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.math.Position;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeType;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeTypes;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -2829,16 +2831,18 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * transforming to zombified piglins.
      *
      * @return true if piglins will not transform to zombified piglins
-     * @apiNote the returned value may be inaccurate in custom biome using environmental attribute override
+     * @deprecated use {@link #getEnvironmentalAttribute(EnvironmentalAttributeType)} with {@link EnvironmentalAttributeTypes#PIGLINS_ZOMBIFY}
      */
+    @Deprecated(since = "26.2")
     public boolean isPiglinSafe();
 
     /**
      * Gets if this world allows players to charge and use respawn anchors.
      *
      * @return true if players can charge and use respawn anchors
-     * @apiNote the returned value may be inaccurate in custom biome using environmental attribute override
+     * @deprecated use {@link #getEnvironmentalAttribute(EnvironmentalAttributeType)} with {@link EnvironmentalAttributeTypes#RESPAWN_ANCHOR_WORKS}
      */
+    @Deprecated(since = "26.2")
     public boolean isRespawnAnchorWorks();
 
     /**
@@ -2846,8 +2850,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * raid.
      *
      * @return true if raids will be triggered
-     * @apiNote the returned value may be inaccurate in custom biome using environmental attribute override
+     * @deprecated use {@link #getEnvironmentalAttribute(EnvironmentalAttributeType)} with {@link EnvironmentalAttributeTypes#CAN_START_RAID}
      */
+    @Deprecated(since = "26.2")
     public boolean hasRaids();
 
     /**
@@ -2860,7 +2865,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * </ul>
      *
      * @return true if this world has the above mechanics
-     * @deprecated replaced by the gameplay/water_evaporates and gameplay/fast_lava environmental attributes
+     * @deprecated use {@link #getEnvironmentalAttribute(EnvironmentalAttributeType)} with {@link EnvironmentalAttributeTypes#WATER_EVAPORATES} and {@link EnvironmentalAttributeTypes#FAST_LAVA}
      */
     @Deprecated(since = "1.21.11")
     public boolean isUltraWarm();
