@@ -83,6 +83,13 @@ public interface ConsumeEffect {
          * @return teleportation diameter
          */
         float diameter();
+
+        /**
+         * If the teleport need to show a particle trail into the direction of the teleportation.
+         *
+         * @return true if the particle trail should be shown
+         */
+        boolean directionalParticles();
     }
 
     /**

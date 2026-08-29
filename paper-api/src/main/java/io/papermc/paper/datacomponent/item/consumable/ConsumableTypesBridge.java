@@ -29,4 +29,6 @@ interface ConsumableTypesBridge {
     ConsumeEffect.PlaySound playSoundEffect(Key sound);
 
     ConsumeEffect.TeleportRandomly teleportRandomlyEffect(float diameter);
+
+    ConsumeEffect.TeleportRandomly teleportRandomlyEffect(float diameter, boolean directionalParticles);
 }

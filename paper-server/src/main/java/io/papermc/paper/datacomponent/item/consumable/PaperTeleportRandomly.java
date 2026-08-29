@@ -10,4 +10,9 @@ public record PaperTeleportRandomly(
     public float diameter() {
         return this.internal.diameter();
     }
+
+    @Override
+    public boolean directionalParticles() {
+        return this.internal.directionalParticles();
+    }
 }

@@ -53,8 +53,13 @@ public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
 
     @Override
     public ConsumeEffect.TeleportRandomly teleportRandomlyEffect(final float diameter) {
+        return this.teleportRandomlyEffect(diameter, true);
+    }
+
+    @Override
+    public ConsumeEffect.TeleportRandomly teleportRandomlyEffect(final float diameter, final boolean directionalParticles) {
         return new PaperTeleportRandomly(
-            new net.minecraft.world.item.consume_effects.TeleportRandomlyConsumeEffect(requirePositive(diameter, "diameter"))
+            new net.minecraft.world.item.consume_effects.TeleportRandomlyConsumeEffect(requirePositive(diameter, "diameter"), directionalParticles)
         );
     }
 }
