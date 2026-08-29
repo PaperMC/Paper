@@ -2,9 +2,9 @@ package org.bukkit.craftbukkit.legacy.reroute;
 
 import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.base.Predicates;
+import io.papermc.paper.plugin.ApiVersion;
 import java.util.List;
 import java.util.Map;
-import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
@@ -20,12 +20,12 @@ public class InjectPluginVersionTest extends AbstractRerouteTest {
                                 "java/lang/Object",
                                 "getList",
                                 false,
-                                "(Ljava/lang/Object;Lorg/bukkit/craftbukkit/util/ApiVersion;)Ljava/util/List;",
+                                "(Ljava/lang/Object;Lio/papermc/paper/plugin/ApiVersion;)Ljava/util/List;",
                                 "org/bukkit/craftbukkit/legacy/reroute/InjectPluginVersionTest$InjectPluginVersionTestData",
                                 "getList",
                                 this.create(
                                         this.create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null),
-                                        this.create("Lorg/bukkit/craftbukkit/util/ApiVersion;", "Lorg/bukkit/craftbukkit/util/ApiVersion;", false, true, null)
+                                        this.create("Lio/papermc/paper/plugin/ApiVersion;", "Lio/papermc/paper/plugin/ApiVersion;", false, true, null)
                                 ),
                                 "Ljava/util/List;",
                                 true,
