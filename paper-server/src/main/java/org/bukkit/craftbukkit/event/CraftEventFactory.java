@@ -247,6 +247,7 @@ import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
 import org.bukkit.event.player.PlayerHarvestBlockEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemBreakEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerItemMendEvent;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
@@ -2424,5 +2425,14 @@ public class CraftEventFactory {
             return PrimedTnt.NO_FUSE;
         }
         return event.getFuseTime();
+    }
+
+    public static PlayerItemConsumeEvent callPlayerItemConsumeEvent(final ServerPlayer serverPlayer, final InteractionHand hand, final ItemStack stack) {
+        final org.bukkit.inventory.ItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(stack);
+        final org.bukkit.inventory.EquipmentSlot handSlot = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand);
+        final org.bukkit.event.player.PlayerItemConsumeEvent event = new org.bukkit.event.player.PlayerItemConsumeEvent(serverPlayer.getBukkitEntity(), craftItem, handSlot);
+        event.callEvent();
+
+        return event;
     }
 }
