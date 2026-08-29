@@ -96,16 +96,13 @@ public class CraftWorldInfo implements WorldInfo {
                 false,
                 net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(),
                 63,
-                net.minecraft.world.level.levelgen.NoiseRouterData.none(),
-                List.of(),
-                Optional.empty(),
-                List.of()
+                net.minecraft.world.level.levelgen.NoiseRouterData.none()
             );
         }
 
         final net.minecraft.world.level.biome.BiomeSource biomeSource = this.vanillaChunkGenerator.getBiomeSource();
-        final net.minecraft.world.level.biome.Climate.Sampler sampler = randomState.sampler();
-        final net.minecraft.world.level.biome.BiomeResolver resolver = biomeSource.createResolver(sampler);
+        // TODO - snapshot - not sure about createCachingResolver or createUncachedResolver
+        final net.minecraft.world.level.biome.BiomeResolver resolver = biomeSource.createCachingResolver(randomState);
 
         final java.util.List<org.bukkit.block.Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
             .map(CraftBiome::minecraftHolderToBukkit)
