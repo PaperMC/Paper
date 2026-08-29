@@ -547,8 +547,21 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public byte[] serializeEntity(org.bukkit.entity.Entity entity, EntitySerializationFlag... serializationFlags) {
+    public byte[] serializeEntity(org.bukkit.entity.Entity entity, boolean compress, EntitySerializationFlag... serializationFlags) {
         Preconditions.checkNotNull(entity, "null cannot be serialized");
+        CompoundTag entityTag = serializeEntityAsTag(entity, serializationFlags);
+        return MCUtil.serializeTagToBytes(entityTag, compress);
+    }
+
+    @Override
+    public void serializeEntity(org.bukkit.entity.Entity entity, java.io.OutputStream output, EntitySerializationFlag... serializationFlags) throws java.io.IOException {
+        Preconditions.checkNotNull(entity, "null cannot be serialized");
+        Preconditions.checkNotNull(output, "OutputStream cannot be null");
+        CompoundTag entityTag = serializeEntityAsTag(entity, serializationFlags);
+        MCUtil.serializeTag(entityTag, output);
+    }
+
+    private CompoundTag serializeEntityAsTag(org.bukkit.entity.Entity entity, EntitySerializationFlag... serializationFlags) {
         Preconditions.checkArgument(entity instanceof CraftEntity, "Only CraftEntities can be serialized");
 
         Set<EntitySerializationFlag> flags = Set.of(serializationFlags);
@@ -562,32 +575,32 @@ public final class CraftMagicNumbers implements UnsafeValues {
         (serializePassengers ? nmsEntity.getSelfAndPassengers() : Stream.of(nmsEntity)).forEach(e -> {
             // Ensure force flag is not needed
             Preconditions.checkArgument(
-                (e.getBukkitEntity().isValid() && e.getBukkitEntity().isPersistent()) || forceSerialization,
-                "Cannot serialize invalid or non-persistent entity %s(%s) without the FORCE flag",
-                e.getType().toShortString(),
-                e.getStringUUID()
+                    (e.getBukkitEntity().isValid() && e.getBukkitEntity().isPersistent()) || forceSerialization,
+                    "Cannot serialize invalid or non-persistent entity %s(%s) without the FORCE flag",
+                    e.getType().toShortString(),
+                    e.getStringUUID()
             );
 
             if (e instanceof Player) {
                 // Ensure player flag is not needed
                 Preconditions.checkArgument(
-                    allowPlayerSerialization,
-                    "Cannot serialize player(%s) without the PLAYER flag",
-                    e.getStringUUID()
+                        allowPlayerSerialization,
+                        "Cannot serialize player(%s) without the PLAYER flag",
+                        e.getStringUUID()
                 );
             } else {
                 // Ensure misc flag is not needed
                 Preconditions.checkArgument(
-                    nmsEntity.getType().canSerialize() || allowMiscSerialization,
-                    "Cannot serialize misc non-saveable entity %s(%s) without the MISC flag",
-                    e.getType().toShortString(),
-                    e.getStringUUID()
+                        nmsEntity.getType().canSerialize() || allowMiscSerialization,
+                        "Cannot serialize misc non-saveable entity %s(%s) without the MISC flag",
+                        e.getType().toShortString(),
+                        e.getStringUUID()
                 );
             }
         });
 
         try (final ProblemReporter.ScopedCollector problemReporter = new ProblemReporter.ScopedCollector(
-            () -> "serialiseEntity@" + entity.getUniqueId(), LOGGER
+                () -> "serialiseEntity@" + entity.getUniqueId(), LOGGER
         )) {
             final TagValueOutput output = TagValueOutput.createWithContext(problemReporter, nmsEntity.registryAccess());
             if (serializePassengers) {
@@ -603,27 +616,38 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     throw new IllegalArgumentException("Couldn't serialize entity");
                 }
             }
-            return MCUtil.serializeTagToBytes(output.buildResult());
+            return output.buildResult();
         }
     }
 
     @Override
-    public org.bukkit.entity.Entity deserializeEntity(byte[] data, World world, boolean preserveUUID, boolean preservePassengers) {
+    public org.bukkit.entity.Entity deserializeEntity(byte[] data, boolean decompress, World world, boolean preserveUUID, boolean preservePassengers) {
         Preconditions.checkNotNull(data, "null cannot be deserialized");
-        Preconditions.checkArgument(data.length > 0, "Cannot deserialize empty data");
+        Preconditions.checkNotNull(world, "World cannot be null");
+        CompoundTag entityTag = MCUtil.deserializeTagFromBytes(data, decompress);
+        return deserializeEntityFromTag(entityTag, world, preserveUUID, preservePassengers);
+    }
 
-        CompoundTag tag = MCUtil.deserializeTagFromBytes(data);
+    @Override
+    public org.bukkit.entity.Entity deserializeEntity(java.io.InputStream inputStream, World world, boolean preserveUUID, boolean preservePassengers) throws java.io.IOException {
+        Preconditions.checkNotNull(inputStream, "InputStream cannot be null");
+        Preconditions.checkNotNull(world, "World cannot be null");
+        CompoundTag entityTag = MCUtil.deserializeTag(inputStream);
+        return deserializeEntityFromTag(entityTag, world, preserveUUID, preservePassengers);
+    }
+
+    private org.bukkit.entity.Entity deserializeEntityFromTag(CompoundTag tag, World world, boolean preserveUUID, boolean preservePassengers) {
         int dataVersion = NbtUtils.getDataVersion(tag, 0);
         Preconditions.checkArgument(dataVersion <= Bukkit.getUnsafe().getDataVersion(), "Newer version! Server downgrades are not supported!");
         tag = PlatformHooks.get().convertNBT(References.ENTITY, MinecraftServer.getServer().getFixerUpper(), tag, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
         if (!preservePassengers) {
             tag.remove(Entity.TAG_PASSENGERS);
         }
-        net.minecraft.world.entity.Entity nmsEntity = deserializeEntity(tag, ((CraftWorld) world).getHandle(), preserveUUID);
+        net.minecraft.world.entity.Entity nmsEntity = deserializeEntityFromTag0(tag, ((CraftWorld) world).getHandle(), preserveUUID);
         return nmsEntity.getBukkitEntity();
     }
 
-    private net.minecraft.world.entity.Entity deserializeEntity(CompoundTag tag, ServerLevel world, boolean preserveUUID) {
+    private net.minecraft.world.entity.Entity deserializeEntityFromTag0(CompoundTag tag, ServerLevel world, boolean preserveUUID) {
         if (!preserveUUID) {
             // Generate a new UUID, so we don't have to worry about deserializing the same entity twice
             tag.remove(Entity.TAG_UUID);
@@ -645,7 +669,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 if (!(passenger instanceof final CompoundTag serializedPassenger)) {
                     continue;
                 }
-                final net.minecraft.world.entity.Entity passengerEntity = deserializeEntity(serializedPassenger, world, preserveUUID);
+                final net.minecraft.world.entity.Entity passengerEntity = deserializeEntityFromTag0(serializedPassenger, world, preserveUUID);
                 passengerEntity.startRiding(nmsEntity, true, true);
             }
         });
