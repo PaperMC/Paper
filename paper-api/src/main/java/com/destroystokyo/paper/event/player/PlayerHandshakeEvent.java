@@ -25,6 +25,7 @@ public class PlayerHandshakeEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
+    private final UUID connectionId;
     private final String originalHandshake;
     private final String originalSocketAddressHostname;
     private @Nullable String serverHostname;
@@ -42,9 +43,16 @@ public class PlayerHandshakeEvent extends Event implements Cancellable {
         this(originalHandshake, "127.0.0.1", cancelled);
     }
 
+    @Deprecated
     @ApiStatus.Internal
     public PlayerHandshakeEvent(final String originalHandshake, final String originalSocketAddressHostname, final boolean cancelled) {
+        this(UUID.randomUUID(), originalHandshake, originalSocketAddressHostname, cancelled);
+    }
+
+    @ApiStatus.Internal
+    public PlayerHandshakeEvent(final UUID connectionId, final String originalHandshake, final String originalSocketAddressHostname, final boolean cancelled) {
         super(true);
+        this.connectionId = connectionId;
         this.originalHandshake = originalHandshake;
         this.originalSocketAddressHostname = originalSocketAddressHostname;
         this.cancelled = cancelled;
@@ -57,6 +65,19 @@ public class PlayerHandshakeEvent extends Event implements Cancellable {
      */
     public String getOriginalHandshake() {
         return this.originalHandshake;
+    }
+
+    /**
+     * Gets the stable connection identifier associated with this handshake.
+     *
+     * <p>This identifier remains the same throughout the entire connection
+     * lifecycle and can be used to correlate this handshake with subsequent
+     * connection stages such as login and join.</p>
+     *
+     * @return the stable connection identifier
+     */
+    public UUID getConnectionId() {
+        return this.connectionId;
     }
 
     /**
