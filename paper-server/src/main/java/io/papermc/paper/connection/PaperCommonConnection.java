@@ -7,6 +7,7 @@ import io.papermc.paper.adventure.PaperAdventure;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Map;
+import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.minecraft.network.protocol.common.ClientboundCustomReportDetailsPacket;
 import net.minecraft.network.protocol.common.ClientboundServerLinksPacket;
@@ -103,6 +104,11 @@ public abstract class PaperCommonConnection<T extends ServerCommonPacketListener
     @Override
     public @Nullable InetSocketAddress getHAProxyAddress() {
         return this.packetListener.connection.haProxyAddress instanceof final InetSocketAddress inetSocketAddress ? inetSocketAddress : null;
+    }
+
+    @Override
+    public UUID getConnectionId() {
+        return this.packetListener.connection.getConnectionId();
     }
 
     @Override

@@ -56,9 +56,16 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
     private Object[] players;
 
     @ApiStatus.Internal
+    @Deprecated(forRemoval = true)
     public PaperServerListPingEvent(@NotNull StatusClient client, @NotNull net.kyori.adventure.text.Component motd, int numPlayers, int maxPlayers,
                                     @NotNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
-        super("", client.getAddress().getAddress(), motd, numPlayers, maxPlayers);
+        this(UUID.randomUUID(), client, motd, numPlayers, maxPlayers, version, protocolVersion, favicon);
+    }
+
+    @ApiStatus.Internal
+    public PaperServerListPingEvent(@NotNull UUID connectionId, @NotNull StatusClient client, @NotNull net.kyori.adventure.text.Component motd, int numPlayers, int maxPlayers,
+                                    @NotNull String version, int protocolVersion, @Nullable CachedServerIcon favicon) {
+        super(connectionId, "", client.getAddress().getAddress(), motd, numPlayers, maxPlayers);
         this.client = client;
         this.numPlayers = numPlayers;
         this.version = version;
