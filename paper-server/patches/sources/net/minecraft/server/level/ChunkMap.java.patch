@@ -165,21 +165,22 @@
              Optional<ChunkAccess> chunk = Optional.ofNullable(holder.getLatestChunk());
              Optional<LevelChunk> fullChunk = chunk.flatMap(
                  chunkAccess -> chunkAccess instanceof LevelChunk levelChunk ? Optional.of(levelChunk) : Optional.empty()
-@@ -922,14 +_,14 @@
+@@ -922,14 +_,15 @@
          return this.upgradeChunkTag(
              tag,
              -1,
 -            getChunkDataFixContextTag(this.level.dimension(), this.generator().getTypeNameForDataFixer()),
-+            getChunkDataFixContextTag(this.level.getTypeKey(), this.generator().getTypeNameForDataFixer()), // CraftBukkit
++            getChunkDataFixContextTag(this.level.dimension(), this.generator().getTypeNameForDataFixer(), this.level.getTypeKey()), // Paper - pass level stem
              SharedConstants.getCurrentVersion().dataVersion().version()
          );
      }
  
 -    public static CompoundTag getChunkDataFixContextTag(final ResourceKey<Level> dimension, final Optional<Identifier> generatorIdentifier) {
-+    public static CompoundTag getChunkDataFixContextTag(final ResourceKey<net.minecraft.world.level.dimension.LevelStem> stemKey, final Optional<Identifier> generatorIdentifier) { // CraftBukkit
++    public static CompoundTag getChunkDataFixContextTag(final ResourceKey<Level> dimension, final Optional<Identifier> generatorIdentifier, final ResourceKey<net.minecraft.world.level.dimension.LevelStem> stemKey) { // Paper - pass level stem
          CompoundTag contextTag = new CompoundTag();
 -        contextTag.putString("dimension", dimension.identifier().toString());
-+        contextTag.putString("dimension", stemKey.identifier().toString()); // CraftBukkit
++        contextTag.putString("dimension", stemKey.identifier().toString()); // Paper - pass level stem as dimension instead of passed dimension to run datafixers for non minecraft worlds.
++        contextTag.putString("level_identifier", dimension.identifier().toString()); // Paper - store dimension key for later lookup if needed.
          generatorIdentifier.ifPresent(identifier -> contextTag.putString("generator", identifier.toString()));
          return contextTag;
      }

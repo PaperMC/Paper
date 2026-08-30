@@ -16,7 +16,6 @@ import org.jspecify.annotations.Nullable;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#POTION_CONTENTS
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface PotionContents {
 
@@ -81,7 +80,6 @@ public interface PotionContents {
     @Contract(pure = true)
     Color computeEffectiveColor();
 
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<PotionContents> {
 

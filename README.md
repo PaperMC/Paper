@@ -1,4 +1,4 @@
-Paper [![Version](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fartifactory.papermc.io%2Fartifactory%2Funiverse%2Fio%2Fpapermc%2Fpaper%2Fpaper-api%2Fmaven-metadata.xml&strategy=highestVersion&filter=26.2*&label=version&color=%23344ceb
+Paper [![Version](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fartifactory.papermc.io%2Fartifactory%2Funiverse%2Fio%2Fpapermc%2Fpaper%2Fpaper-api%2Fmaven-metadata.xml&strategy=highestVersion&filter=26.2.*&label=version&color=%23344ceb
 )](https://papermc.io/downloads/paper)
 [![Paper Build Status](https://img.shields.io/github/actions/workflow/status/PaperMC/Paper/build.yml?branch=main)](https://github.com/PaperMC/Paper/actions)
 [![Discord](https://img.shields.io/discord/289587909051416579.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/papermc)
@@ -18,7 +18,7 @@ Paperclip is a jar file that you can download and run just like a normal jar fil
 
 Download Paper from our [downloads page](https://papermc.io/downloads/paper).
 
-Run the Paperclip jar directly from your server. Just like old times
+Run the Paperclip jar directly from your server. Just like old times.
 
 * Documentation on using Paper: [docs.papermc.io](https://docs.papermc.io)
 * For a sneak peek at upcoming features, [see here](https://github.com/PaperMC/Paper/projects)

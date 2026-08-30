@@ -1,14 +1,25 @@
+import io.papermc.paperweight.checkstyle.JavadocTag
 import paper.libs.com.google.gson.Gson
 
 plugins {
     `java-library`
     `maven-publish`
     idea
+    id("io.papermc.paperweight.paper-checkstyle")
 }
 
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+val projectCustomJavadocTags = setOf(
+    JavadocTag("apiNote", "a", "API Note:"),
+)
+
+paperCheckstyle {
+    customJavadocTags = projectCustomJavadocTags
+    directoriesToSkipFile = layout.projectDirectory.file(".checkstyle/ignored_directories.txt")
 }
 
 val annotationsVersion = "26.0.2"
@@ -92,6 +103,9 @@ dependencies {
     testImplementation("org.ow2.asm:asm-tree:9.9.1")
     mockitoAgent("org.mockito:mockito-core:5.22.0") { isTransitive = false } // configure mockito agent that is needed in newer java versions
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
+
+    // checkstyle
+    checkstyle(project(":paper-checkstyle"))
 }
 
 val generatedDir: java.nio.file.Path = layout.projectDirectory.dir("src/generated/java").asFile.toPath()
@@ -201,7 +215,7 @@ tasks.withType<Javadoc>().configureEach {
         "https://logging.apache.org/log4j/2.x/javadoc/log4j-api/",
         "https://www.javadocs.dev/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
-    options.tags("apiNote:a:API Note:")
+    options.tags(projectCustomJavadocTags.map { it.toOptionString() })
 
     inputs.files(javadocSourcepath).ignoreEmptyDirectories().withPropertyName(javadocSourcepath.name + "-configuration")
     val javadocSourcepathElements = javadocSourcepath.elements

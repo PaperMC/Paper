@@ -1,5 +1,6 @@
 package org.bukkit.tag;
 
+import io.papermc.paper.annotation.MinecraftVersionDependent;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Vanilla {@link DamageType} {@link Tag tags}.
  */
-@ApiStatus.Experimental
+@MinecraftVersionDependent
 public final class DamageTypeTags {
 
     // Start generate - DamageTypeTags

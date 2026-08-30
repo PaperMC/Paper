@@ -22,14 +22,12 @@ import static io.papermc.paper.util.BoundChecker.requirePositive;
 /**
  * A data-centric version-specific registry entry for the {@link SulfurCube.Archetype} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface SulfurCubeArchetypeRegistryEntry {
 
     /**
      * An attribute entry to apply to a sulfur cube of this archetype.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface AttributeEntry {
 
@@ -63,7 +61,6 @@ public interface SulfurCubeArchetypeRegistryEntry {
      * The contact damage a sulfur cube of this archetype will deal when pushed
      * by another entity.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface ContactDamage {
 
@@ -77,6 +74,7 @@ public interface SulfurCubeArchetypeRegistryEntry {
          * @apiNote for non-constant damage this will return one possible sample
          * instead of the exact amount
          */
+        @ApiStatus.Experimental
         @NonNegative float amount(); // todo expose FloatProvider/IntProvider in a consistent way (should match Machine's PR for dimension type)
 
         /**
@@ -94,6 +92,7 @@ public interface SulfurCubeArchetypeRegistryEntry {
          * @return the created instance
          */
         @Contract(value = "_, _, _ -> new", pure = true)
+        @ApiStatus.Experimental
         static ContactDamage of(final TypedKey<DamageType> damageType, final @NonNegative float amount, final boolean attributeToSource) {
             record Impl(TypedKey<DamageType> damageType, @NonNegative float amount, boolean attributeToSource) implements ContactDamage {
             }
@@ -105,7 +104,6 @@ public interface SulfurCubeArchetypeRegistryEntry {
     /**
      * The explosion settings of a sulfur cube of this archetype.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface ExplosionSettings {
 
@@ -147,7 +145,6 @@ public interface SulfurCubeArchetypeRegistryEntry {
      * The knockback modifiers a sulfur cube of this archetype will receive
      * when knocked by another entity.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface KnockbackModifiers {
 
@@ -180,18 +177,20 @@ public interface SulfurCubeArchetypeRegistryEntry {
     /**
      * The sound settings of a sulfur cube of this archetype.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface SoundSettings {
 
+        // todo The sounds should take a RegistryHolder but need more thoughts on the create method
         /**
          * {@return the sound played once the sulfur cube is knocked}
          */
-        TypedKey<Sound> hitSound(); // todo should take a RegistryHolder but need more thoughts on the create method
+        @ApiStatus.Experimental
+        TypedKey<Sound> hitSound();
 
         /**
          * {@return the sound played once the sulfur cube is pushed}
          */
+        @ApiStatus.Experimental
         TypedKey<Sound> pushSound();
 
         /**
@@ -214,6 +213,7 @@ public interface SulfurCubeArchetypeRegistryEntry {
          * @return the created instance
          */
         @Contract(value = "_, _, _, _ -> new", pure = true)
+        @ApiStatus.Experimental
         static SoundSettings of(final TypedKey<Sound> hitSound, final TypedKey<Sound> pushSound, final float pushSoundImpulseThreshold, final float pushSoundCooldown) {
             record Impl(TypedKey<Sound> hitSound, TypedKey<Sound> pushSound, float pushSoundImpulseThreshold, float pushSoundCooldown) implements SoundSettings {
             }
@@ -284,7 +284,6 @@ public interface SulfurCubeArchetypeRegistryEntry {
      *     <li>{@link #soundSettings(SoundSettings)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends SulfurCubeArchetypeRegistryEntry, RegistryBuilder<SulfurCube.Archetype> {
 

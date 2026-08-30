@@ -15,7 +15,6 @@ import java.util.function.Consumer;
 /**
  * A data-centric version-specific registry entry for the {@link org.bukkit.MusicInstrument} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface InstrumentRegistryEntry {
 
@@ -68,7 +67,6 @@ public interface InstrumentRegistryEntry {
      *     <li>{@link #description(Component)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends InstrumentRegistryEntry, RegistryBuilder<MusicInstrument> {
 
@@ -78,7 +76,7 @@ public interface InstrumentRegistryEntry {
          * <p>This will override both {@link #soundEvent(Consumer)} and {@link #soundEvent(RegistryHolder)}</p>
          *
          * @param soundEvent the sound event
-         * @return this builder
+         * @return this builder instance
          * @see #soundEvent(Consumer)
          * @see InstrumentRegistryEntry#soundEvent()
          * @see MusicInstrument#getSound()
@@ -91,7 +89,7 @@ public interface InstrumentRegistryEntry {
          * <p>This will override both {@link #soundEvent(TypedKey)} and {@link #soundEvent(RegistryHolder)}</p>
          *
          * @param soundEvent the sound event
-         * @return this builder
+         * @return this builder instance
          * @see #soundEvent(TypedKey)
          * @see InstrumentRegistryEntry#soundEvent()
          * @see MusicInstrument#getSound()
@@ -104,7 +102,7 @@ public interface InstrumentRegistryEntry {
          * <p>This will override both {@link #soundEvent(Consumer)} and {@link #soundEvent(TypedKey)}</p>
          *
          * @param soundEvent the sound event
-         * @return this builder
+         * @return this builder instance
          * @see #soundEvent(TypedKey)
          * @see #soundEvent(Consumer)
          * @see InstrumentRegistryEntry#soundEvent()
@@ -117,7 +115,7 @@ public interface InstrumentRegistryEntry {
          * Sets the duration of use for this instrument.
          *
          * @param duration the duration (positive)
-         * @return this builder
+         * @return this builder instance
          * @see InstrumentRegistryEntry#duration()
          * @see MusicInstrument#getDuration()
          */
@@ -128,7 +126,7 @@ public interface InstrumentRegistryEntry {
          * Sets the range for this instrument.
          *
          * @param range the range (positive)
-         * @return this builder
+         * @return this builder instance
          * @see InstrumentRegistryEntry#range()
          * @see MusicInstrument#getRange()
          */
@@ -139,7 +137,7 @@ public interface InstrumentRegistryEntry {
          * Sets the description for this instrument.
          *
          * @param description the description
-         * @return this builder
+         * @return this builder instance
          * @see InstrumentRegistryEntry#description()
          * @see MusicInstrument#description()
          */

@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.math.Angle;
 import io.papermc.paper.math.Position;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -631,7 +632,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return collection of entities corresponding to current pearls.
      */
-    @ApiStatus.Experimental
     public Collection<EnderPearl> getEnderPearls();
 
     /**
@@ -843,6 +843,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param seed The seed for the sound
      */
     public void playSound(Entity entity, String sound, SoundCategory category, float volume, float pitch, long seed);
+
+    /**
+     * Plays a sound at a position.
+     *
+     * @param sound a sound
+     * @param pos position
+     */
+    default void playSound(net.kyori.adventure.sound.Sound sound, Position pos) {
+        playSound(sound, pos.x(), pos.y(), pos.z());
+    }
 
     /**
      * Stop the specified sound from playing.
@@ -2065,6 +2075,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     public net.kyori.adventure.util.TriState hasFlyingFallDamage();
     // Paper end
+
+    /**
+
+     * Resets the player's flying tick counter used for flight checks.
+     * <p>
+     * Only valid once the player's connection is initialized.
+     */
+    public void resetFlyingTicks();
 
     /**
      * Hides a player from this player
@@ -3539,7 +3557,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param side The side to edit
      * @see io.papermc.paper.event.packet.UncheckedSignChangeEvent
      */
-    @ApiStatus.Experimental
     void openVirtualSign(Position block, Side side);
 
     /**
@@ -3778,15 +3795,15 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
         // Paper end
     }
 
-    // Paper start - brand support
     /**
-     * Returns player's client brand name. If the client didn't send this information, the brand name will be null.<br>
-     * For the Notchian client this name defaults to <code>vanilla</code>. Some modified clients report other names such as <code>forge</code>.<br>
+     * Returns player's client brand name. If the client didn't send this information, the brand name will be null.
+     * <p>
+     * For the Notchian client this name defaults to {@code vanilla}. Some modified clients report other names such as {@code neoforge}.
+     *
      * @return client brand name
+     * @see io.papermc.paper.connection.PlayerCommonConnection#getClientBrandName()
      */
-    @Nullable
-    String getClientBrandName();
-    // Paper end
+    @Nullable String getClientBrandName();
 
     // Paper start - Teleport API
     /**
@@ -3794,8 +3811,22 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param yaw the yaw
      * @param pitch the pitch
+     * @see #setRotation(Angle, Angle)
      */
     void setRotation(float yaw, float pitch);
+
+    /**
+     * Set the player's rotation.
+     * <p>
+     * Note: When using relative angles, client will add corresponding value
+     * to its yaw/pitch client side, avoiding jitter while the player
+     * is actively moving their view, it's different from just send
+     * new absolute angle with only yaw or pitch addition.
+     *
+     * @param yaw the yaw
+     * @param pitch the pitch
+     */
+    void setRotation(Angle yaw, Angle pitch);
 
     /**
      * Causes the player to look towards the given entity.
@@ -3906,20 +3937,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Gets the set of chunk keys for all chunks that have been sent to the player.
      *
      * @return an immutable set of chunk keys
-     * @apiNote currently marked as experimental to gather feedback regarding the returned set being an immutable copy
-     * vs it potentially being an unmodifiable view of the set chunks.
      */
-    @ApiStatus.Experimental
     java.util.@org.jetbrains.annotations.Unmodifiable Set<Long> getSentChunkKeys();
 
     /**
      * Gets the set of chunks that have been sent to the player.
      *
      * @return an immutable set of chunks
-     * @apiNote currently marked as experimental to gather feedback regarding the returned set being an immutable copy
-      * vs it potentially being an unmodifiable view of the set chunks.
      */
-    @ApiStatus.Experimental
     java.util.@org.jetbrains.annotations.Unmodifiable Set<org.bukkit.Chunk> getSentChunks();
 
     /**
@@ -4013,11 +4038,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return the game connection
      */
-    @ApiStatus.Experimental
     PlayerGameConnection getConnection();
 
     @Override
     default ObjectContents asObjectContents() {
         return this.getPlayerProfile().asObjectContents();
     }
+
+    /**
+     * Updates the player's pose according to the current game state,
+     * clearing any fixed pose in the process.
+     */
+    void unsetFixedPose();
 }

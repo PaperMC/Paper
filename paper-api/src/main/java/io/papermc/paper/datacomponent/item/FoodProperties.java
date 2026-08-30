@@ -12,7 +12,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#FOOD
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface FoodProperties extends BuildableDataComponent<FoodProperties, FoodProperties.Builder> {
 
@@ -48,7 +47,6 @@ public interface FoodProperties extends BuildableDataComponent<FoodProperties, F
     /**
      * Builder for {@link FoodProperties}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<FoodProperties> {
 

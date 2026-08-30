@@ -13,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#DEATH_PROTECTION
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface DeathProtection {
 
@@ -33,7 +32,6 @@ public interface DeathProtection {
     /**
      * Builder for {@link DeathProtection}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<DeathProtection> {
 

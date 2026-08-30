@@ -12,7 +12,6 @@ import org.jspecify.annotations.Nullable;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#POT_DECORATIONS
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface PotDecorations {
 
@@ -61,7 +60,6 @@ public interface PotDecorations {
     /**
      * Builder for {@link PotDecorations}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<PotDecorations> {
 
