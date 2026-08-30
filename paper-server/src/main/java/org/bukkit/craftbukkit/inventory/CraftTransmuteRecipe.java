@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.TransmuteResult;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
@@ -33,7 +34,7 @@ public class CraftTransmuteRecipe extends TransmuteRecipe implements CraftRecipe
             CraftRecipe.toIngredient(this.getInput(), true),
             CraftRecipe.toIngredient(this.getMaterial(), true),
             net.minecraft.world.item.crafting.TransmuteRecipe.DEFAULT_MATERIAL_COUNT,
-            CraftItemStack.asTemplate(this.getResult()),
+            TransmuteResult.fromTemplate(CraftItemStack.asTemplate(this.getResult())),
             false
         );
         MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toResourceKey(Registries.RECIPE, this.getKey()), recipe));
