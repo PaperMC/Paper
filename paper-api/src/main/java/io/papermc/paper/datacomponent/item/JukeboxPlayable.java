@@ -11,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#JUKEBOX_PLAYABLE
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface JukeboxPlayable  {
 
@@ -26,7 +25,6 @@ public interface JukeboxPlayable  {
     /**
      * Builder for {@link JukeboxPlayable}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<JukeboxPlayable> {
 

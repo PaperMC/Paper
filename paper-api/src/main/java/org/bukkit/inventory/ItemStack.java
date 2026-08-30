@@ -1179,7 +1179,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @see #hasData(io.papermc.paper.datacomponent.DataComponentType) for DataComponentType.NonValued
      */
     @org.jetbrains.annotations.Contract(pure = true)
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public <T> @Nullable T getData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type) {
         return this.craftDelegate.getData(type);
     }
@@ -1195,7 +1194,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @Utility
     @org.jetbrains.annotations.Contract(value = "_, !null -> !null", pure = true)
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public <T> @Nullable T getDataOrDefault(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<? extends T> type, final @Nullable T fallback) {
         final T object = this.getData(type);
         return object != null ? object : fallback;
@@ -1208,7 +1206,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return {@code true} if set, {@code false} otherwise
      */
     @org.jetbrains.annotations.Contract(pure = true)
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public boolean hasData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
         return this.craftDelegate.hasData(type);
     }
@@ -1219,7 +1216,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return an immutable set of data component types
      */
     @org.jetbrains.annotations.Contract("-> new")
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public java.util.@org.jetbrains.annotations.Unmodifiable Set<io.papermc.paper.datacomponent.@NotNull DataComponentType> getDataTypes() {
         return this.craftDelegate.getDataTypes();
     }
@@ -1235,7 +1231,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param <T> value type
      */
     @Utility
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public <T> void setData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type, final @NotNull io.papermc.paper.datacomponent.DataComponentBuilder<T> valueBuilder) {
         this.setData(type, valueBuilder.build());
     }
@@ -1274,7 +1269,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param value value to set
      * @param <T> value type
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public <T> void setData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type, final @NotNull T value) {
         this.craftDelegate.setData(type, value);
     }
@@ -1284,7 +1278,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param type the data component type
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public void setData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull NonValued type) {
         this.craftDelegate.setData(type);
     }
@@ -1294,7 +1287,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param type the data component type
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public void unsetData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
         this.craftDelegate.unsetData(type);
     }
@@ -1305,7 +1297,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param type the data component type
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public void resetData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
         this.craftDelegate.resetData(type);
     }
@@ -1330,7 +1321,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param source the item stack to copy from
      * @param filter predicate for which components to copy
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public void copyDataFrom(final @NotNull ItemStack source, final @NotNull Predicate<io.papermc.paper.datacomponent.@NotNull DataComponentType> filter) {
         this.craftDelegate.copyDataFrom(source, filter);
     }
@@ -1342,7 +1332,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param type the data component type
      * @return {@code true} if the data type is overridden
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public boolean isDataOverridden(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
         return this.craftDelegate.isDataOverridden(type);
     }
@@ -1355,7 +1344,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param excludeTypes the data component types to ignore
      * @return {@code true} if the provided item is equal, ignoring the provided components
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull java.util.Set<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes) {
         return this.matchesWithoutData(item, excludeTypes, false);
     }
@@ -1369,7 +1357,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param ignoreCount ignore the count of the item
      * @return {@code true} if the provided item is equal, ignoring the provided components
      */
-    @org.jetbrains.annotations.ApiStatus.Experimental
     public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull java.util.Set<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes, final boolean ignoreCount) {
         return this.craftDelegate.matchesWithoutData(item, excludeTypes, ignoreCount);
     }

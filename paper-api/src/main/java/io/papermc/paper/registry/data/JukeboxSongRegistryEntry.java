@@ -16,7 +16,6 @@ import org.jetbrains.annotations.Range;
 /**
  * A data-centric version-specific registry entry for the {@link JukeboxSong} type.
  */
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface JukeboxSongRegistryEntry {
 
@@ -65,7 +64,6 @@ public interface JukeboxSongRegistryEntry {
      *     <li>{@link #comparatorOutput(int)}</li>
      * </ul>
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends JukeboxSongRegistryEntry, RegistryBuilder<JukeboxSong> {
 

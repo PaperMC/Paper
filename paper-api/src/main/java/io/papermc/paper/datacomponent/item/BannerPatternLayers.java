@@ -13,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BANNER_PATTERNS
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface BannerPatternLayers {
 
@@ -38,7 +37,6 @@ public interface BannerPatternLayers {
     /**
      * Builder for {@link BannerPatternLayers}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<BannerPatternLayers> {
 

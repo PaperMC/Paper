@@ -191,6 +191,31 @@ and your server.
 While we will fix minor formatting issues, you should stick to the guide below
 when making and submitting changes.
 
+### Contribution Ownership and AI Assistance
+
+Tools that generate code or text can be useful while working on a contribution,
+but they are not a substitute for the contributor. You are responsible for every
+part of what you submit. Only submit changes that you understand, have personally
+reviewed, and have verified to the best of your ability. You should be able to
+explain why the change is needed, how it works, and what tradeoffs it makes.
+
+Issues, discussion posts, pull request descriptions, comments, and review
+responses should be written by you, in your own words. Do not pass generated
+responses on to maintainers or use an AI tool as a proxy for the conversation.
+If a tool helped you investigate or implement something, read and validate its
+output, then communicate the relevant conclusions yourself.
+
+Do not conceal or misrepresent meaningful AI involvement; be transparent about
+how these tools contributed to your work. Transparency does not excuse
+submitting work you do not understand, review, verify, and take responsibility
+for.
+
+Review is a collaborative process, not a way to outsource completion of a
+generated change to maintainers. Be prepared to answer questions about your
+reasoning and to remain involved until the contribution is complete. We may
+close contributions when the author cannot explain or take responsibility for
+the submitted work.
+
 ### Branches and Minecraft Versions
 
 Generally, PRs should be targeted at the `main` branch, where active development for

@@ -19,7 +19,6 @@ import org.jspecify.annotations.Nullable;
  * @see DataComponentTypes#TOOL
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface Tool {
 
@@ -80,7 +79,6 @@ public interface Tool {
     @Contract(pure = true)
     boolean canDestroyBlocksInCreative();
 
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Rule {
 
@@ -111,7 +109,6 @@ public interface Tool {
     /**
      * Builder for {@link Tool}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<Tool> {
 

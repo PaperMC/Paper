@@ -16,7 +16,6 @@ import org.jspecify.annotations.Nullable;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#EQUIPPABLE
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface Equippable extends BuildableDataComponent<Equippable, Equippable.Builder> {
 
@@ -123,7 +122,6 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
     /**
      * Builder for {@link Equippable}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<Equippable> {
 

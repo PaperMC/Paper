@@ -23,7 +23,6 @@ import org.jspecify.annotations.Nullable;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#PROFILE
  */
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
 
@@ -115,7 +114,6 @@ public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
     /**
      * Override rendering options for a {@link ResolvableProfile}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface SkinPatch {
 
@@ -182,7 +180,6 @@ public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
     /**
      * Builder for {@link SkinPatch}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface SkinPatchBuilder extends DataComponentBuilder<SkinPatch> {
         /**
@@ -225,7 +222,6 @@ public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
     /**
      * Builder for {@link ResolvableProfile}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<ResolvableProfile> {
 

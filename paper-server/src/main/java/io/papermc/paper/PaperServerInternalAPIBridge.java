@@ -59,6 +59,7 @@ import org.bukkit.craftbukkit.entity.CraftMannequin;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.CraftSpawnCategory;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -66,6 +67,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pose;
+import org.bukkit.entity.SpawnCategory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -177,6 +179,11 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public String getTranslationKey(final EntityType entityType) {
         return CraftEntityType.bukkitToMinecraft(entityType).getDescriptionId();
+    }
+
+    @Override
+    public SpawnCategory getSpawnCategory(final EntityType entityType) {
+        return CraftSpawnCategory.toBukkit(CraftEntityType.bukkitToMinecraft(entityType).getCategory());
     }
 
     @Override

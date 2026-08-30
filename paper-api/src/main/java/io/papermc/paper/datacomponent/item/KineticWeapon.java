@@ -10,7 +10,6 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-@ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface KineticWeapon {
 
@@ -72,7 +71,6 @@ public interface KineticWeapon {
     /**
      * Builder for {@link KineticWeapon}.
      */
-    @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<KineticWeapon> {
 
