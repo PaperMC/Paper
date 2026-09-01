@@ -8,7 +8,11 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a {@link Command} belonging to a plugin
+ *
+ * @deprecated plugin developers should prefer to use the
+ *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
  */
+@Deprecated(since = "26.3")
 public final class PluginCommand extends Command implements PluginIdentifiableCommand {
     private final Plugin owningPlugin;
     private CommandExecutor executor;

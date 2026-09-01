@@ -8,6 +8,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @deprecated plugin developers should prefer to use the
+ *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
+ */
+@Deprecated(since = "26.3")
 public class PluginCommandYamlParser {
 
     @NotNull
