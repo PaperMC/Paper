@@ -110,7 +110,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:leafpile:1.0.0")
+    implementation("ca.spottedleaf:leafpile:1.2.0")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -127,7 +127,7 @@ dependencies {
     runtimeOnly(log4jPlugins.output)
     alsoShade(log4jPlugins.output)
 
-    implementation("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT") {
+    implementation("com.velocitypowered:velocity-native:4.1.0") {
         isTransitive = false
     }
     implementation("io.netty:netty-codec-haproxy:4.2.15.Final") // Add support for proxy protocol
@@ -156,7 +156,7 @@ dependencies {
 
     // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
-    implementation("me.lucko:spark-paper:1.10.172")
+    implementation("me.lucko:spark-paper:1.10.180")
 }
 
 tasks.jar {

@@ -182,7 +182,7 @@
                  } catch (RejectedExecutionException ignored) {
                      this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
                  } catch (ClassCastException exception) {
-@@ -297,6 +_,30 @@
+@@ -297,6 +_,47 @@
          }
      }
  
@@ -195,7 +195,7 @@
 +     *
 +     * @see <a href="https://mojira.dev/MC-308621">MC-308621</a>
 +     */
-+    public void scheduleNettyTask(final Runnable task) {
++    private void scheduleNettyTask(final Runnable task) {
 +        final boolean connected = this.isConnected();
 +        if (!connected && !this.preparing) {
 +            return;
@@ -204,9 +204,26 @@
 +        if (connected && this.pendingActions.isEmpty()) {
 +            this.channel.eventLoop().execute(task);
 +        } else {
-+            this.pendingActions.add(new WrappedConsumer(connection -> connection.channel.eventLoop().execute(task)));
++            this.pendingActions.add(connection -> connection.channel.eventLoop().execute(task));
 +            this.flushQueue();
 +        }
++    }
++
++    /**
++     * Schedules a task on the channel's event loop after all currently queued packets have been submitted for writing.
++     * This allows the compression packet to be written and compression to be enabled in the same event-loop task.
++     * Vanilla enables compression from a write-future listener, which may run after another packet has already been
++     * queued without compression.
++     *
++     * @see <a href="https://mojira.dev/MC-308621">MC-308621</a>
++     */
++    public void sendPacketAndScheduleNettyTask(final Packet<?> packet, final boolean flush, final Runnable after) {
++        this.scheduleNettyTask(() -> {
++            Connection.this.sendPacket(packet, null, flush);
++            if (after != null) {
++                after.run();
++            }
++        });
 +    }
 +    // Paper end - Add netty task scheduling helper
 +
