@@ -121,6 +121,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
             if (context.getKiller() != null) {
                 Player nmsKiller = ((CraftHumanEntity) context.getKiller()).getHandle();
                 this.setMaybe(builder, LootContextParams.ATTACKING_ENTITY, nmsKiller);
+                this.setMaybe(builder, LootContextParams.DIRECT_ATTACKING_ENTITY, nmsKiller);
                 // If there is a player killer, damage source should reflect that in case loot tables use that information
                 this.setMaybe(builder, LootContextParams.DAMAGE_SOURCE, handle.damageSources().playerAttack(nmsKiller));
                 this.setMaybe(builder, LootContextParams.LAST_DAMAGE_PLAYER, nmsKiller); // SPIGOT-5603 - Set minecraft:killed_by_player
