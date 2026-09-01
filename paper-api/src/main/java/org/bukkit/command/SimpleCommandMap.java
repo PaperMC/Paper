@@ -19,6 +19,11 @@ import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @deprecated plugin developers should prefer to use the
+ *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
+ */
+@Deprecated(since = "26.3")
 public class SimpleCommandMap implements CommandMap {
     protected final Map<String, Command> knownCommands;
     private final Server server;

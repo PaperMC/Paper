@@ -6,7 +6,11 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a class which can suggest tab completions for commands.
+ *
+ * @deprecated plugin developers should prefer to use the
+ *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
  */
+@Deprecated(since = "26.3")
 public interface TabCompleter {
 
     /**
@@ -21,7 +25,10 @@ public interface TabCompleter {
      *     partial argument to be completed
      * @return A List of possible completions for the final argument, or null
      *     to default to the command executor
+     * @deprecated plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
      */
+    @Deprecated(since = "26.3")
     @Nullable
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args);
 }
