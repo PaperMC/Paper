@@ -41,8 +41,8 @@
      private final RecipeManager.CachedCheck<BrewingInput, BrewingRecipe> quickCheck = RecipeManager.createCheck(RecipeType.BREWING);
  
      public BrewingStandBlockEntity(final BlockPos worldPosition, final BlockState blockState) {
-@@ -133,10 +_,20 @@
-         ItemStack fuel = entity.items.get(4);
+@@ -134,11 +_,22 @@
+         ItemStack fuel = items.get(4);
          BrewingFuel brewingFuel = fuel.get(DataComponents.BREWING_FUEL);
          if (entity.fuel <= 0 && brewingFuel != null) {
 -            entity.fuel = entity.getUses(level, brewingFuel);
@@ -59,12 +59,21 @@
 +            // Paper end - call BrewingStandFuelEvent
              entity.totalFuel = entity.fuel;
              entity.speedMultiplier = entity.getSpeedMultiplier(level, brewingFuel);
--            fuel.shrink(1);
-+            if (entity.fuel > 0 && event.isConsuming()) fuel.shrink(1); // Paper - call BrewingStandFuelEvent
-             setChanged(level, pos, selfState);
-         }
+             ItemStackTemplate fuelRemainder = fuel.getItem().getCraftingRemainder();
+             ItemStack newFuel = fuel;
++            if (entity.fuel > 0 && event.isConsuming()) { // Paper - call BrewingStandFuelEvent
+             fuel.shrink(1);
+             if (fuelRemainder != null) {
+                 if (fuel.isEmpty()) {
+@@ -147,6 +_,7 @@
+                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), fuelRemainder.create());
+                 }
+             }
++            } // Paper - call BrewingStandFuelEvent
  
-@@ -156,8 +_,16 @@
+             items.set(4, newFuel);
+             setChanged(level, pos, selfState);
+@@ -168,8 +_,16 @@
          } else if (brewable && entity.fuel > 0) {
              float speedMutliplier = entity.speedMultiplier > 0.0F ? entity.speedMultiplier : 1.0F;
              entity.fuel--;
@@ -83,7 +92,7 @@
              entity.ingredient = ingredient.getItem();
              setChanged(level, pos, selfState);
          }
-@@ -219,12 +_,38 @@
+@@ -231,12 +_,38 @@
          NonNullList<ItemStack> items = entity.getItems();
          ItemStack ingredient = items.get(3);
  

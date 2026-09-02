@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-@@ -108,6 +_,7 @@
+@@ -111,6 +_,7 @@
      };
      public final Reference2IntOpenHashMap<ResourceKey<Recipe<?>>> recipesUsed = new Reference2IntOpenHashMap<>();
      public final RecipeManager.CachedCheck<SingleRecipeInput, ? extends AbstractCookingRecipe> quickCheck;
@@ -8,7 +8,7 @@
  
      protected AbstractFurnaceBlockEntity(
          final BlockEntityType<?> type, final BlockPos worldPosition, final BlockState blockState, final RecipeType<? extends AbstractCookingRecipe> recipeType
-@@ -116,6 +_,41 @@
+@@ -119,6 +_,41 @@
          this.quickCheck = RecipeManager.createCheck(recipeType);
      }
  
@@ -50,7 +50,7 @@
      @Override
      protected void loadAdditional(final ValueInput input) {
          super.loadAdditional(input);
-@@ -128,6 +_,7 @@
+@@ -131,6 +_,7 @@
          this.speedMultiplier = input.getFloatOr("speed_multiplier", 1.0F);
          this.recipesUsed.clear();
          this.recipesUsed.putAll(input.read("RecipesUsed", RECIPES_USED_CODEC).orElse(Map.of()));
@@ -58,7 +58,7 @@
      }
  
      @Override
-@@ -140,6 +_,7 @@
+@@ -143,6 +_,7 @@
          output.putFloat("speed_multiplier", this.speedMultiplier);
          ContainerHelper.saveAllItems(output, this.items);
          output.store("RecipesUsed", RECIPES_USED_CODEC, this.recipesUsed);
@@ -66,7 +66,7 @@
      }
  
      public static void serverTick(final ServerLevel level, final BlockPos pos, BlockState state, final AbstractFurnaceBlockEntity entity) {
-@@ -169,6 +_,15 @@
+@@ -172,6 +_,15 @@
                      if (!burnResult.isEmpty() && canBurn(entity.items, maxStackSize, burnResult)) {
                          if (!isLit) {
                              int newLitTime = entity.getBurnDuration(level, fuel);
@@ -82,14 +82,14 @@
                              float newSpeedMultiplier = entity.getSpeedMultiplier(level, fuel);
                              entity.litTimeRemaining = newLitTime;
                              entity.litTotalTime = newLitTime;
-@@ -179,20 +_,36 @@
+@@ -182,20 +_,36 @@
                                  entity.cookingTimer = (int)Math.ceil(completionRatio * entity.cookingTotalTime);
                              }
  
 -                            if (newLitTime > 0) {
 +                            if (newLitTime > 0 && burnEvent.isBurning()) { // CraftBukkit - respect event output
 +                                if (burnEvent.willConsumeFuel()) { // Paper - add consumeFuel to FurnaceBurnEvent
-                                 consumeFuel(entity.items, fuel);
+                                 consumeFuel(level, pos, entity.items, fuel);
 +                                } // Paper - add consumeFuel to FurnaceBurnEvent
                                  isLit = true;
                                  changed = true;
@@ -121,7 +121,7 @@
                                  changed = true;
                              }
                          } else {
-@@ -244,19 +_,47 @@
+@@ -254,19 +_,47 @@
          return resultCount <= maxResultCount;
      }
  
@@ -170,16 +170,16 @@
      }
  
      public int getBurnDuration(final ServerLevel level, final ItemStack fuelItem) {
-@@ -264,7 +_,7 @@
+@@ -274,7 +_,7 @@
      }
  
      public float getSpeedMultiplier(final ServerLevel level, final ItemStack fuelItem) {
--        return ResolvableNumber.getFloatFromItem(fuelItem, DataComponents.COOKING_FUEL, CookingFuel::speedMultiplier, this.getLootContext(level), 1.0F);
-+        return ResolvableNumber.getFloatFromItem(fuelItem, DataComponents.COOKING_FUEL, CookingFuel::speedMultiplier, this.getLootContext(level), 1.0F) / (float) this.cookSpeedMultiplier; // Paper - cook speed multiplier API
+-        return ResolvableFloat.getFromItem(fuelItem, DataComponents.COOKING_FUEL, CookingFuel::speedMultiplier, this.getLootContext(level), 1.0F);
++        return ResolvableFloat.getFromItem(fuelItem, DataComponents.COOKING_FUEL, CookingFuel::speedMultiplier, this.getLootContext(level), 1.0F) / (float) this.cookSpeedMultiplier; // Paper - cook speed multiplier API
      }
  
      private static int getTotalCookTime(final RecipeHolder<? extends AbstractCookingRecipe> recipe, final AbstractFurnaceBlockEntity entity) {
-@@ -358,8 +_,8 @@
+@@ -368,8 +_,8 @@
      public void awardUsedRecipes(final Player player, final List<ItemStack> itemStacks) {
      }
  
@@ -190,7 +190,7 @@
          player.awardRecipes(recipesToAward);
  
          for (RecipeHolder<?> recipe : recipesToAward) {
-@@ -370,30 +_,60 @@
+@@ -380,30 +_,60 @@
      }
  
      public List<RecipeHolder<?>> getRecipesToAwardAndPopExperience(final ServerLevel level, final Vec3 position) {
