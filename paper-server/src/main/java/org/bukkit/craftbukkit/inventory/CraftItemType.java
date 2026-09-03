@@ -15,13 +15,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStackTemplate;
-import net.minecraft.world.item.component.Compostable;
 import net.minecraft.world.item.component.CookingFuel;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
-import net.minecraft.world.level.storage.loot.providers.number.ResolvableNumber;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Registry;
@@ -184,7 +183,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
         ).create(Optional.empty());
 
         // TODO - snapshot - this in theory return the negative case (block is not blast furnace or smoker) because need pass a block in the LootContext
-        return ResolvableNumber.getIntFromItem(stack, DataComponents.COOKING_FUEL, CookingFuel::burnTime, lootContext, 0);
+        return ResolvableInt.getFromItem(stack, DataComponents.COOKING_FUEL, CookingFuel::burnTime, lootContext, 0);
     }
 
     @Override
@@ -195,6 +194,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
     @Override
     public float getCompostChance() {
         Preconditions.checkArgument(this.isCompostable(), "The item type " + this.getKey() + " is not compostable");
+        // TODO - snapshot - how can get the chance if the component require context?
         return ComposterBlock.COMPOSTABLES.getFloat(this.getHandle());
     }
 
