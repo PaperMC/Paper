@@ -1389,16 +1389,16 @@
          }
  
          return changedItems;
-@@ -3009,7 +_,7 @@
-             itemsToSend.add(Pair.of(slot, newItemToStore));
-             this.lastEquipmentItems.put(slot, newItemToStore);
-         });
--        ((ServerLevel)this.level()).getChunkSource().sendToTrackingPlayers(this, new ClientboundSetEquipmentPacket(this.getId(), itemsToSend));
-+        ((ServerLevel)this.level()).getChunkSource().sendToTrackingPlayers(this, new ClientboundSetEquipmentPacket(this.getId(), itemsToSend, true)); // Paper - data sanitization
+@@ -3013,7 +_,7 @@
+     }
+ 
+     private void updatePlayersWithNewEquipment(final ServerLevel level, final List<Pair<EquipmentSlot, ItemStack>> itemsToSend) {
+-        level.getChunkSource().sendToTrackingPlayers(this, new ClientboundSetEquipmentPacket(this.getId(), itemsToSend));
++        level.getChunkSource().sendToTrackingPlayers(this, new ClientboundSetEquipmentPacket(this.getId(), itemsToSend, true)); // Paper - data sanitization
      }
  
      protected void tickHeadTurn(final float yBodyRotT) {
-@@ -3093,8 +_,10 @@
+@@ -3097,8 +_,10 @@
              if (!inWaterAndHasFluidHeight || this.onGround() && !(fluidHeight > fluidJumpThreshold)) {
                  if (!this.isInLava() || this.onGround() && this.isInShallowFluid(FluidTags.LAVA)) {
                      if ((this.onGround() || inWaterAndHasFluidHeight && fluidHeight <= fluidJumpThreshold) && this.noJumpDelay == 0) {
@@ -1409,7 +1409,7 @@
                      }
                  } else {
                      this.jumpInLiquid(FluidTags.LAVA);
-@@ -3135,7 +_,7 @@
+@@ -3139,7 +_,7 @@
          profiler.pop();
          if (this.level() instanceof ServerLevel serverLevel) {
              profiler.push("freezing");
@@ -1418,7 +1418,7 @@
                  this.setTicksFrozen(Math.max(0, this.getTicksFrozen() - 2));
              }
  
-@@ -3156,6 +_,20 @@
+@@ -3160,6 +_,20 @@
  
          this.pushEntities();
          profiler.pop();
@@ -1439,7 +1439,7 @@
          if (this.level() instanceof ServerLevel serverLevel && this.isSensitiveToWater() && this.isInWaterOrRain()) {
              this.hurtServer(serverLevel, this.damageSources().drown(), 1.0F);
          }
-@@ -3178,6 +_,7 @@
+@@ -3182,6 +_,7 @@
          this.checkFallDistanceAccumulation();
          if (!this.level().isClientSide()) {
              if (!this.canGlide()) {
@@ -1447,7 +1447,7 @@
                  this.setSharedFlag(Entity.FLAG_FALL_FLYING, false);
                  return;
              }
-@@ -3214,10 +_,25 @@
+@@ -3218,10 +_,25 @@
      }
  
      protected void pushEntities() {
@@ -1474,7 +1474,7 @@
                  if (maxCramming > 0 && pushableEntities.size() > maxCramming - 1 && this.random.nextInt(4) == 0) {
                      int count = 0;
  
-@@ -3233,7 +_,16 @@
+@@ -3237,7 +_,16 @@
                  }
              }
  
@@ -1491,7 +1491,7 @@
                  this.doPush(entity);
              }
          }
-@@ -3242,16 +_,32 @@
+@@ -3246,16 +_,32 @@
      protected void checkAutoSpinAttack(final AABB old, final AABB current) {
          AABB minmax = old.minmax(current);
          List<Entity> entities = this.level().getEntities(this, minmax);
@@ -1525,7 +1525,7 @@
              this.autoSpinAttackTicks = 0;
          }
  
-@@ -3274,10 +_,10 @@
+@@ -3278,10 +_,10 @@
      }
  
      @Override
@@ -1539,7 +1539,7 @@
              this.dismountVehicle(oldVehicle);
          }
      }
-@@ -3304,7 +_,7 @@
+@@ -3308,7 +_,7 @@
      }
  
      public void onItemPickup(final ItemEntity entity) {
@@ -1548,7 +1548,7 @@
              CriteriaTriggers.THROWN_ITEM_PICKED_UP_BY_ENTITY.trigger(serverPlayer, entity.getItem(), this);
          }
      }
-@@ -3315,7 +_,7 @@
+@@ -3319,7 +_,7 @@
              && (entity instanceof ItemEntity || entity instanceof AbstractArrow || entity instanceof ExperienceOrb)) {
              ((ServerLevel)this.level())
                  .getChunkSource()
@@ -1557,7 +1557,7 @@
          }
      }
  
-@@ -3332,7 +_,8 @@
+@@ -3336,7 +_,8 @@
  
          Vec3 from = new Vec3(this.getX(), this.getEyeY(), this.getZ());
          Vec3 to = new Vec3(target.getX(), eyeHeight, target.getZ());
@@ -1567,7 +1567,7 @@
              && this.level().clip(new ClipContext(from, to, blockCollidingContext, fluidCollidingContext, this)).getType() == HitResult.Type.MISS;
      }
  
-@@ -3355,16 +_,31 @@
+@@ -3359,16 +_,31 @@
  
      @Override
      public boolean isPickable() {
@@ -1602,7 +1602,7 @@
  
      @Override
      public float getYHeadRot() {
-@@ -3395,7 +_,7 @@
+@@ -3399,7 +_,7 @@
      }
  
      public final void setAbsorptionAmount(final float absorptionAmount) {
@@ -1611,7 +1611,7 @@
      }
  
      protected void internalSetAbsorptionAmount(final float absorptionAmount) {
-@@ -3422,6 +_,15 @@
+@@ -3426,6 +_,15 @@
          return (this.entityData.get(DATA_LIVING_ENTITY_FLAGS) & 2) > 0 ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
      }
  
@@ -1627,7 +1627,7 @@
      private void updatingUsingItem() {
          if (this.isUsingItem()) {
              if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
-@@ -3469,7 +_,12 @@
+@@ -3473,7 +_,12 @@
  
      protected void updateUsingItem(final ItemStack useItem) {
          useItem.onUseTick(this.level(), this, this.getUseItemRemainingTicks());
@@ -1641,7 +1641,7 @@
              this.completeUsingItem();
          }
      }
-@@ -3495,10 +_,19 @@
+@@ -3499,10 +_,19 @@
      }
  
      public void startUsingItem(final InteractionHand hand) {
@@ -1661,9 +1661,9 @@
 +            this.eatStartTime = System.nanoTime();
 +            // Paper end - lag compensate eating
              if (!this.level().isClientSide()) {
+                 this.updatePlayersWithNewEquipment((ServerLevel)this.level(), List.of(Pair.of(hand.asEquipmentSlot(), this.useItem)));
                  this.setLivingEntityFlag(LIVING_ENTITY_FLAG_IS_USING, true);
-                 this.setLivingEntityFlag(LIVING_ENTITY_FLAG_OFF_HAND, hand == InteractionHand.OFF_HAND);
-@@ -3525,7 +_,10 @@
+@@ -3530,7 +_,10 @@
                  }
              } else if (!this.isUsingItem() && !this.useItem.isEmpty()) {
                  this.useItem = ItemStack.EMPTY;
@@ -1675,7 +1675,7 @@
              }
          }
      }
-@@ -3568,9 +_,41 @@
+@@ -3573,9 +_,41 @@
                  this.releaseUsingItem();
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
@@ -1718,7 +1718,7 @@
                      }
  
                      this.stopUsingItem();
-@@ -3602,6 +_,7 @@
+@@ -3607,6 +_,7 @@
          ItemStack itemInUsedHand = this.getItemInHand(this.getUsedItemHand());
          if (!this.useItem.isEmpty() && ItemStack.isSameItem(itemInUsedHand, this.useItem)) {
              this.useItem = itemInUsedHand;
@@ -1726,7 +1726,7 @@
              this.useItem.releaseUsing(this.level(), this, this.getUseItemRemainingTicks());
              if (this.useItem.useOnRelease()) {
                  this.updatingUsingItem();
-@@ -3622,7 +_,10 @@
+@@ -3627,7 +_,10 @@
          }
  
          this.useItem = ItemStack.EMPTY;
@@ -1738,7 +1738,7 @@
      }
  
      public boolean isBlocking() {
-@@ -3645,6 +_,60 @@
+@@ -3650,6 +_,60 @@
          return null;
      }
  
@@ -1799,7 +1799,7 @@
      public boolean isSuppressingSlidingDownLadder() {
          return this.isShiftKeyDown();
      }
-@@ -3663,10 +_,30 @@
+@@ -3668,10 +_,30 @@
      }
  
      public boolean randomTeleport(final double xx, final double yy, final double zz, final boolean showParticles, final TagKey<Block> avoidanceTag) {
@@ -1831,7 +1831,7 @@
          double y = yy;
          Level level = this.level();
          WorldBorder worldBorder = level.getWorldBorder();
-@@ -3677,17 +_,17 @@
+@@ -3682,17 +_,17 @@
                  pos.move(Direction.DOWN);
                  BlockState state = level.getBlockState(pos);
                  if (state.is(BlockTags.ENTITIES_CAN_TELEPORT_TO)) {
@@ -1852,7 +1852,7 @@
          final double xx,
          final double y,
          final double zz,
-@@ -3695,20 +_,37 @@
+@@ -3700,20 +_,37 @@
          final Predicate<BlockState> isInvalidPosition,
          final BlockState state,
          final Level level
@@ -1893,7 +1893,7 @@
                  if (showParticles) {
                      level.broadcastEntityEvent(this, EntityEvent.TELEPORT);
                  }
-@@ -3717,12 +_,12 @@
+@@ -3722,12 +_,12 @@
                      pathfinderMob.getNavigation().stop();
                  }
  

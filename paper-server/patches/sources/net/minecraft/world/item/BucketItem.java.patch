@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/BucketItem.java
 +++ b/net/minecraft/world/item/BucketItem.java
-@@ -32,6 +_,7 @@
+@@ -34,6 +_,7 @@
  import org.jspecify.annotations.Nullable;
  
  public class BucketItem extends Item implements DispensibleContainerItem {
@@ -8,7 +8,7 @@
      protected final Fluid content;
  
      public BucketItem(final Fluid content, final Item.Properties properties) {
-@@ -57,7 +_,7 @@
+@@ -59,7 +_,7 @@
          if (level.mayInteract(player, pos) && player.mayUseItemAt(directionOffsetPos, direction, itemStack)) {
              BlockState clicked = level.getBlockState(pos);
              BlockPos placePos = clicked.getBlock() instanceof LiquidBlockContainer && this.content == Fluids.WATER ? pos : directionOffsetPos;
@@ -17,7 +17,7 @@
                  this.checkExtraContent(player, level, itemStack, placePos);
                  if (player instanceof ServerPlayer serverPlayer && this.content != Fluids.EMPTY) {
                      CriteriaTriggers.PLACED_BLOCK.trigger(serverPlayer, placePos, itemStack);
-@@ -70,12 +_,22 @@
+@@ -72,12 +_,22 @@
                  if (this.content == Fluids.EMPTY) {
                      BlockState blockState = level.getBlockState(pos);
                      if (blockState.getBlock() instanceof BucketPickup bucketPickupBlock) {
@@ -41,7 +41,7 @@
                              if (!level.isClientSide()) {
                                  CriteriaTriggers.FILLED_BUCKET.trigger((ServerPlayer)player, taken);
                              }
-@@ -97,6 +_,13 @@
+@@ -99,6 +_,13 @@
      }
  
      public static ItemStack getEmptySuccessItem(final ItemStack itemStack, final Player player) {
@@ -55,7 +55,7 @@
          return !player.hasInfiniteMaterials() ? new ItemStack(Items.BUCKET) : itemStack;
      }
  
-@@ -105,7 +_,13 @@
+@@ -107,7 +_,13 @@
      }
  
      @Override
@@ -70,23 +70,29 @@
          if (!(this.content instanceof FlowingFluid flowingFluid)) {
              return false;
          } else {
-@@ -116,8 +_,18 @@
-             boolean placeLiquid = mayReplace
+@@ -119,6 +_,16 @@
                  || block instanceof LiquidBlockContainer container && container.canPlaceLiquid(user, level, pos, blockState, this.content);
              boolean canPlaceFluidInsideBlock = blockState.isAir() || placeLiquid && (!shiftKeyDown || hitResult == null);
-+            // CraftBukkit start
-+            if (canPlaceFluidInsideBlock && user instanceof Player player) {
-+                org.bukkit.event.player.PlayerBucketEmptyEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketEmptyEvent(level, player, pos, clicked, direction, itemStack, hand);
-+                if (event.isCancelled()) {
-+                    player.containerMenu.sendAllDataToRemote(); // SPIGOT-4541
-+                    return false;
+             if (canPlaceFluidInsideBlock) {
++                // CraftBukkit start
++                if (user instanceof Player player) {
++                    org.bukkit.event.player.PlayerBucketEmptyEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketEmptyEvent(level, player, pos, clicked, direction, itemStack, hand);
++                    if (event.isCancelled()) {
++                        player.containerMenu.sendAllDataToRemote(); // SPIGOT-4541
++                        return false;
++                    }
++                    itemLeftInHandAfterPlayerBucketEmptyEvent = event.getItemStack() != null ? event.getItemStack().equals(org.bukkit.craftbukkit.inventory.CraftItemStack.asNewCraftStack(net.minecraft.world.item.Items.BUCKET)) ? null : org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY; // Paper - Fix PlayerBucketEmptyEvent result itemstack
 +                }
-+                itemLeftInHandAfterPlayerBucketEmptyEvent = event.getItemStack() != null ? event.getItemStack().equals(org.bukkit.craftbukkit.inventory.CraftItemStack.asNewCraftStack(net.minecraft.world.item.Items.BUCKET)) ? null : org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY; // Paper - Fix PlayerBucketEmptyEvent result itemstack
-+            }
-+            // CraftBukkit end
-             if (!canPlaceFluidInsideBlock) {
++                // CraftBukkit end
+                 if (level.environmentAttributes().getValue(EnvironmentAttributes.WATER_EVAPORATES, pos) && this.content.is(FluidTags.WATER)) {
+                     int x = pos.getX();
+                     int y = pos.getY();
+@@ -150,7 +_,7 @@
+                     return true;
+                 }
+             } else {
 -                return hitResult != null && this.emptyContents(user, level, hitResult.getBlockPos().relative(hitResult.getDirection()), null);
 +                return hitResult != null && this.emptyContents(user, level, hitResult.getBlockPos().relative(hitResult.getDirection()), null, direction, clicked, itemStack, hand); // CraftBukkit
              }
- 
-             if (level.environmentAttributes().getValue(EnvironmentAttributes.WATER_EVAPORATES, pos) && this.content.is(FluidTags.WATER)) {
+         }
+     }
