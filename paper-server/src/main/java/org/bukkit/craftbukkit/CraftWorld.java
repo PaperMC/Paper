@@ -43,6 +43,7 @@ import net.minecraft.core.QuartPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
+import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.Identifier;
@@ -1756,15 +1757,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
         }
         this.getHandle().sendParticlesSource(
-                receivers == null ? this.getHandle().players() : Lists.transform(receivers, player -> ((CraftPlayer) player).getHandle()), // Paper -  Particle API
-                sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API
-                CraftParticle.createParticleParam(particle, data), // Particle
-                force,
-                false,
-                x, y, z, // Position
-                count, // Count
-                offsetX, offsetY, offsetZ, // Random offset
-                extra // Speed?
+            receivers == null ? this.getHandle().players() : Lists.transform(receivers, player -> ((CraftPlayer) player).getHandle()), // Paper -  Particle API
+            sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API
+            CraftParticle.createParticleParam(particle, data), // Particle
+            force,
+            false,
+            x, y, z, // Position
+            count, // Count
+            offsetX, offsetY, offsetZ, // Random offset
+            extra, // Speed?
+            ClientboundLevelParticlesPacket.RandomizationType.DEFAULT
         );
 
     }
