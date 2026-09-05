@@ -54,6 +54,8 @@ import org.bukkit.craftbukkit.entity.boat.CraftOakBoat;
 import org.bukkit.craftbukkit.entity.boat.CraftOakChestBoat;
 import org.bukkit.craftbukkit.entity.boat.CraftPaleOakBoat;
 import org.bukkit.craftbukkit.entity.boat.CraftPaleOakChestBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftPoplarBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftPoplarChestBoat;
 import org.bukkit.craftbukkit.entity.boat.CraftSpruceBoat;
 import org.bukkit.craftbukkit.entity.boat.CraftSpruceChestBoat;
 import org.bukkit.entity.Allay;
@@ -79,6 +81,7 @@ import org.bukkit.entity.CopperGolem;
 import org.bukkit.entity.Cow;
 import org.bukkit.entity.Creaking;
 import org.bukkit.entity.Creeper;
+import org.bukkit.entity.Cushion;
 import org.bukkit.entity.Dolphin;
 import org.bukkit.entity.Donkey;
 import org.bukkit.entity.DragonFireball;
@@ -208,6 +211,8 @@ import org.bukkit.entity.boat.OakBoat;
 import org.bukkit.entity.boat.OakChestBoat;
 import org.bukkit.entity.boat.PaleOakBoat;
 import org.bukkit.entity.boat.PaleOakChestBoat;
+import org.bukkit.entity.boat.PoplarBoat;
+import org.bukkit.entity.boat.PoplarChestBoat;
 import org.bukkit.entity.boat.SpruceBoat;
 import org.bukkit.entity.boat.SpruceChestBoat;
 import org.bukkit.entity.minecart.CommandMinecart;
@@ -434,6 +439,8 @@ public final class CraftEntityTypes {
         register(new EntityTypeData<>(EntityType.PALE_OAK_CHEST_BOAT, PaleOakChestBoat.class, CraftPaleOakChestBoat::new, createAndMove(net.minecraft.world.entity.EntityTypes.PALE_OAK_CHEST_BOAT)));
         register(new EntityTypeData<>(EntityType.SPRUCE_BOAT, SpruceBoat.class, CraftSpruceBoat::new, createAndMove(net.minecraft.world.entity.EntityTypes.SPRUCE_BOAT)));
         register(new EntityTypeData<>(EntityType.SPRUCE_CHEST_BOAT, SpruceChestBoat.class, CraftSpruceChestBoat::new, createAndMove(net.minecraft.world.entity.EntityTypes.SPRUCE_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.POPLAR_BOAT, PoplarBoat.class, CraftPoplarBoat::new, createAndMove(net.minecraft.world.entity.EntityTypes.POPLAR_BOAT)));
+        register(new EntityTypeData<>(EntityType.POPLAR_CHEST_BOAT, PoplarChestBoat.class, CraftPoplarChestBoat::new, createAndMove(net.minecraft.world.entity.EntityTypes.POPLAR_CHEST_BOAT)));
 
         // Set pos
         register(new EntityTypeData<>(EntityType.MARKER, Marker.class, CraftMarker::new, createAndSetPos(net.minecraft.world.entity.EntityTypes.MARKER)));
@@ -453,6 +460,7 @@ public final class CraftEntityTypes {
 
             return item;
         }));
+        register(new EntityTypeData<>(EntityType.CUSHION, Cushion.class, CraftCushion::new, createAndMoveEmptyRot(net.minecraft.world.entity.EntityTypes.CUSHION)));
         register(new EntityTypeData<>(EntityType.EXPERIENCE_ORB, ExperienceOrb.class, CraftExperienceOrb::new,
                 combine(combine(spawnData -> new net.minecraft.world.entity.ExperienceOrb(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), 0, org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM, null, null), CLEAR_MOVE_IF_NOT_RANDOMIZED), (spawnData, experienceOrb) -> { if (!spawnData.randomizeData()) { experienceOrb.setYRot(0); } }) // Paper - respect randomizeData
         ));
