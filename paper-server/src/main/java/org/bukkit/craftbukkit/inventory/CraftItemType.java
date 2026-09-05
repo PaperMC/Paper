@@ -12,15 +12,19 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.random.Weighted;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.component.Compostable;
 import net.minecraft.world.item.component.CookingFuel;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
 import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt;
+import net.minecraft.world.level.storage.loot.providers.number.ints.WeightedListValue;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Registry;
@@ -193,9 +197,32 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public float getCompostChance() {
-        Preconditions.checkArgument(this.isCompostable(), "The item type " + this.getKey() + " is not compostable");
-        // TODO - snapshot - how can get the chance if the component require context?
-        return ComposterBlock.COMPOSTABLES.getFloat(this.getHandle());
+        // TODO - snapshot - this cover vanilla but custom ones can break this.. maybe better deprecate this...
+        final net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.getHandle());
+        Compostable compostable = stack.get(DataComponents.COMPOSTABLE);
+        Preconditions.checkArgument(compostable != null, "The item type " + this.getKey() + " is not compostable");
+        if (compostable.layers() instanceof ResolvableInt.Constant) {
+            // Constant (ex: [minecraft:compostable={layers:10}]) case it's the 100% of cases add layers to the composter.
+            return 1;
+        } else if (compostable.layers() instanceof ResolvableInt.Reference reference) {
+            final ServerLevel serverLevel = ((CraftWorld) Bukkit.getWorlds().getFirst()).getHandle();
+            final LootContext lootContext = new LootContext.Builder(
+                new LootParams.Builder(serverLevel).create(LootContextParamSets.EMPTY)
+            ).create(Optional.empty());
+
+            return reference.getProvider(lootContext)
+                .map(contextIntProvider -> {
+                    if (contextIntProvider instanceof WeightedListValue(
+                        net.minecraft.util.random.WeightedList<Holder<ContextIntProvider>> distribution
+                    )) {
+                        return distribution.unwrap().stream().mapToInt(Weighted::weight).max().orElse(0);
+                    } else {
+                        return 1;
+                    }
+                }).orElse(0);
+        }
+
+        return 0;
     }
 
     @Override
