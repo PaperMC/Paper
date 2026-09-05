@@ -26,6 +26,20 @@ import org.jspecify.annotations.NullMarked;
 @GeneratedClass
 public final class MapDecorationTypeKeys {
     /**
+     * {@code minecraft:abandoned_camp}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<MapCursor.Type> ABANDONED_CAMP = create(key("abandoned_camp"));
+
+    /**
+     * {@code minecraft:ancient_city}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<MapCursor.Type> ANCIENT_CITY = create(key("ancient_city"));
+
+    /**
      * {@code minecraft:banner_black}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -145,6 +159,13 @@ public final class MapDecorationTypeKeys {
     public static final TypedKey<MapCursor.Type> BLUE_MARKER = create(key("blue_marker"));
 
     /**
+     * {@code minecraft:desert_pyramid}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<MapCursor.Type> DESERT_PYRAMID = create(key("desert_pyramid"));
+
+    /**
      * {@code minecraft:frame}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -166,11 +187,25 @@ public final class MapDecorationTypeKeys {
     public static final TypedKey<MapCursor.Type> MANSION = create(key("mansion"));
 
     /**
+     * {@code minecraft:mineshaft}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<MapCursor.Type> MINESHAFT = create(key("mineshaft"));
+
+    /**
      * {@code minecraft:monument}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<MapCursor.Type> MONUMENT = create(key("monument"));
+
+    /**
+     * {@code minecraft:ocean_ruin_warm}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<MapCursor.Type> OCEAN_RUIN_WARM = create(key("ocean_ruin_warm"));
 
     /**
      * {@code minecraft:player}
