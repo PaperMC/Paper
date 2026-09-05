@@ -373,6 +373,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> BLACK_CONCRETE_POWDER = getBlockType("black_concrete_powder");
 
+    BlockType.Typed<Slab> BLACK_CONCRETE_SLAB = getBlockType("black_concrete_slab");
+
+    BlockType.Typed<Stairs> BLACK_CONCRETE_STAIRS = getBlockType("black_concrete_stairs");
+
     BlockType.Typed<Directional> BLACK_GLAZED_TERRACOTTA = getBlockType("black_glazed_terracotta");
 
     BlockType.Typed<Directional> BLACK_SHULKER_BOX = getBlockType("black_shulker_box");
@@ -386,6 +390,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> BLACK_WALL_BANNER = getBlockType("black_wall_banner");
 
     BlockType.Typed<BlockData> BLACK_WOOL = getBlockType("black_wool");
+
+    BlockType.Typed<Slab> BLACK_WOOL_SLAB = getBlockType("black_wool_slab");
+
+    BlockType.Typed<Stairs> BLACK_WOOL_STAIRS = getBlockType("black_wool_stairs");
 
     BlockType.Typed<BlockData> BLACKSTONE = getBlockType("blackstone");
 
@@ -411,6 +419,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> BLUE_CONCRETE_POWDER = getBlockType("blue_concrete_powder");
 
+    BlockType.Typed<Slab> BLUE_CONCRETE_SLAB = getBlockType("blue_concrete_slab");
+
+    BlockType.Typed<Stairs> BLUE_CONCRETE_STAIRS = getBlockType("blue_concrete_stairs");
+
     BlockType.Typed<Directional> BLUE_GLAZED_TERRACOTTA = getBlockType("blue_glazed_terracotta");
 
     BlockType.Typed<BlockData> BLUE_ICE = getBlockType("blue_ice");
@@ -428,6 +440,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> BLUE_WALL_BANNER = getBlockType("blue_wall_banner");
 
     BlockType.Typed<BlockData> BLUE_WOOL = getBlockType("blue_wool");
+
+    BlockType.Typed<Slab> BLUE_WOOL_SLAB = getBlockType("blue_wool_slab");
+
+    BlockType.Typed<Stairs> BLUE_WOOL_STAIRS = getBlockType("blue_wool_stairs");
 
     BlockType.Typed<Orientable> BONE_BLOCK = getBlockType("bone_block");
 
@@ -465,6 +481,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> BROWN_CONCRETE_POWDER = getBlockType("brown_concrete_powder");
 
+    BlockType.Typed<Slab> BROWN_CONCRETE_SLAB = getBlockType("brown_concrete_slab");
+
+    BlockType.Typed<Stairs> BROWN_CONCRETE_STAIRS = getBlockType("brown_concrete_stairs");
+
     BlockType.Typed<Directional> BROWN_GLAZED_TERRACOTTA = getBlockType("brown_glazed_terracotta");
 
     BlockType.Typed<BlockData> BROWN_MUSHROOM = getBlockType("brown_mushroom");
@@ -482,6 +502,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> BROWN_WALL_BANNER = getBlockType("brown_wall_banner");
 
     BlockType.Typed<BlockData> BROWN_WOOL = getBlockType("brown_wool");
+
+    BlockType.Typed<Slab> BROWN_WOOL_SLAB = getBlockType("brown_wool_slab");
+
+    BlockType.Typed<Stairs> BROWN_WOOL_STAIRS = getBlockType("brown_wool_stairs");
 
     BlockType.Typed<BubbleColumn> BUBBLE_COLUMN = getBlockType("bubble_column");
 
@@ -771,6 +795,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> CYAN_CONCRETE_POWDER = getBlockType("cyan_concrete_powder");
 
+    BlockType.Typed<Slab> CYAN_CONCRETE_SLAB = getBlockType("cyan_concrete_slab");
+
+    BlockType.Typed<Stairs> CYAN_CONCRETE_STAIRS = getBlockType("cyan_concrete_stairs");
+
     BlockType.Typed<Directional> CYAN_GLAZED_TERRACOTTA = getBlockType("cyan_glazed_terracotta");
 
     BlockType.Typed<Directional> CYAN_SHULKER_BOX = getBlockType("cyan_shulker_box");
@@ -784,6 +812,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> CYAN_WALL_BANNER = getBlockType("cyan_wall_banner");
 
     BlockType.Typed<BlockData> CYAN_WOOL = getBlockType("cyan_wool");
+
+    BlockType.Typed<Slab> CYAN_WOOL_SLAB = getBlockType("cyan_wool_slab");
+
+    BlockType.Typed<Stairs> CYAN_WOOL_STAIRS = getBlockType("cyan_wool_stairs");
 
     BlockType.Typed<Directional> DAMAGED_ANVIL = getBlockType("damaged_anvil");
 
@@ -1073,6 +1105,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> GRAY_CONCRETE_POWDER = getBlockType("gray_concrete_powder");
 
+    BlockType.Typed<Slab> GRAY_CONCRETE_SLAB = getBlockType("gray_concrete_slab");
+
+    BlockType.Typed<Stairs> GRAY_CONCRETE_STAIRS = getBlockType("gray_concrete_stairs");
+
     BlockType.Typed<Directional> GRAY_GLAZED_TERRACOTTA = getBlockType("gray_glazed_terracotta");
 
     BlockType.Typed<Directional> GRAY_SHULKER_BOX = getBlockType("gray_shulker_box");
@@ -1086,6 +1122,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> GRAY_WALL_BANNER = getBlockType("gray_wall_banner");
 
     BlockType.Typed<BlockData> GRAY_WOOL = getBlockType("gray_wool");
+
+    BlockType.Typed<Slab> GRAY_WOOL_SLAB = getBlockType("gray_wool_slab");
+
+    BlockType.Typed<Stairs> GRAY_WOOL_STAIRS = getBlockType("gray_wool_stairs");
 
     BlockType.Typed<Rotatable> GREEN_BANNER = getBlockType("green_banner");
 
@@ -1101,6 +1141,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> GREEN_CONCRETE_POWDER = getBlockType("green_concrete_powder");
 
+    BlockType.Typed<Slab> GREEN_CONCRETE_SLAB = getBlockType("green_concrete_slab");
+
+    BlockType.Typed<Stairs> GREEN_CONCRETE_STAIRS = getBlockType("green_concrete_stairs");
+
     BlockType.Typed<Directional> GREEN_GLAZED_TERRACOTTA = getBlockType("green_glazed_terracotta");
 
     BlockType.Typed<Directional> GREEN_SHULKER_BOX = getBlockType("green_shulker_box");
@@ -1114,6 +1158,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> GREEN_WALL_BANNER = getBlockType("green_wall_banner");
 
     BlockType.Typed<BlockData> GREEN_WOOL = getBlockType("green_wool");
+
+    BlockType.Typed<Slab> GREEN_WOOL_SLAB = getBlockType("green_wool_slab");
+
+    BlockType.Typed<Stairs> GREEN_WOOL_STAIRS = getBlockType("green_wool_stairs");
 
     BlockType.Typed<Grindstone> GRINDSTONE = getBlockType("grindstone");
 
@@ -1251,6 +1299,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> LIGHT_BLUE_CONCRETE_POWDER = getBlockType("light_blue_concrete_powder");
 
+    BlockType.Typed<Slab> LIGHT_BLUE_CONCRETE_SLAB = getBlockType("light_blue_concrete_slab");
+
+    BlockType.Typed<Stairs> LIGHT_BLUE_CONCRETE_STAIRS = getBlockType("light_blue_concrete_stairs");
+
     BlockType.Typed<Directional> LIGHT_BLUE_GLAZED_TERRACOTTA = getBlockType("light_blue_glazed_terracotta");
 
     BlockType.Typed<Directional> LIGHT_BLUE_SHULKER_BOX = getBlockType("light_blue_shulker_box");
@@ -1264,6 +1316,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> LIGHT_BLUE_WALL_BANNER = getBlockType("light_blue_wall_banner");
 
     BlockType.Typed<BlockData> LIGHT_BLUE_WOOL = getBlockType("light_blue_wool");
+
+    BlockType.Typed<Slab> LIGHT_BLUE_WOOL_SLAB = getBlockType("light_blue_wool_slab");
+
+    BlockType.Typed<Stairs> LIGHT_BLUE_WOOL_STAIRS = getBlockType("light_blue_wool_stairs");
 
     BlockType.Typed<Rotatable> LIGHT_GRAY_BANNER = getBlockType("light_gray_banner");
 
@@ -1279,6 +1335,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> LIGHT_GRAY_CONCRETE_POWDER = getBlockType("light_gray_concrete_powder");
 
+    BlockType.Typed<Slab> LIGHT_GRAY_CONCRETE_SLAB = getBlockType("light_gray_concrete_slab");
+
+    BlockType.Typed<Stairs> LIGHT_GRAY_CONCRETE_STAIRS = getBlockType("light_gray_concrete_stairs");
+
     BlockType.Typed<Directional> LIGHT_GRAY_GLAZED_TERRACOTTA = getBlockType("light_gray_glazed_terracotta");
 
     BlockType.Typed<Directional> LIGHT_GRAY_SHULKER_BOX = getBlockType("light_gray_shulker_box");
@@ -1292,6 +1352,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> LIGHT_GRAY_WALL_BANNER = getBlockType("light_gray_wall_banner");
 
     BlockType.Typed<BlockData> LIGHT_GRAY_WOOL = getBlockType("light_gray_wool");
+
+    BlockType.Typed<Slab> LIGHT_GRAY_WOOL_SLAB = getBlockType("light_gray_wool_slab");
+
+    BlockType.Typed<Stairs> LIGHT_GRAY_WOOL_STAIRS = getBlockType("light_gray_wool_stairs");
 
     BlockType.Typed<AnaloguePowerable> LIGHT_WEIGHTED_PRESSURE_PLATE = getBlockType("light_weighted_pressure_plate");
 
@@ -1317,6 +1381,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> LIME_CONCRETE_POWDER = getBlockType("lime_concrete_powder");
 
+    BlockType.Typed<Slab> LIME_CONCRETE_SLAB = getBlockType("lime_concrete_slab");
+
+    BlockType.Typed<Stairs> LIME_CONCRETE_STAIRS = getBlockType("lime_concrete_stairs");
+
     BlockType.Typed<Directional> LIME_GLAZED_TERRACOTTA = getBlockType("lime_glazed_terracotta");
 
     BlockType.Typed<Directional> LIME_SHULKER_BOX = getBlockType("lime_shulker_box");
@@ -1330,6 +1398,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> LIME_WALL_BANNER = getBlockType("lime_wall_banner");
 
     BlockType.Typed<BlockData> LIME_WOOL = getBlockType("lime_wool");
+
+    BlockType.Typed<Slab> LIME_WOOL_SLAB = getBlockType("lime_wool_slab");
+
+    BlockType.Typed<Stairs> LIME_WOOL_STAIRS = getBlockType("lime_wool_stairs");
 
     BlockType.Typed<BlockData> LODESTONE = getBlockType("lodestone");
 
@@ -1349,6 +1421,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> MAGENTA_CONCRETE_POWDER = getBlockType("magenta_concrete_powder");
 
+    BlockType.Typed<Slab> MAGENTA_CONCRETE_SLAB = getBlockType("magenta_concrete_slab");
+
+    BlockType.Typed<Stairs> MAGENTA_CONCRETE_STAIRS = getBlockType("magenta_concrete_stairs");
+
     BlockType.Typed<Directional> MAGENTA_GLAZED_TERRACOTTA = getBlockType("magenta_glazed_terracotta");
 
     BlockType.Typed<Directional> MAGENTA_SHULKER_BOX = getBlockType("magenta_shulker_box");
@@ -1362,6 +1438,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> MAGENTA_WALL_BANNER = getBlockType("magenta_wall_banner");
 
     BlockType.Typed<BlockData> MAGENTA_WOOL = getBlockType("magenta_wool");
+
+    BlockType.Typed<Slab> MAGENTA_WOOL_SLAB = getBlockType("magenta_wool_slab");
+
+    BlockType.Typed<Stairs> MAGENTA_WOOL_STAIRS = getBlockType("magenta_wool_stairs");
 
     BlockType.Typed<BlockData> MAGMA_BLOCK = getBlockType("magma_block");
 
@@ -1533,7 +1613,13 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> ORANGE_CONCRETE_POWDER = getBlockType("orange_concrete_powder");
 
+    BlockType.Typed<Slab> ORANGE_CONCRETE_SLAB = getBlockType("orange_concrete_slab");
+
+    BlockType.Typed<Stairs> ORANGE_CONCRETE_STAIRS = getBlockType("orange_concrete_stairs");
+
     BlockType.Typed<Directional> ORANGE_GLAZED_TERRACOTTA = getBlockType("orange_glazed_terracotta");
+
+    BlockType.Typed<Leaves> ORANGE_POPLAR_LEAVES = getBlockType("orange_poplar_leaves");
 
     BlockType.Typed<Directional> ORANGE_SHULKER_BOX = getBlockType("orange_shulker_box");
 
@@ -1548,6 +1634,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> ORANGE_WALL_BANNER = getBlockType("orange_wall_banner");
 
     BlockType.Typed<BlockData> ORANGE_WOOL = getBlockType("orange_wool");
+
+    BlockType.Typed<Slab> ORANGE_WOOL_SLAB = getBlockType("orange_wool_slab");
+
+    BlockType.Typed<Stairs> ORANGE_WOOL_STAIRS = getBlockType("orange_wool_stairs");
 
     BlockType.Typed<BlockData> OXEYE_DAISY = getBlockType("oxeye_daisy");
 
@@ -1651,6 +1741,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> PINK_CONCRETE_POWDER = getBlockType("pink_concrete_powder");
 
+    BlockType.Typed<Slab> PINK_CONCRETE_SLAB = getBlockType("pink_concrete_slab");
+
+    BlockType.Typed<Stairs> PINK_CONCRETE_STAIRS = getBlockType("pink_concrete_stairs");
+
     BlockType.Typed<Directional> PINK_GLAZED_TERRACOTTA = getBlockType("pink_glazed_terracotta");
 
     BlockType.Typed<FlowerBed> PINK_PETALS = getBlockType("pink_petals");
@@ -1668,6 +1762,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> PINK_WALL_BANNER = getBlockType("pink_wall_banner");
 
     BlockType.Typed<BlockData> PINK_WOOL = getBlockType("pink_wool");
+
+    BlockType.Typed<Slab> PINK_WOOL_SLAB = getBlockType("pink_wool_slab");
+
+    BlockType.Typed<Stairs> PINK_WOOL_STAIRS = getBlockType("pink_wool_stairs");
 
     BlockType.Typed<Piston> PISTON = getBlockType("piston");
 
@@ -1757,6 +1855,40 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Wall> POLISHED_TUFF_WALL = getBlockType("polished_tuff_wall");
 
+    BlockType.Typed<Switch> POPLAR_BUTTON = getBlockType("poplar_button");
+
+    BlockType.Typed<Door> POPLAR_DOOR = getBlockType("poplar_door");
+
+    BlockType.Typed<Fence> POPLAR_FENCE = getBlockType("poplar_fence");
+
+    BlockType.Typed<Gate> POPLAR_FENCE_GATE = getBlockType("poplar_fence_gate");
+
+    BlockType.Typed<HangingSign> POPLAR_HANGING_SIGN = getBlockType("poplar_hanging_sign");
+
+    BlockType.Typed<Orientable> POPLAR_LOG = getBlockType("poplar_log");
+
+    BlockType.Typed<BlockData> POPLAR_PLANKS = getBlockType("poplar_planks");
+
+    BlockType.Typed<Powerable> POPLAR_PRESSURE_PLATE = getBlockType("poplar_pressure_plate");
+
+    BlockType.Typed<Sapling> POPLAR_SAPLING = getBlockType("poplar_sapling");
+
+    BlockType.Typed<Shelf> POPLAR_SHELF = getBlockType("poplar_shelf");
+
+    BlockType.Typed<Sign> POPLAR_SIGN = getBlockType("poplar_sign");
+
+    BlockType.Typed<Slab> POPLAR_SLAB = getBlockType("poplar_slab");
+
+    BlockType.Typed<Stairs> POPLAR_STAIRS = getBlockType("poplar_stairs");
+
+    BlockType.Typed<TrapDoor> POPLAR_TRAPDOOR = getBlockType("poplar_trapdoor");
+
+    BlockType.Typed<WallHangingSign> POPLAR_WALL_HANGING_SIGN = getBlockType("poplar_wall_hanging_sign");
+
+    BlockType.Typed<WallSign> POPLAR_WALL_SIGN = getBlockType("poplar_wall_sign");
+
+    BlockType.Typed<Orientable> POPLAR_WOOD = getBlockType("poplar_wood");
+
     BlockType.Typed<BlockData> POPPY = getBlockType("poppy");
 
     BlockType.Typed<Ageable> POTATOES = getBlockType("potatoes");
@@ -1821,6 +1953,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> POTTED_PINK_TULIP = getBlockType("potted_pink_tulip");
 
+    BlockType.Typed<BlockData> POTTED_POPLAR_SAPLING = getBlockType("potted_poplar_sapling");
+
     BlockType.Typed<BlockData> POTTED_POPPY = getBlockType("potted_poppy");
 
     BlockType.Typed<BlockData> POTTED_RED_MUSHROOM = getBlockType("potted_red_mushroom");
@@ -1877,6 +2011,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> PURPLE_CONCRETE_POWDER = getBlockType("purple_concrete_powder");
 
+    BlockType.Typed<Slab> PURPLE_CONCRETE_SLAB = getBlockType("purple_concrete_slab");
+
+    BlockType.Typed<Stairs> PURPLE_CONCRETE_STAIRS = getBlockType("purple_concrete_stairs");
+
     BlockType.Typed<Directional> PURPLE_GLAZED_TERRACOTTA = getBlockType("purple_glazed_terracotta");
 
     BlockType.Typed<Directional> PURPLE_SHULKER_BOX = getBlockType("purple_shulker_box");
@@ -1890,6 +2028,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> PURPLE_WALL_BANNER = getBlockType("purple_wall_banner");
 
     BlockType.Typed<BlockData> PURPLE_WOOL = getBlockType("purple_wool");
+
+    BlockType.Typed<Slab> PURPLE_WOOL_SLAB = getBlockType("purple_wool_slab");
+
+    BlockType.Typed<Stairs> PURPLE_WOOL_STAIRS = getBlockType("purple_wool_stairs");
 
     BlockType.Typed<BlockData> PURPUR_BLOCK = getBlockType("purpur_block");
 
@@ -1931,6 +2073,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> RED_CONCRETE_POWDER = getBlockType("red_concrete_powder");
 
+    BlockType.Typed<Slab> RED_CONCRETE_SLAB = getBlockType("red_concrete_slab");
+
+    BlockType.Typed<Stairs> RED_CONCRETE_STAIRS = getBlockType("red_concrete_stairs");
+
     BlockType.Typed<Directional> RED_GLAZED_TERRACOTTA = getBlockType("red_glazed_terracotta");
 
     BlockType.Typed<BlockData> RED_MUSHROOM = getBlockType("red_mushroom");
@@ -1945,6 +2091,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> RED_NETHER_BRICKS = getBlockType("red_nether_bricks");
 
+    BlockType.Typed<Leaves> RED_POPLAR_LEAVES = getBlockType("red_poplar_leaves");
+
     BlockType.Typed<BlockData> RED_SAND = getBlockType("red_sand");
 
     BlockType.Typed<BlockData> RED_SANDSTONE = getBlockType("red_sandstone");
@@ -1954,6 +2102,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Stairs> RED_SANDSTONE_STAIRS = getBlockType("red_sandstone_stairs");
 
     BlockType.Typed<Wall> RED_SANDSTONE_WALL = getBlockType("red_sandstone_wall");
+
+    BlockType.Typed<BlockData> RED_SHRUB = getBlockType("red_shrub");
 
     BlockType.Typed<Directional> RED_SHULKER_BOX = getBlockType("red_shulker_box");
 
@@ -1968,6 +2118,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> RED_WALL_BANNER = getBlockType("red_wall_banner");
 
     BlockType.Typed<BlockData> RED_WOOL = getBlockType("red_wool");
+
+    BlockType.Typed<Slab> RED_WOOL_SLAB = getBlockType("red_wool_slab");
+
+    BlockType.Typed<Stairs> RED_WOOL_STAIRS = getBlockType("red_wool_stairs");
 
     BlockType.Typed<BlockData> REDSTONE_BLOCK = getBlockType("redstone_block");
 
@@ -2032,6 +2186,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<SeaPickle> SEA_PICKLE = getBlockType("sea_pickle");
 
     BlockType.Typed<BlockData> SEAGRASS = getBlockType("seagrass");
+
+    BlockType.Typed<Ageable> SHELF_MUSHROOM = getBlockType("shelf_mushroom");
 
     BlockType.Typed<BlockData> SHORT_DRY_GRASS = getBlockType("short_dry_grass");
 
@@ -2163,6 +2319,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Directional> STONECUTTER = getBlockType("stonecutter");
 
+    BlockType.Typed<Directional> STRAW_BED = getBlockType("straw_bed");
+
     BlockType.Typed<Orientable> STRIPPED_ACACIA_LOG = getBlockType("stripped_acacia_log");
 
     BlockType.Typed<Orientable> STRIPPED_ACACIA_WOOD = getBlockType("stripped_acacia_wood");
@@ -2200,6 +2358,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Orientable> STRIPPED_PALE_OAK_LOG = getBlockType("stripped_pale_oak_log");
 
     BlockType.Typed<Orientable> STRIPPED_PALE_OAK_WOOD = getBlockType("stripped_pale_oak_wood");
+
+    BlockType.Typed<Orientable> STRIPPED_POPLAR_LOG = getBlockType("stripped_poplar_log");
+
+    BlockType.Typed<Orientable> STRIPPED_POPLAR_WOOD = getBlockType("stripped_poplar_wood");
 
     BlockType.Typed<Orientable> STRIPPED_SPRUCE_LOG = getBlockType("stripped_spruce_log");
 
@@ -2529,6 +2691,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> WHITE_CONCRETE_POWDER = getBlockType("white_concrete_powder");
 
+    BlockType.Typed<Slab> WHITE_CONCRETE_SLAB = getBlockType("white_concrete_slab");
+
+    BlockType.Typed<Stairs> WHITE_CONCRETE_STAIRS = getBlockType("white_concrete_stairs");
+
     BlockType.Typed<Directional> WHITE_GLAZED_TERRACOTTA = getBlockType("white_glazed_terracotta");
 
     BlockType.Typed<Directional> WHITE_SHULKER_BOX = getBlockType("white_shulker_box");
@@ -2544,6 +2710,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> WHITE_WALL_BANNER = getBlockType("white_wall_banner");
 
     BlockType.Typed<BlockData> WHITE_WOOL = getBlockType("white_wool");
+
+    BlockType.Typed<Slab> WHITE_WOOL_SLAB = getBlockType("white_wool_slab");
+
+    BlockType.Typed<Stairs> WHITE_WOOL_STAIRS = getBlockType("white_wool_stairs");
 
     BlockType.Typed<FlowerBed> WILDFLOWERS = getBlockType("wildflowers");
 
@@ -2567,7 +2737,13 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> YELLOW_CONCRETE_POWDER = getBlockType("yellow_concrete_powder");
 
+    BlockType.Typed<Slab> YELLOW_CONCRETE_SLAB = getBlockType("yellow_concrete_slab");
+
+    BlockType.Typed<Stairs> YELLOW_CONCRETE_STAIRS = getBlockType("yellow_concrete_stairs");
+
     BlockType.Typed<Directional> YELLOW_GLAZED_TERRACOTTA = getBlockType("yellow_glazed_terracotta");
+
+    BlockType.Typed<Leaves> YELLOW_POPLAR_LEAVES = getBlockType("yellow_poplar_leaves");
 
     BlockType.Typed<Directional> YELLOW_SHULKER_BOX = getBlockType("yellow_shulker_box");
 
@@ -2580,6 +2756,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> YELLOW_WALL_BANNER = getBlockType("yellow_wall_banner");
 
     BlockType.Typed<BlockData> YELLOW_WOOL = getBlockType("yellow_wool");
+
+    BlockType.Typed<Slab> YELLOW_WOOL_SLAB = getBlockType("yellow_wool_slab");
+
+    BlockType.Typed<Stairs> YELLOW_WOOL_STAIRS = getBlockType("yellow_wool_stairs");
 
     BlockType.Typed<Skull> ZOMBIE_HEAD = getBlockType("zombie_head");
 

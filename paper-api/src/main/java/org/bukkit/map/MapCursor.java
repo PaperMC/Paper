@@ -290,6 +290,10 @@ public final class MapCursor {
     public interface Type extends OldEnum<Type>, Keyed {
 
         // Start generate - MapCursorType
+        Type ABANDONED_CAMP = getType("abandoned_camp");
+
+        Type ANCIENT_CITY = getType("ancient_city");
+
         Type BANNER_BLACK = getType("banner_black");
 
         Type BANNER_BLUE = getType("banner_blue");
@@ -324,13 +328,19 @@ public final class MapCursor {
 
         Type BLUE_MARKER = getType("blue_marker");
 
+        Type DESERT_PYRAMID = getType("desert_pyramid");
+
         Type FRAME = getType("frame");
 
         Type JUNGLE_TEMPLE = getType("jungle_temple");
 
         Type MANSION = getType("mansion");
 
+        Type MINESHAFT = getType("mineshaft");
+
         Type MONUMENT = getType("monument");
+
+        Type OCEAN_RUIN_WARM = getType("ocean_ruin_warm");
 
         Type PLAYER = getType("player");
 

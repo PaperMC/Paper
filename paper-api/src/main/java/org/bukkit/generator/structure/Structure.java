@@ -19,6 +19,42 @@ import org.jetbrains.annotations.NotNull;
 public abstract class Structure implements Keyed {
 
     // Start generate - Structure
+    public static final Structure ABANDONED_CAMP_BAMBOO_JUNGLE = getStructure("abandoned_camp_bamboo_jungle");
+
+    public static final Structure ABANDONED_CAMP_BIRCH_FOREST = getStructure("abandoned_camp_birch_forest");
+
+    public static final Structure ABANDONED_CAMP_CHERRY_GROVE = getStructure("abandoned_camp_cherry_grove");
+
+    public static final Structure ABANDONED_CAMP_DAPPLED_FOREST = getStructure("abandoned_camp_dappled_forest");
+
+    public static final Structure ABANDONED_CAMP_FLOWER_FOREST = getStructure("abandoned_camp_flower_forest");
+
+    public static final Structure ABANDONED_CAMP_FOREST = getStructure("abandoned_camp_forest");
+
+    public static final Structure ABANDONED_CAMP_MEADOW = getStructure("abandoned_camp_meadow");
+
+    public static final Structure ABANDONED_CAMP_OLD_GROWTH_BIRCH_FOREST = getStructure("abandoned_camp_old_growth_birch_forest");
+
+    public static final Structure ABANDONED_CAMP_OLD_GROWTH_PINE_TAIGA = getStructure("abandoned_camp_old_growth_pine_taiga");
+
+    public static final Structure ABANDONED_CAMP_OLD_GROWTH_SPRUCE_TAIGA = getStructure("abandoned_camp_old_growth_spruce_taiga");
+
+    public static final Structure ABANDONED_CAMP_PALE_GARDEN = getStructure("abandoned_camp_pale_garden");
+
+    public static final Structure ABANDONED_CAMP_SAVANNA = getStructure("abandoned_camp_savanna");
+
+    public static final Structure ABANDONED_CAMP_SNOWY_TAIGA = getStructure("abandoned_camp_snowy_taiga");
+
+    public static final Structure ABANDONED_CAMP_SPARSE_JUNGLE = getStructure("abandoned_camp_sparse_jungle");
+
+    public static final Structure ABANDONED_CAMP_SWAMP = getStructure("abandoned_camp_swamp");
+
+    public static final Structure ABANDONED_CAMP_TAIGA = getStructure("abandoned_camp_taiga");
+
+    public static final Structure ABANDONED_CAMP_WINDSWEPT_FOREST = getStructure("abandoned_camp_windswept_forest");
+
+    public static final Structure ABANDONED_CAMP_WOODED_BADLANDS = getStructure("abandoned_camp_wooded_badlands");
+
     public static final Structure ANCIENT_CITY = getStructure("ancient_city");
 
     public static final Structure BASTION_REMNANT = getStructure("bastion_remnant");

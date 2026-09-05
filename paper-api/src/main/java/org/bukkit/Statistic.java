@@ -69,6 +69,7 @@ public enum Statistic implements Keyed {
     RAID_TRIGGER,
     RAID_WIN,
     SLEEP_IN_BED,
+    SLEEP_IN_STRAW_BED,
     SNEAK_TIME,
     SPRINT_ONE_CM,
     STRIDER_ONE_CM,
