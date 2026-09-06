@@ -333,11 +333,11 @@ public final class CraftLegacy {
                     Dynamic blockTag = BlockStateData.getTag(material.getId() << 4 | data);
                     blockTag = DataFixers.getDataFixer().update(References.BLOCK_STATE, blockTag, 100, CraftMagicNumbers.INSTANCE.getDataVersion());
                     // TODO: better skull conversion, chests
-                    if (blockTag.get("Name").asString("").contains("%%FILTER_ME%%")) {
+                    if (blockTag.get("id").asString("").contains("%%FILTER_ME%%")) {
                         continue;
                     }
 
-                    String name = blockTag.get("Name").asString("");
+                    String name = blockTag.get("id").asString("");
                     Block block = BuiltInRegistries.BLOCK.getValue(Identifier.parse(name));
                     if (block == null) {
                         continue;
@@ -345,7 +345,7 @@ public final class CraftLegacy {
                     BlockState state = block.defaultBlockState();
                     StateDefinition<?, ?> def = block.getStateDefinition();
 
-                    Optional<CompoundTag> propertiesTag = blockTag.getElement("Properties").result();
+                    Optional<CompoundTag> propertiesTag = blockTag.getElement("properties").result();
                     if (propertiesTag.isPresent()) {
                         CompoundTag properties = propertiesTag.get();
                         for (String propertyName : properties.keySet()) {
