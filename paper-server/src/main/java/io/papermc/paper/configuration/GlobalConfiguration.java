@@ -10,6 +10,7 @@ import io.papermc.paper.configuration.type.number.IntOr;
 import io.papermc.paper.util.sanitizer.ItemObfuscationBinding;
 import io.papermc.paper.util.sanitizer.OversizedItemComponentSanitizer;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import java.util.List;
@@ -543,7 +544,7 @@ public class GlobalConfiguration extends ConfigurationPart {
     public Stats stats;
     public class Stats extends ConfigurationPart {
         public boolean disableSaving = false;
-        public Object2IntMap<Holder<Identifier>> forcedCustomStatValues;
+        public Object2IntMap<Holder<Identifier>> forcedCustomStatValues = new Object2IntOpenHashMap<>();
     }
 
     public AttributesSection attributes;
