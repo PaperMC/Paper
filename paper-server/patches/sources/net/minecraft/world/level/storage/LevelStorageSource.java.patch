@@ -1,11 +1,32 @@
 --- a/net/minecraft/world/level/storage/LevelStorageSource.java
 +++ b/net/minecraft/world/level/storage/LevelStorageSource.java
-@@ -145,21 +_,28 @@
+@@ -145,21 +_,48 @@
          final WorldDataConfiguration dataConfiguration,
          final Registry<LevelStem> datapackDimensions,
          final HolderLookup.Provider registryAccess
+-    ) {
 +        , final ResourceKey<Level> dimension // Paper - pass dimension
-     ) {
++    ) {
++        // Paper start - Recover missing overworld world gen settings
++        return getLevelDataAndDimensions(worldAccess, levelDataTag, dataConfiguration, datapackDimensions, registryAccess, dimension, () -> {
++            // Preserve dimension settings if we got them from the datapack
++            WorldDimensions defaultDimensions = datapackDimensions.containsKey(LevelStem.OVERWORLD)
++                ? new WorldDimensions(datapackDimensions)
++                : net.minecraft.world.level.levelgen.presets.WorldPresets.createNormalWorldDimensions(registryAccess);
++            return new WorldGenSettings(WorldOptions.defaultWithRandomSeed(), defaultDimensions);
++        });
++    }
++
++    public static LevelDataAndDimensions getLevelDataAndDimensions(
++        final LevelStorageSource.LevelStorageAccess worldAccess,
++        final Dynamic<?> levelDataTag,
++        final WorldDataConfiguration dataConfiguration,
++        final Registry<LevelStem> datapackDimensions,
++        final HolderLookup.Provider registryAccess,
++        final ResourceKey<Level> dimension,
++        final java.util.function.Supplier<WorldGenSettings> worldGenSettingsFactory
++    ) {
++        // Paper end - Recover missing overworld world gen settings
          if (DataFixers.getFileFixer().requiresFileFixing(NbtUtils.getDataVersion(levelDataTag))) {
              throw new IllegalStateException("Cannot get level data without file fixing first");
          }
@@ -25,11 +46,11 @@
 +                        throw new IllegalStateException("Unable to read or access the world gen settings file " + dataLocation + ". " + error.message());
 +                    }
 +                    LOGGER.warn(
-+                        "World gen settings file is missing! Falling back to the default settings with a random world seed. {}",
++                        "World gen settings file is missing! Recreating settings from server.properties. {}",
 +                        dataLocation
                      );
 -                    return new WorldGenSettings(WorldOptions.defaultWithRandomSeed(), new WorldDimensions(datapackDimensions));
-+                    return new WorldGenSettings(WorldOptions.defaultWithRandomSeed(), net.minecraft.world.level.levelgen.presets.WorldPresets.createNormalWorldDimensions(registryAccess));
++                    return worldGenSettingsFactory.get();
 +                    // Paper end - Recover missing overworld world gen settings
                  }
              );
