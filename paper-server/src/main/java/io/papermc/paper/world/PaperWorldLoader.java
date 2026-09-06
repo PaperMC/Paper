@@ -144,7 +144,7 @@ public record PaperWorldLoader(MinecraftServer server, String levelId) {
             return;
         }
 
-        final WorldGenSettings worldGenSettings = !hasWorldData
+        final WorldGenSettings worldGenSettings = loading.info().dimensionKey() == Level.OVERWORLD || !hasWorldData
             ? this.server.getWorldGenSettings()
             : loadWorldGenSettings(
             this.server.storageSource,

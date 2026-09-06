@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/storage/LevelStorageSource.java
 +++ b/net/minecraft/world/level/storage/LevelStorageSource.java
-@@ -145,13 +_,14 @@
+@@ -145,21 +_,28 @@
          final WorldDataConfiguration dataConfiguration,
          final Registry<LevelStem> datapackDimensions,
          final HolderLookup.Provider registryAccess
@@ -16,6 +16,24 @@
              .mapOrElse(
                  Function.identity(),
                  error -> {
+-                    LOGGER.error(
+-                        "Unable to read or access the world gen settings file! Falling back to the default settings with a random world seed. {}",
+-                        error.message()
++                    // Paper start - Recover missing overworld world gen settings
++                    Path dataLocation = WorldGenSettings.TYPE.id().withSuffix(".dat").resolveAgainst(worldAccess.getDimensionPath(dimension).resolve(LevelResource.DATA.id()));
++                    if (!Files.notExists(dataLocation, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
++                        throw new IllegalStateException("Unable to read or access the world gen settings file " + dataLocation + ". " + error.message());
++                    }
++                    LOGGER.warn(
++                        "World gen settings file is missing! Falling back to the default settings with a random world seed. {}",
++                        dataLocation
+                     );
+-                    return new WorldGenSettings(WorldOptions.defaultWithRandomSeed(), new WorldDimensions(datapackDimensions));
++                    return new WorldGenSettings(WorldOptions.defaultWithRandomSeed(), net.minecraft.world.level.levelgen.presets.WorldPresets.createNormalWorldDimensions(registryAccess));
++                    // Paper end - Recover missing overworld world gen settings
+                 }
+             );
+         LevelSettings settings = LevelSettings.parse(dataTag, dataConfiguration);
 @@ -170,9 +_,9 @@
      }
  
