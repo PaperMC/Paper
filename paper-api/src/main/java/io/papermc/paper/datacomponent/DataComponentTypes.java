@@ -391,6 +391,8 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<DyeColor> CAT_COLLAR = valued("cat/collar");
     public static final DataComponentType.Valued<DyeColor> SHEEP_COLOR = valued("sheep/color");
     public static final DataComponentType.Valued<DyeColor> SHULKER_COLOR = valued("shulker/color");
+    public static final DataComponentType.NonValued WAXED = unvalued("waxed");
+    public static final DataComponentType.Valued<DyeColor> CUSHION_COLOR = valued("cushion/color");
 
     private static DataComponentType.NonValued unvalued(@KeyPattern.Value final String key) {
         final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));
