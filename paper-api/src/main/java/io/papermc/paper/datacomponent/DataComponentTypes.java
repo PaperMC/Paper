@@ -27,6 +27,7 @@ import io.papermc.paper.datacomponent.item.KineticWeapon;
 import io.papermc.paper.datacomponent.item.LodestoneTracker;
 import io.papermc.paper.datacomponent.item.MapDecorations;
 import io.papermc.paper.datacomponent.item.MapId;
+import io.papermc.paper.datacomponent.item.MobVisibility;
 import io.papermc.paper.datacomponent.item.OminousBottleAmplifier;
 import io.papermc.paper.datacomponent.item.PiercingWeapon;
 import io.papermc.paper.datacomponent.item.PotDecorations;
@@ -393,6 +394,7 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<DyeColor> SHULKER_COLOR = valued("shulker/color");
     public static final DataComponentType.NonValued WAXED = unvalued("waxed");
     public static final DataComponentType.Valued<DyeColor> CUSHION_COLOR = valued("cushion/color");
+    public static final DataComponentType.Valued<MobVisibility> MOB_VISIBILITY = valued("mob_visibility");
 
     private static DataComponentType.NonValued unvalued(@KeyPattern.Value final String key) {
         final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));

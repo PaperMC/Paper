@@ -2,10 +2,12 @@ package io.papermc.paper.datacomponent.item;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.text.Filtered;
+import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.core.registries.Registries;
@@ -14,6 +16,7 @@ import org.bukkit.JukeboxSong;
 import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
@@ -287,5 +290,15 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
         Preconditions.checkArgument(absorbedItem != null, "absorbedItem cannot be null");
         Preconditions.checkArgument(!absorbedItem.isEmpty(), "absorbedItem cannot be empty");
         return new PaperSulfurCubeContent(new net.minecraft.world.item.component.SulfurCubeContent(CraftItemStack.asTemplate(absorbedItem)));
+    }
+
+    @Override
+    public MobVisibility mobVisibility(final RegistryKeySet<EntityType> targetingEntityTypes, final float visibility) {
+        Preconditions.checkArgument(targetingEntityTypes != null, "targetingEntityTypes cannot be null");
+        Preconditions.checkArgument(!targetingEntityTypes.isEmpty(), "targetingEntityTypes cannot be empty");
+        return new PaperMobVisibility(new net.minecraft.world.item.component.MobVisibility(
+            PaperRegistrySets.convertToNms(Registries.ENTITY_TYPE, Conversions.global().lookup(), targetingEntityTypes),
+            requireRange(visibility, "visibility", net.minecraft.world.item.component.MobVisibility.MIN_VISIBILITY, net.minecraft.world.item.component.MobVisibility.MAX_VISIBILITY))
+        );
     }
 }

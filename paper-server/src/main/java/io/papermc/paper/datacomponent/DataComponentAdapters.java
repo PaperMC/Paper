@@ -28,6 +28,7 @@ import io.papermc.paper.datacomponent.item.PaperKineticWeapon;
 import io.papermc.paper.datacomponent.item.PaperLodestoneTracker;
 import io.papermc.paper.datacomponent.item.PaperMapDecorations;
 import io.papermc.paper.datacomponent.item.PaperMapId;
+import io.papermc.paper.datacomponent.item.PaperMobVisibility;
 import io.papermc.paper.datacomponent.item.PaperOminousBottleAmplifier;
 import io.papermc.paper.datacomponent.item.PaperPiercingWeapon;
 import io.papermc.paper.datacomponent.item.PaperPotDecorations;
@@ -216,6 +217,7 @@ public final class DataComponentAdapters {
         register(DataComponents.SHULKER_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         registerUntyped(DataComponents.WAXED);
         register(DataComponents.CUSHION_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
+        register(DataComponents.MOB_VISIBILITY, PaperMobVisibility::new);
 
         for (final ResourceKey<DataComponentType<?>> key : BuiltInRegistries.DATA_COMPONENT_TYPE.registryKeySet()) {
             if (!ADAPTERS.containsKey(key)) {

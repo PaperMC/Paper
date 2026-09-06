@@ -11,6 +11,7 @@ import net.kyori.adventure.util.TriState;
 import org.bukkit.JukeboxSong;
 import org.bukkit.block.BlockType;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
@@ -129,4 +130,6 @@ interface ItemComponentTypesBridge {
     KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed);
 
     SulfurCubeContent sulfurCubeContent(ItemStack absorbedItem);
+
+    MobVisibility mobVisibility(RegistryKeySet<EntityType> targetingEntityTypes, float visibility);
 }
