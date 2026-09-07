@@ -57,9 +57,7 @@ dependencies {
     api("com.google.guava:guava:33.6.0-jre")
     api("com.google.code.gson:gson:2.14.0")
     api("org.yaml:snakeyaml:2.2")
-    api("org.joml:joml:1.10.8") {
-        isTransitive = false // https://github.com/JOML-CI/JOML/issues/352
-    }
+    api("org.joml:joml:1.10.9")
     api("it.unimi.dsi:fastutil:8.5.18")
     api("org.apache.logging.log4j:log4j-api:$log4jVersion")
     api("org.slf4j:slf4j-api:$slf4jVersion")
@@ -207,7 +205,7 @@ tasks.withType<Javadoc>().configureEach {
         "https://guava.dev/releases/33.6.0-jre/api/docs/",
         "https://www.javadocs.dev/org.yaml/snakeyaml/2.2/",
         "https://www.javadocs.dev/org.jetbrains/annotations/$annotationsVersion/",
-        "https://www.javadocs.dev/org.joml/joml/1.10.8/",
+        "https://www.javadocs.dev/org.joml/joml/1.10.9/",
         "https://www.javadocs.dev/com.google.code.gson/gson/2.14.0",
         "https://jspecify.dev/docs/api/",
         "https://jd.papermc.io/adventure/$adventureVersion/",
