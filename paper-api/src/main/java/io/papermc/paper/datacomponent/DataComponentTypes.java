@@ -60,6 +60,7 @@ import org.bukkit.FireworkEffect;
 import org.bukkit.MusicInstrument;
 import org.bukkit.Registry;
 import org.bukkit.block.banner.PatternType;
+import org.bukkit.block.pot.PotPatternType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.Cat;
@@ -306,6 +307,7 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<OminousBottleAmplifier> OMINOUS_BOTTLE_AMPLIFIER = valued("ominous_bottle_amplifier");
     public static final DataComponentType.Valued<JukeboxPlayable> JUKEBOX_PLAYABLE = valued("jukebox_playable");
     public static final DataComponentType.Valued<RegistryKeySet<PatternType>> PROVIDES_BANNER_PATTERNS = valued("provides_banner_patterns");
+    public static final DataComponentType.Valued<PotPatternType> PROVIDES_POTTERY_PATTERN = valued("provides_pottery_pattern");
     /**
      * List of recipes that should be unlocked when using the Knowledge Book item.
      */

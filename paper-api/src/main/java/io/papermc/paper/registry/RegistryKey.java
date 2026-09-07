@@ -19,6 +19,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
+import org.bukkit.block.pot.PotPatternType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Cat;
@@ -193,6 +194,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.BannerPatternKeys
      */
     RegistryKey<PatternType> BANNER_PATTERN = create("banner_pattern");
+    /**
+     * Data-driven registry for decorated pot patterns.
+     * @see io.papermc.paper.registry.keys.DecoratedPotPatternKeys
+     */
+    RegistryKey<PotPatternType> DECORATED_POT_PATTERN = create("decorated_pot_pattern");
     /**
      * Data-driven registry for painting variants.
      * @see io.papermc.paper.registry.keys.PaintingVariantKeys

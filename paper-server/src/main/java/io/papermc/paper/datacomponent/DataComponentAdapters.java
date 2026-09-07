@@ -66,6 +66,7 @@ import net.minecraft.world.item.component.MapPostProcessing;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
+import org.bukkit.craftbukkit.block.pot.CraftPotPatternType;
 import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.entity.CraftCat;
 import org.bukkit.craftbukkit.entity.CraftChicken;
@@ -159,6 +160,7 @@ public final class DataComponentAdapters {
         register(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, PaperOminousBottleAmplifier::new);
         register(DataComponents.JUKEBOX_PLAYABLE, PaperJukeboxPlayable::new);
         register(DataComponents.PROVIDES_BANNER_PATTERNS, set -> PaperRegistrySets.convertToApi(RegistryKey.BANNER_PATTERN, set), set -> PaperRegistrySets.convertToNms(Registries.BANNER_PATTERN, Conversions.global().lookup(), set));
+        register(DataComponents.PROVIDES_POTTERY_PATTERN, CraftPotPatternType::minecraftHolderToBukkit, CraftPotPatternType::bukkitToMinecraftHolder);
         register(
             DataComponents.RECIPES,
             nms -> transformUnmodifiable(nms, PaperAdventure::asAdventureKey),

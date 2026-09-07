@@ -17,6 +17,7 @@ import io.papermc.paper.registry.data.InstrumentRegistryEntry;
 import io.papermc.paper.registry.data.JukeboxSongRegistryEntry;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PigVariantRegistryEntry;
+import io.papermc.paper.registry.data.PotPatternRegistryEntry;
 import io.papermc.paper.registry.data.SoundEventRegistryEntry;
 import io.papermc.paper.registry.data.SulfurCubeArchetypeRegistryEntry;
 import io.papermc.paper.registry.data.TrimMaterialRegistryEntry;
@@ -73,6 +74,7 @@ import net.minecraft.world.item.equipment.trim.TrimPatterns;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BannerPatterns;
+import net.minecraft.world.level.block.entity.DecoratedPotPatterns;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.material.Fluids;
@@ -90,6 +92,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
+import org.bukkit.block.pot.PotPatternType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Cat;
@@ -196,6 +199,7 @@ public final class RegistryEntries {
         entry(Registries.ENCHANTMENT, Enchantments.class, Enchantment.class).writableApiRegistryBuilder(EnchantmentRegistryEntry.Builder.class, "PaperEnchantmentRegistryEntry.PaperBuilder").serializationUpdater("ENCHANTMENT_RENAME").delayed(),
         entry(Registries.JUKEBOX_SONG, JukeboxSongs.class, JukeboxSong.class).writableApiRegistryBuilder(JukeboxSongRegistryEntry.Builder.class, "PaperJukeboxSongRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.BANNER_PATTERN, BannerPatterns.class, PatternType.class).allowDirect().writableApiRegistryBuilder(BannerPatternRegistryEntry.Builder.class, "PaperBannerPatternRegistryEntry.PaperBuilder").delayed(),
+        entry(Registries.DECORATED_POT_PATTERN, DecoratedPotPatterns.class, PotPatternType.class).allowDirect().writableApiRegistryBuilder(PotPatternRegistryEntry.Builder.class, "PaperPotPatternRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.PAINTING_VARIANT, PaintingVariants.class, Art.class).writableApiRegistryBuilder(PaintingVariantRegistryEntry.Builder.class, "PaperPaintingVariantRegistryEntry.PaperBuilder").apiRegistryField("ART").delayed(),
         entry(Registries.INSTRUMENT, Instruments.class, MusicInstrument.class).allowDirect().writableApiRegistryBuilder(InstrumentRegistryEntry.Builder.class, "PaperInstrumentRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.CAT_VARIANT, CatVariants.class, Cat.Type.class).writableApiRegistryBuilder(CatTypeRegistryEntry.Builder.class, "PaperCatTypeRegistryEntry.PaperBuilder").delayed(),
