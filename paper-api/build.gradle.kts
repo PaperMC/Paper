@@ -93,7 +93,7 @@ dependencies {
     compileOnlyApi(checkerQual)
     testCompileOnly(checkerQual)
 
-    apiAndDocs("org.jspecify:jspecify:1.0.0")
+    apiAndDocs("org.jspecify:jspecify:1.0.1")
 
     // Test dependencies
     testImplementation("org.apache.commons:commons-lang3:3.20.0")
