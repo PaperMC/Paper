@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Represents the visibility percentage provided by an item with the appropriate {@link DataComponentTypes#EQUIPPABLE} component,
+ * Represents the visibility provided by an item with the appropriate {@link DataComponentTypes#EQUIPPABLE} component,
  * modifying the range at which mobs are able to detect an entity.
  *
  * @see io.papermc.paper.datacomponent.DataComponentTypes#MOB_VISIBILITY
@@ -18,6 +18,7 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.NonExtendable
 public interface MobVisibility {
 
+    @Contract(value = "_, _ -> new", pure = true)
     static MobVisibility mobVisibility(RegistryKeySet<EntityType> targetingEntityTypes, @Range(from = 0, to = 10) float visibility) {
         return ItemComponentTypesBridge.bridge().mobVisibility(targetingEntityTypes, visibility);
     }
