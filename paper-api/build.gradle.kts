@@ -22,7 +22,7 @@ paperCheckstyle {
     directoriesToSkipFile = layout.projectDirectory.file(".checkstyle/ignored_directories.txt")
 }
 
-val annotationsVersion = "26.0.2"
+val annotationsVersion = "26.1.0"
 val adventureVersion = "5.2.0"
 val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
 val slf4jVersion = "2.0.17"
@@ -89,7 +89,7 @@ dependencies {
     testCompileOnly(annotations)
     javadocSourcepath(annotations) // For adventure-api module requirements
 
-    val checkerQual = "org.checkerframework:checker-qual:3.49.2"
+    val checkerQual = "org.checkerframework:checker-qual:4.2.3"
     compileOnlyApi(checkerQual)
     testCompileOnly(checkerQual)
 
