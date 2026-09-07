@@ -918,7 +918,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     double getDefaultGravity();
 
     /**
-     * Returns the acceleration due to gravity (in blocks per tick). If {@link Entity#hasGravity()} is true, returns 0.
+     * Returns the acceleration due to gravity (in blocks per tick). If {@link Entity#hasGravity()} is false, returns 0.
      *
      * @return the acceleration due to gravity
      */
