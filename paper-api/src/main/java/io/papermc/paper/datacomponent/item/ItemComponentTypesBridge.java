@@ -3,9 +3,11 @@ package io.papermc.paper.datacomponent.item;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.text.Filtered;
+import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.util.TriState;
 import org.bukkit.JukeboxSong;
 import org.bukkit.block.BlockType;
@@ -133,4 +135,8 @@ interface ItemComponentTypesBridge {
     MobVisibility mobVisibility(RegistryKeySet<EntityType> targetingEntityTypes, float visibility);
 
     VillagerFood villagerFood(int nutrition);
+
+    SignText.Builder signText();
+
+    SignText.Builder signText(List<? extends ComponentLike> messages);
 }

@@ -36,6 +36,7 @@ import io.papermc.paper.datacomponent.item.PaperPotionContents;
 import io.papermc.paper.datacomponent.item.PaperRepairable;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.PaperSeededContainerLoot;
+import io.papermc.paper.datacomponent.item.PaperSignText;
 import io.papermc.paper.datacomponent.item.PaperSulfurCubeContent;
 import io.papermc.paper.datacomponent.item.PaperSuspiciousStewEffects;
 import io.papermc.paper.datacomponent.item.PaperSwingAnimation;
@@ -220,6 +221,8 @@ public final class DataComponentAdapters {
         register(DataComponents.CUSHION_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.MOB_VISIBILITY, PaperMobVisibility::new);
         register(DataComponents.VILLAGER_FOOD, PaperVillagerFood::new);
+        register(DataComponents.SIGN_TEXT_FRONT, PaperSignText::new);
+        register(DataComponents.SIGN_TEXT_BACK, PaperSignText::new);
 
         for (final ResourceKey<DataComponentType<?>> key : BuiltInRegistries.DATA_COMPONENT_TYPE.registryKeySet()) {
             if (!ADAPTERS.containsKey(key)) {

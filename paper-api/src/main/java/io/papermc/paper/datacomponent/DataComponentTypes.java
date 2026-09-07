@@ -35,6 +35,7 @@ import io.papermc.paper.datacomponent.item.PotionContents;
 import io.papermc.paper.datacomponent.item.Repairable;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.datacomponent.item.SeededContainerLoot;
+import io.papermc.paper.datacomponent.item.SignText;
 import io.papermc.paper.datacomponent.item.SulfurCubeContent;
 import io.papermc.paper.datacomponent.item.SuspiciousStewEffects;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
@@ -397,6 +398,8 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<DyeColor> CUSHION_COLOR = valued("cushion/color");
     public static final DataComponentType.Valued<MobVisibility> MOB_VISIBILITY = valued("mob_visibility");
     public static final DataComponentType.Valued<VillagerFood> VILLAGER_FOOD = valued("villager_food");
+    public static final DataComponentType.Valued<SignText> SIGN_TEXT_FRONT = valued("sign_text_front");
+    public static final DataComponentType.Valued<SignText> SIGN_TEXT_BACK = valued("sign_text_back");
 
     private static DataComponentType.NonValued unvalued(@KeyPattern.Value final String key) {
         final DataComponentType dataComponentType = Registry.DATA_COMPONENT_TYPE.getOrThrow(Key.key(Key.MINECRAFT_NAMESPACE, key));

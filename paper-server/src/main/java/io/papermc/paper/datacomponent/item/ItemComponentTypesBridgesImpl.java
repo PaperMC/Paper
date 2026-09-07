@@ -2,13 +2,15 @@ package io.papermc.paper.datacomponent.item;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.common.base.Preconditions;
-import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.text.Filtered;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.component.OminousBottleAmplifier;
@@ -305,5 +307,15 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     @Override
     public VillagerFood villagerFood(final int nutrition) {
         return new PaperVillagerFood(new net.minecraft.world.food.VillagerFood(requireNonNegative(nutrition, "nutrition")));
+    }
+
+    @Override
+    public SignText.Builder signText() {
+        return new PaperSignText.BuilderImpl();
+    }
+
+    @Override
+    public SignText.Builder signText(final List<? extends ComponentLike> messages) {
+        return new PaperSignText.BuilderImpl(PaperAdventure.asVanilla(new ArrayList<>(ComponentLike.asComponents(messages))));
     }
 }
