@@ -63,7 +63,7 @@ dependencies {
     api("it.unimi.dsi:fastutil:8.5.18")
     api("org.apache.logging.log4j:log4j-api:$log4jVersion")
     api("org.slf4j:slf4j-api:$slf4jVersion")
-    api("com.mojang:brigadier:1.3.10")
+    api("com.mojang:brigadier:1.3.11")
 
     // Deprecate bungeecord-chat in favor of adventure
     api("net.md-5:bungeecord-chat:$bungeeCordChatVersion") {
