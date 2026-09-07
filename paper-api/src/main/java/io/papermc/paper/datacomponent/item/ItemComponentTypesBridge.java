@@ -2,7 +2,6 @@ package io.papermc.paper.datacomponent.item;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import io.papermc.paper.registry.set.RegistryKeySet;
-import io.papermc.paper.registry.tag.TagKey;
 import io.papermc.paper.text.Filtered;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -132,4 +131,6 @@ interface ItemComponentTypesBridge {
     SulfurCubeContent sulfurCubeContent(ItemStack absorbedItem);
 
     MobVisibility mobVisibility(RegistryKeySet<EntityType> targetingEntityTypes, float visibility);
+
+    VillagerFood villagerFood(int nutrition);
 }

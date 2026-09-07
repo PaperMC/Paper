@@ -301,4 +301,9 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
             requireRange(visibility, "visibility", net.minecraft.world.item.component.MobVisibility.MIN_VISIBILITY, net.minecraft.world.item.component.MobVisibility.MAX_VISIBILITY))
         );
     }
+
+    @Override
+    public VillagerFood villagerFood(final int nutrition) {
+        return new PaperVillagerFood(new net.minecraft.world.food.VillagerFood(requireNonNegative(nutrition, "nutrition")));
+    }
 }

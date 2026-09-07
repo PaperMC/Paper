@@ -43,6 +43,7 @@ import io.papermc.paper.datacomponent.item.PaperTooltipDisplay;
 import io.papermc.paper.datacomponent.item.PaperUseCooldown;
 import io.papermc.paper.datacomponent.item.PaperUseEffects;
 import io.papermc.paper.datacomponent.item.PaperUseRemainder;
+import io.papermc.paper.datacomponent.item.PaperVillagerFood;
 import io.papermc.paper.datacomponent.item.PaperWeapon;
 import io.papermc.paper.datacomponent.item.PaperWritableBookContent;
 import io.papermc.paper.datacomponent.item.PaperWrittenBookContent;
@@ -218,6 +219,7 @@ public final class DataComponentAdapters {
         registerUntyped(DataComponents.WAXED);
         register(DataComponents.CUSHION_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.MOB_VISIBILITY, PaperMobVisibility::new);
+        register(DataComponents.VILLAGER_FOOD, PaperVillagerFood::new);
 
         for (final ResourceKey<DataComponentType<?>> key : BuiltInRegistries.DATA_COMPONENT_TYPE.registryKeySet()) {
             if (!ADAPTERS.containsKey(key)) {
