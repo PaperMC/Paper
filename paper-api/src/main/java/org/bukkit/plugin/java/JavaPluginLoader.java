@@ -27,7 +27,6 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventException;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.AuthorNagException;
 import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.InvalidDescriptionException;
@@ -285,29 +284,19 @@ public final class JavaPluginLoader implements PluginLoader {
     }
 
     private void searchDeprecatedUsages(final Class<? extends Event> inClass, final Plugin plugin, final Method method) {
-        if (inClass.isInterface()) { // new path
-            if (inClass.isAnnotationPresent(Deprecated.class)) {
-                warnOnDeprecatedUsage(inClass, plugin, method);
-                return;
+        assert inClass.isInterface();
+        if (inClass.isAnnotationPresent(Deprecated.class)) {
+            warnOnDeprecatedUsage(inClass, plugin, method);
+            return;
+        }
+
+        for (Class<?> currentClass : inClass.getInterfaces()) {
+            if (!Event.class.isAssignableFrom(currentClass)) {
+                continue;
             }
 
-            for (Class<?> currentClass : inClass.getInterfaces()) {
-                if (!Event.class.isAssignableFrom(currentClass)) {
-                    continue;
-                }
-
-                Class<? extends Event> eventClass = currentClass.asSubclass(Event.class);
-                searchDeprecatedUsages(eventClass, plugin, method);
-            }
-        } else {
-            // todo remove
-            for (Class<?> currentClass = inClass; Event.class.isAssignableFrom(currentClass); currentClass = currentClass.getSuperclass()) {
-                Class<? extends Event> eventClass = currentClass.asSubclass(Event.class);
-                if (eventClass.isAnnotationPresent(Deprecated.class)) {
-                    warnOnDeprecatedUsage(eventClass, plugin, method);
-                    break;
-                }
-            }
+            Class<? extends Event> eventClass = currentClass.asSubclass(Event.class);
+            searchDeprecatedUsages(eventClass, plugin, method);
         }
     }
 

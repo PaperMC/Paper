@@ -120,18 +120,10 @@ class PaperEventManager {
             eventClass.getDeclaredMethod("getHandlerList");
             return Optional.of(eventClass);
         } catch (NoSuchMethodException e) {
-            if (eventClass.isInterface()) { // new path
-                for (Class<?> itf : eventClass.getInterfaces()) {
-                    if (Event.class.isAssignableFrom(itf) && !itf.equals(Event.class)) {
-                        return getUpstreamRegistrationClass(itf.asSubclass(Event.class));
-                    }
-                }
-            } else {
-                Class<?> parentClass = eventClass.getSuperclass();
-                if (parentClass != null
-                    && !parentClass.equals(Event.class)
-                    && Event.class.isAssignableFrom(parentClass)) { // todo remove
-                    return getUpstreamRegistrationClass(parentClass.asSubclass(Event.class));
+            assert eventClass.isInterface();
+            for (Class<?> itf : eventClass.getInterfaces()) {
+                if (Event.class.isAssignableFrom(itf) && !itf.equals(Event.class)) {
+                    return getUpstreamRegistrationClass(itf.asSubclass(Event.class));
                 }
             }
         }
@@ -181,29 +173,19 @@ class PaperEventManager {
     }
 
     private void searchDeprecatedUsages(final Class<? extends Event> inClass, final Plugin plugin, final Method method) {
-        if (inClass.isInterface()) { // new path
-            if (inClass.isAnnotationPresent(Deprecated.class)) {
-                warnOnDeprecatedUsage(inClass, plugin, method);
-                return;
+        assert inClass.isInterface();
+        if (inClass.isAnnotationPresent(Deprecated.class)) {
+            warnOnDeprecatedUsage(inClass, plugin, method);
+            return;
+        }
+
+        for (Class<?> currentClass : inClass.getInterfaces()) {
+            if (!Event.class.isAssignableFrom(currentClass)) {
+                continue;
             }
 
-            for (Class<?> currentClass : inClass.getInterfaces()) {
-                if (!Event.class.isAssignableFrom(currentClass)) {
-                    continue;
-                }
-
-                Class<? extends Event> eventClass = currentClass.asSubclass(Event.class);
-                searchDeprecatedUsages(eventClass, plugin, method);
-            }
-        } else {
-            // todo remove
-            for (Class<?> currentClass = inClass; Event.class.isAssignableFrom(currentClass); currentClass = currentClass.getSuperclass()) {
-                Class<? extends Event> eventClass = currentClass.asSubclass(Event.class);
-                if (eventClass.isAnnotationPresent(Deprecated.class)) {
-                    warnOnDeprecatedUsage(eventClass, plugin, method);
-                    break;
-                }
-            }
+            Class<? extends Event> eventClass = currentClass.asSubclass(Event.class);
+            searchDeprecatedUsages(eventClass, plugin, method);
         }
     }
 

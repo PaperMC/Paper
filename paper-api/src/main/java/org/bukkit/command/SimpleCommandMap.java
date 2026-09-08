@@ -1,5 +1,6 @@
 package org.bukkit.command;
 
+import com.destroystokyo.paper.exception.ServerCommandException;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +17,7 @@ import org.bukkit.command.defaults.HelpCommand;
 import org.bukkit.command.defaults.ReloadCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -160,18 +162,22 @@ public class SimpleCommandMap implements CommandMap {
             target.execute(sender, sentCommandLabel, Arrays.copyOfRange(args, 1, args.length));
             } // target.timings.stopTiming(); // Spigot // Paper
         } catch (CommandException ex) {
-            // TODO - server.getPluginManager().callEvent(new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
+            this.onServerException(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args)); // Paper
             //target.timings.stopTiming(); // Spigot // Paper
             throw ex;
         } catch (Throwable ex) {
             //target.timings.stopTiming(); // Spigot // Paper
             String msg = "Unhandled exception executing '" + commandLine + "' in " + target;
-            // TODO - server.getPluginManager().callEvent(new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
+            this.onServerException(new com.destroystokyo.paper.exception.ServerCommandException(msg, ex, target, sender, args)); // Paper
             throw new CommandException(msg, ex);
         }
 
         // return true as command was handled
         return true;
+    }
+
+    @ApiStatus.OverrideOnly
+    protected void onServerException(@NotNull ServerCommandException exception) {
     }
 
     @Override
@@ -247,7 +253,7 @@ public class SimpleCommandMap implements CommandMap {
             throw ex;
         } catch (Throwable ex) {
             String msg = "Unhandled exception executing tab-completer for '" + cmdLine + "' in " + target;
-            // TODO - server.getPluginManager().callEvent(new io.papermc.paper.event.server.PaperServerExceptionEvent(new com.destroystokyo.paper.exception.ServerTabCompleteException(msg, ex, target, sender, args))); // Paper
+            this.onServerException(new com.destroystokyo.paper.exception.ServerTabCompleteException(msg, ex, target, sender, args)); // Paper
             throw new CommandException(msg, ex);
         }
     }

@@ -12,7 +12,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
  */
 public class CraftServiceUnregisterEvent extends CraftServiceEvent implements ServiceUnregisterEvent {
 
-    protected CraftServiceUnregisterEvent(final RegisteredServiceProvider<?> provider) {
+    public CraftServiceUnregisterEvent(final RegisteredServiceProvider<?> provider) {
         super(provider);
     }
 

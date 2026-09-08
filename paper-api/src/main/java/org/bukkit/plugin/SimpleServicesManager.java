@@ -11,8 +11,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import org.bukkit.Bukkit;
-import org.bukkit.event.server.ServiceRegisterEvent;
 import org.bukkit.event.server.ServiceUnregisterEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,6 +25,14 @@ public class SimpleServicesManager implements ServicesManager {
      * Map of providers.
      */
     private final Map<Class<?>, List<RegisteredServiceProvider<?>>> providers = new HashMap<Class<?>, List<RegisteredServiceProvider<?>>>();
+
+    @ApiStatus.OverrideOnly
+    protected void onRegisterProvider(@NotNull RegisteredServiceProvider<?> provider) {
+    }
+
+    @ApiStatus.OverrideOnly
+    protected void onUnregisterProvider(@NotNull List<ServiceUnregisterEvent> into, @NotNull RegisteredServiceProvider<?> provider) {
+    }
 
     /**
      * Register a provider of a service.
@@ -54,9 +62,8 @@ public class SimpleServicesManager implements ServicesManager {
             } else {
                 registered.add(position, registeredProvider);
             }
-
         }
-       // TODO - Bukkit.getServer().getPluginManager().callEvent(new CraftServiceRegisterEvent(registeredProvider));
+        this.onRegisterProvider(registeredProvider);
     }
 
     /**
@@ -83,7 +90,7 @@ public class SimpleServicesManager implements ServicesManager {
 
                             if (registered.getPlugin().equals(plugin)) {
                                 it2.remove();
-                                // TODO - unregisteredEvents.add(new CraftServiceUnregisterEvent(registered));
+                                this.onUnregisterProvider(unregisteredEvents, registered);
                             }
                         }
                     } catch (NoSuchElementException e) { // Why does Java suck
@@ -132,7 +139,7 @@ public class SimpleServicesManager implements ServicesManager {
 
                             if (registered.getProvider() == provider) {
                                 it2.remove();
-                                // TODO - unregisteredEvents.add(new CraftServiceUnregisterEvent(registered));
+                                this.onUnregisterProvider(unregisteredEvents, registered);
                             }
                         }
                     } catch (NoSuchElementException e) { // Why does Java suck
@@ -174,7 +181,7 @@ public class SimpleServicesManager implements ServicesManager {
 
                             if (registered.getProvider().equals(provider)) {
                                 it2.remove();
-                                // TODO - unregisteredEvents.add(new CraftServiceUnregisterEvent(registered));
+                                this.onUnregisterProvider(unregisteredEvents, registered);
                             }
                         }
                     } catch (NoSuchElementException e) { // Why does Java suck

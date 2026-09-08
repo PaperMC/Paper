@@ -750,18 +750,10 @@ public final class SimplePluginManager implements PluginManager {
             eventClass.getDeclaredMethod("getHandlerList");
             return Optional.of(eventClass);
         } catch (NoSuchMethodException e) {
-            if (eventClass.isInterface()) { // new path
-                for (Class<?> itf : eventClass.getInterfaces()) {
-                    if (Event.class.isAssignableFrom(itf) && !itf.equals(Event.class)) {
-                        return getUpstreamRegistrationClass(itf.asSubclass(Event.class));
-                    }
-                }
-            } else {
-                Class<?> parentClass = eventClass.getSuperclass();
-                if (parentClass != null
-                    && !parentClass.equals(Event.class)
-                    && Event.class.isAssignableFrom(parentClass)) { // todo remove
-                    return getUpstreamRegistrationClass(parentClass.asSubclass(Event.class));
+            assert eventClass.isInterface();
+            for (Class<?> itf : eventClass.getInterfaces()) {
+                if (Event.class.isAssignableFrom(itf) && !itf.equals(Event.class)) {
+                    return getUpstreamRegistrationClass(itf.asSubclass(Event.class));
                 }
             }
         }

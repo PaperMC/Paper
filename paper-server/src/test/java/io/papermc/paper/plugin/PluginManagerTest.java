@@ -20,7 +20,7 @@ public class PluginManagerTest {
 
     @Test
     public void testSyncSameThread() {
-        final Event event = new TestEvent(false);
+        final Event event = new CraftTestEvent(false);
         pm.callEvent(event);
     }
 

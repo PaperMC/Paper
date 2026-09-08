@@ -18,7 +18,7 @@ public class SyntheticEventTest {
         Plugin plugin = new PaperTestPlugin("SyntheticTestPlugin");
         PaperPluginManagerImpl paperPluginManager = new PaperPluginManagerImpl(Bukkit.getServer(), null, null);
 
-        TestEvent event = new TestEvent(false);
+        TestEvent event = new CraftTestEvent(false);
         Impl impl = new Impl();
 
         paperPluginManager.registerEvents(impl, plugin);

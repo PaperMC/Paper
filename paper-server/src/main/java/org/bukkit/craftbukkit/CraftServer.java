@@ -94,7 +94,6 @@ import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.RepairItemRecipe;
 import net.minecraft.world.level.CustomSpawner;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -153,7 +152,6 @@ import org.bukkit.craftbukkit.ban.CraftIpBanList;
 import org.bukkit.craftbukkit.ban.CraftProfileBanList;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftBossBar;
-import org.bukkit.craftbukkit.boss.CraftKeyedBossbar;
 import org.bukkit.craftbukkit.command.CraftCommandMap;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.entity.CraftEntityFactory;
@@ -161,6 +159,8 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.event.server.CraftBroadcastMessageEvent;
 import org.bukkit.craftbukkit.event.server.CraftServerLoadEvent;
+import org.bukkit.craftbukkit.event.server.CraftServiceRegisterEvent;
+import org.bukkit.craftbukkit.event.server.CraftServiceUnregisterEvent;
 import org.bukkit.craftbukkit.event.world.CraftWorldUnloadEvent;
 import org.bukkit.craftbukkit.generator.CraftWorldInfo;
 import org.bukkit.craftbukkit.generator.OldCraftChunkData;
@@ -215,6 +215,7 @@ import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.event.server.ServerLoadEvent;
+import org.bukkit.event.server.ServiceUnregisterEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
@@ -247,6 +248,7 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginLoadOrder;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.SimplePluginManager;
 import org.bukkit.plugin.SimpleServicesManager;
@@ -269,7 +271,17 @@ public final class CraftServer implements Server {
     private final String serverVersion;
     private final String bukkitVersion = Versioning.getBukkitVersion();
     private final Logger logger = Logger.getLogger("Minecraft");
-    private final ServicesManager servicesManager = new SimpleServicesManager();
+    private final ServicesManager servicesManager = new SimpleServicesManager() {
+        @Override
+        protected void onRegisterProvider(RegisteredServiceProvider<?> provider) {
+            new CraftServiceRegisterEvent(provider).callEvent();
+        }
+
+        @Override
+        protected void onUnregisterProvider(List<ServiceUnregisterEvent> into, RegisteredServiceProvider<?> provider) {
+            into.add(new CraftServiceUnregisterEvent(provider));
+        }
+    };
     private final CraftScheduler scheduler = new CraftScheduler();
     private final CraftCommandMap commandMap; // Paper - Move down
     private final SimpleHelpMap helpMap = new SimpleHelpMap(this);
