@@ -1,7 +1,7 @@
 package io.papermc.paper.event.entity;
 
 import com.destroystokyo.paper.event.entity.SlimeWanderEvent;
-import org.bukkit.entity.AbstractCubeMob;
+import net.minecraft.world.entity.monster.cubemob.AbstractCubeMob;
 
 public class PaperSlimeWanderEvent extends PaperSlimePathfindEvent implements SlimeWanderEvent {
 

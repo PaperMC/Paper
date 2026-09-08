@@ -22,6 +22,10 @@ public class CraftExplosionPrimeEvent extends CraftEntityEvent implements Explos
         this(explosive, explosive.getYield(), explosive.isIncendiary());
     }
 
+    public CraftExplosionPrimeEvent(final net.minecraft.world.entity.Entity entity, final float radius, final boolean fire) {
+        this(entity.getBukkitEntity(), radius, fire);
+    }
+
     @Override
     public float getRadius() {
         return this.radius;

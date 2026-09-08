@@ -1,28 +1,25 @@
 package io.papermc.paper.event.entity;
 
 import com.destroystokyo.paper.event.entity.ThrownEggHatchEvent;
-import com.google.common.base.Preconditions;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEgg;
+import org.bukkit.craftbukkit.event.data.TransientEggInfo;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.HandlerList;
+import org.checkerframework.checker.index.qual.NonNegative;
 
 public class PaperThrownEggHatchEvent extends CraftEntityEvent implements ThrownEggHatchEvent {
 
-    private boolean hatching;
-    private byte numHatches;
-    private EntityType hatchType;
+    private final TransientEggInfo eggInfo;
 
-    public PaperThrownEggHatchEvent(final Egg egg, final boolean hatching, final byte numHatches, final EntityType hatchType) {
+    public PaperThrownEggHatchEvent(final Egg egg, final TransientEggInfo eggInfo) {
         super(egg);
-        this.hatching = hatching;
-        this.numHatches = numHatches;
-        this.hatchType = hatchType;
+        this.eggInfo = eggInfo;
     }
 
-    @Override
-    public Egg getEgg() {
-        return this.getEntity();
+    public PaperThrownEggHatchEvent(final ThrownEgg egg, final TransientEggInfo eggInfo) {
+        this((Egg) egg.getBukkitEntity(), eggInfo);
     }
 
     @Override
@@ -32,33 +29,32 @@ public class PaperThrownEggHatchEvent extends CraftEntityEvent implements Thrown
 
     @Override
     public boolean isHatching() {
-        return this.hatching;
+        return this.eggInfo.isHatching();
     }
 
     @Override
     public void setHatching(final boolean hatching) {
-        this.hatching = hatching;
+        this.eggInfo.setHatching(hatching);
     }
 
     @Override
-    public byte getNumHatches() {
-        return this.numHatches;
+    public @NonNegative byte getNumHatches() {
+        return (byte) this.eggInfo.getNumHatches();
     }
 
     @Override
-    public void setNumHatches(final byte numHatches) {
-        this.numHatches = numHatches;
+    public void setNumHatches(final @NonNegative byte numHatches) {
+        this.eggInfo.setNumHatches(numHatches);
     }
 
     @Override
     public EntityType getHatchingType() {
-        return this.hatchType;
+        return this.eggInfo.getType();
     }
 
     @Override
     public void setHatchingType(final EntityType hatchType) {
-        Preconditions.checkArgument(hatchType.isSpawnable(), "Can't spawn that entity type from an egg!");
-        this.hatchType = hatchType;
+        this.eggInfo.setType(hatchType);
     }
 
     @Override

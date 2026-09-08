@@ -1,6 +1,7 @@
 package io.papermc.paper.event.entity;
 
 import com.destroystokyo.paper.event.entity.EndermanAttackPlayerEvent;
+import net.minecraft.world.entity.monster.EnderMan;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Player;
@@ -14,6 +15,10 @@ public class PaperEndermanAttackPlayerEvent extends CraftEntityEvent implements 
     public PaperEndermanAttackPlayerEvent(final Enderman entity, final Player player) {
         super(entity);
         this.player = player;
+    }
+
+    public PaperEndermanAttackPlayerEvent(final EnderMan entity, final net.minecraft.world.entity.player.Player player) {
+        this((Enderman) entity.getBukkitEntity(), (Player) player.getBukkitEntity());
     }
 
     @Override

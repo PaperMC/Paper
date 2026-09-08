@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.server.level.ServerPlayer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerItemDamageEvent;
@@ -18,6 +20,10 @@ public class CraftPlayerItemDamageEvent extends CraftPlayerEvent implements Play
         this.item = item;
         this.damage = damage;
         this.originalDamage = originalDamage;
+    }
+
+    public CraftPlayerItemDamageEvent(final ServerPlayer player, final net.minecraft.world.item.ItemStack item, final int damage, final int originalDamage) {
+        this(player.getBukkitEntity(), CraftItemStack.asCraftMirror(item), damage, originalDamage);
     }
 
     @Override

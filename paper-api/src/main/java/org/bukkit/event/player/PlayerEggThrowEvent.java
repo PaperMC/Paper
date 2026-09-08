@@ -3,6 +3,7 @@ package org.bukkit.event.player;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.HandlerList;
+import org.checkerframework.checker.index.qual.NonNegative;
 
 /**
  * Called when a player throws an egg and it might hatch
@@ -57,7 +58,7 @@ public interface PlayerEggThrowEvent extends PlayerEvent {
      *
      * @return The number of mobs going to be hatched by the egg
      */
-    byte getNumHatches();
+    @NonNegative byte getNumHatches();
 
     /**
      * Change the number of mobs coming out of the hatched egg
@@ -67,7 +68,7 @@ public interface PlayerEggThrowEvent extends PlayerEvent {
      *
      * @param numHatches The number of mobs coming out of the egg
      */
-    void setNumHatches(byte numHatches);
+    void setNumHatches(@NonNegative byte numHatches);
 
     static HandlerList getHandlerList() {
         final class Holder {

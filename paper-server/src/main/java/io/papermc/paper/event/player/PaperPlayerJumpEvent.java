@@ -2,6 +2,7 @@ package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.player.PlayerJumpEvent;
 import com.google.common.base.Preconditions;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Player;
@@ -18,6 +19,10 @@ public class PaperPlayerJumpEvent extends CraftPlayerEvent implements PlayerJump
         super(player);
         this.from = from;
         this.to = to;
+    }
+
+    public PaperPlayerJumpEvent(final ServerPlayer player, final Location from, final Location to) {
+        this(player.getBukkitEntity(), from, to);
     }
 
     @Override

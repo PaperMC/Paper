@@ -17,6 +17,10 @@ public class PaperEntityIgniteEvent extends CraftEntityEvent implements EntityIg
         this.fuseTime = fuseTime;
     }
 
+    public PaperEntityIgniteEvent(final net.minecraft.world.entity.Entity entity, final int fuseTime) {
+        this(entity.getBukkitEntity(), fuseTime);
+    }
+
     @Override
     public @Positive int getFuseTime() {
         return this.fuseTime;

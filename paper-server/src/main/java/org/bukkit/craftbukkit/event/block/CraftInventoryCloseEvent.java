@@ -1,6 +1,7 @@
 
 package org.bukkit.craftbukkit.event.block;
 
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.bukkit.craftbukkit.event.inventory.CraftInventoryEvent;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.HandlerList;
@@ -14,6 +15,10 @@ public class CraftInventoryCloseEvent extends CraftInventoryEvent implements Inv
     public CraftInventoryCloseEvent(final InventoryView transaction, final Reason reason) {
         super(transaction);
         this.reason = reason;
+    }
+
+    public CraftInventoryCloseEvent(final AbstractContainerMenu menu, final Reason reason) {
+        this(menu.getBukkitView(), reason);
     }
 
     @Override

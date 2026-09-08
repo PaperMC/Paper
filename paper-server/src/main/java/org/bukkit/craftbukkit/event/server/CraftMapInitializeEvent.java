@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.server;
 
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.server.MapInitializeEvent;
 import org.bukkit.map.MapView;
@@ -10,6 +11,10 @@ public class CraftMapInitializeEvent extends CraftServerEvent implements MapInit
 
     public CraftMapInitializeEvent(final MapView mapView) {
         this.mapView = mapView;
+    }
+
+    public CraftMapInitializeEvent(final MapItemSavedData data) {
+        this(data.mapView);
     }
 
     @Override

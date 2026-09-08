@@ -5,6 +5,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.potion.PotionEffectType;
+import org.checkerframework.common.value.qual.IntRange;
 
 /**
  * An event that is triggered when an entity receives a potion effect instantly
@@ -30,7 +31,7 @@ public interface EntityEffectTickEvent extends EntityEvent, Cancellable {
      *
      * @return the amplifier level of the potion effect
      */
-    int getAmplifier();
+    @IntRange(from = 0, to = 255) int getAmplifier();
 
     static HandlerList getHandlerList() {
         final class Holder {

@@ -2,6 +2,7 @@ package io.papermc.paper.event.entity;
 
 import com.destroystokyo.paper.event.entity.WitchThrowPotionEvent;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Witch;
 import org.bukkit.event.HandlerList;
@@ -14,10 +15,18 @@ public class PaperWitchThrowPotionEvent extends CraftEntityEvent implements Witc
     private @Nullable ItemStack potion;
     private boolean cancelled;
 
-    public PaperWitchThrowPotionEvent(final Witch witch, final LivingEntity target, final @Nullable ItemStack potion) {
+    public PaperWitchThrowPotionEvent(final Witch witch, final LivingEntity target, final ItemStack potion) {
         super(witch);
         this.target = target;
         this.potion = potion;
+    }
+
+    public PaperWitchThrowPotionEvent(
+        final net.minecraft.world.entity.monster.Witch witch,
+        final net.minecraft.world.entity.LivingEntity target,
+        final net.minecraft.world.item.ItemStack potion
+    ) {
+        this((Witch) witch.getBukkitEntity(), target.getBukkitEntity(), CraftItemStack.asCraftMirror(potion));
     }
 
     @Override

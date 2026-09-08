@@ -13,9 +13,9 @@ import org.bukkit.inventory.ItemStack;
 public interface FurnaceExtractEvent extends BlockExpEvent, PlayerEvent {
 
     /**
-     * Get the ItemStack of the item triggering the event
+     * Get the item being retrieved
      *
-     * @return the item stack
+     * @return the item retrieved
      */
     ItemStack getItemStack();
 
@@ -36,6 +36,6 @@ public interface FurnaceExtractEvent extends BlockExpEvent, PlayerEvent {
      * @return the amount of the item
      * @deprecated use {@link #getItemStack()}
      */
-    @Deprecated(since = "1.21.11") // todo check
+    @Deprecated(since = "1.21.11")
     int getItemAmount();
 }

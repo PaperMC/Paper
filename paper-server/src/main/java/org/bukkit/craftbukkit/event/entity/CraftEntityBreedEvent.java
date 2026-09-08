@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.event.entity;
 
-import com.google.common.base.Preconditions;
+import net.minecraft.Optionull;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityBreedEvent;
@@ -8,17 +9,26 @@ import org.bukkit.inventory.ItemStack;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jspecify.annotations.Nullable;
 
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
+
 public class CraftEntityBreedEvent extends CraftEntityEvent implements EntityBreedEvent {
 
     private final LivingEntity mother;
     private final LivingEntity father;
-    private final LivingEntity breeder;
-    private final ItemStack bredWith;
+    private final @Nullable LivingEntity breeder;
+    private final @Nullable ItemStack bredWith;
     private int experience;
 
     private boolean cancelled;
 
-    public CraftEntityBreedEvent(final LivingEntity child, final LivingEntity mother, final LivingEntity father, final @Nullable LivingEntity breeder, final @Nullable ItemStack bredWith, final int experience) {
+    public CraftEntityBreedEvent(
+        final LivingEntity child,
+        final LivingEntity mother,
+        final LivingEntity father,
+        final @Nullable LivingEntity breeder,
+        final @Nullable ItemStack bredWith,
+        final int experience
+    ) {
         super(child);
 
         this.mother = mother;
@@ -26,6 +36,24 @@ public class CraftEntityBreedEvent extends CraftEntityEvent implements EntityBre
         this.breeder = breeder; // Breeder can be null in the case of spontaneous conception
         this.bredWith = bredWith;
         this.experience = experience;
+    }
+
+    public CraftEntityBreedEvent(
+        final net.minecraft.world.entity.LivingEntity child,
+        final net.minecraft.world.entity.LivingEntity mother,
+        final net.minecraft.world.entity.LivingEntity father,
+        final net.minecraft.world.entity.@Nullable LivingEntity breeder,
+        final net.minecraft.world.item.@Nullable ItemStack bredWith,
+        final int experience
+    ) {
+        this(
+            child.getBukkitEntity(),
+            mother.getBukkitEntity(),
+            father.getBukkitEntity(),
+            Optionull.map(breeder, net.minecraft.world.entity.LivingEntity::getBukkitEntity),
+            Optionull.map(bredWith, CraftItemStack::asBukkitCopy),
+            experience
+        );
     }
 
     @Override
@@ -60,8 +88,7 @@ public class CraftEntityBreedEvent extends CraftEntityEvent implements EntityBre
 
     @Override
     public void setExperience(final @NonNegative int experience) {
-        Preconditions.checkArgument(experience >= 0, "Experience cannot be negative");
-        this.experience = experience;
+        this.experience = requireNonNegative(experience, "experience");
     }
 
     @Override

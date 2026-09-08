@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerRecipeDiscoverEvent;
@@ -15,6 +17,10 @@ public class CraftPlayerRecipeDiscoverEvent extends CraftPlayerEvent implements 
         super(player);
         this.recipe = recipe;
         this.showNotification = showNotification;
+    }
+
+    public CraftPlayerRecipeDiscoverEvent(final net.minecraft.world.entity.player.Player player, final RecipeHolder<?> recipe) {
+        this((Player) player.getBukkitEntity(), CraftNamespacedKey.fromMinecraft(recipe.id().identifier()), recipe.value().showNotification());
     }
 
     @Override

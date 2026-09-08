@@ -1,10 +1,17 @@
 package io.papermc.paper.event.block;
 
 import com.destroystokyo.paper.event.block.BeaconEffectEvent;
+import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
+import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.potion.PotionEffect;
 
 public class PaperBeaconEffectEvent extends CraftBlockEvent implements BeaconEffectEvent {
@@ -20,6 +27,17 @@ public class PaperBeaconEffectEvent extends CraftBlockEvent implements BeaconEff
         this.effect = effect;
         this.player = player;
         this.primary = primary;
+    }
+
+    public static void applyEffects(final Level level, final BlockPos pos, final List<net.minecraft.world.entity.player.Player> players, final MobEffectInstance effect, final boolean isPrimary) {
+        final PotionEffect apiEffect = CraftPotionUtil.toBukkit(effect);
+        final Block apiBlock = CraftBlock.at(level, pos);
+        for (final net.minecraft.world.entity.player.Player player : players) {
+            final BeaconEffectEvent event = new PaperBeaconEffectEvent(apiBlock, apiEffect, (Player) player.getBukkitEntity(), isPrimary);
+            if (event.callEvent()) {
+                player.addEffect(CraftPotionUtil.fromBukkit(event.getEffect()), EntityPotionEffectEvent.Cause.BEACON);
+            }
+        }
     }
 
     @Override

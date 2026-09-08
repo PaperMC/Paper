@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.event.player;
 
 import net.kyori.adventure.text.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameType;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -15,11 +17,16 @@ public class CraftPlayerGameModeChangeEvent extends CraftPlayerEvent implements 
 
     private boolean cancelled;
 
-    public CraftPlayerGameModeChangeEvent(final Player player, final GameMode newGameMode, final Cause cause, final @Nullable Component cancelMessage) {
+    public CraftPlayerGameModeChangeEvent(final Player player, final GameMode newGameMode, final Cause cause) {
         super(player);
         this.newGameMode = newGameMode;
         this.cause = cause;
-        this.cancelMessage = cancelMessage;
+    }
+
+    public CraftPlayerGameModeChangeEvent(
+        final ServerPlayer player, final GameType newGameMode, final Cause cause
+    ) {
+        this(player.getBukkitEntity(), GameMode.getByValue(newGameMode.getId()), cause);
     }
 
     @Override

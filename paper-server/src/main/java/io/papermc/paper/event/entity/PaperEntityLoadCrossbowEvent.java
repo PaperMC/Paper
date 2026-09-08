@@ -1,6 +1,9 @@
 package io.papermc.paper.event.entity;
 
+import net.minecraft.world.InteractionHand;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
@@ -18,6 +21,12 @@ public class PaperEntityLoadCrossbowEvent extends CraftEntityEvent implements En
         super(entity);
         this.crossbow = crossbow;
         this.hand = hand;
+    }
+
+    public PaperEntityLoadCrossbowEvent(
+        final net.minecraft.world.entity.LivingEntity entity, final net.minecraft.world.item.ItemStack crossbow, final InteractionHand hand
+    ) {
+        this(entity.getBukkitEntity(), CraftItemStack.asCraftMirror(crossbow), CraftEquipmentSlot.getHand(hand));
     }
 
     @Override

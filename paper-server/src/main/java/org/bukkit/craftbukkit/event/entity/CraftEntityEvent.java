@@ -6,10 +6,14 @@ import org.bukkit.event.entity.EntityEvent;
 
 public abstract class CraftEntityEvent extends CraftEvent implements EntityEvent {
 
-    protected Entity entity;
+    protected final Entity entity;
 
     protected CraftEntityEvent(final Entity entity) {
         this.entity = entity;
+    }
+
+    protected CraftEntityEvent(final net.minecraft.world.entity.Entity entity) {
+        this(entity.getBukkitEntity());
     }
 
     @Override

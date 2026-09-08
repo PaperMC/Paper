@@ -11,9 +11,9 @@ import org.jspecify.annotations.Nullable;
 
 public class CraftBlockCanBuildEvent extends CraftBlockEvent implements BlockCanBuildEvent {
 
-    private final Player player;
+    private final @Nullable Player player;
     private final EquipmentSlot hand;
-    protected BlockData blockData;
+    protected final BlockData blockData;
     protected boolean buildable;
 
     public CraftBlockCanBuildEvent(final Block block, final @Nullable Player player, final BlockData blockData, final boolean canBuild, final EquipmentSlot hand) {

@@ -1,6 +1,9 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerBedLeaveEvent;
@@ -14,6 +17,10 @@ public class CraftPlayerBedLeaveEvent extends CraftPlayerEvent implements Player
     public CraftPlayerBedLeaveEvent(final Player player, final Block bed) {
         super(player);
         this.bed = bed;
+    }
+
+    public CraftPlayerBedLeaveEvent(final ServerPlayer player, final BlockPos pos) {
+        this(player.getBukkitEntity(), CraftBlock.at(player.level(), pos));
     }
 
     @Override

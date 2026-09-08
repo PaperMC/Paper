@@ -39,11 +39,8 @@ public interface WardenAngerChangeEvent extends EntityEvent, Cancellable {
 
     /**
      * Sets the new anger level resulting from this event.
-     * <p>
-     * The anger of a warden is capped at 150.
      *
-     * @param newAnger the new anger level, max 150
-     * @throws IllegalArgumentException if newAnger is greater than 150
+     * @param newAnger the new anger level
      * @see Warden#setAnger(Entity, int)
      */
     void setNewAnger(@IntRange(from = 0, to = 150) int newAnger);

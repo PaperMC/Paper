@@ -1,6 +1,10 @@
 package org.bukkit.craftbukkit.event.block;
 
+import net.minecraft.Optionull;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.TNTPrimeEvent;
@@ -19,6 +23,21 @@ public class CraftTNTPrimeEvent extends CraftBlockEvent implements TNTPrimeEvent
         this.igniteCause = igniteCause;
         this.primingEntity = primingEntity;
         this.primingBlock = primingBlock;
+    }
+
+    public CraftTNTPrimeEvent(
+        final Level level,
+        final BlockPos pos,
+        final PrimeCause igniteCause,
+        final net.minecraft.world.entity.@Nullable Entity primingEntity,
+        final @Nullable BlockPos primingPos
+    ) {
+        this(
+            CraftBlock.at(level, pos),
+            igniteCause,
+            Optionull.map(primingEntity, net.minecraft.world.entity.Entity::getBukkitEntity),
+            primingPos == null ? null : CraftBlock.at(level, primingPos)
+        );
     }
 
     @Override

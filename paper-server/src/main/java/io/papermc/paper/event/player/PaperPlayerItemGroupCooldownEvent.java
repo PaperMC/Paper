@@ -1,10 +1,15 @@
 package io.papermc.paper.event.player;
 
-import com.google.common.base.Preconditions;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.checkerframework.checker.index.qual.NonNegative;
+
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
 public class PaperPlayerItemGroupCooldownEvent extends CraftPlayerEvent implements PlayerItemGroupCooldownEvent {
 
@@ -19,20 +24,25 @@ public class PaperPlayerItemGroupCooldownEvent extends CraftPlayerEvent implemen
         this.cooldown = cooldown;
     }
 
+    public PaperPlayerItemGroupCooldownEvent(final ServerPlayer player, final Identifier cooldownGroup, final int cooldown) {
+        this(
+            player.getBukkitEntity(), CraftNamespacedKey.fromMinecraft(cooldownGroup), cooldown
+        );
+    }
+
     @Override
     public NamespacedKey getCooldownGroup() {
         return this.cooldownGroup;
     }
 
     @Override
-    public int getCooldown() {
+    public @NonNegative int getCooldown() {
         return this.cooldown;
     }
 
     @Override
-    public void setCooldown(final int cooldown) {
-        Preconditions.checkArgument(cooldown >= 0, "The cooldown has to be equal to or greater than 0!");
-        this.cooldown = cooldown;
+    public void setCooldown(final @NonNegative int cooldown) {
+        this.cooldown = requireNonNegative(cooldown, "cooldown");
     }
 
     @Override

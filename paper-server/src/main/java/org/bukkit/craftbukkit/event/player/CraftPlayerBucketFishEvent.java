@@ -1,15 +1,20 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
 import org.bukkit.entity.Fish;
-import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerBucketFishEvent;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
 
 public class CraftPlayerBucketFishEvent extends CraftPlayerBucketEntityEvent implements PlayerBucketFishEvent {
 
-    public CraftPlayerBucketFishEvent(final Player player, final Fish fish, final ItemStack waterBucket, final ItemStack fishBucket, final EquipmentSlot hand) {
-        super(player, fish, waterBucket, fishBucket, hand);
+    public CraftPlayerBucketFishEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final LivingEntity fish,
+        final net.minecraft.world.item.ItemStack originalBucket,
+        final net.minecraft.world.item.ItemStack entityBucket,
+        final InteractionHand hand
+    ) {
+        super(player, fish, originalBucket, entityBucket, hand);
     }
 
     @Override

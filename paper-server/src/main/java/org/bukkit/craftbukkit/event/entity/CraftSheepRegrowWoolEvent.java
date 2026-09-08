@@ -12,6 +12,10 @@ public class CraftSheepRegrowWoolEvent extends CraftEntityEvent implements Sheep
         super(sheep);
     }
 
+    public CraftSheepRegrowWoolEvent(final net.minecraft.world.entity.animal.sheep.Sheep sheep) {
+        super(sheep);
+    }
+
     @Override
     public Sheep getEntity() {
         return (Sheep) this.entity;

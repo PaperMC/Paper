@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.world.entity.item.ItemEntity;
 import org.bukkit.Location;
 import org.bukkit.entity.Item;
 import org.bukkit.event.HandlerList;
@@ -10,9 +11,13 @@ public class CraftItemDespawnEvent extends CraftEntityEvent implements ItemDespa
     private final Location location;
     private boolean cancelled;
 
-    public CraftItemDespawnEvent(final Item despawnee, final Location location) {
-        super(despawnee);
-        this.location = location;
+    public CraftItemDespawnEvent(final Item item) {
+        super(item);
+        this.location = item.getLocation();
+    }
+
+    public CraftItemDespawnEvent(final ItemEntity item) {
+        this((Item) item.getBukkitEntity());
     }
 
     @Override

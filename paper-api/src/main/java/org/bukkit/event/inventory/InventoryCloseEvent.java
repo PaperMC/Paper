@@ -32,7 +32,7 @@ public interface InventoryCloseEvent extends InventoryEvent {
      *
      * @return Player who is involved in this event
      */
-    HumanEntity getPlayer(); // todo PlayerEvent?
+    HumanEntity getPlayer();
 
     Reason getReason();
 

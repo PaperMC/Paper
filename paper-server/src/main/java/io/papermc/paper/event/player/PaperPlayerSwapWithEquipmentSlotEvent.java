@@ -1,6 +1,8 @@
 package io.papermc.paper.event.player;
 
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
@@ -14,16 +16,24 @@ public class PaperPlayerSwapWithEquipmentSlotEvent extends CraftPlayerEvent impl
 
     private boolean cancelled;
 
-    public PaperPlayerSwapWithEquipmentSlotEvent(
-        final Player player,
-        final ItemStack itemInHand,
-        final EquipmentSlot slot,
-        final ItemStack itemToSwap
-    ) {
+    public PaperPlayerSwapWithEquipmentSlotEvent(final Player player, final ItemStack itemInHand, final EquipmentSlot slot, final ItemStack itemToSwap) {
         super(player);
         this.itemInHand = itemInHand;
         this.slot = slot;
         this.itemToSwap = itemToSwap;
+    }
+
+    public PaperPlayerSwapWithEquipmentSlotEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.item.ItemStack itemInHand,
+        final net.minecraft.world.entity.EquipmentSlot slot,
+        final net.minecraft.world.item.ItemStack itemToSwap
+    ) {
+        this((Player) player.getBukkitEntity(),
+            CraftItemStack.asCraftMirror(itemInHand),
+            CraftEquipmentSlot.getSlot(slot),
+            CraftItemStack.asCraftMirror(itemToSwap)
+        );
     }
 
     @Override

@@ -14,6 +14,10 @@ public class CraftHorseJumpEvent extends CraftEntityEvent implements HorseJumpEv
         this.power = power;
     }
 
+    public CraftHorseJumpEvent(final net.minecraft.world.entity.animal.equine.AbstractHorse horse, final float power) {
+        this((AbstractHorse) horse.getBukkitEntity(), power);
+    }
+
     @Override
     public AbstractHorse getEntity() {
         return (AbstractHorse) this.entity;

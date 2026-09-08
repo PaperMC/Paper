@@ -10,6 +10,7 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -92,14 +93,14 @@ public interface InventoryDragEvent extends InventoryInteractEvent {
      *
      * @return map from raw slot id to new ItemStack
      */
-    Map<Integer, ItemStack> getNewItems();
+    @Unmodifiable Map<Integer, ItemStack> getNewItems();
 
     /**
      * Gets the raw slot ids to be changed in this drag.
      *
      * @return list of raw slot ids, suitable for getView().getItem(int)
      */
-    Set<Integer> getRawSlots();
+    @Unmodifiable Set<Integer> getRawSlots();
 
     /**
      * Gets the slots to be changed in this drag.
@@ -107,7 +108,7 @@ public interface InventoryDragEvent extends InventoryInteractEvent {
      * @return list of converted slot ids, suitable for {@link
      *     org.bukkit.inventory.Inventory#getItem(int)}.
      */
-    Set<Integer> getInventorySlots();
+    @Unmodifiable Set<Integer> getInventorySlots();
 
     static HandlerList getHandlerList() {
         final class Holder {

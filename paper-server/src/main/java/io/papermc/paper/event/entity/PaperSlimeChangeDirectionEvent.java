@@ -12,6 +12,10 @@ public class PaperSlimeChangeDirectionEvent extends PaperSlimePathfindEvent impl
         this.yaw = yaw;
     }
 
+    public PaperSlimeChangeDirectionEvent(final net.minecraft.world.entity.monster.cubemob.AbstractCubeMob cubeMob, final float yaw) {
+        this((AbstractCubeMob) cubeMob.getBukkitEntity(), yaw);
+    }
+
     @Override
     public float getNewYaw() {
         return this.yaw;

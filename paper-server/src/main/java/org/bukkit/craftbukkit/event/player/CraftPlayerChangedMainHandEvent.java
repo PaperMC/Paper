@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.HumanoidArm;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerChangedMainHandEvent;
@@ -14,9 +16,8 @@ public class CraftPlayerChangedMainHandEvent extends CraftPlayerEvent implements
         this.newMainHand = newMainHand;
     }
 
-    @Override
-    public MainHand getMainHand() {
-        return this.newMainHand == MainHand.LEFT ? MainHand.RIGHT : MainHand.LEFT;
+    public CraftPlayerChangedMainHandEvent(final ServerPlayer player, final HumanoidArm newMainHand) {
+        this(player.getBukkitEntity(), newMainHand == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
     }
 
     @Override

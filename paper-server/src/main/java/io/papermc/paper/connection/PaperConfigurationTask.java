@@ -34,7 +34,7 @@ public class PaperConfigurationTask implements ConfigurationTask {
             return;
         }
         CONFIGURATION_POOL.execute(() -> {
-            AsyncPlayerConnectionConfigureEvent event = new PaperAsyncPlayerConnectionConfigureEvent(this.packetListener.paperConnection);
+            AsyncPlayerConnectionConfigureEvent event = new PaperAsyncPlayerConnectionConfigureEvent(this.packetListener);
             event.callEvent();
             this.packetListener.finishCurrentTask(TYPE);
         });

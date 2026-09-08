@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.event.block;
 
-import org.bukkit.block.Block;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.LeavesDecayEvent;
 
@@ -8,8 +10,8 @@ public class CraftLeavesDecayEvent extends CraftBlockEvent implements LeavesDeca
 
     private boolean cancelled;
 
-    public CraftLeavesDecayEvent(final Block block) {
-        super(block);
+    public CraftLeavesDecayEvent(final Level level, final BlockPos pos) {
+        super(CraftBlock.at(level, pos));
     }
 
     @Override

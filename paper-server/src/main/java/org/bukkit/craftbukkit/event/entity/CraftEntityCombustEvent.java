@@ -14,6 +14,10 @@ public class CraftEntityCombustEvent extends CraftEntityEvent implements EntityC
         this.duration = duration;
     }
 
+    public CraftEntityCombustEvent(final net.minecraft.world.entity.Entity combustee, final float duration) {
+        this(combustee.getBukkitEntity(), duration);
+    }
+
     @Override
     public float getDuration() {
         return this.duration;

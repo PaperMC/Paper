@@ -140,7 +140,7 @@ public interface AsyncTabCompleteEvent extends Event, Cancellable {
      * Will provide no completions, and will not fire the synchronous process
      */
     @Override
-    void setCancelled(final boolean cancel);
+    void setCancelled(boolean cancel);
 
     static HandlerList getHandlerList() {
         final class Holder {

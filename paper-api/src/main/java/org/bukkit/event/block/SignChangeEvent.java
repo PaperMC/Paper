@@ -6,6 +6,7 @@ import org.bukkit.block.sign.Side;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
+import org.jetbrains.annotations.UnmodifiableView;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -20,7 +21,7 @@ public interface SignChangeEvent extends BlockEvent, PlayerEvent, Cancellable {
      *
      * @return the String array for the sign's lines new text
      */
-    List<Component> lines();
+    @UnmodifiableView List<Component> lines();
 
     /**
      * Gets a single line of text from the sign involved in this event.
@@ -50,7 +51,7 @@ public interface SignChangeEvent extends BlockEvent, PlayerEvent, Cancellable {
      * @deprecated in favour of {@link #lines()}
      */
     @Deprecated
-    String[] getLines();
+    @Nullable String[] getLines();
 
     /**
      * Gets a single line of text from the sign involved in this event.

@@ -1,9 +1,14 @@
 package io.papermc.paper.event.entity;
 
+import net.minecraft.core.Holder;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
+import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.potion.PotionEffectType;
+import org.checkerframework.common.value.qual.IntRange;
 
 public class PaperEntityEffectTickEvent extends CraftEntityEvent implements EntityEffectTickEvent {
 
@@ -17,6 +22,14 @@ public class PaperEntityEffectTickEvent extends CraftEntityEvent implements Enti
         this.amplifier = amplifier;
     }
 
+    public PaperEntityEffectTickEvent(final net.minecraft.world.entity.LivingEntity entity, final Holder<MobEffect> effect, final int amplifier) {
+        this(entity.getBukkitEntity(), CraftPotionEffectType.minecraftHolderToBukkit(effect), amplifier);
+    }
+
+    public PaperEntityEffectTickEvent(final net.minecraft.world.entity.LivingEntity entity, final MobEffect effect, final int amplifier) {
+        this(entity.getBukkitEntity(), CraftPotionEffectType.minecraftToBukkit(effect), amplifier);
+    }
+
     @Override
     public LivingEntity getEntity() {
         return (LivingEntity) this.entity;
@@ -28,7 +41,7 @@ public class PaperEntityEffectTickEvent extends CraftEntityEvent implements Enti
     }
 
     @Override
-    public int getAmplifier() {
+    public @IntRange(from = MobEffectInstance.MIN_AMPLIFIER, to = MobEffectInstance.MAX_AMPLIFIER) int getAmplifier() {
         return this.amplifier;
     }
 

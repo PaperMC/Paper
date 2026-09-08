@@ -1,5 +1,8 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.world.InteractionHand;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -13,11 +16,31 @@ public class CraftPlayerArmorStandManipulateEvent extends CraftPlayerInteractEnt
     private final ItemStack armorStandItem;
     private final EquipmentSlot slot;
 
-    public CraftPlayerArmorStandManipulateEvent(final Player player, final ArmorStand clickedEntity, final ItemStack playerItem, final ItemStack armorStandItem, final EquipmentSlot slot, final EquipmentSlot hand) {
+    public CraftPlayerArmorStandManipulateEvent(
+        final Player player, final ArmorStand clickedEntity, final ItemStack playerItem, final ItemStack armorStandItem, final EquipmentSlot slot, final EquipmentSlot hand
+    ) {
         super(player, clickedEntity, hand);
         this.playerItem = playerItem;
         this.armorStandItem = armorStandItem;
         this.slot = slot;
+    }
+
+    public CraftPlayerArmorStandManipulateEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.entity.decoration.ArmorStand armorStand,
+        final net.minecraft.world.item.ItemStack playerItem,
+        final net.minecraft.world.item.ItemStack armorStandItem,
+        final net.minecraft.world.entity.EquipmentSlot slot,
+        final InteractionHand hand
+    ) {
+        this(
+            (Player) player.getBukkitEntity(),
+            (ArmorStand) armorStand.getBukkitEntity(),
+            CraftItemStack.asCraftMirror(playerItem),
+            CraftItemStack.asCraftMirror(armorStandItem),
+            CraftEquipmentSlot.getSlot(slot),
+            CraftEquipmentSlot.getHand(hand)
+        );
     }
 
     @Override

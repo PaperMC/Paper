@@ -187,8 +187,9 @@ import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftSign;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.conversations.ConversationTracker;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.event.player.CraftPlayerExpCooldownChangeEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerHideEntityEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerItemMendEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerShowEntityEvent;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.map.CraftMapCursor;
@@ -1584,7 +1585,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
 
     @Override
     public void setExpCooldown(int ticks) {
-        this.getHandle().takeXpDelay = CraftEventFactory.callPlayerXpCooldownEvent(this.getHandle(), ticks, PlayerExpCooldownChangeEvent.ChangeReason.PLUGIN).getNewCooldown();
+        PlayerExpCooldownChangeEvent event = new CraftPlayerExpCooldownChangeEvent(this, ticks, PlayerExpCooldownChangeEvent.ChangeReason.PLUGIN);
+        event.callEvent();
+        this.getHandle().takeXpDelay = event.getNewCooldown();
     }
 
     @Override
@@ -1670,7 +1673,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         Preconditions.checkArgument(mode != null, "GameMode cannot be null");
         if (this.getHandle().connection == null) return;
 
-        this.getHandle().setGameMode(GameType.byId(mode.getValue()), org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.PLUGIN, null); // Paper - Expand PlayerGameModeChangeEvent
+        this.getHandle().setGameMode(GameType.byId(mode.getValue()), org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.PLUGIN); // Paper - Expand PlayerGameModeChangeEvent
     }
 
     @Override
@@ -1704,7 +1707,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
             );
             int repair = Math.min(toRepairFromXpAmount, itemstack.getDamageValue());
             final int consumedExperience = repair > 0 ? repair * amount / toRepairFromXpAmount : toRepairFromXpAmount; // Paper - prevent division by 0
-            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, selected.get().inSlot(), repair, consumedExperience);
+            org.bukkit.event.player.PlayerItemMendEvent event = new CraftPlayerItemMendEvent(handle, itemstack, selected.get().inSlot(), orb, repair, consumedExperience);
+            event.callEvent();
             repair = event.getRepairAmount();
             orb.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN);
             if (!event.isCancelled()) {
@@ -2421,7 +2425,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         return true;
     }
 
-    public void disconnect() {
+    public void onDisconnect() {
         this.conversationTracker.abandonAllConversations();
         this.perm.clearPermissions();
     }

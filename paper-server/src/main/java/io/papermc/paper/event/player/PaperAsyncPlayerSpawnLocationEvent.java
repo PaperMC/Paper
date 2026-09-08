@@ -8,20 +8,18 @@ import org.bukkit.event.HandlerList;
 
 public class PaperAsyncPlayerSpawnLocationEvent extends PaperConnectionEvent implements AsyncPlayerSpawnLocationEvent {
 
-    private final PlayerConfigurationConnection connection;
     private final boolean newPlayer;
     private Location spawnLocation;
 
     public PaperAsyncPlayerSpawnLocationEvent(final PlayerConfigurationConnection connection, final Location spawnLocation, final boolean newPlayer) {
         super(connection, true);
-        this.connection = connection;
         this.spawnLocation = spawnLocation;
         this.newPlayer = newPlayer;
     }
 
     @Override
     public PlayerConfigurationConnection getConnection() {
-        return this.connection;
+        return (PlayerConfigurationConnection) this.connection;
     }
 
     @Override

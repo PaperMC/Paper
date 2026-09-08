@@ -1,7 +1,7 @@
 package io.papermc.paper.event.entity;
 
 import com.destroystokyo.paper.event.entity.SlimeSwimEvent;
-import org.bukkit.entity.AbstractCubeMob;
+import net.minecraft.world.entity.monster.cubemob.AbstractCubeMob;
 
 public class PaperSlimeSwimEvent extends PaperSlimeWanderEvent implements SlimeSwimEvent {
 

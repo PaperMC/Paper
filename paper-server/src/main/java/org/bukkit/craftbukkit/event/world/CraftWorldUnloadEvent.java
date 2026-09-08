@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.event.world;
 
-import org.bukkit.World;
+import net.minecraft.world.level.Level;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.world.WorldUnloadEvent;
 
@@ -8,8 +8,8 @@ public class CraftWorldUnloadEvent extends CraftWorldEvent implements WorldUnloa
 
     private boolean cancelled;
 
-    public CraftWorldUnloadEvent(final World world) {
-        super(world);
+    public CraftWorldUnloadEvent(final Level level) {
+        super(level);
     }
 
     @Override

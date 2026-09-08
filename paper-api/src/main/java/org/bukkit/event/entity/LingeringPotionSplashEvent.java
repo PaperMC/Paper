@@ -1,16 +1,16 @@
 package org.bukkit.event.entity;
 
 import org.bukkit.entity.AreaEffectCloud;
-import org.bukkit.entity.ThrownPotion;
+import org.bukkit.entity.LingeringPotion;
 import org.bukkit.event.HandlerList;
 
 /**
- * Called when a splash potion hits an area
+ * Called when a lingering potion hits an area
  */
 public interface LingeringPotionSplashEvent extends ProjectileHitEvent {
 
     @Override
-    ThrownPotion getEntity();
+    LingeringPotion getEntity();
 
     /**
      * Gets the AreaEffectCloud spawned

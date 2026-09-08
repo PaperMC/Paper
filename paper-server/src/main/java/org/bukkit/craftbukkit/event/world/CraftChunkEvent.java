@@ -5,7 +5,7 @@ import org.bukkit.event.world.ChunkEvent;
 
 public abstract class CraftChunkEvent extends CraftWorldEvent implements ChunkEvent {
 
-    protected Chunk chunk;
+    protected final Chunk chunk;
 
     protected CraftChunkEvent(final Chunk chunk) {
         super(chunk.getWorld());

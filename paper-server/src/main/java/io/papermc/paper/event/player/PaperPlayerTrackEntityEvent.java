@@ -1,5 +1,6 @@
 package io.papermc.paper.event.player;
 
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -13,6 +14,10 @@ public class PaperPlayerTrackEntityEvent extends CraftPlayerEvent implements Pla
     public PaperPlayerTrackEntityEvent(final Player player, final Entity entity) {
         super(player);
         this.entity = entity;
+    }
+
+    public PaperPlayerTrackEntityEvent(final ServerPlayer player, final net.minecraft.world.entity.Entity entity) {
+        this(player.getBukkitEntity(), entity.getBukkitEntity());
     }
 
     @Override

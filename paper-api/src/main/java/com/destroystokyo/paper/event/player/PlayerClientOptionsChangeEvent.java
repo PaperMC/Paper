@@ -10,7 +10,7 @@ import org.bukkit.inventory.MainHand;
 /**
  * Called when the player changes their client settings
  */
-public interface PlayerClientOptionsChangeEvent extends PlayerEvent { // todo javadocs?
+public interface PlayerClientOptionsChangeEvent extends PlayerEvent {
 
     String getLocale();
 

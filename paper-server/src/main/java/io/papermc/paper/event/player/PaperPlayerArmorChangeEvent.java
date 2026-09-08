@@ -1,7 +1,9 @@
 package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
@@ -18,6 +20,20 @@ public class PaperPlayerArmorChangeEvent extends CraftPlayerEvent implements Pla
         this.slotType = slotType;
         this.oldItem = oldItem;
         this.newItem = newItem;
+    }
+
+    public PaperPlayerArmorChangeEvent(
+        final ServerPlayer player,
+        final net.minecraft.world.entity.EquipmentSlot slot,
+        final net.minecraft.world.item.ItemStack oldItem,
+        final net.minecraft.world.item.ItemStack newItem
+    ) {
+        this(
+            player.getBukkitEntity(),
+            SlotType.valueOf(slot.name()),
+            CraftItemStack.asBukkitCopy(oldItem),
+            CraftItemStack.asBukkitCopy(newItem)
+        );
     }
 
     @Override

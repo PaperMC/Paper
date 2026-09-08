@@ -12,13 +12,15 @@ import org.jspecify.annotations.Nullable;
 
 public class CraftInventoryClickEvent extends CraftInventoryInteractEvent implements InventoryClickEvent {
 
+    public static final int UNKNOWN_KEY = -1;
+
     private final ClickType click;
     private final InventoryAction action;
     private final InventoryType.SlotType slotType;
     private final int whichSlot;
     private final int rawSlot;
-    private ItemStack current = null;
-    private int hotbarKey = -1;
+    private @Nullable ItemStack current = null;
+    private int hotbarKey = UNKNOWN_KEY;
 
     public CraftInventoryClickEvent(final InventoryView view, final InventoryType.SlotType type, final int slot, final ClickType click, final InventoryAction action) {
         super(view);
@@ -29,7 +31,9 @@ public class CraftInventoryClickEvent extends CraftInventoryInteractEvent implem
         this.action = action;
     }
 
-    public CraftInventoryClickEvent(final InventoryView view, final InventoryType.SlotType type, final int slot, final ClickType click, final InventoryAction action, final int key) {
+    public CraftInventoryClickEvent(
+        final InventoryView view, final InventoryType.SlotType type, final int slot, final ClickType click, final InventoryAction action, final int key
+    ) {
         this(view, type, slot, click, action);
         this.hotbarKey = key;
     }

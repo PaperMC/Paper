@@ -1,6 +1,7 @@
 package io.papermc.paper.event.player;
 
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
@@ -14,6 +15,14 @@ public class PaperPlayerMapFilledEvent extends CraftPlayerEvent implements Playe
         super(player);
         this.originalItem = originalItem;
         this.createdMap = createdMap;
+    }
+
+    public PaperPlayerMapFilledEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.item.ItemStack emptyMap,
+        final net.minecraft.world.item.ItemStack createdMap
+    ) {
+        this((Player) player.getBukkitEntity(), CraftItemStack.asCraftMirror(emptyMap), CraftItemStack.asCraftMirror(createdMap));
     }
 
     @Override

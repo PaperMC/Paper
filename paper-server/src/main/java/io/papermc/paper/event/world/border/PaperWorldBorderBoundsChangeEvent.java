@@ -1,10 +1,12 @@
 package io.papermc.paper.event.world.border;
 
-import com.google.common.base.Preconditions;
+import com.google.common.primitives.Ints;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.event.HandlerList;
 import org.checkerframework.checker.index.qual.NonNegative;
+
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
 public class PaperWorldBorderBoundsChangeEvent extends PaperWorldBorderEvent implements WorldBorderBoundsChangeEvent {
 
@@ -49,8 +51,7 @@ public class PaperWorldBorderBoundsChangeEvent extends PaperWorldBorderEvent imp
 
     @Override
     public void setDurationTicks(final @NonNegative long duration) {
-        Preconditions.checkArgument(duration >= 0 && duration <= Integer.MAX_VALUE, "duration must be between 0-%s", Integer.MAX_VALUE);
-        this.duration = duration;
+        this.duration = Ints.saturatedCast(requireNonNegative(duration, "duration"));
         if (this.type == Type.INSTANT_MOVE) {
             this.type = Type.STARTED_MOVE;
         }

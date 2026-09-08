@@ -1,7 +1,11 @@
 package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.player.PlayerElytraBoostEvent;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -22,6 +26,20 @@ public class PaperPlayerElytraBoostEvent extends CraftPlayerEvent implements Pla
         this.itemStack = itemStack;
         this.firework = firework;
         this.hand = hand;
+    }
+
+    public PaperPlayerElytraBoostEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.item.ItemStack itemStack,
+        final FireworkRocketEntity firework,
+        final InteractionHand hand
+    ) {
+        this(
+            (Player) player.getBukkitEntity(),
+            CraftItemStack.asCraftMirror(itemStack),
+            (Firework) firework.getBukkitEntity(),
+            CraftEquipmentSlot.getHand(hand)
+        );
     }
 
     @Override

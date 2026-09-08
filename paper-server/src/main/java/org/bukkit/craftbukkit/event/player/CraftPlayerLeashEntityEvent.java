@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.world.InteractionHand;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -19,6 +21,15 @@ public class CraftPlayerLeashEntityEvent extends CraftPlayerEvent implements Pla
         this.leashHolder = leashHolder;
         this.entity = entity;
         this.hand = hand;
+    }
+
+    public CraftPlayerLeashEntityEvent(
+        final net.minecraft.world.entity.Entity entity,
+        final net.minecraft.world.entity.Entity leashHolder,
+        final net.minecraft.world.entity.player.Player leasher,
+        final InteractionHand hand
+    ) {
+        this(entity.getBukkitEntity(), leashHolder.getBukkitEntity(), (Player) leasher.getBukkitEntity(), CraftEquipmentSlot.getHand(hand));
     }
 
     @Override

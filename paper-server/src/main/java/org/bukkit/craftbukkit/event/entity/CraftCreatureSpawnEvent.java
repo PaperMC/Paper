@@ -7,8 +7,8 @@ public class CraftCreatureSpawnEvent extends CraftEntitySpawnEvent implements Cr
 
     private final SpawnReason spawnReason;
 
-    public CraftCreatureSpawnEvent(final LivingEntity spawnee, final SpawnReason spawnReason) {
-        super(spawnee);
+    public CraftCreatureSpawnEvent(final net.minecraft.world.entity.LivingEntity entity, final SpawnReason spawnReason) {
+        super(entity);
         this.spawnReason = spawnReason;
     }
 

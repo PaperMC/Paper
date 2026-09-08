@@ -14,6 +14,10 @@ public class CraftEntityAirChangeEvent extends CraftEntityEvent implements Entit
         this.amount = amount;
     }
 
+    public CraftEntityAirChangeEvent(final net.minecraft.world.entity.Entity entity, final int amount) {
+        this(entity.getBukkitEntity(), amount);
+    }
+
     @Override
     public int getAmount() {
         return this.amount;

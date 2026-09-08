@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.world.entity.item.ItemEntity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
@@ -16,6 +17,10 @@ public class CraftEntityPickupItemEvent extends CraftEntityEvent implements Enti
         super(entity);
         this.item = item;
         this.remaining = remaining;
+    }
+
+    public CraftEntityPickupItemEvent(final net.minecraft.world.entity.LivingEntity entity, final ItemEntity item, final int remaining) {
+        this(entity.getBukkitEntity(), (Item) item.getBukkitEntity(), remaining);
     }
 
     @Override

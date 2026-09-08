@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.phys.Vec3;
@@ -65,6 +66,10 @@ public final class CraftLocation {
 
     public static Location toBukkit(Node point, Level level) {
         return new Location(level.getWorld(), point.x, point.y, point.z);
+    }
+
+    public static Location toBukkit(PositionMoveRotation destination, Level level) {
+        return toBukkit(destination.position(), level, destination.yRot(), destination.xRot());
     }
 
     public static BlockPos toBlockPos(Location loc) {

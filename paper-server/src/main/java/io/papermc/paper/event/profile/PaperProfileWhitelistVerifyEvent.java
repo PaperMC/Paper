@@ -28,13 +28,13 @@ public class PaperProfileWhitelistVerifyEvent extends CraftEvent implements Prof
     @Override
     @Deprecated
     public @Nullable String getKickMessage() {
-        return this.kickMessage == null ? null : LegacyComponentSerializer.legacySection().serialize(this.kickMessage);
+        return LegacyComponentSerializer.legacySection().serializeOrNull(this.kickMessage);
     }
 
     @Override
     @Deprecated
     public void setKickMessage(final @Nullable String kickMessage) {
-        this.kickMessage(kickMessage == null ? null : LegacyComponentSerializer.legacySection().deserialize(kickMessage));
+        this.kickMessage = LegacyComponentSerializer.legacySection().deserializeOrNull(kickMessage);
     }
 
     @Override

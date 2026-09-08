@@ -1,8 +1,10 @@
 package org.bukkit.craftbukkit.event.block;
 
+import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockShearEntityEvent;
@@ -22,6 +24,17 @@ public class CraftBlockShearEntityEvent extends CraftBlockEvent implements Block
         this.sheared = sheared;
         this.tool = tool;
         this.drops = Collections.unmodifiableList(drops);
+    }
+
+    public CraftBlockShearEntityEvent(
+        final Block dispenser, final net.minecraft.world.entity.Entity sheared, final net.minecraft.world.item.ItemStack tool, final List<net.minecraft.world.item.ItemStack> drops
+    ) {
+        this(
+            dispenser,
+            sheared.getBukkitEntity(),
+            CraftItemStack.asCraftMirror(tool),
+            Lists.transform(drops, CraftItemStack::asCraftMirror)
+        );
     }
 
     @Override

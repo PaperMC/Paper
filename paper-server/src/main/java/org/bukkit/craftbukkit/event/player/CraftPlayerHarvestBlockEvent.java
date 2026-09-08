@@ -1,7 +1,14 @@
 package org.bukkit.craftbukkit.event.player;
 
+import io.papermc.paper.util.MCUtil;
 import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerHarvestBlockEvent;
@@ -21,6 +28,21 @@ public class CraftPlayerHarvestBlockEvent extends CraftPlayerEvent implements Pl
         this.harvestedBlock = harvestedBlock;
         this.hand = hand;
         this.itemsHarvested = itemsHarvested;
+    }
+
+    public CraftPlayerHarvestBlockEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final Level level,
+        final BlockPos pos,
+        final InteractionHand hand,
+        final List<net.minecraft.world.item.ItemStack> itemsHarvested
+    ) {
+        this(
+            (Player) player.getBukkitEntity(),
+            CraftBlock.at(level, pos),
+            CraftEquipmentSlot.getHand(hand),
+            MCUtil.mutableTransform(itemsHarvested, CraftItemStack::asCraftMirror, CraftItemStack::asNMSCopy)
+        );
     }
 
     @Override

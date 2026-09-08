@@ -96,6 +96,7 @@ public interface EntityDeathEvent extends EntityEvent, Cancellable {
      * @param sound The sound that the entity should make when dying
      */
     void setDeathSound(@Nullable Sound sound);
+
     /**
      * Get the sound category that the death sound should play in
      *

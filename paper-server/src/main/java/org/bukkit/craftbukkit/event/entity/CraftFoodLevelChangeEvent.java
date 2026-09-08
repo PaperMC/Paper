@@ -1,5 +1,8 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.Optionull;
+import net.minecraft.world.entity.player.Player;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
@@ -9,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 public class CraftFoodLevelChangeEvent extends CraftEntityEvent implements FoodLevelChangeEvent {
 
     private int level;
-    private final ItemStack item;
+    private final @Nullable ItemStack item;
 
     private boolean cancelled;
 
@@ -17,6 +20,10 @@ public class CraftFoodLevelChangeEvent extends CraftEntityEvent implements FoodL
         super(human);
         this.level = level;
         this.item = item;
+    }
+
+    public CraftFoodLevelChangeEvent(final Player player, final int level, final net.minecraft.world.item.@Nullable ItemStack item) {
+        this(player.getBukkitEntity(), level, Optionull.map(item, CraftItemStack::asCraftMirror));
     }
 
     @Override

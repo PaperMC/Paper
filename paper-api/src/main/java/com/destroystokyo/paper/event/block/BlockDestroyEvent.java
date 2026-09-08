@@ -4,7 +4,6 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockExpEvent;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired anytime the server intends to 'destroy' a block through some triggering reason.
@@ -16,7 +15,6 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * Events such as leaves decaying, pistons retracting (where the block is moving), does NOT fire this event.
  */
-@NullMarked
 public interface BlockDestroyEvent extends BlockExpEvent, Cancellable {
 
     /**

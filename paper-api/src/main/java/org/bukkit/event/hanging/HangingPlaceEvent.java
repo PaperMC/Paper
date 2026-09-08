@@ -32,12 +32,11 @@ public interface HangingPlaceEvent extends HangingEvent, BlockEvent, Cancellable
     BlockFace getBlockFace();
 
     /**
-     * Returns the hand that was used to place the hanging entity, or {@code null}
-     * if a player did not place the hanging entity.
+     * Returns the hand that was used to place the hanging entity.
      *
      * @return the hand
      */
-    @Nullable EquipmentSlot getHand();
+    EquipmentSlot getHand();
 
     /**
      * {@return the item from which the hanging entity originated}

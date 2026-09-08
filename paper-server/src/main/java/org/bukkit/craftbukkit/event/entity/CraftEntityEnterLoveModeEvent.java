@@ -1,5 +1,8 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.Optionull;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.player.Player;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.HandlerList;
@@ -8,15 +11,19 @@ import org.jspecify.annotations.Nullable;
 
 public class CraftEntityEnterLoveModeEvent extends CraftEntityEvent implements EntityEnterLoveModeEvent {
 
-    private final HumanEntity humanEntity;
+    private final @Nullable HumanEntity humanEntity;
     private int ticksInLove;
 
     private boolean cancelled;
 
-    public CraftEntityEnterLoveModeEvent(final Animals animalInLove, final @Nullable HumanEntity humanEntity, final int ticksInLove) {
-        super(animalInLove);
+    public CraftEntityEnterLoveModeEvent(final Animals animal, final @Nullable HumanEntity humanEntity, final int ticksInLove) {
+        super(animal);
         this.humanEntity = humanEntity;
         this.ticksInLove = ticksInLove;
+    }
+
+    public CraftEntityEnterLoveModeEvent(final Animal animal, final @Nullable Player player, final int ticksInLove) {
+        this((Animals) animal.getBukkitEntity(), Optionull.map(player, Player::getBukkitEntity), ticksInLove);
     }
 
     @Override

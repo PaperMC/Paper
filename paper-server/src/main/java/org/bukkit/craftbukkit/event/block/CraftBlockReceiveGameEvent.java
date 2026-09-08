@@ -1,7 +1,14 @@
 package org.bukkit.craftbukkit.event.block;
 
+import net.minecraft.Optionull;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.GameEvent;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.CraftGameEvent;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockReceiveGameEvent;
@@ -18,6 +25,19 @@ public class CraftBlockReceiveGameEvent extends CraftBlockEvent implements Block
         super(block);
         this.event = event;
         this.entity = entity;
+    }
+
+    public CraftBlockReceiveGameEvent(
+        final Holder<net.minecraft.world.level.gameevent.GameEvent> event,
+        final Level level,
+        final Vec3 pos,
+        final net.minecraft.world.entity.@Nullable Entity entity
+    ) {
+        this(
+            CraftGameEvent.minecraftHolderToBukkit(event),
+            CraftBlock.at(level, BlockPos.containing(pos)),
+            Optionull.map(entity, net.minecraft.world.entity.Entity::getBukkitEntity)
+        );
     }
 
     @Override

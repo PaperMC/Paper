@@ -86,5 +86,5 @@ public interface WaterBottleSplashEvent extends PotionSplashEvent {
      */
     @Deprecated(since = "1.19.3")
     @Override
-    void setIntensity(LivingEntity entity, double intensity) ;
+    void setIntensity(LivingEntity entity, double intensity);
 }

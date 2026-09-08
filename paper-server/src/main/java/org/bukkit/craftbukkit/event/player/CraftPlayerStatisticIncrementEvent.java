@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.event.player;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
 import org.bukkit.entity.EntityType;
@@ -15,46 +16,38 @@ public class CraftPlayerStatisticIncrementEvent extends CraftPlayerEvent impleme
     protected final Statistic statistic;
     private final int initialValue;
     private final int newValue;
-    private final @Nullable EntityType entityType;
-    private final @Nullable Material material;
+    private @Nullable EntityType entityType;
+    private @Nullable Material material;
 
     private boolean cancelled;
 
-    public CraftPlayerStatisticIncrementEvent(final Player player, final Statistic statistic, final int initialValue, final int newValue) {
+    public CraftPlayerStatisticIncrementEvent(final Player player, final Statistic statistic, final int initialValue, final int newValue, final @Nullable Keyed element) {
         super(player);
         this.statistic = statistic;
         this.initialValue = initialValue;
         this.newValue = newValue;
-        this.entityType = null;
-        this.material = null;
-    }
-
-    public CraftPlayerStatisticIncrementEvent(final Player player, final Statistic statistic, final int initialValue, final int newValue, final EntityType entityType) {
-        super(player);
-        this.statistic = statistic;
-        this.initialValue = initialValue;
-        this.newValue = newValue;
-        this.entityType = entityType;
-        this.material = null;
-    }
-
-    public CraftPlayerStatisticIncrementEvent(final Player player, final Statistic statistic, final int initialValue, final int newValue, Material material) {
-        super(player);
-        this.statistic = statistic;
-        this.initialValue = initialValue;
-        this.newValue = newValue;
-        this.entityType = null;
-        if (material != null && material.isLegacy()) {
-            if (statistic.getType() == Statistic.Type.BLOCK) {
-                material = Bukkit.getUnsafe().fromLegacy(new MaterialData(material), false);
-            } else if (statistic.getType() == Statistic.Type.ITEM) {
-                material = Bukkit.getUnsafe().fromLegacy(new MaterialData(material), true);
-            } else {
-                // Theoretically, this should not happen, can probably print a warning, but for now it should be fine.
-                material = Bukkit.getUnsafe().fromLegacy(new MaterialData(material), false);
+        switch (element) {
+            case final EntityType type -> this.entityType = type;
+            case final Material type -> {
+                if (type.isLegacy()) {
+                    if (statistic.getType() == Statistic.Type.BLOCK) {
+                        this.material = Bukkit.getUnsafe().fromLegacy(new MaterialData(type), false);
+                    } else if (statistic.getType() == Statistic.Type.ITEM) {
+                        this.material = Bukkit.getUnsafe().fromLegacy(new MaterialData(type), true);
+                    } else {
+                        // Theoretically, this should not happen, can probably print a warning, but for now it should be fine.
+                        this.material = Bukkit.getUnsafe().fromLegacy(new MaterialData(type), false);
+                    }
+                }
             }
+            case null, default -> {}
         }
-        this.material = material;
+    }
+
+    public CraftPlayerStatisticIncrementEvent(
+        final net.minecraft.world.entity.player.Player player, final Statistic statistic, final int initialValue, final int newValue, final @Nullable Keyed element
+    ) {
+        this((Player) player.getBukkitEntity(), statistic, initialValue, newValue, element);
     }
 
     @Override

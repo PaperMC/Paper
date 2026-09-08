@@ -14,6 +14,10 @@ public class CraftEntityBlockFormEvent extends CraftBlockFormEvent implements En
         this.entity = entity;
     }
 
+    public CraftEntityBlockFormEvent(final net.minecraft.world.entity.Entity entity, final Block block, final BlockState newState) {
+        this(entity.getBukkitEntity(), block, newState);
+    }
+
     @Override
     public Entity getEntity() {
         return this.entity;

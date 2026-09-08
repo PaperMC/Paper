@@ -1,24 +1,27 @@
 package io.papermc.paper.event.world;
 
-import org.bukkit.GameRule;
-import org.bukkit.World;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.gamerules.GameRule;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.event.world.CraftWorldEvent;
 import org.bukkit.event.HandlerList;
 import org.jspecify.annotations.Nullable;
 
-public class PaperWorldGameRuleChangeEvent extends CraftWorldEvent implements WorldGameRuleChangeEvent {
+public class PaperWorldGameRuleChangeEvent<T> extends CraftWorldEvent implements WorldGameRuleChangeEvent {
 
     private final @Nullable CommandSender commandSender;
-    protected final GameRule<?> gameRule;
-    private String value;
+    private final GameRule<T> rule;
+    private T value;
     private boolean cancelled;
 
-    public PaperWorldGameRuleChangeEvent(final World world, final @Nullable CommandSender commandSender, final GameRule<?> gameRule, final String value) {
-        super(world);
+    private org.bukkit.@Nullable GameRule<?> apiRule;
+    private @Nullable String valueStr;
+
+    public PaperWorldGameRuleChangeEvent(final Level level, final @Nullable CommandSender commandSender, final GameRule<T> rule, final T value) {
+        super(level.getWorld());
         this.commandSender = commandSender;
-        this.gameRule = gameRule;
+        this.rule = rule;
         this.value = value;
     }
 
@@ -28,21 +31,29 @@ public class PaperWorldGameRuleChangeEvent extends CraftWorldEvent implements Wo
     }
 
     @Override
-    public GameRule<?> getGameRule() {
-        return this.gameRule;
+    public org.bukkit.GameRule<?> getGameRule() {
+        if (this.apiRule == null) {
+            this.apiRule = CraftGameRule.minecraftToBukkit(this.rule);
+        }
+        return this.apiRule;
     }
 
     @Override
     public String getValue() {
-        return this.value;
+        if (this.valueStr == null) {
+            this.valueStr = this.rule.serialize(this.value);
+        }
+        return this.valueStr;
     }
 
     @Override
     public void setValue(final String value) {
-        ((CraftGameRule<?>) this.gameRule).getHandle().deserialize(value).ifError(error -> {
-            throw CraftGameRule.INVALID_VALUE.apply(value, error);
-        });
-        this.value = value;
+        this.value = this.rule.deserialize(value).getOrThrow(error -> CraftGameRule.INVALID_VALUE.apply(value, error));
+        this.valueStr = value;
+    }
+
+    public T newValue() {
+        return this.value;
     }
 
     @Override

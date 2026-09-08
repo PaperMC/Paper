@@ -1,6 +1,8 @@
 package io.papermc.paper.event.player;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.trading.MerchantOffer;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -22,6 +24,16 @@ public class PaperPlayerPurchaseEvent extends CraftPlayerEvent implements Player
         this.trade = trade;
         this.rewardExp = rewardExp;
         this.increaseTradeUses = increaseTradeUses;
+    }
+
+    public PaperPlayerPurchaseEvent(
+        final ServerPlayer player,
+        final net.minecraft.world.item.trading.Merchant merchant,
+        final MerchantOffer offer,
+        final boolean rewardExp,
+        final boolean increaseTradeUses
+    ) {
+        this(player.getBukkitEntity(), merchant.getCraftMerchant(), offer.asBukkit(), rewardExp, increaseTradeUses);
     }
 
     @Override

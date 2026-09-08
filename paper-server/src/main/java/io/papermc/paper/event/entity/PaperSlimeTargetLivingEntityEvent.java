@@ -13,6 +13,12 @@ public class PaperSlimeTargetLivingEntityEvent extends PaperSlimePathfindEvent i
         this.target = target;
     }
 
+    public PaperSlimeTargetLivingEntityEvent(
+        final net.minecraft.world.entity.monster.cubemob.AbstractCubeMob cubeMob, final net.minecraft.world.entity.LivingEntity target
+    ) {
+        this((AbstractCubeMob) cubeMob.getBukkitEntity(), target.getBukkitEntity());
+    }
+
     @Override
     public LivingEntity getTarget() {
         return this.target;

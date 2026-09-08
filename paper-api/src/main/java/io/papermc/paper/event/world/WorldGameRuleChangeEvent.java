@@ -39,7 +39,7 @@ public interface WorldGameRuleChangeEvent extends WorldEvent, Cancellable {
      *
      * @param value the new value of the gamerule.
      */
-    void setValue(final String value);
+    void setValue(String value);
 
     static HandlerList getHandlerList() {
         final class Holder {

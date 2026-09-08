@@ -6,7 +6,7 @@ import org.bukkit.event.weather.WeatherEvent;
 
 public abstract class CraftWeatherEvent extends CraftEvent implements WeatherEvent {
 
-    protected World world;
+    protected final World world;
 
     protected CraftWeatherEvent(final World world) {
         this.world = world;

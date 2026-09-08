@@ -1,22 +1,28 @@
 package org.bukkit.craftbukkit.event.block;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockBurnEvent;
-import org.jspecify.annotations.Nullable;
 
 public class CraftBlockBurnEvent extends CraftBlockEvent implements BlockBurnEvent {
 
     private final Block ignitingBlock;
     private boolean cancelled;
 
-    public CraftBlockBurnEvent(final Block block, final @Nullable Block ignitingBlock) {
+    public CraftBlockBurnEvent(final Block block, final Block ignitingBlock) {
         super(block);
         this.ignitingBlock = ignitingBlock;
     }
 
+    public CraftBlockBurnEvent(final Level level, final BlockPos pos, final BlockPos sourcePos) {
+        this(CraftBlock.at(level, pos), CraftBlock.at(level, sourcePos));
+    }
+
     @Override
-    public @Nullable Block getIgnitingBlock() {
+    public Block getIgnitingBlock() {
         return this.ignitingBlock;
     }
 

@@ -13,8 +13,8 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class CraftGameRule<T> extends GameRule<T> implements PaperFeatureDependent<net.minecraft.world.level.gamerules.GameRule<T>> {
 
-    public static final BiFunction<String, DataResult.Error<?>, IllegalArgumentException> INVALID_VALUE = (value, error) -> {
-        return new IllegalArgumentException("Invalid value: %s (%s)".formatted(value, error.message()));
+    public static final BiFunction<String, String, IllegalArgumentException> INVALID_VALUE = (value, error) -> {
+        return new IllegalArgumentException("Invalid value: %s (%s)".formatted(value, error));
     };
 
     public static <T> GameRule<T> minecraftToBukkit(net.minecraft.world.level.gamerules.GameRule<T> minecraft) {

@@ -1,6 +1,11 @@
 package org.bukkit.craftbukkit.event.block;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.CrafterCraftEvent;
 import org.bukkit.inventory.CraftingRecipe;
@@ -17,6 +22,10 @@ public class CraftCrafterCraftEvent extends CraftBlockEvent implements CrafterCr
         super(crafter);
         this.result = result;
         this.recipe = recipe;
+    }
+
+    public CraftCrafterCraftEvent(final Level level, final BlockPos pos, final RecipeHolder<?> recipe, final net.minecraft.world.item.ItemStack result) {
+        this(CraftBlock.at(level, pos), (CraftingRecipe) recipe.toBukkitRecipe(), CraftItemStack.asCraftMirror(result));
     }
 
     @Override

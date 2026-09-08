@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.server.level.ServerPlayer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
@@ -15,9 +17,14 @@ public class CraftPlayerSwapHandItemsEvent extends CraftPlayerEvent implements P
 
     public CraftPlayerSwapHandItemsEvent(final Player player, final ItemStack mainHandItem, final ItemStack offHandItem) {
         super(player);
-
         this.mainHandItem = mainHandItem;
         this.offHandItem = offHandItem;
+    }
+
+    public CraftPlayerSwapHandItemsEvent(
+        final ServerPlayer player, final net.minecraft.world.item.ItemStack mainHandItem, final net.minecraft.world.item.ItemStack offHandItem
+    ) {
+        this(player.getBukkitEntity(), CraftItemStack.asCraftMirror(mainHandItem), CraftItemStack.asCraftMirror(offHandItem));
     }
 
     @Override

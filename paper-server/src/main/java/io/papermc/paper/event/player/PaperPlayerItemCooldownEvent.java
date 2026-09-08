@@ -1,16 +1,18 @@
 package io.papermc.paper.event.player;
 
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
+import org.bukkit.craftbukkit.inventory.CraftItemType;
 
 public class PaperPlayerItemCooldownEvent extends PaperPlayerItemGroupCooldownEvent implements PlayerItemCooldownEvent {
 
     private final Material type;
 
-    public PaperPlayerItemCooldownEvent(final Player player, final Material type, final NamespacedKey cooldownGroup, final int cooldown) {
+    public PaperPlayerItemCooldownEvent(final ServerPlayer player, final Item item, final Identifier cooldownGroup, final int cooldown) {
         super(player, cooldownGroup, cooldown);
-        this.type = type;
+        this.type = CraftItemType.minecraftToBukkit(item);
     }
 
     @Override

@@ -2,6 +2,9 @@ package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.player.PlayerHandshakeEvent;
 import com.google.common.base.Preconditions;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -23,11 +26,17 @@ public class PaperPlayerHandshakeEvent extends CraftEvent implements PlayerHands
 
     private boolean cancelled;
 
-    public PaperPlayerHandshakeEvent(final String originalHandshake, final String originalSocketAddressHostname, final boolean cancelled) {
+    public PaperPlayerHandshakeEvent(final String originalHandshake, final String originalSocketAddressHostname) {
         super(true);
         this.originalHandshake = originalHandshake;
         this.originalSocketAddressHostname = originalSocketAddressHostname;
-        this.cancelled = cancelled;
+    }
+
+    public PaperPlayerHandshakeEvent(final String originalHandshake, final SocketAddress remoteAddress) {
+        this(
+            originalHandshake,
+            remoteAddress instanceof final InetSocketAddress inetSocketAddress ?  inetSocketAddress.getHostString() : InetAddress.getLoopbackAddress().getHostAddress()
+        );
     }
 
     @Override
@@ -102,13 +111,13 @@ public class PaperPlayerHandshakeEvent extends CraftEvent implements PlayerHands
 
     @Override
     public String getFailMessage() {
-        return LegacyComponentSerializer.legacySection().serialize(this.failMessage());
+        return LegacyComponentSerializer.legacySection().serialize(this.failMessage);
     }
 
     @Override
     public void setFailMessage(final String failMessage) {
         Preconditions.checkArgument(failMessage != null && !failMessage.isEmpty(), "fail message cannot be null or empty");
-        this.failMessage(LegacyComponentSerializer.legacySection().deserialize(failMessage));
+        this.failMessage = LegacyComponentSerializer.legacySection().deserialize(failMessage);
     }
 
     @Override

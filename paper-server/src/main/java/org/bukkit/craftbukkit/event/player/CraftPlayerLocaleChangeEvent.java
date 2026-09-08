@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.event.player;
 import java.util.Locale;
 import java.util.Objects;
 import net.kyori.adventure.translation.Translator;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerLocaleChangeEvent;
@@ -16,6 +17,10 @@ public class CraftPlayerLocaleChangeEvent extends CraftPlayerEvent implements Pl
         super(player);
         this.locale = locale;
         this.adventure$locale = Objects.requireNonNullElse(Translator.parseLocale(locale), Locale.US);
+    }
+
+    public CraftPlayerLocaleChangeEvent(final ServerPlayer player, final String locale) {
+        this(player.getBukkitEntity(), locale);
     }
 
     @Override

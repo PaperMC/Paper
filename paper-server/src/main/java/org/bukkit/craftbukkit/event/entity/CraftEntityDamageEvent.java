@@ -1,11 +1,11 @@
 package org.bukkit.craftbukkit.event.entity;
 
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
@@ -14,7 +14,6 @@ import org.bukkit.event.entity.EntityDamageEvent;
 public class CraftEntityDamageEvent extends CraftEntityEvent implements EntityDamageEvent {
 
     private static final DamageModifier[] MODIFIERS = DamageModifier.values();
-    private static final Function<? super Double, Double> ZERO = Functions.constant(-0.0);
     private final Map<DamageModifier, Double> modifiers;
     private final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions;
     private final Map<DamageModifier, Double> originals;
@@ -23,7 +22,13 @@ public class CraftEntityDamageEvent extends CraftEntityEvent implements EntityDa
 
     private boolean cancelled;
 
-    public CraftEntityDamageEvent(final Entity damagee, final DamageCause cause, final DamageSource damageSource, final Map<DamageModifier, Double> modifiers, final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
+    public CraftEntityDamageEvent(
+        final Entity damagee,
+        final DamageCause cause,
+        final DamageSource damageSource,
+        final Map<DamageModifier, Double> modifiers,
+        final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions
+    ) {
         super(damagee);
         Preconditions.checkArgument(modifiers.containsKey(DamageModifier.BASE), "BASE DamageModifier missing");
         Preconditions.checkArgument(!modifiers.containsKey(null), "Cannot have null DamageModifier");
@@ -35,6 +40,16 @@ public class CraftEntityDamageEvent extends CraftEntityEvent implements EntityDa
         this.modifiers = modifiers;
         this.modifierFunctions = modifierFunctions;
         this.damageSource = damageSource;
+    }
+
+    public CraftEntityDamageEvent(
+        final net.minecraft.world.entity.Entity damagee,
+        final DamageCause cause,
+        final net.minecraft.world.damagesource.DamageSource damageSource,
+        final Map<DamageModifier, Double> modifiers,
+        final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions
+    ) {
+        this(damagee.getBukkitEntity(), cause, new CraftDamageSource(damageSource), modifiers, modifierFunctions);
     }
 
     @Override

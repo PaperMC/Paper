@@ -22,12 +22,10 @@ public interface BlockCanBuildEvent extends BlockEvent {
 
     /**
      * Gets the player who placed the block involved in this event.
-     * <br>
-     * May be {@code null} for legacy calls of the event.
      *
      * @return The Player who placed the block involved in this event
      */
-    @Nullable Player getPlayer(); // todo check nullability
+    @Nullable Player getPlayer();
 
     /**
      * Gets the Material that we are trying to place.

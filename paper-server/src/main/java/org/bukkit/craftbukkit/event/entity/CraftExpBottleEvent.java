@@ -1,21 +1,19 @@
 package org.bukkit.craftbukkit.event.entity;
 
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Entity;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownExperienceBottle;
+import net.minecraft.world.phys.HitResult;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.ExpBottleEvent;
-import org.jspecify.annotations.Nullable;
 
 public class CraftExpBottleEvent extends CraftProjectileHitEvent implements ExpBottleEvent {
 
-    private int exp;
+    private int experience;
     private boolean showEffect = true;
 
-    public CraftExpBottleEvent(final ThrownExpBottle bottle, final @Nullable Entity hitEntity, final @Nullable Block hitBlock, final @Nullable BlockFace hitFace, final int exp) {
-        super(bottle, hitEntity, hitBlock, hitFace);
-        this.exp = exp;
+    public CraftExpBottleEvent(final ThrownExperienceBottle bottle, final HitResult hitResult, final int experience) {
+        super(bottle, hitResult);
+        this.experience = experience;
     }
 
     @Override
@@ -35,12 +33,12 @@ public class CraftExpBottleEvent extends CraftProjectileHitEvent implements ExpB
 
     @Override
     public int getExperience() {
-        return this.exp;
+        return this.experience;
     }
 
     @Override
     public void setExperience(final int exp) {
-        this.exp = exp;
+        this.experience = exp;
     }
 
     @Override

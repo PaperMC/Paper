@@ -24,6 +24,13 @@ public final class BoundChecker {
         return value;
     }
 
+    public static long requireNonNegative(final long value, final String field) {
+        if (value < 0) {
+            throw new IllegalArgumentException("argument " + field + " must be non-negative: " + value);
+        }
+        return value;
+    }
+
     public static int requirePositive(final int value, final String field) {
         if (value < 1) {
             throw new IllegalArgumentException("argument " + field + " must be positive: " + value);
@@ -47,6 +54,20 @@ public final class BoundChecker {
 
     public static float requirePositive(final float value, final String field) {
         if (Float.compare(value, 0.0F) > 0 && Float.compare(value, Float.MAX_VALUE) <= 0) {
+            return value;
+        }
+        throw new IllegalArgumentException("argument " + field + " must be positive: " + value);
+    }
+
+    public static double requireNonNegative(final double value, final String field) {
+        if (Double.compare(value, 0.0) >= 0 && Double.compare(value, Double.MAX_VALUE) <= 0) {
+            return value;
+        }
+        throw new IllegalArgumentException("argument " + field + " must be non-negative: " + value);
+    }
+
+    public static double requirePositive(final double value, final String field) {
+        if (Double.compare(value, 0.0) > 0 && Double.compare(value, Double.MAX_VALUE) <= 0) {
             return value;
         }
         throw new IllegalArgumentException("argument " + field + " must be positive: " + value);

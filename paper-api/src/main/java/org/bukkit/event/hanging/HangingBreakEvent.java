@@ -13,7 +13,7 @@ public interface HangingBreakEvent extends HangingEvent, Cancellable {
      *
      * @return the RemoveCause for the hanging entity's removal
      */
-    HangingBreakEvent.RemoveCause getCause();
+    RemoveCause getCause();
 
     static HandlerList getHandlerList() {
         final class Holder {

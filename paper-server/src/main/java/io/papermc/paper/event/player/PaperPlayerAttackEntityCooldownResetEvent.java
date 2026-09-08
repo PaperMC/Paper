@@ -19,6 +19,14 @@ public class PaperPlayerAttackEntityCooldownResetEvent extends CraftPlayerEvent 
         this.cooledAttackStrength = cooledAttackStrength;
     }
 
+    public PaperPlayerAttackEntityCooldownResetEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.entity.Entity attackEntity,
+        final float cooledAttackStrength
+     ) {
+        this((Player) player.getBukkitEntity(), attackEntity.getBukkitEntity(), cooledAttackStrength);
+    }
+
     @Override
     public Entity getAttackedEntity() {
         return this.attackedEntity;

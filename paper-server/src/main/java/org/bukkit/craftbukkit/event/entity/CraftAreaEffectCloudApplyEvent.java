@@ -16,6 +16,10 @@ public class CraftAreaEffectCloudApplyEvent extends CraftEntityEvent implements 
         this.affectedEntities = affectedEntities;
     }
 
+    public CraftAreaEffectCloudApplyEvent(final net.minecraft.world.entity.AreaEffectCloud entity, final List<LivingEntity> affectedEntities) {
+        this((AreaEffectCloud) entity.getBukkitEntity(), affectedEntities);
+    }
+
     @Override
     public AreaEffectCloud getEntity() {
         return (AreaEffectCloud) this.entity;

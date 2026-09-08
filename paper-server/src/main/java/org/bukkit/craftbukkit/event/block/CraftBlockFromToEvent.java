@@ -1,26 +1,33 @@
 package org.bukkit.craftbukkit.event.block;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockFromToEvent;
-import org.jspecify.annotations.Nullable;
 
 public class CraftBlockFromToEvent extends CraftBlockEvent implements BlockFromToEvent {
 
-    protected @Nullable Block toBlock;
-    protected BlockFace face;
+    protected final Block toBlock;
+    protected final BlockFace face;
 
     protected boolean cancelled;
 
-    public CraftBlockFromToEvent(final Block block, final BlockFace face) {
+    public CraftBlockFromToEvent(final Block block, final Block toBlock, final BlockFace face) {
         super(block);
+        this.toBlock = toBlock;
         this.face = face;
     }
 
-    public CraftBlockFromToEvent(final Block block, final Block toBlock) {
-        this(block, BlockFace.SELF);
-        this.toBlock = toBlock;
+    public CraftBlockFromToEvent(final Level level, final BlockPos pos, final Direction face) {
+        this(CraftBlock.at(level, pos), CraftBlock.at(level, pos.relative(face)), CraftBlock.notchToBlockFace(face));
+    }
+
+    public CraftBlockFromToEvent(final Level level, final BlockPos fromPos, final BlockPos toPos) {
+        this(CraftBlock.at(level, fromPos), CraftBlock.at(level, toPos), BlockFace.SELF);
     }
 
     @Override
@@ -30,9 +37,6 @@ public class CraftBlockFromToEvent extends CraftBlockEvent implements BlockFromT
 
     @Override
     public Block getToBlock() {
-        if (this.toBlock == null) {
-            this.toBlock = this.block.getRelative(this.face);
-        }
         return this.toBlock;
     }
 

@@ -197,7 +197,7 @@ public final class PaperAdventure {
     }
 
     @Contract("null -> null; !null -> !null")
-    public static net.minecraft.network.chat.Component asVanilla(final @Nullable Component component) {
+    public static net.minecraft.network.chat.@Nullable Component asVanilla(final @Nullable Component component) {
         if (component == null) return null;
         if (true) return new AdventureComponent(component);
         return WRAPPER_AWARE_SERIALIZER.serialize(component);

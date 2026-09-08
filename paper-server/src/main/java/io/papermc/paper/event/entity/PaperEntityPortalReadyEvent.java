@@ -1,5 +1,7 @@
 package io.papermc.paper.event.entity;
 
+import net.minecraft.Optionull;
+import net.minecraft.world.level.Level;
 import org.bukkit.PortalType;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
@@ -18,6 +20,10 @@ public class PaperEntityPortalReadyEvent extends CraftEntityEvent implements Ent
         super(entity);
         this.targetWorld = targetWorld;
         this.portalType = portalType;
+    }
+
+    public PaperEntityPortalReadyEvent(final net.minecraft.world.entity.Entity entity, final @Nullable Level newLevel, final PortalType portalType) {
+        this(entity.getBukkitEntity(), Optionull.map(newLevel, Level::getWorld), portalType);
     }
 
     @Override

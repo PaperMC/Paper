@@ -1,6 +1,9 @@
 package io.papermc.paper.event.player;
 
+import net.minecraft.world.InteractionHand;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -21,6 +24,16 @@ public class PaperPlayerToggleEntityAgeLockEvent extends CraftPlayerEvent implem
         this.item = item;
         this.hand = hand;
         this.ageLocked = ageLocked;
+    }
+
+    public PaperPlayerToggleEntityAgeLockEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.entity.LivingEntity entity,
+        final net.minecraft.world.item.ItemStack item,
+        final InteractionHand hand,
+        final boolean ageLocked
+    ) {
+        this((Player) player.getBukkitEntity(), entity.getBukkitEntity(), CraftItemStack.asCraftMirror(item), CraftEquipmentSlot.getHand(hand), ageLocked);
     }
 
     @Override

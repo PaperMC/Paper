@@ -1,6 +1,8 @@
 package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.player.PlayerAdvancementCriterionGrantEvent;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
@@ -20,6 +22,10 @@ public class PaperPlayerAdvancementCriterionGrantEvent extends CraftPlayerEvent 
         this.advancement = advancement;
         this.criterion = criterion;
         this.advancementProgress = player.getAdvancementProgress(advancement);
+    }
+
+    public PaperPlayerAdvancementCriterionGrantEvent(final ServerPlayer player, final AdvancementHolder holder, final String criterion) {
+        this(player.getBukkitEntity(), holder.toBukkit(), criterion);
     }
 
     @Override

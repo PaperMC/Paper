@@ -3,7 +3,6 @@ package org.bukkit.event.block;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a block is destroyed as a result of being burnt by fire.
@@ -16,10 +15,9 @@ public interface BlockBurnEvent extends BlockEvent, Cancellable {
     /**
      * Gets the block which ignited this block.
      *
-     * @return The Block that ignited and burned this block, or {@code null} if no
-     * source block exists
+     * @return The Block that ignited and burned this block
      */
-    @Nullable Block getIgnitingBlock();
+    Block getIgnitingBlock();
 
     static HandlerList getHandlerList() {
         final class Holder {

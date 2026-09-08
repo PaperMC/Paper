@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -12,6 +14,10 @@ public class CraftPlayerChangedWorldEvent extends CraftPlayerEvent implements Pl
     public CraftPlayerChangedWorldEvent(final Player player, final World from) {
         super(player);
         this.from = from;
+    }
+
+    public CraftPlayerChangedWorldEvent(final ServerPlayer player, final Level level) {
+        this(player.getBukkitEntity(), level.getWorld());
     }
 
     @Override

@@ -17,6 +17,10 @@ public class PaperSkeletonHorseTrapEvent extends CraftEntityEvent implements Ske
         this.eligibleHumans = eligibleHumans;
     }
 
+    public PaperSkeletonHorseTrapEvent(final net.minecraft.world.entity.animal.equine.SkeletonHorse horse, final List<HumanEntity> eligibleHumans) {
+        this((SkeletonHorse) horse.getBukkitEntity(), eligibleHumans);
+    }
+
     @Override
     public SkeletonHorse getEntity() {
         return (SkeletonHorse) this.entity;
@@ -42,4 +46,3 @@ public class PaperSkeletonHorseTrapEvent extends CraftEntityEvent implements Ske
         return SkeletonHorseTrapEvent.getHandlerList();
     }
 }
-

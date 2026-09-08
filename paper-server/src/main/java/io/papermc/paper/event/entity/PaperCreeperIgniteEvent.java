@@ -13,6 +13,10 @@ public class PaperCreeperIgniteEvent extends PaperEntityIgniteEvent implements C
         this.ignited = ignited;
     }
 
+    public PaperCreeperIgniteEvent(final net.minecraft.world.entity.monster.Creeper creeper, final boolean ignited) {
+        this((Creeper) creeper.getBukkitEntity(), ignited);
+    }
+
     @Override
     public Creeper getEntity() {
         return (Creeper) this.entity;

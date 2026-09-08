@@ -4,15 +4,18 @@ import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityEvent;
 import org.checkerframework.common.value.qual.IntRange;
 import org.jspecify.annotations.Nullable;
 
-public interface CauldronLevelChangeEvent extends BlockEvent, EntityEvent, Cancellable {
+public interface CauldronLevelChangeEvent extends BlockEvent, Cancellable {
 
+    /**
+     * Gets the entity responsible for this level change.
+     *
+     * @return the responsible entity
+     */
     @Nullable Entity getEntity();
 
-    // todo javadocs?
     ChangeReason getReason();
 
     /**

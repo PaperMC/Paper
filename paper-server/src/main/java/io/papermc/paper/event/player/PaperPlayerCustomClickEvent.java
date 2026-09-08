@@ -5,10 +5,12 @@ import io.papermc.paper.connection.PlayerCommonConnection;
 import io.papermc.paper.dialog.DialogResponseView;
 import io.papermc.paper.dialog.PaperDialogResponseView;
 import io.papermc.paper.event.network.connection.PaperConnectionEvent;
+import java.util.Optional;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.Identifier;
 import org.bukkit.event.HandlerList;
 import org.jspecify.annotations.Nullable;
 
@@ -20,10 +22,10 @@ public class PaperPlayerCustomClickEvent extends PaperConnectionEvent implements
 
     private @Nullable DialogResponseView rawResponse;
 
-    public PaperPlayerCustomClickEvent(final Key identifier, final PlayerCommonConnection commonConnection, final @Nullable Tag payload) {
-        super(commonConnection);
-        this.identifier = identifier;
-        this.payload = payload;
+    public PaperPlayerCustomClickEvent(final Identifier identifier, final PlayerCommonConnection connection, final Optional<Tag> payload) {
+        super(connection);
+        this.identifier = PaperAdventure.asAdventure(identifier);
+        this.payload = payload.orElse(null);
     }
 
     @Override

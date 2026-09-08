@@ -7,25 +7,31 @@ import org.bukkit.event.HandlerList;
 
 public class PaperExperienceOrbMergeEvent extends CraftEntityEvent implements ExperienceOrbMergeEvent {
 
-    private final ExperienceOrb mergeTarget;
-    private final ExperienceOrb mergeSource;
+    private final ExperienceOrb target;
+    private final ExperienceOrb source;
 
     private boolean cancelled;
 
-    public PaperExperienceOrbMergeEvent(final ExperienceOrb mergeTarget, final ExperienceOrb mergeSource) {
-        super(mergeTarget);
-        this.mergeTarget = mergeTarget;
-        this.mergeSource = mergeSource;
+    public PaperExperienceOrbMergeEvent(final ExperienceOrb target, final ExperienceOrb source) {
+        super(target);
+        this.target = target;
+        this.source = source;
+    }
+
+    public PaperExperienceOrbMergeEvent(
+        final net.minecraft.world.entity.ExperienceOrb target, final net.minecraft.world.entity.ExperienceOrb source
+    ) {
+        this((ExperienceOrb) target.getBukkitEntity(), (ExperienceOrb) source.getBukkitEntity());
     }
 
     @Override
     public ExperienceOrb getMergeTarget() {
-        return this.mergeTarget;
+        return this.target;
     }
 
     @Override
     public ExperienceOrb getMergeSource() {
-        return this.mergeSource;
+        return this.source;
     }
 
     @Override

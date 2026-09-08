@@ -1,7 +1,9 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.world.level.block.entity.SignBlockEntity;
 import org.bukkit.block.Sign;
 import org.bukkit.block.sign.Side;
+import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerSignOpenEvent;
@@ -19,6 +21,15 @@ public class CraftPlayerSignOpenEvent extends CraftPlayerEvent implements Player
         this.sign = sign;
         this.side = side;
         this.cause = cause;
+    }
+
+    public CraftPlayerSignOpenEvent(final net.minecraft.world.entity.player.Player player, final SignBlockEntity signEntity, final boolean front, final Cause cause) {
+        this(
+            (Player) player.getBukkitEntity(),
+            (Sign) CraftBlockStates.snapshotOf(signEntity),
+            front ? Side.FRONT : Side.BACK,
+            cause
+        );
     }
 
     @Override

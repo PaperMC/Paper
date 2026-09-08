@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.block;
 
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -7,15 +8,17 @@ import org.bukkit.event.block.BlockBreakEvent;
 public class CraftBlockBreakEvent extends CraftBlockExpEvent implements BlockBreakEvent {
 
     private final Player player;
-    private boolean dropItems;
+    private boolean dropItems = true; // Defaults to dropping items as it normally would
 
     private boolean cancelled;
 
     public CraftBlockBreakEvent(final Block block, final Player player) {
         super(block, 0);
-
         this.player = player;
-        this.dropItems = true; // Defaults to dropping items as it normally would
+    }
+
+    public CraftBlockBreakEvent(final Block block, final ServerPlayer player) {
+        this(block, player.getBukkitEntity());
     }
 
     @Override

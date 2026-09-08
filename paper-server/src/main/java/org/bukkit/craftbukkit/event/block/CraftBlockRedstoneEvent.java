@@ -1,10 +1,15 @@
 package org.bukkit.craftbukkit.event.block;
 
-import com.google.common.base.Preconditions;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.redstone.Redstone;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockRedstoneEvent;
+import org.checkerframework.common.value.qual.IntRange;
+
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public class CraftBlockRedstoneEvent extends CraftBlockEvent implements BlockRedstoneEvent {
 
@@ -17,24 +22,23 @@ public class CraftBlockRedstoneEvent extends CraftBlockEvent implements BlockRed
         this.newCurrent = newCurrent;
     }
 
+    public CraftBlockRedstoneEvent(final LevelAccessor level, final BlockPos pos, final int oldCurrent, final int newCurrent) {
+        this(CraftBlock.at(level, pos), oldCurrent, newCurrent);
+    }
+
     @Override
-    public int getOldCurrent() {
+    public @IntRange(from = Redstone.SIGNAL_MIN, to = Redstone.SIGNAL_MAX) int getOldCurrent() {
         return this.oldCurrent;
     }
 
     @Override
-    public int getNewCurrent() {
+    public @IntRange(from = Redstone.SIGNAL_MIN, to = Redstone.SIGNAL_MAX) int getNewCurrent() {
         return this.newCurrent;
     }
 
     @Override
-    public void setNewCurrent(final int newCurrent) {
-        Preconditions.checkArgument(
-            newCurrent >= Redstone.SIGNAL_MIN && newCurrent <= Redstone.SIGNAL_MAX,
-            "New current must be a redstone signal between %s and %s (was %s)",
-            Redstone.SIGNAL_MIN, Redstone.SIGNAL_MAX, newCurrent
-        );
-        this.newCurrent = newCurrent;
+    public void setNewCurrent(final @IntRange(from = Redstone.SIGNAL_MIN, to = Redstone.SIGNAL_MAX) int newCurrent) {
+        this.newCurrent = requireRange(newCurrent, "newCurrent", Redstone.SIGNAL_MIN, Redstone.SIGNAL_MAX);
     }
 
     @Override

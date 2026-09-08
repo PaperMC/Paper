@@ -16,6 +16,10 @@ public class PaperLootableInventoryReplenishEvent extends CraftPlayerEvent imple
         this.inventory = inventory;
     }
 
+    public PaperLootableInventoryReplenishEvent(final net.minecraft.world.entity.player.Player player, final LootableInventory inventory) {
+        this((Player) player.getBukkitEntity(), inventory);
+    }
+
     @Override
     public LootableInventory getInventory() {
         return this.inventory;

@@ -12,7 +12,7 @@ public class CraftBlockGrowEvent extends CraftBlockEvent implements BlockGrowEve
 
     public CraftBlockGrowEvent(final Block block, final BlockState newState) {
         super(block);
-        this.newState = newState; // todo lazy
+        this.newState = newState;
     }
 
     @Override

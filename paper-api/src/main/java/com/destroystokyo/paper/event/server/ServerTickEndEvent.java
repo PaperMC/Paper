@@ -2,6 +2,7 @@ package com.destroystokyo.paper.event.server;
 
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.server.ServerEvent;
+import org.checkerframework.checker.index.qual.Positive;
 
 /**
  * Called when the server has finished ticking the main loop
@@ -11,7 +12,7 @@ public interface ServerTickEndEvent extends ServerEvent {
     /**
      * @return What tick this was since start (first tick = 1)
      */
-    int getTickNumber();
+    @Positive int getTickNumber();
 
     /**
      * @return Time in milliseconds of how long this tick took

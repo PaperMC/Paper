@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.event.inventory;
 
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.item.ItemEntity;
 import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.entity.Item;
 import org.bukkit.event.HandlerList;
@@ -16,6 +18,10 @@ public class CraftInventoryPickupItemEvent extends CraftEvent implements Invento
     public CraftInventoryPickupItemEvent(final Inventory inventory, final Item item) {
         this.inventory = inventory;
         this.item = item;
+    }
+
+    public CraftInventoryPickupItemEvent(final Container container, final ItemEntity item, final boolean fromHopper) {
+        this(CraftInventoryMoveItemEvent.extractInventory(container, fromHopper), (Item) item.getBukkitEntity());
     }
 
     @Override

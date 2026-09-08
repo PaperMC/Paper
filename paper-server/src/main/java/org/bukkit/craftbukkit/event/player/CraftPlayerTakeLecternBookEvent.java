@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.world.inventory.LecternMenu;
 import net.minecraft.world.level.block.entity.LecternBlockEntity;
 import org.bukkit.block.Lectern;
 import org.bukkit.entity.Player;
@@ -16,6 +17,10 @@ public class CraftPlayerTakeLecternBookEvent extends CraftPlayerEvent implements
     public CraftPlayerTakeLecternBookEvent(final Player player, final Lectern lectern) {
         super(player);
         this.lectern = lectern;
+    }
+
+    public CraftPlayerTakeLecternBookEvent(final Player player, final LecternMenu menu) {
+        this(player, menu.getBukkitView().getTopInventory().getHolder());
     }
 
     @Override

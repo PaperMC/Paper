@@ -38,7 +38,7 @@ public class CraftAsyncPlayerChatEvent extends CraftPlayerEvent implements Async
     @Override
     public void setFormat(final String format) {
         Preconditions.checkArgument(format != null, "format cannot be null");
-        // Oh for a better way to do this!
+        // Oh, for a better way to do this!
         try {
             String.format(format, this.player, this.message);
         } catch (RuntimeException ex) {

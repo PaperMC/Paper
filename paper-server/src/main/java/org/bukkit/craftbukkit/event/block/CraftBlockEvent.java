@@ -6,7 +6,7 @@ import org.bukkit.event.block.BlockEvent;
 
 public abstract class CraftBlockEvent extends CraftEvent implements BlockEvent {
 
-    protected Block block;
+    protected final Block block;
 
     protected CraftBlockEvent(final Block block) {
         this.block = block;

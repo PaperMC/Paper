@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.checkerframework.checker.index.qual.NonNegative;
 
 /**
  * Called when an arrow enters or exists an entity's body.
@@ -24,21 +25,21 @@ public interface ArrowBodyCountChangeEvent extends EntityEvent, Cancellable {
      *
      * @return amount of arrows
      */
-    int getOldAmount();
+    @NonNegative int getOldAmount();
 
     /**
      * Get the new amount of arrows in the entity's body.
      *
      * @return amount of arrows
      */
-    int getNewAmount();
+    @NonNegative int getNewAmount();
 
     /**
      * Sets the final amount of arrows in the entity's body.
      *
      * @param newAmount amount of arrows
      */
-    void setNewAmount(int newAmount);
+    void setNewAmount(@NonNegative int newAmount);
 
     static HandlerList getHandlerList() {
         final class Holder {

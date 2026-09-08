@@ -2,7 +2,7 @@ package io.papermc.paper.event.server;
 
 import com.destroystokyo.paper.event.server.AsyncTabCompleteEvent;
 import com.google.common.base.Preconditions;
-import io.papermc.paper.util.TransformingRandomAccessList;
+import io.papermc.paper.util.MCUtil;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Location;
@@ -18,7 +18,7 @@ public class PaperAsyncTabCompleteEvent extends CraftEvent implements AsyncTabCo
     private final boolean isCommand;
     private final @Nullable Location location;
     private final List<Completion> completions = new ArrayList<>();
-    private final List<String> stringCompletions = new TransformingRandomAccessList<>(
+    private final List<String> stringCompletions = MCUtil.mutableTransform(
         this.completions,
         Completion::suggestion,
         Completion::completion
@@ -26,12 +26,12 @@ public class PaperAsyncTabCompleteEvent extends CraftEvent implements AsyncTabCo
     private boolean handled;
     private boolean cancelled;
 
-    public PaperAsyncTabCompleteEvent(final CommandSender sender, final String buffer, final boolean isCommand, final @Nullable Location loc) {
+    public PaperAsyncTabCompleteEvent(final CommandSender sender, final String buffer, final boolean isCommand, final @Nullable Location location) {
         super(true);
         this.sender = sender;
         this.buffer = buffer;
         this.isCommand = isCommand;
-        this.location = loc;
+        this.location = location;
     }
 
     @Override

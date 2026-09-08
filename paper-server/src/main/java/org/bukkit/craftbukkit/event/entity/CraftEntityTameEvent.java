@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.world.entity.player.Player;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
@@ -13,6 +14,10 @@ public class CraftEntityTameEvent extends CraftEntityEvent implements EntityTame
     public CraftEntityTameEvent(final LivingEntity entity, final AnimalTamer owner) {
         super(entity);
         this.owner = owner;
+    }
+
+    public CraftEntityTameEvent(final net.minecraft.world.entity.LivingEntity entity, final Player owner) {
+        this(entity.getBukkitEntity(), owner.getBukkitEntity());
     }
 
     @Override

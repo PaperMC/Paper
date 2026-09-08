@@ -517,21 +517,21 @@ public class CraftBlock implements Block {
         Preconditions.checkArgument(direction != null, face + " is not a valid cartesian face");
 
         BlockFertilizeEvent event = null;
-        ServerLevel world = this.getCraftWorld().getHandle();
-        UseOnContext context = new UseOnContext(world, null, InteractionHand.MAIN_HAND, Items.BONE_MEAL.getDefaultInstance(), new BlockHitResult(Vec3.ZERO, direction, this.getPosition(), false));
+        ServerLevel level = this.getCraftWorld().getHandle();
+        UseOnContext context = new UseOnContext(level, null, InteractionHand.MAIN_HAND, Items.BONE_MEAL.getDefaultInstance(), new BlockHitResult(Vec3.ZERO, direction, this.getPosition(), false));
 
         // SPIGOT-6895: Call StructureGrowEvent and BlockFertilizeEvent
         List<org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates;
-        world.captureTreeGeneration = true;
+        level.captureTreeGeneration = true;
         TreeType treeType;
         InteractionResult result;
         try {
             result = BoneMealItem.applyBonemeal(context);
         } finally {
-            world.captureTreeGeneration = false;
+            level.captureTreeGeneration = false;
 
-            capturedBlockStates = new ArrayList<>(world.capturedBlockStates.values());
-            world.capturedBlockStates.clear();
+            capturedBlockStates = new ArrayList<>(level.capturedBlockStates.values());
+            level.capturedBlockStates.clear();
 
             treeType = SaplingBlock.treeType;
             SaplingBlock.treeType = null;
@@ -545,14 +545,14 @@ public class CraftBlock implements Block {
                 Bukkit.getPluginManager().callEvent(structureEvent);
             }
 
-            event = new CraftBlockFertilizeEvent(CraftBlock.at(world, this.getPosition()), null, (List<org.bukkit.block.BlockState>) (List<? extends org.bukkit.block.BlockState>) capturedBlockStates);
+            event = new CraftBlockFertilizeEvent(level, this.getPosition(), null, (List<org.bukkit.block.BlockState>) (List<? extends org.bukkit.block.BlockState>) capturedBlockStates);
             event.setCancelled(structureEvent != null && structureEvent.isCancelled());
             Bukkit.getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
                 for (CraftBlockState snapshot : capturedBlockStates) {
                     snapshot.place(snapshot.getFlags());
-                    world.checkCapturedTreeStateForObserverNotify(this.position, snapshot);
+                    level.checkCapturedTreeStateForObserverNotify(this.position, snapshot);
                 }
             }
         }

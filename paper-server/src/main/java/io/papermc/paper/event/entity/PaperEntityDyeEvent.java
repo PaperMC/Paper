@@ -1,5 +1,6 @@
 package io.papermc.paper.event.entity;
 
+import net.minecraft.Optionull;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.entity.Entity;
@@ -18,6 +19,18 @@ public class PaperEntityDyeEvent extends CraftEntityEvent implements EntityDyeEv
         super(entity);
         this.dyeColor = dyeColor;
         this.player = player;
+    }
+
+    public PaperEntityDyeEvent(
+        final net.minecraft.world.entity.Entity entity,
+        final net.minecraft.world.item.DyeColor color,
+        final net.minecraft.world.entity.player.@Nullable Player player
+    ) {
+        this(
+            entity.getBukkitEntity(),
+            org.bukkit.DyeColor.getByWoolData((byte) color.getId()),
+            (Player) Optionull.map(player, net.minecraft.world.entity.player.Player::getBukkitEntity)
+        );
     }
 
     @Override

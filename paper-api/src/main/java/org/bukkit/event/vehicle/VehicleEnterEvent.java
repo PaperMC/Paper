@@ -1,6 +1,6 @@
 package org.bukkit.event.vehicle;
 
-import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 
@@ -14,7 +14,7 @@ public interface VehicleEnterEvent extends VehicleEvent, Cancellable {
      *
      * @return the Entity that entered the vehicle
      */
-    Entity getEntered();
+    LivingEntity getEntered();
 
     static HandlerList getHandlerList() {
         final class Holder {

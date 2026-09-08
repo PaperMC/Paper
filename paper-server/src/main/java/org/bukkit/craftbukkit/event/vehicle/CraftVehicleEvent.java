@@ -6,7 +6,7 @@ import org.bukkit.event.vehicle.VehicleEvent;
 
 public abstract class CraftVehicleEvent extends CraftEvent implements VehicleEvent {
 
-    protected Vehicle vehicle;
+    protected final Vehicle vehicle;
 
     protected CraftVehicleEvent(final Vehicle vehicle) {
         this.vehicle = vehicle;

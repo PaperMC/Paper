@@ -1,7 +1,12 @@
 package org.bukkit.craftbukkit.event.player;
 
+import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.configuration.GlobalConfiguration;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.minecraft.network.DisconnectionDetails;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerKickEvent;
@@ -20,6 +25,22 @@ public class CraftPlayerKickEvent extends CraftPlayerEvent implements PlayerKick
         this.kickReason = kickReason;
         this.leaveMessage = leaveMessage;
         this.cause = cause;
+    }
+
+    public CraftPlayerKickEvent(final ServerPlayer player, final DisconnectionDetails details) {
+        final Player p = player.getBukkitEntity();
+        final Component leaveMessage = Component.translatable(
+            "multiplayer.player.left",
+            NamedTextColor.YELLOW,
+            GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? p.displayName() : Component.text(player.getScoreboardName())
+        );
+
+        this(
+            p,
+            PaperAdventure.asAdventure(details.reason()),
+            leaveMessage,
+            details.disconnectionReason().orElseThrow().game().orElse(Cause.UNKNOWN)
+        );
     }
 
     @Override

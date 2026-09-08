@@ -1,6 +1,7 @@
 package io.papermc.paper.event.entity;
 
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.SulfurCube;
 import org.bukkit.event.HandlerList;
@@ -21,6 +22,20 @@ public class PaperSulfurCubeSwallowItemEvent extends CraftEntityEvent implements
         this.newItem = newItem;
     }
 
+    public PaperSulfurCubeSwallowItemEvent(
+        final net.minecraft.world.entity.monster.cubemob.SulfurCube sulfurCube,
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.item.ItemStack oldItem,
+        final net.minecraft.world.item.ItemStack newItem
+    ) {
+        this(
+            (SulfurCube) sulfurCube.getBukkitEntity(),
+            (Player) player.getBukkitEntity(),
+            CraftItemStack.asCraftMirror(oldItem),
+            CraftItemStack.asCraftMirror(newItem)
+        );
+    }
+
     @Override
     public Player getPlayer() {
         return this.player;
@@ -34,6 +49,10 @@ public class PaperSulfurCubeSwallowItemEvent extends CraftEntityEvent implements
     @Override
     public ItemStack getNewItem() {
         return this.newItem.clone();
+    }
+
+    public ItemStack getNewItemNoClone() {
+        return this.newItem;
     }
 
     @Override

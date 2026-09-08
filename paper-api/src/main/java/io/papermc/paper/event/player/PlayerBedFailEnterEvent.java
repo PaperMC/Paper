@@ -10,7 +10,7 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
-public interface PlayerBedFailEnterEvent extends PlayerEvent, BlockEvent, Cancellable { // todo javadocs?
+public interface PlayerBedFailEnterEvent extends PlayerEvent, BlockEvent, Cancellable {
 
     /**
      * @deprecated This enum has been replaced with a system that better

@@ -4,6 +4,7 @@ import org.bukkit.entity.PufferFish;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
+import org.checkerframework.common.value.qual.IntRange;
 
 /**
  * Called just before a {@link PufferFish} inflates or deflates.
@@ -21,7 +22,7 @@ public interface PufferFishStateChangeEvent extends EntityEvent, Cancellable {
      *
      * @return The <strong>new</strong> puff state, 0 being not inflated, 1 being slightly inflated and 2 being fully inflated
      */
-    int getNewPuffState();
+    @IntRange(from = 0, to = 2) int getNewPuffState();
 
     /**
      * Get if the {@link PufferFish} is going to inflate.

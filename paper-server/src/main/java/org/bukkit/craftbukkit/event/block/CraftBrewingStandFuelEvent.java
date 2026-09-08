@@ -1,6 +1,10 @@
 package org.bukkit.craftbukkit.event.block;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.BrewingStandFuelEvent;
 import org.bukkit.inventory.ItemStack;
@@ -17,6 +21,10 @@ public class CraftBrewingStandFuelEvent extends CraftBlockEvent implements Brewi
         super(brewingStand);
         this.fuel = fuel;
         this.fuelPower = fuelPower;
+    }
+
+    public CraftBrewingStandFuelEvent(final Level level, final BlockPos pos, final net.minecraft.world.item.ItemStack fuel, final int fuelPower) {
+        this(CraftBlock.at(level, pos), CraftItemStack.asCraftMirror(fuel), fuelPower);
     }
 
     @Override

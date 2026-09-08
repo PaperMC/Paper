@@ -4,7 +4,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.Range;
+import org.checkerframework.common.value.qual.IntRange;
 
 /**
  * Called when an ItemStack is successfully burned as fuel in a furnace-like block such as a
@@ -32,7 +32,7 @@ public interface FurnaceBurnEvent extends BlockEvent, Cancellable {
      *
      * @param burnTime the burn time for this fuel
      */
-    void setBurnTime(@Range(from = Short.MIN_VALUE, to = Short.MAX_VALUE) int burnTime);
+    void setBurnTime(@IntRange(from = Short.MIN_VALUE, to = Short.MAX_VALUE) int burnTime);
 
     /**
      * Gets whether the furnace's fuel is burning or not.

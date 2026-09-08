@@ -14,6 +14,10 @@ public class PaperEntityAttemptSpinAttackEvent extends CraftEntityEvent implemen
         this.target = target;
     }
 
+    public PaperEntityAttemptSpinAttackEvent(final net.minecraft.world.entity.LivingEntity entity, final net.minecraft.world.entity.LivingEntity target) {
+        this(entity.getBukkitEntity(), target.getBukkitEntity());
+    }
+
     @Override
     public LivingEntity getEntity() {
         return (LivingEntity) this.entity;

@@ -25,7 +25,7 @@ public interface CreatureSpawnEvent extends EntitySpawnEvent {
     /**
      * An enum to specify the type of spawning
      */
-    enum SpawnReason { // todo move outside
+    enum SpawnReason {
 
         /**
          * When something spawns from natural means

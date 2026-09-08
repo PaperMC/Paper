@@ -12,7 +12,15 @@ public class CraftPlayerPortalEvent extends CraftPlayerTeleportEvent implements 
     private boolean canCreatePortal;
     private int creationRadius;
 
-    public CraftPlayerPortalEvent(final Player player, final Location from, final @Nullable Location to, final TeleportCause cause, final int searchRadius, final boolean canCreatePortal, final int creationRadius) {
+    public CraftPlayerPortalEvent(
+        final Player player,
+        final Location from,
+        final @Nullable Location to,
+        final TeleportCause cause,
+        final int searchRadius,
+        final boolean canCreatePortal,
+        final int creationRadius
+    ) {
         super(player, from, to, cause);
         this.searchRadius = searchRadius;
         this.canCreatePortal = canCreatePortal;

@@ -6,17 +6,21 @@ import org.bukkit.event.entity.EntityToggleGlideEvent;
 
 public class CraftEntityToggleGlideEvent extends CraftEntityEvent implements EntityToggleGlideEvent {
 
-    private final boolean isGliding;
+    private final boolean gliding;
     private boolean cancelled;
 
-    public CraftEntityToggleGlideEvent(final LivingEntity livingEntity, final boolean isGliding) {
+    public CraftEntityToggleGlideEvent(final LivingEntity livingEntity, final boolean gliding) {
         super(livingEntity);
-        this.isGliding = isGliding;
+        this.gliding = gliding;
+    }
+
+    public CraftEntityToggleGlideEvent(final net.minecraft.world.entity.LivingEntity livingEntity, final boolean gliding) {
+        this(livingEntity.getBukkitEntity(), gliding);
     }
 
     @Override
     public boolean isGliding() {
-        return this.isGliding;
+        return this.gliding;
     }
 
     @Override

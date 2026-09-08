@@ -1,5 +1,6 @@
 package io.papermc.paper.event.entity;
 
+import net.minecraft.world.entity.projectile.FishingHook;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.entity.FishHook;
 import org.bukkit.event.HandlerList;
@@ -11,6 +12,10 @@ public class PaperFishHookStateChangeEvent extends CraftEntityEvent implements F
     public PaperFishHookStateChangeEvent(final FishHook entity, final FishHook.HookState newHookState) {
         super(entity);
         this.newHookState = newHookState;
+    }
+
+    public PaperFishHookStateChangeEvent(final FishingHook entity, final FishHook.HookState newHookState) {
+        this((FishHook) entity.getBukkitEntity(), newHookState);
     }
 
     @Override

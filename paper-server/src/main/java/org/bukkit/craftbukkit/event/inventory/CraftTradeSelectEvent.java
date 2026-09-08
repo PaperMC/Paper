@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.inventory;
 
+import net.minecraft.world.inventory.MerchantMenu;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.TradeSelectEvent;
 import org.bukkit.inventory.Merchant;
@@ -13,6 +14,10 @@ public class CraftTradeSelectEvent extends CraftInventoryInteractEvent implement
     public CraftTradeSelectEvent(final MerchantView transaction, final int newIndex) {
         super(transaction);
         this.index = newIndex;
+    }
+
+    public CraftTradeSelectEvent(final MerchantMenu menu, final int newIndex) {
+        this(menu.getBukkitView(), newIndex);
     }
 
     @Override

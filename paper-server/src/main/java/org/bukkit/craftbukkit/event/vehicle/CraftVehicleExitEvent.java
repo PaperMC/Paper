@@ -18,6 +18,10 @@ public class CraftVehicleExitEvent extends CraftVehicleEvent implements VehicleE
         this.cancellable = cancellable;
     }
 
+    public CraftVehicleExitEvent(final Vehicle vehicle, final net.minecraft.world.entity.LivingEntity exited, final boolean cancellable) {
+        this(vehicle, exited.getBukkitEntity(), cancellable);
+    }
+
     @Override
     public LivingEntity getExited() {
         return this.exited;

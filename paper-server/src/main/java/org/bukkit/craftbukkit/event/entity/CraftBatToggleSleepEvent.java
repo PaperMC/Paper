@@ -14,6 +14,10 @@ public class CraftBatToggleSleepEvent extends CraftEntityEvent implements BatTog
         this.awake = awake;
     }
 
+    public CraftBatToggleSleepEvent(final net.minecraft.world.entity.ambient.Bat bat, final boolean awake) {
+        this((Bat) bat.getBukkitEntity(), awake);
+    }
+
     @Override
     public boolean isAwake() {
         return this.awake;

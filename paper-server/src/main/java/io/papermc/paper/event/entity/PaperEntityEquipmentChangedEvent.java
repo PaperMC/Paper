@@ -17,6 +17,10 @@ public class PaperEntityEquipmentChangedEvent extends CraftEntityEvent implement
         this.equipmentChanges = Collections.unmodifiableMap(equipmentChanges);
     }
 
+    public PaperEntityEquipmentChangedEvent(final net.minecraft.world.entity.LivingEntity entity, final Map<EquipmentSlot, EquipmentChange> equipmentChanges) {
+        this(entity.getBukkitEntity(), equipmentChanges);
+    }
+
     @Override
     public LivingEntity getEntity() {
         return (LivingEntity) this.entity;

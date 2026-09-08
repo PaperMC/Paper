@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.event.inventory;
 
 import net.kyori.adventure.text.Component;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.InventoryOpenEvent;
@@ -9,11 +10,15 @@ import org.jspecify.annotations.Nullable;
 
 public class CraftInventoryOpenEvent extends CraftInventoryEvent implements InventoryOpenEvent {
 
-    private Component titleOverride;
+    private @Nullable Component titleOverride;
     private boolean cancelled;
 
     public CraftInventoryOpenEvent(final InventoryView transaction) {
         super(transaction);
+    }
+
+    public CraftInventoryOpenEvent(final AbstractContainerMenu menu) {
+        this(menu.getBukkitView());
     }
 
     @Override

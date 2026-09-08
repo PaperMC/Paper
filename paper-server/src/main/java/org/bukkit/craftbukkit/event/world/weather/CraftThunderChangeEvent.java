@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.world.weather;
 
+import net.minecraft.world.level.Level;
 import org.bukkit.World;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.weather.ThunderChangeEvent;
@@ -15,6 +16,10 @@ public class CraftThunderChangeEvent extends CraftWeatherEvent implements Thunde
         super(world);
         this.newThunderState = newThunderState;
         this.cause = cause;
+    }
+
+    public CraftThunderChangeEvent(final Level level, final boolean newThunderState, final Cause cause) {
+        this(level.getWorld(), newThunderState, cause);
     }
 
     @Override

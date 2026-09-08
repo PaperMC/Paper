@@ -1,6 +1,7 @@
 package io.papermc.paper.event.entity;
 
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
@@ -17,6 +18,15 @@ public class PaperEntityAttemptSmashAttackEvent extends CraftEntityEvent impleme
         this.target = target;
         this.weapon = weapon;
         this.originalResult = originalResult;
+    }
+
+    public PaperEntityAttemptSmashAttackEvent(
+        final net.minecraft.world.entity.LivingEntity attacker,
+        final net.minecraft.world.entity.LivingEntity target,
+        final net.minecraft.world.item.ItemStack weapon,
+        final boolean originalResult
+    ) {
+        this(attacker.getBukkitEntity(), target.getBukkitEntity(), CraftItemStack.asCraftMirror(weapon), originalResult);
     }
 
     @Override

@@ -14,6 +14,10 @@ public class CraftEntityMountEvent extends CraftEntityEvent implements EntityMou
         this.mount = mount;
     }
 
+    public CraftEntityMountEvent(final net.minecraft.world.entity.Entity entity, final net.minecraft.world.entity.Entity mount) {
+        this(entity.getBukkitEntity(), mount.getBukkitEntity());
+    }
+
     @Override
     public Entity getMount() {
         return this.mount;

@@ -27,7 +27,7 @@ public interface PlayerServerFullCheckEvent extends Event {
      *
      * @param kickMessage The message to send to the player on kick if not able to join.
      */
-    void deny(final Component kickMessage);
+    void deny(Component kickMessage);
 
     /**
      * Sets whether the player is able to join this server.

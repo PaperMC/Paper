@@ -1,8 +1,11 @@
 package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 
@@ -17,6 +20,10 @@ public class PaperPlayerRecipeBookClickEvent extends CraftPlayerEvent implements
         super(player);
         this.recipe = recipe;
         this.makeAll = makeAll;
+    }
+
+    public PaperPlayerRecipeBookClickEvent(final ServerPlayer player, final RecipeHolder<?> recipe, final boolean makeAll) {
+        this(player.getBukkitEntity(), CraftNamespacedKey.fromMinecraft(recipe.id().identifier()), makeAll);
     }
 
     @Override

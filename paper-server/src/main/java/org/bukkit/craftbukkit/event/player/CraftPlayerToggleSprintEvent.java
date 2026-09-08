@@ -1,22 +1,27 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
 
 public class CraftPlayerToggleSprintEvent extends CraftPlayerEvent implements PlayerToggleSprintEvent {
 
-    private final boolean isSprinting;
+    private final boolean sprinting;
     private boolean cancelled;
 
-    public CraftPlayerToggleSprintEvent(final Player player, final boolean isSprinting) {
+    public CraftPlayerToggleSprintEvent(final Player player, final boolean sprinting) {
         super(player);
-        this.isSprinting = isSprinting;
+        this.sprinting = sprinting;
+    }
+
+    public CraftPlayerToggleSprintEvent(final ServerPlayer player, final boolean sprinting) {
+        this(player.getBukkitEntity(), sprinting);
     }
 
     @Override
     public boolean isSprinting() {
-        return this.isSprinting;
+        return this.sprinting;
     }
 
     @Override

@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
 import net.minecraft.SharedConstants;
@@ -121,6 +122,10 @@ public final class CraftItemStack extends ItemStack {
     public static net.minecraft.world.item.ItemStack getOrCloneOnMutation(ItemStack initial, ItemStack current) {
         return initial == current ? unwrap(initial) : asNMSCopy(current);
     }
+
+    public static net.minecraft.world.item.ItemStack getOrCloneOnMutation(net.minecraft.world.item.ItemStack initial, ItemStack current) {
+        return initial == unwrap(current) ? initial : asNMSCopy(current);
+    }
     // Paper end - MC Utils
 
     // Paper start - override isEmpty to use vanilla's impl
@@ -197,6 +202,14 @@ public final class CraftItemStack extends ItemStack {
 
     public static CraftItemStack asNewCraftStack(Item item, int amount) {
         return new CraftItemStack(CraftItemType.minecraftToBukkit(item), amount, (short) 0, null);
+    }
+
+    @Deprecated
+    public static CraftItemStack emptyToNull(net.minecraft.world.item.ItemStack item, Function<net.minecraft.world.item.ItemStack, CraftItemStack> converter) {
+        if (item.isEmpty()) {
+            return null;
+        }
+        return converter.apply(item);
     }
 
     public static ItemPredicate asCriterionConditionItem(ItemStack key) {

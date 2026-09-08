@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import io.papermc.paper.util.MCUtil;
 import java.util.List;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Piglin;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.PiglinBarterEvent;
@@ -15,9 +17,16 @@ public class CraftPiglinBarterEvent extends CraftEntityEvent implements PiglinBa
 
     public CraftPiglinBarterEvent(final Piglin piglin, final ItemStack input, final List<ItemStack> outcome) {
         super(piglin);
-
         this.input = input;
         this.outcome = outcome;
+    }
+
+    public CraftPiglinBarterEvent(final net.minecraft.world.entity.monster.piglin.Piglin piglin, final net.minecraft.world.item.ItemStack input, final List<net.minecraft.world.item.ItemStack> outcome) {
+        this(
+            (Piglin) piglin.getBukkitEntity(),
+            CraftItemStack.asCraftMirror(input),
+            MCUtil.mutableTransform(outcome, CraftItemStack::asCraftMirror, CraftItemStack::asNMSCopy)
+        );
     }
 
     @Override

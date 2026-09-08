@@ -4,12 +4,10 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.AbstractThrownPotion;
+import net.minecraft.world.phys.HitResult;
 import org.bukkit.craftbukkit.event.entity.CraftPotionSplashEvent;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.ThrownPotion;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
@@ -19,15 +17,13 @@ public class PaperWaterBottleSplashEvent extends CraftPotionSplashEvent implemen
     private final Set<LivingEntity> extinguish;
 
     public PaperWaterBottleSplashEvent(
-        final ThrownPotion potion,
-        final @Nullable Entity hitEntity,
-        final @Nullable Block hitBlock,
-        final @Nullable BlockFace hitFace,
+        final AbstractThrownPotion potion,
+        final @Nullable HitResult hitResult,
         final Map<LivingEntity, Double> affectedEntities,
         final Set<LivingEntity> rehydrate,
         final Set<LivingEntity> extinguish
     ) {
-        super(potion, hitEntity, hitBlock, hitFace, affectedEntities);
+        super(potion, hitResult, affectedEntities);
         this.rehydrate = rehydrate;
         this.extinguish = extinguish;
     }

@@ -16,6 +16,12 @@ public class PaperEnderDragonFlameEvent extends CraftEntityEvent implements Ende
         this.areaEffectCloud = areaEffectCloud;
     }
 
+    public PaperEnderDragonFlameEvent(
+        final net.minecraft.world.entity.boss.enderdragon.EnderDragon enderDragon, final net.minecraft.world.entity.AreaEffectCloud areaEffectCloud
+    ) {
+        this((EnderDragon) enderDragon.getBukkitEntity(), (AreaEffectCloud) areaEffectCloud.getBukkitEntity());
+    }
+
     @Override
     public EnderDragon getEntity() {
         return (EnderDragon) this.entity;

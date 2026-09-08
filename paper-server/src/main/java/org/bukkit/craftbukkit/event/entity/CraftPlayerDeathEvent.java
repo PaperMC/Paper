@@ -1,9 +1,16 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import io.papermc.paper.adventure.PaperAdventure;
 import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -16,31 +23,58 @@ public class CraftPlayerDeathEvent extends CraftEntityDeathEvent implements Play
     private int newLevel = 0;
     private int newTotalExp = 0;
     private boolean showDeathMessages;
-    private Component deathMessage;
-    private Component deathScreenMessageOverride = null;
-    private boolean doExpDrop;
-    private boolean keepLevel = false;
-    private boolean keepInventory = false;
+    private @Nullable Component deathMessage;
+    private @Nullable Component deathScreenMessageOverride;
+    private boolean doExpDrop = true;
+    private boolean keepLevel;
+    private boolean keepInventory;
     @Deprecated
     private final List<ItemStack> itemsToKeep = new ArrayList<>();
 
-    // todo collapse
-    public CraftPlayerDeathEvent(final Player player, final DamageSource damageSource, final List<ItemStack> drops, final int droppedExp, final int newExp, final @Nullable Component deathMessage, final boolean showDeathMessages) {
-        this(player, damageSource, drops, droppedExp, newExp, 0, 0, deathMessage, showDeathMessages);
-    }
-
-    public CraftPlayerDeathEvent(final Player player, final DamageSource damageSource, final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable Component deathMessage, final boolean showDeathMessages) {
-        this(player, damageSource, drops, droppedExp, newExp, newTotalExp, newLevel, deathMessage, showDeathMessages, true);
-    }
-
-    public CraftPlayerDeathEvent(final Player player, final DamageSource damageSource, final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable Component deathMessage, final boolean showDeathMessages, final boolean doExpDrop) {
-        super(player, damageSource, drops, droppedExp);
-        this.newExp = newExp;
-        this.newTotalExp = newTotalExp;
-        this.newLevel = newLevel;
+    public CraftPlayerDeathEvent(
+        final Player player,
+        final DamageSource damageSource,
+        final List<ItemStack> drops,
+        final int droppedExp,
+        final double reviveHealth,
+        final boolean shouldPlayDeathSound,
+        final @Nullable Sound deathSound,
+        final SoundCategory deathSoundCategory,
+        final float deathSoundVolume,
+        final float deathSoundPitch,
+        final Component deathMessage,
+        final boolean showDeathMessages,
+        final boolean keepLevel,
+        final boolean keepInventory
+    ) {
+        super(player, damageSource, drops, droppedExp, reviveHealth, shouldPlayDeathSound, deathSound, deathSoundCategory, deathSoundVolume, deathSoundPitch);
         this.deathMessage = deathMessage;
         this.showDeathMessages = showDeathMessages;
-        this.doExpDrop = doExpDrop;
+        this.keepLevel = keepLevel;
+        this.keepInventory = keepInventory;
+    }
+
+    public CraftPlayerDeathEvent(
+        final ServerPlayer player,
+        final net.minecraft.world.damagesource.DamageSource damageSource,
+        final List<Entity.DefaultDrop> drops,
+        final int droppedExp,
+        final double reviveHealth,
+        final boolean shouldPlayDeathSound,
+        final @Nullable SoundEvent deathSound,
+        final SoundSource deathSoundSource,
+        final float deathSoundVolume,
+        final float deathSoundPitch,
+        final net.minecraft.network.chat.Component deathMessage,
+        final boolean showDeathMessages,
+        final boolean keepLevel,
+        final boolean keepInventory
+    ) {
+        super(player, damageSource, drops, droppedExp, reviveHealth, shouldPlayDeathSound, deathSound, deathSoundSource, deathSoundVolume, deathSoundPitch);
+        this.deathMessage = PaperAdventure.asAdventure(deathMessage);
+        this.showDeathMessages = showDeathMessages;
+        this.keepLevel = keepLevel;
+        this.keepInventory = keepInventory;
     }
 
     @Override
@@ -50,12 +84,12 @@ public class CraftPlayerDeathEvent extends CraftEntityDeathEvent implements Play
 
     @Override
     public boolean getShowDeathMessages() {
-        return showDeathMessages;
+        return this.showDeathMessages;
     }
 
     @Override
-    public void setShowDeathMessages(final boolean displayDeathMessage) {
-        this.showDeathMessages = displayDeathMessage;
+    public void setShowDeathMessages(final boolean showDeathMessages) {
+        this.showDeathMessages = showDeathMessages;
     }
 
     @Override

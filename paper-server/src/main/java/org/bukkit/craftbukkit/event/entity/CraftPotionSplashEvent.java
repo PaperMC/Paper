@@ -4,9 +4,8 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Entity;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.AbstractThrownPotion;
+import net.minecraft.world.phys.HitResult;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.HandlerList;
@@ -17,8 +16,8 @@ public class CraftPotionSplashEvent extends CraftProjectileHitEvent implements P
 
     protected final Map<LivingEntity, Double> affectedEntities;
 
-    public CraftPotionSplashEvent(final ThrownPotion potion, final @Nullable Entity hitEntity, final @Nullable Block hitBlock, final @Nullable BlockFace hitFace, final Map<LivingEntity, Double> affectedEntities) {
-        super(potion, hitEntity, hitBlock, hitFace);
+    public CraftPotionSplashEvent(final AbstractThrownPotion potion, final @Nullable HitResult hitResult, final Map<LivingEntity, Double> affectedEntities) {
+        super(potion, hitResult);
         this.affectedEntities = affectedEntities;
     }
 

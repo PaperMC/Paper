@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import org.bukkit.entity.Firework;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.FireworkExplodeEvent;
@@ -10,6 +11,10 @@ public class CraftFireworkExplodeEvent extends CraftEntityEvent implements Firew
 
     public CraftFireworkExplodeEvent(final Firework firework) {
         super(firework);
+    }
+
+    public CraftFireworkExplodeEvent(final FireworkRocketEntity firework) {
+        this((Firework) firework.getBukkitEntity());
     }
 
     @Override

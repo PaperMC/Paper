@@ -6,7 +6,7 @@ import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.StonecutterInventory;
 import org.bukkit.inventory.StonecuttingRecipe;
 
-public interface PlayerStonecutterRecipeSelectEvent extends PlayerEvent, Cancellable { // todo javadocs?
+public interface PlayerStonecutterRecipeSelectEvent extends PlayerEvent, Cancellable {
 
     StonecutterInventory getStonecutterInventory();
 

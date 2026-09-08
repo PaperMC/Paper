@@ -1,5 +1,6 @@
 package io.papermc.paper.event.player;
 
+import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.LivingEntity;
@@ -20,6 +21,15 @@ public class PaperPlayerNameEntityEvent extends CraftPlayerEvent implements Play
         this.entity = entity;
         this.name = name;
         this.persistent = persistent;
+    }
+
+    public PaperPlayerNameEntityEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.entity.LivingEntity entity,
+        final net.minecraft.network.chat.Component name,
+        final boolean persistent
+    ) {
+        this((Player) player.getBukkitEntity(), entity.getBukkitEntity(), PaperAdventure.asAdventure(name), persistent);
     }
 
     @Override

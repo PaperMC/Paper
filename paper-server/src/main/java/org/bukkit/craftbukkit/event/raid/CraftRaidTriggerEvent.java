@@ -1,7 +1,10 @@
 package org.bukkit.craftbukkit.event.raid;
 
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import org.bukkit.Raid;
 import org.bukkit.World;
+import org.bukkit.craftbukkit.CraftRaid;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.raid.RaidTriggerEvent;
@@ -14,6 +17,10 @@ public class CraftRaidTriggerEvent extends CraftRaidEvent implements RaidTrigger
     public CraftRaidTriggerEvent(final Raid raid, final World world, final Player player) {
         super(raid, world);
         this.player = player;
+    }
+
+    public CraftRaidTriggerEvent(final Level level, final net.minecraft.world.entity.raid.Raid raid, final ServerPlayer player) {
+        this(new CraftRaid(raid, level), level.getWorld(), player.getBukkitEntity());
     }
 
     @Override

@@ -17,6 +17,10 @@ public class CraftEntityUnleashEvent extends CraftEntityEvent implements EntityU
         this.dropLeash = dropLeash;
     }
 
+    public CraftEntityUnleashEvent(final net.minecraft.world.entity.Entity entity, final UnleashReason reason, final boolean dropLeash) {
+        this(entity.getBukkitEntity(), reason, dropLeash);
+    }
+
     @Override
     public UnleashReason getReason() {
         return this.reason;

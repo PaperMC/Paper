@@ -1,9 +1,16 @@
 package org.bukkit.craftbukkit.event.block;
 
 import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.ExplosionResult;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.CraftExplosionResult;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockExplodeEvent;
 
@@ -22,6 +29,19 @@ public class CraftBlockExplodeEvent extends CraftBlockEvent implements BlockExpl
         this.blocks = blocks;
         this.yield = yield;
         this.result = result;
+    }
+
+    public CraftBlockExplodeEvent(
+        final Level level, final Vec3 pos, final DamageSource damageSource, final List<Block> blocks, final float yield, final Explosion.BlockInteraction blockInteraction
+    ) {
+        final Block center = CraftBlock.at(level, BlockPos.containing(pos));
+        this(
+            center,
+            damageSource.causingBlockSnapshot() != null ? damageSource.causingBlockSnapshot() : center.getState(),
+            blocks,
+            yield,
+            CraftExplosionResult.toExplosionResult(blockInteraction)
+        );
     }
 
     @Override

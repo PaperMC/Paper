@@ -6,8 +6,10 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.network.PaperLegacyStatusClient;
 import io.papermc.paper.network.PaperStatusClient;
-import io.papermc.paper.util.TransformingRandomAccessList;
+import io.papermc.paper.util.MCUtil;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,8 +42,8 @@ public class PaperServerListPingEventImpl extends CraftServerListPingEvent imple
     private int numPlayers;
     private boolean hidePlayers;
     private final List<ListedPlayerInfo> listedPlayers = new ArrayList<>();
-    private final TransformingRandomAccessList<ListedPlayerInfo, PlayerProfile> playerSample = new TransformingRandomAccessList<>(
-        listedPlayers,
+    private final List<PlayerProfile> playerSample = MCUtil.mutableTransform(
+        this.listedPlayers,
         info -> new UncheckedPlayerProfile(info.name(), info.id()),
         profile -> new ListedPlayerInfo(profile.getName(), profile.getId())
     );
@@ -54,15 +56,30 @@ public class PaperServerListPingEventImpl extends CraftServerListPingEvent imple
     private boolean cancelled;
 
     private boolean originalPlayerCount = true;
-    private @Nullable ServerPlayer[] players;
+    private @Nullable ServerPlayer @Nullable [] players;
 
-    public PaperServerListPingEventImpl(final MinecraftServer server, final StatusClient client, final int protocolVersion, final @Nullable CachedServerIcon icon) {
+    private PaperServerListPingEventImpl(final MinecraftServer server, final StatusClient client, final int protocolVersion, final @Nullable CachedServerIcon icon) {
         super("", client.address().getAddress(), server.motd(), server.getPlayerCount(), server.getMaxPlayers());
         this.client = client;
         this.version = server.getServerModName() + ' ' + server.getServerVersion();
         this.protocolVersion = protocolVersion;
         this.setServerIcon(icon);
         this.server = server;
+    }
+
+    public static PaperServerListPingEventImpl legacy(final MinecraftServer server, final InetSocketAddress address, final int protocolVersion, final @Nullable InetSocketAddress virtualHost) {
+        return new PaperServerListPingEventImpl(
+            server, new PaperLegacyStatusClient(address, protocolVersion, virtualHost), Byte.MAX_VALUE, null
+        );
+    }
+
+    public static PaperServerListPingEventImpl.Standard modern(final MinecraftServer server, final Connection connection, final ServerStatus status) {
+        return new PaperServerListPingEventImpl.Standard(
+            server,
+            new PaperStatusClient(connection),
+            status.version().map(ServerStatus.Version::protocol).orElse(-1),
+            status.players().map(ServerStatus.Players::sample).orElse(null) // GH-1473 - pre-tick race condition NPE
+        );
     }
 
     @Override
@@ -225,12 +242,12 @@ public class PaperServerListPingEventImpl extends CraftServerListPingEvent imple
 
     private static final class UncheckedPlayerProfile implements PlayerProfile {
 
-        private String name;
-        private UUID uuid;
+        private @Nullable String name;
+        private @Nullable UUID uuid;
 
         public UncheckedPlayerProfile(final String name, final UUID uuid) {
-            Preconditions.checkNotNull(name, "name cannot be null");
-            Preconditions.checkNotNull(uuid, "uuid cannot be null");
+            Preconditions.checkArgument(name != null, "name cannot be null");
+            Preconditions.checkArgument(uuid != null, "uuid cannot be null");
             this.name = name;
             this.uuid = uuid;
         }
@@ -246,7 +263,7 @@ public class PaperServerListPingEventImpl extends CraftServerListPingEvent imple
         }
 
         @Override
-        public String setName(final @Nullable String name) {
+        public String setName(final String name) {
             Preconditions.checkArgument(name != null, "name cannot be null");
             return this.name = name;
         }
@@ -257,7 +274,7 @@ public class PaperServerListPingEventImpl extends CraftServerListPingEvent imple
         }
 
         @Override
-        public @Nullable UUID setId(final @Nullable UUID uuid) {
+        public UUID setId(final UUID uuid) {
             Preconditions.checkArgument(uuid != null, "uuid cannot be null");
             return this.uuid = uuid;
         }
@@ -352,9 +369,9 @@ public class PaperServerListPingEventImpl extends CraftServerListPingEvent imple
 
         private @Nullable List<NameAndId> originalSample;
 
-        public Standard(final MinecraftServer server, final Connection connection, final ServerStatus ping) {
-            super(server, new PaperStatusClient(connection), ping.version().map(ServerStatus.Version::protocol).orElse(-1), server.server.getServerIcon());
-            this.originalSample = ping.players().map(ServerStatus.Players::sample).orElse(null); // GH-1473 - pre-tick race condition NPE
+        private Standard(final MinecraftServer server, final StatusClient statusClient, final int protocolVersion, final @Nullable List<NameAndId> originalSample) {
+            super(server, statusClient, protocolVersion, server.server.getServerIcon());
+            this.originalSample = originalSample;
         }
 
         @Override

@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.world.entity.player.Player;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityExhaustionEvent;
@@ -15,6 +16,10 @@ public class CraftEntityExhaustionEvent extends CraftEntityEvent implements Enti
         super(human);
         this.exhaustionReason = exhaustionReason;
         this.exhaustion = exhaustion;
+    }
+
+    public CraftEntityExhaustionEvent(final Player player, final ExhaustionReason exhaustionReason, final float exhaustion) {
+        this(player.getBukkitEntity(), exhaustionReason, exhaustion);
     }
 
     @Override

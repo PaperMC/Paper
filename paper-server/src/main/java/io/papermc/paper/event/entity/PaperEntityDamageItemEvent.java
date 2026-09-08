@@ -1,6 +1,7 @@
 package io.papermc.paper.event.entity;
 
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
@@ -16,6 +17,10 @@ public class PaperEntityDamageItemEvent extends CraftEntityEvent implements Enti
         super(entity);
         this.item = item;
         this.damage = damage;
+    }
+
+    public PaperEntityDamageItemEvent(final net.minecraft.world.entity.Entity entity, final net.minecraft.world.item.ItemStack item, final int damage) {
+        this(entity.getBukkitEntity(), CraftItemStack.asCraftMirror(item), damage);
     }
 
     @Override

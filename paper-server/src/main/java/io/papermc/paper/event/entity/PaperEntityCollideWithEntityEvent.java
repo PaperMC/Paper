@@ -11,7 +11,11 @@ public class PaperEntityCollideWithEntityEvent extends CraftEvent implements Ent
     private final List<Entity> entities;
 
     public PaperEntityCollideWithEntityEvent(final Entity entity1, final Entity entity2) {
-        entities = List.of(entity1, entity2);
+        this.entities = List.of(entity1, entity2);
+    }
+
+    public PaperEntityCollideWithEntityEvent(final net.minecraft.world.entity.Entity entity1, final net.minecraft.world.entity.Entity entity2) {
+        this(entity1.getBukkitEntity(), entity2.getBukkitEntity());
     }
 
     @Override

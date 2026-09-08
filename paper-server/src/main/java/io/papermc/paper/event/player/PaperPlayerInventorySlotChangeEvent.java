@@ -1,6 +1,8 @@
 package io.papermc.paper.event.player;
 
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.InventoryView;
@@ -23,6 +25,12 @@ public class PaperPlayerInventorySlotChangeEvent extends CraftPlayerEvent implem
         this.view = player.getOpenInventory();
         this.oldItemStack = oldItemStack;
         this.newItemStack = newItemStack;
+    }
+
+    public PaperPlayerInventorySlotChangeEvent(
+        final ServerPlayer player, final int rawSlot, final net.minecraft.world.item.ItemStack oldItem, final net.minecraft.world.item.ItemStack newItem
+    ) {
+        this(player.getBukkitEntity(), rawSlot, CraftItemStack.asBukkitCopy(oldItem), CraftItemStack.asBukkitCopy(newItem));
     }
 
     @Override

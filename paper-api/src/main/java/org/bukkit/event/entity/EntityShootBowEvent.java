@@ -22,7 +22,7 @@ public interface EntityShootBowEvent extends EntityEvent, Cancellable {
      *
      * @return the bow involved in this event
      */
-    @Nullable ItemStack getBow();
+    ItemStack getBow();
 
     /**
      * Get the ItemStack to be consumed in this event (if any).
@@ -89,8 +89,8 @@ public interface EntityShootBowEvent extends EntityEvent, Cancellable {
     /**
      * @deprecated use {@link #getConsumable()}
      */
-    @Nullable @Deprecated
-    default ItemStack getArrowItem() {
+    @Deprecated
+    default @Nullable ItemStack getArrowItem() {
         return this.getConsumable();
     }
 

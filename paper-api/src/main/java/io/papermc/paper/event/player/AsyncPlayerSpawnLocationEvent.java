@@ -6,7 +6,6 @@ import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.event.HandlerList;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when selecting a player's spawn location (i.e. joining the server or reconfiguring).
@@ -14,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
  * <p>The player will be kept in the configuration phase until all event handlers return and
  * the spawn location is loaded.</p>
  */
-@NullMarked
 public interface AsyncPlayerSpawnLocationEvent extends ConnectionEvent {
 
     @Override

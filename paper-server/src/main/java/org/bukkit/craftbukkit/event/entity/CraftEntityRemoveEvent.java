@@ -13,6 +13,10 @@ public class CraftEntityRemoveEvent extends CraftEntityEvent implements EntityRe
         this.cause = cause;
     }
 
+    public CraftEntityRemoveEvent(final net.minecraft.world.entity.Entity entity, final Cause cause) {
+        this(entity.getBukkitEntity(), cause);
+    }
+
     @Override
     public Cause getCause() {
         return this.cause;

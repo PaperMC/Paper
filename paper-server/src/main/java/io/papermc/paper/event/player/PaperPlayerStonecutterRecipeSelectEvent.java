@@ -1,5 +1,7 @@
 package io.papermc.paper.event.player;
 
+import net.minecraft.world.inventory.StonecutterMenu;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -17,6 +19,10 @@ public class PaperPlayerStonecutterRecipeSelectEvent extends CraftPlayerEvent im
         super(player);
         this.stonecutterInventory = stonecutterInventory;
         this.stonecuttingRecipe = stonecuttingRecipe;
+    }
+
+    public PaperPlayerStonecutterRecipeSelectEvent(final net.minecraft.world.entity.player.Player player, final StonecutterMenu menu, final RecipeHolder<?> recipe) {
+        this((Player) player.getBukkitEntity(), menu.getBukkitView().getTopInventory(), (StonecuttingRecipe) recipe.toBukkitRecipe());
     }
 
     @Override

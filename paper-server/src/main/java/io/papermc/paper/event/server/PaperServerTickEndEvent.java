@@ -3,6 +3,7 @@ package io.papermc.paper.event.server;
 import com.destroystokyo.paper.event.server.ServerTickEndEvent;
 import org.bukkit.craftbukkit.event.server.CraftServerEvent;
 import org.bukkit.event.HandlerList;
+import org.checkerframework.checker.index.qual.Positive;
 
 public class PaperServerTickEndEvent extends CraftServerEvent implements ServerTickEndEvent {
 
@@ -17,7 +18,7 @@ public class PaperServerTickEndEvent extends CraftServerEvent implements ServerT
     }
 
     @Override
-    public int getTickNumber() {
+    public @Positive int getTickNumber() {
         return this.tickNumber;
     }
 

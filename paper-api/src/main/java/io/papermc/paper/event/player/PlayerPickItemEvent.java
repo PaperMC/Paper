@@ -4,7 +4,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.Range;
+import org.checkerframework.common.value.qual.IntRange;
 
 /**
  * Event that is fired when a player uses the pick item functionality
@@ -37,14 +37,14 @@ public interface PlayerPickItemEvent extends PlayerEvent, Cancellable {
      *
      * @return hotbar slot (0-8 inclusive)
      */
-    @Range(from = 0, to = 8) int getTargetSlot();
+    @IntRange(from = 0, to = 8) int getTargetSlot();
 
     /**
      * Changes the slot the item that is being picked goes into.
      *
      * @param targetSlot hotbar slot (0-8 inclusive)
      */
-    void setTargetSlot(@Range(from = 0, to = 8) int targetSlot);
+    void setTargetSlot(@IntRange(from = 0, to = 8) int targetSlot);
 
     /**
      * Returns the slot in which the item that will be put into the players hotbar is located.
@@ -54,7 +54,7 @@ public interface PlayerPickItemEvent extends PlayerEvent, Cancellable {
      *
      * @return player inventory slot (0-35 inclusive, or {@code -1} if not in the player inventory)
      */
-    @Range(from = -1, to = 35) int getSourceSlot();
+    @IntRange(from = -1, to = 35) int getSourceSlot();
 
     /**
      * Change the source slot from which the item that will be put in the players hotbar will be taken.
@@ -63,7 +63,7 @@ public interface PlayerPickItemEvent extends PlayerEvent, Cancellable {
      *
      * @param sourceSlot player inventory slot (0-35 inclusive, or {@code -1} if not in the player inventory)
      */
-    void setSourceSlot(@Range(from = -1, to = 35) int sourceSlot);
+    void setSourceSlot(@IntRange(from = -1, to = 35) int sourceSlot);
 
     static HandlerList getHandlerList() {
         final class Holder {

@@ -1,7 +1,10 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.bukkit.Location;
 import org.bukkit.PortalType;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityPortalEnterEvent;
@@ -17,6 +20,10 @@ public class CraftEntityPortalEnterEvent extends CraftEntityEvent implements Ent
         super(entity);
         this.location = location;
         this.portalType = portalType;
+    }
+
+    public CraftEntityPortalEnterEvent(final net.minecraft.world.entity.Entity entity, final Level level, final BlockPos pos, final PortalType portalType) {
+        this(entity.getBukkitEntity(), CraftLocation.toBukkit(pos, level), portalType);
     }
 
     @Override

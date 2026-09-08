@@ -14,7 +14,7 @@ public interface InventoryInteractEvent extends InventoryEvent, Cancellable {
      *
      * @return The clicking player.
      */
-    default HumanEntity getWhoClicked() { // todo PlayerEvent?
+    default HumanEntity getWhoClicked() {
         return this.getView().getPlayer();
     }
 

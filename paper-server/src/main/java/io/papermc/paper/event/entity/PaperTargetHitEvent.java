@@ -1,21 +1,21 @@
 package io.papermc.paper.event.entity;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.event.block.TargetHitEvent;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.redstone.Redstone;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
+import net.minecraft.world.phys.BlockHitResult;
 import org.bukkit.craftbukkit.event.entity.CraftProjectileHitEvent;
-import org.bukkit.entity.Projectile;
 import org.bukkit.event.HandlerList;
 import org.checkerframework.common.value.qual.IntRange;
+
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public class PaperTargetHitEvent extends CraftProjectileHitEvent implements TargetHitEvent {
 
     private int signalStrength;
 
-    public PaperTargetHitEvent(final Projectile projectile, final Block block, final BlockFace blockFace, final int signalStrength) {
-        super(projectile, null, block, blockFace);
+    public PaperTargetHitEvent(final Projectile projectile, final BlockHitResult hitResult, final int signalStrength) {
+        super(projectile, hitResult);
         this.signalStrength = signalStrength;
     }
 
@@ -26,8 +26,7 @@ public class PaperTargetHitEvent extends CraftProjectileHitEvent implements Targ
 
     @Override
     public void setSignalStrength(final @IntRange(from = Redstone.SIGNAL_MIN, to = Redstone.SIGNAL_MAX) int signalStrength) {
-        Preconditions.checkArgument(signalStrength >= Redstone.SIGNAL_MIN && signalStrength <= Redstone.SIGNAL_MAX, "Signal strength out of range (%s), must be in range [%s, %s]", signalStrength, Redstone.SIGNAL_MIN, Redstone.SIGNAL_MAX);
-        this.signalStrength = signalStrength;
+        this.signalStrength = requireRange(signalStrength, "signalStrength", Redstone.SIGNAL_MIN, Redstone.SIGNAL_MAX);
     }
 
     @Override

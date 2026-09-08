@@ -1,5 +1,10 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.Optionull;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.projectile.Projectile;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
@@ -11,7 +16,7 @@ import org.jspecify.annotations.Nullable;
 public class CraftEntityShootBowEvent extends CraftEntityEvent implements EntityShootBowEvent {
 
     private final ItemStack bow;
-    private final ItemStack consumable;
+    private final @Nullable ItemStack consumable;
     private Entity projectile;
     private final EquipmentSlot hand;
     private final float force;
@@ -19,7 +24,7 @@ public class CraftEntityShootBowEvent extends CraftEntityEvent implements Entity
 
     private boolean cancelled;
 
-    public CraftEntityShootBowEvent(final LivingEntity shooter, final @Nullable ItemStack bow, final @Nullable ItemStack consumable, final Entity projectile, final EquipmentSlot hand, final float force, final boolean consumeItem) {
+    public CraftEntityShootBowEvent(final LivingEntity shooter, final ItemStack bow, final @Nullable ItemStack consumable, final Entity projectile, final EquipmentSlot hand, final float force, final boolean consumeItem) {
         super(shooter);
         this.bow = bow;
         this.consumable = consumable;
@@ -29,13 +34,34 @@ public class CraftEntityShootBowEvent extends CraftEntityEvent implements Entity
         this.consumeItem = consumeItem;
     }
 
+    public CraftEntityShootBowEvent(
+        final net.minecraft.world.entity.LivingEntity shooter,
+        final net.minecraft.world.item.ItemStack bow,
+        final net.minecraft.world.item.@Nullable ItemStack consumable,
+        final Projectile projectile,
+        final InteractionHand hand,
+        final float force,
+        final boolean consumeItem
+    ) {
+        this(
+            shooter.getBukkitEntity(),
+            CraftItemStack.asCraftMirror(bow),
+            Optionull.map(consumable, CraftItemStack::asCraftMirror),
+            projectile.getBukkitEntity(),
+            CraftEquipmentSlot.getHand(hand),
+            force,
+            consumeItem
+        );
+    }
+
+
     @Override
     public LivingEntity getEntity() {
         return (LivingEntity) this.entity;
     }
 
     @Override
-    public @Nullable ItemStack getBow() {
+    public ItemStack getBow() {
         return this.bow;
     }
 

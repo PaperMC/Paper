@@ -1,5 +1,9 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.Optionull;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.projectile.FishingHook;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
@@ -26,8 +30,20 @@ public class CraftPlayerFishEvent extends CraftPlayerEvent implements PlayerFish
         this.state = state;
     }
 
-    public CraftPlayerFishEvent(final Player player, final @Nullable Entity entity, final FishHook hookEntity, final State state) {
-        this(player, entity, hookEntity, null, state);
+    public CraftPlayerFishEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.entity.@Nullable Entity entity,
+        final FishingHook hook,
+        final @Nullable InteractionHand hand,
+        final State state
+    ) {
+        this(
+            (Player) player.getBukkitEntity(),
+            Optionull.map(entity, net.minecraft.world.entity.Entity::getBukkitEntity),
+            (FishHook) hook.getBukkitEntity(),
+            Optionull.map(hand, CraftEquipmentSlot::getHand),
+            state
+        );
     }
 
     public @Nullable Entity getCaught() {

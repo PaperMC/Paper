@@ -10,7 +10,7 @@ public class CraftPlayerAnimationEvent extends CraftPlayerEvent implements Playe
     private final PlayerAnimationType animationType;
     private boolean cancelled;
 
-    public CraftPlayerAnimationEvent(final Player player, final PlayerAnimationType playerAnimationType) {
+    protected CraftPlayerAnimationEvent(final Player player, final PlayerAnimationType playerAnimationType) {
         super(player);
         this.animationType = playerAnimationType;
     }

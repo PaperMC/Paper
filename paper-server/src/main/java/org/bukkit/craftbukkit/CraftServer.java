@@ -1343,7 +1343,7 @@ public final class CraftServer implements Server {
             return false;
         }
 
-        WorldUnloadEvent event = new CraftWorldUnloadEvent(handle.getWorld());
+        WorldUnloadEvent event = new CraftWorldUnloadEvent(handle);
         if (!event.callEvent()) {
             return false;
         }
@@ -1564,7 +1564,7 @@ public final class CraftServer implements Server {
         }
 
         // Call Bukkit event to check for matrix/result changes.
-        result = CraftEventFactory.callPreCraftEvent(craftingContainer, craftResult, result, container.getBukkitView(), recipe.map(RecipeHolder::value).orElse(null) instanceof RepairItemRecipe);
+        result = CraftEventFactory.callPreCraftEvent(craftingContainer, craftResult, result, container, recipe);
         return this.createItemCraftResult(recipe, CraftItemStack.asBukkitCopy(result), craftingContainer);
     }
 

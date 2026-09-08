@@ -17,6 +17,10 @@ public class CraftVehicleEntityCollisionEvent extends CraftVehicleCollisionEvent
         this.entity = entity;
     }
 
+    public CraftVehicleEntityCollisionEvent(final net.minecraft.world.entity.Entity vehicle, final net.minecraft.world.entity.Entity entity) {
+        this((Vehicle) vehicle.getBukkitEntity(), entity.getBukkitEntity());
+    }
+
     @Override
     public Entity getEntity() {
         return this.entity;

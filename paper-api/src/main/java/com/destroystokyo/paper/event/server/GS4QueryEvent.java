@@ -19,7 +19,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Mark Vainomaa
  */
-public interface GS4QueryEvent extends Event { // todo javadocs?
+public interface GS4QueryEvent extends Event {
 
     /**
      * Get query type

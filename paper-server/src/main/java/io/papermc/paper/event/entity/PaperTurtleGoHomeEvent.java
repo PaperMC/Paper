@@ -9,7 +9,7 @@ public class PaperTurtleGoHomeEvent extends CraftEntityEvent implements TurtleGo
 
     private boolean cancelled;
 
-    public PaperTurtleGoHomeEvent(final Turtle turtle) {
+    public PaperTurtleGoHomeEvent(final net.minecraft.world.entity.animal.turtle.Turtle turtle) {
         super(turtle);
     }
 

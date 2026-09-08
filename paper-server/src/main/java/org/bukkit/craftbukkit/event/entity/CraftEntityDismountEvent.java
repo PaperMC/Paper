@@ -7,14 +7,18 @@ import org.bukkit.event.entity.EntityDismountEvent;
 public class CraftEntityDismountEvent extends CraftEntityEvent implements EntityDismountEvent {
 
     private final Entity dismounted;
-    private final boolean isCancellable;
+    private final boolean cancellable;
 
     private boolean cancelled;
 
-    public CraftEntityDismountEvent(final Entity entity, final Entity dismounted, final boolean isCancellable) {
+    public CraftEntityDismountEvent(final Entity entity, final Entity dismounted, final boolean cancellable) {
         super(entity);
         this.dismounted = dismounted;
-        this.isCancellable = isCancellable;
+        this.cancellable = cancellable;
+    }
+
+    public CraftEntityDismountEvent(final net.minecraft.world.entity.Entity entity, final net.minecraft.world.entity.Entity dismounted, final boolean cancellable) {
+        this(entity.getBukkitEntity(), dismounted.getBukkitEntity(), cancellable);
     }
 
     @Override
@@ -29,7 +33,7 @@ public class CraftEntityDismountEvent extends CraftEntityEvent implements Entity
 
     @Override
     public void setCancelled(final boolean cancel) {
-        if (cancel && !this.isCancellable) {
+        if (cancel && !this.cancellable) {
             return;
         }
         this.cancelled = cancel;
@@ -37,7 +41,7 @@ public class CraftEntityDismountEvent extends CraftEntityEvent implements Entity
 
     @Override
     public boolean isCancellable() {
-        return this.isCancellable;
+        return this.cancellable;
     }
 
     @Override

@@ -18,8 +18,11 @@ public abstract class PaperAbstractRespawnEvent extends CraftPlayerEvent impleme
     private final Set<PlayerRespawnEvent.RespawnFlag> respawnFlags;
 
     protected PaperAbstractRespawnEvent(
-        final Player respawnPlayer, final Location respawnLocation,
-        final boolean isBedSpawn, final boolean isAnchorSpawn, final boolean missingRespawnBlock,
+        final Player respawnPlayer,
+        final Location respawnLocation,
+        final boolean isBedSpawn,
+        final boolean isAnchorSpawn,
+        final boolean missingRespawnBlock,
         final PlayerRespawnEvent.RespawnReason respawnReason
     ) {
         super(respawnPlayer);

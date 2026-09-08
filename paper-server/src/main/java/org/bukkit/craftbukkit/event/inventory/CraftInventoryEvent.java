@@ -10,7 +10,7 @@ import org.bukkit.inventory.InventoryView;
 
 public abstract class CraftInventoryEvent extends CraftEvent implements InventoryEvent {
 
-    protected InventoryView transaction;
+    protected final InventoryView transaction;
 
     public CraftInventoryEvent(final InventoryView transaction) {
         this.transaction = transaction;

@@ -1,8 +1,10 @@
 package io.papermc.paper.event.entity;
 
 import com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent;
+import net.minecraft.core.BlockPos;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Turtle;
 import org.bukkit.event.HandlerList;
 
@@ -14,6 +16,10 @@ public class PaperTurtleStartDiggingEvent extends CraftEntityEvent implements Tu
     public PaperTurtleStartDiggingEvent(final Turtle turtle, final Location location) {
         super(turtle);
         this.location = location;
+    }
+
+    public PaperTurtleStartDiggingEvent(final net.minecraft.world.entity.animal.turtle.Turtle turtle, final BlockPos pos) {
+        this((Turtle) turtle.getBukkitEntity(), CraftLocation.toBukkit(pos, turtle.level()));
     }
 
     @Override

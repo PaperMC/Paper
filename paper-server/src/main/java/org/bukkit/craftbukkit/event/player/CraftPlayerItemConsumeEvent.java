@@ -1,5 +1,9 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
@@ -17,14 +21,21 @@ public class CraftPlayerItemConsumeEvent extends CraftPlayerEvent implements Pla
 
     public CraftPlayerItemConsumeEvent(final Player player, final ItemStack item, final EquipmentSlot hand) {
         super(player);
-
         this.item = item;
         this.hand = hand;
+    }
+
+    public CraftPlayerItemConsumeEvent(final ServerPlayer player, final net.minecraft.world.item.ItemStack item, final InteractionHand hand) {
+        this(player.getBukkitEntity(), CraftItemStack.asCraftMirror(item), CraftEquipmentSlot.getHand(hand));
     }
 
     @Override
     public ItemStack getItem() {
         return this.item.clone();
+    }
+
+    public ItemStack getItemNoClone() {
+        return this.item;
     }
 
     @Override

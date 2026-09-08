@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
@@ -13,6 +14,10 @@ public class CraftPlayerExpCooldownChangeEvent extends CraftPlayerEvent implemen
         super(player);
         this.newCooldown = newCooldown;
         this.reason = reason;
+    }
+
+    public CraftPlayerExpCooldownChangeEvent(final ServerPlayer player, final int newCooldown, final ChangeReason reason) {
+        this(player.getBukkitEntity(), newCooldown, reason);
     }
 
     @Override

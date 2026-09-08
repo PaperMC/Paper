@@ -1,6 +1,7 @@
 package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -13,6 +14,10 @@ public class PaperPlayerNaturallySpawnCreaturesEvent extends CraftPlayerEvent im
     public PaperPlayerNaturallySpawnCreaturesEvent(final Player player, final byte radius) {
         super(player);
         this.radius = radius;
+    }
+
+    public PaperPlayerNaturallySpawnCreaturesEvent(final ServerPlayer player, final int radius) {
+        this(player.getBukkitEntity(), (byte) radius);
     }
 
     @Override

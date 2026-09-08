@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
@@ -13,6 +14,10 @@ public class CraftPlayerLevelChangeEvent extends CraftPlayerEvent implements Pla
         super(player);
         this.oldLevel = oldLevel;
         this.newLevel = newLevel;
+    }
+
+    public CraftPlayerLevelChangeEvent(final ServerPlayer player, final int oldLevel, final int newLevel) {
+        this(player.getBukkitEntity(), oldLevel, newLevel);
     }
 
     @Override

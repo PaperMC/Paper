@@ -1,11 +1,17 @@
 package org.bukkit.craftbukkit.event.block;
 
-import com.google.common.base.Preconditions;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.block.BrewingStartEvent;
 import org.bukkit.inventory.ItemStack;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.checker.index.qual.Positive;
+
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
+import static io.papermc.paper.util.BoundChecker.requirePositive;
 
 public class CraftBrewingStartEvent extends CraftInventoryBlockStartEvent implements BrewingStartEvent {
 
@@ -17,6 +23,10 @@ public class CraftBrewingStartEvent extends CraftInventoryBlockStartEvent implem
         this.brewingTime = brewingTime;
     }
 
+    public CraftBrewingStartEvent(final Level level, final BlockPos pos, final net.minecraft.world.item.ItemStack ingredient, final int brewingTime) {
+        this(CraftBlock.at(level, pos), CraftItemStack.asCraftMirror(ingredient), brewingTime);
+    }
+
     @Override
     public @NonNegative int getBrewingTime() {
         return this.brewingTime;
@@ -24,8 +34,7 @@ public class CraftBrewingStartEvent extends CraftInventoryBlockStartEvent implem
 
     @Override
     public void setBrewingTime(final @NonNegative int brewTime) {
-        Preconditions.checkArgument(brewTime >= 0, "brewTime must be non-negative");
-        this.brewingTime = brewTime;
+        this.brewingTime = requireNonNegative(brewTime, "brewTime");
     }
 
     @Override
@@ -35,7 +44,6 @@ public class CraftBrewingStartEvent extends CraftInventoryBlockStartEvent implem
 
     @Override
     public void setRecipeBrewTime(final @Positive int recipeBrewTime) {
-        Preconditions.checkArgument(recipeBrewTime > 0, "recipeBrewTime must be positive");
-        this.recipeBrewTime = recipeBrewTime;
+        this.recipeBrewTime = requirePositive(recipeBrewTime, "recipeBrewTime");
     }
 }

@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.Optionull;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityTargetEvent;
@@ -7,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 
 public class CraftEntityTargetEvent extends CraftEntityEvent implements EntityTargetEvent {
 
-    protected Entity target;
+    protected @Nullable Entity target;
     private final TargetReason reason;
 
     private boolean cancelled;
@@ -16,6 +17,10 @@ public class CraftEntityTargetEvent extends CraftEntityEvent implements EntityTa
         super(entity);
         this.target = target;
         this.reason = reason;
+    }
+
+    public CraftEntityTargetEvent(final net.minecraft.world.entity.Entity entity, final net.minecraft.world.entity.@Nullable Entity target, final TargetReason reason) {
+        this(entity.getBukkitEntity(), Optionull.map(target, net.minecraft.world.entity.Entity::getBukkitEntity), reason);
     }
 
     @Override

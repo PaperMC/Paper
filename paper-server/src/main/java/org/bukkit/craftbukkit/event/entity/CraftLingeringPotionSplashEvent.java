@@ -1,10 +1,9 @@
 package org.bukkit.craftbukkit.event.entity;
 
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownLingeringPotion;
+import net.minecraft.world.phys.HitResult;
 import org.bukkit.entity.AreaEffectCloud;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.ThrownPotion;
+import org.bukkit.entity.LingeringPotion;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.LingeringPotionSplashEvent;
 import org.jspecify.annotations.Nullable;
@@ -14,14 +13,14 @@ public class CraftLingeringPotionSplashEvent extends CraftProjectileHitEvent imp
     private final AreaEffectCloud effectCloud;
     private boolean allowEmptyCreation;
 
-    public CraftLingeringPotionSplashEvent(final ThrownPotion potion, final @Nullable Entity hitEntity, final @Nullable Block hitBlock, final @Nullable BlockFace hitFace, final AreaEffectCloud effectCloud) {
-        super(potion, hitEntity, hitBlock, hitFace);
-        this.effectCloud = effectCloud;
+    public CraftLingeringPotionSplashEvent(final ThrownLingeringPotion potion, final @Nullable HitResult hitResult, final net.minecraft.world.entity.AreaEffectCloud effectCloud) {
+        super(potion, hitResult);
+        this.effectCloud = (AreaEffectCloud) effectCloud.getBukkitEntity();
     }
 
     @Override
-    public ThrownPotion getEntity() {
-        return (ThrownPotion) this.entity;
+    public LingeringPotion getEntity() {
+        return (LingeringPotion) this.entity;
     }
 
     @Override
@@ -39,7 +38,8 @@ public class CraftLingeringPotionSplashEvent extends CraftProjectileHitEvent imp
         return this.allowEmptyCreation;
     }
 
-    public static HandlerList getHandlerList() {
+    @Override
+    public HandlerList getHandlers() {
         return LingeringPotionSplashEvent.getHandlerList();
     }
 }

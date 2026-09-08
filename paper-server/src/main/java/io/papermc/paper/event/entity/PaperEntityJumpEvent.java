@@ -13,6 +13,10 @@ public class PaperEntityJumpEvent extends CraftEntityEvent implements EntityJump
         super(entity);
     }
 
+    public PaperEntityJumpEvent(final net.minecraft.world.entity.LivingEntity entity) {
+        this(entity.getBukkitEntity());
+    }
+
     @Override
     public LivingEntity getEntity() {
         return (LivingEntity) this.entity;

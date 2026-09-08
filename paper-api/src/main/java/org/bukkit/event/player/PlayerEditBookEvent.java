@@ -3,7 +3,7 @@ package org.bukkit.event.player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.meta.BookMeta;
-import org.jetbrains.annotations.Range;
+import org.checkerframework.common.value.qual.IntRange;
 
 /**
  * Called when a player edits or signs a book and quill item. If the event is
@@ -50,7 +50,7 @@ public interface PlayerEditBookEvent extends PlayerEvent, Cancellable {
      * @deprecated books may be signed from off hand
      */
     @Deprecated(since = "1.13.1", forRemoval = true)
-    @Range(from = -1, to = 8) int getSlot();
+    @IntRange(from = -1, to = 8) int getSlot();
 
     /**
      * Gets whether the book is being signed. If a book is signed the

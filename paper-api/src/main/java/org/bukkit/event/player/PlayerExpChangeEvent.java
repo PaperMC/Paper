@@ -1,8 +1,7 @@
 package org.bukkit.event.player;
 
-import org.bukkit.entity.Entity;
+import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.event.HandlerList;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a players experience changes naturally
@@ -14,7 +13,7 @@ public interface PlayerExpChangeEvent extends PlayerEvent {
      *
      * @return The source of the experience
      */
-    @Nullable Entity getSource();
+    ExperienceOrb getSource();
 
     /**
      * Get the amount of experience the player will receive

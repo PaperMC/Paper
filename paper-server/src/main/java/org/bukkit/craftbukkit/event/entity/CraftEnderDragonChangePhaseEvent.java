@@ -1,6 +1,10 @@
 package org.bukkit.craftbukkit.event.entity;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.Optionull;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import org.bukkit.craftbukkit.entity.CraftEnderDragon;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EnderDragonChangePhaseEvent;
@@ -8,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 
 public class CraftEnderDragonChangePhaseEvent extends CraftEntityEvent implements EnderDragonChangePhaseEvent {
 
-    private final EnderDragon.Phase currentPhase;
+    private final EnderDragon.@Nullable Phase currentPhase;
     private EnderDragon.Phase newPhase;
 
     private boolean cancelled;
@@ -17,6 +21,18 @@ public class CraftEnderDragonChangePhaseEvent extends CraftEntityEvent implement
         super(dragon);
         this.currentPhase = currentPhase;
         this.newPhase = newPhase;
+    }
+
+    public CraftEnderDragonChangePhaseEvent(
+        final net.minecraft.world.entity.boss.enderdragon.EnderDragon dragon,
+        final @Nullable DragonPhaseInstance currentPhase,
+        final EnderDragonPhase<?> newPhase
+    ) {
+        this(
+            (EnderDragon) dragon.getBukkitEntity(),
+            Optionull.map(currentPhase, i -> CraftEnderDragon.getBukkitPhase(i.getPhase())),
+            CraftEnderDragon.getBukkitPhase(newPhase)
+        );
     }
 
     @Override

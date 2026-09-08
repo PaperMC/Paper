@@ -14,6 +14,10 @@ public class CraftEntityPoseChangeEvent extends CraftEntityEvent implements Enti
         this.pose = pose;
     }
 
+    public CraftEntityPoseChangeEvent(final net.minecraft.world.entity.Entity entity, final net.minecraft.world.entity.Pose pose) {
+        this(entity.getBukkitEntity(), Pose.values()[pose.ordinal()]);
+    }
+
     @Override
     public Pose getPose() {
         return this.pose;

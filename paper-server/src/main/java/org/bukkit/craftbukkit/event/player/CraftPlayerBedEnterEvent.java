@@ -2,7 +2,10 @@ package org.bukkit.craftbukkit.event.player;
 
 import io.papermc.paper.block.bed.BedEnterAction;
 import io.papermc.paper.block.bed.BedRuleResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerBedEnterEvent;
@@ -19,6 +22,10 @@ public class CraftPlayerBedEnterEvent extends CraftPlayerEvent implements Player
         this.bed = bed;
         this.bedEnterResult = bedEnterResult;
         this.enterAction = enterAction;
+    }
+
+    public CraftPlayerBedEnterEvent(final ServerPlayer player, final BlockPos pos, final BedEnterResult bedEnterResult, final BedEnterAction enterAction) {
+        this(player.getBukkitEntity(), CraftBlock.at(player.level(), pos), bedEnterResult, enterAction);
     }
 
     @Override

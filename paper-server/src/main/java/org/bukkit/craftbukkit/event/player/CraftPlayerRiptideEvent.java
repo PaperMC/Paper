@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.player;
 
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerRiptideEvent;
@@ -17,6 +18,12 @@ public class CraftPlayerRiptideEvent extends CraftPlayerEvent implements PlayerR
         super(player);
         this.item = item;
         this.velocity = velocity;
+    }
+
+    public CraftPlayerRiptideEvent(
+        final net.minecraft.world.entity.player.Player player, final net.minecraft.world.item.ItemStack item, final float xd, final float yd, final float zd
+    ) {
+        this((Player) player.getBukkitEntity(), CraftItemStack.asCraftMirror(item), new Vector(xd, yd, zd));
     }
 
     @Override

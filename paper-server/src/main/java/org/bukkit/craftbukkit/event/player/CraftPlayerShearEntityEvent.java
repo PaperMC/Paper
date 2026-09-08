@@ -1,6 +1,10 @@
 package org.bukkit.craftbukkit.event.player;
 
+import io.papermc.paper.util.MCUtil;
 import java.util.List;
+import net.minecraft.world.InteractionHand;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -24,6 +28,22 @@ public class CraftPlayerShearEntityEvent extends CraftPlayerEvent implements Pla
         this.item = item;
         this.hand = hand;
         this.drops = drops;
+    }
+
+    public CraftPlayerShearEntityEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.entity.Entity entity,
+        final net.minecraft.world.item.ItemStack item,
+        final InteractionHand hand,
+        final List<net.minecraft.world.item.ItemStack> drops
+    ) {
+        this(
+            (Player) player.getBukkitEntity(),
+            entity.getBukkitEntity(),
+            CraftItemStack.asCraftMirror(item),
+            CraftEquipmentSlot.getHand(hand),
+            MCUtil.transformUnmodifiable(drops, CraftItemStack::asCraftMirror)
+        );
     }
 
     @Override

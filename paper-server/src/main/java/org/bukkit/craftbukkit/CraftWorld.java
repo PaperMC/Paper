@@ -1678,7 +1678,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (!this.getHandle().getGameRules().rules.has(nms)) {
             return false;
         }
-        return !CraftEventFactory.handleGameRuleSet(nms, nms.deserialize(value).getOrThrow(), this.getHandle(), null).cancelled();
+        return !CraftEventFactory.handleGameRuleSet(nms, nms.deserialize(value).getOrThrow(), this.getHandle(), null).isCancelled();
     }
 
     @Override
@@ -1724,12 +1724,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             convertedValue = (T) legacyGameRuleWrapper.getFromLegacyToModern().apply(newValue);
         } else {
             nms.valueCodec().encodeStart(NullOps.INSTANCE, newValue).ifError(error -> {
-                throw CraftGameRule.INVALID_VALUE.apply(newValue.toString(), error);
+                throw CraftGameRule.INVALID_VALUE.apply(newValue.toString(), error.message());
             });
             convertedValue = newValue;
         }
 
-        return !CraftEventFactory.handleGameRuleSet(nms, convertedValue, this.getHandle(), null).cancelled();
+        return !CraftEventFactory.handleGameRuleSet(nms, convertedValue, this.getHandle(), null).isCancelled();
     }
 
     @Override

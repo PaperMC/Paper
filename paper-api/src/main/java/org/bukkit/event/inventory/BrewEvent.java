@@ -25,8 +25,7 @@ public interface BrewEvent extends BlockEvent, Cancellable {
     /**
      * Gets the resulting items in the Brewing Stand.
      * <p>
-     * The returned list, in case of a server-created event instance, is
-     * mutable. Any changes in the returned list will reflect in the brewing
+     * The returned list is mutable. Any changes in the returned list will reflect in the brewing
      * result if the event is not cancelled. If the size of the list is reduced,
      * remaining items will be set to air.
      *

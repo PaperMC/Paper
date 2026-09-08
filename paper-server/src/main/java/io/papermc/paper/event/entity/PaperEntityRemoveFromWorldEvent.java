@@ -1,6 +1,7 @@
 package io.papermc.paper.event.entity;
 
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
+import net.minecraft.world.level.Level;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.entity.Entity;
@@ -13,6 +14,10 @@ public class PaperEntityRemoveFromWorldEvent extends CraftEntityEvent implements
     public PaperEntityRemoveFromWorldEvent(final Entity entity, final World world) {
         super(entity);
         this.world = world;
+    }
+
+    public PaperEntityRemoveFromWorldEvent(final net.minecraft.world.entity.Entity entity, final Level level) {
+        this(entity.getBukkitEntity(), level.getWorld());
     }
 
     @Override

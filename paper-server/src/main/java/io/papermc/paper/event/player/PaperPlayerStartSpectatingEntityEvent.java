@@ -1,6 +1,7 @@
 package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -17,6 +18,14 @@ public class PaperPlayerStartSpectatingEntityEvent extends CraftPlayerEvent impl
         super(player);
         this.currentSpectatorTarget = currentSpectatorTarget;
         this.newSpectatorTarget = newSpectatorTarget;
+    }
+
+    public PaperPlayerStartSpectatingEntityEvent(
+        final ServerPlayer player,
+        final net.minecraft.world.entity.Entity oldCamera,
+        final net.minecraft.world.entity.Entity newCamera
+    ) {
+        this(player.getBukkitEntity(), oldCamera.getBukkitEntity(), newCamera.getBukkitEntity());
     }
 
     @Override

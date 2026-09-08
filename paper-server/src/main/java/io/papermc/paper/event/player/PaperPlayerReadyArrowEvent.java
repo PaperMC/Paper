@@ -1,7 +1,9 @@
 package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.player.PlayerReadyArrowEvent;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
@@ -17,6 +19,10 @@ public class PaperPlayerReadyArrowEvent extends CraftPlayerEvent implements Play
         super(player);
         this.bow = bow;
         this.arrow = arrow;
+    }
+
+    public PaperPlayerReadyArrowEvent(final ServerPlayer player, final net.minecraft.world.item.ItemStack bow, final net.minecraft.world.item.ItemStack arrow) {
+        this(player.getBukkitEntity(), CraftItemStack.asCraftMirror(bow), CraftItemStack.asCraftMirror(arrow));
     }
 
     @Override

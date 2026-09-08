@@ -1,6 +1,7 @@
 package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -14,6 +15,10 @@ public class PaperPlayerStopSpectatingEntityEvent extends CraftPlayerEvent imple
     public PaperPlayerStopSpectatingEntityEvent(final Player player, final Entity spectatorTarget) {
         super(player);
         this.spectatorTarget = spectatorTarget;
+    }
+
+    public PaperPlayerStopSpectatingEntityEvent(final ServerPlayer player, final net.minecraft.world.entity.Entity camera) {
+        this(player.getBukkitEntity(), camera.getBukkitEntity());
     }
 
     @Override

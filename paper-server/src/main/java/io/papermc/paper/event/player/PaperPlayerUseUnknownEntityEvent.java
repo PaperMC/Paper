@@ -1,7 +1,13 @@
 package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.player.PlayerUseUnknownEntityEvent;
+import net.minecraft.Optionull;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.Vec3;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
@@ -21,6 +27,12 @@ public class PaperPlayerUseUnknownEntityEvent extends CraftPlayerEvent implement
         this.attack = attack;
         this.hand = hand;
         this.clickedPosition = clickedPosition;
+    }
+
+    public PaperPlayerUseUnknownEntityEvent(
+        final ServerPlayer player, final int entityId, final boolean attack, final InteractionHand hand, final @Nullable Vec3 clickedPosition
+    ) {
+        this(player.getBukkitEntity(), entityId, attack, CraftEquipmentSlot.getHand(hand), Optionull.map(clickedPosition, CraftVector::toBukkit));
     }
 
     @Override

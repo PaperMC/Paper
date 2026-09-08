@@ -7,7 +7,6 @@ import java.util.ListIterator;
 import java.util.RandomAccess;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -19,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @param <T> transformed list element type
  */
 @NullMarked
-@ApiStatus.Internal
 public final class TransformingRandomAccessList<F, T> extends AbstractList<T> implements RandomAccess {
 
     final List<F> fromList;

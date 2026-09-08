@@ -13,6 +13,10 @@ public abstract class PaperSlimePathfindEvent extends CraftEntityEvent implement
         super(cubeMob);
     }
 
+    protected PaperSlimePathfindEvent(final net.minecraft.world.entity.monster.cubemob.AbstractCubeMob cubeMob) {
+        super(cubeMob);
+    }
+
     @Override
     public AbstractCubeMob getEntity() {
         return (AbstractCubeMob) this.entity;

@@ -1,7 +1,9 @@
 package io.papermc.paper.event.player;
 
+import net.minecraft.world.level.block.entity.SignBlockEntity;
 import org.bukkit.block.Sign;
 import org.bukkit.block.sign.Side;
+import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -19,6 +21,20 @@ public class PaperPlayerOpenSignEvent extends CraftPlayerEvent implements Player
         this.sign = sign;
         this.side = side;
         this.cause = cause;
+    }
+
+    public PaperPlayerOpenSignEvent(
+        final net.minecraft.world.entity.player.Player editor,
+        final SignBlockEntity sign,
+        final boolean isFrontText,
+        final Cause cause
+    ) {
+        this(
+            (Player) editor.getBukkitEntity(),
+            (Sign) CraftBlockStates.snapshotOf(sign),
+            isFrontText ? Side.FRONT : Side.BACK,
+            cause
+        );
     }
 
     @Override

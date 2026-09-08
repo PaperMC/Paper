@@ -1,7 +1,11 @@
 package io.papermc.paper.event.player;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
@@ -19,6 +23,16 @@ public class PaperPlayerFlowerPotManipulateEvent extends CraftPlayerEvent implem
         this.flowerpot = flowerpot;
         this.item = item;
         this.placing = placing;
+    }
+
+    public PaperPlayerFlowerPotManipulateEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final Level level,
+        final BlockPos pos,
+        final net.minecraft.world.item.ItemStack item,
+        final boolean placing
+    ) {
+        this((Player) player.getBukkitEntity(), CraftBlock.at(level, pos), CraftItemStack.asBukkitCopy(item), placing);
     }
 
     @Override

@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.RandomAccess;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -224,6 +225,13 @@ public final class MCUtil {
 
     public static <A, M> Collection<A> transformUnmodifiable(final Collection<? extends M> nms, final Function<? super M, ? extends A> converter) {
         return Collections.unmodifiableCollection(Collections2.transform(nms, converter::apply));
+    }
+
+    public static <F extends @Nullable Object, T extends @Nullable Object> List<T> mutableTransform(final List<F> fromList, final Function<? super F, ? extends T> toFunction, final Function<? super T, ? extends F> fromFunction) {
+        if (!(fromList instanceof RandomAccess)) {
+            throw new UnsupportedOperationException("Only random access list are supported");
+        }
+        return new TransformingRandomAccessList<>(fromList, toFunction, fromFunction);
     }
 
     public static <A, M, C extends Collection<M>> void addAndConvert(final C target, final Collection<A> toAdd, final Function<? super A, ? extends M> converter) {

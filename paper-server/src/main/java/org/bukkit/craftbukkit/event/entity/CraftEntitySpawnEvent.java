@@ -8,8 +8,12 @@ public class CraftEntitySpawnEvent extends CraftEntityEvent implements EntitySpa
 
     private boolean cancelled;
 
-    public CraftEntitySpawnEvent(final Entity spawnee) {
-        super(spawnee);
+    public CraftEntitySpawnEvent(final Entity entity) {
+        super(entity);
+    }
+
+    public CraftEntitySpawnEvent(final net.minecraft.world.entity.Entity entity) {
+        super(entity);
     }
 
     @Override

@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityPortalExitEvent;
@@ -15,6 +17,11 @@ public class CraftEntityPortalExitEvent extends CraftEntityTeleportEvent impleme
         super(entity, from, to);
         this.before = before;
         this.after = after;
+    }
+
+    public CraftEntityPortalExitEvent(final net.minecraft.world.entity.Entity entity, final Location to, final Vec3 after) {
+        final Entity e = entity.getBukkitEntity();
+        this(e, e.getLocation(), to, e.getVelocity(), CraftVector.toBukkit(after));
     }
 
     @Override

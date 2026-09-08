@@ -7,7 +7,7 @@ import org.bukkit.inventory.ItemStack;
 
 public class CraftInventoryBlockStartEvent extends CraftBlockEvent implements InventoryBlockStartEvent {
 
-    protected ItemStack source;
+    protected final ItemStack source;
 
     public CraftInventoryBlockStartEvent(final Block block, final ItemStack source) {
         super(block);

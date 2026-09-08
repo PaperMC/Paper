@@ -14,6 +14,10 @@ public class PaperEntityLungeEvent extends CraftEntityEvent implements EntityLun
         this.lungePower = lungePower;
     }
 
+    public PaperEntityLungeEvent(final net.minecraft.world.entity.LivingEntity entity, final int lungePower) {
+        this(entity.getBukkitEntity(), lungePower);
+    }
+
     @Override
     public int getLungePower() {
         return this.lungePower;

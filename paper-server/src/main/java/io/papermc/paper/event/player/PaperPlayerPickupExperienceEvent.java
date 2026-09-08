@@ -1,6 +1,7 @@
 package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.player.PlayerPickupExperienceEvent;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Player;
@@ -14,6 +15,10 @@ public class PaperPlayerPickupExperienceEvent extends CraftPlayerEvent implement
     public PaperPlayerPickupExperienceEvent(final Player player, final ExperienceOrb experienceOrb) {
         super(player);
         this.experienceOrb = experienceOrb;
+    }
+
+    public PaperPlayerPickupExperienceEvent(final ServerPlayer player, final net.minecraft.world.entity.ExperienceOrb experienceOrb) {
+        this(player.getBukkitEntity(), (ExperienceOrb) experienceOrb.getBukkitEntity());
     }
 
     @Override

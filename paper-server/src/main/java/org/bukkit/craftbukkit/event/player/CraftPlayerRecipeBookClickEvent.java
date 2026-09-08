@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.event.player;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerRecipeBookClickEvent;
@@ -18,6 +19,10 @@ public class CraftPlayerRecipeBookClickEvent extends CraftPlayerEvent implements
         this.originalRecipe = recipe;
         this.recipe = recipe;
         this.shiftClick = shiftClick;
+    }
+
+    public CraftPlayerRecipeBookClickEvent(final ServerPlayer player, final Recipe recipe, final boolean shiftClick) {
+        this(player.getBukkitEntity(), recipe, shiftClick);
     }
 
     @Override

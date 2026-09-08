@@ -1,9 +1,13 @@
 package org.bukkit.craftbukkit.event.world;
 
 import java.util.List;
+import net.minecraft.Optionull;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.bukkit.Location;
 import org.bukkit.TreeType;
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.world.StructureGrowEvent;
@@ -14,7 +18,7 @@ public class CraftStructureGrowEvent extends CraftWorldEvent implements Structur
     private final Location location;
     private final TreeType species;
     private final boolean bonemeal;
-    private final Player player;
+    private final @Nullable Player player;
     private final List<BlockState> blocks;
 
     private boolean cancelled;
@@ -26,6 +30,23 @@ public class CraftStructureGrowEvent extends CraftWorldEvent implements Structur
         this.bonemeal = bonemeal;
         this.player = player;
         this.blocks = blocks;
+    }
+
+    public CraftStructureGrowEvent(
+        final Level level,
+        final BlockPos pos,
+        final TreeType species,
+        final boolean bonemeal,
+        final net.minecraft.world.entity.player.@Nullable Player player,
+        final List<BlockState> blocks
+    ) {
+        this(
+            CraftLocation.toBukkit(pos, level),
+            species,
+            bonemeal,
+            (Player) Optionull.map(player, net.minecraft.world.entity.player.Player::getBukkitEntity),
+            blocks
+        );
     }
 
     @Override

@@ -1,6 +1,10 @@
 package org.bukkit.craftbukkit.event.block;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.VaultDisplayItemEvent;
 import org.bukkit.inventory.ItemStack;
@@ -11,9 +15,13 @@ public class CraftVaultDisplayItemEvent extends CraftBlockEvent implements Vault
     private @Nullable ItemStack displayItem;
     private boolean cancelled;
 
-    public CraftVaultDisplayItemEvent(final Block vault, final @Nullable ItemStack displayItem) {
+    public CraftVaultDisplayItemEvent(final Block vault, final ItemStack displayItem) {
         super(vault);
         this.displayItem = displayItem;
+    }
+
+    public CraftVaultDisplayItemEvent(final Level level, final BlockPos pos, final net.minecraft.world.item.ItemStack displayItem) {
+        this(CraftBlock.at(level, pos), CraftItemStack.asBukkitCopy(displayItem));
     }
 
     @Override

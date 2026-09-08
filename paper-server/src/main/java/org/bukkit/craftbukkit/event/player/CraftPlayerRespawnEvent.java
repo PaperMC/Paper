@@ -10,8 +10,11 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 public class CraftPlayerRespawnEvent extends PaperAbstractRespawnEvent implements PlayerRespawnEvent {
 
     public CraftPlayerRespawnEvent(
-        final Player respawnPlayer, final Location respawnLocation,
-        final boolean isBedSpawn, final boolean isAnchorSpawn, final boolean missingRespawnBlock,
+        final Player respawnPlayer,
+        final Location respawnLocation,
+        final boolean isBedSpawn,
+        final boolean isAnchorSpawn,
+        final boolean missingRespawnBlock,
         final RespawnReason respawnReason
     ) {
         super(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, missingRespawnBlock, respawnReason);

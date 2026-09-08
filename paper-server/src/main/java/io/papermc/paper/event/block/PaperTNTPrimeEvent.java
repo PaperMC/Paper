@@ -1,7 +1,11 @@
 package io.papermc.paper.event.block;
 
 import com.destroystokyo.paper.event.block.TNTPrimeEvent;
+import net.minecraft.Optionull;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
@@ -18,6 +22,10 @@ public class PaperTNTPrimeEvent extends CraftBlockEvent implements TNTPrimeEvent
         super(block);
         this.reason = reason;
         this.primerEntity = primerEntity;
+    }
+
+    public PaperTNTPrimeEvent(final Level level, final BlockPos pos, final PrimeReason reason, final net.minecraft.world.entity.@Nullable Entity primerEntity) {
+        this(CraftBlock.at(level, pos), reason, Optionull.map(primerEntity, net.minecraft.world.entity.Entity::getBukkitEntity));
     }
 
     @Override

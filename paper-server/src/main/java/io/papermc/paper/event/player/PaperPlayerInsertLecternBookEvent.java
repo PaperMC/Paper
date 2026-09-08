@@ -1,10 +1,15 @@
 package io.papermc.paper.event.player;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Lectern;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
@@ -20,6 +25,10 @@ public class PaperPlayerInsertLecternBookEvent extends CraftPlayerEvent implemen
         super(player);
         this.block = block;
         this.book = book;
+    }
+
+    public PaperPlayerInsertLecternBookEvent(final ServerPlayer player, final Level level, final BlockPos pos, final net.minecraft.world.item.ItemStack book) {
+        this(player.getBukkitEntity(), CraftBlock.at(level, pos), CraftItemStack.asCraftMirror(book));
     }
 
     @Override

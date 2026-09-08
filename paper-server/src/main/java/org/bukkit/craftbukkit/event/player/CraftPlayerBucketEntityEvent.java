@@ -1,5 +1,8 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.world.InteractionHand;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -22,6 +25,22 @@ public class CraftPlayerBucketEntityEvent extends CraftPlayerEvent implements Pl
         this.originalBucket = originalBucket;
         this.entityBucket = entityBucket;
         this.hand = hand;
+    }
+
+    public CraftPlayerBucketEntityEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.entity.Entity entity,
+        final net.minecraft.world.item.ItemStack originalBucket,
+        final net.minecraft.world.item.ItemStack entityBucket,
+        final InteractionHand hand
+    ) {
+        this(
+            (Player) player.getBukkitEntity(),
+            entity.getBukkitEntity(),
+            CraftItemStack.asBukkitCopy(originalBucket),
+            CraftItemStack.asBukkitCopy(entityBucket),
+            CraftEquipmentSlot.getHand(hand)
+        );
     }
 
     @Override

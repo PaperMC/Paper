@@ -14,6 +14,10 @@ public class CraftStriderTemperatureChangeEvent extends CraftEntityEvent impleme
         this.shivering = shivering;
     }
 
+    public CraftStriderTemperatureChangeEvent(final net.minecraft.world.entity.monster.Strider strider, final boolean shivering) {
+        this((Strider) strider.getBukkitEntity(), shivering);
+    }
+
     @Override
     public Strider getEntity() {
         return (Strider) this.entity;

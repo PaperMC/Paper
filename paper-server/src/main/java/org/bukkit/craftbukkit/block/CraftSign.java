@@ -14,6 +14,7 @@ import org.bukkit.block.sign.SignSide;
 import org.bukkit.craftbukkit.block.sign.CraftSignSide;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.event.player.CraftPlayerSignOpenEvent;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerSignOpenEvent;
@@ -172,15 +173,13 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
         Preconditions.checkArgument(sign.isPlaced(), "Sign must be placed");
         Preconditions.checkArgument(sign.getWorld() == player.getWorld(), "Sign must be in same world as Player");
 
-        // Paper start - Add PlayerOpenSignEvent
         io.papermc.paper.event.player.PlayerOpenSignEvent event = new io.papermc.paper.event.player.PaperPlayerOpenSignEvent((Player) player, sign, side, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLUGIN);
         if (!event.callEvent()) return;
         if (PlayerSignOpenEvent.getHandlerList().getRegisteredListeners().length > 0) {
-            // Paper end - Add PlayerOpenSignEvent
-        if (!CraftEventFactory.callPlayerSignOpenEvent(player, sign, side, PlayerSignOpenEvent.Cause.PLUGIN)) {
-            return;
+            if (!new CraftPlayerSignOpenEvent(player, sign, side, PlayerSignOpenEvent.Cause.PLUGIN).callEvent()) {
+                return;
+            }
         }
-        } // Paper - Add PlayerOpenSignEvent
 
         SignBlockEntity blockEntity = ((CraftSign<?>) sign).getBlockEntity();
         blockEntity.setAllowedPlayerEditor(player.getUniqueId());

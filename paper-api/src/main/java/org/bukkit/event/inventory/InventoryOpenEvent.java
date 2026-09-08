@@ -17,7 +17,7 @@ public interface InventoryOpenEvent extends InventoryEvent, Cancellable {
      *
      * @return Player who is involved in this event
      */
-    HumanEntity getPlayer(); // todo PlayerEvent?
+    HumanEntity getPlayer();
 
     /**
      * Gets the title override set by another event or {@code null}

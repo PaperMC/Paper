@@ -25,18 +25,13 @@ public class CraftCreeper extends CraftMonster implements Creeper {
 
     @Override
     public void setPowered(boolean powered) {
-        CreeperPowerEvent.PowerCause cause = powered ? CreeperPowerEvent.PowerCause.SET_ON : CreeperPowerEvent.PowerCause.SET_OFF;
-
         // only call event when we are not in world generation
-        if (this.getHandle().generation || !this.callPowerEvent(cause)) {
-            this.getHandle().setPowered(powered);
+        if (!this.getHandle().generation) {
+            if (!new CraftCreeperPowerEvent(this, null, powered ? CreeperPowerEvent.PowerCause.SET_ON : CreeperPowerEvent.PowerCause.SET_OFF).callEvent()) {
+                return;
+            }
         }
-    }
-
-    private boolean callPowerEvent(CreeperPowerEvent.PowerCause cause) {
-        CreeperPowerEvent event = new CraftCreeperPowerEvent((Creeper) this.getHandle().getBukkitEntity(), cause);
-        this.server.getPluginManager().callEvent(event);
-        return event.isCancelled();
+        this.getHandle().setPowered(powered);
     }
 
     @Override

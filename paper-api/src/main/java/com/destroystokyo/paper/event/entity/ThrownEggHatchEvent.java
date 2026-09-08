@@ -4,6 +4,7 @@ import org.bukkit.entity.Egg;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
+import org.checkerframework.checker.index.qual.NonNegative;
 
 /**
  * Called when a thrown egg might hatch.
@@ -19,7 +20,12 @@ public interface ThrownEggHatchEvent extends EntityEvent {
      * @deprecated use {@link #getEntity()}
      */
     @Deprecated(forRemoval = true)
-    Egg getEgg();
+    default Egg getEgg() {
+        return this.getEntity();
+    }
+
+    @Override
+    Egg getEntity();
 
     /**
      * Gets whether the egg is hatching or not. Will be what the server
@@ -48,7 +54,7 @@ public interface ThrownEggHatchEvent extends EntityEvent {
      *
      * @return The number of mobs going to be hatched by the egg
      */
-    byte getNumHatches();
+    @NonNegative byte getNumHatches();
 
     /**
      * Change the number of mobs coming out of the hatched egg
@@ -58,7 +64,7 @@ public interface ThrownEggHatchEvent extends EntityEvent {
      *
      * @param numHatches The number of mobs coming out of the egg
      */
-    void setNumHatches(byte numHatches);
+    void setNumHatches(@NonNegative byte numHatches);
 
     /**
      * Get the type of the mob being hatched ({@link EntityType#CHICKEN} by default)

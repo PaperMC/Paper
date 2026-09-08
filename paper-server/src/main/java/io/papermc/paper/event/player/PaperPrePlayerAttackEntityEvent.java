@@ -19,6 +19,14 @@ public class PaperPrePlayerAttackEntityEvent extends CraftPlayerEvent implements
         this.cancelled = !willAttack;
     }
 
+    public PaperPrePlayerAttackEntityEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.entity.Entity attacked,
+        final boolean willAttack
+    ) {
+        this((Player) player.getBukkitEntity(), attacked.getBukkitEntity(), willAttack);
+    }
+
     @Override
     public Entity getAttacked() {
         return this.attacked;

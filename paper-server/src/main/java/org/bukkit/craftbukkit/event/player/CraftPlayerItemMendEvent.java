@@ -1,5 +1,8 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.server.level.ServerPlayer;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -17,13 +20,33 @@ public class CraftPlayerItemMendEvent extends CraftPlayerEvent implements Player
 
     private boolean cancelled;
 
-    public CraftPlayerItemMendEvent(final Player player, final ItemStack item, final EquipmentSlot slot, final ExperienceOrb experienceOrb, final int repairAmount, final int consumedExperience) {
+    public CraftPlayerItemMendEvent(
+        final Player player, final ItemStack item, final EquipmentSlot slot, final ExperienceOrb experienceOrb, final int repairAmount, final int consumedExperience
+    ) {
         super(player);
         this.item = item;
         this.slot = slot;
         this.experienceOrb = experienceOrb;
         this.repairAmount = repairAmount;
         this.consumedExperience = consumedExperience;
+    }
+
+    public CraftPlayerItemMendEvent(
+        final ServerPlayer player,
+        final net.minecraft.world.item.ItemStack item,
+        final net.minecraft.world.entity.EquipmentSlot slot,
+        final net.minecraft.world.entity.ExperienceOrb experienceOrb,
+        final int repairAmount,
+        final int consumedExperience
+    ) {
+        this(
+            player.getBukkitEntity(),
+            CraftItemStack.asCraftMirror(item),
+            CraftEquipmentSlot.getSlot(slot),
+            (ExperienceOrb) experienceOrb.getBukkitEntity(),
+            repairAmount,
+            consumedExperience
+        );
     }
 
     @Override

@@ -8,8 +8,8 @@ import org.bukkit.inventory.EquipmentSlot;
 
 public class CraftPlayerInteractEntityEvent extends CraftPlayerEvent implements PlayerInteractEntityEvent {
 
-    protected Entity clickedEntity;
-    private final EquipmentSlot hand;
+    protected final Entity clickedEntity;
+    protected final EquipmentSlot hand;
 
     private boolean cancelled;
 

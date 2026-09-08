@@ -1,6 +1,9 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEnterBlockEvent;
@@ -13,6 +16,10 @@ public class CraftEntityEnterBlockEvent extends CraftEntityEvent implements Enti
     public CraftEntityEnterBlockEvent(final Entity entity, final Block block) {
         super(entity);
         this.block = block;
+    }
+
+    public CraftEntityEnterBlockEvent(final net.minecraft.world.entity.Entity entity, final Level level, final BlockPos pos) {
+        this(entity.getBukkitEntity(), CraftBlock.at(level, pos));
     }
 
     @Override

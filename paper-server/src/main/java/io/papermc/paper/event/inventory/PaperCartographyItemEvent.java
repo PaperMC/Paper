@@ -10,10 +10,6 @@ import org.bukkit.inventory.InventoryView;
 
 public class PaperCartographyItemEvent extends CraftInventoryClickEvent implements CartographyItemEvent {
 
-    public PaperCartographyItemEvent(final InventoryView view, final InventoryType.SlotType type, final int slot, final ClickType click, final InventoryAction action) {
-        super(view, type, slot, click, action);
-    }
-
     public PaperCartographyItemEvent(final InventoryView view, final InventoryType.SlotType type, final int slot, final ClickType click, final InventoryAction action, final int key) {
         super(view, type, slot, click, action, key);
     }

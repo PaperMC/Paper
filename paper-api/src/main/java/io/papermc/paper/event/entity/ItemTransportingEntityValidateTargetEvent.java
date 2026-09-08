@@ -2,6 +2,7 @@ package io.papermc.paper.event.entity;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.CopperGolem;
+import org.bukkit.entity.Creature;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.entity.EntityEvent;
@@ -16,6 +17,9 @@ import org.bukkit.event.entity.EntityEvent;
  * should be careful to implement checks in an efficient manner.
  */
 public interface ItemTransportingEntityValidateTargetEvent extends EntityEvent, BlockEvent {
+
+    @Override
+    Creature getEntity();
 
     /**
      * Gets the target block the entity is validating.

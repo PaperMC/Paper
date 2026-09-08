@@ -2,6 +2,7 @@ package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.HandlerList;
@@ -19,6 +20,14 @@ public class PaperPlayerLaunchProjectileEvent extends CraftPlayerEvent implement
         super(shooter);
         this.itemStack = itemStack;
         this.projectile = projectile;
+    }
+
+    public PaperPlayerLaunchProjectileEvent(
+        final net.minecraft.world.entity.player.Player shooter,
+        final net.minecraft.world.item.ItemStack itemStack,
+        final net.minecraft.world.entity.projectile.Projectile projectile
+    ) {
+        this((Player) shooter.getBukkitEntity(), CraftItemStack.asCraftMirror(itemStack), (Projectile) projectile.getBukkitEntity());
     }
 
     @Override

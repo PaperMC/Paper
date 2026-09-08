@@ -18,6 +18,7 @@ public interface PlayerTradeEvent extends PlayerPurchaseEvent {
      * @see #getMerchant()
      */
     @ApiStatus.Obsolete(since = "1.21.11")
-    AbstractVillager getVillager();
-
+    default AbstractVillager getVillager() {
+        return this.getMerchant();
+    }
 }

@@ -3,12 +3,13 @@ package io.papermc.paper.event.network.connection.configuration;
 import io.papermc.paper.connection.PlayerConfigurationConnection;
 import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
 import io.papermc.paper.event.network.connection.PaperConnectionEvent;
+import net.minecraft.network.protocol.configuration.ServerConfigurationPacketListener;
 import org.bukkit.event.HandlerList;
 
 public class PaperAsyncPlayerConnectionConfigureEvent extends PaperConnectionEvent implements AsyncPlayerConnectionConfigureEvent {
 
-    public PaperAsyncPlayerConnectionConfigureEvent(final PlayerConfigurationConnection connection) {
-        super(connection, true);
+    public PaperAsyncPlayerConnectionConfigureEvent(final ServerConfigurationPacketListener packetListener) {
+        super(packetListener.paperConnection(), true);
     }
 
     @Override

@@ -1,9 +1,13 @@
 package io.papermc.paper.event.player;
 
+import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
+import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
+import net.minecraft.server.players.NameAndId;
 import org.bukkit.craftbukkit.event.CraftEvent;
 import org.bukkit.event.HandlerList;
+import org.jspecify.annotations.Nullable;
 
 public class PaperPlayerServerFullCheckEvent extends CraftEvent implements PlayerServerFullCheckEvent {
 
@@ -15,6 +19,10 @@ public class PaperPlayerServerFullCheckEvent extends CraftEvent implements Playe
         this.profile = profile;
         this.kickMessage = kickMessage;
         this.allow = allow;
+    }
+
+    public PaperPlayerServerFullCheckEvent(final NameAndId nameAndId, final net.minecraft.network.chat.@Nullable Component kickMessage, final boolean allow) {
+        this(new CraftPlayerProfile(nameAndId), PaperAdventure.asAdventure(kickMessage), allow);
     }
 
     @Override

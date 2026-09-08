@@ -14,6 +14,10 @@ public class CraftSlimeSplitEvent extends CraftEntityEvent implements SlimeSplit
         this.count = count;
     }
 
+    public CraftSlimeSplitEvent(final net.minecraft.world.entity.monster.cubemob.AbstractCubeMob cubeMob, final int count) {
+        this((AbstractCubeMob) cubeMob.getBukkitEntity(), count);
+    }
+
     @Override
     public AbstractCubeMob getEntity() {
         return (AbstractCubeMob) this.entity;

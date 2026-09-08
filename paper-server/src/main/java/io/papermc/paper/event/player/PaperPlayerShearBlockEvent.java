@@ -1,9 +1,16 @@
 package io.papermc.paper.event.player;
 
 import io.papermc.paper.event.block.PlayerShearBlockEvent;
+import io.papermc.paper.util.MCUtil;
 import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
@@ -24,6 +31,23 @@ public class PaperPlayerShearBlockEvent extends CraftPlayerEvent implements Play
         this.item = item;
         this.hand = hand;
         this.drops = drops;
+    }
+
+    public PaperPlayerShearBlockEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final Level level,
+        final BlockPos pos,
+        final net.minecraft.world.item.ItemStack item,
+        final InteractionHand hand,
+        final List<net.minecraft.world.item.ItemStack> drops
+    ) {
+        this(
+            (Player) player.getBukkitEntity(),
+            CraftBlock.at(level, pos),
+            CraftItemStack.asCraftMirror(item),
+            CraftEquipmentSlot.getHand(hand),
+            MCUtil.mutableTransform(drops, CraftItemStack::asCraftMirror, CraftItemStack::asNMSCopy)
+        );
     }
 
     @Override

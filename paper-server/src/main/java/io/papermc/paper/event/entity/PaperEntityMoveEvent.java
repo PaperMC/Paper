@@ -19,6 +19,10 @@ public class PaperEntityMoveEvent extends CraftEntityEvent implements EntityMove
         this.to = to;
     }
 
+    public PaperEntityMoveEvent(final net.minecraft.world.entity.LivingEntity entity, final Location from, final Location to) {
+        this(entity.getBukkitEntity(), from, to);
+    }
+
     @Override
     public LivingEntity getEntity() {
         return (LivingEntity) this.entity;

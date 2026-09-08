@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
 public class CraftVehicleDamageEvent extends CraftVehicleEvent implements VehicleDamageEvent {
 
     private final DamageSource damageSource;
-    private final Entity attacker;
+    private final @Nullable Entity attacker;
     private double damage;
 
     private boolean cancelled;

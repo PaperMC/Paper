@@ -8,6 +8,5 @@ import org.bukkit.util.Vector;
  */
 public interface PlayerInteractAtEntityEvent extends PlayerInteractEntityEvent {
 
-    // todo javadocs?
     Vector getClickedPosition();
 }

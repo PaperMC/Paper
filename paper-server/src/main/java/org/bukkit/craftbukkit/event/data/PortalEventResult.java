@@ -1,4 +1,4 @@
-package org.bukkit.craftbukkit.event;
+package org.bukkit.craftbukkit.event.data;
 
 import org.bukkit.Location;
 

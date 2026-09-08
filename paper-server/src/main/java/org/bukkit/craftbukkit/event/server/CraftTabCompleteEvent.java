@@ -16,7 +16,7 @@ public class CraftTabCompleteEvent extends CraftEvent implements TabCompleteEven
     private final CommandSender sender;
     private final String buffer;
     private final boolean isCommand;
-    private final Location location;
+    private final @Nullable Location location;
     private List<String> completions;
 
     private boolean cancelled;

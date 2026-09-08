@@ -1,5 +1,6 @@
 package io.papermc.paper.event.entity;
 
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.entity.ElderGuardian;
 import org.bukkit.entity.Player;
@@ -13,6 +14,10 @@ public class PaperElderGuardianAppearanceEvent extends CraftEntityEvent implemen
     public PaperElderGuardianAppearanceEvent(final ElderGuardian guardian, final Player affectedPlayer) {
         super(guardian);
         this.affectedPlayer = affectedPlayer;
+    }
+
+    public PaperElderGuardianAppearanceEvent(final net.minecraft.world.entity.monster.ElderGuardian guardian, final ServerPlayer affectedPlayer) {
+        this((ElderGuardian) guardian.getBukkitEntity(), affectedPlayer.getBukkitEntity());
     }
 
     @Override

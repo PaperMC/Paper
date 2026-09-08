@@ -2,6 +2,7 @@ package org.bukkit.event.block;
 
 import java.util.List;
 import org.bukkit.block.BlockState;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Fired when a single block placement action of a player triggers the
@@ -19,5 +20,5 @@ public interface BlockMultiPlaceEvent extends BlockPlaceEvent {
      *
      * @return immutable list of replaced BlockStates
      */
-    List<BlockState> getReplacedBlockStates();
+    @Unmodifiable List<BlockState> getReplacedBlockStates();
 }

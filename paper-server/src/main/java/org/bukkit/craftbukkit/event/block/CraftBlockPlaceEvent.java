@@ -1,7 +1,15 @@
 package org.bukkit.craftbukkit.event.block;
 
+import java.util.function.Consumer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -10,23 +18,46 @@ import org.bukkit.inventory.ItemStack;
 
 public class CraftBlockPlaceEvent extends CraftBlockEvent implements BlockPlaceEvent {
 
-    protected Block placedAgainst;
-    protected ItemStack itemInHand;
-    protected Player player;
-    protected BlockState replacedState;
-    protected boolean canBuild;
-    protected EquipmentSlot hand;
+    protected final Player player;
+    protected final ItemStack itemInHand;
+    protected final EquipmentSlot hand;
+    protected final Block placedAgainst;
+    protected final BlockState replacedState;
+    protected boolean canBuild = true;
 
     protected boolean cancelled;
 
-    public CraftBlockPlaceEvent(final Block placedBlock, final BlockState replacedState, final Block placedAgainst, final ItemStack itemInHand, final Player player, final boolean canBuild, final EquipmentSlot hand) {
+    public CraftBlockPlaceEvent(
+        final Player player, final ItemStack itemInHand, final EquipmentSlot hand, final Block placedBlock, final Block placedAgainst, final BlockState replacedState
+    ) {
         super(placedBlock);
-        this.placedAgainst = placedAgainst;
-        this.itemInHand = itemInHand;
         this.player = player;
-        this.replacedState = replacedState;
-        this.canBuild = canBuild;
+        this.itemInHand = itemInHand;
         this.hand = hand;
+        this.placedAgainst = placedAgainst;
+        this.replacedState = replacedState;
+    }
+
+    public CraftBlockPlaceEvent(
+        final Level level,
+        final net.minecraft.world.entity.player.Player player,
+        final InteractionHand hand,
+        final BlockState replacedState,
+        final BlockPos clickedPos
+    ) {
+        this(
+            (Player) player.getBukkitEntity(),
+            CraftItemStack.asBukkitCopy(player.getItemInHand(hand)),
+            CraftEquipmentSlot.getHand(hand),
+            replacedState.getBlock(),
+            CraftBlock.at(level, clickedPos),
+            replacedState
+        );
+        this.forEachPos(pos -> this.canBuild &= level.mayInteract(player, pos));
+    }
+
+    protected void forEachPos(final Consumer<BlockPos> output) {
+        output.accept(((CraftBlockState) this.replacedState).getPosition());
     }
 
     @Override

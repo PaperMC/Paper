@@ -8,19 +8,19 @@ public class CraftEntityRegainHealthEvent extends CraftEntityEvent implements En
 
     private double amount;
     private final RegainReason regainReason;
-    private final boolean isFastRegen;
+    private final boolean fastRegen;
 
     private boolean cancelled;
 
-    public CraftEntityRegainHealthEvent(final Entity entity, final double amount, final RegainReason regainReason) {
-        this(entity, amount, regainReason, false);
-    }
-
-    public CraftEntityRegainHealthEvent(final Entity entity, final double amount, final RegainReason regainReason, final boolean isFastRegen) {
+    public CraftEntityRegainHealthEvent(final Entity entity, final double amount, final RegainReason regainReason, final boolean fastRegen) {
         super(entity);
         this.amount = amount;
         this.regainReason = regainReason;
-        this.isFastRegen = isFastRegen;
+        this.fastRegen = fastRegen;
+    }
+
+    public CraftEntityRegainHealthEvent(final net.minecraft.world.entity.Entity entity, final double amount, final RegainReason regainReason, final boolean fastRegen) {
+        this(entity.getBukkitEntity(), amount, regainReason, fastRegen);
     }
 
     @Override
@@ -40,7 +40,7 @@ public class CraftEntityRegainHealthEvent extends CraftEntityEvent implements En
 
     @Override
     public boolean isFastRegen() {
-        return this.isFastRegen;
+        return this.fastRegen;
     }
 
     @Override

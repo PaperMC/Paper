@@ -1,10 +1,14 @@
 package org.bukkit.craftbukkit.event.block;
 
-import com.google.common.base.Preconditions;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.SculkSpreader;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.SculkBloomEvent;
+import org.checkerframework.common.value.qual.IntRange;
+
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public class CraftSculkBloomEvent extends CraftBlockEvent implements SculkBloomEvent {
 
@@ -16,15 +20,18 @@ public class CraftSculkBloomEvent extends CraftBlockEvent implements SculkBloomE
         this.charge = charge;
     }
 
+    public CraftSculkBloomEvent(final Level level, final SculkSpreader.ChargeCursor cursor) {
+        this(CraftBlock.at(level, cursor.getPos()), cursor.getCharge());
+    }
+
     @Override
-    public int getCharge() {
+    public @IntRange(from = 0, to = SculkSpreader.MAX_CHARGE) int getCharge() {
         return this.charge;
     }
 
     @Override
-    public void setCharge(final int charge) {
-        Preconditions.checkArgument(charge >= 0 && charge <= SculkSpreader.MAX_CHARGE, charge + " is not in range [0, %s]", SculkSpreader.MAX_CHARGE);
-        this.charge = charge;
+    public void setCharge(final @IntRange(from = 0, to = SculkSpreader.MAX_CHARGE) int charge) {
+        this.charge = requireRange(charge, "charge", 0, SculkSpreader.MAX_CHARGE);
     }
 
     @Override

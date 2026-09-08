@@ -16,6 +16,12 @@ public class PaperEnderDragonShootFireballEvent extends CraftEntityEvent impleme
         this.fireball = fireball;
     }
 
+    public PaperEnderDragonShootFireballEvent(
+        final net.minecraft.world.entity.boss.enderdragon.EnderDragon entity, final net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball fireball
+    ) {
+        this((EnderDragon) entity.getBukkitEntity(), (DragonFireball) fireball.getBukkitEntity());
+    }
+
     @Override
     public EnderDragon getEntity() {
         return (EnderDragon) this.entity;

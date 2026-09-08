@@ -1,10 +1,14 @@
 package org.bukkit.craftbukkit.event.block;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.Range;
+import org.checkerframework.common.value.qual.IntRange;
 
 public class CraftFurnaceBurnEvent extends CraftBlockEvent implements FurnaceBurnEvent {
 
@@ -21,6 +25,10 @@ public class CraftFurnaceBurnEvent extends CraftBlockEvent implements FurnaceBur
         this.burnTime = burnTime;
     }
 
+    public CraftFurnaceBurnEvent(final Level level, final BlockPos pos, final net.minecraft.world.item.ItemStack fuel, final int burnTime) {
+        this(CraftBlock.at(level, pos), CraftItemStack.asCraftMirror(fuel), burnTime);
+    }
+
     @Override
     public ItemStack getFuel() {
         return this.fuel;
@@ -32,7 +40,7 @@ public class CraftFurnaceBurnEvent extends CraftBlockEvent implements FurnaceBur
     }
 
     @Override
-    public void setBurnTime(final @Range(from = Short.MIN_VALUE, to = Short.MAX_VALUE) int burnTime) {
+    public void setBurnTime(final @IntRange(from = Short.MIN_VALUE, to = Short.MAX_VALUE) int burnTime) {
         this.burnTime = Math.clamp(burnTime, Short.MIN_VALUE, Short.MAX_VALUE);
     }
 

@@ -41,7 +41,6 @@ public interface PlayerQuitEvent extends PlayerEvent {
     @Deprecated
     void setQuitMessage(@Nullable String quitMessage);
 
-    // todo javadocs?
     QuitReason getReason();
 
     static HandlerList getHandlerList() {

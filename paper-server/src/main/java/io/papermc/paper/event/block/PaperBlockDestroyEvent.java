@@ -1,8 +1,12 @@
 package io.papermc.paper.event.block;
 
 import com.destroystokyo.paper.event.block.BlockDestroyEvent;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.event.block.CraftBlockExpEvent;
 import org.bukkit.event.HandlerList;
 
@@ -20,6 +24,10 @@ public class PaperBlockDestroyEvent extends CraftBlockExpEvent implements BlockD
         this.newState = newState;
         this.effectBlock = effectBlock;
         this.willDrop = willDrop;
+    }
+
+    public PaperBlockDestroyEvent(final Level level, final BlockPos pos, final BlockState newState, final BlockState effectState, final int xp, final boolean willDrop) {
+        this(CraftBlock.at(level, pos), newState.asBlockData(), effectState.asBlockData(), xp, willDrop);
     }
 
     @Override

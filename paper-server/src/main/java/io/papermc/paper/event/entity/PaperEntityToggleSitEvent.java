@@ -6,17 +6,21 @@ import org.bukkit.event.HandlerList;
 
 public class PaperEntityToggleSitEvent extends CraftEntityEvent implements EntityToggleSitEvent {
 
-    private final boolean isSitting;
+    private final boolean sitting;
     private boolean cancelled;
 
-    public PaperEntityToggleSitEvent(final Entity entity, final boolean isSitting) {
+    public PaperEntityToggleSitEvent(final Entity entity, final boolean sitting) {
         super(entity);
-        this.isSitting = isSitting;
+        this.sitting = sitting;
+    }
+
+    public PaperEntityToggleSitEvent(final net.minecraft.world.entity.Entity entity, final boolean sitting) {
+        this(entity.getBukkitEntity(), sitting);
     }
 
     @Override
     public boolean getSittingState() {
-        return this.isSitting;
+        return this.sitting;
     }
 
     @Override

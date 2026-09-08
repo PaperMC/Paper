@@ -4,10 +4,8 @@ import java.util.Set;
 import org.bukkit.Location;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 
-@ApiStatus.NonExtendable
 public interface AbstractRespawnEvent extends PlayerEvent {
 
     /**

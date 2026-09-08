@@ -1,7 +1,16 @@
 package org.bukkit.craftbukkit.event.hanging;
 
+import net.minecraft.Optionull;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -12,21 +21,40 @@ import org.jspecify.annotations.Nullable;
 
 public class CraftHangingPlaceEvent extends CraftHangingEvent implements HangingPlaceEvent {
 
-    private final Player player;
+    private final @Nullable Player player;
     private final Block block;
     private final BlockFace blockFace;
     private final EquipmentSlot hand;
-    private final ItemStack itemStack;
+    private final @Nullable ItemStack itemStack;
 
     private boolean cancelled;
 
-    public CraftHangingPlaceEvent(final Hanging hanging, final @Nullable Player player, final Block block, final BlockFace blockFace, final @Nullable EquipmentSlot hand, final @Nullable ItemStack itemStack) {
+    public CraftHangingPlaceEvent(final Hanging hanging, final @Nullable Player player, final Block block, final BlockFace blockFace, final EquipmentSlot hand, final @Nullable ItemStack itemStack) {
         super(hanging);
         this.player = player;
         this.block = block;
         this.blockFace = blockFace;
         this.hand = hand;
         this.itemStack = itemStack;
+    }
+
+    public CraftHangingPlaceEvent(
+        final Entity hanging,
+        final net.minecraft.world.entity.player.@Nullable Player player,
+        final Level level,
+        final BlockPos pos,
+        final @Nullable Direction face,
+        final InteractionHand hand,
+        final net.minecraft.world.item.@Nullable ItemStack itemStack
+    ) {
+        this(
+            (Hanging) hanging.getBukkitEntity(),
+            (Player) Optionull.map(player, net.minecraft.world.entity.player.Player::getBukkitEntity),
+            CraftBlock.at(level, pos),
+            CraftBlock.notchToBlockFace(face),
+            CraftEquipmentSlot.getHand(hand),
+            Optionull.map(itemStack, CraftItemStack::asBukkitCopy)
+        );
     }
 
     @Override
@@ -45,7 +73,7 @@ public class CraftHangingPlaceEvent extends CraftHangingEvent implements Hanging
     }
 
     @Override
-    public @Nullable EquipmentSlot getHand() {
+    public EquipmentSlot getHand() {
         return this.hand;
     }
 

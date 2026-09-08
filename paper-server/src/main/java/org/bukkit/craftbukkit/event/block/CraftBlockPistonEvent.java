@@ -1,8 +1,12 @@
 package org.bukkit.craftbukkit.event.block;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.block.BlockPistonEvent;
 
 public abstract class CraftBlockPistonEvent extends CraftBlockEvent implements BlockPistonEvent {
@@ -13,6 +17,10 @@ public abstract class CraftBlockPistonEvent extends CraftBlockEvent implements B
     protected CraftBlockPistonEvent(final Block block, final BlockFace direction) {
         super(block);
         this.direction = direction;
+    }
+
+    protected CraftBlockPistonEvent(final Level level, final BlockPos pos, final Direction direction) {
+        this(CraftBlock.at(level, pos), CraftBlock.notchToBlockFace(direction));
     }
 
     @Override

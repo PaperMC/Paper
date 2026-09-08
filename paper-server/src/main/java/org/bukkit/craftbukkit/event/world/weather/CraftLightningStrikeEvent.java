@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.world.weather;
 
+import net.minecraft.world.entity.LightningBolt;
 import org.bukkit.World;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.event.HandlerList;
@@ -18,8 +19,12 @@ public class CraftLightningStrikeEvent extends CraftWeatherEvent implements Ligh
         this.cause = cause;
     }
 
+    public CraftLightningStrikeEvent(final LightningBolt bolt, final Cause cause) {
+        this(bolt.level().getWorld(), (LightningStrike) bolt.getBukkitEntity(), cause);
+    }
+
     @Override
-    public LightningStrike getLightning() {
+    public LightningStrike getEntity() {
         return this.bolt;
     }
 

@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.world.entity.item.ItemEntity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -17,6 +18,10 @@ public class CraftPlayerAttemptPickupItemEvent extends CraftPlayerEvent implemen
         super(player);
         this.item = item;
         this.remaining = remaining;
+    }
+
+    public CraftPlayerAttemptPickupItemEvent(final net.minecraft.world.entity.player.Player player, final ItemEntity item, final int remaining) {
+        this((Player) player.getBukkitEntity(), (Item) item.getBukkitEntity(), remaining);
     }
 
     @Override

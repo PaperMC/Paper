@@ -1,7 +1,12 @@
 package org.bukkit.craftbukkit.event.block;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.LevelAccessor;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockFadeEvent;
 
@@ -13,6 +18,13 @@ public class CraftBlockFadeEvent extends CraftBlockEvent implements BlockFadeEve
     public CraftBlockFadeEvent(final Block block, final BlockState newState) {
         super(block);
         this.newState = newState;
+    }
+
+    public CraftBlockFadeEvent(final LevelAccessor level, final BlockPos pos, final net.minecraft.world.level.block.state.BlockState newState) {
+        final org.bukkit.block.Block block = CraftBlock.at(level, pos);
+        final CraftBlockState snapshot = CraftBlockStates.snapshotOfSimpleBlock(block, newState);
+
+        this(block, snapshot);
     }
 
     @Override

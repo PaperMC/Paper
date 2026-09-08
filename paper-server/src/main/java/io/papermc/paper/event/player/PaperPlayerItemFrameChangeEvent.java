@@ -1,6 +1,7 @@
 package io.papermc.paper.event.player;
 
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -20,6 +21,20 @@ public class PaperPlayerItemFrameChangeEvent extends CraftPlayerEvent implements
         this.itemFrame = itemFrame;
         this.itemStack = itemStack;
         this.action = action;
+    }
+
+    public PaperPlayerItemFrameChangeEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final net.minecraft.world.entity.decoration.ItemFrame itemFrame,
+        final net.minecraft.world.item.ItemStack itemStack,
+        final ItemFrameChangeAction action
+    ) {
+        this(
+            (Player) player.getBukkitEntity(),
+            (ItemFrame) itemFrame,
+            CraftItemStack.asBukkitCopy(itemStack),
+            action
+        );
     }
 
     @Override

@@ -51,7 +51,7 @@ public class CraftPlayerChatEvent extends CraftPlayerEvent implements PlayerChat
 
     @Override
     public void setFormat(final String format) {
-        // Oh for a better way to do this!
+        // Oh, for a better way to do this!
         try {
             String.format(format, this.mutablePlayer, this.message);
         } catch (RuntimeException ex) {

@@ -5,6 +5,7 @@ import org.bukkit.entity.Turtle;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
+import org.checkerframework.common.value.qual.IntRange;
 
 /**
  * Fired when a Turtle lays eggs
@@ -31,14 +32,14 @@ public interface TurtleLayEggEvent extends EntityEvent, Cancellable {
      *
      * @return Number of eggs
      */
-    int getEggCount();
+    @IntRange(from = 1, to = 4) int getEggCount();
 
     /**
      * Set the number of eggs being laid
      *
      * @param eggCount Number of eggs
      */
-    void setEggCount(int eggCount);
+    void setEggCount(@IntRange(from = 0, to = 4) int eggCount);
 
     static HandlerList getHandlerList() {
         final class Holder {

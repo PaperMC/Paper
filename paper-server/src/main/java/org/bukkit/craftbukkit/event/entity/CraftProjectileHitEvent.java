@@ -1,7 +1,11 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.HandlerList;
@@ -21,6 +25,22 @@ public class CraftProjectileHitEvent extends CraftEntityEvent implements Project
         this.hitEntity = hitEntity;
         this.hitBlock = hitBlock;
         this.hitFace = hitFace;
+    }
+
+    public CraftProjectileHitEvent(final net.minecraft.world.entity.projectile.Projectile projectile, final @Nullable HitResult hitResult) {
+        Block hitBlock = null;
+        BlockFace hitFace = null;
+        if (hitResult instanceof final BlockHitResult blockHitResult) {
+            hitBlock = CraftBlock.at(projectile.level(), blockHitResult.getBlockPos());
+            hitFace = CraftBlock.notchToBlockFace(blockHitResult.getDirection());
+        }
+
+        Entity hitEntity = null;
+        if (hitResult instanceof final EntityHitResult entityHitResult) {
+            hitEntity = entityHitResult.getEntity().getBukkitEntity();
+        }
+
+        this((Projectile) projectile.getBukkitEntity(), hitEntity, hitBlock, hitFace);
     }
 
     @Override

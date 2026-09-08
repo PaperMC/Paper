@@ -1,9 +1,11 @@
 package org.bukkit.craftbukkit.event.entity;
 
 import java.util.List;
+import net.minecraft.world.level.Explosion;
 import org.bukkit.ExplosionResult;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.CraftExplosionResult;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityExplodeEvent;
@@ -23,6 +25,11 @@ public class CraftEntityExplodeEvent extends CraftEntityEvent implements EntityE
         this.blocks = blocks;
         this.yield = yield;
         this.result = result;
+    }
+
+    public CraftEntityExplodeEvent(final net.minecraft.world.entity.Entity entity, final List<Block> blocks, final float yield, final Explosion.BlockInteraction blockInteraction) {
+        Entity e = entity.getBukkitEntity();
+        this(e, e.getLocation(), blocks, yield, CraftExplosionResult.toExplosionResult(blockInteraction));
     }
 
     @Override

@@ -1,8 +1,12 @@
 package org.bukkit.craftbukkit.event.block;
 
+import io.papermc.paper.util.MCUtil;
 import java.util.List;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.item.ItemEntity;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.entity.CraftItem;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -21,6 +25,18 @@ public class CraftBlockDropItemEvent extends CraftBlockEvent implements BlockDro
         this.blockState = blockState;
         this.player = player;
         this.items = items;
+    }
+
+    public CraftBlockDropItemEvent(final Block block, final BlockState blockState, final ServerPlayer player, final List<ItemEntity> items) {
+        this(
+            block,
+            blockState,
+            player.getBukkitEntity(),
+            MCUtil.mutableTransform(items,
+                item -> (Item) item.getBukkitEntity(),
+                item -> ((CraftItem) item).getHandle()
+            )
+        );
     }
 
     @Override

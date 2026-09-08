@@ -1,6 +1,7 @@
 package io.papermc.paper.event.entity;
 
 import com.destroystokyo.paper.event.entity.EndermanEscapeEvent;
+import net.minecraft.world.entity.monster.EnderMan;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.entity.Enderman;
 import org.bukkit.event.HandlerList;
@@ -13,6 +14,10 @@ public class PaperEndermanEscapeEvent extends CraftEntityEvent implements Enderm
     public PaperEndermanEscapeEvent(final Enderman entity, final Reason reason) {
         super(entity);
         this.reason = reason;
+    }
+
+    public PaperEndermanEscapeEvent(final EnderMan entity, final Reason reason) {
+        this((Enderman) entity.getBukkitEntity(), reason);
     }
 
     @Override

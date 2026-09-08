@@ -68,7 +68,7 @@ public interface PlayerPreLoginEvent extends Event {
      * @deprecated in favour of {@link #kickMessage(Component)}
      */
     @Deprecated
-    void setKickMessage(final String message);
+    void setKickMessage(String message);
 
     /**
      * Allows the player to log in

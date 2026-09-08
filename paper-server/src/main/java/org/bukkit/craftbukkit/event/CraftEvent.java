@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public abstract class CraftEvent implements Event {
@@ -31,7 +30,11 @@ public abstract class CraftEvent implements Event {
 
     @Override
     public String getEventName() {
-        return this.getClass().getSimpleName(); // TODO handle interface, print the API name
+        final Class<?>[] itfs = this.getClass().getInterfaces();
+        if (itfs.length == 0) {
+            return this.getClass().getSimpleName();
+        }
+        return itfs[0].getSimpleName();
     }
 
     @Override

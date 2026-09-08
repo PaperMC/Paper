@@ -1,9 +1,18 @@
 package org.bukkit.craftbukkit.event.player;
 
+import net.minecraft.Optionull;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.Action;
@@ -12,6 +21,8 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.jspecify.annotations.Nullable;
+
+import static org.bukkit.craftbukkit.inventory.CraftItemStack.emptyToNull;
 
 public class CraftPlayerInteractEvent extends CraftPlayerEvent implements PlayerInteractEvent {
 
@@ -24,7 +35,15 @@ public class CraftPlayerInteractEvent extends CraftPlayerEvent implements Player
     private Result useItemInHand;
     private Result useClickedBlock;
 
-    public CraftPlayerInteractEvent(final Player player, final Action action, final @Nullable ItemStack item, final @Nullable Block clickedBlock, final BlockFace clickedFace, final @Nullable EquipmentSlot hand, final @Nullable Vector clickedPosition) {
+    public CraftPlayerInteractEvent(
+        final Player player,
+        final Action action,
+        final @Nullable ItemStack item,
+        final @Nullable Block clickedBlock,
+        final BlockFace clickedFace,
+        final @Nullable EquipmentSlot hand,
+        final @Nullable Vector clickedPosition
+    ) {
         super(player);
         this.action = action;
         this.item = item;
@@ -35,6 +54,26 @@ public class CraftPlayerInteractEvent extends CraftPlayerEvent implements Player
 
         this.useItemInHand = Result.DEFAULT;
         this.useClickedBlock = clickedBlock == null ? Result.DENY : Result.ALLOW;
+    }
+
+    public CraftPlayerInteractEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final Action action,
+        final net.minecraft.world.item.ItemStack item,
+        final @Nullable BlockPos pos,
+        final @Nullable Direction face,
+        final @Nullable InteractionHand hand,
+        final @Nullable Vec3 clickedPos
+    ) {
+        this(
+            (Player) player.getBukkitEntity(),
+            action,
+            emptyToNull(item, CraftItemStack::asCraftMirror),
+            Optionull.map(pos, p -> CraftBlock.at(player.level(), p)),
+            CraftBlock.notchToBlockFace(face),
+            Optionull.map(hand, CraftEquipmentSlot::getHand),
+            Optionull.map(clickedPos, CraftVector::toBukkit)
+        );
     }
 
     @Override

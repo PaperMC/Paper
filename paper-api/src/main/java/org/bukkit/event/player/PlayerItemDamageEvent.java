@@ -24,7 +24,6 @@ public interface PlayerItemDamageEvent extends PlayerEvent, Cancellable {
      */
     int getDamage();
 
-    // todo javadocs?
     void setDamage(int damage);
 
     /**

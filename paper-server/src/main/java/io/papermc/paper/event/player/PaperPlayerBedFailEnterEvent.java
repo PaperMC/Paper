@@ -1,8 +1,11 @@
 package io.papermc.paper.event.player;
 
 import io.papermc.paper.block.bed.BedEnterAction;
+import io.papermc.paper.block.bed.BedEnterProblem;
 import net.kyori.adventure.text.Component;
+import net.minecraft.core.BlockPos;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -18,13 +21,19 @@ public class PaperPlayerBedFailEnterEvent extends CraftPlayerEvent implements Pl
 
     private boolean cancelled;
 
-    public PaperPlayerBedFailEnterEvent(final Player player, final FailReason failReason, final Block bed, final boolean willExplode, final BedEnterAction enterAction) {
+    public PaperPlayerBedFailEnterEvent(final Player player, final FailReason failReason, final Block bed, final BedEnterAction enterAction) {
         super(player);
         this.failReason = failReason;
         this.bed = bed;
         this.enterAction = enterAction;
-        this.willExplode = willExplode;
+        this.willExplode = enterAction.problem() == BedEnterProblem.EXPLOSION;
         this.message = enterAction.errorMessage();
+    }
+
+    public PaperPlayerBedFailEnterEvent(
+        final net.minecraft.world.entity.player.Player player, final FailReason failReason, final BlockPos pos, final BedEnterAction enterAction
+    ) {
+        this((Player) player.getBukkitEntity(), failReason, CraftBlock.at(player.level(), pos), enterAction);
     }
 
     @Override

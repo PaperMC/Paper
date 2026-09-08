@@ -31,7 +31,11 @@ public class CraftBlockState implements BlockState {
     private WeakReference<LevelAccessor> weakLevel;
 
     protected CraftBlockState(final Block block) {
-        this(block.getWorld(), ((CraftBlock) block).getPosition(), ((CraftBlock) block).getBlockState());
+        this(block, ((CraftBlock) block).getBlockState());
+    }
+
+    protected CraftBlockState(final Block block, final net.minecraft.world.level.block.state.BlockState state) {
+        this(block.getWorld(), ((CraftBlock) block).getPosition(), state);
         this.capturedFlags = net.minecraft.world.level.block.Block.UPDATE_ALL;
 
         this.setWorldHandle(((CraftBlock) block).getLevel());

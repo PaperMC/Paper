@@ -6,7 +6,7 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public interface LootableInventoryReplenishEvent extends PlayerEvent, Cancellable { // todo javadocs?
+public interface LootableInventoryReplenishEvent extends PlayerEvent, Cancellable {
 
     LootableInventory getInventory();
 

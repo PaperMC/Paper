@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.world.item.trading.MerchantOffer;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.VillagerReplenishTradeEvent;
@@ -13,6 +14,10 @@ public class CraftVillagerReplenishTradeEvent extends CraftEntityEvent implement
     public CraftVillagerReplenishTradeEvent(final AbstractVillager villager, final MerchantRecipe recipe) {
         super(villager);
         this.recipe = recipe;
+    }
+
+    public CraftVillagerReplenishTradeEvent(final net.minecraft.world.entity.npc.villager.AbstractVillager villager, final MerchantOffer offer) {
+        this((AbstractVillager) villager.getBukkitEntity(), offer.asBukkit());
     }
 
     @Override

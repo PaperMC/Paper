@@ -4,8 +4,12 @@ import com.google.common.base.Preconditions;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.LevelAccessor;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.world.AsyncStructureGenerateEvent;
 import org.bukkit.generator.structure.Structure;
@@ -22,20 +26,39 @@ public class CraftAsyncStructureGenerateEvent extends CraftWorldEvent implements
     private final Cause cause;
 
     private final Structure structure;
-    private final BoundingBox boundingBox;
+    private final BoundingBox box;
 
     private final int chunkX, chunkZ;
 
     private final Map<NamespacedKey, BlockTransformer> blockTransformers = new LinkedHashMap<>();
     private final Map<NamespacedKey, EntityTransformer> entityTransformers = new LinkedHashMap<>();
 
-    public CraftAsyncStructureGenerateEvent(final World world, final boolean async, final Cause cause, final Structure structure, final BoundingBox boundingBox, final int chunkX, final int chunkZ) {
-        super(world, async);
+    public CraftAsyncStructureGenerateEvent(
+        final World world, final Cause cause, final Structure structure, final BoundingBox box, final int chunkX, final int chunkZ
+    ) {
+        super(world, !Bukkit.isPrimaryThread());
         this.cause = cause;
         this.structure = structure;
-        this.boundingBox = boundingBox;
+        this.box = box;
         this.chunkX = chunkX;
         this.chunkZ = chunkZ;
+    }
+
+    public CraftAsyncStructureGenerateEvent(
+        final LevelAccessor level,
+        final Cause cause,
+        final net.minecraft.world.level.levelgen.structure.Structure structure,
+        final net.minecraft.world.level.levelgen.structure.BoundingBox box,
+        final ChunkPos center
+    ) {
+        this(
+            level.getMinecraftWorld().getWorld(),
+            cause,
+            CraftStructure.minecraftToBukkit(structure),
+            new BoundingBox(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ()),
+            center.x(),
+            center.z()
+        );
     }
 
     @Override
@@ -50,7 +73,7 @@ public class CraftAsyncStructureGenerateEvent extends CraftWorldEvent implements
 
     @Override
     public BoundingBox getBoundingBox() {
-        return this.boundingBox.clone();
+        return this.box.clone();
     }
 
     @Override

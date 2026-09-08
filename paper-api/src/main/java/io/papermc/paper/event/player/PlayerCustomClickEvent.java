@@ -8,7 +8,6 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.event.ClickCallback;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -17,7 +16,6 @@ import org.jspecify.annotations.Nullable;
  * @see net.kyori.adventure.text.event.ClickEvent#custom(Key, BinaryTagHolder)
  * @see io.papermc.paper.registry.data.dialog.action.DialogAction#customClick(DialogActionCallback, ClickCallback.Options)
  */
-@ApiStatus.NonExtendable
 public interface PlayerCustomClickEvent extends ConnectionEvent {
 
     /**

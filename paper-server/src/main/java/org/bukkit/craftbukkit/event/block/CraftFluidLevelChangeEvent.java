@@ -1,8 +1,12 @@
 package org.bukkit.craftbukkit.event.block;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.FluidLevelChangeEvent;
 
@@ -14,6 +18,10 @@ public class CraftFluidLevelChangeEvent extends CraftBlockEvent implements Fluid
     public CraftFluidLevelChangeEvent(final Block fluid, final BlockData newData) {
         super(fluid);
         this.newData = newData;
+    }
+
+    public CraftFluidLevelChangeEvent(final LevelAccessor level, final BlockPos pos, final BlockState newState) {
+        this(CraftBlock.at(level, pos), newState.asBlockData());
     }
 
     @Override

@@ -29,13 +29,13 @@ public class CraftPlayerJoinEvent extends CraftPlayerEvent implements PlayerJoin
     @Override
     @Deprecated
     public @Nullable String getJoinMessage() {
-        return this.joinMessage == null ? null : LegacyComponentSerializer.legacySection().serialize(this.joinMessage);
+        return LegacyComponentSerializer.legacySection().serializeOrNull(this.joinMessage);
     }
 
     @Override
     @Deprecated
     public void setJoinMessage(final @Nullable String joinMessage) {
-        this.joinMessage = joinMessage != null ? LegacyComponentSerializer.legacySection().deserialize(joinMessage) : null;
+        this.joinMessage = LegacyComponentSerializer.legacySection().deserializeOrNull(joinMessage);
     }
 
     @Override

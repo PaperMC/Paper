@@ -187,6 +187,20 @@ public final class CraftBlockStates {
         return CraftBlockStates.getFactory(null, blockEntityType).blockStateType;
     }
 
+    public static BlockState snapshotOf(BlockEntity blockEntity) {
+        return CraftBlockStates.getBlockState(blockEntity.getLevel().getWorld(), blockEntity.getBlockPos(), blockEntity.getBlockState(), blockEntity);
+    }
+
+    public static BlockState viewOf(BlockEntity blockEntity) {
+        boolean prev = CraftBlockEntityState.DISABLE_SNAPSHOT;
+        CraftBlockEntityState.DISABLE_SNAPSHOT = true;
+        try {
+            return CraftBlockStates.getBlockState(blockEntity.getLevel().getWorld(), blockEntity.getBlockPos(), blockEntity.getBlockState(), blockEntity);
+        } finally {
+            CraftBlockEntityState.DISABLE_SNAPSHOT = prev;
+        }
+    }
+
     public static BlockState getBlockState(Block block) {
         return CraftBlockStates.getBlockState(block, true);
     }
@@ -259,8 +273,16 @@ public final class CraftBlockStates {
     }
 
     // This ignores block entity data.
-    public static CraftBlockState getBlockState(LevelAccessor level, BlockPos pos) {
-        return new CraftBlockState(CraftBlock.at(level, pos));
+    public static CraftBlockState snapshotOfSimpleBlock(Block block) {
+        return new CraftBlockState(block);
+    }
+
+    public static CraftBlockState snapshotOfSimpleBlock(LevelAccessor level, BlockPos pos) {
+        return snapshotOfSimpleBlock(CraftBlock.at(level, pos));
+    }
+
+    public static CraftBlockState snapshotOfSimpleBlock(Block block, net.minecraft.world.level.block.state.BlockState newState) {
+        return new CraftBlockState(block, newState);
     }
 
     @Nullable

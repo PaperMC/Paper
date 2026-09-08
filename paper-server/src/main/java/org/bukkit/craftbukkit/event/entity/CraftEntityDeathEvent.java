@@ -1,9 +1,19 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import io.papermc.paper.util.MCUtil;
 import java.util.List;
+import java.util.function.Function;
+import net.minecraft.Optionull;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
-import org.bukkit.attribute.Attribute;
+import org.bukkit.craftbukkit.CraftSound;
+import org.bukkit.craftbukkit.damage.CraftDamageSource;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
@@ -11,27 +21,77 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
+import static io.papermc.paper.util.BoundChecker.requirePositive;
+
 public class CraftEntityDeathEvent extends CraftEntityEvent implements EntityDeathEvent {
+
+    private static final Function<@Nullable ItemStack, Entity.@Nullable DefaultDrop> FROM_FUNCTION = item -> {
+        if (item == null) return null;
+        return new Entity.DefaultDrop(CraftItemType.bukkitToMinecraft(item.getType()), item, null);
+    };
 
     private final DamageSource damageSource;
     private final List<ItemStack> drops;
-    private int dropExp = 0;
+    private int droppedExp = 0;
 
     private double reviveHealth = 0;
     private boolean shouldPlayDeathSound;
 
-    private Sound deathSound;
-    private SoundCategory deathSoundCategory;
+    private @Nullable Sound deathSound;
+    private @Nullable SoundCategory deathSoundCategory;
     private float deathSoundVolume;
     private float deathSoundPitch;
 
     private boolean cancelled;
 
-    public CraftEntityDeathEvent(final LivingEntity livingEntity, final DamageSource damageSource, final List<ItemStack> drops, final int droppedExp) {
+    public CraftEntityDeathEvent(
+        final LivingEntity livingEntity,
+        final DamageSource damageSource,
+        final List<ItemStack> drops,
+        final int droppedExp,
+        final double reviveHealth,
+        final boolean shouldPlayDeathSound,
+        final @Nullable Sound deathSound,
+        final SoundCategory deathSoundCategory,
+        final float deathSoundVolume,
+        final float deathSoundPitch
+    ) {
         super(livingEntity);
         this.damageSource = damageSource;
         this.drops = drops;
-        this.dropExp = droppedExp;
+        this.droppedExp = droppedExp;
+        this.reviveHealth = reviveHealth;
+        this.shouldPlayDeathSound = shouldPlayDeathSound;
+        this.deathSound = deathSound;
+        this.deathSoundCategory = deathSoundCategory;
+        this.deathSoundVolume = deathSoundVolume;
+        this.deathSoundPitch = deathSoundPitch;
+    }
+
+    public CraftEntityDeathEvent(
+        final net.minecraft.world.entity.LivingEntity livingEntity,
+        final net.minecraft.world.damagesource.DamageSource damageSource,
+        final List<Entity.DefaultDrop> drops,
+        final int droppedExp,
+        final double reviveHealth,
+        final boolean shouldPlayDeathSound,
+        final @Nullable SoundEvent deathSound,
+        final SoundSource deathSoundSource,
+        final float deathSoundVolume,
+        final float deathSoundPitch
+    ) {
+        this(
+            livingEntity.getBukkitEntity(),
+            new CraftDamageSource(damageSource),
+            MCUtil.mutableTransform(drops, Entity.DefaultDrop::stack, FROM_FUNCTION),
+            droppedExp,
+            reviveHealth,
+            shouldPlayDeathSound,
+            Optionull.map(deathSound, CraftSound::minecraftToBukkit),
+            SoundCategory.valueOf(deathSoundSource.name()),
+            deathSoundVolume,
+            deathSoundPitch
+        );
     }
 
     @Override
@@ -46,12 +106,12 @@ public class CraftEntityDeathEvent extends CraftEntityEvent implements EntityDea
 
     @Override
     public int getDroppedExp() {
-        return this.dropExp;
+        return this.droppedExp;
     }
 
     @Override
     public void setDroppedExp(final int exp) {
-        this.dropExp = exp;
+        this.droppedExp = exp;
     }
 
     @Override
@@ -61,16 +121,12 @@ public class CraftEntityDeathEvent extends CraftEntityEvent implements EntityDea
 
     @Override
     public double getReviveHealth() {
-        return this.reviveHealth;
+        return Math.min(this.reviveHealth, ((CraftLivingEntity) this.entity).getHandle().getAttributeValue(Attributes.MAX_HEALTH));
     }
 
     @Override
     public void setReviveHealth(final double reviveHealth) throws IllegalArgumentException {
-        final double maxHealth = ((LivingEntity) this.entity).getAttribute(Attribute.MAX_HEALTH).getValue();
-        if ((maxHealth != 0 && reviveHealth <= 0) || (reviveHealth > maxHealth)) {
-            throw new IllegalArgumentException("Health must be between 0 (exclusive) and " + maxHealth + " (inclusive), but was " + reviveHealth);
-        }
-        this.reviveHealth = reviveHealth;
+        this.reviveHealth = requirePositive(reviveHealth, "reviveHealth");
     }
 
     @Override
@@ -136,5 +192,18 @@ public class CraftEntityDeathEvent extends CraftEntityEvent implements EntityDea
     @Override
     public HandlerList getHandlers() {
         return EntityDeathEvent.getHandlerList();
+    }
+
+    // todo this feels overblown better to just provide a way to cancel the sound and plugins play their own sound
+    public void playDeathSound(final net.minecraft.world.entity.LivingEntity victim, final net.minecraft.world.damagesource.DamageSource damageSource) {
+        if (!this.shouldPlayDeathSound || this.deathSound == null || this.deathSoundCategory == null) {
+            return;
+        }
+
+        final net.minecraft.world.entity.player.Player source = victim instanceof final net.minecraft.world.entity.player.Player player ? player : null;
+        final SoundEvent soundEvent = CraftSound.bukkitToMinecraft(this.deathSound);
+        final SoundSource soundSource = SoundSource.valueOf(this.deathSoundCategory.name());
+        victim.level().playSound(source, victim.getX(), victim.getY(), victim.getZ(), soundEvent, soundSource, this.deathSoundVolume, this.deathSoundPitch);
+        victim.playSecondaryHurtSound(damageSource);
     }
 }

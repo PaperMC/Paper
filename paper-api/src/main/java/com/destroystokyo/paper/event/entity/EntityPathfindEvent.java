@@ -39,7 +39,7 @@ public interface EntityPathfindEvent extends EntityEvent, Cancellable {
      *
      * @return Location of where the entity is trying to pathfind to.
      */
-    Location getLocation();
+    Location getTargetLocation();
 
     /**
      * The Location of where the entity is about to move to.
@@ -47,10 +47,11 @@ public interface EntityPathfindEvent extends EntityEvent, Cancellable {
      * Note that if the target happened to of been an entity
      *
      * @return Location of where the entity is trying to pathfind to.
+     * @deprecated use {@link #getTargetLocation()}
      */
     @Deprecated(forRemoval = true)
     default Location getLoc() {
-        return this.getLocation();
+        return this.getTargetLocation();
     }
 
     static HandlerList getHandlerList() {

@@ -1,13 +1,13 @@
 package io.papermc.paper.event.player;
 
 import com.destroystokyo.paper.ClientOption;
-import com.destroystokyo.paper.ClientOption.ChatVisibility;
-import com.destroystokyo.paper.ClientOption.ParticleVisibility;
+import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.SkinParts;
 import com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent;
-import java.util.Map;
+import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.HumanoidArm;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.MainHand;
 
@@ -15,26 +15,26 @@ public class PaperPlayerClientOptionsChangeEvent extends CraftPlayerEvent implem
 
     private final String locale;
     private final int viewDistance;
-    private final ChatVisibility chatVisibility;
+    private final ClientOption.ChatVisibility chatVisibility;
     private final boolean chatColors;
     private final SkinParts skinparts;
     private final MainHand mainHand;
     private final boolean allowsServerListings;
     private final boolean textFilteringEnabled;
-    private final ParticleVisibility particleVisibility;
+    private final ClientOption.ParticleVisibility particleVisibility;
 
-    public PaperPlayerClientOptionsChangeEvent(final Player player, final Map<ClientOption<?>, ?> options) {
-        super(player);
+    public PaperPlayerClientOptionsChangeEvent(final ServerPlayer player, final ClientInformation information) {
+        super(player.getBukkitEntity());
 
-        this.locale = (String) options.get(ClientOption.LOCALE);
-        this.viewDistance = (int) options.get(ClientOption.VIEW_DISTANCE);
-        this.chatVisibility = (ChatVisibility) options.get(ClientOption.CHAT_VISIBILITY);
-        this.chatColors = (boolean) options.get(ClientOption.CHAT_COLORS_ENABLED);
-        this.skinparts = (SkinParts) options.get(ClientOption.SKIN_PARTS);
-        this.mainHand = (MainHand) options.get(ClientOption.MAIN_HAND);
-        this.allowsServerListings = (boolean) options.get(ClientOption.ALLOW_SERVER_LISTINGS);
-        this.textFilteringEnabled = (boolean) options.get(ClientOption.TEXT_FILTERING_ENABLED);
-        this.particleVisibility = (ParticleVisibility) options.get(ClientOption.PARTICLE_VISIBILITY);
+        this.locale = information.language();
+        this.viewDistance = information.viewDistance();
+        this.chatVisibility = ClientOption.ChatVisibility.valueOf(information.chatVisibility().name());
+        this.chatColors = information.chatColors();
+        this.skinparts = new PaperSkinParts(information.modelCustomisation());
+        this.mainHand = information.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT;
+        this.allowsServerListings = information.allowsListing();
+        this.textFilteringEnabled = information.textFilteringEnabled();
+        this.particleVisibility = ClientOption.ParticleVisibility.valueOf(information.particleStatus().name());
     }
 
     @Override
@@ -58,7 +58,7 @@ public class PaperPlayerClientOptionsChangeEvent extends CraftPlayerEvent implem
     }
 
     @Override
-    public ChatVisibility getChatVisibility() {
+    public ClientOption.ChatVisibility getChatVisibility() {
         return this.chatVisibility;
     }
 
@@ -118,7 +118,7 @@ public class PaperPlayerClientOptionsChangeEvent extends CraftPlayerEvent implem
     }
 
     @Override
-    public ParticleVisibility getParticleVisibility() {
+    public ClientOption.ParticleVisibility getParticleVisibility() {
         return this.particleVisibility;
     }
 

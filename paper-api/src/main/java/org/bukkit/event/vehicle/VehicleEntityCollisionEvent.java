@@ -6,7 +6,7 @@ import org.bukkit.event.entity.EntityEvent;
 /**
  * Raised when a vehicle collides with an entity.
  */
-public interface VehicleEntityCollisionEvent extends VehicleCollisionEvent, EntityEvent, Cancellable { // todo javadocs?
+public interface VehicleEntityCollisionEvent extends VehicleCollisionEvent, EntityEvent, Cancellable {
 
     @Deprecated(forRemoval = true)
     boolean isPickupCancelled();

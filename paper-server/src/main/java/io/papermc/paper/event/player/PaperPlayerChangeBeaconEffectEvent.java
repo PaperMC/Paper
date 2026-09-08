@@ -1,7 +1,12 @@
 package io.papermc.paper.event.player;
 
+import java.util.Optional;
+import net.minecraft.core.Holder;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
+import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.potion.PotionEffectType;
@@ -21,6 +26,20 @@ public class PaperPlayerChangeBeaconEffectEvent extends CraftPlayerEvent impleme
         this.primary = primary;
         this.secondary = secondary;
         this.beacon = beacon;
+    }
+
+    public PaperPlayerChangeBeaconEffectEvent(
+        final net.minecraft.world.entity.player.Player player,
+        final Optional<Holder<MobEffect>> primary,
+        final Optional<Holder<MobEffect>> secondary,
+        final ContainerLevelAccess access
+    ) {
+        this(
+            (Player) player.getBukkitEntity(),
+            primary.map(CraftPotionEffectType::minecraftHolderToBukkit).orElse(null),
+            secondary.map(CraftPotionEffectType::minecraftHolderToBukkit).orElse(null),
+            access.getLocation().getBlock()
+        );
     }
 
     @Override

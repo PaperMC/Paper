@@ -1,5 +1,7 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.world.entity.monster.illager.SpellcasterIllager;
+import org.bukkit.craftbukkit.entity.CraftSpellcaster;
 import org.bukkit.entity.Spellcaster;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntitySpellCastEvent;
@@ -12,6 +14,10 @@ public class CraftEntitySpellCastEvent extends CraftEntityEvent implements Entit
     public CraftEntitySpellCastEvent(final Spellcaster spellcaster, final Spellcaster.Spell spell) {
         super(spellcaster);
         this.spell = spell;
+    }
+
+    public CraftEntitySpellCastEvent(final SpellcasterIllager spellcaster, final SpellcasterIllager.IllagerSpell spell) {
+        this((Spellcaster) spellcaster.getBukkitEntity(), CraftSpellcaster.toBukkitSpell(spell));
     }
 
     @Override

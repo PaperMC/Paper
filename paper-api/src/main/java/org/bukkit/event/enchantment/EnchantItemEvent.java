@@ -58,7 +58,7 @@ public interface EnchantItemEvent extends InventoryEvent, PlayerEvent, BlockEven
      *
      * @return experience level cost
      */
-    int getExpLevelCost();
+    @Positive int getExpLevelCost();
 
     /**
      * Sets the cost (minimum level) which is displayed as a number on the right

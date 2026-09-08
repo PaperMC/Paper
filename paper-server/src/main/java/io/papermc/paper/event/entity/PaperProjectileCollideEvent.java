@@ -18,6 +18,12 @@ public class PaperProjectileCollideEvent extends CraftEntityEvent implements Pro
         this.collidedWith = collidedWith;
     }
 
+    public PaperProjectileCollideEvent(
+        final net.minecraft.world.entity.projectile.Projectile projectile, final net.minecraft.world.entity.Entity collidedWith
+    ) {
+        this((Projectile) projectile.getBukkitEntity(), collidedWith.getBukkitEntity());
+    }
+
     @Override
     public Projectile getEntity() {
         return (Projectile) this.entity;

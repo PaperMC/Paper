@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.util.StackWalkerUtil;
+import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -35,19 +36,19 @@ public class HorriblePlayerLoginEventHack {
             return false;
         }
         LOGGER.warn("""
-                
+
                 ============================================================
                 WARNING: {} Attempted to use PlayerGameConnection#reenterConfiguration()
-                
+
                 This method currently requires that all plugins installed on the server
                 are not listening to the PlayerLoginEvent.
-                
+
                 Please look in your logs for the Plugins listening to this event.
                 ============================================================""", StackWalkerUtil.getFirstPluginCaller().getName());
         return true;
     }
 
-    public static @Nullable Component execute(final Connection connection, MinecraftServer server, GameProfile profile, PlayerList.LoginResult result) {
+    public static @Nullable Component execute(final Connection connection, GameProfile profile, PlayerList.LoginResult result) {
         if (PlayerLoginEvent.getHandlerList().getRegisteredListeners().length == 0) {
             return result.message();
         }
@@ -61,14 +62,14 @@ public class HorriblePlayerLoginEventHack {
                 LOGGER.info("You have plugins listening to the PlayerLoginEvent, this will cause re-configuration APIs to be unavailable: {}", plugins);
             } else {
                 LOGGER.warn("""
-                    
+
                     ============================================================
                     WARNING: Legacy PlayerLoginEvent usage detected!
-                    
+
                     This event forces an alternative player loading path that is
                     deprecated and will be removed in a future release.
                     For more information, see: https://go.papermc.io/announcement/1.21.7
-                    
+
                     Please notify the following plugin developers: {}
                     ============================================================""", plugins);
             }
@@ -80,14 +81,13 @@ public class HorriblePlayerLoginEventHack {
         if (connection.savedPlayerForLegacyEvents != null) {
             player = connection.savedPlayerForLegacyEvents;
         } else {
-            ServerPlayer serverPlayer = new ServerPlayer(server, server.overworld(), profile, ClientInformation.createDefault());
-            connection.savedPlayerForLegacyEvents = serverPlayer;
-            player = serverPlayer;
+            MinecraftServer server = MinecraftServer.getServer();
+            player = new ServerPlayer(server, server.overworld(), profile, ClientInformation.createDefault());
+            connection.savedPlayerForLegacyEvents = player;
         }
         connection.handledLegacyLoginEvent = true;
 
-        CraftPlayer horribleBukkitPlayer = player.getBukkitEntity();
-        PlayerLoginEvent event = new CraftPlayerLoginEvent(horribleBukkitPlayer, connection.hostname, ((java.net.InetSocketAddress) connection.getRemoteAddress()).getAddress(), ((java.net.InetSocketAddress) connection.channel.remoteAddress()).getAddress());
+        PlayerLoginEvent event = new CraftPlayerLoginEvent(player, connection.hostname, ((InetSocketAddress) connection.getRemoteAddress()).getAddress(), ((java.net.InetSocketAddress) connection.channel.remoteAddress()).getAddress());
         event.disallow(result.result(), PaperAdventure.asAdventure(result.message()));
         event.callEvent();
 

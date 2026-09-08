@@ -30,7 +30,15 @@ public abstract class CraftPlayerBucketEvent extends CraftPlayerEvent implements
 
     private boolean cancelled;
 
-    protected CraftPlayerBucketEvent(final Player player, final Block block, final Block blockClicked, final BlockFace blockFace, final Material bucket, final ItemStack itemInHand, final EquipmentSlot hand) {
+    protected CraftPlayerBucketEvent(
+        final Player player,
+        final Block block,
+        final Block blockClicked,
+        final BlockFace blockFace,
+        final Material bucket,
+        final ItemStack itemInHand,
+        final EquipmentSlot hand
+    ) {
         super(player);
         this.block = block;
         this.blockClicked = blockClicked;
@@ -50,11 +58,17 @@ public abstract class CraftPlayerBucketEvent extends CraftPlayerEvent implements
     }
 
     public static <EVENT extends PlayerBucketEvent> EVENT create(
-        final Factory<? extends EVENT> factory, final Level level, final net.minecraft.world.entity.player.Player player, final BlockPos changedPos,
-        final BlockPos clickedPos, final Direction clickedFace, final net.minecraft.world.item.ItemStack bucket, final net.minecraft.world.item.Item itemInHand,
+        final Factory<? extends EVENT> factory,
+        final Level level,
+        final net.minecraft.world.entity.player.Player player,
+        final BlockPos changedPos,
+        final BlockPos clickedPos,
+        final Direction clickedFace,
+        final net.minecraft.world.item.ItemStack bucket,
+        final net.minecraft.world.item.Item itemInHand,
         final InteractionHand hand
     ) {
-        return factory.create(
+        final EVENT event = factory.create(
             (Player) player.getBukkitEntity(),
             CraftBlock.at(level, changedPos),
             CraftBlock.at(level, clickedPos),
@@ -63,6 +77,8 @@ public abstract class CraftPlayerBucketEvent extends CraftPlayerEvent implements
             CraftItemStack.asNewCraftStack(itemInHand),
             CraftEquipmentSlot.getHand(hand)
         );
+        event.setCancelled(!level.mayInteract(player, changedPos));
+        return event;
     }
 
     @Override

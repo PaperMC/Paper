@@ -1,5 +1,10 @@
 package org.bukkit.craftbukkit.event.entity;
 
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import org.bukkit.craftbukkit.entity.CraftVillager;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Villager.Profession;
 import org.bukkit.event.HandlerList;
@@ -16,6 +21,14 @@ public class CraftVillagerCareerChangeEvent extends CraftEntityEvent implements 
         super(villager);
         this.profession = profession;
         this.reason = reason;
+    }
+
+    public CraftVillagerCareerChangeEvent(final net.minecraft.world.entity.npc.villager.Villager villager, final Holder<VillagerProfession> profession, final ChangeReason reason) {
+        this((Villager) villager.getBukkitEntity(), CraftVillager.CraftProfession.minecraftHolderToBukkit(profession), reason);
+    }
+
+    public CraftVillagerCareerChangeEvent(final net.minecraft.world.entity.npc.villager.Villager villager, final ResourceKey<VillagerProfession> profession, final ChangeReason reason) {
+        this(villager, BuiltInRegistries.VILLAGER_PROFESSION.getOrThrow(profession), reason);
     }
 
     @Override

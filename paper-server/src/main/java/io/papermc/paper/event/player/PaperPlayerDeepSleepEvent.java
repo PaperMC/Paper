@@ -1,7 +1,8 @@
 package io.papermc.paper.event.player;
 
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 
 public class PaperPlayerDeepSleepEvent extends CraftPlayerEvent implements PlayerDeepSleepEvent {
@@ -9,7 +10,7 @@ public class PaperPlayerDeepSleepEvent extends CraftPlayerEvent implements Playe
     private boolean cancelled;
 
     public PaperPlayerDeepSleepEvent(final Player player) {
-        super(player);
+        super((ServerPlayer) player);
     }
 
     @Override

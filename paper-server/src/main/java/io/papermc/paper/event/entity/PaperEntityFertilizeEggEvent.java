@@ -1,6 +1,9 @@
 package io.papermc.paper.event.entity;
 
+import net.minecraft.Optionull;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -16,12 +19,30 @@ public class PaperEntityFertilizeEggEvent extends CraftEntityEvent implements En
 
     private boolean cancelled;
 
-    public PaperEntityFertilizeEggEvent(final LivingEntity mother, final LivingEntity father, final @Nullable Player breeder, final @Nullable ItemStack bredWith, final int experience) {
+    public PaperEntityFertilizeEggEvent(
+        final LivingEntity mother, final LivingEntity father, final @Nullable Player breeder, final @Nullable ItemStack bredWith, final int experience
+    ) {
         super(mother);
         this.father = father;
         this.breeder = breeder;
         this.bredWith = bredWith;
         this.experience = experience;
+    }
+
+    public PaperEntityFertilizeEggEvent(
+        final net.minecraft.world.entity.LivingEntity mother,
+        final net.minecraft.world.entity.LivingEntity father,
+        final @Nullable ServerPlayer breeder,
+        final net.minecraft.world.item.@Nullable ItemStack bredWith,
+        final int experience
+    ) {
+        this(
+            mother.getBukkitEntity(),
+            father.getBukkitEntity(),
+            Optionull.map(breeder, ServerPlayer::getBukkitEntity),
+            Optionull.map(bredWith, CraftItemStack::asBukkitCopy),
+            experience
+        );
     }
 
     @Override

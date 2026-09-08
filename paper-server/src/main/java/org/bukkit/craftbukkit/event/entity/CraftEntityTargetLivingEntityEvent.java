@@ -7,7 +7,9 @@ import org.jspecify.annotations.Nullable;
 
 public class CraftEntityTargetLivingEntityEvent extends CraftEntityTargetEvent implements EntityTargetLivingEntityEvent {
 
-    public CraftEntityTargetLivingEntityEvent(final Entity entity, final @Nullable LivingEntity target, final TargetReason reason) {
+    public CraftEntityTargetLivingEntityEvent(
+        final net.minecraft.world.entity.Entity entity, final net.minecraft.world.entity.@Nullable LivingEntity target, final TargetReason reason
+    ) {
         super(entity, target, reason);
     }
 

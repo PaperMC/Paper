@@ -1,20 +1,27 @@
 package org.bukkit.event.weather;
 
 import org.bukkit.entity.LightningStrike;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.entity.EntitySpawnEvent;
 
 /**
  * Stores data for lightning striking
  */
-public interface LightningStrikeEvent extends WeatherEvent, Cancellable {
+public interface LightningStrikeEvent extends EntitySpawnEvent, WeatherEvent {
 
     /**
      * Gets the bolt which is striking the earth.
      *
      * @return lightning entity
+     * @deprecated use {@link #getEntity()}
      */
-    LightningStrike getLightning();
+    @Deprecated(forRemoval = true)
+    default LightningStrike getLightning() {
+        return this.getEntity();
+    }
+
+    @Override
+    LightningStrike getEntity();
 
     /**
      * Gets the cause of this lightning strike.

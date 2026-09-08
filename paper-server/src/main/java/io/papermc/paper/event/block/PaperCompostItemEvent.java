@@ -1,7 +1,11 @@
 package io.papermc.paper.event.block;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.LevelAccessor;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.event.block.CraftBlockEvent;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 
@@ -14,6 +18,10 @@ public class PaperCompostItemEvent extends CraftBlockEvent implements CompostIte
         super(composter);
         this.item = item;
         this.willRaiseLevel = willRaiseLevel;
+    }
+
+    public PaperCompostItemEvent(final LevelAccessor level, final BlockPos pos, final net.minecraft.world.item.ItemStack item, final boolean willRaiseLevel) {
+        this(CraftBlock.at(level, pos), CraftItemStack.asCraftMirror(item), willRaiseLevel);
     }
 
     @Override

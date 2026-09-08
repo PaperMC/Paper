@@ -33,6 +33,7 @@ import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
 import org.bukkit.craftbukkit.event.hanging.CraftHangingEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftInventoryEvent;
 import org.bukkit.craftbukkit.event.inventory.CraftInventoryInteractEvent;
+import org.bukkit.craftbukkit.event.player.CraftPlayerChannelEvent;
 import org.bukkit.craftbukkit.event.player.CraftPlayerEvent;
 import org.bukkit.craftbukkit.event.raid.CraftRaidEvent;
 import org.bukkit.craftbukkit.event.server.CraftPluginEvent;
@@ -101,6 +102,7 @@ public final class ClassToInterfaceRules {
             //<editor-fold desc="event classes" defaultstate="collapsed">
             map.put(Event.class, CraftEvent.class);
             map.put(AbstractRespawnEvent.class, PaperAbstractRespawnEvent.class);
+            map.put(PlayerChannelEvent.class, CraftPlayerChannelEvent.class);
             map.put(PlayerEvent.class, CraftPlayerEvent.class);
             map.put(BlockPistonEvent.class, CraftBlockPistonEvent.class);
             map.put(BlockEvent.class, CraftBlockEvent.class);
@@ -162,7 +164,6 @@ public final class ClassToInterfaceRules {
             ChatEvent.class,
             PlayerCommandPreprocessEvent.class,
             PlayerSignCommandPreprocessEvent.class,
-            AbstractRespawnEvent.class,
             PlayerRespawnEvent.class,
             PlayerPostRespawnEvent.class,
             PlayerAnimationEvent.class,

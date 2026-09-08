@@ -1,6 +1,10 @@
 package org.bukkit.craftbukkit.event.player;
 
+import io.papermc.paper.adventure.PaperAdventure;
+import java.util.Optional;
 import net.kyori.adventure.text.Component;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -16,6 +20,10 @@ public class CraftPlayerAdvancementDoneEvent extends CraftPlayerEvent implements
         super(player);
         this.advancement = advancement;
         this.message = message;
+    }
+
+    public CraftPlayerAdvancementDoneEvent(final ServerPlayer player, final AdvancementHolder holder, final Optional<net.minecraft.network.chat.Component> message) {
+        this(player.getBukkitEntity(), holder.toBukkit(), message.map(PaperAdventure::asAdventure).orElse(null));
     }
 
     @Override

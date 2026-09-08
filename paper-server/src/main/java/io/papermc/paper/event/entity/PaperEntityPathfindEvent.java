@@ -1,8 +1,11 @@
 package io.papermc.paper.event.entity;
 
 import com.destroystokyo.paper.event.entity.EntityPathfindEvent;
+import net.minecraft.Optionull;
+import net.minecraft.core.BlockPos;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.event.entity.CraftEntityEvent;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.jspecify.annotations.Nullable;
@@ -10,14 +13,24 @@ import org.jspecify.annotations.Nullable;
 public class PaperEntityPathfindEvent extends CraftEntityEvent implements EntityPathfindEvent {
 
     private final @Nullable Entity targetEntity;
-    private final Location location;
+    private final Location targetLocation;
 
     private boolean cancelled;
 
-    public PaperEntityPathfindEvent(final Entity entity, final Location location, final @Nullable Entity targetEntity) {
+    public PaperEntityPathfindEvent(final Entity entity, final Location targetLocation, final @Nullable Entity targetEntity) {
         super(entity);
         this.targetEntity = targetEntity;
-        this.location = location;
+        this.targetLocation = targetLocation;
+    }
+
+    public PaperEntityPathfindEvent(
+        final net.minecraft.world.entity.Entity entity, final BlockPos target, final net.minecraft.world.entity.@Nullable Entity targetEntity
+    ) {
+        this(
+            entity.getBukkitEntity(),
+            CraftLocation.toBukkit(target, entity.level()),
+            Optionull.map(targetEntity, net.minecraft.world.entity.Entity::getBukkitEntity)
+        );
     }
 
     @Override
@@ -26,8 +39,8 @@ public class PaperEntityPathfindEvent extends CraftEntityEvent implements Entity
     }
 
     @Override
-    public Location getLocation() {
-        return this.location.clone();
+    public Location getTargetLocation() {
+        return this.targetLocation.clone();
     }
 
     @Override

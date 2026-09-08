@@ -1,12 +1,18 @@
 package org.bukkit.event.vehicle;
 
-import org.bukkit.event.Cancellable;
+import org.bukkit.entity.Vehicle;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.entity.EntitySpawnEvent;
 
 /**
  * Raised when a vehicle is created.
  */
-public interface VehicleCreateEvent extends VehicleEvent, Cancellable {
+public interface VehicleCreateEvent extends EntitySpawnEvent, VehicleEvent {
+
+    @Override
+    default Vehicle getEntity() {
+        return this.getVehicle();
+    }
 
     static HandlerList getHandlerList() {
         final class Holder {

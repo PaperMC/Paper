@@ -1,24 +1,28 @@
 package org.bukkit.craftbukkit.event.player;
 
-import org.bukkit.entity.Entity;
+import net.minecraft.server.level.ServerPlayer;
+import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerExpChangeEvent;
-import org.jspecify.annotations.Nullable;
 
 public class CraftPlayerExpChangeEvent extends CraftPlayerEvent implements PlayerExpChangeEvent {
 
-    private final @Nullable Entity source;
+    private final ExperienceOrb source;
     private int amount;
 
-    public CraftPlayerExpChangeEvent(final Player player, final @Nullable Entity source, final int amount) {
+    public CraftPlayerExpChangeEvent(final Player player, final ExperienceOrb source, final int amount) {
         super(player);
         this.source = source;
         this.amount = amount;
     }
 
+    public CraftPlayerExpChangeEvent(final ServerPlayer player, final net.minecraft.world.entity.ExperienceOrb source, final int amount) {
+        this(player.getBukkitEntity(), (ExperienceOrb) source.getBukkitEntity(), amount);
+    }
+
     @Override
-    public @Nullable Entity getSource() {
+    public ExperienceOrb getSource() {
         return this.source;
     }
 

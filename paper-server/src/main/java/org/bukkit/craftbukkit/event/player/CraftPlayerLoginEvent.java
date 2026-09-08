@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.event.player;
 import java.net.InetAddress;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerLoginEvent;
@@ -20,6 +21,10 @@ public class CraftPlayerLoginEvent extends CraftPlayerEvent implements PlayerLog
         this.hostname = hostname;
         this.address = address;
         this.realAddress = realAddress;
+    }
+
+    public CraftPlayerLoginEvent(final ServerPlayer player, final String hostname, final InetAddress address, final InetAddress realAddress) {
+        this(player.getBukkitEntity(), hostname, address, realAddress);
     }
 
     @Override

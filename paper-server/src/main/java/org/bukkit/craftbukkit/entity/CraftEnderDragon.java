@@ -46,11 +46,11 @@ public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnem
         this.getHandle().getPhaseManager().setPhase(CraftEnderDragon.getMinecraftPhase(phase));
     }
 
-    public static Phase getBukkitPhase(EnderDragonPhase phase) {
+    public static Phase getBukkitPhase(EnderDragonPhase<?> phase) {
         return Phase.values()[phase.getId()];
     }
 
-    public static EnderDragonPhase getMinecraftPhase(Phase phase) {
+    public static EnderDragonPhase<?> getMinecraftPhase(Phase phase) {
         return EnderDragonPhase.getById(phase.ordinal());
     }
 

@@ -2,18 +2,18 @@ package io.papermc.paper.event.network.connection;
 
 import com.destroystokyo.paper.event.player.PlayerConnectionCloseEvent;
 import io.papermc.paper.connection.PlayerCommonConnection;
-import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.connection.PlayerLoginConnection;
 import java.net.InetAddress;
 import java.util.UUID;
+import net.minecraft.network.protocol.game.ServerPacketListener;
 import org.bukkit.event.HandlerList;
 
 public class PaperPlayerConnectionCloseEvent extends PaperConnectionEvent implements PlayerConnectionCloseEvent {
 
     private final InetAddress ipAddress;
 
-    public PaperPlayerConnectionCloseEvent(final PlayerConnection connection, final InetAddress ipAddress, final boolean async) {
-        super(connection, async);
+    public PaperPlayerConnectionCloseEvent(final ServerPacketListener packetListener, final InetAddress ipAddress, final boolean async) {
+        super(packetListener.paperConnection(), async);
         this.ipAddress = ipAddress;
     }
 

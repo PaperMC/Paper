@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.event.world;
 
 import java.util.List;
+import net.minecraft.Optionull;
+import net.minecraft.world.level.LevelAccessor;
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
@@ -11,17 +13,20 @@ import org.jspecify.annotations.Nullable;
 public class CraftPortalCreateEvent extends CraftWorldEvent implements PortalCreateEvent {
 
     private final List<BlockState> blocks;
-    private final Entity entity;
+    private final @Nullable Entity entity;
     private final CreateReason reason;
 
     private boolean cancelled;
 
     public CraftPortalCreateEvent(final List<BlockState> blocks, final World world, final @Nullable Entity entity, final CreateReason reason) {
         super(world);
-
         this.blocks = blocks;
         this.entity = entity;
         this.reason = reason;
+    }
+
+    public CraftPortalCreateEvent(final List<BlockState> blocks, final LevelAccessor level, final net.minecraft.world.entity.@Nullable Entity entity, final CreateReason reason) {
+        this(blocks, level.getMinecraftWorld().getWorld(), Optionull.map(entity, net.minecraft.world.entity.Entity::getBukkitEntity), reason);
     }
 
     @Override

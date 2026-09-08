@@ -12,6 +12,14 @@ public class CraftEntityCombustByEntityEvent extends CraftEntityCombustEvent imp
         this.combuster = combuster;
     }
 
+    public CraftEntityCombustByEntityEvent(
+        final net.minecraft.world.entity.Entity combuster,
+        final net.minecraft.world.entity.Entity combustee,
+        final float duration
+    ) {
+        this(combuster.getBukkitEntity(), combustee.getBukkitEntity(), duration);
+    }
+
     @Override
     public Entity getCombuster() {
         return this.combuster;

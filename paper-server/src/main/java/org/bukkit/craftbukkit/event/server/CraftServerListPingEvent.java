@@ -9,7 +9,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.server.ServerListPingEvent;
 import org.bukkit.util.CachedServerIcon;
-import org.jetbrains.annotations.Contract;
 
 public class CraftServerListPingEvent extends CraftServerEvent implements ServerListPingEvent {
 
@@ -96,13 +95,6 @@ public class CraftServerListPingEvent extends CraftServerEvent implements Server
     @Override
     public void setMaxPlayers(final int maxPlayers) {
         this.maxPlayers = maxPlayers;
-    }
-
-    @Override
-    @Contract("-> false")
-    @Deprecated(since = "1.19.3", forRemoval = true)
-    public boolean shouldSendChatPreviews() {
-        return false;
     }
 
     @Override

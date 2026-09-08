@@ -9,20 +9,20 @@ import org.jspecify.annotations.Nullable;
 
 public class CraftBellRingEvent extends CraftBlockEvent implements BellRingEvent {
 
-    private final BlockFace direction;
+    private final BlockFace face;
     private final @Nullable Entity entity;
 
     private boolean cancelled;
 
-    public CraftBellRingEvent(final Block block, final BlockFace direction, final @Nullable Entity entity) {
+    public CraftBellRingEvent(final Block block, final BlockFace face, final @Nullable Entity entity) {
         super(block);
-        this.direction = direction;
+        this.face = face;
         this.entity = entity;
     }
 
     @Override
     public BlockFace getDirection() {
-        return this.direction;
+        return this.face;
     }
 
     @Override

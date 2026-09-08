@@ -6,7 +6,7 @@ import org.bukkit.event.hanging.HangingEvent;
 
 public abstract class CraftHangingEvent extends CraftEvent implements HangingEvent {
 
-    protected Hanging hanging;
+    protected final Hanging hanging;
 
     protected CraftHangingEvent(final Hanging hanging) {
         this.hanging = hanging;

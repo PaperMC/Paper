@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.event.block;
 
-import com.google.common.base.Preconditions;
+import net.minecraft.Optionull;
 import net.minecraft.world.level.block.LayeredCauldronBlock;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -10,7 +10,10 @@ import org.bukkit.block.data.Levelled;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.CauldronLevelChangeEvent;
+import org.checkerframework.common.value.qual.IntRange;
 import org.jspecify.annotations.Nullable;
+
+import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public class CraftCauldronLevelChangeEvent extends CraftBlockEvent implements CauldronLevelChangeEvent {
 
@@ -25,6 +28,10 @@ public class CraftCauldronLevelChangeEvent extends CraftBlockEvent implements Ca
         this.entity = entity;
         this.reason = reason;
         this.newState = newBlock;
+    }
+
+    public CraftCauldronLevelChangeEvent(final Block block, final net.minecraft.world.entity.@Nullable Entity entity, final ChangeReason reason, final BlockState newBlock) {
+        this(block, Optionull.map(entity, net.minecraft.world.entity.Entity::getBukkitEntity), reason, newBlock);
     }
 
     @Override
@@ -43,27 +50,23 @@ public class CraftCauldronLevelChangeEvent extends CraftBlockEvent implements Ca
     }
 
     @Override
-    public int getOldLevel() {
-        BlockData oldBlock = this.getBlock().getBlockData();
-        return (oldBlock instanceof Levelled levelled) ? levelled.getLevel() : ((oldBlock.getMaterial() == Material.CAULDRON) ? 0 : LayeredCauldronBlock.MAX_FILL_LEVEL);
+    public @IntRange(from = 0, to = LayeredCauldronBlock.MAX_FILL_LEVEL) int getOldLevel() {
+        final BlockData oldBlock = this.getBlock().getBlockData();
+        return (oldBlock instanceof final Levelled levelled) ? levelled.getLevel() : ((oldBlock.getMaterial() == Material.CAULDRON) ? 0 : LayeredCauldronBlock.MAX_FILL_LEVEL);
     }
 
     @Override
-    public int getNewLevel() {
-        BlockData newBlock = this.newState.getBlockData();
-        return (newBlock instanceof Levelled levelled) ? levelled.getLevel() : ((newBlock.getMaterial() == Material.CAULDRON) ? 0 : LayeredCauldronBlock.MAX_FILL_LEVEL);
+    public @IntRange(from = 0, to = LayeredCauldronBlock.MAX_FILL_LEVEL) int getNewLevel() {
+        final BlockData newBlock = this.newState.getBlockData();
+        return (newBlock instanceof final Levelled levelled) ? levelled.getLevel() : ((newBlock.getMaterial() == Material.CAULDRON) ? 0 : LayeredCauldronBlock.MAX_FILL_LEVEL);
     }
 
     @Override
-    public void setNewLevel(final int newLevel) {
-        Preconditions.checkArgument(
-            0 <= newLevel && newLevel <= LayeredCauldronBlock.MAX_FILL_LEVEL,
-            "Cauldron level out of bounds 0 <= %s <= %s",
-            newLevel, LayeredCauldronBlock.MAX_FILL_LEVEL
-        );
+    public void setNewLevel(final @IntRange(from = 0, to = LayeredCauldronBlock.MAX_FILL_LEVEL) int newLevel) {
+        requireRange(newLevel, "newLevel", 0, LayeredCauldronBlock.MAX_FILL_LEVEL);
         if (newLevel == 0) {
             this.newState.setType(Material.CAULDRON);
-        } else if (this.newState.getBlockData() instanceof Levelled levelled) {
+        } else if (this.newState.getBlockData() instanceof final Levelled levelled) {
             levelled.setLevel(newLevel);
         } else {
             // Error, non-levellable block

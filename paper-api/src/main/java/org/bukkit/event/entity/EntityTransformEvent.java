@@ -4,6 +4,7 @@ import java.util.List;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Called when an entity is about to be replaced by another entity.
@@ -15,7 +16,7 @@ public interface EntityTransformEvent extends EntityEvent, Cancellable {
      *
      * @return The transformed entities.
      */
-    List<Entity> getTransformedEntities();
+    @Unmodifiable List<Entity> getTransformedEntities();
 
     /**
      * Gets the entity that the original entity was transformed to.

@@ -12,11 +12,6 @@ public class CraftCraftItemEvent extends CraftInventoryClickEvent implements Cra
 
     private final Recipe recipe;
 
-    public CraftCraftItemEvent(final Recipe recipe, final InventoryView view, final InventoryType.SlotType type, final int slot, final ClickType click, final InventoryAction action) {
-        super(view, type, slot, click, action);
-        this.recipe = recipe;
-    }
-
     public CraftCraftItemEvent(final Recipe recipe, final InventoryView view, final InventoryType.SlotType type, final int slot, final ClickType click, final InventoryAction action, final int key) {
         super(view, type, slot, click, action, key);
         this.recipe = recipe;

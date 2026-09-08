@@ -1,29 +1,52 @@
 package org.bukkit.craftbukkit.event.world;
 
-import com.google.common.base.Preconditions;
+import net.minecraft.Optionull;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.world.level.Level;
+import org.bukkit.Bukkit;
 import org.bukkit.GameEvent;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.CraftGameEvent;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.world.GenericGameEvent;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jspecify.annotations.Nullable;
 
+import static io.papermc.paper.util.BoundChecker.requireNonNegative;
+
 public class CraftGenericGameEvent extends CraftWorldEvent implements GenericGameEvent {
 
     private final GameEvent event;
     private final Location location;
-    private final Entity entity;
+    private final @Nullable Entity entity;
     private int radius;
 
     private boolean cancelled;
 
-    public CraftGenericGameEvent(final GameEvent event, final Location location, final @Nullable Entity entity, final int radius, final boolean isAsync) {
-        super(location.getWorld(), isAsync);
+    public CraftGenericGameEvent(final GameEvent event, final Location location, final @Nullable Entity entity, final int radius) {
+        super(location.getWorld(), !Bukkit.isPrimaryThread());
         this.event = event;
         this.location = location;
         this.entity = entity;
         this.radius = radius;
+    }
+
+    public CraftGenericGameEvent(
+        final Holder<net.minecraft.world.level.gameevent.GameEvent> gameEvent,
+        final Level level,
+        final BlockPos pos,
+        final net.minecraft.world.entity.@Nullable Entity entity,
+        final int radius
+    ) {
+        this(
+            CraftGameEvent.minecraftHolderToBukkit(gameEvent),
+            CraftLocation.toBukkit(pos, level),
+            Optionull.map(entity, net.minecraft.world.entity.Entity::getBukkitEntity),
+            radius
+        );
     }
 
     @Override
@@ -48,8 +71,7 @@ public class CraftGenericGameEvent extends CraftWorldEvent implements GenericGam
 
     @Override
     public void setRadius(final @NonNegative int radius) {
-        Preconditions.checkArgument(radius >= 0, "Radius must be >= 0");
-        this.radius = radius;
+        this.radius = requireNonNegative(radius, "radius");
     }
 
     @Override

@@ -6,17 +6,21 @@ import org.bukkit.event.entity.EntityToggleSwimEvent;
 
 public class CraftEntityToggleSwimEvent extends CraftEntityEvent implements EntityToggleSwimEvent {
 
-    private final boolean isSwimming;
+    private final boolean swimming;
     private boolean cancelled;
 
-    public CraftEntityToggleSwimEvent(final LivingEntity livingEntity, final boolean isSwimming) {
+    public CraftEntityToggleSwimEvent(final LivingEntity livingEntity, final boolean swimming) {
         super(livingEntity);
-        this.isSwimming = isSwimming;
+        this.swimming = swimming;
+    }
+
+    public CraftEntityToggleSwimEvent(final net.minecraft.world.entity.LivingEntity livingEntity, final boolean swimming) {
+        this(livingEntity.getBukkitEntity(), swimming);
     }
 
     @Override
     public boolean isSwimming() {
-        return this.isSwimming;
+        return this.swimming;
     }
 
     @Override
