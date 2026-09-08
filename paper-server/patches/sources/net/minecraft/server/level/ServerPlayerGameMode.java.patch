@@ -91,11 +91,11 @@
          final BlockPos pos, final ServerboundPlayerActionPacket.Action action, final Direction direction, final int maxY, final int sequence
      ) {
          if (!this.player.isWithinBlockInteractionRange(pos, 1.0)) {
-+            if (true) return; // Paper - Don't allow digging into unloaded chunks; Don't notify if unreasonably far away
-             this.debugLogging(pos, false, sequence, "too far");
-         } else if (pos.getY() > maxY) {
-             this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
-@@ -178,16 +_,35 @@
++            if (true) return; // Paper - Don't allow digging into unloaded chunks; Don't notify if unreasonably far away // TODO - snapshot - revisit now that there is logic involved here
+             if (this.isDestroyingBlock && action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
+                 this.abortDestroyBlock(pos, sequence);
+             }
+@@ -182,16 +_,35 @@
                  }
  
                  if (!this.level.mayInteract(this.player, pos)) {
@@ -133,7 +133,7 @@
                  if (this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) {
                      this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
                      this.debugLogging(pos, false, sequence, "block action restricted");
-@@ -197,7 +_,7 @@
+@@ -201,7 +_,7 @@
                  this.destroyProgressStart = this.gameTicks;
                  float progress = 1.0F;
                  BlockState blockState = this.level.getBlockState(pos);
@@ -142,7 +142,7 @@
                      EnchantmentHelper.onHitBlock(
                          this.level,
                          this.player.getMainHandItem(),
-@@ -212,6 +_,23 @@
+@@ -216,6 +_,23 @@
                      progress = blockState.getDestroyProgress(this.player, this.player.level(), pos);
                  }
  
@@ -166,32 +166,32 @@
                  if (!blockState.isAir() && progress >= 1.0F) {
                      this.destroyAndAck(pos, sequence, "insta mine");
                  } else {
-@@ -255,14 +_,22 @@
-                 this.debugLogging(pos, true, sequence, "stopped destroying");
-             } else if (action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
-                 this.isDestroyingBlock = false;
--                if (!Objects.equals(this.destroyPos, pos)) {
--                    LOGGER.warn("Mismatch in destroy block pos: {} {}", this.destroyPos, pos);
-+                // Paper start - Don't allow digging into unloaded chunks
-+                if (!Objects.equals(this.destroyPos, pos) && !BlockPos.ZERO.equals(this.destroyPos)) { // Paper
-+                    ServerPlayerGameMode.LOGGER.debug("Mismatch in destroy block pos: {} {}", this.destroyPos, pos); // CraftBukkit - SPIGOT-5457 sent by client when interact event cancelled
-+                    BlockState destroyState = this.level.getBlockStateIfLoaded(this.destroyPos); // Don't load unloaded chunks for stale records here
-+                    if (destroyState != null) {
-                     this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
-                     this.debugLogging(pos, true, sequence, "aborted mismatched destroying");
-+                    }
-+                    this.destroyPos = BlockPos.ZERO;
-+                    // Paper end - Don't allow digging into unloaded chunks
-                 }
+@@ -265,14 +_,22 @@
  
-                 this.level.destroyBlockProgress(this.player.getId(), pos, -1);
-                 this.debugLogging(pos, true, sequence, "aborted destroying");
-+
-+                org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDamageAbortEvent(this.player, pos, this.player.getInventory().getSelectedItem()); // CraftBukkit
-             }
+     private void abortDestroyBlock(final BlockPos pos, final int sequence) {
+         this.isDestroyingBlock = false;
+-        if (!Objects.equals(this.destroyPos, pos)) {
+-            LOGGER.warn("Mismatch in destroy block pos: {} {}", this.destroyPos, pos);
++        // Paper start - Don't allow digging into unloaded chunks
++        if (!Objects.equals(this.destroyPos, pos) && !BlockPos.ZERO.equals(this.destroyPos)) { // Paper
++            ServerPlayerGameMode.LOGGER.debug("Mismatch in destroy block pos: {} {}", this.destroyPos, pos); // CraftBukkit - SPIGOT-5457 sent by client when interact event cancelled
++            BlockState destroyState = this.level.getBlockStateIfLoaded(this.destroyPos); // Don't load unloaded chunks for stale records here
++            if (destroyState != null) {
+             this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
+             this.debugLogging(pos, true, sequence, "aborted mismatched destroying");
++            }
++            this.destroyPos = BlockPos.ZERO;
++            // Paper end - Don't allow digging into unloaded chunks
          }
+ 
+         this.level.destroyBlockProgress(this.player.getId(), pos, -1);
+         this.debugLogging(pos, true, sequence, "aborted destroying");
++
++        org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDamageAbortEvent(this.player, pos, this.player.getInventory().getSelectedItem()); // CraftBukkit
      }
-@@ -278,13 +_,53 @@
+ 
+     public void destroyAndAck(final BlockPos pos, final int sequence, final String exitId) {
+@@ -286,13 +_,53 @@
  
      public boolean destroyBlock(final BlockPos pos) {
          BlockState state = this.level.getBlockState(pos);
@@ -248,7 +248,7 @@
              this.level.sendBlockUpdated(pos, state, state, Block.UPDATE_ALL);
              return false;
          }
-@@ -293,6 +_,10 @@
+@@ -301,6 +_,10 @@
              return false;
          }
  
@@ -259,7 +259,7 @@
          BlockState adjustedState = block.playerWillDestroy(this.level, pos, state, this.player);
          boolean changed = this.level.removeBlock(pos, false);
          if (SharedConstants.DEBUG_BLOCK_BREAK) {
-@@ -303,17 +_,38 @@
+@@ -311,17 +_,38 @@
              block.destroy(this.level, pos, adjustedState);
          }
  
@@ -305,7 +305,7 @@
  
          return true;
      }
-@@ -329,6 +_,7 @@
+@@ -337,6 +_,7 @@
  
          int oldCount = itemStack.getCount();
          int oldDamage = itemStack.getDamageValue();
@@ -313,7 +313,7 @@
          InteractionResult result = itemStack.use(level, player, hand);
          ItemStack resultStack;
          if (result instanceof InteractionResult.Success success) {
-@@ -357,25 +_,70 @@
+@@ -365,25 +_,70 @@
          }
  
          if (!player.isUsingItem()) {
@@ -387,7 +387,7 @@
                  return InteractionResult.CONSUME;
              }
  
-@@ -416,7 +_,7 @@
+@@ -424,7 +_,7 @@
                  }
              }
  
@@ -396,7 +396,7 @@
                  UseOnContext context = new UseOnContext(player, hand, hitResult);
                  InteractionResult result;
                  if (player.hasInfiniteMaterials()) {
-@@ -439,6 +_,11 @@
+@@ -447,6 +_,11 @@
  
                  return result;
              } else {
