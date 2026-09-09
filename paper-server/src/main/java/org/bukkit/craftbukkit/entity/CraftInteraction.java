@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.UUID;
+import net.kyori.adventure.util.TriState;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.craftbukkit.CraftServer;
@@ -45,6 +46,16 @@ public class CraftInteraction extends CraftEntity implements Interaction {
     @Override
     public void setResponsive(boolean response) {
         this.getHandle().setResponse(response);
+    }
+
+    @Override
+    public TriState canBeHitByProjectile() {
+        return this.getHandle().canBeHitByProjectile;
+    }
+
+    @Override
+    public void setCanBeHitByProjectile(final TriState canBeHitByProjectile) {
+        this.getHandle().canBeHitByProjectile = canBeHitByProjectile;
     }
 
     @Override
