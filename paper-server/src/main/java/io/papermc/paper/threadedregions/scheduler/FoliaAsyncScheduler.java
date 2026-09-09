@@ -233,6 +233,7 @@ public final class FoliaAsyncScheduler implements AsyncScheduler {
                         this.delay = FoliaAsyncScheduler.this.timerThread.schedule(this, delay, TimeUnit.NANOSECONDS);
                     } else {
                         // cancelled repeating task
+                        this.state = STATE_CANCELLED;
                         removeFromTasks = true;
                     }
                 }
