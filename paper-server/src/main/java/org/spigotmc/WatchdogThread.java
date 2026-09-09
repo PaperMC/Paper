@@ -109,6 +109,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
                 logger.log(Level.SEVERE, "------------------------------");
                 logger.log(Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):"); // Paper
                 FeatureHooks.dumpAllChunkLoadInfo(MinecraftServer.getServer(), isLongTimeout); // Paper - log detailed tick information
+                WatchdogThread.dumpTickingInfo(logger);
                 WatchdogThread.dumpThread(ManagementFactory.getThreadMXBean().getThreadInfo(MinecraftServer.getServer().getRunningThread().threadId(), Integer.MAX_VALUE), logger);
                 logger.log(Level.SEVERE, "------------------------------");
 
@@ -153,6 +154,79 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
             } catch (InterruptedException ex) {
                 this.interrupt();
             }
+        }
+    }
+
+    private static void dumpTickingInfo(Logger logger) {
+        // The state read below is mutated by the (hung) server thread while we read it, so it may be torn or null
+        // in ways the normal invariants disallow. Never let that take down the watchdog itself - a failed dump must
+        // not stop us from printing the thread dump and, on a long timeout, halting the server.
+        try {
+            // ticking entities
+            for (net.minecraft.world.entity.Entity entity : net.minecraft.server.level.ServerLevel.getCurrentlyTickingEntities()) {
+                WatchdogThread.dumpEntity(entity, logger);
+                net.minecraft.world.entity.Entity vehicle = entity.getVehicle();
+                if (vehicle != null) {
+                    logger.log(Level.SEVERE, "Detailing vehicle for above entity:");
+                    WatchdogThread.dumpEntity(vehicle, logger);
+                }
+            }
+
+            // packet processors
+            for (net.minecraft.network.PacketListener packetListener : net.minecraft.network.PacketProcessor.getCurrentPacketProcessors()) {
+                if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl gamePacketListener) {
+                    net.minecraft.server.level.ServerPlayer player = gamePacketListener.player;
+                    long totalPackets = net.minecraft.network.PacketProcessor.getTotalProcessedPackets();
+                    if (player == null) {
+                        logger.log(Level.SEVERE, "Handling packet for player connection or ticking player connection (null player): " + packetListener);
+                    } else {
+                        WatchdogThread.dumpEntity(player, logger);
+                        net.minecraft.world.entity.Entity vehicle = player.getVehicle();
+                        if (vehicle != null) {
+                            logger.log(Level.SEVERE, "Detailing vehicle for above entity:");
+                            WatchdogThread.dumpEntity(vehicle, logger);
+                        }
+                    }
+                    logger.log(Level.SEVERE, "Total packets processed on the main thread for all players: " + totalPackets);
+                } else {
+                    logger.log(Level.SEVERE, "Handling packet for connection: " + packetListener);
+                }
+            }
+        } catch (Throwable thr) {
+            logger.log(Level.SEVERE, "Failed to dump ticking information", thr);
+        }
+    }
+
+    private static void dumpEntity(final net.minecraft.world.entity.Entity entity, Logger logger) {
+        double posX, posY, posZ;
+        net.minecraft.world.phys.Vec3 mot;
+        double moveStartX, moveStartY, moveStartZ;
+        net.minecraft.world.phys.Vec3 moveVec;
+        synchronized (entity.posLock) {
+            posX = entity.getX();
+            posY = entity.getY();
+            posZ = entity.getZ();
+            mot = entity.getDeltaMovement();
+            moveStartX = entity.getMoveStartX();
+            moveStartY = entity.getMoveStartY();
+            moveStartZ = entity.getMoveStartZ();
+            moveVec = entity.getMoveVector();
+        }
+
+        String entityType = net.minecraft.world.entity.EntityType.getKey(entity.getType()).toString();
+        java.util.UUID entityUUID = entity.getUUID();
+        net.minecraft.world.level.Level world = entity.level();
+
+        logger.log(Level.SEVERE, "Ticking entity: " + entityType + ", entity class: " + entity.getClass().getName());
+        logger.log(Level.SEVERE, "Entity status: removed: " + entity.isRemoved() + ", valid: " + entity.valid + ", alive: " + entity.isAlive() + ", is passenger: " + entity.isPassenger());
+        logger.log(Level.SEVERE, "Entity UUID: " + entityUUID);
+        logger.log(Level.SEVERE, "Position: world: '" + (world == null ? "unknown world?" : world.getWorld().getName()) + "' at location (" + posX + ", " + posY + ", " + posZ + ")");
+        logger.log(Level.SEVERE, "Velocity: " + (mot == null ? "unknown velocity" : mot.toString()) + " (in blocks per tick)");
+        logger.log(Level.SEVERE, "Entity AABB: " + entity.getBoundingBox());
+        if (moveVec != null) {
+            logger.log(Level.SEVERE, "Move call information: ");
+            logger.log(Level.SEVERE, "Start position: (" + moveStartX + ", " + moveStartY + ", " + moveStartZ + ")");
+            logger.log(Level.SEVERE, "Move vector: " + moveVec.toString());
         }
     }
 
