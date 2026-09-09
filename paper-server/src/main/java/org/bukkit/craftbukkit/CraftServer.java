@@ -1707,17 +1707,6 @@ public final class CraftServer implements Server {
         this.getServer().setSpawnProtectionRadius(value);
     }
 
-    @Override // Paper - replacement for setSpawnRadius
-    public void setSpawnProtection(int value) {
-        MinecraftServer server = MinecraftServer.getServer();
-        var dedicatedServer = (net.minecraft.server.dedicated.DedicatedServer) server;
-        var properties = dedicatedServer.getProperties();
-        properties.spawnProtection.update(server.registryAccess(), value);
-        properties.properties.setProperty("spawn-protection", String.valueOf(value));
-        properties.store(java.nio.file.Path.of("server.properties"));
-        dedicatedServer.setSpawnProtectionRadius(value);
-    }
-
     @Override
     public boolean isEnforcingSecureProfiles() {
         return this.getServer().enforceSecureProfile();
