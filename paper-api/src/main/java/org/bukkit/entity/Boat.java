@@ -173,10 +173,10 @@ public interface Boat extends Vehicle, io.papermc.paper.entity.Leashable { // Pa
     /**
      * Represents the status of the boat.
      */
-    public enum Status {
+    enum Status {
 
-        NOT_IN_WORLD,
         // Start generate - BoatStatus
+        NOT_IN_WORLD,
         IN_WATER,
         UNDER_WATER,
         UNDER_FLOWING_WATER,
