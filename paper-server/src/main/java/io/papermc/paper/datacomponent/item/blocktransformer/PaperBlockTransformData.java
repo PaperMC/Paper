@@ -9,12 +9,14 @@ import io.papermc.paper.datacomponent.item.blocktransform.TransformType;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import java.util.List;
+import java.util.Optional;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.component.BlockTransformer;
 import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.util.Handleable;
+import org.bukkit.loot.LootTable;
 import org.checkerframework.checker.index.qual.NonNegative;
 
 public record PaperBlockTransformData(
@@ -23,7 +25,7 @@ public record PaperBlockTransformData(
 
     @Override
     public net.minecraft.core.component.BlockTransformer.BlockTransformData getHandle() {
-        return this.imlp;
+        return this.impl;
     }
 
     @Override
@@ -46,8 +48,13 @@ public record PaperBlockTransformData(
     }
 
     @Override
-    public List<BlockFace> disallowedFaces() {
-        return this.imlp().disallowedFaces().stream().map(CraftBlock::notchToBlockFace).toList();
+    public @Unmodifiable List<BlockFace> disallowedFaces() {
+        return this.impl.disallowedFaces().stream().map(CraftBlock::notchToBlockFace).toList();
+    }
+
+    @Override
+    public @Nullable LootTable lootTable() {
+        return this.impl.loot().map(CraftLootTable::minecraftToBukkit).orElse(null);
     }
 
     @Override
