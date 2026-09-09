@@ -173,6 +173,7 @@ public class WorldConfiguration extends ConfigurationPart {
             public ArrowDespawnRate nonPlayerArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this.spigotConfig);
             public ArrowDespawnRate creativeArrowDespawnRate = ArrowDespawnRate.def(WorldConfiguration.this.spigotConfig);
             public IntOr.Disabled maxArrowDespawnInvulnerability = new IntOr.Disabled(OptionalInt.of(200));
+            public IntOr.Disabled playerArrowQuota = new IntOr.Disabled(OptionalInt.of(5));
             public boolean filterBadTileEntityNbtFromFallingBlocks = true;
             public List<NbtPathArgument.NbtPath> filteredEntityTagNbtPaths = NbtPathSerializer.fromString(List.of("Pos", "Motion", "sleeping_pos"));
             public boolean disableMobSpawnerSpawnEggTransformation = false;
