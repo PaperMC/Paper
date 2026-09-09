@@ -1,13 +1,16 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Mon, 20 Apr 2026 02:56:22 -0700
-Subject: [PATCH] Delay open/close callbacks for chests
+Subject: [PATCH] Delay close callbacks for chests
 
 The logic for chests may invoke block updates, which may not
 be safe to perform. For example, inventory closing due to
 player logout (which restricts chunk loading due to being
 inside an entity status callback) or during shutdown (which has
 chunk loading restrictions due to the chunk system being halted).
+
+Container state changes are observable from the advancement callback that
+follows a block use, so opening must remain synchronous for datapack GUIs.
 
 diff --git a/net/minecraft/world/level/block/entity/BarrelBlockEntity.java b/net/minecraft/world/level/block/entity/BarrelBlockEntity.java
 index aa4e5a8977fd437780675b173397988e37303f46..118af4e35eec652e7eb8a484a44652cfabc1bab5 100644
@@ -46,10 +49,10 @@ index 06878204e0df42fc35cfa380413986a045ee229d..a9273aebb5c8efe78e88158f11e1ee2a
          protected void onOpen(final Level level, final BlockPos pos, final BlockState blockState) {
              if (blockState.getBlock() instanceof ChestBlock chestBlock) {
 diff --git a/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java b/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
-index baa8b5aba0500981a191626553d66650c7304b88..52737172ccfa0c7c977e4f2fe1db242e0bb92d25 100644
+index baa8b5aba0500981a191626553d66650c7304b88..25b530d8880ff4fbe29a722079d1c3538f1511de 100644
 --- a/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
 +++ b/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
-@@ -37,11 +37,23 @@ public abstract class ContainerOpenersCounter {
+@@ -37,11 +37,17 @@ public abstract class ContainerOpenersCounter {
  
      protected abstract void openerCountChanged(final Level level, final BlockPos pos, final BlockState blockState, int previous, int current);
  
@@ -64,16 +67,10 @@ index baa8b5aba0500981a191626553d66650c7304b88..52737172ccfa0c7c977e4f2fe1db242e
      public void incrementOpeners(
          final LivingEntity entity, final Level level, final BlockPos pos, final BlockState blockState, final double maxInteractionRange
      ) {
-+        // Paper start - delay open/close callbacks
-+        if (this.delayCallbacks()) {
-+            scheduleRecheck(level, pos, blockState, 1);
-+            return;
-+        }
-+        // Paper end - delay open/close callbacks
          int previous = this.openCount++;
  
          // Paper start - Call BlockRedstoneEvent
-@@ -66,6 +78,12 @@ public abstract class ContainerOpenersCounter {
+@@ -66,6 +72,12 @@ public abstract class ContainerOpenersCounter {
      }
  
      public void decrementOpeners(final LivingEntity entity, final Level level, final BlockPos pos, final BlockState blockState) {
@@ -86,7 +83,7 @@ index baa8b5aba0500981a191626553d66650c7304b88..52737172ccfa0c7c977e4f2fe1db242e
          if (this.openCount == 0) return; // Paper - Prevent ContainerOpenersCounter openCount from going negative
          int previous = this.openCount--;
  
-@@ -151,6 +169,11 @@ public abstract class ContainerOpenersCounter {
+@@ -151,6 +163,11 @@ public abstract class ContainerOpenersCounter {
      }
  
      private static void scheduleRecheck(final Level level, final BlockPos blockPos, final BlockState blockState) {
