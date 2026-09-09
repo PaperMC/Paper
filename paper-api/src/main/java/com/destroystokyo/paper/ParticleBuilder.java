@@ -28,9 +28,10 @@ public class ParticleBuilder implements Cloneable {
     private @Nullable Location location;
     private int count = 1;
     private double offsetX = 0, offsetY = 0, offsetZ = 0;
-    private double extra = 1;
+    private double speedX = 1, speedY = 1, speedZ = 1;
     private @Nullable Object data;
     private boolean force = true;
+    private Particle.RandomizationType randomizationType = Particle.RandomizationType.DEFAULT;
 
     public ParticleBuilder(final Particle particle) {
         this.particle = particle;
@@ -49,7 +50,8 @@ public class ParticleBuilder implements Cloneable {
         this.location.getWorld().spawnParticle(
             this.particle, this.receivers, this.source,
             this.location.getX(), this.location.getY(), this.location.getZ(),
-            this.count, this.offsetX, this.offsetY, this.offsetZ, this.extra, this.data, this.force
+            this.count, this.offsetX, this.offsetY, this.offsetZ, this.speedX, this.speedY, this.speedZ,
+            this.data, this.force, this.randomizationType
         );
         return this;
     }
@@ -131,7 +133,7 @@ public class ParticleBuilder implements Cloneable {
      *                  world
      * @return a reference to this object.
      */
-    public ParticleBuilder receivers(final Player @Nullable... receivers) {
+    public ParticleBuilder receivers(final Player @Nullable ... receivers) {
         this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
         return this;
     }
@@ -357,12 +359,14 @@ public class ParticleBuilder implements Cloneable {
     }
 
     /**
-     * Gets the Particle extra data. Varies by particle on how this is used
+     * Gets the Particle extra data (offsetX). Varies by particle on how this is used
      *
      * @return the extra particle data
+     * @deprecated This method is deprecated and will be removed in a future version. Use one of the <code>speed</code> methods instead.
      */
+    @Deprecated(forRemoval = true)
     public double extra() {
-        return this.extra;
+        return this.offsetX;
     }
 
     /**
@@ -370,9 +374,55 @@ public class ParticleBuilder implements Cloneable {
      *
      * @param extra the extra particle data
      * @return a reference to this object.
+     * @deprecated This method is deprecated and will be removed in a future version. Use {@link #speed(double, double, double)} instead.
      */
+    @Deprecated(forRemoval = true)
     public ParticleBuilder extra(final double extra) {
-        this.extra = extra;
+        this.offsetX = extra;
+        this.offsetY = extra;
+        this.offsetZ = extra;
+        return this;
+    }
+
+    /**
+     * Particle speed X. Varies by particle on how this is used
+     *
+     * @return the particle speed X
+     */
+    public double speedX() {
+        return this.speedX;
+    }
+
+    /**
+     * Particle speed Y. Varies by particle on how this is used
+     *
+     * @return the particle speed Y
+     */
+    public double speedY() {
+        return this.speedY;
+    }
+
+    /**
+     * Particle speed Z. Varies by particle on how this is used
+     *
+     * @return the particle speed Z
+     */
+    public double speedZ() {
+        return this.speedZ;
+    }
+
+    /**
+     * Sets the particle speed. Varies by particle on how this is used
+     *
+     * @param speedX Particle speed X
+     * @param speedY Particle speed Y
+     * @param speedZ Particle speed Z
+     * @return a reference to this object.
+     */
+    public ParticleBuilder speed(final double speedX, final double speedY, final double speedZ) {
+        this.speedX = speedX;
+        this.speedY = speedY;
+        this.speedZ = speedZ;
         return this;
     }
 
@@ -416,6 +466,26 @@ public class ParticleBuilder implements Cloneable {
      */
     public ParticleBuilder force(final boolean force) {
         this.force = force;
+        return this;
+    }
+
+    /**
+     * Gets the randomization type for the particle. This determines how the particle's position and velocity are randomized.
+     *
+     * @return the randomization type for the particle
+     */
+    public Particle.RandomizationType randomizationType() {
+        return this.randomizationType;
+    }
+
+    /**
+     * Sets the randomization type for the particle. This determines how the particle's position and velocity are randomized.
+     *
+     * @param randomizationType the new randomization type for the particle
+     * @return a reference to this object.
+     */
+    public ParticleBuilder randomizationType(final Particle.RandomizationType randomizationType) {
+        this.randomizationType = randomizationType;
         return this;
     }
 
