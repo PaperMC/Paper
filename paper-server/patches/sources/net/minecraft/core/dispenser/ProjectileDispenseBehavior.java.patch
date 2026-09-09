@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/dispenser/ProjectileDispenseBehavior.java
 +++ b/net/minecraft/core/dispenser/ProjectileDispenseBehavior.java
-@@ -27,17 +_,36 @@
+@@ -27,17 +_,38 @@
          ServerLevel level = source.level();
          Direction direction = source.state().getValue(DispenserBlock.FACING);
          Position position = this.dispenseConfig.positionFunction().getDispensePosition(source, direction);
@@ -40,8 +40,10 @@
 +
 +        // SPIGOT-7923: Avoid create projectiles with empty item
 +        if (!singleItemStack.isEmpty()) {
-+            Projectile projectile = Projectile.spawnProjectileUsingShoot(this.projectileItem.asProjectile(level, position, org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getItem()), direction), level, singleItemStack, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.dispenseConfig.power(), this.dispenseConfig.uncertainty()); // Paper - track changed items in the dispense event; unwrap is safe here because all uses of the stack make their own copies
++            Projectile projectile = this.projectileItem.asProjectile(level, position, org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getItem()), direction); // Paper - track changed items in the dispense event; unwrap is safe here because all uses of the stack make their own copies
++            Projectile.Delayed<Projectile> delayedProjectile = Projectile.spawnProjectileUsingShootDelayed(projectile, level, singleItemStack, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.dispenseConfig.power(), this.dispenseConfig.uncertainty());
 +            projectile.projectileSource = new org.bukkit.craftbukkit.projectiles.CraftBlockProjectileSource(source.blockEntity());
++            delayedProjectile.spawn();
 +        }
 +        if (shrink) dispensed.shrink(1);
 +        // CraftBukkit end
