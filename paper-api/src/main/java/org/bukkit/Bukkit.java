@@ -1373,13 +1373,6 @@ public final class Bukkit {
     }
 
     /**
-     * Gets the radius, in blocks, around each worlds spawn point to protect (successor to setSpawnRadius).
-     */
-    public static void setSpawnProtection(int value) {
-        server.setSpawnProtection(value);
-    }
-
-    /**
      * Gets whether the server should send a preview of the player's chat
      * message to the client when the player sends a message
      *
