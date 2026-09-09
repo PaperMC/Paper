@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/MobBucketItem.java
 +++ b/net/minecraft/world/item/MobBucketItem.java
-@@ -52,18 +_,18 @@
+@@ -52,18 +_,28 @@
          }
  
          if (mob != null) {
@@ -14,6 +14,16 @@
 -    public boolean emptyContents(final @Nullable LivingEntity user, final Level level, final BlockPos pos, final @Nullable BlockHitResult hitResult) {
 +    public boolean emptyContents(final @Nullable LivingEntity user, final Level level, final BlockPos pos, final @Nullable BlockHitResult hitResult, final net.minecraft.core.Direction direction, final BlockPos clicked, final ItemStack itemStack, final net.minecraft.world.InteractionHand hand) { // Paper
          if (this.content == Fluids.EMPTY) {
++            // Paper start - call PlayerBucketEmptyEvent for mobs in buckets with not fluids
++            if (user instanceof net.minecraft.world.entity.player.Player player) {
++                org.bukkit.event.player.PlayerBucketEmptyEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketEmptyEvent(level, player, pos, clicked, direction, itemStack, hand);
++                if (event.isCancelled()) {
++                    player.containerMenu.sendAllDataToRemote(); // SPIGOT-4541
++                    return false;
++                }
++                BucketItem.itemLeftInHandAfterPlayerBucketEmptyEvent = event.getItemStack() != null ? event.getItemStack().equals(org.bukkit.craftbukkit.inventory.CraftItemStack.asNewCraftStack(net.minecraft.world.item.Items.BUCKET)) ? null : org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY; // Paper - Fix PlayerBucketEmptyEvent result itemstack
++            }
++            // Paper end
              this.playEmptySound(user, level, pos);
              return true;
          } else {
