@@ -1751,7 +1751,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public <T> void spawnParticle(Particle particle, List<Player> receivers, Player sender, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
+    public <T> void spawnParticle(Particle particle, List<Player> receivers, Player sender, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speedX, double speedY, double speedZ, T data, boolean force, Particle.RandomizationType randomizationType) {
         data = CraftParticle.convertLegacy(data);
         if (data != null) {
             Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
@@ -1765,8 +1765,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             x, y, z, // Position
             count, // Count
             offsetX, offsetY, offsetZ, // Random offset
-            extra, // Speed?
-            ClientboundLevelParticlesPacket.RandomizationType.DEFAULT
+            speedX, speedY, speedZ, // Speed
+            ClientboundLevelParticlesPacket.RandomizationType.valueOf(randomizationType.name())
         );
 
     }
