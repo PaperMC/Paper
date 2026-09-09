@@ -24,6 +24,9 @@ import io.papermc.generator.rewriter.types.simple.trial.VillagerProfessionRewrit
 import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
+import io.papermc.paper.datacomponent.item.blocktransform.DropStrategy;
+import io.papermc.paper.datacomponent.item.blocktransform.TransformParticle;
+import io.papermc.paper.datacomponent.item.blocktransform.TransformType;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.RemovalReason;
@@ -180,6 +183,9 @@ public final class Rewriters {
                     );
                 }
             })
+            .register("DropStrategy", DropStrategy.class, new EnumCloneRewriter<>(net.minecraft.core.component.BlockTransformer.DropStrategy.class))
+            .register("TransformParticle", TransformParticle.class, new EnumCloneRewriter<>(net.minecraft.core.component.BlockTransformer.TransformParticle.class))
+            .register("TransformType", TransformType.class, new EnumCloneRewriter<>(net.minecraft.core.component.BlockTransformer.TransformType.class))
             .register(Material.class, composite(
                 holder("Blocks", new MaterialRewriter.Blocks()),
                 //holder("Material#isTransparent", MaterialRewriter.IsTransparent()),
