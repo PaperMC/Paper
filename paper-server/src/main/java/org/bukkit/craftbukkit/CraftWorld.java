@@ -825,6 +825,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public boolean isDayTime() {
         return getHandle().isBrightOutside();
     }
+
+    @Override
+    public boolean hasWorldClock() {
+        return getHandle().dimensionType().defaultClock().isPresent();
+    }
     // Paper end
 
     @Override
