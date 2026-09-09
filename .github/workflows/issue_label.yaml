@@ -1,0 +1,59 @@
+name: Issue Labeler
+
+on:
+  issues:
+    types: [ opened ]
+
+permissions:
+  issues: write
+
+jobs:
+  label-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Detect and label Minecraft version
+        uses: actions/github-script@v9
+        with:
+          script: |
+            // Matches:
+            // 1 = Brand
+            // 2 = Minecraft Version
+            // 3 = Build Number
+            // 4 = Git Branch/Commit
+            // 5 = Build Time
+            const PAPER_PATTERN = /This server is running ([A-Za-z0-9]+) version ([\d\.]+)-(DEV|\d+)-(.*) \((.*)\) \(Implementing API version .*\)(?: \(Git: .*\))?/;
+            const PAPER_PATTERN_OLD = /This server is running Paper version .* \(MC: ([^\)]+)\) \(Implementing API version .*\)(?: \(Git: .*\))?/;
+            const LABEL_PREFIX = 'version: ';
+
+            const issue = context.payload.issue;
+            const body = issue?.body;
+            if (!body) {
+              core.info('Issue has no body, skipping.');
+              return;
+            }
+
+            let version;
+            const match = body.match(PAPER_PATTERN);
+            if (match && match.length === 6) {
+              version = match[2];
+            } else {
+              const oldMatch = body.match(PAPER_PATTERN_OLD);
+              if (oldMatch) {
+                version = oldMatch[1];
+              }
+            }
+
+            if (!version) {
+              core.info('Could not detect a Minecraft version in the issue body.');
+              return;
+            }
+
+            const label = LABEL_PREFIX + version;
+            core.info(`Applying label "${label}" to issue #${issue.number}`);
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: [label],
+            });
