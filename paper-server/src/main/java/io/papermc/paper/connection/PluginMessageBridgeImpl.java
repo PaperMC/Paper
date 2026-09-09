@@ -13,9 +13,10 @@ import org.jspecify.annotations.NullMarked;
 public interface PluginMessageBridgeImpl {
 
     boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
+    int CHANNEL_LIMIT = Integer.getInteger("paper.pluginMessageChannelLimit", 128); // Paper - add a flag to customize the channel limit
 
     default boolean addChannel(String channel) {
-        Preconditions.checkState(DISABLE_CHANNEL_LIMIT || this.channels().size() < 128, "Cannot register channel. Too many channels registered!"); // Paper - flag to disable channel limit
+        Preconditions.checkState(DISABLE_CHANNEL_LIMIT || this.channels().size() < CHANNEL_LIMIT, "Cannot register channel. Too many channels registered!"); // Paper - flag to disable channel limit
         channel = StandardMessenger.validateAndCorrectChannel(channel);
         if (channels().add(channel)) {
             if (this instanceof CraftPlayer player) {
