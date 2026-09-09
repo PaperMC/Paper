@@ -1258,13 +1258,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public void setSpawnRadius(int value);
 
     /**
-     * Sets the radius, in blocks, around each worlds spawn point to protect (successor to setSpawnRadius).
-     *
-     * @param value new spawn radius, or 0 if none
-     */
-    public void setSpawnProtection(int value);
-
-    /**
      * Gets whether the server should send a preview of the player's chat
      * message to the client when the player types a message
      *
