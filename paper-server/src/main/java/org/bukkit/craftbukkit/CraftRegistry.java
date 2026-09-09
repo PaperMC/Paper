@@ -10,10 +10,10 @@ import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.util.Holderable;
 import io.papermc.paper.util.MCUtil;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import net.minecraft.core.Holder;
@@ -148,12 +148,12 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     }
 
     private final Class<?> bukkitClass; // Paper - relax preload class
-    private final Map<NamespacedKey, B> cache = new HashMap<>();
+    private final Map<NamespacedKey, B> cache = new ConcurrentHashMap<>();
     private final net.minecraft.core.Registry<M> minecraftRegistry;
     private final io.papermc.paper.registry.entry.RegistryTypeMapper<M, B> minecraftToBukkit; // Paper - switch to Holder
     private final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater; // Paper - rename to make it *clear* what it is *only* for
     private final InvalidHolderOwner invalidHolderOwner = new InvalidHolderOwner();
-    private boolean lockReferenceHolders;
+    private volatile boolean lockReferenceHolders;
 
     public CraftRegistry(Class<?> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, BiFunction<? super NamespacedKey, M, B> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater) { // Paper - relax preload class
         // Paper start - switch to Holder
@@ -190,11 +190,10 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
     @Override
     public B get(NamespacedKey namespacedKey) {
-        B cached = this.cache.get(namespacedKey);
-        if (cached != null) {
-            return cached;
-        }
+        return this.cache.computeIfAbsent(namespacedKey, this::loadBukkit);
+    }
 
+    private B loadBukkit(final NamespacedKey namespacedKey) {
         // Important to use the ResourceKey<?> "get" method below because it will work before registry is frozen
         final Optional<Holder.Reference<M>> holderOptional = this.minecraftRegistry.get(CraftNamespacedKey.toResourceKey(this.minecraftRegistry.key(), namespacedKey));
         final Holder.Reference<M> holder;
@@ -208,11 +207,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         } else {
             return null;
         }
-        final B bukkit = this.createBukkit(holder);
-
-        this.cache.put(namespacedKey, bukkit);
-
-        return bukkit;
+        return this.createBukkit(holder);
     }
 
     @NotNull
