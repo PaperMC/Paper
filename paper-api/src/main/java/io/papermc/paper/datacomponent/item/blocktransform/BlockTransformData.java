@@ -4,10 +4,13 @@ import io.papermc.paper.block.BlockPredicate;
 import java.util.List;
 import net.kyori.adventure.key.Key;
 import org.bukkit.block.BlockFace;
+import org.bukkit.loot.LootTable;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 @NullMarked
 @ApiStatus.NonExtendable
@@ -23,9 +26,9 @@ public interface BlockTransformData {
     TransformParticle particle();
 
     @Contract(pure = true)
-    List<BlockFace> disallowedFaces();
+    @Unmodifiable List<BlockFace> disallowedFaces();
 
-    //Optional<ResourceKey<LootTable>> loot();
+    @Nullable LootTable lootTable();
 
     @Contract(pure = true)
     DropStrategy dropStrategy();
