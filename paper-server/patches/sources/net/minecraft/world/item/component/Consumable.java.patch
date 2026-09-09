@@ -1,5 +1,33 @@
 --- a/net/minecraft/world/item/component/Consumable.java
 +++ b/net/minecraft/world/item/component/Consumable.java
+@@ -68,7 +_,26 @@
+                 user.startUsingItem(hand);
+                 return InteractionResult.CONSUME;
+             } else {
+-                ItemStack result = this.onConsume(user.level(), user, stack);
++                // Paper start - PlayerItemConsumeEvent event for instant consumption
++                ItemStack result;
++                if (user instanceof ServerPlayer serverPlayer) {
++                    final org.bukkit.event.player.PlayerItemConsumeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemConsumeEvent(serverPlayer, hand, stack);
++                    if (event.isCancelled()) {
++                        serverPlayer.containerMenu.forceHeldSlot(hand);
++                        serverPlayer.getBukkitEntity().updateScaledHealth();
++                        return InteractionResult.FAIL;
++                    }
++                    final net.minecraft.world.item.ItemStack eventItemNmsCopy = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
++                    result = this.onConsume(user.level(), user, (stack.equals(eventItemNmsCopy)) ? stack : eventItemNmsCopy);
++                    if (event.getReplacement() != null) {
++                        result = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getReplacement());
++                        serverPlayer.setItemInHand(hand, result);
++                        serverPlayer.containerMenu.forceHeldSlot(hand);
++                    }
++                } else {
++                    result = this.onConsume(user.level(), user, stack);
++                }
++                // Paper end
+                 return InteractionResult.CONSUME.heldItemTransformedTo(result);
+             }
+         }
 @@ -84,13 +_,35 @@
  
          stack.getAllOfType(ConsumableListener.class).forEach(component -> component.onConsume(level, user, stack, this));
