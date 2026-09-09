@@ -2,11 +2,12 @@ package org.bukkit.craftbukkit.scheduler;
 
 import java.util.function.Consumer;
 
+import io.papermc.paper.util.concurrent.TickBoundTask;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
-public class CraftTask implements BukkitTask, Runnable { // Spigot
+public class CraftTask implements BukkitTask, Runnable, TickBoundTask {
 
     private volatile CraftTask next = null;
     public static final int ERROR = 0;
@@ -81,7 +82,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
         }
     }
 
-    long getCreatedAt() {
+    public long getCreatedAt() {
         return this.createdAt;
     }
 
@@ -93,11 +94,11 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
         this.period = period;
     }
 
-    long getNextRun() {
+    public long getNextRun() {
         return this.nextRun;
     }
 
-    void setNextRun(long nextRun) {
+    public void setNextRun(long nextRun) {
         this.nextRun = nextRun;
     }
 
