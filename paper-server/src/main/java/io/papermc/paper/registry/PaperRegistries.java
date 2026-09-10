@@ -6,11 +6,14 @@ import io.papermc.paper.block.pot.PaperPotPatternType;
 import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
+import io.papermc.paper.datacomponent.item.blocktransformer.BlockTransformer;
+import io.papermc.paper.datacomponent.item.blocktransformer.PaperBlockTransformer;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.poi.PaperPoiType;
 import io.papermc.paper.entity.poi.PoiTypes;
 import io.papermc.paper.registry.data.PaperBannerPatternRegistryEntry;
+import io.papermc.paper.registry.data.PaperBlockTransformerRegistryEntry;
 import io.papermc.paper.registry.data.PaperCatTypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperChickenVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperCowVariantRegistryEntry;
@@ -159,6 +162,7 @@ public final class PaperRegistries {
             start(Registries.ZOMBIE_NAUTILUS_VARIANT, RegistryKey.ZOMBIE_NAUTILUS_VARIANT).craft(ZombieNautilus.Variant.class, CraftZombieNautilus.CraftVariant::new).writable(PaperZombieNautilusVariantRegistryEntry.PaperBuilder::new),
             start(Registries.SULFUR_CUBE_ARCHETYPE, RegistryKey.SULFUR_CUBE_ARCHETYPE).craft(SulfurCube.Archetype.class, CraftSulfurCube.CraftArchetype::new).writable(PaperSulfurCubeArchetypeRegistryEntry.PaperBuilder::new),
             start(Registries.DIALOG, RegistryKey.DIALOG).craft(Dialog.class, PaperDialog::new, true).writable(PaperDialogRegistryEntry.PaperBuilder::new),
+            start(Registries.BLOCK_TRANSFORMER, RegistryKey.BLOCK_TRANSFORMER).craft(BlockTransformer.class, PaperBlockTransformer::new, true).writable(PaperBlockTransformerRegistryEntry.PaperBuilder::new).delayed(),
 
             // api-only
             start(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE).apiOnly(PaperSimpleRegistry::entityType),

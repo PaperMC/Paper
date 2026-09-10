@@ -1,4 +1,4 @@
-package io.papermc.paper.datacomponent.item.blocktransform;
+package io.papermc.paper.datacomponent.item.blocktransformer;
 
 public enum DropStrategy {
 
