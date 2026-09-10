@@ -33,7 +33,7 @@ public interface BlockTransformData extends BuildableDataComponent<BlockTransfor
     BlockStateProvider blockStateProvider();
 
     @Contract(pure = true)
-    Key sound();
+    @Nullable Key sound();
 
     @Contract(pure = true)
     TransformParticle particle();
@@ -62,7 +62,7 @@ public interface BlockTransformData extends BuildableDataComponent<BlockTransfor
     interface Builder extends DataComponentBuilder<BlockTransformData> {
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder sound(Key sound);
+        Builder sound(@Nullable Key sound);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder particle(TransformParticle particle);
