@@ -72,11 +72,11 @@ public interface PlatformHooks extends ChunkSystemHooks {
 
     public boolean configAutoConfigSendDistance();
 
-    public double configPlayerMaxLoadRate();
+    public double configPlayerMaxLoadRate(final ServerLevel world);
 
-    public double configPlayerMaxGenRate();
+    public double configPlayerMaxGenRate(final ServerLevel world);
 
-    public double configPlayerMaxSendRate();
+    public double configPlayerMaxSendRate(final ServerLevel world);
 
     public int configPlayerMaxConcurrentLoads();
 
