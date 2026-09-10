@@ -14,18 +14,18 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperBlockTransformerRegistryEntry implements BlockTransformerRegistryEntry {
 
-    protected @Nullable List<BlockTransformer.BlockTransformData> transforms;
+    protected @Nullable List<BlockTransformData> transforms;
 
     public PaperBlockTransformerRegistryEntry(final Conversions conversions, final @Nullable BlockTransformer internal) {
         if (internal == null) {
             return;
         }
-        this.transforms = new ArrayList<>(internal.transforms());
+        this.transforms = new ArrayList<>(internal.transforms().stream().map(PaperBlockTransformData::new).map(BlockTransformData.class::cast).toList());
     }
 
     @Override
     public List<BlockTransformData> transforms() {
-        return asConfigured(this.transforms, "transforms").stream().map(PaperBlockTransformData::new).map(BlockTransformData.class::cast).toList();
+        return asConfigured(this.transforms, "transforms");
     }
 
     public static final class PaperBuilder extends PaperBlockTransformerRegistryEntry implements Builder, PaperRegistryBuilder<BlockTransformer, io.papermc.paper.datacomponent.item.blocktransformer.BlockTransformer> {
@@ -39,7 +39,7 @@ public class PaperBlockTransformerRegistryEntry implements BlockTransformerRegis
             if (this.transforms == null) {
                 this.transforms = new ArrayList<>();
             }
-            this.transforms.add(PaperBlockTransformData.toVanilla(asArgument(transform, "transform")));
+            this.transforms.add(asArgument(transform, "transform"));
             return this;
         }
 
@@ -53,7 +53,7 @@ public class PaperBlockTransformerRegistryEntry implements BlockTransformerRegis
 
         @Override
         public BlockTransformer build() {
-            return new BlockTransformer(List.copyOf(asConfigured(this.transforms, "transforms")));
+            return new BlockTransformer(asConfigured(this.transforms, "transforms").stream().map(PaperBlockTransformData::toVanilla).toList());
         }
     }
 }
