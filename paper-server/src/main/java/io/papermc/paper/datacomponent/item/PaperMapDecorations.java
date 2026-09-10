@@ -43,6 +43,11 @@ public record PaperMapDecorations(
         return Collections.unmodifiableMap(decorations);
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().putAll(this.decorations());
+    }
+
     public record PaperDecorationEntry(net.minecraft.world.item.component.MapDecorations.Entry entry) implements DecorationEntry {
 
         public static DecorationEntry toApi(final MapCursor.Type type, final double x, final double z, final float rotation) {

@@ -31,6 +31,15 @@ public record PaperPotDecorations(
     }
 
     @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .back(this.back())
+            .left(this.left())
+            .right(this.right())
+            .front(this.front());
+    }
+
+    @Override
     public net.minecraft.world.level.block.entity.PotDecorations getHandle() {
         return this.impl;
     }

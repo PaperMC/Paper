@@ -2,6 +2,7 @@ package io.papermc.paper.datacomponent.item;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import java.util.Collection;
 import java.util.UUID;
@@ -24,7 +25,7 @@ import org.jspecify.annotations.Nullable;
  */
 @NullMarked
 @ApiStatus.NonExtendable
-public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
+public interface ResolvableProfile extends BuildableDataComponent<ResolvableProfile, ResolvableProfile.Builder>, PlayerHeadObjectContents.SkinSource {
 
     @Contract(value = "_ -> new", pure = true)
     static ResolvableProfile resolvableProfile(final PlayerProfile profile) {
@@ -37,12 +38,10 @@ public interface ResolvableProfile extends PlayerHeadObjectContents.SkinSource {
     }
 
     @Contract(pure = true)
-    @Nullable
-    UUID uuid();
+    @Nullable UUID uuid();
 
     @Contract(pure = true)
-    @Nullable
-    String name();
+    @Nullable String name();
 
     @Contract(pure = true)
     @Unmodifiable

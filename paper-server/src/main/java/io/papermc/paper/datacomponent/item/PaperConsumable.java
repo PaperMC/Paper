@@ -59,7 +59,8 @@ public record PaperConsumable(
             .consumeSeconds(this.consumeSeconds())
             .animation(this.animation())
             .sound(this.sound())
-            .addEffects(this.consumeEffects());
+            .hasConsumeParticles(this.hasConsumeParticles())
+            .effects(this.consumeEffects());
     }
 
     static final class BuilderImpl implements Builder {

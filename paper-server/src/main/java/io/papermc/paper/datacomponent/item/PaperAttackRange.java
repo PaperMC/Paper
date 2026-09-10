@@ -43,6 +43,17 @@ public record PaperAttackRange(
         return this.impl.mobFactor();
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .minReach(this.minReach())
+            .maxReach(this.maxReach())
+            .minCreativeReach(this.minCreativeReach())
+            .maxCreativeReach(this.maxCreativeReach())
+            .hitboxMargin(this.hitboxMargin())
+            .mobFactor(this.mobFactor());
+    }
+
     static final class BuilderImpl implements AttackRange.Builder {
 
         private float minReach = net.minecraft.world.item.component.AttackRange.CODEC_DEFAULT.minReach();

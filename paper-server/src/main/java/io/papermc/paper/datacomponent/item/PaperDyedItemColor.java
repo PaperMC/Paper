@@ -17,6 +17,11 @@ public record PaperDyedItemColor(
         return Color.fromRGB(this.impl.rgb() & 0x00FFFFFF); // skip alpha channel
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl().color(this.color());
+    }
+
     static final class BuilderImpl implements DyedItemColor.Builder {
 
         private Color color = Color.WHITE;

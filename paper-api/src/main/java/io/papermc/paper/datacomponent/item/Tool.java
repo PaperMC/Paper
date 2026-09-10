@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.registry.set.RegistryKeySet;
@@ -20,7 +21,7 @@ import org.jspecify.annotations.Nullable;
  */
 @NullMarked
 @ApiStatus.NonExtendable
-public interface Tool {
+public interface Tool extends BuildableDataComponent<Tool, Tool.Builder> {
 
     @Contract(value = "-> new", pure = true)
     static Tool.Builder tool() {
@@ -113,14 +114,33 @@ public interface Tool {
     interface Builder extends DataComponentBuilder<Tool> {
 
         /**
-         * Controls the amount of durability to remove each time a block is mined with this tool.
+         * Adds a rule to the tool that controls the breaking speed / damage per block if matched.
          *
-         * @param damage durability to remove
+         * @param rule rule
          * @return the builder for chaining
-         * @see #damagePerBlock()
+         * @see #rules()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder damagePerBlock(@NonNegative int damage);
+        Builder addRule(Rule rule);
+
+        /**
+         * Adds rules to the tool that control the breaking speed / damage per block if matched.
+         *
+         * @param rules rules
+         * @return the builder for chaining
+         * @see #rules()
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder addRules(Collection<Rule> rules);
+
+        /**
+         * Sets rules to the tool that control the breaking speed / damage per block if matched.
+         *
+         * @param rules rules
+         * @return the builder for chaining
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder rules(Collection<Rule> rules);
 
         /**
          * Controls mining speed to use if no rules match and don't override mining speed.
@@ -133,14 +153,14 @@ public interface Tool {
         Builder defaultMiningSpeed(float miningSpeed);
 
         /**
-         * Adds a rule to the tool that controls the breaking speed / damage per block if matched.
+         * Controls the amount of durability to remove each time a block is mined with this tool.
          *
-         * @param rule rule
+         * @param damage durability to remove
          * @return the builder for chaining
-         * @see #rules()
+         * @see #damagePerBlock()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder addRule(Rule rule);
+        Builder damagePerBlock(@NonNegative int damage);
 
         /**
          * Controls whether this tool can destroy blocks in creative mode.
@@ -151,15 +171,5 @@ public interface Tool {
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder canDestroyBlocksInCreative(boolean canDestroyBlocksInCreative);
-
-        /**
-         * Adds rules to the tool that control the breaking speed / damage per block if matched.
-         *
-         * @param rules rules
-         * @return the builder for chaining
-         * @see #rules()
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder addRules(Collection<Rule> rules);
     }
 }

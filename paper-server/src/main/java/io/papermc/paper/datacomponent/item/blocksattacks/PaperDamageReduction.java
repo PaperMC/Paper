@@ -37,6 +37,15 @@ public record PaperDamageReduction(
         return this.internal.factor();
     }
 
+    @Override
+    public Builder toBuilder() {
+        return new BuilderImpl()
+            .type(this.type())
+            .horizontalBlockingAngle(this.horizontalBlockingAngle())
+            .base(this.base())
+            .factor(this.factor());
+    }
+
     static final class BuilderImpl implements Builder {
 
         private Optional<HolderSet<net.minecraft.world.damagesource.DamageType>> type = Optional.empty();
