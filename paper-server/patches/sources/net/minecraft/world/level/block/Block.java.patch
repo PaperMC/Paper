@@ -58,7 +58,7 @@
      private @Nullable Item item;
      private static final int CACHE_SIZE = 256;
      private static final ThreadLocal<Object2ByteLinkedOpenHashMap<Block.ShapePairKey>> OCCLUSION_CACHE = ThreadLocal.withInitial(() -> {
-@@ -382,6 +_,27 @@
+@@ -382,19 +_,46 @@
          return state.getDrops(params);
      }
  
@@ -85,20 +85,28 @@
 +
      public static void dropResources(final BlockState state, final Level level, final BlockPos pos) {
          if (level instanceof ServerLevel serverLevel) {
-             getDrops(state, serverLevel, pos, null).forEach(stack -> popResource(level, pos, stack));
-@@ -396,6 +_,12 @@
+-            getDrops(state, serverLevel, pos, null).forEach(stack -> popResource(level, pos, stack));
++            org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDropResourcesEvent(getDrops(state, serverLevel, pos, null), level, pos, state, null, null).forEach(stack -> popResource(level, pos, stack)); // Paper - implement BlockDropResourcesEvent
+             state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
          }
      }
  
+     public static void dropResources(final BlockState state, final LevelAccessor level, final BlockPos pos, final @Nullable BlockEntity blockEntity) {
+         if (level instanceof ServerLevel serverLevel) {
+-            getDrops(state, serverLevel, pos, blockEntity).forEach(stack -> popResource(serverLevel, pos, stack));
++            org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDropResourcesEvent(getDrops(state, serverLevel, pos, blockEntity), level, pos, state, null, null).forEach(stack -> popResource(serverLevel, pos, stack));  // Paper - implement BlockDropResourcesEvent
+             state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
+         }
+     }
++
 +    // Paper start - Properly handle xp dropping
 +    public static void dropResources(final BlockState state, final Level level, final BlockPos pos, final @Nullable BlockEntity blockEntity, final @Nullable Entity breaker, final ItemStack tool) {
 +        dropResources(state, level, pos, blockEntity, breaker, tool, true);
 +    }
 +    // Paper end - Properly handle xp dropping
-+
+ 
      public static void dropResources(
          final BlockState state,
-         final Level level,
 @@ -403,10 +_,11 @@
          final @Nullable BlockEntity blockEntity,
          final @Nullable Entity breaker,
@@ -106,8 +114,9 @@
 +        , final boolean dropExperience // Paper - Properly handle xp dropping
      ) {
          if (level instanceof ServerLevel serverLevel) {
-             getDrops(state, serverLevel, pos, blockEntity, breaker, tool).forEach(stack -> popResource(level, pos, stack));
+-            getDrops(state, serverLevel, pos, blockEntity, breaker, tool).forEach(stack -> popResource(level, pos, stack));
 -            state.spawnAfterBreak(serverLevel, pos, tool, true);
++            org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDropResourcesEvent(getDrops(state, serverLevel, pos, blockEntity, breaker, tool), level, pos, state, breaker, tool).forEach(stack -> popResource(level, pos, stack)); // Paper - implement BlockDropResourcesEvent
 +            state.spawnAfterBreak(serverLevel, pos, tool, dropExperience); // Paper - Properly handle xp dropping
          }
      }
