@@ -88,6 +88,23 @@ public class WorldConfiguration extends ConfigurationPart {
     @Setting(Configuration.VERSION_FIELD)
     public int version = CURRENT_VERSION;
 
+    public ChunkLoadingBasic chunkLoadingBasic;
+
+    public class ChunkLoadingBasic extends ConfigurationPart {
+        @Comment("The maximum rate in chunks per second that the server will send to any individual player. Set to -1 to disable this limit.")
+        public double playerMaxChunkSendRate = 75.0;
+
+        @Comment(
+            "The maximum rate at which chunks will load for any individual player. " +
+            "Note that this setting also affects chunk generations, since a chunk load is always first issued to test if a" +
+            "chunk is already generated. Set to -1 to disable this limit."
+        )
+        public double playerMaxChunkLoadRate = 100.0;
+
+        @Comment("The maximum rate at which chunks will generate for any individual player. Set to -1 to disable this limit.")
+        public double playerMaxChunkGenerateRate = -1.0;
+    }
+
     public Anticheat anticheat;
 
     public class Anticheat extends ConfigurationPart {
