@@ -3,6 +3,7 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import java.util.Random;
 import io.papermc.paper.math.Position;
+import net.kyori.adventure.key.Key;
 import org.bukkit.command.CommandSender;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.ChunkGenerator;
@@ -15,13 +16,14 @@ import org.jetbrains.annotations.Nullable;
  * Represents various types of options that may be used to create a world.
  */
 public class WorldCreator {
-    private final NamespacedKey key; // Paper
+    private final NamespacedKey key;
     private final String name;
     private long seed;
     private World.Environment environment = World.Environment.NORMAL;
     private ChunkGenerator generator = null;
     private BiomeProvider biomeProvider = null;
     private WorldType type = WorldType.NORMAL;
+    private @Nullable Key customEnvironmentKey = null;
     private boolean generateStructures = true;
     private String generatorSettings = "";
     private boolean hardcore = false;
@@ -151,6 +153,9 @@ public class WorldCreator {
 
         seed = world.getSeed();
         environment = world.getEnvironment();
+        if (environment == World.Environment.CUSTOM) {
+            customEnvironmentKey = world.getEnvironmentKey();
+        }
         generator = world.getGenerator();
         biomeProvider = world.getBiomeProvider();
         type = world.getWorldType();
@@ -173,6 +178,7 @@ public class WorldCreator {
 
         seed = creator.seed();
         environment = creator.environment();
+        customEnvironmentKey = creator.customEnvironmentKey();
         generator = creator.generator();
         biomeProvider = creator.biomeProvider();
         type = creator.type();
@@ -231,14 +237,48 @@ public class WorldCreator {
     }
 
     /**
-     * Sets the environment that will be used to create or load the world
+     * Sets the environment that will be used to create or load the world.
+     * <p>
+     * <b>Note:</b> if the environment is {@link World.Environment#CUSTOM},
+     * then you also need to set the key using {@link #customEnvironmentKey(Key)}.
      *
      * @param env World environment
      * @return This object, for chaining
+     * @see #customEnvironmentKey(Key)
      */
     @NotNull
     public WorldCreator environment(@NotNull World.Environment env) {
         this.environment = env;
+
+        if (env != World.Environment.CUSTOM) {
+            this.customEnvironmentKey = null;
+        }
+
+        return this;
+    }
+
+    /**
+     * Gets the environment key that will be used to create or load the world
+     * if {@link #environment()} is {@link World.Environment#CUSTOM}.
+     *
+     * @return World environment key
+     */
+    @ApiStatus.Experimental
+    public @Nullable Key customEnvironmentKey() {
+        return customEnvironmentKey;
+    }
+
+    /**
+     * Sets the environment key that will be used to create or load the world and
+     * set the environment to {@link World.Environment#CUSTOM}.
+     *
+     * @param customEnvironmentKey World environment key
+     * @return This object, for chaining
+     */
+    @ApiStatus.Experimental
+    public @NotNull WorldCreator customEnvironmentKey(@NotNull Key customEnvironmentKey) {
+        this.environment = World.Environment.CUSTOM;
+        this.customEnvironmentKey = customEnvironmentKey;
 
         return this;
     }
