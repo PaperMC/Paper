@@ -2,6 +2,7 @@ package io.papermc.paper.datacomponent.item.blocktransformer;
 
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.block.BlockPredicate;
+import io.papermc.paper.block.stateprovider.BlockStateProvider;
 import io.papermc.paper.registry.PaperRegistries;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,8 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.core.component.BlockTransformer;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.feature.stateproviders.SimpleStateProvider;
 import net.minecraft.world.level.levelgen.feature.stateproviders.RuleBasedStateProvider;
@@ -29,6 +32,7 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
+import static io.papermc.paper.registry.data.util.Checks.asArgument;
 import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
 public record PaperBlockTransformData(
@@ -41,7 +45,7 @@ public record PaperBlockTransformData(
     }
 
     @Override
-    public io.papermc.paper.block.stateprovider.BlockStateProvider blockStateProvider() {
+    public BlockStateProvider blockStateProvider() {
         final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider provider = unwrapStateProvider(this.impl.blockStateProvider().value());
         if (provider instanceof SimpleStateProvider(net.minecraft.world.level.block.state.BlockState state)) {
             return io.papermc.paper.block.stateprovider.BlockStateProvider.simple(CraftBlockData.createData(state));
@@ -115,7 +119,7 @@ public record PaperBlockTransformData(
             Holder.direct(toVanillaStateProvider(data.blockStateProvider())),
             PaperAdventure.resolveSound(data.sound()),
             net.minecraft.core.component.BlockTransformer.TransformParticle.valueOf(data.particle().name()),
-            data.disallowedFaces().stream().map(PaperBlockTransformData::toVanillaDirection).toList(),
+            data.disallowedFaces().stream().map(CraftBlock::blockFaceToNotch).toList(),
             java.util.Optional.empty(),
             net.minecraft.core.component.BlockTransformer.DropStrategy.valueOf(data.dropStrategy().name()),
             data.updateFromNeighbors(),
@@ -125,16 +129,8 @@ public record PaperBlockTransformData(
         );
     }
 
-    private static Direction toVanillaDirection(final BlockFace blockFace) {
-        final Direction direction = CraftBlock.blockFaceToNotch(blockFace);
-        if (direction == null) {
-            throw new IllegalArgumentException("Unsupported block face: " + blockFace);
-        }
-        return direction;
-    }
-
     private static net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider toVanillaStateProvider(
-        final io.papermc.paper.block.stateprovider.BlockStateProvider provider
+        final BlockStateProvider provider
     ) {
         final BlockData simple = provider.simple();
         if (simple == null) {
@@ -162,49 +158,53 @@ public record PaperBlockTransformData(
 
     static final class BuilderImpl implements Builder {
 
-        private final io.papermc.paper.block.stateprovider.BlockStateProvider blockStateProvider;
-        private @Nullable BlockPredicate predicate;
-        private Key sound = Key.key("minecraft:empty");
-        private TransformParticle particle = TransformParticle.NONE;
-        private final List<BlockFace> disallowedFaces = new ArrayList<>();
+        private static final Holder<SoundEvent> DEFAULT_SOUND = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.EMPTY);
+
+        private final Holder<net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider> blockStateProvider;
+        private Holder<SoundEvent> sound = DEFAULT_SOUND;
+        private BlockTransformer.TransformParticle particle = BlockTransformer.TransformParticle.NONE;
+        private final List<Direction> disallowedFaces = new ArrayList<>();
         private Optional<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> lootTable = Optional.empty();
-        private DropStrategy dropStrategy = DropStrategy.FROM_MIDDLE;
+        private BlockTransformer.DropStrategy dropStrategy = BlockTransformer.DropStrategy.FROM_MIDDLE;
         private boolean updateFromNeighbors = true;
-        private TransformType transformType = TransformType.SINGLE_BLOCK;
+        private BlockTransformer.TransformType transformType = BlockTransformer.TransformType.SINGLE_BLOCK;
         private boolean consumeOnUse = true;
         private int itemDamagePerUse = 1;
 
-        BuilderImpl(final io.papermc.paper.block.stateprovider.BlockStateProvider blockStateProvider) {
-            this.blockStateProvider = blockStateProvider;
+        BuilderImpl(final BlockStateProvider blockStateProvider) {
+            this(null, blockStateProvider);
         }
 
-        BuilderImpl(final BlockPredicate blockPredicate, final io.papermc.paper.block.stateprovider.BlockStateProvider blockStateProvider) {
-            this.predicate = blockPredicate;
-            this.blockStateProvider = blockStateProvider;
+        BuilderImpl(final @Nullable BlockPredicate blockPredicate, final BlockStateProvider blockStateProvider) {
+            final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider targetProvider = toVanillaStateProvider(blockStateProvider);
+            final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider provider = blockPredicate == null
+                ? targetProvider
+                : RuleBasedStateProvider.builder().ifTrueThenProvide(toVanillaBlockPredicate(blockPredicate), targetProvider).build();
+            this.blockStateProvider = Holder.direct(provider);
         }
 
         @Override
-        public Builder sound(final Key sound) {
-            this.sound = sound;
+        public Builder sound(final @Nullable Key sound) {
+            this.sound = (sound == null) ? DEFAULT_SOUND : PaperAdventure.resolveSound(sound);
             return this;
         }
 
         @Override
         public Builder particle(final TransformParticle particle) {
-            this.particle = particle;
+            this.particle = BlockTransformer.TransformParticle.valueOf(asArgument(particle, "particle").name());
             return this;
         }
 
         @Override
         public Builder disallowedFaces(final List<BlockFace> disallowedFaces) {
             this.disallowedFaces.clear();
-            this.disallowedFaces.addAll(disallowedFaces);
+            disallowedFaces.forEach(this::addDisallowedFace);
             return this;
         }
 
         @Override
         public Builder addDisallowedFace(final BlockFace disallowedFace) {
-            this.disallowedFaces.add(disallowedFace);
+            this.disallowedFaces.add(CraftBlock.blockFaceToNotch(asArgument(disallowedFace, "disallowedFace")));
             return this;
         }
 
@@ -216,7 +216,7 @@ public record PaperBlockTransformData(
 
         @Override
         public Builder dropStrategy(final DropStrategy dropStrategy) {
-            this.dropStrategy = dropStrategy;
+            this.dropStrategy = BlockTransformer.DropStrategy.valueOf(asArgument(dropStrategy, "dropStrategy").name());
             return this;
         }
 
@@ -228,7 +228,7 @@ public record PaperBlockTransformData(
 
         @Override
         public Builder transformType(final TransformType transformType) {
-            this.transformType = transformType;
+            this.transformType = BlockTransformer.TransformType.valueOf(asArgument(transformType, "transformType").name());
             return this;
         }
 
@@ -246,19 +246,15 @@ public record PaperBlockTransformData(
 
         @Override
         public BlockTransformData build() {
-            final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider targetProvider = toVanillaStateProvider(this.blockStateProvider);
-            final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider provider = this.predicate == null
-                ? targetProvider
-                : RuleBasedStateProvider.builder().ifTrueThenProvide(toVanillaBlockPredicate(this.predicate), targetProvider).build();
             return new PaperBlockTransformData(new net.minecraft.core.component.BlockTransformer.BlockTransformData(
-                Holder.direct(provider),
-                PaperAdventure.resolveSound(this.sound),
-                net.minecraft.core.component.BlockTransformer.TransformParticle.valueOf(this.particle.name()),
-                this.disallowedFaces.stream().map(PaperBlockTransformData::toVanillaDirection).toList(),
+                this.blockStateProvider,
+                this.sound,
+                this.particle,
+                this.disallowedFaces,
                 this.lootTable,
-                net.minecraft.core.component.BlockTransformer.DropStrategy.valueOf(this.dropStrategy.name()),
+                this.dropStrategy,
                 this.updateFromNeighbors,
-                net.minecraft.core.component.BlockTransformer.TransformType.valueOf(this.transformType.name()),
+                this.transformType,
                 this.consumeOnUse,
                 this.itemDamagePerUse
             ));
