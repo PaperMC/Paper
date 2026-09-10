@@ -25,6 +25,7 @@ import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
 import io.papermc.paper.configuration.transformation.global.versioned.V29_LogIPs;
 import io.papermc.paper.configuration.transformation.global.versioned.V30_PacketIds;
 import io.papermc.paper.configuration.transformation.global.versioned.V31_AllowNetherPropertiesToConfig;
+import io.papermc.paper.configuration.transformation.global.versioned.V32_ChunkLoadingBasicToWorld;
 import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
 import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
@@ -132,9 +133,9 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     private static final Function<ContextMap, String> WORLD_HEADER = map -> String.format("""
         This is a world configuration file for Paper.
         This file may start empty but can be filled with settings to override ones in the %s/%s
-        
+
         For more information, see https://docs.papermc.io/paper/reference/configuration/#per-world-configuration
-        
+
         World: %s""",
         PaperConfigurations.CONFIG_DIR,
         PaperConfigurations.WORLD_DEFAULTS_CONFIG_FILE_NAME,
@@ -145,7 +146,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         The global and world default configuration files have moved to %s
         and the world-specific configuration file has been moved inside
         the respective world folder.
-        
+
         See https://docs.papermc.io/paper/configuration for more information.
         """;
 
@@ -298,6 +299,10 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         V29_LogIPs.apply(versionedBuilder);
         V30_PacketIds.apply(versionedBuilder);
         V31_AllowNetherPropertiesToConfig.apply(versionedBuilder);
+        V32_ChunkLoadingBasicToWorld.apply(versionedBuilder, this.createLoaderBuilder()
+            .defaultOptions(options -> options.header(WORLD_DEFAULTS_HEADER))
+            .path(this.globalFolder.resolve(this.defaultWorldConfigFileName))
+            .build(), this.worldConfigVersion());
         // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
         versionedBuilder.build().apply(node);
     }
