@@ -359,14 +359,14 @@ public class ParticleBuilder implements Cloneable {
     }
 
     /**
-     * Gets the Particle extra data (offsetX). Varies by particle on how this is used
+     * Gets the Particle extra data (speedX). Varies by particle on how this is used
      *
      * @return the extra particle data
      * @deprecated This method is deprecated and will be removed in a future version. Use one of the <code>speed</code> methods instead.
      */
     @Deprecated(forRemoval = true)
     public double extra() {
-        return this.offsetX;
+        return this.speedX;
     }
 
     /**
