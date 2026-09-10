@@ -3,9 +3,12 @@ package io.papermc.paper.datacomponent.item.blocktransformer;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.block.BlockPredicate;
 import io.papermc.paper.block.stateprovider.BlockStateProvider;
+import io.papermc.paper.block.stateprovider.PaperBlockStateProvider;
 import io.papermc.paper.registry.PaperRegistries;
+import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Direction;
@@ -22,7 +25,7 @@ import net.minecraft.world.level.levelgen.feature.stateproviders.SimpleStateProv
 import net.minecraft.world.level.levelgen.feature.stateproviders.RuleBasedStateProvider;
 import net.minecraft.world.level.levelgen.blockpredicates.MatchingBlocksPredicate;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.BlockData;
+import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
@@ -115,11 +118,12 @@ public record PaperBlockTransformData(
         if (data instanceof final PaperBlockTransformData paperBlockTransformData) {
             return paperBlockTransformData.getHandle();
         }
+
         return new net.minecraft.core.component.BlockTransformer.BlockTransformData(
-            Holder.direct(toVanillaStateProvider(data.blockStateProvider())),
+            Holder.direct(PaperBlockStateProvider.toVanilla(data.blockStateProvider())),
             PaperAdventure.resolveSound(data.sound()),
             net.minecraft.core.component.BlockTransformer.TransformParticle.valueOf(data.particle().name()),
-            data.disallowedFaces().stream().map(CraftBlock::blockFaceToNotch).toList(),
+            data.disallowedFaces().stream().map(CraftBlock::blockFaceToNotch).filter(Objects::nonNull).toList(),
             java.util.Optional.empty(),
             net.minecraft.core.component.BlockTransformer.DropStrategy.valueOf(data.dropStrategy().name()),
             data.updateFromNeighbors(),
@@ -127,19 +131,6 @@ public record PaperBlockTransformData(
             data.consumeOnUse(),
             data.itemDamagePerUse()
         );
-    }
-
-    private static net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider toVanillaStateProvider(
-        final BlockStateProvider provider
-    ) {
-        final BlockData simple = provider.simple();
-        if (simple == null) {
-            throw new UnsupportedOperationException("Unsupported block state provider type");
-        }
-        if (!(simple instanceof final CraftBlockData craftBlockData)) {
-            throw new IllegalArgumentException("Unsupported BlockData implementation: " + simple.getClass().getName());
-        }
-        return new SimpleStateProvider(craftBlockData.getState());
     }
 
     private static net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider unwrapStateProvider(
@@ -176,7 +167,7 @@ public record PaperBlockTransformData(
         }
 
         BuilderImpl(final @Nullable BlockPredicate blockPredicate, final BlockStateProvider blockStateProvider) {
-            final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider targetProvider = toVanillaStateProvider(blockStateProvider);
+            final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider targetProvider = PaperBlockStateProvider.toVanilla(blockStateProvider);
             final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider provider = blockPredicate == null
                 ? targetProvider
                 : RuleBasedStateProvider.builder().ifTrueThenProvide(toVanillaBlockPredicate(blockPredicate), targetProvider).build();
@@ -204,7 +195,7 @@ public record PaperBlockTransformData(
 
         @Override
         public Builder addDisallowedFace(final BlockFace disallowedFace) {
-            this.disallowedFaces.add(CraftBlock.blockFaceToNotch(asArgument(disallowedFace, "disallowedFace")));
+            this.disallowedFaces.add(asArgument(CraftBlock.blockFaceToNotch(disallowedFace), "disallowedFace"));
             return this;
         }
 
@@ -262,16 +253,14 @@ public record PaperBlockTransformData(
     }
 
     private static net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate toVanillaBlockPredicate(final BlockPredicate predicate) {
-        if (predicate.blocks() == null) {
+        RegistryKeySet<BlockType> blocks = predicate.blocks();
+        if (blocks == null) {
             return net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate.alwaysTrue();
         }
-        final List<Holder<Block>> blockHolders = predicate.blocks().values().stream()
+        final List<Holder<Block>> blockHolders = blocks.values().stream()
             .map(PaperRegistries::<Block, org.bukkit.block.BlockType>toNms)
             .map(key -> {
                 final Block block = BuiltInRegistries.BLOCK.getValue(key.identifier());
-                if (block == null) {
-                    throw new IllegalArgumentException("Unknown block key: " + key.identifier());
-                }
                 return BuiltInRegistries.BLOCK.wrapAsHolder(block);
             })
             .toList();

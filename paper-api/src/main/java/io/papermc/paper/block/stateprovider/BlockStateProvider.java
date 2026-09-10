@@ -3,13 +3,20 @@ package io.papermc.paper.block.stateprovider;
 import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
+/**
+ * A provider for {@link BlockData} that can be used to provide block states for various purposes.
+ */
 @ApiStatus.NonExtendable
 public interface BlockStateProvider {
 
+    /**
+     * Creates a simple {@link BlockStateProvider} that always provides the given {@link BlockData}.
+     *
+     * @param blockData the block data to provide
+     * @return a new {@link BlockStateProvider}
+     */
     @Contract(value = "_ -> new", pure = true)
     static BlockStateProvider simple(final BlockData blockData) {
         //<editor-fold desc="implementations" defaultstate="collapsed">
@@ -20,9 +27,15 @@ public interface BlockStateProvider {
             }
         }
         //</editor-fold>
+
         return new SimpleProviderImpl(blockData);
     }
 
+    /**
+     * Returns the simple {@link BlockData} if this provider is a simple provider, or null otherwise.
+     *
+     * @return the simple {@link BlockData} or null
+     */
     @Nullable BlockData simple();
 
 }
