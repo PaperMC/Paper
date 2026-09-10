@@ -29,28 +29,11 @@ import java.util.Set;
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class GlobalConfiguration extends ConfigurationPart {
     private static final Logger LOGGER = LogUtils.getLogger();
-    static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): allow-nether property to config
+    static final int CURRENT_VERSION = 32; // (when you change the version, change the comment, so it conflicts on rebases): move basic chunk loading limits to world config
     private static GlobalConfiguration instance;
     public static boolean isFirstStart = false;
     public static GlobalConfiguration get() {
         return instance;
-    }
-
-    public ChunkLoadingBasic chunkLoadingBasic;
-
-    public class ChunkLoadingBasic extends ConfigurationPart {
-        @Comment("The maximum rate in chunks per second that the server will send to any individual player. Set to -1 to disable this limit.")
-        public double playerMaxChunkSendRate = 75.0;
-
-        @Comment(
-            "The maximum rate at which chunks will load for any individual player. " +
-            "Note that this setting also affects chunk generations, since a chunk load is always first issued to test if a" +
-            "chunk is already generated. Set to -1 to disable this limit."
-        )
-        public double playerMaxChunkLoadRate = 100.0;
-
-        @Comment("The maximum rate at which chunks will generate for any individual player. Set to -1 to disable this limit.")
-        public double playerMaxChunkGenerateRate = -1.0;
     }
 
     public ChunkLoadingAdvanced chunkLoadingAdvanced;
