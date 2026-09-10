@@ -5,6 +5,8 @@ import io.papermc.paper.block.pot.PaperPotPatternType;
 import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.block.pot.PotPatternTypes;
 import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.blocktransformer.BlockTransformer;
+import io.papermc.paper.datacomponent.item.blocktransformer.PaperBlockTransformer;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.poi.PaperPoiType;
@@ -170,6 +172,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Registries.GAME_RULE, GameRule.class, GameRules.class, CraftGameRule.class, net.minecraft.world.level.gamerules.GameRule.class);
         register(Registries.POINT_OF_INTEREST_TYPE, PoiType.class, PoiTypes.class, PaperPoiType.class, net.minecraft.world.entity.ai.village.poi.PoiType.class);
         register(Registries.SULFUR_CUBE_ARCHETYPE, SulfurCube.Archetype.class, CraftSulfurCube.CraftArchetype.class, SulfurCubeArchetype.class);
+        register(Registries.BLOCK_TRANSFORMER, BlockTransformer.class, PaperBlockTransformer.class, net.minecraft.core.component.BlockTransformer.class);
     }
 
     private static <M, B extends Keyed> void register(ResourceKey<? extends Registry<? extends M>> registryKey, Class<B> api, Class<? extends B> impl, Class<M> internal) {
