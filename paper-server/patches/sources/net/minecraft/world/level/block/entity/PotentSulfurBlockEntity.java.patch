@@ -1,0 +1,23 @@
+--- a/net/minecraft/world/level/block/entity/PotentSulfurBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/PotentSulfurBlockEntity.java
+@@ -128,7 +_,19 @@
+                     && !entityToBeLaunched.isPassenger()
+                     && !entityToBeLaunched.is(EntityTypeTags.NOT_AFFECTED_BY_GEYSERS)
+                     && entityVelocity.y < 0.3F + waterBlocks * 0.1) {
+-                    entityToBeLaunched.addDeltaMovement(new Vec3(0.0, 0.2F, 0.0));
++                    // Paper start - add EntityPotentSulfurLaunchEvent
++                    io.papermc.paper.event.entity.EntityPotentSulfurLaunchEvent event = new io.papermc.paper.event.entity.EntityPotentSulfurLaunchEvent(
++                        entityToBeLaunched.getBukkitEntity(),
++                        org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level.getWorld()),
++                        org.bukkit.craftbukkit.util.CraftLocation.toBukkit(sourceBlock, level.getWorld()),
++                        new org.bukkit.util.Vector(0.0, GEYSER_LAUNCH_FORCE, 0.0)
++                    );
++                    if (!event.callEvent()) {
++                        continue;
++                    }
++                    org.bukkit.util.Vector launchVelocity = event.getLaunchVelocity();
++                    entityToBeLaunched.addDeltaMovement(org.bukkit.craftbukkit.util.CraftVector.toVec3(launchVelocity));
++                    // Paper end - add EntityPotentSulfurLaunchEvent
+                     entityToBeLaunched.needsSync = true;
+                 }
+             }
