@@ -318,4 +318,14 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     public SignText.Builder signText(final List<? extends ComponentLike> messages) {
         return new PaperSignText.BuilderImpl(PaperAdventure.asVanilla(new ArrayList<>(ComponentLike.asComponents(messages))));
     }
+
+    @Override
+    public BrewingFuel.Builder brewingFuel() {
+        return new PaperBrewingFuel.BuilderImpl();
+    }
+
+    @Override
+    public CookingFuel.Builder cookingFuel() {
+        return new PaperCookingFuel.BuilderImpl();
+    }
 }

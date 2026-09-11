@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.core.component.DataComponents;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import org.bukkit.block.Furnace;
@@ -44,7 +44,7 @@ public class CraftInventoryFurnace extends CraftInventory implements FurnaceInve
 
     @Override
     public boolean isFuel(ItemStack stack) {
-        return stack != null && !stack.isEmpty() && CraftItemStack.asNMSCopy(stack).has(DataComponents.COOKING_FUEL); // TODO - snapshot - replace with Paper DataComponents
+        return stack != null && !stack.isEmpty() && stack.hasData(DataComponentTypes.COOKING_FUEL);
     }
 
     @Override
