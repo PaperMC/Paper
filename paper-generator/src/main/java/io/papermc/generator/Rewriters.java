@@ -24,7 +24,7 @@ import io.papermc.generator.rewriter.types.simple.trial.VillagerProfessionRewrit
 import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
-import io.papermc.paper.datacomponent.item.blocktransformer.BlockTransformer;
+import io.papermc.paper.datacomponent.item.blocktransformer.BlockTransformers;
 import io.papermc.paper.datacomponent.item.blocktransformer.DropStrategy;
 import io.papermc.paper.datacomponent.item.blocktransformer.TransformParticle;
 import io.papermc.paper.datacomponent.item.blocktransformer.TransformType;
@@ -257,7 +257,7 @@ public final class Rewriters {
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
             .register("Tag", Tag.class, new TagRewriter())
             .register("MapPalette#colors", MapPalette.class, new MapPaletteRewriter())
-            .register("BlockTransformer", BlockTransformer.class, new RegistryFieldRewriter<>(Registries.BLOCK_TRANSFORMER, "getBlockTransformer"));
+            .register("BlockTransformer", BlockTransformers.class, new RegistryFieldRewriter<>(Registries.BLOCK_TRANSFORMER, "getBlockTransformer"));
         RegistryBootstrapper.bootstrapApi(sourceSet);
     }
 
