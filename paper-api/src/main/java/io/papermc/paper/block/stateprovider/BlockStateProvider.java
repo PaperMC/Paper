@@ -1,8 +1,11 @@
 package io.papermc.paper.block.stateprovider;
 
+import io.papermc.paper.registry.set.RegistryKeySet;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.Nullable;
 
 @ApiStatus.NonExtendable
 public interface BlockStateProvider {
@@ -35,5 +38,47 @@ public interface BlockStateProvider {
         }
         //</editor-fold>
         return new CopyPropertiesProviderImpl(blockType);
+    }
+
+    /**
+     * Creates a provider that chooses a random block from the provided set.
+     *
+     * @param blocks candidate blocks
+     * @return a random block state provider
+     */
+    @Contract(value = "_ -> new", pure = true)
+    static RandomBlockStateProvider randomBlock(final RegistryKeySet<BlockType> blocks) {
+        //<editor-fold desc="implementations" defaultstate="collapsed">
+        record RandomBlockProviderImpl(RegistryKeySet<BlockType> blocks) implements RandomBlockStateProvider {
+        }
+        //</editor-fold>
+        return new RandomBlockProviderImpl(blocks);
+    }
+
+    /**
+     * Creates a provider that applies a random rotation to the output of another provider.
+     *
+     * @param stateProvider source provider
+     * @return a rotated block state provider
+     */
+    @Contract(value = "_ -> new", pure = true)
+    static RotatedBlockStateProvider rotated(final BlockStateProvider stateProvider) {
+        return rotated(stateProvider, null);
+    }
+
+    /**
+     * Creates a provider that rotates the output of another provider with an optional forced direction.
+     *
+     * @param stateProvider source provider
+     * @param direction     direction to force, or null for random direction
+     * @return a rotated block state provider
+     */
+    @Contract(value = "_, _ -> new", pure = true)
+    static RotatedBlockStateProvider rotated(final BlockStateProvider stateProvider, final @Nullable BlockFace direction) {
+        //<editor-fold desc="implementations" defaultstate="collapsed">
+        record RotatedBlockProviderImpl(BlockStateProvider stateProvider, @Nullable BlockFace direction) implements RotatedBlockStateProvider {
+        }
+        //</editor-fold>
+        return new RotatedBlockProviderImpl(stateProvider, direction);
     }
 }
