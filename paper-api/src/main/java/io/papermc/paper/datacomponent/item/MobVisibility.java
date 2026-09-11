@@ -6,7 +6,6 @@ import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents the visibility provided by an item with the appropriate {@link DataComponentTypes#EQUIPPABLE} component,
@@ -14,12 +13,11 @@ import org.jspecify.annotations.NullMarked;
  *
  * @see io.papermc.paper.datacomponent.DataComponentTypes#MOB_VISIBILITY
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface MobVisibility {
 
     @Contract(value = "_, _ -> new", pure = true)
-    static MobVisibility mobVisibility(RegistryKeySet<EntityType> targetingEntityTypes, @Range(from = 0, to = 10) float visibility) {
+    static MobVisibility mobVisibility(final RegistryKeySet<EntityType> targetingEntityTypes, final @Range(from = 0, to = 10) float visibility) {
         return ItemComponentTypesBridge.bridge().mobVisibility(targetingEntityTypes, visibility);
     }
 

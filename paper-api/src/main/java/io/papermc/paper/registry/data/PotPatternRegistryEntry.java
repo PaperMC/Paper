@@ -2,7 +2,7 @@ package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.RegistryBuilder;
 import net.kyori.adventure.key.Key;
-import org.bukkit.block.pot.PotPatternType;
+import io.papermc.paper.block.pot.PotPatternType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 

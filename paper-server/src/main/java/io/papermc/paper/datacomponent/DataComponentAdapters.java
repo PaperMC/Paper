@@ -66,7 +66,7 @@ import net.minecraft.world.item.component.MapPostProcessing;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
-import org.bukkit.craftbukkit.block.pot.CraftPotPatternType;
+import io.papermc.paper.block.pot.PaperPotPatternType;
 import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.entity.CraftCat;
 import org.bukkit.craftbukkit.entity.CraftChicken;
@@ -109,7 +109,6 @@ public final class DataComponentAdapters {
         registerIdentity(DataComponents.DAMAGE);
         registerUntyped(DataComponents.UNBREAKABLE);
         register(DataComponents.USE_EFFECTS, PaperUseEffects::new);
-        registerIdentity(DataComponents.POTION_DURATION_SCALE);
         register(DataComponents.CUSTOM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         registerIdentity(DataComponents.MINIMUM_ATTACK_CHARGE);
         register(DataComponents.DAMAGE_TYPE, CraftDamageType::minecraftHolderToBukkit, CraftDamageType::bukkitToMinecraftHolder);
@@ -122,6 +121,7 @@ public final class DataComponentAdapters {
         register(DataComponents.CAN_BREAK, PaperItemAdventurePredicate::new);
         register(DataComponents.ATTRIBUTE_MODIFIERS, PaperItemAttributeModifiers::new);
         register(DataComponents.CUSTOM_MODEL_DATA, PaperCustomModelData::new);
+        register(DataComponents.TOOLTIP_DISPLAY, PaperTooltipDisplay::new);
         registerIdentity(DataComponents.REPAIR_COST);
         // registerUntyped(DataComponents.CREATIVE_SLOT_LOCK);
         registerIdentity(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
@@ -132,6 +132,8 @@ public final class DataComponentAdapters {
         register(DataComponents.USE_COOLDOWN, PaperUseCooldown::new);
         register(DataComponents.DAMAGE_RESISTANT, PaperDamageResistant::new);
         register(DataComponents.TOOL, PaperItemTool::new);
+        register(DataComponents.WEAPON, PaperWeapon::new);
+        register(DataComponents.ATTACK_RANGE, PaperAttackRange::new);
         register(DataComponents.ENCHANTABLE, PaperEnchantable::new);
         register(DataComponents.EQUIPPABLE, PaperEquippable::new);
         register(DataComponents.REPAIRABLE, PaperRepairable::new);
@@ -147,6 +149,7 @@ public final class DataComponentAdapters {
         register(DataComponents.CHARGED_PROJECTILES, PaperChargedProjectiles::new);
         register(DataComponents.BUNDLE_CONTENTS, PaperBundleContents::new);
         register(DataComponents.POTION_CONTENTS, PaperPotionContents::new);
+        registerIdentity(DataComponents.POTION_DURATION_SCALE);
         register(DataComponents.SUSPICIOUS_STEW_EFFECTS, PaperSuspiciousStewEffects::new);
         register(DataComponents.WRITTEN_BOOK_CONTENT, PaperWrittenBookContent::new);
         register(DataComponents.WRITABLE_BOOK_CONTENT, PaperWritableBookContent::new);
@@ -160,7 +163,6 @@ public final class DataComponentAdapters {
         register(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, PaperOminousBottleAmplifier::new);
         register(DataComponents.JUKEBOX_PLAYABLE, PaperJukeboxPlayable::new);
         register(DataComponents.PROVIDES_BANNER_PATTERNS, set -> PaperRegistrySets.convertToApi(RegistryKey.BANNER_PATTERN, set), set -> PaperRegistrySets.convertToNms(Registries.BANNER_PATTERN, Conversions.global().lookup(), set));
-        register(DataComponents.PROVIDES_POTTERY_PATTERN, CraftPotPatternType::minecraftHolderToBukkit, CraftPotPatternType::bukkitToMinecraftHolder);
         register(
             DataComponents.RECIPES,
             nms -> transformUnmodifiable(nms, PaperAdventure::asAdventureKey),
@@ -181,15 +183,15 @@ public final class DataComponentAdapters {
         // register(DataComponents.LOCK, PaperLockCode::new);
         register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
         register(DataComponents.BREAK_SOUND, nms -> PaperAdventure.asAdventure(nms.value().location()), PaperAdventure::resolveSound);
-        register(DataComponents.TOOLTIP_DISPLAY, PaperTooltipDisplay::new);
-        register(DataComponents.WEAPON, PaperWeapon::new);
         register(DataComponents.BLOCKS_ATTACKS, PaperBlocksAttacks::new);
         register(DataComponents.PIERCING_WEAPON, PaperPiercingWeapon::new);
         register(DataComponents.KINETIC_WEAPON, PaperKineticWeapon::new);
-        register(DataComponents.ATTACK_RANGE, PaperAttackRange::new);
         register(DataComponents.ATTACK_ANIMATION, PaperSwingAnimation::new);
         register(DataComponents.INTERACT_ANIMATION, PaperSwingAnimation::new);
         // registerIdentity(DataComponents.ADDITIONAL_TRADE_COST);
+        // block transformer
+        register(DataComponents.VILLAGER_FOOD, PaperVillagerFood::new);
+        register(DataComponents.MOB_VISIBILITY, PaperMobVisibility::new);
         register(DataComponents.VILLAGER_VARIANT, CraftVillager.CraftType::minecraftHolderToBukkit, CraftVillager.CraftType::bukkitToMinecraftHolder);
         register(DataComponents.WOLF_VARIANT, CraftWolf.CraftVariant::minecraftHolderToBukkit, CraftWolf.CraftVariant::bukkitToMinecraftHolder);
         register(DataComponents.WOLF_COLLAR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
@@ -201,7 +203,7 @@ public final class DataComponentAdapters {
         register(DataComponents.TROPICAL_FISH_BASE_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.TROPICAL_FISH_PATTERN_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.MOOSHROOM_VARIANT, nms -> MushroomCow.Variant.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.cow.MushroomCow.Variant.values()[api.ordinal()]);
-        register(DataComponents.RABBIT_VARIANT, nms -> Rabbit.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.rabbit.Rabbit.Variant.byId(api.ordinal()));
+        register(DataComponents.RABBIT_VARIANT, nms -> Rabbit.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.rabbit.Rabbit.Variant.values()[api.ordinal()]);
         register(DataComponents.PIG_VARIANT, CraftPig.CraftVariant::minecraftHolderToBukkit, CraftPig.CraftVariant::bukkitToMinecraftHolder);
         register(DataComponents.PIG_SOUND_VARIANT, CraftPig.CraftSoundVariant::minecraftHolderToBukkit, CraftPig.CraftSoundVariant::bukkitToMinecraftHolder);
         register(DataComponents.COW_VARIANT, CraftCow.CraftVariant::minecraftHolderToBukkit, CraftCow.CraftVariant::bukkitToMinecraftHolder);
@@ -219,12 +221,11 @@ public final class DataComponentAdapters {
         register(DataComponents.CAT_COLLAR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.SHEEP_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
         register(DataComponents.SHULKER_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
-        registerUntyped(DataComponents.WAXED);
-        register(DataComponents.CUSHION_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
-        register(DataComponents.MOB_VISIBILITY, PaperMobVisibility::new);
-        register(DataComponents.VILLAGER_FOOD, PaperVillagerFood::new);
+        register(DataComponents.PROVIDES_POTTERY_PATTERN, PaperPotPatternType::minecraftHolderToBukkit, PaperPotPatternType::bukkitToMinecraftHolder);
         register(DataComponents.SIGN_TEXT_FRONT, PaperSignText::new);
         register(DataComponents.SIGN_TEXT_BACK, PaperSignText::new);
+        registerUntyped(DataComponents.WAXED);
+        register(DataComponents.CUSHION_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
 
         for (final ResourceKey<DataComponentType<?>> key : BuiltInRegistries.DATA_COMPONENT_TYPE.registryKeySet()) {
             if (!ADAPTERS.containsKey(key)) {

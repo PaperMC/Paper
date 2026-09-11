@@ -26,9 +26,9 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.paper.datacomponent.item.SwingAnimation;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.dialog.Dialog;
+import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.entity.poi.PoiTypes;
 import io.papermc.paper.item.MapPostProcessing;
-import io.papermc.paper.entity.RemovalReason;
 import io.papermc.paper.world.WeatheringCopperState;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
@@ -64,7 +64,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
-import org.bukkit.block.pot.PotPatternType;
+import io.papermc.paper.block.pot.PotPatternTypes;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Armadillo;
 import org.bukkit.entity.Boat;
@@ -228,7 +228,7 @@ public final class Rewriters {
             .register("CatSoundVariant", Cat.SoundVariant.class, new RegistryFieldRewriter<>(Registries.CAT_SOUND_VARIANT, "getSoundVariant"))
             .register("FrogVariant", Frog.Variant.class, new RegistryFieldRewriter<>(Registries.FROG_VARIANT, "getVariant"))
             .register("PatternType", PatternType.class, new RegistryFieldRewriter<>(Registries.BANNER_PATTERN, "getType"))
-            .register("PotPatternType", PotPatternType.class, new RegistryFieldRewriter<>(Registries.DECORATED_POT_PATTERN, "getType"))
+            .register("PotPatternTypes", PotPatternTypes.class, new RegistryFieldRewriter<>(Registries.DECORATED_POT_PATTERN, "getType"))
             .register("Biome", Biome.class, new RegistryFieldRewriter<>(Registries.BIOME, "getBiome"))
             .register("Fluid", Fluid.class, new RegistryFieldRewriter<>(Registries.FLUID, "getFluid"))
             // .register("Attribute", Attribute.class, new RegistryFieldRewriter<>(Registries.ATTRIBUTE, "getAttribute")) - disable for now (javadocs)

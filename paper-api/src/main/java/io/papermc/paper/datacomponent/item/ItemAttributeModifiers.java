@@ -9,13 +9,11 @@ import org.bukkit.inventory.EquipmentSlotGroup;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds attribute modifiers applied to any item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#ATTRIBUTE_MODIFIERS
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface ItemAttributeModifiers {
 

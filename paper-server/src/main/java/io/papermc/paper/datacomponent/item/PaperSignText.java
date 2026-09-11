@@ -60,6 +60,16 @@ public record PaperSignText(
             this.filteredMessages = messages;
         }
 
+        private static void validateLineCount(final int current, final int add) {
+            final int newSize = current + add;
+            Preconditions.checkArgument(
+                newSize <= net.minecraft.world.level.block.entity.SignText.LINES,
+                "Cannot have more than %s lines, had %s",
+                net.minecraft.world.level.block.entity.SignText.LINES,
+                newSize
+            );
+        }
+
         @Override
         public Builder messages(final List<? extends ComponentLike> messages) {
             validateLineCount(0, messages.size());
@@ -98,16 +108,6 @@ public record PaperSignText(
                 this.color,
                 this.hasGlowingText
             ));
-        }
-
-        private static void validateLineCount(final int current, final int add) {
-            final int newSize = current + add;
-            Preconditions.checkArgument(
-                newSize <= net.minecraft.world.level.block.entity.SignText.LINES,
-                "Cannot have more than %s lines, had %s",
-                net.minecraft.world.level.block.entity.SignText.LINES,
-                newSize
-            );
         }
     }
 }

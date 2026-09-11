@@ -1,6 +1,7 @@
 package io.papermc.paper.datacomponent.item;
 
 import org.bukkit.craftbukkit.util.Handleable;
+import org.checkerframework.checker.index.qual.Positive;
 
 public record PaperVillagerFood(
     net.minecraft.world.food.VillagerFood impl
@@ -12,7 +13,7 @@ public record PaperVillagerFood(
     }
 
     @Override
-    public int nutrition() {
+    public @Positive int nutrition() {
         return this.impl.nutrition();
     }
 }

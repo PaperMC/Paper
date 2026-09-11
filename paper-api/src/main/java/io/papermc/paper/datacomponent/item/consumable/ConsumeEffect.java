@@ -7,12 +7,10 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Effect that occurs when consuming an item.
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface ConsumeEffect {
 

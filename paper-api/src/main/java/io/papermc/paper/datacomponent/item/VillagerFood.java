@@ -4,7 +4,6 @@ import org.bukkit.Tag;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents items that villagers can eat.
@@ -12,15 +11,13 @@ import org.jspecify.annotations.NullMarked;
  *
  * @see io.papermc.paper.datacomponent.DataComponentTypes#VILLAGER_FOOD
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface VillagerFood {
 
     @Contract(value = "_ -> new", pure = true)
-    static VillagerFood villagerFood(@Positive int nutrition) {
+    static VillagerFood villagerFood(final @Positive int nutrition) {
         return ItemComponentTypesBridge.bridge().villagerFood(nutrition);
     }
-
 
     /**
      * Gets the nutrition value of this item.

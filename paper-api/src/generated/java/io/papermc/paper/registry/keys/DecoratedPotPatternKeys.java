@@ -3,10 +3,10 @@ package io.papermc.paper.registry.keys;
 import static net.kyori.adventure.key.Key.key;
 
 import io.papermc.paper.annotation.GeneratedClass;
+import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
-import org.bukkit.block.pot.PotPatternType;
 import org.jspecify.annotations.NullMarked;
 
 /**

@@ -4,9 +4,7 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Range;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 @ApiStatus.NonExtendable
 public interface AttackRange {
 

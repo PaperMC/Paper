@@ -306,7 +306,7 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
 
     @Override
     public VillagerFood villagerFood(final int nutrition) {
-        return new PaperVillagerFood(new net.minecraft.world.food.VillagerFood(requireNonNegative(nutrition, "nutrition")));
+        return new PaperVillagerFood(new net.minecraft.world.food.VillagerFood(requirePositive(nutrition, "nutrition")));
     }
 
     @Override

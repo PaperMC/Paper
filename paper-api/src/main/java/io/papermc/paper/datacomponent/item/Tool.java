@@ -11,14 +11,12 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Controls the behavior of the item as a tool.
  * @see DataComponentTypes#TOOL
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface Tool {
 

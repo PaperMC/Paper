@@ -3,13 +3,11 @@ package io.papermc.paper.datacomponent.item;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the item absorbed by a sulfur cube.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#SULFUR_CUBE_CONTENT
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface SulfurCubeContent {
 

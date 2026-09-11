@@ -6,14 +6,12 @@ import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Controls which blocks a player in Adventure mode can do a certain action with this item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CAN_BREAK
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CAN_PLACE_ON
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface ItemAdventurePredicate {
 

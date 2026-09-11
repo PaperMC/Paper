@@ -8,7 +8,6 @@ import net.kyori.adventure.text.ComponentLike;
 import org.bukkit.DyeColor;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents the text on a sign side.
@@ -16,7 +15,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#SIGN_TEXT_FRONT
  * @see io.papermc.paper.datacomponent.DataComponentTypes#SIGN_TEXT_BACK
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface SignText extends BuildableDataComponent<SignText, SignText.Builder> {
 

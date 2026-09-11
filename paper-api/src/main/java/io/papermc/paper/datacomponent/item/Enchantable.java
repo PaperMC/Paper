@@ -3,13 +3,11 @@ package io.papermc.paper.datacomponent.item;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds if an item is enchantable, allowing for enchantments of the type to be seen in an enchanting table.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#ENCHANTABLE
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface Enchantable {
 

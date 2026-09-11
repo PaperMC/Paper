@@ -26,7 +26,7 @@ import org.bukkit.GameEvent;
 import org.bukkit.JukeboxSong;
 import org.bukkit.MusicInstrument;
 import org.bukkit.block.banner.PatternType;
-import org.bukkit.block.pot.PotPatternType;
+import io.papermc.paper.block.pot.PotPatternType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Cat;
