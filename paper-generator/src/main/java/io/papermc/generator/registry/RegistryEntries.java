@@ -217,7 +217,7 @@ public final class RegistryEntries {
         entry(Registries.ZOMBIE_NAUTILUS_VARIANT, ZombieNautilusVariants.class, ZombieNautilus.Variant.class).writableApiRegistryBuilder(ZombieNautilusVariantRegistryEntry.Builder.class, "PaperZombieNautilusVariantRegistryEntry.PaperBuilder"),
         entry(Registries.SULFUR_CUBE_ARCHETYPE, SulfurCubeArchetypes.class, SulfurCube.Archetype.class).writableApiRegistryBuilder(SulfurCubeArchetypeRegistryEntry.Builder.class, "PaperSulfurCubeArchetypeRegistryEntry.PaperBuilder"),
         entry(Registries.DIALOG, Dialogs.class, Dialog.class, "Paper").allowDirect().writableApiRegistryBuilder(DialogRegistryEntry.Builder.class, "PaperDialogRegistryEntry.PaperBuilder"),
-        entry(Registries.BLOCK_TRANSFORMER, BlockTransformers.class, BlockTransformer.class, "Paper").allowDirect().writableApiRegistryBuilder(BlockTransformerRegistryEntry.Builder.class, "PaperBlockTransformerRegistryEntry.PaperBuilder").delayed()
+        entry(Registries.BLOCK_TRANSFORMER, BlockTransformers.class, BlockTransformer.class, "Paper").allowDirect().writableApiRegistryBuilder(BlockTransformerRegistryEntry.Builder.class, "PaperBlockTransformerRegistryEntry.PaperBuilder")
     );
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(
