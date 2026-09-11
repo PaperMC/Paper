@@ -2,6 +2,7 @@ package io.papermc.paper.block.stateprovider;
 
 import org.bukkit.block.BlockFace;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
 @ApiStatus.NonExtendable
@@ -12,6 +13,7 @@ public interface RotatedBlockStateProvider extends BlockStateProvider {
      *
      * @return source provider
      */
+    @Contract(pure = true)
     BlockStateProvider stateProvider();
 
     /**
@@ -19,5 +21,6 @@ public interface RotatedBlockStateProvider extends BlockStateProvider {
      *
      * @return forced direction, or null
      */
+    @Contract(pure = true)
     @Nullable BlockFace direction();
 }
