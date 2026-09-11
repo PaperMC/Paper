@@ -18,11 +18,9 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.level.levelgen.feature.stateproviders.RuleBasedStateProvider;
-import net.minecraft.world.level.levelgen.feature.stateproviders.SimpleStateProvider;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.loot.LootTable;
 import org.checkerframework.checker.index.qual.NonNegative;
@@ -43,18 +41,7 @@ public record PaperBlockTransformData(
 
     @Override
     public BlockStateProvider blockStateProvider() {
-        final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider provider = unwrapStateProvider(this.impl.blockStateProvider().value());
-        if (provider instanceof SimpleStateProvider(net.minecraft.world.level.block.state.BlockState state)) {
-            return io.papermc.paper.block.stateprovider.BlockStateProvider.simple(CraftBlockType.minecraftToBukkitNew(state.getBlock()));
-        }
-        if (provider instanceof net.minecraft.world.level.levelgen.feature.stateproviders.CopyPropertiesProvider(
-            Holder<net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider> source
-        )
-            && source.value() instanceof SimpleStateProvider(net.minecraft.world.level.block.state.BlockState sourceState)
-        ) {
-            return io.papermc.paper.block.stateprovider.BlockStateProvider.copyPropertiesFrom(CraftBlockType.minecraftToBukkitNew(sourceState.getBlock()));
-        }
-        throw new UnsupportedOperationException("Unsupported block state provider type: " + provider.getClass().getSimpleName());
+        return PaperBlockStateProvider.toApi(unwrapStateProvider(this.impl.blockStateProvider().value()));
     }
 
     @Override
