@@ -25,6 +25,7 @@ import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
 import io.papermc.paper.configuration.transformation.global.versioned.V29_LogIPs;
 import io.papermc.paper.configuration.transformation.global.versioned.V30_PacketIds;
 import io.papermc.paper.configuration.transformation.global.versioned.V31_AllowNetherPropertiesToConfig;
+import io.papermc.paper.configuration.transformation.global.versioned.V32_ChunkLoadingBasicToWorld;
 import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
 import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
@@ -298,6 +299,10 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         V29_LogIPs.apply(versionedBuilder);
         V30_PacketIds.apply(versionedBuilder);
         V31_AllowNetherPropertiesToConfig.apply(versionedBuilder);
+        V32_ChunkLoadingBasicToWorld.apply(versionedBuilder, this.createLoaderBuilder()
+            .defaultOptions(options -> options.header(WORLD_DEFAULTS_HEADER))
+            .path(this.globalFolder.resolve(this.defaultWorldConfigFileName))
+            .build(), this.worldConfigVersion());
         // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
         versionedBuilder.build().apply(node);
     }
