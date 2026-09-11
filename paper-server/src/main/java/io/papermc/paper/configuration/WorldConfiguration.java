@@ -177,6 +177,14 @@ public class WorldConfiguration extends ConfigurationPart {
             public List<NbtPathArgument.NbtPath> filteredEntityTagNbtPaths = NbtPathSerializer.fromString(List.of("Pos", "Motion", "sleeping_pos"));
             public boolean disableMobSpawnerSpawnEggTransformation = false;
             public boolean perPlayerMobSpawns = true;
+            /**
+             * Throttles natural spawning in a chunk where a plugin keeps refusing
+             * PreCreatureSpawnEvent, rather than charging the refusal to the mob cap of
+             * nearby players. Off by default: it changes how a plugin's refusals are
+             * accounted for, and a server whose plugins do not cancel that event sees no
+             * difference either way.
+             */
+            public boolean throttleRefusedSpawnsPerChunk = false;
             public boolean scanForLegacyEnderDragon = true;
             @MergeMap
             public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
