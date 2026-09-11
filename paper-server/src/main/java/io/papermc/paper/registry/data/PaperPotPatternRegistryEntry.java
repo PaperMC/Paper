@@ -1,12 +1,12 @@
 package io.papermc.paper.registry.data;
 
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.util.Conversions;
 import net.kyori.adventure.key.Key;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.DecoratedPotPattern;
-import io.papermc.paper.block.pot.PotPatternType;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;

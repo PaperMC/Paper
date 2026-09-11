@@ -20,7 +20,7 @@ public interface BiomeParameterPoint {
      * @return The maximum temperature
      * @deprecated no longer available
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(since = "26.3", forRemoval = true)
     default double getMaxTemperature() {
         return this.getTemperature();
     }
@@ -31,7 +31,7 @@ public interface BiomeParameterPoint {
      * @return The minimum temperature
      * @deprecated no longer available
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(since = "26.3", forRemoval = true)
     default double getMinTemperature() {
         return this.getTemperature();
     }
@@ -50,7 +50,7 @@ public interface BiomeParameterPoint {
      * @return The maximum humidity
      * @deprecated no longer available
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(since = "26.3", forRemoval = true)
     default double getMaxHumidity() {
         return this.getHumidity();
     }
@@ -61,7 +61,7 @@ public interface BiomeParameterPoint {
      * @return The minimum humidity
      * @deprecated no longer available
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(since = "26.3", forRemoval = true)
     default double getMinHumidity() {
         return this.getHumidity();
     }
@@ -80,7 +80,7 @@ public interface BiomeParameterPoint {
      * @return The maximum continentalness
      * @deprecated no longer available
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(since = "26.3", forRemoval = true)
     default double getMaxContinentalness() {
         return this.getContinentalness();
     }
@@ -91,7 +91,7 @@ public interface BiomeParameterPoint {
      * @return The minimum continentalness
      * @deprecated no longer available
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(since = "26.3", forRemoval = true)
     default double getMinContinentalness() {
         return this.getContinentalness();
     }
@@ -110,7 +110,7 @@ public interface BiomeParameterPoint {
      * @return The maximum erosion
      * @deprecated no longer available
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(since = "26.3", forRemoval = true)
     default double getMaxErosion() {
         return this.getErosion();
     }
@@ -121,7 +121,7 @@ public interface BiomeParameterPoint {
      * @return The minimum erosion
      * @deprecated no longer available
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(since = "26.3", forRemoval = true)
     default double getMinErosion() {
         return this.getErosion();
     }
@@ -140,7 +140,7 @@ public interface BiomeParameterPoint {
      * @return The maximum depth
      * @deprecated no longer available
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(since = "26.3", forRemoval = true)
     default double getMaxDepth() {
         return this.getDepth();
     }
@@ -151,7 +151,7 @@ public interface BiomeParameterPoint {
      * @return The minimum depth
      * @deprecated no longer available
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(since = "26.3", forRemoval = true)
     default double getMinDepth() {
         return this.getDepth();
     }
@@ -170,7 +170,7 @@ public interface BiomeParameterPoint {
      * @return The maximum weirdness
      * @deprecated no longer available
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(since = "26.3", forRemoval = true)
     default double getMaxWeirdness() {
         return this.getWeirdness();
     }
@@ -181,7 +181,7 @@ public interface BiomeParameterPoint {
      * @return The minimum weirdness
      * @deprecated no longer available
      */
-    @Deprecated(forRemoval = true, since = "26.3")
+    @Deprecated(since = "26.3", forRemoval = true)
     default double getMinWeirdness() {
         return this.getWeirdness();
     }

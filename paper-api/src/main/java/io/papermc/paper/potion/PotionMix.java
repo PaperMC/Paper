@@ -13,7 +13,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Represents a potion mix made in a Brewing Stand.
  *
- * @deprecated Fully replaced by {@link org.bukkit.inventory.BrewingRecipe}.
+ * @deprecated fully replaced by {@link org.bukkit.inventory.BrewingRecipe}
  */
 @NullMarked
 @Deprecated(since = "26.3", forRemoval = true)

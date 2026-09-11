@@ -30,15 +30,15 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
     protected @Nullable Holder<SoundEvent> soundEvent;
     protected @Nullable Float useDuration;
     protected @Nullable Float range;
-    protected @Nullable Integer durabilityDamage = 0;
+    protected int durabilityDamage = 0;
     protected @Nullable Component description;
 
     public PaperInstrumentRegistryEntry(final Conversions conversions, final @Nullable Instrument internal) {
         this.conversions = conversions;
-
         if (internal == null) {
             return;
         }
+
         this.soundEvent = internal.soundEvent();
         this.useDuration = internal.useDuration();
         this.range = internal.range();
@@ -64,7 +64,7 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
 
     @Override
     public @NonNegative int durabilityDamage() {
-        return asConfigured(this.durabilityDamage, "durabilityDamage");
+        return this.durabilityDamage;
     }
 
     @Override
@@ -126,7 +126,7 @@ public class PaperInstrumentRegistryEntry implements InstrumentRegistryEntry {
                 asConfigured(this.soundEvent, "soundEvent"),
                 this.duration(),
                 this.range(),
-                this.durabilityDamage(),
+                this.durabilityDamage,
                 asConfigured(this.description, "description")
             );
         }

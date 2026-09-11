@@ -18,10 +18,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.map.MapCursor;
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
-@ApiStatus.Internal
 interface ItemComponentTypesBridge {
 
     Optional<ItemComponentTypesBridge> BRIDGE = ServiceLoader.load(ItemComponentTypesBridge.class, ItemComponentTypesBridge.class.getClassLoader()).findFirst();

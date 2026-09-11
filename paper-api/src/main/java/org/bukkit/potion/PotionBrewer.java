@@ -7,8 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Used to manage custom {@link io.papermc.paper.potion.PotionMix}s.
- * @deprecated since mojang introduced data driven brewing recipes, this type no longer offers anything that isnt
- * covered by existing recipe and potion type api.
+ * @deprecated since mojang introduced data driven brewing recipes, this type no longer offers anything that isn't
+ * covered by existing recipe and potion type API
  */
 @Deprecated(since = "26.3", forRemoval = true)
 public interface PotionBrewer {

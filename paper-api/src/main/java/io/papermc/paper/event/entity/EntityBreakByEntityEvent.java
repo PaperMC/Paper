@@ -12,10 +12,6 @@ public class EntityBreakByEntityEvent extends EntityBreakEvent {
     private final DamageSource damageSource;
 
     @ApiStatus.Internal
-    public EntityBreakByEntityEvent(final Entity entity, final Entity remover, final DamageSource damageSource) {
-        this(entity, remover, damageSource, RemoveCause.ENTITY);
-    }
-
     public EntityBreakByEntityEvent(final Entity entity, final Entity remover, final DamageSource damageSource, final RemoveCause cause) {
         super(entity, cause);
         this.remover = remover;

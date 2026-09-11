@@ -19,7 +19,7 @@ public class BrewingRecipe implements Recipe, Keyed {
      * Creates a new brewing recipe.
      *
      * @param key        a unique key for the brewing recipe
-     * @param result     the resulting itemstack that will appear in the 3 bottom slots
+     * @param result     the resulting item that will appear in the 3 bottom slots
      * @param input      the input placed into the bottom 3 slots
      * @param ingredient the ingredient placed into the top slot
      */
@@ -36,10 +36,11 @@ public class BrewingRecipe implements Recipe, Keyed {
     }
 
     /**
-     * Gets the resulting itemstack after the brew has finished.
+     * Gets the resulting item after the brew has finished.
      *
-     * @return the result itemstack
+     * @return the result item
      */
+    @Override
     public ItemStack getResult() {
         return this.result.clone();
     }
@@ -47,7 +48,7 @@ public class BrewingRecipe implements Recipe, Keyed {
     /**
      * Gets the input for the bottom 3 slots in the brewing stand.
      *
-     * @return the bottom 3 slot ingredients
+     * @return the bottom 3 slot input
      */
     public RecipeChoice getInput() {
         return this.input.clone();

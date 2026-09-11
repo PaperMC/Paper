@@ -372,20 +372,19 @@ public enum Effect {
      */
     DESTROY_BLOCK(2014, Type.VISUAL, BlockData.class),
     /**
-     * The particles shown when an ender dragon teleports its egg.
+     * The particles shown when an ender dragon egg teleports.
      */
-    ENDER_DRAGON_EGG_TELEPORT(2015, Type.VISUAL, Integer.class),
+    ENDER_DRAGON_EGG_TELEPORT(2015, Type.VISUAL, Integer.class), // not really nice but like SCULK_CHARGE not worth at this point to implement correctly
     /**
      * The particles shown when a shulker teleports.
      */
     SHULKER_TELEPORT(2016, Type.VISUAL, Integer.class),
     /**
-     * The particles shown when a player consumes an effect that teleports them.
+     * The particles shown when a player consumes an item that teleports them.
      */
     CONSUME_EFFECT_TELEPORT(2017, Type.VISUAL, Integer.class),
     /**
      * The particles shown when an enderman teleports.
-     * {@link Integer} param is relative to the number of particles.
      */
     ENDERMAN_TELEPORT(2018, Type.VISUAL, Integer.class),
     /**
@@ -412,7 +411,7 @@ public enum Effect {
      */
     ELECTRIC_SPARK(3002, Type.VISUAL, Axis.class),
     /**
-     * The sound played / particles shown when wax is applied to a copper block.
+     * The particles shown when wax is applied to a copper block.
      */
     COPPER_WAX_ON(3003, Type.VISUAL),
     /**

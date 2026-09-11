@@ -22,7 +22,7 @@ public class EntityBreakEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * Gets the cause for the entity's removal
+     * Gets the cause for the entity's removal.
      *
      * @return the RemoveCause for the entity's removal
      */
@@ -50,27 +50,27 @@ public class EntityBreakEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * An enum to specify the cause of the removal
+     * An enum to specify the cause of the removal.
      */
     public enum RemoveCause {
         /**
-         * Removed by an entity
+         * Removed by an entity.
          */
         ENTITY,
         /**
-         * Removed by an explosion
+         * Removed by an explosion.
          */
         EXPLOSION,
         /**
-         * Removed by placing a block on it
+         * Removed by placing a block on it.
          */
         OBSTRUCTION,
         /**
-         * Removed by destroying the block behind it, etc
+         * Removed by destroying the block behind it, etc.
          */
         PHYSICS,
         /**
-         * Removed by an uncategorised cause
+         * Removed by an uncategorised cause.
          */
         DEFAULT,
     }

@@ -9,7 +9,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.MapPostProcessing;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import org.bukkit.Bukkit;
-import org.bukkit.Color;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.MapView;
@@ -92,7 +91,7 @@ public class CraftMetaMap extends CraftMetaItem implements MapMeta {
     }
 
     boolean isMapEmpty() {
-        return !(this.hasMapId() || this.hasScaling() | this.hasLocationName() || this.hasColor());
+        return !(this.hasMapId() || this.hasScaling() | this.hasLocationName());
     }
 
     @Override
@@ -154,20 +153,6 @@ public class CraftMetaMap extends CraftMetaItem implements MapMeta {
     @Override
     public void setLocationName(String name) {
         this.setLocalizedName(name); // SPIGOT-6308
-    }
-
-    @Override
-    public boolean hasColor() {
-        return false;
-    }
-
-    @Override
-    public Color getColor() {
-        return null;
-    }
-
-    @Override
-    public void setColor(Color color) {
     }
 
     @Override

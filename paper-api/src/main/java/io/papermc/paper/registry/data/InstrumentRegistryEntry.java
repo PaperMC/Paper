@@ -4,6 +4,7 @@ import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.holder.RegistryHolder;
+import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
 import org.bukkit.MusicInstrument;
 import org.bukkit.Sound;
@@ -11,7 +12,6 @@ import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import java.util.function.Consumer;
 
 /**
  * A data-centric version-specific registry entry for the {@link org.bukkit.MusicInstrument} type.
@@ -50,10 +50,9 @@ public interface InstrumentRegistryEntry {
      * Provides the amount of durability to consume on each use.
      *
      * @return the amount of durability to consume
-     * @see MusicInstrument#getDurabilityDamage()
      */
     @Contract(pure = true)
-    @Positive int durabilityDamage();
+    @NonNegative int durabilityDamage();
 
     /**
      * Provides the description of the instrument, which is used in the item tooltip.
@@ -148,8 +147,7 @@ public interface InstrumentRegistryEntry {
          *
          * @param durabilityDamage the damage (non-negative)
          * @return this builder instance
-         * @see InstrumentRegistryEntry#durabilityDamage() ()
-         * @see MusicInstrument#getDurabilityDamage()
+         * @see InstrumentRegistryEntry#durabilityDamage()
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder durabilityDamage(@NonNegative int durabilityDamage);

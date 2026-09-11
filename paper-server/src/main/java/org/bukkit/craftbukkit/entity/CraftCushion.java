@@ -8,7 +8,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class CraftCushion extends CraftBlockAttachedEntity implements Cushion {
 
-    public CraftCushion(CraftServer server, net.minecraft.world.entity.decoration.Cushion entity) {
+    public CraftCushion(final CraftServer server, final net.minecraft.world.entity.decoration.Cushion entity) {
         super(server, entity);
     }
 
@@ -23,7 +23,7 @@ public class CraftCushion extends CraftBlockAttachedEntity implements Cushion {
     }
 
     @Override
-    public void setColor(DyeColor color) {
+    public void setColor(final DyeColor color) {
         this.getHandle().setColor(net.minecraft.world.item.DyeColor.byId(color.getWoolData()));
     }
 }

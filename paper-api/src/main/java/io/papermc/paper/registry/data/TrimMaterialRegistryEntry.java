@@ -14,9 +14,9 @@ import org.jetbrains.annotations.Contract;
 public interface TrimMaterialRegistryEntry {
 
     /**
-     * Provides the palette texture key to be used for this trim material.
+     * Provides the palette texture id to be used for this trim material.
      *
-     * @return the palette texture key
+     * @return the palette texture id
      */
     @Contract(pure = true)
     Key paletteId();
@@ -42,9 +42,9 @@ public interface TrimMaterialRegistryEntry {
     interface Builder extends TrimMaterialRegistryEntry, RegistryBuilder<TrimMaterial> {
 
         /**
-         * Sets the palette texture key to be used for this trim material.
+         * Sets the palette texture id to be used for this trim material.
          *
-         * @param paletteId the palette texture key
+         * @param paletteId the palette texture id
          * @return this builder instance
          * @see #paletteId()
          */

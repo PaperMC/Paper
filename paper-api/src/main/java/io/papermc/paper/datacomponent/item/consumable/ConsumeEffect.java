@@ -19,10 +19,23 @@ public interface ConsumeEffect {
      *
      * @param diameter diameter of random teleportation
      * @return the effect instance
+     * @see #teleportRandomlyEffect(float, boolean)
      */
     @Contract(value = "_ -> new", pure = true)
     static TeleportRandomly teleportRandomlyEffect(final float diameter) {
-        return ConsumableTypesBridge.bridge().teleportRandomlyEffect(diameter);
+        return teleportRandomlyEffect(diameter, true);
+    }
+
+    /**
+     * Creates a consume effect that randomly teleports the entity on consumption.
+     *
+     * @param diameter diameter of random teleportation
+     * @param directionalParticles show a particle trail in the direction of the teleportation
+     * @return the effect instance
+     */
+    @Contract(value = "_, _ -> new", pure = true)
+    static TeleportRandomly teleportRandomlyEffect(final float diameter, final boolean directionalParticles) {
+        return ConsumableTypesBridge.bridge().teleportRandomlyEffect(diameter, directionalParticles);
     }
 
     /**
@@ -83,9 +96,9 @@ public interface ConsumeEffect {
         float diameter();
 
         /**
-         * If the teleport need to show a particle trail into the direction of the teleportation.
+         * Checks whether to show a particle trail in the direction of the teleportation.
          *
-         * @return true if the particle trail should be shown
+         * @return {@code true} if the particle trail should be shown
          */
         boolean directionalParticles();
     }

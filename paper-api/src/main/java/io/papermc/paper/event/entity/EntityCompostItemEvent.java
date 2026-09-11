@@ -18,8 +18,8 @@ public class EntityCompostItemEvent extends CompostItemEvent implements Cancella
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public EntityCompostItemEvent(final Entity entity, final Block composter, final ItemStack item, final int willRaiseLevel) {
-        super(composter, item, willRaiseLevel);
+    public EntityCompostItemEvent(final Entity entity, final Block composter, final ItemStack item, final int raisedLevels) {
+        super(composter, item, raisedLevels);
         this.entity = entity;
     }
 

@@ -40,9 +40,7 @@ public class CompostItemEvent extends BlockEvent {
      * Gets whether the composter will rise a level.
      *
      * @return {@code true} if successful
-     * @deprecated items can now control how many layers they add on click. Use {@link #getLevelsToRaise()}.
      */
-    @Deprecated(since = "26.3", forRemoval = true)
     public boolean willRaiseLevel() {
         return this.raisedLevels > 0;
     }
@@ -50,7 +48,8 @@ public class CompostItemEvent extends BlockEvent {
     /**
      * Sets whether the composter will rise a level.
      *
-     * @param willRaiseLevel {@code true} if the composter should rise a level. Use {@link #setLevelsToRaise(int)}.
+     * @param willRaiseLevel {@code true} if the composter should rise a level
+     * @deprecated items can now control how many layers they add on click. Use {@link #setLevelsToRaise(int)}.
      */
     @Deprecated(since = "26.3", forRemoval = true)
     public void setWillRaiseLevel(final boolean willRaiseLevel) {
@@ -67,7 +66,7 @@ public class CompostItemEvent extends BlockEvent {
     /**
      * Configures the levels the composter will be raised by.
      *
-     * @param raisedLevels the levels to raise the composter by.
+     * @param raisedLevels the levels to raise the composter by
      */
     public void setLevelsToRaise(final int raisedLevels) {
         this.raisedLevels = raisedLevels;

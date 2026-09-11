@@ -1,6 +1,7 @@
 package io.papermc.paper.datacomponent;
 
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.block.pot.PaperPotPatternType;
 import io.papermc.paper.datacomponent.item.PaperAttackRange;
 import io.papermc.paper.datacomponent.item.PaperBannerPatternLayers;
 import io.papermc.paper.datacomponent.item.PaperBlockItemDataProperties;
@@ -66,7 +67,6 @@ import net.minecraft.world.item.component.MapPostProcessing;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
-import io.papermc.paper.block.pot.PaperPotPatternType;
 import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.craftbukkit.entity.CraftCat;
 import org.bukkit.craftbukkit.entity.CraftChicken;

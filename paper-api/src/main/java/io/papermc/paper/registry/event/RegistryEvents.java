@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.event;
 
+import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
@@ -26,7 +27,6 @@ import org.bukkit.GameEvent;
 import org.bukkit.JukeboxSong;
 import org.bukkit.MusicInstrument;
 import org.bukkit.block.banner.PatternType;
-import io.papermc.paper.block.pot.PotPatternType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Cat;

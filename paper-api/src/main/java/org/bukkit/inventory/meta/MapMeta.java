@@ -3,6 +3,7 @@ package org.bukkit.inventory.meta;
 import org.bukkit.Color;
 import org.bukkit.UndefinedNullability;
 import org.bukkit.map.MapView;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -132,7 +133,10 @@ public interface MapMeta extends ItemMeta {
      * @deprecated maps no longer have a color
      */
     @Deprecated(since = "26.3")
-    boolean hasColor();
+    @Contract("-> false")
+    default boolean hasColor() {
+        return false;
+    }
 
     /**
      * Gets the map color that is set. A custom map color will alter the display
@@ -145,7 +149,10 @@ public interface MapMeta extends ItemMeta {
      * @deprecated maps no longer have a color
      */
     @Deprecated(since = "26.3")
-    @Nullable Color getColor();
+    @Contract("-> null")
+    default @Nullable Color getColor() {
+        return null;
+    }
 
     /**
      * Sets the map color. A custom map color will alter the display of the map
@@ -155,7 +162,8 @@ public interface MapMeta extends ItemMeta {
      * @deprecated maps no longer have a color
      */
     @Deprecated(since = "26.3")
-    void setColor(@Nullable Color color);
+    default void setColor(@Nullable Color color) {
+    }
 
     @Override
     @NotNull

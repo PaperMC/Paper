@@ -87,13 +87,6 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
     public abstract float getRange();
 
     /**
-     * Gets the durability damage to this instrument.
-     *
-     * @return the durability damage to this instrument
-     */
-    public abstract float getDurabilityDamage();
-
-    /**
      * Gets the description of this instrument as displayed to the client.
      *
      * @return the description component

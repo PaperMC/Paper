@@ -96,10 +96,6 @@ public class CraftBlockData implements BlockData {
         return state.setValue(propertyValue.property(), propertyValue.value());
     }
 
-    private <T extends Comparable<T>> BlockState copyProperty(BlockState source, BlockState target, Property<T> property) {
-        return target.setValue(property, source.getValue(property));
-    }
-
     @Override
     public boolean matches(BlockData data) {
         if (!(data instanceof final CraftBlockData craft)) {
@@ -608,9 +604,7 @@ public class CraftBlockData implements BlockData {
         CraftBlockData other = (CraftBlockData) blockData;
         BlockState otherState = other.state;
         for (Property<?> property : this.state.getBlock().getStateDefinition().getProperties()) {
-            if (otherState.hasProperty(property)) {
-                otherState = this.copyProperty(this.state, otherState, property);
-            }
+            otherState = BlockState.copyProperty(this.state, otherState, property);
         }
 
         other.state = otherState;
