@@ -260,26 +260,24 @@ public enum Particle implements Keyed {
 
     // Paper start - RandomizationType support
     /**
-     * The randomization type for the particle, which controls how offset and speed
-     * are randomized for the particle.
+     * The randomization type for the particle, which controls how offset and speed are randomized.
      */
     public enum RandomizationType {
         /**
-         * The default randomization type, which multiplies offsets and speed by a
-         * Gaussian random value similar to {@link java.util.Random#nextGaussian()}
-         * (mean 0, standard deviation 1 — unbounded, and may be negative).
+         * The default randomization type, which multiplies each offset axis and each speed axis independently by its
+         * own Gaussian random value (similar to {@link java.util.Random#nextGaussian()} (mean 0, standard deviation 1).
          */
         DEFAULT,
 
         /**
-         * Multiplies offsets by a uniform random value in the range [0, 1) similar to
-         * {@link java.util.Random#nextDouble()}. Speed is left unmodified.
+         * Multiplies each offset axis independently by its own uniform random value in the range [0, 1)
+         * similar to {@link java.util.Random#nextDouble()}. Speed is left unmodified.
          */
         ALTERNATIVE,
 
         /**
-         * Multiplies offsets and speed by a uniform random value in the range [0, 1)
-         * similar to {@link java.util.Random#nextDouble()}.
+         * Multiplies each offset axis <b>and</b> each speed axis independently by its own uniform random
+         * value in the range [0, 1) similar to {@link java.util.Random#nextDouble()}.
          */
         ALTERNATIVE_WITH_SPEED
     }
