@@ -102,6 +102,7 @@ import org.bukkit.block.data.type.SculkShrieker;
 import org.bukkit.block.data.type.SculkVein;
 import org.bukkit.block.data.type.SeaPickle;
 import org.bukkit.block.data.type.Shelf;
+import org.bukkit.block.data.type.ShelfMushroom;
 import org.bukkit.block.data.type.Sign;
 import org.bukkit.block.data.type.Skull;
 import org.bukkit.block.data.type.Slab;
@@ -2187,7 +2188,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> SEAGRASS = getBlockType("seagrass");
 
-    BlockType.Typed<Ageable> SHELF_MUSHROOM = getBlockType("shelf_mushroom");
+    BlockType.Typed<ShelfMushroom> SHELF_MUSHROOM = getBlockType("shelf_mushroom");
 
     BlockType.Typed<BlockData> SHORT_DRY_GRASS = getBlockType("short_dry_grass");
 
@@ -2319,7 +2320,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Directional> STONECUTTER = getBlockType("stonecutter");
 
-    BlockType.Typed<Directional> STRAW_BED = getBlockType("straw_bed");
+    BlockType.Typed<Bed> STRAW_BED = getBlockType("straw_bed");
 
     BlockType.Typed<Orientable> STRIPPED_ACACIA_LOG = getBlockType("stripped_acacia_log");
 

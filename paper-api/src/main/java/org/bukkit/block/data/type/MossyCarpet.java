@@ -50,7 +50,7 @@ public interface MossyCarpet extends BlockData {
      * {@link org.bukkit.block.data.type.Wall.Height} instead. All references
      * to this enum will be redirected to that enum at runtime.
      */
-    @Deprecated
+    @Deprecated(since = "1.21.5", forRemoval = true)
     public enum Height {
         /**
          * Not present.

@@ -108,6 +108,7 @@ import org.bukkit.block.data.type.SculkShrieker;
 import org.bukkit.block.data.type.SculkVein;
 import org.bukkit.block.data.type.SeaPickle;
 import org.bukkit.block.data.type.Shelf;
+import org.bukkit.block.data.type.ShelfMushroom;
 import org.bukkit.block.data.type.Sign;
 import org.bukkit.block.data.type.Skull;
 import org.bukkit.block.data.type.Slab;
@@ -1675,7 +1676,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     SEA_LANTERN(-1),
     SEA_PICKLE(-1, SeaPickle.class),
     SEAGRASS(-1),
-    SHELF_MUSHROOM(-1, Ageable.class),
+    SHELF_MUSHROOM(-1, ShelfMushroom.class),
     SHORT_DRY_GRASS(-1),
     SHORT_GRASS(-1),
     SHROOMLIGHT(-1),
@@ -1741,7 +1742,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     STONE_SLAB(-1, Slab.class),
     STONE_STAIRS(-1, Stairs.class),
     STONECUTTER(-1, Directional.class),
-    STRAW_BED(-1, Directional.class),
+    STRAW_BED(-1, Bed.class),
     STRIPPED_ACACIA_LOG(-1, Orientable.class),
     STRIPPED_ACACIA_WOOD(-1, Orientable.class),
     STRIPPED_BAMBOO_BLOCK(-1, Orientable.class),

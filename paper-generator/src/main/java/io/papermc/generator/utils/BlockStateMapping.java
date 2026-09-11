@@ -136,6 +136,7 @@ public final class BlockStateMapping {
         .put("UntintedParticleLeaves", "Leaves")
         .put("TintedParticleLeaves", "Leaves")
         .put("StandingSign", "Sign")
+        .put("StrawBed", "Bed")
         .put("FenceGate", "Gate")
         .buildOrThrow();
 

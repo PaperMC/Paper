@@ -10,14 +10,13 @@ import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @GeneratedClass
-public class CraftStrawBed extends CraftBlockData implements Directional {
+public class CraftStrawBed extends CraftBlockData implements Bed {
     private static final EnumProperty<Direction> FACING = StrawBedBlock.FACING;
 
     private static final BooleanProperty OCCUPIED = StrawBedBlock.OCCUPIED;
@@ -45,18 +44,22 @@ public class CraftStrawBed extends CraftBlockData implements Directional {
         return this.getValues(FACING, BlockFace.class);
     }
 
+    @Override
     public boolean isOccupied() {
         return this.get(OCCUPIED);
     }
 
+    @Override
     public void setOccupied(final boolean occupied) {
         this.set(OCCUPIED, occupied);
     }
 
+    @Override
     public Bed.Part getPart() {
         return this.get(PART, Bed.Part.class);
     }
 
+    @Override
     public void setPart(final Bed.Part part) {
         Preconditions.checkArgument(part != null, "part cannot be null!");
         this.set(PART, part);
