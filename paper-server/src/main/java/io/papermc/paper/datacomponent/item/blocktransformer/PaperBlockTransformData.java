@@ -2,10 +2,9 @@ package io.papermc.paper.datacomponent.item.blocktransformer;
 
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.block.BlockPredicate;
+import io.papermc.paper.block.PaperBlockPredicate;
 import io.papermc.paper.block.stateprovider.BlockStateProvider;
 import io.papermc.paper.block.stateprovider.PaperBlockStateProvider;
-import io.papermc.paper.registry.PaperRegistries;
-import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -13,22 +12,17 @@ import java.util.Optional;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
-import net.minecraft.core.HolderSet;
-import net.minecraft.core.Vec3i;
 import net.minecraft.core.component.BlockTransformer;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.levelgen.feature.stateproviders.SimpleStateProvider;
 import net.minecraft.world.level.levelgen.feature.stateproviders.RuleBasedStateProvider;
-import net.minecraft.world.level.levelgen.blockpredicates.MatchingBlocksPredicate;
+import net.minecraft.world.level.levelgen.feature.stateproviders.SimpleStateProvider;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.loot.LootTable;
 import org.checkerframework.checker.index.qual.NonNegative;
@@ -51,7 +45,14 @@ public record PaperBlockTransformData(
     public BlockStateProvider blockStateProvider() {
         final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider provider = unwrapStateProvider(this.impl.blockStateProvider().value());
         if (provider instanceof SimpleStateProvider(net.minecraft.world.level.block.state.BlockState state)) {
-            return io.papermc.paper.block.stateprovider.BlockStateProvider.simple(CraftBlockData.createData(state));
+            return io.papermc.paper.block.stateprovider.BlockStateProvider.simple(CraftBlockType.minecraftToBukkitNew(state.getBlock()));
+        }
+        if (provider instanceof net.minecraft.world.level.levelgen.feature.stateproviders.CopyPropertiesProvider(
+            Holder<net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider> source
+        )
+            && source.value() instanceof SimpleStateProvider(net.minecraft.world.level.block.state.BlockState sourceState)
+        ) {
+            return io.papermc.paper.block.stateprovider.BlockStateProvider.copyPropertiesFrom(CraftBlockType.minecraftToBukkitNew(sourceState.getBlock()));
         }
         throw new UnsupportedOperationException("Unsupported block state provider type: " + provider.getClass().getSimpleName());
     }
@@ -168,9 +169,9 @@ public record PaperBlockTransformData(
 
         BuilderImpl(final @Nullable BlockPredicate blockPredicate, final BlockStateProvider blockStateProvider) {
             final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider targetProvider = PaperBlockStateProvider.toVanilla(blockStateProvider);
-            final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider provider = blockPredicate == null
+            final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider provider = (blockPredicate == null)
                 ? targetProvider
-                : RuleBasedStateProvider.builder().ifTrueThenProvide(toVanillaBlockPredicate(blockPredicate), targetProvider).build();
+                : RuleBasedStateProvider.builder().ifTrueThenProvide(PaperBlockPredicate.toVanilla(blockPredicate), targetProvider).build();
             this.blockStateProvider = Holder.direct(provider);
         }
 
@@ -250,23 +251,5 @@ public record PaperBlockTransformData(
                 this.itemDamagePerUse
             ));
         }
-    }
-
-    private static net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate toVanillaBlockPredicate(final BlockPredicate predicate) {
-        RegistryKeySet<BlockType> blocks = predicate.blocks();
-        if (blocks == null) {
-            return net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate.alwaysTrue();
-        }
-        final List<Holder<Block>> blockHolders = blocks.values().stream()
-            .map(PaperRegistries::<Block, org.bukkit.block.BlockType>toNms)
-            .map(key -> {
-                final Block block = BuiltInRegistries.BLOCK.getValue(key.identifier());
-                return BuiltInRegistries.BLOCK.wrapAsHolder(block);
-            })
-            .toList();
-        return new MatchingBlocksPredicate(
-            Vec3i.ZERO,
-            HolderSet.direct(blockHolders)
-        );
     }
 }
