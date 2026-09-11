@@ -1,5 +1,12 @@
 --- a/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 +++ b/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+@@ -12,4 +_,6 @@
+ import java.util.Map;
+ import java.util.Objects;
+ import java.util.Optional;
++import java.util.Set;
++import java.util.UUID;
+ import java.util.function.Predicate;
 @@ -48,7 +_,7 @@
      private static final String FRAME_PREFIX = "frame-";
      public static final Codec<MapItemSavedData> CODEC = RecordCodecBuilder.create(
@@ -108,6 +115,29 @@
  
          for (MapItemSavedData.HoldingPlayer holdingPlayer : this.carriedBy) {
              holdingPlayer.markColorsDirty(x, y);
+@@ -388,8 +_,22 @@
+          this.carriedByPlayers.put(player, holdingPlayer);
+          this.carriedBy.add(holdingPlayer);
+       }
+ 
+       return holdingPlayer;
+    }
++
++   // Paper start - remove holder state for departed players
++   public void removeHolders(final Set<UUID> playerIds) {
++      Iterator<HoldingPlayer> iterator = this.carriedBy.iterator();
++      while (iterator.hasNext()) {
++         HoldingPlayer holder = iterator.next();
++         if (playerIds.contains(holder.player.getUUID())) {
++            this.carriedByPlayers.remove(holder.player);
++            iterator.remove();
++            this.removeDecoration(holder.player.getPlainTextName());
++         }
++      }
++   }
++   // Paper end
+ 
+    public boolean toggleBanner(final LevelAccessor level, final BlockPos pos) {
 @@ -416,7 +_,7 @@
                  return true;
              }
