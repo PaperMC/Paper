@@ -1,5 +1,21 @@
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
+@@ -51,7 +_,6 @@
+ import net.minecraft.network.protocol.game.ClientboundDamageEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundExplodePacket;
+-import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
+ import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
+@@ -172,7 +_,6 @@
+ import net.minecraft.world.level.storage.LevelData;
+ import net.minecraft.world.level.storage.LevelStorageSource;
+ import net.minecraft.world.level.storage.SavedDataStorage;
+-import net.minecraft.world.level.storage.ServerLevelData;
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.phys.shapes.BooleanOp;
 @@ -196,7 +_,7 @@
      private final List<ServerPlayer> players = Lists.newArrayList();
      private final ServerChunkCache chunkSource;
@@ -276,7 +292,7 @@
      }
  
      @Override
-@@ -373,11 +_,24 @@
+@@ -373,11 +_,25 @@
          int percentage = this.getGameRules().get(GameRules.PLAYERS_SLEEPING_PERCENTAGE);
          if (this.sleepStatus.areEnoughSleeping(percentage) && this.sleepStatus.areEnoughDeepSleeping(percentage, this.players)) {
              Optional<Holder<WorldClock>> defaultClock = this.dimensionType().defaultClock();
@@ -284,16 +300,17 @@
              if (this.getGameRules().get(GameRules.ADVANCE_TIME) && defaultClock.isPresent()) {
 -                this.server.clockManager().moveToTimeMarker(defaultClock.get(), ClockTimeMarkers.WAKE_UP_FROM_SLEEP);
 +                // Paper start - per-world time
-+                long currentTime = this.clockManager().getInstance(defaultClock.get()).totalTicks();
-+                long delta = this.clockManager().getTotalTicksToTimeMarker(defaultClock.get(), ClockTimeMarkers.WAKE_UP_FROM_SLEEP).orElse(0L) - currentTime;
-+                event = new org.bukkit.event.world.TimeSkipEvent(
-+                    this.getWorld(),
-+                    org.bukkit.event.world.ClockTimeSkipEvent.SkipReason.NIGHT_SKIP,
-+                    delta
-+                );
++                final ServerClockManager.TimerMove timerMove = this.clockManager().resolveTimerMove(defaultClock.get(), net.minecraft.world.clock.ClockTimeMarkers.WAKE_UP_FROM_SLEEP);
++                if (timerMove != null) {
++                    event = new org.bukkit.event.world.TimeSkipEvent(
++                        this.getWorld(),
++                        org.bukkit.event.world.ClockTimeSkipEvent.SkipReason.NIGHT_SKIP,
++                        timerMove.targetTime() - timerMove.currentTime()
++                    );
 +
-+                if (event.callEvent()) {
-+                    this.clockManager().setTotalTicks(defaultClock.get(), currentTime + event.getSkipAmount());
++                    if (event.callEvent()) {
++                        this.clockManager().setTotalTicks(defaultClock.get(), timerMove.currentTime() + event.getSkipAmount());
++                    }
 +                }
 +                // Paper end - per-world time
              }

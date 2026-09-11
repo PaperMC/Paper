@@ -80,7 +80,7 @@ public class VelocityProxy {
         return new PropertyMap(propertiesMap);
     }
 
-    public static ProfilePublicKey.Data readForwardedKey(ByteBuf buf) { // TODO - snapshot - is even used?
+    public static ProfilePublicKey.Data readForwardedKey(ByteBuf buf) {
         return ProfilePublicKey.Data.STREAM_CODEC.decode(buf);
     }
 

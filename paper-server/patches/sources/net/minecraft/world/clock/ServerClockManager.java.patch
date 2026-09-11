@@ -30,17 +30,25 @@
          if (advanceTime) {
              this.clocks.values().forEach(ServerClockManager.ServerClockInstance::tick);
              this.setDirty();
-@@ -102,7 +_,16 @@
+@@ -102,7 +_,24 @@
          return result.get();
      }
  
 -    public void addTicks(final Holder<WorldClock> clock, final int ticks) {
 +    // Paper start - time skip event
-+    public java.util.OptionalLong getTotalTicksToTimeMarker(final Holder<WorldClock> clock, final ResourceKey<ClockTimeMarker> timeMarkerId) {
++    public record TimerMove(long currentTime, long targetTime) {
++
++    }
++
++    public @org.jspecify.annotations.Nullable TimerMove resolveTimerMove(final Holder<WorldClock> clock, final ResourceKey<ClockTimeMarker> timeMarkerId) {
 +        final ServerClockManager.ServerClockInstance instance = this.getInstance(clock);
 +        final ClockTimeMarker timeMarker = instance.timeMarkers.get(timeMarkerId);
++        if (timeMarker == null) return null;
 +
-+        return timeMarker != null ? java.util.OptionalLong.of(timeMarker.resolveTimeToMoveTo(instance.totalTicks)) : java.util.OptionalLong.empty();
++        return new TimerMove(
++            instance.totalTicks,
++            timeMarker.resolveTimeToMoveTo(instance.totalTicks)
++        );
 +    }
 +    // Paper end - time skip event
 +

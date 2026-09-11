@@ -27,7 +27,7 @@
          long currentTicks = timeline.value().getCurrentTicks(clockManager);
          source.sendSuccess(() -> Component.translatable("commands.time.query.timeline", timeline.getRegisteredName(), currentTicks), false);
          return wrapTime(currentTicks);
-@@ -179,36 +_,65 @@
+@@ -179,34 +_,50 @@
              throw ERROR_WRONG_TIMELINE_FOR_CLOCK.create(clock.getRegisteredName(), timeline.getRegisteredName());
          }
  
@@ -84,29 +84,29 @@
      private static int setTimeToTimeMarker(final CommandSourceStack source, final Holder<WorldClock> clock, final ResourceKey<ClockTimeMarker> timeMarkerId) throws CommandSyntaxException {
 -        ServerClockManager clockManager = source.getServer().clockManager();
 -        ServerClockManager.MoveResult moveResult = clockManager.moveToTimeMarker(clock, timeMarkerId);
-+        // Paper start - per-world time
-+        // TODO - snapshot - need check this later for the changes into ServerClockManager.MoveResult
-+        ServerClockManager clockManager = source.getLevel().clockManager();
-+        java.util.OptionalLong targetTime = clockManager.getTotalTicksToTimeMarker(clock, timeMarkerId);
-+        ServerClockManager.MoveResult moveResult = net.minecraft.world.clock.ServerClockManager.MoveResult.NOT_MOVED;
++        ServerClockManager clockManager = source.getLevel().clockManager(); // Paper - per world time
++        ServerClockManager.MoveResult moveResult = moveToTimeMarker(clock, timeMarkerId, clockManager, source); // Paper - time skip event
          String clockName = clock.getRegisteredName();
          String timeMarkerName = timeMarkerId.identifier().toString();
-+        if (targetTime.isEmpty()) {
-+            throw ERROR_NO_TIME_MARKER_FOUND.create(clockName, timeMarkerName);
-+        }
-+        final long currentTime = clockManager.getInstance(clock).totalTicks();
-+        final org.bukkit.event.world.ClockTimeSkipEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.createTimeSkipEvent(source, targetTime.getAsLong() - currentTime);
-+        if (event.callEvent()) {
-+            moveResult = net.minecraft.world.clock.ServerClockManager.MoveResult.MOVED;
-+            clockManager.setTotalTicks(clock, currentTime + event.getSkipAmount());
-+        }
-+        // Paper end - per-world time
          switch (moveResult) {
-             case NO_TIME_MARKER_FOUND:
-                 throw ERROR_NO_TIME_MARKER_FOUND.create(clockName, timeMarkerName);
-@@ -222,7 +_,7 @@
+@@ -221,8 +_,22 @@
+         }
      }
  
++    // Paper start - time skip event
++    private static ServerClockManager.MoveResult moveToTimeMarker(final Holder<WorldClock> clock, final ResourceKey<ClockTimeMarker> timeMarkerId, final ServerClockManager clockManager, final CommandSourceStack source) {
++        final ServerClockManager.TimerMove timerMove = clockManager.resolveTimerMove(clock, timeMarkerId);
++        if (timerMove == null) return ServerClockManager.MoveResult.NO_TIME_MARKER_FOUND;
++
++        // We consider it an attempted move even if the marker occurs at this point in time for event calling purposes.
++        final org.bukkit.event.world.ClockTimeSkipEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.createTimeSkipEvent(source, timerMove.targetTime() - timerMove.currentTime());
++        if (!event.callEvent() || event.getSkipAmount() == 0) return ServerClockManager.MoveResult.NOT_MOVED;
++
++        clockManager.setTotalTicks(clock, timerMove.currentTime() + event.getSkipAmount());
++        return ServerClockManager.MoveResult.MOVED;
++    }
++    // Paper end - time skip event
++
      private static int setPaused(final CommandSourceStack source, final Holder<WorldClock> clock, final boolean paused) throws CommandSyntaxException {
 -        ServerClockManager clockManager = source.getServer().clockManager();
 +        ServerClockManager clockManager = source.getLevel().clockManager(); // Paper - per-world time
