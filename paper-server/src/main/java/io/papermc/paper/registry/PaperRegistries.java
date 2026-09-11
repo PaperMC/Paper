@@ -162,7 +162,7 @@ public final class PaperRegistries {
             start(Registries.ZOMBIE_NAUTILUS_VARIANT, RegistryKey.ZOMBIE_NAUTILUS_VARIANT).craft(ZombieNautilus.Variant.class, CraftZombieNautilus.CraftVariant::new).writable(PaperZombieNautilusVariantRegistryEntry.PaperBuilder::new),
             start(Registries.SULFUR_CUBE_ARCHETYPE, RegistryKey.SULFUR_CUBE_ARCHETYPE).craft(SulfurCube.Archetype.class, CraftSulfurCube.CraftArchetype::new).writable(PaperSulfurCubeArchetypeRegistryEntry.PaperBuilder::new),
             start(Registries.DIALOG, RegistryKey.DIALOG).craft(Dialog.class, PaperDialog::new, true).writable(PaperDialogRegistryEntry.PaperBuilder::new),
-            start(Registries.BLOCK_TRANSFORMER, RegistryKey.BLOCK_TRANSFORMER).craft(BlockTransformer.class, PaperBlockTransformer::new, true).writable(PaperBlockTransformerRegistryEntry.PaperBuilder::new).delayed(),
+            start(Registries.BLOCK_TRANSFORMER, RegistryKey.BLOCK_TRANSFORMER).craft(BlockTransformer.class, PaperBlockTransformer::new, true).writable(PaperBlockTransformerRegistryEntry.PaperBuilder::new),
 
             // api-only
             start(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE).apiOnly(PaperSimpleRegistry::entityType),
