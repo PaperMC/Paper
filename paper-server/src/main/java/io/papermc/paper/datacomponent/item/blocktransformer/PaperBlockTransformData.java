@@ -1,6 +1,7 @@
 package io.papermc.paper.datacomponent.item.blocktransformer;
 
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.block.BlockPredicate;
 import io.papermc.paper.block.stateprovider.BlockStateProvider;
 import io.papermc.paper.block.stateprovider.PaperBlockStateProvider;
 import java.util.ArrayList;
@@ -123,6 +124,7 @@ public record PaperBlockTransformData(
         private static final Holder<SoundEvent> DEFAULT_SOUND = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.EMPTY);
 
         private final Holder<net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider> blockStateProvider;
+        private final @Nullable BlockPredicate predicate;
         private Holder<SoundEvent> sound = DEFAULT_SOUND;
         private BlockTransformer.TransformParticle particle = BlockTransformer.TransformParticle.NONE;
         private final List<Direction> disallowedFaces = new ArrayList<>();
@@ -134,6 +136,11 @@ public record PaperBlockTransformData(
         private int itemDamagePerUse = 1;
 
         BuilderImpl(final BlockStateProvider blockStateProvider) {
+            this(null, blockStateProvider);
+        }
+
+        BuilderImpl(final @Nullable BlockPredicate predicate, final BlockStateProvider blockStateProvider) {
+            this.predicate = predicate;
             this.blockStateProvider = Holder.direct(PaperBlockStateProvider.toVanilla(blockStateProvider));
         }
 
@@ -201,7 +208,15 @@ public record PaperBlockTransformData(
         @Override
         public BlockTransformData build() {
             return new PaperBlockTransformData(new net.minecraft.core.component.BlockTransformer.BlockTransformData(
-                this.blockStateProvider,
+                Holder.direct(this.predicate == null
+                    ? this.blockStateProvider.value()
+                    : new net.minecraft.world.level.levelgen.feature.stateproviders.RuleBasedStateProvider(
+                        null,
+                        List.of(new net.minecraft.world.level.levelgen.feature.stateproviders.RuleBasedStateProvider.Rule(
+                            io.papermc.paper.block.PaperBlockPredicate.toVanilla(this.predicate),
+                            this.blockStateProvider
+                        ))
+                    )),
                 this.sound,
                 this.particle,
                 this.disallowedFaces,

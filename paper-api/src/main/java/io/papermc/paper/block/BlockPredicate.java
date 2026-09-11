@@ -1,5 +1,6 @@
 package io.papermc.paper.block;
 
+import io.papermc.paper.annotation.MinecraftVersionDependent;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.List;
 import org.bukkit.block.BlockFace;
@@ -10,17 +11,21 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
+@MinecraftVersionDependent
 @ApiStatus.NonExtendable
 public interface BlockPredicate {
 
     @Contract(value = "_ -> new", pure = true)
-    static BlockPredicate matchesBlocks(final @Nullable RegistryKeySet<BlockType> blocks) {
+    static MatchesBlocks matchesBlocks(final @Nullable RegistryKeySet<BlockType> blocks) {
         return predicate().blocks(blocks).build();
     }
 
     @Contract(value = "_, _ -> new", pure = true)
-    static BlockPredicate matchesDirection(final BlockFace direction, final @Nullable RegistryKeySet<BlockType> blocks) {
-        return predicate().direction(direction).blocks(blocks).build();
+    static MatchesDirection matchesDirection(final BlockFace direction, final @Nullable RegistryKeySet<BlockType> blocks) {
+        record MatchesDirectionPredicateImpl(@Nullable RegistryKeySet<BlockType> blocks, @Nullable BlockFace direction)
+            implements MatchesDirection {
+        }
+        return new MatchesDirectionPredicateImpl(blocks, direction);
     }
 
     @Contract(value = "_ -> new", pure = true)
@@ -43,22 +48,16 @@ public interface BlockPredicate {
         return allOf(List.of(predicates));
     }
 
-    static Builder predicate() {
+    static DirectionalBuilder predicate() {
         //<editor-fold desc="implementations" defaultstate="collapsed">
-        record BlockPredicateImpl(@Nullable RegistryKeySet<BlockType> blocks, @Nullable BlockFace direction)
-            implements BlockPredicate {
-            @Override
-            public @Nullable RegistryKeySet<BlockType> blocks() {
-                return this.blocks;
-            }
-
-            @Override
-            public @Nullable BlockFace direction() {
-                return this.direction;
-            }
+        record MatchesBlocksPredicateImpl(@Nullable RegistryKeySet<BlockType> blocks) implements MatchesBlocks {
         }
 
-        class BuilderImpl implements Builder {
+        record MatchesDirectionPredicateImpl(@Nullable RegistryKeySet<BlockType> blocks, @Nullable BlockFace direction)
+            implements MatchesDirection {
+        }
+
+        class BuilderImpl implements DirectionalBuilder {
 
             private @Nullable RegistryKeySet<BlockType> blocks;
             private @Nullable BlockFace direction;
@@ -70,24 +69,42 @@ public interface BlockPredicate {
             }
 
             @Override
-            public Builder direction(final @Nullable BlockFace direction) {
+            public DirectionalBuilder direction(final @Nullable BlockFace direction) {
                 this.direction = direction;
                 return this;
             }
 
             @Override
-            public BlockPredicate build() {
-                return new BlockPredicateImpl(this.blocks, this.direction);
+            public MatchesBlocks build() {
+                return this.direction == null
+                    ? new MatchesBlocksPredicateImpl(this.blocks)
+                    : new MatchesDirectionPredicateImpl(this.blocks, this.direction);
             }
         }
         //</editor-fold>
         return new BuilderImpl();
     }
 
-    @Nullable RegistryKeySet<BlockType> blocks();
+    @ApiStatus.NonExtendable
+    interface MatchesBlocks extends BlockPredicate {
 
-    default @Nullable BlockFace direction() {
-        return null;
+        @Nullable RegistryKeySet<BlockType> blocks();
+    }
+
+    @ApiStatus.NonExtendable
+    interface MatchesDirection extends MatchesBlocks {
+
+        @Override
+        @Nullable RegistryKeySet<BlockType> blocks();
+
+        @Nullable BlockFace direction();
+    }
+
+    @ApiStatus.NonExtendable
+    interface DirectionalBuilder extends Builder {
+
+        @Contract(value = "_ -> this", mutates = "this")
+        DirectionalBuilder direction(@Nullable BlockFace direction);
     }
 
     @ApiStatus.NonExtendable
@@ -96,30 +113,17 @@ public interface BlockPredicate {
         @Contract(value = "_ -> this", mutates = "this")
         Builder blocks(@Nullable RegistryKeySet<BlockType> blocks);
 
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder direction(@Nullable BlockFace direction);
-
-        BlockPredicate build();
+        MatchesBlocks build();
     }
 
     @ApiStatus.NonExtendable
     interface AnyOf extends BlockPredicate {
-
-        @Override
-        default @Nullable RegistryKeySet<BlockType> blocks() {
-            return null;
-        }
 
         List<BlockPredicate> predicates();
     }
 
     @ApiStatus.NonExtendable
     interface AllOf extends BlockPredicate {
-
-        @Override
-        default @Nullable RegistryKeySet<BlockType> blocks() {
-            return null;
-        }
 
         List<BlockPredicate> predicates();
     }
