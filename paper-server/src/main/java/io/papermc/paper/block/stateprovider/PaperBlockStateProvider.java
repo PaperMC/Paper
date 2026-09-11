@@ -1,25 +1,22 @@
 package io.papermc.paper.block.stateprovider;
 
 import net.minecraft.world.level.levelgen.feature.stateproviders.SimpleStateProvider;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.block.CraftBlockType;
 
 public final class PaperBlockStateProvider {
 
     private PaperBlockStateProvider() {
     }
 
-    public static net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider toVanilla(
-        final BlockStateProvider provider
-    ) {
-        final BlockData simple = provider.simple();
-        if (simple == null) {
-            throw new UnsupportedOperationException("Unsupported block state provider type");
+    public static net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider toVanilla(final BlockStateProvider provider) {
+        if (provider instanceof final SimpleBlockStateProvider simple) {
+            return new SimpleStateProvider(CraftBlockType.bukkitToMinecraftNew(simple.blockType()).defaultBlockState());
         }
-        if (!(simple instanceof final CraftBlockData craftBlockData)) {
-            throw new IllegalArgumentException("Unsupported BlockData implementation: " + simple.getClass().getName());
+        if (provider instanceof final CopyPropertiesBlockStateProvider copyProperties) {
+            return new net.minecraft.world.level.levelgen.feature.stateproviders.CopyPropertiesProvider(
+                CraftBlockType.bukkitToMinecraftNew(copyProperties.blockType())
+            );
         }
-        return new SimpleStateProvider(craftBlockData.getState());
+        throw new UnsupportedOperationException("Unsupported block state provider type: " + provider.getClass().getSimpleName());
     }
-
 }

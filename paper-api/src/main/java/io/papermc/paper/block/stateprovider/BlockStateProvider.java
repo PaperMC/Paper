@@ -1,41 +1,39 @@
 package io.papermc.paper.block.stateprovider;
 
-import org.bukkit.block.data.BlockData;
+import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
 
-/**
- * A provider for {@link BlockData} that can be used to provide block states for various purposes.
- */
 @ApiStatus.NonExtendable
 public interface BlockStateProvider {
 
     /**
-     * Creates a simple {@link BlockStateProvider} that always provides the given {@link BlockData}.
+     * Creates a simple provider that always returns the default state of the given block type.
      *
-     * @param blockData the block data to provide
-     * @return a new {@link BlockStateProvider}
+     * @param blockType block type to provide
+     * @return a simple block state provider
      */
     @Contract(value = "_ -> new", pure = true)
-    static BlockStateProvider simple(final BlockData blockData) {
+    static SimpleBlockStateProvider simple(final BlockType blockType) {
         //<editor-fold desc="implementations" defaultstate="collapsed">
-        record SimpleProviderImpl(@Nullable BlockData blockData) implements BlockStateProvider {
-            @Override
-            public @Nullable BlockData simple() {
-                return this.blockData;
-            }
+        record SimpleProviderImpl(BlockType blockType) implements SimpleBlockStateProvider {
         }
         //</editor-fold>
-
-        return new SimpleProviderImpl(blockData);
+        return new SimpleProviderImpl(blockType);
     }
 
     /**
-     * Returns the simple {@link BlockData} if this provider is a simple provider, or null otherwise.
+     * Creates a provider that copies properties from the current block into the given target block type.
      *
-     * @return the simple {@link BlockData} or null
+     * @param blockType target block type
+     * @return a copy-properties block state provider
      */
-    @Nullable BlockData simple();
-
+    @Contract(value = "_ -> new", pure = true)
+    static CopyPropertiesBlockStateProvider copyPropertiesFrom(final BlockType blockType) {
+        //<editor-fold desc="implementations" defaultstate="collapsed">
+        record CopyPropertiesProviderImpl(BlockType blockType) implements CopyPropertiesBlockStateProvider {
+        }
+        //</editor-fold>
+        return new CopyPropertiesProviderImpl(blockType);
+    }
 }

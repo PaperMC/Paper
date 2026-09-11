@@ -18,4 +18,5 @@ interface BlockTransformTypesBridge {
     BlockTransformData.Builder blockTransformData(BlockStateProvider blockStateProvider);
 
     BlockTransformData.Builder blockTransformData(BlockPredicate predicate, BlockStateProvider blockStateProvider);
+
 }
