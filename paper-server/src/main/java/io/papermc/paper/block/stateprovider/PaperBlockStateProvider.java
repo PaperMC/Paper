@@ -6,7 +6,6 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -92,7 +91,17 @@ public final class PaperBlockStateProvider {
             case RuleBasedStateProvider(
                 Holder<net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider> fallback,
                 List<RuleBasedStateProvider.Rule> rules
-            ) when fallback == null && rules.size() == 1 -> toApi(rules.getFirst().then().value());
+            ) -> BlockStateProvider.ruleBased(
+                fallback == null ? null : toApi(fallback.value()),
+                rules.stream()
+                    .map(rule -> BlockStateProvider.rule(
+                        rule.ifTrue() == net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate.alwaysTrue()
+                            ? io.papermc.paper.block.BlockPredicate.predicate().build()
+                            : PaperBlockPredicate.toApi(rule.ifTrue()),
+                        toApi(rule.then().value())
+                    ))
+                    .toList()
+            );
             default ->
                 throw new UnsupportedOperationException("Unsupported block state provider type: " + provider.getClass().getSimpleName());
         };
