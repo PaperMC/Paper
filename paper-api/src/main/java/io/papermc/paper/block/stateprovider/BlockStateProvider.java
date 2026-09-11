@@ -1,10 +1,13 @@
 package io.papermc.paper.block.stateprovider;
 
+import io.papermc.paper.block.BlockPredicate;
 import io.papermc.paper.registry.set.RegistryKeySet;
+import java.util.List;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
 @ApiStatus.NonExtendable
@@ -80,5 +83,48 @@ public interface BlockStateProvider {
         }
         //</editor-fold>
         return new RotatedBlockProviderImpl(stateProvider, direction);
+    }
+
+    /**
+     * Creates a rule-based provider using the given rules and no fallback provider.
+     *
+     * @param rules rule list
+     * @return a rule-based block state provider
+     */
+    @Contract(value = "_ -> new", pure = true)
+    static RuleBasedBlockStateProvider ruleBased(final List<RuleBasedBlockStateProvider.Rule> rules) {
+        return ruleBased(null, rules);
+    }
+
+    /**
+     * Creates a rule-based provider using the given fallback and rules.
+     *
+     * @param fallback fallback provider when no rule matches
+     * @param rules    rule list
+     * @return a rule-based block state provider
+     */
+    @Contract(value = "_, _ -> new", pure = true)
+    static RuleBasedBlockStateProvider ruleBased(final @Nullable BlockStateProvider fallback, final List<RuleBasedBlockStateProvider.Rule> rules) {
+        //<editor-fold desc="implementations" defaultstate="collapsed">
+        record RuleBasedProviderImpl(@Nullable BlockStateProvider fallback, @Unmodifiable List<RuleBasedBlockStateProvider.Rule> rules)
+            implements RuleBasedBlockStateProvider {
+            RuleBasedProviderImpl {
+                rules = List.copyOf(rules);
+            }
+        }
+        //</editor-fold>
+        return new RuleBasedProviderImpl(fallback, rules);
+    }
+
+    /**
+     * Creates a rule used by {@link #ruleBased(List)} and {@link #ruleBased(BlockStateProvider, List)}.
+     *
+     * @param ifTrue      predicate that must match
+     * @param thenProvide provider to use when the predicate matches
+     * @return an immutable rule
+     */
+    @Contract(value = "_, _ -> new", pure = true)
+    static RuleBasedBlockStateProvider.Rule rule(final BlockPredicate ifTrue, final BlockStateProvider thenProvide) {
+        return new RuleBasedBlockStateProvider.Rule(ifTrue, thenProvide);
     }
 }

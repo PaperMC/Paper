@@ -1,8 +1,6 @@
 package io.papermc.paper.datacomponent.item.blocktransformer;
 
 import io.papermc.paper.adventure.PaperAdventure;
-import io.papermc.paper.block.BlockPredicate;
-import io.papermc.paper.block.PaperBlockPredicate;
 import io.papermc.paper.block.stateprovider.BlockStateProvider;
 import io.papermc.paper.block.stateprovider.PaperBlockStateProvider;
 import java.util.ArrayList;
@@ -17,7 +15,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.level.levelgen.feature.stateproviders.RuleBasedStateProvider;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.block.CraftBlock;
@@ -41,7 +38,7 @@ public record PaperBlockTransformData(
 
     @Override
     public BlockStateProvider blockStateProvider() {
-        return PaperBlockStateProvider.toApi(unwrapStateProvider(this.impl.blockStateProvider().value()));
+        return PaperBlockStateProvider.toApi(this.impl.blockStateProvider().value());
     }
 
     @Override
@@ -121,20 +118,6 @@ public record PaperBlockTransformData(
         );
     }
 
-    private static net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider unwrapStateProvider(
-        final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider provider
-    ) {
-        if (provider instanceof RuleBasedStateProvider(
-            Holder<net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider> fallback,
-            List<RuleBasedStateProvider.Rule> rules
-        )
-            && fallback == null
-            && rules.size() == 1) {
-            return unwrapStateProvider(rules.getFirst().then().value());
-        }
-        return provider;
-    }
-
     static final class BuilderImpl implements Builder {
 
         private static final Holder<SoundEvent> DEFAULT_SOUND = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.EMPTY);
@@ -151,15 +134,7 @@ public record PaperBlockTransformData(
         private int itemDamagePerUse = 1;
 
         BuilderImpl(final BlockStateProvider blockStateProvider) {
-            this(null, blockStateProvider);
-        }
-
-        BuilderImpl(final @Nullable BlockPredicate blockPredicate, final BlockStateProvider blockStateProvider) {
-            final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider targetProvider = PaperBlockStateProvider.toVanilla(blockStateProvider);
-            final net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider provider = (blockPredicate == null)
-                ? targetProvider
-                : RuleBasedStateProvider.builder().ifTrueThenProvide(PaperBlockPredicate.toVanilla(blockPredicate), targetProvider).build();
-            this.blockStateProvider = Holder.direct(provider);
+            this.blockStateProvider = Holder.direct(PaperBlockStateProvider.toVanilla(blockStateProvider));
         }
 
         @Override
