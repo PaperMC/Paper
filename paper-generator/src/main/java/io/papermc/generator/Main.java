@@ -108,6 +108,7 @@ public class Main implements Callable<Integer> {
             }).thenAccept(resources -> {
                 resources.updateComponentsAndStaticRegistryTags();
                 EXPERIMENTAL_TAGS = ExperimentalCollector.collectTags(resourceManager);
+                System.out.println(EXPERIMENTAL_TAGS);
             });
         } else {
             EXPERIMENTAL_TAGS = Map.of();

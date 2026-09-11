@@ -51,68 +51,68 @@ public final class ExperimentalCollector {
 
     static {
         EXPERIMENTAL_REGISTRY_ENTRIES = HashMultimap.create();
-        for (final Map.Entry<RegistrySetBuilder, SingleFlagHolder> entry : EXPERIMENTAL_REGISTRY_FLAGS.entrySet()) {
-            for (final RegistrySetBuilder.RegistryStub stub : entry.getKey().entries) {
+        for (Map.Entry<RegistrySetBuilder, SingleFlagHolder> entry : EXPERIMENTAL_REGISTRY_FLAGS.entrySet()) {
+            for (RegistrySetBuilder.RegistryStub stub : entry.getKey().entries) {
                 stub.requiredRegistries().forEach(registry -> EXPERIMENTAL_REGISTRY_ENTRIES.put(registry, Map.entry(entry.getValue(), stub)));
             }
         }
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> Map<ResourceKey<T>, SingleFlagHolder> collectDataDrivenElementIds(final Registry<T> registry) {
-        final Collection<Map.Entry<SingleFlagHolder, RegistrySetBuilder.RegistryStub>> experimentalEntries = EXPERIMENTAL_REGISTRY_ENTRIES.get(registry.key());
+    public static <T> Map<ResourceKey<T>, SingleFlagHolder> collectDataDrivenElementIds(Registry<T> registry) {
+        Collection<Map.Entry<SingleFlagHolder, RegistrySetBuilder.RegistryStub>> experimentalEntries = EXPERIMENTAL_REGISTRY_ENTRIES.get(registry.key());
         if (experimentalEntries.isEmpty()) {
             return Collections.emptyMap();
         }
 
-        final HolderLookup.Provider staticRegistries = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
-        final HolderLookup.Provider vanillaWorldAccess = VanillaRegistries.createWorldLookup();
+        HolderLookup.Provider staticRegistries = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
+        HolderLookup.Provider vanillaWorldAccess = VanillaRegistries.createWorldLookup();
 
-        final Map<ResourceKey<T>, SingleFlagHolder> result = new IdentityHashMap<>();
-        for (final Map.Entry<SingleFlagHolder, RegistrySetBuilder.RegistryStub> entry : experimentalEntries) {
-            final RegistrySetBuilder.BootstrappedRegistryState<?> registryAdditions = getRegistryAdditions(registry, entry.getValue(), staticRegistries, vanillaWorldAccess);
-            result.putAll(registryAdditions.registeredValues().keySet().stream().collect(Collectors.toMap(k -> (ResourceKey<T>) k, _ -> entry.getKey())));
+        Map<ResourceKey<T>, SingleFlagHolder> result = new IdentityHashMap<>();
+        for (Map.Entry<SingleFlagHolder, RegistrySetBuilder.RegistryStub> entry : experimentalEntries) {
+            RegistrySetBuilder.BootstrappedRegistryState<?> additions = getRegistryAdditions(registry, entry.getValue(), staticRegistries, vanillaWorldAccess);
+            result.putAll(additions.registeredValues().keySet().stream().collect(Collectors.toMap(k -> (ResourceKey<T>) k, _ -> entry.getKey())));
         }
 
-        final List<RegistrySetBuilder.RegistryStub> vanillaStubs = VANILLA_REGISTRY_ENTRIES.get(registry.key());
+        List<RegistrySetBuilder.RegistryStub> vanillaStubs = VANILLA_REGISTRY_ENTRIES.get(registry.key());
         if (vanillaStubs == null || vanillaStubs.isEmpty()) return result;
 
-        for (final RegistrySetBuilder.RegistryStub stub : vanillaStubs) {
-            final RegistrySetBuilder.BootstrappedRegistryState<T> registryAdditions = getRegistryAdditions(registry, stub, staticRegistries, vanillaWorldAccess);
-            registryAdditions.registeredValues().keySet().forEach(result::remove);
+        for (RegistrySetBuilder.RegistryStub stub : vanillaStubs) {
+            RegistrySetBuilder.BootstrappedRegistryState<T> additions = getRegistryAdditions(registry, stub, staticRegistries, vanillaWorldAccess);
+            additions.registeredValues().keySet().forEach(result::remove);
         }
         return result;
     }
 
     @SuppressWarnings("unchecked")
     private static <T> RegistrySetBuilder.@UnknownNullability BootstrappedRegistryState<T> getRegistryAdditions(
-        final Registry<T> registry,
-        final RegistrySetBuilder.RegistryStub stub,
-        final HolderLookup.Provider staticRegistries,
-        final HolderLookup.Provider vanillaWorldAccess
+        Registry<T> registry,
+        RegistrySetBuilder.RegistryStub stub,
+        HolderLookup.Provider staticRegistries,
+        HolderLookup.Provider vanillaWorldAccess
     ) {
-        final Set<ResourceKey<? extends Registry<?>>> registriesMissingFromPatch = RegistrySetBuilder.findRegistriesMissingFromPatch(
+        Set<ResourceKey<? extends Registry<?>>> registriesMissingFromPatch = RegistrySetBuilder.findRegistriesMissingFromPatch(
             staticRegistries,
             vanillaWorldAccess,
             List.of(stub)
         );
-        final List<RegistrySetBuilder.RegistryStub> stubs = Stream.concat(
+        List<RegistrySetBuilder.RegistryStub> stubs = Stream.concat(
             Stream.of(stub),
             registriesMissingFromPatch.stream().map(RegistrySetBuilder::placeholderStub)
         ).toList();
 
-        final RegistrySetBuilder.BuildState buildState = RegistrySetBuilder.BuildState.createAndApply(staticRegistries, stubs);
+        RegistrySetBuilder.BuildState buildState = RegistrySetBuilder.BuildState.createAndApply(staticRegistries, stubs);
         return (RegistrySetBuilder.BootstrappedRegistryState<T>) buildState.bootstrappedRegistries().get(registry.key());
     }
 
     // collect all the tags by grabbing the json from the data-packs
     // another (probably) way is to hook into the data generator like the typed keys generator
-    public static Map<TagKey<?>, String> collectTags(final ResourceManager resourceManager) {
-        final Map<TagKey<?>, String> result = new IdentityHashMap<>();
+    public static Map<TagKey<?>, String> collectTags(ResourceManager resourceManager) {
+        Map<TagKey<?>, String> result = new IdentityHashMap<>();
 
         // collect all vanilla tags
-        final Multimap<ResourceKey<? extends Registry<?>>, String> vanillaTags = HashMultimap.create();
-        final PackResources vanillaPack = resourceManager.listPacks()
+        Multimap<ResourceKey<? extends Registry<?>>, String> vanillaTags = HashMultimap.create();
+        PackResources vanillaPack = resourceManager.listPacks()
             .filter(packResources -> packResources.packId().equals(BuiltInPackSource.VANILLA_ID))
             .findFirst()
             .orElseThrow();
@@ -120,7 +120,7 @@ public final class ExperimentalCollector {
 
         // then distinct with other data-pack tags to know for sure newly created tags and so experimental one
         resourceManager.listPacks().forEach(pack -> {
-            final String packId = pack.packId();
+            String packId = pack.packId();
             if (packId.equals(BuiltInPackSource.VANILLA_ID)) return;
 
             collectTagsFromPack(pack, (entry, path) -> {
@@ -137,15 +137,15 @@ public final class ExperimentalCollector {
         return Collections.unmodifiableMap(result);
     }
 
-    private static void collectTagsFromPack(final PackResources pack, final BiConsumer<RegistryAccess.RegistryEntry<?>, String> output) {
-        final Set<String> namespaces = pack.getNamespaces(PackType.SERVER_DATA);
+    private static void collectTagsFromPack(PackResources pack, BiConsumer<RegistryAccess.RegistryEntry<?>, String> output) {
+        Set<String> namespaces = pack.getNamespaces(PackType.SERVER_DATA);
 
-        for (final String namespace : namespaces) {
+        for (String namespace : namespaces) {
             Main.REGISTRY_ACCESS.registries().forEach(entry -> {
                 // this is probably expensive but can't find another way around and data-pack loader has similar logic
                 // the issue is that registry key can have parent/key but tag key can also have parent/key so parsing become a mess
                 // without having at least one of the two values
-                final String tagDir = Registries.tagsDirPath(entry.key());
+                String tagDir = Registries.tagsDirPath(entry.key());
                 pack.listResources(PackType.SERVER_DATA, namespace, tagDir, (id, supplier) -> {
                     Formatting.formatTagKey(tagDir, id.getPath()).ifPresentOrElse(path -> output.accept(entry, path), () -> {
                         LOGGER.warn("Unable to parse the path: {}/{}/{}.json in the data-pack {} into a tag key", namespace, tagDir, id.getPath(), pack.packId());

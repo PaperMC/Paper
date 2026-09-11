@@ -1297,6 +1297,11 @@ public interface Tag<T extends Keyed> extends Keyed {
     @Deprecated(since = "26.2", forRemoval = true)
     Tag<Material> CONCRETE_POWDER = CONCRETE_POWDERS;
     /**
+     * @deprecated replaced by {@link #CONVERTIBLE_TO_MUD}
+     */
+    @Deprecated(since = "26.3", forRemoval = true)
+    Tag<Material> CONVERTABLE_TO_MUD = CONVERTIBLE_TO_MUD;
+    /**
      * Vanilla item tag representing all piglin food.
      *
      * @deprecated replaced by {@link #ITEMS_PIGLIN_FOOD}
