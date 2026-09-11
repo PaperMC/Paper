@@ -45,7 +45,7 @@ public class CraftWeatheringCopperGolemStatue extends CraftBlockData implements 
     @Override
     public void setFacing(final BlockFace blockFace) {
         Preconditions.checkArgument(blockFace != null, "blockFace cannot be null!");
-        Preconditions.checkArgument(blockFace.isCartesian() && blockFace.getModY() == 0, "Invalid face, only cartesian horizontal face are allowed for this property!");
+        Preconditions.checkArgument(blockFace.isCardinal(), "Invalid face, only cardinal face are allowed for this property!");
         this.set(FACING, blockFace);
     }
 

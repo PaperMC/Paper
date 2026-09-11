@@ -32,10 +32,8 @@ import net.minecraft.world.level.block.ChiseledBookShelfBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Property;
-import org.bukkit.Axis;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.Rail;
 import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.generator.utils.NamingManager.keywordGet;
@@ -74,7 +72,7 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
             method.addStatement("$T.checkArgument($N.isCartesian(), $S)", Preconditions.class, param, "Invalid face, only cartesian face are allowed for this property!");
         },
         BlockStateProperties.HORIZONTAL_FACING, (param, method) -> {
-            method.addStatement("$1T.checkArgument($2N.isCartesian() && $2N.getModY() == 0, $3S)", Preconditions.class, param, "Invalid face, only cartesian horizontal face are allowed for this property!");
+            method.addStatement("$T.checkArgument($N.isCardinal(), $S)", Preconditions.class, param, "Invalid face, only cardinal face are allowed for this property!");
         },
         BlockStateProperties.FACING_HOPPER, (param, method) -> {
             method.addStatement("$1T.checkArgument($2N.isCartesian() && $2N != $3T.UP, $4S)", Preconditions.class, param, BlockFace.class, "Invalid face, only cartesian face (excluding UP) are allowed for this property!");
@@ -86,10 +84,10 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
             method.addStatement("$1T.checkArgument($2N != $3T.SELF && $2N.getModY() == 0, $4S)", Preconditions.class, param, BlockFace.class, "Invalid face, only horizontal face are allowed for this property!");
         },
         BlockStateProperties.HORIZONTAL_AXIS, (param, method) -> {
-            method.addStatement("$1T.checkArgument($2N == $3T.X || $2N == $3T.Z, $4S)", Preconditions.class, param, Axis.class, "Invalid axis, only horizontal axis are allowed for this property!");
+            method.addStatement("$T.checkArgument($N.isHorizontal(), $S)", Preconditions.class, param, "Invalid axis, only horizontal axis are allowed for this property!");
         },
         BlockStateProperties.RAIL_SHAPE_STRAIGHT, (param, method) -> {
-            method.addStatement("$1T.checkArgument($2N != $3T.NORTH_EAST && $2N != $3T.NORTH_WEST && $2N != $3T.SOUTH_EAST && $2N != $3T.SOUTH_WEST, $4S)", Preconditions.class, param, Rail.Shape.class, "Invalid rail shape, only straight rail are allowed for this property!");
+            method.addStatement("$T.checkArgument($N.isStraight(), $S)", Preconditions.class, param, "Invalid rail shape, only straight rail shape are allowed for this property!");
         }
     );
 

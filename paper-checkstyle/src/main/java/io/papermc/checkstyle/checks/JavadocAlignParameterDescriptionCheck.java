@@ -6,7 +6,10 @@ import com.puppycrawl.tools.checkstyle.checks.javadoc.AbstractJavadocCheck;
 import com.puppycrawl.tools.checkstyle.utils.JavadocUtil;
 import io.papermc.checkstyle.Util;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.IntPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,7 +43,9 @@ public final class JavadocAlignParameterDescriptionCheck extends AbstractJavadoc
                 continue;
             }
             // iterate over all text nodes (multiline)
-            for (final DetailNode textNode : JavadocUtil.getAllNodesOfType(paramDescription, JavadocCommentsTokenTypes.TEXT)) {
+            for (final DetailNode textNode : getFirstNodeOfTypePerLine(
+                paramDescription, type -> type == JavadocCommentsTokenTypes.TEXT || type == JavadocCommentsTokenTypes.JAVADOC_INLINE_TAG
+            )) {
                 final Matcher matcher = SPACE_PREFIX.matcher(textNode.getText());
                 int paramDescColNum = textNode.getColumnNumber();
                 if (matcher.find()) {
@@ -65,5 +70,19 @@ public final class JavadocAlignParameterDescriptionCheck extends AbstractJavadoc
                 );
             }
         }
+    }
+
+    // taken from getAllNodesOfType
+    private static List<DetailNode> getFirstNodeOfTypePerLine(final DetailNode detailNode, final IntPredicate types) {
+        final List<DetailNode> nodes = new ArrayList<>();
+        final Set<Integer> seen = new HashSet<>();
+        DetailNode node = detailNode.getFirstChild();
+        while (node != null) {
+            if (types.test(node.getType()) && seen.add(node.getLineNumber())) {
+                nodes.add(node);
+            }
+            node = node.getNextSibling();
+        }
+        return nodes;
     }
 }

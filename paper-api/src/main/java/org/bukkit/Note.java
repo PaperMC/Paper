@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A note class to store a specific note.
  */
-public class Note {
+public class Note implements Comparable<Note> {
 
     /**
      * An enum holding tones.
@@ -293,6 +293,12 @@ public class Note {
             return false;
         return true;
     }
+
+    @Override
+    public int compareTo(final @NotNull Note other) {
+        return Byte.compare(this.note, other.note);
+    }
+
 
     @Override
     public String toString() {

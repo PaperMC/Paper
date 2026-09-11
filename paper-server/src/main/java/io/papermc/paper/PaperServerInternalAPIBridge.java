@@ -8,6 +8,8 @@ import com.google.common.base.Preconditions;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.attribute.UnmodifiableAttributeMap;
+import io.papermc.paper.block.property.EnumBlockProperty;
+import io.papermc.paper.block.property.PaperBlockProperties;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
@@ -39,6 +41,7 @@ import net.minecraft.world.damagesource.FallLocation;
 import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.decoration.Mannequin;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.GameRule;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Statistic;
@@ -48,6 +51,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.block.CraftBiome;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
@@ -256,5 +260,14 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public ComponentFlattener componentFlattener() {
         return PaperAdventure.FLATTENER;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Override
+    public <A extends Enum<A>> String getPropertyEnumName(final EnumBlockProperty<A> property, final A bukkitEnum) {
+        if (!(PaperBlockProperties.convertTointernalProperty(property) instanceof final EnumProperty enumProperty)) {
+            throw new IllegalArgumentException("Could not convert " + property + " to an nms EnumProperty");
+        }
+        return enumProperty.getName(CraftBlockData.toVanilla(bukkitEnum, enumProperty.getValueClass()));
     }
 }
