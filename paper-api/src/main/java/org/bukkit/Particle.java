@@ -246,7 +246,6 @@ public enum Particle implements Keyed {
         return key;
     }
 
-    // Paper start - Particle API expansion
     /**
      * Creates a {@link com.destroystokyo.paper.ParticleBuilder}
      *
@@ -256,7 +255,29 @@ public enum Particle implements Keyed {
     public com.destroystokyo.paper.ParticleBuilder builder() {
         return new com.destroystokyo.paper.ParticleBuilder(this);
     }
-    // Paper end
+
+    /**
+     * The randomization type for the particle, which controls how offset and speed are randomized.
+     */
+    public enum RandomizationType {
+        /**
+         * The default randomization type, which multiplies each offset axis and each speed axis independently by its
+         * own Gaussian random value (similar to {@link java.util.Random#nextGaussian()} (mean 0, standard deviation 1).
+         */
+        DEFAULT,
+
+        /**
+         * Multiplies each offset axis independently by its own uniform random value in the range [0, 1)
+         * similar to {@link java.util.Random#nextDouble()}. Speed is left unmodified.
+         */
+        ALTERNATIVE,
+
+        /**
+         * Multiplies each offset axis <b>and</b> each speed axis independently by its own uniform random
+         * value in the range [0, 1) similar to {@link java.util.Random#nextDouble()}.
+         */
+        ALTERNATIVE_WITH_SPEED
+    }
 
     /**
      * Options which can be applied to dust particles - a particle

@@ -2690,8 +2690,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
-        ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(CraftParticle.createParticleParam(particle, data), force, false, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count); // Paper - fix x/y/z precision loss
+    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speedX, double speedY, double speedZ, T data, boolean force, Particle.RandomizationType randomizationType) {
+        ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(
+            CraftParticle.createParticleParam(particle, data),
+            force,
+            false,
+            x, y, z,
+            (float) offsetX, (float) offsetY, (float) offsetZ,
+            (float) speedX, (float) speedY, (float) speedZ,
+            count,
+            ClientboundLevelParticlesPacket.RandomizationType.valueOf(randomizationType.name())
+        );
         this.getHandle().connection.send(packet);
     }
 
