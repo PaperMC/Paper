@@ -13,7 +13,7 @@
      );
      private static final Identifier REINFORCEMENT_CALLER_CHARGE_ID = Identifier.withDefaultNamespace("reinforcement_caller_charge");
      private static final AttributeModifier ZOMBIE_REINFORCEMENT_CALLEE_CHARGE = new AttributeModifier(
-@@ -96,13 +_,15 @@
+@@ -96,13 +_,14 @@
      private static final boolean DEFAULT_BABY = false;
      private static final boolean DEFAULT_CAN_BREAK_DOORS = false;
      private static final int DEFAULT_IN_WATER_TIME = 0;
@@ -22,7 +22,6 @@
      private boolean canBreakDoors = false;
      private int inWaterTime = 0;
      public int conversionTime;
-+    private boolean shouldBurnInDay = true; // Paper - Add more Zombie API
  
      public Zombie(final EntityType<? extends Zombie> type, final Level level) {
          super(type, level);
@@ -113,7 +112,7 @@
          ZombieVillager zombieVillager = villager.convertTo(
              EntityTypes.ZOMBIE_VILLAGER,
              ConversionParams.single(villager, true, true),
-@@ -269,17 +_,24 @@
+@@ -269,12 +_,13 @@
                  zombie.setGossips(villager.getGossips().copy());
                  zombie.setTradeOffers(villager.getOffers().copy());
                  zombie.setVillagerXp(villager.getVillagerXp());
@@ -132,19 +131,6 @@
      }
  
      public boolean isSunSensitive() {
--        return true;
--    }
-+        return this.shouldBurnInDay; // Paper - Add more Zombie API
-+    }
-+
-+    // Paper start - Add more Zombie API
-+    public void setShouldBurnInDay(boolean shouldBurnInDay) {
-+        this.shouldBurnInDay = shouldBurnInDay;
-+    }
-+    // Paper end - Add more Zombie API
- 
-     @Override
-     public boolean hurtServer(final ServerLevel level, final DamageSource source, final float damage) {
 @@ -313,13 +_,13 @@
                  if (SpawnPlacements.isSpawnPositionOk(type, level, spawnPos)
                      && SpawnPlacements.checkSpawnRules(type, level, EntitySpawnReason.REINFORCEMENT, spawnPos, level.getRandom())) {
@@ -176,19 +162,11 @@
              }
          }
  
-@@ -405,6 +_,7 @@
-         output.putBoolean("CanBreakDoors", this.canBreakDoors());
-         output.putInt("InWaterTime", this.isInWater() ? this.inWaterTime : -1);
-         output.putInt("DrownedConversionTime", this.isUnderWaterConverting() ? this.conversionTime : -1);
-+        output.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay); // Paper - Add more Zombie API
-     }
- 
-     @Override
 @@ -419,13 +_,15 @@
          } else {
              this.getEntityData().set(DATA_DROWNED_CONVERSION_ID, false);
          }
-+        this.shouldBurnInDay = input.getBooleanOr("Paper.ShouldBurnInDay", true); // Paper - Add more Zombie API
++        if (!input.getBooleanOr("Paper.ShouldBurnInDay", true)) super.burnInDaylightOverride = net.kyori.adventure.util.TriState.FALSE; // Paper - burnInDaylight API - read old value
      }
  
      @Override
