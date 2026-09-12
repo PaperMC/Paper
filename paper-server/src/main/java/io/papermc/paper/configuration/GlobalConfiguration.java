@@ -149,6 +149,23 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean hasAllPermissions = false;
     }
 
+    public WorldGeneration worldGeneration;
+
+    public class WorldGeneration extends ConfigurationPart {
+        @Comment(
+            "Whether seed overrides should also be applied to dimensions that already have saved world generation settings. " +
+            "Existing chunks are not regenerated, so changing a dimension's seed may create abrupt chunk borders."
+        )
+        public boolean applyToExistingDimensions = false;
+
+        @Comment(
+            "Overrides the seed used to generate a dimension. " +
+            "Keys are dimension identifiers, for example minecraft:overworld or example:custom_dimension. " +
+            "By default, overrides are only applied when a dimension is created for the first time."
+        )
+        public Map<Identifier, Long> dimensionSeedOverrides = Map.of();
+    }
+
     public Watchdog watchdog;
 
     public class Watchdog extends ConfigurationPart {
