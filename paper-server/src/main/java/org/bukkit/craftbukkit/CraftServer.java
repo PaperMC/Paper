@@ -1424,6 +1424,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    @Deprecated
     public PluginCommand getPluginCommand(String name) {
         Command command = this.commandMap.getCommand(name);
 
@@ -1664,6 +1665,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    @Deprecated
     public Map<String, String[]> getCommandAliases() {
         ConfigurationSection section = this.commandsConfiguration.getConfigurationSection("aliases");
         Map<String, String[]> result = new LinkedHashMap<>();
@@ -2290,6 +2292,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    @Deprecated
     public SimpleCommandMap getCommandMap() {
         return this.commandMap;
     }
@@ -2858,6 +2861,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    @Deprecated
     public boolean reloadCommandAliases() {
         Set<String> removals = getCommandAliases().keySet().stream()
                 .map(key -> key.toLowerCase(java.util.Locale.ENGLISH))

@@ -995,7 +995,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param name the name of the command to retrieve
      * @return a plugin command if found, null otherwise
+     * @deprecated plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
      */
+    @Deprecated(since = "26.3")
     @Nullable
     public PluginCommand getPluginCommand(@NotNull String name);
 
@@ -1239,7 +1242,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets a list of command aliases defined in the server properties.
      *
      * @return a map of aliases to command names
+     * @deprecated plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
      */
+    @Deprecated(since = "26.3")
     @NotNull
     public Map<String, String[]> getCommandAliases();
 
@@ -2207,7 +2213,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the active {@link org.bukkit.command.CommandMap}
      *
      * @return the active command map
+     * @deprecated plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
      */
+    @Deprecated(since = "26.3")
     @NotNull
     org.bukkit.command.CommandMap getCommandMap();
 
@@ -2486,6 +2495,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
 
     void reloadPermissions(); // Paper
 
+    /**
+     * @deprecated plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
+     */
+    @Deprecated(since = "26.3")
     boolean reloadCommandAliases(); // Paper
 
     // Paper start - allow preventing player name suggestions by default

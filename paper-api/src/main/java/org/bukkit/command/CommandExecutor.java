@@ -4,7 +4,11 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a class which contains a single method for executing commands
+ *
+ * @deprecated plugin developers should prefer to use the
+ *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
  */
+@Deprecated(since = "26.3")
 public interface CommandExecutor {
 
     /**
@@ -18,6 +22,9 @@ public interface CommandExecutor {
      * @param label Alias of the command which was used
      * @param args Passed command arguments
      * @return true if a valid command, otherwise false
+     * @deprecated plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
      */
+    @Deprecated(since = "26.3")
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args);
 }
