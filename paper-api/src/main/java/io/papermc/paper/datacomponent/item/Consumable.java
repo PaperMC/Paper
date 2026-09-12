@@ -11,6 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Holds the properties for this item for when it is consumed.
@@ -30,6 +31,14 @@ public interface Consumable extends BuildableDataComponent<Consumable, Consumabl
 
     @Contract(pure = true)
     ItemUseAnimation animation();
+
+    /**
+     * Gets the fixed range of the sound played when consuming this item, if present.
+     *
+     * @return the fixed sound range, or {@code null} if the sound uses a variable range
+     */
+    @Contract(pure = true)
+    @Nullable Float soundRange();
 
     @Contract(pure = true)
     Key sound();
@@ -72,6 +81,16 @@ public interface Consumable extends BuildableDataComponent<Consumable, Consumabl
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder sound(Key sound);
+
+        /**
+         * Sets the sound played when consuming the item with an optional fixed range.
+         *
+         * @param sound the {@link Key} representing the sound to be used
+         * @param range the fixed range of the sound, or {@code null} to use a variable range
+         * @return the builder for chaining
+         */
+        @Contract(value = "_, _ -> this", mutates = "this")
+        Builder sound(Key sound, @Nullable Float range);
 
         /**
          * Sets whether consuming the item results in particle effects.

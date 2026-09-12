@@ -3,6 +3,7 @@ package io.papermc.paper.item;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ChargedProjectiles;
+import io.papermc.paper.datacomponent.item.Consumable;
 import io.papermc.paper.datacomponent.item.CustomModelData;
 import io.papermc.paper.datacomponent.item.DyedItemColor;
 import io.papermc.paper.datacomponent.item.Fireworks;
@@ -250,6 +251,21 @@ class ItemStackDataComponentTest {
         stack.unsetData(DataComponentTypes.TOOL);
         meta = stack.getItemMeta();
         Assertions.assertFalse(meta.hasTool());
+    }
+
+    @Test
+    void testConsumableFixedSoundRange() {
+        final Key sound = Key.key("minecraft:item.apple.eat");
+        final Consumable consumable = Consumable.consumable()
+            .sound(sound, 12.0F)
+            .build();
+
+        Assertions.assertEquals(sound, consumable.sound());
+        Assertions.assertEquals(12.0F, consumable.soundRange());
+
+        final Consumable rebuilt = consumable.toBuilder().build();
+        Assertions.assertEquals(sound, rebuilt.sound());
+        Assertions.assertEquals(12.0F, rebuilt.soundRange());
     }
 
     @Test

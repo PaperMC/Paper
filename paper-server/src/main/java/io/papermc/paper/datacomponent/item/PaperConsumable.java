@@ -7,6 +7,7 @@ import io.papermc.paper.datacomponent.item.consumable.PaperConsumableEffect;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
+import java.util.Optional;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
@@ -14,6 +15,7 @@ import net.minecraft.sounds.SoundEvents;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.util.BoundChecker.requireNonNegative;
 
@@ -44,6 +46,11 @@ public record PaperConsumable(
     }
 
     @Override
+    public @Nullable Float soundRange() {
+        return this.impl.sound().value().fixedRange().orElse(null);
+    }
+
+    @Override
     public boolean hasConsumeParticles() {
         return this.impl.hasConsumeParticles();
     }
@@ -58,7 +65,7 @@ public record PaperConsumable(
         return new BuilderImpl()
             .consumeSeconds(this.consumeSeconds())
             .animation(this.animation())
-            .sound(this.sound())
+            .sound(this.sound(), this.soundRange())
             .addEffects(this.consumeEffects());
     }
 
@@ -87,6 +94,12 @@ public record PaperConsumable(
         @Override
         public Builder sound(final Key sound) {
             this.eatSound = PaperAdventure.resolveSound(sound);
+            return this;
+        }
+
+        @Override
+        public Builder sound(final Key sound, final @Nullable Float range) {
+            this.eatSound = Holder.direct(new SoundEvent(PaperAdventure.asVanilla(sound), Optional.ofNullable(range)));
             return this;
         }
 
