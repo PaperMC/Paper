@@ -28,12 +28,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
@@ -41,9 +39,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
-import net.minecraft.advancements.AdvancementNode;
 import net.minecraft.advancements.AdvancementTree;
-import net.minecraft.advancements.TreeNodePosition;
 import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -331,25 +327,15 @@ public final class CraftMagicNumbers implements UnsafeValues {
             allAdvancements.put(id, holder);
             newEntries.add(new AdvancementEntry(holder, element));
         }
+        if (newEntries.isEmpty()) return List.of();
+
         manager.advancements = allAdvancements.build();
 
         final AdvancementTree tree = manager.tree();
         tree.addAll(newEntries.stream().map(AdvancementEntry::advancement).toList());
+        tree.repositionNodes();
 
-        // recalculate advancement position
-        final Set<AdvancementNode> roots = new HashSet<>();
-        for (final AdvancementEntry entry : newEntries) {
-            final AdvancementNode node = Objects.requireNonNull(tree.get(entry.id()));
-            roots.add(node.root());
-        }
-
-        for (final AdvancementNode root : roots) {
-            if (root.holder().value().display().isPresent()) {
-                TreeNodePosition.run(root);
-            }
-        }
-
-        boolean shouldSave = persist && !newEntries.isEmpty();
+        boolean shouldSave = persist;
         if (shouldSave) {
             shouldSave = DynamicBuiltinPacks.BUKKIT.createIfNeeded(DynamicBuiltinPack.LevelPathAccess.SERVER);
         }
@@ -369,9 +355,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             deserializedAdvancements.add(entry.advancement().toBukkit());
         }
 
-        if (!deserializedAdvancements.isEmpty()) {
-            MinecraftServer.getServer().getPlayerList().reloadAdvancementData();
-        }
+        MinecraftServer.getServer().getPlayerList().reloadAdvancementData();
         return deserializedAdvancements;
     }
 
