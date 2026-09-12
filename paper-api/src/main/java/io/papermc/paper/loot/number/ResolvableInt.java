@@ -26,6 +26,10 @@ public interface ResolvableInt {
          */
         int getValue();
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
         default int resolve(LootContext context, int defaultValue) {
             return this.getValue();
         }
