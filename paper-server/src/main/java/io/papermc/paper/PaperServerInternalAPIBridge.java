@@ -16,6 +16,8 @@ import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEventManager;
 import io.papermc.paper.util.MCUtil;
+import io.papermc.paper.world.attribute.EnvironmentalAttributeContext;
+import io.papermc.paper.world.attribute.PaperEnvironmentalAttributeContext;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
@@ -256,5 +258,10 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public ComponentFlattener componentFlattener() {
         return PaperAdventure.FLATTENER;
+    }
+
+    @Override
+    public EnvironmentalAttributeContext.Builder environmentalAttributeContextBuilder() {
+        return new PaperEnvironmentalAttributeContext.PaperBuilder();
     }
 }
