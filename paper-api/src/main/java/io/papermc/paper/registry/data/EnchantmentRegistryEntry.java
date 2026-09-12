@@ -161,6 +161,7 @@ public interface EnchantmentRegistryEntry {
          * @param supportedItems the registry key set representing the supported items
          * @return this builder instance
          * @see RegistrySet#keySet(RegistryKey, TypedKey[])
+         * @see RegistrySet#keySet(TypedKey, TypedKey[])
          * @see RegistryComposeEvent#getOrCreateTag(TagKey)
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -182,6 +183,7 @@ public interface EnchantmentRegistryEntry {
          * @param primaryItems the registry key set representing the primary items.
          * @return this builder instance.
          * @see RegistrySet#keySet(RegistryKey, TypedKey[])
+         * @see RegistrySet#keySet(TypedKey, TypedKey[])
          * @see RegistryComposeEvent#getOrCreateTag(TagKey)
          */
         @Contract(value = "_ -> this", mutates = "this")
@@ -285,6 +287,7 @@ public interface EnchantmentRegistryEntry {
          * @param exclusiveWith a registry set of enchantments exclusive to this one
          * @return this builder instance
          * @see RegistrySet#keySet(RegistryKey, TypedKey[])
+         * @see RegistrySet#keySet(TypedKey, TypedKey[])
          * @see RegistryComposeEvent#getOrCreateTag(TagKey)
          */
         @Contract(value = "_ -> this", mutates = "this")

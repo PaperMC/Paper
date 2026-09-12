@@ -4033,6 +4033,14 @@ public interface Sound extends RegistryElement.Inlineable<Sound, SoundEventRegis
     // Paper end - deprecate getKey
 
     /**
+     * Gets the fixed range, a radius in block which this sound is audible.
+     * The computed range will depends on the volume when this value is not defined.
+     *
+     * @return the fixed range
+     */
+    @Nullable Float getFixedRange();
+
+    /**
      * @return an array of all known sounds.
      * @deprecated use {@link Registry#stream()}.
      */

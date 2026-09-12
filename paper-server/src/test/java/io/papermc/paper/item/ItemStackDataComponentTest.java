@@ -243,7 +243,7 @@ class ItemStackDataComponentTest {
         for (ToolComponent.ToolRule effect : component.getRules()) {
             Assertions.assertEquals(properties.rules().get(idx).speed(), effect.getSpeed());
             Assertions.assertEquals(properties.rules().get(idx).correctForDrops().toBoolean(), effect.isCorrectForDrops());
-            Assertions.assertEquals(properties.rules().get(idx).blocks().resolve(Registry.BLOCK), effect.getBlocks().stream().map(Material::asBlockType).toList());
+            Assertions.assertEquals(properties.rules().get(idx).blocks().resolve(), effect.getBlocks().stream().map(Material::asBlockType).toList());
             idx++;
         }
 

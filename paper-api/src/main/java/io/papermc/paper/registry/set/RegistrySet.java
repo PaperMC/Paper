@@ -6,6 +6,7 @@ import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.tag.Tag;
+import java.util.List;
 import org.bukkit.Keyed;
 import org.jetbrains.annotations.Contract;
 
@@ -88,6 +89,21 @@ public sealed interface RegistrySet<T> permits RegistryHolderSet, RegistryKeySet
     @SafeVarargs
     static <T extends Keyed> RegistryKeySet<T> keySet(final RegistryKey<T> registryKey, final TypedKey<T>... keys) { // TODO remove Keyed
         return keySet(registryKey, Lists.newArrayList(keys));
+    }
+
+    /**
+     * Creates a non empty direct {@code RegistrySet} from {@link TypedKey TypedKeys}.
+     *
+     * @param firstKey the first key for the values
+     * @param otherKeys the other keys for the values
+     * @return a new registry set
+     * @param <T> the type of the values
+     */
+    @SafeVarargs
+    static <T extends Keyed> RegistryKeySet<T> keySet(final TypedKey<T> firstKey, final TypedKey<T>... otherKeys) { // TODO remove Keyed
+        final List<TypedKey<T>> keys = Lists.newArrayList(otherKeys);
+        keys.addFirst(firstKey);
+        return keySet(firstKey.registryKey(), keys);
     }
 
     /**

@@ -48,7 +48,8 @@ public record NamedRegistryKeySetImpl<T extends Keyed, M>( // TODO remove Keyed
     }
 
     @Override
-    public @Unmodifiable Collection<T> resolve(final Registry<T> registry) {
+    public @Unmodifiable Collection<T> resolve() {
+        final Registry<T> registry = RegistryAccess.registryAccess().getRegistry(this.registryKey());
         final ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (final Holder<M> holder : this.namedSet) {
             builder.add(registry.getOrThrow(PaperAdventure.asAdventure(((Holder.Reference<?>) holder).key().identifier())));
@@ -63,7 +64,7 @@ public record NamedRegistryKeySetImpl<T extends Keyed, M>( // TODO remove Keyed
 
     @Override
     public Set<T> getValues() {
-        return Set.copyOf(this.resolve(RegistryAccess.registryAccess().getRegistry(this.registryKey())));
+        return Set.copyOf(this.resolve());
     }
 
     @Override
