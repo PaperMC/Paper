@@ -41,6 +41,7 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import org.bukkit.inventory.ItemStack;
+import org.intellij.lang.annotations.Pattern;
 import org.jspecify.annotations.Nullable;
 
 public final class PaperDialogInstancesProvider implements DialogInstancesProvider {
@@ -94,17 +95,17 @@ public final class PaperDialogInstancesProvider implements DialogInstancesProvid
     }
 
     @Override
-    public BooleanDialogInput.Builder booleanBuilder(final String key, final Component label) {
+    public BooleanDialogInput.Builder booleanBuilder(@Pattern("^[a-zA-Z0-9_]+$") final String key, final Component label) {
         return new BooleanDialogInputImpl.BuilderImpl(key, label);
     }
 
     @Override
-    public NumberRangeDialogInput.Builder numberRangeBuilder(final String key, final Component label, final float start, final float end) {
+    public NumberRangeDialogInput.Builder numberRangeBuilder(@Pattern("^[a-zA-Z0-9_]+$") final String key, final Component label, final float start, final float end) {
         return new NumberRangeDialogInputImpl.BuilderImpl(key, label, start, end);
     }
 
     @Override
-    public SingleOptionDialogInput.Builder singleOptionBuilder(final String key, final Component label, final List<SingleOptionDialogInput.OptionEntry> entries) {
+    public SingleOptionDialogInput.Builder singleOptionBuilder(@Pattern("^[a-zA-Z0-9_]+$") final String key, final Component label, final List<SingleOptionDialogInput.OptionEntry> entries) {
         return new SingleOptionDialogInputImpl.BuilderImpl(key, entries, label);
     }
 
@@ -114,7 +115,7 @@ public final class PaperDialogInstancesProvider implements DialogInstancesProvid
     }
 
     @Override
-    public TextDialogInput.Builder textBuilder(final String key, final Component label) {
+    public TextDialogInput.Builder textBuilder(@Pattern("^[a-zA-Z0-9_]+$") final String key, final Component label) {
         return new TextDialogInputImpl.BuilderImpl(key, label);
     }
 
