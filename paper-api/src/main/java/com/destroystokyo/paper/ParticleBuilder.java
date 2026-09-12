@@ -17,7 +17,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Helps prepare a particle to be sent to players.
  * <p>
- * Usage of the builder is preferred over the super long {@link World#spawnParticle(Particle, Location, int, double, double, double, double, Object)} API
+ * Usage of the builder is preferred over the super long {@link World#spawnParticle(Particle, List, Player, double, double, double, int, double, double, double, double, double, double, Object, boolean, Particle.RandomizationType)} API.
  */
 @NullMarked
 public class ParticleBuilder implements Cloneable {
