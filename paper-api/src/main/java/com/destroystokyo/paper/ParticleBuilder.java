@@ -362,9 +362,9 @@ public class ParticleBuilder implements Cloneable {
      * Gets the Particle extra data (speedX). Varies by particle on how this is used
      *
      * @return the extra particle data
-     * @deprecated This method is deprecated and will be removed in a future version. Use one of the <code>speed</code> methods instead.
+     * @deprecated use one of the {@code speed} methods instead
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "26.3", forRemoval = true)
     public double extra() {
         return this.speedX;
     }
@@ -374,9 +374,9 @@ public class ParticleBuilder implements Cloneable {
      *
      * @param extra the extra particle data
      * @return a reference to this object.
-     * @deprecated This method is deprecated and will be removed in a future version. Use {@link #speed(double, double, double)} instead.
+     * @deprecated use {@link #speed(double)} instead
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "26.3", forRemoval = true)
     public ParticleBuilder extra(final double extra) {
         this.speedX = extra;
         this.speedY = extra;
@@ -409,6 +409,16 @@ public class ParticleBuilder implements Cloneable {
      */
     public double speedZ() {
         return this.speedZ;
+    }
+
+    /**
+     * Sets the particle speed. Varies by particle on how this is used
+     *
+     * @param speed Particle speed
+     * @return a reference to this object.
+     */
+    public ParticleBuilder speed(final double speed) {
+        return this.speed(speed, speed, speed);
     }
 
     /**

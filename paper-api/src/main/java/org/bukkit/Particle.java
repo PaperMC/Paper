@@ -246,7 +246,6 @@ public enum Particle implements Keyed {
         return key;
     }
 
-    // Paper start - Particle API expansion
     /**
      * Creates a {@link com.destroystokyo.paper.ParticleBuilder}
      *
@@ -256,9 +255,7 @@ public enum Particle implements Keyed {
     public com.destroystokyo.paper.ParticleBuilder builder() {
         return new com.destroystokyo.paper.ParticleBuilder(this);
     }
-    // Paper end
 
-    // Paper start - RandomizationType support
     /**
      * The randomization type for the particle, which controls how offset and speed are randomized.
      */
@@ -281,7 +278,6 @@ public enum Particle implements Keyed {
          */
         ALTERNATIVE_WITH_SPEED
     }
-    // Paper end
 
     /**
      * Options which can be applied to dust particles - a particle
