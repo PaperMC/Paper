@@ -1,6 +1,7 @@
 package io.papermc.paper.persistence;
 
 import java.util.Set;
+import net.kyori.adventure.key.Key;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -109,6 +110,23 @@ public interface PersistentDataContainerView {
      * the {@link PersistentDataType#getPrimitiveType()}
      */
     <P, C> C getOrDefault(NamespacedKey key, PersistentDataType<P, C> type, C defaultValue);
+
+    /**
+     * Estimates the {@link PersistentDataType} of the value based on the primitive
+     * type that is stored for the given key.
+     * <br>
+     * <b>WARNING:</b> This method will only return data types
+     * defined in {@link PersistentDataType} which directly map to a specific
+     * nbt tag. The return value will be wrong if the data type is plugin
+     * specific or not represented by a specific nbt tag.
+     * Use {@link #has(NamespacedKey, PersistentDataType)} if you expect a
+     * specific data type.
+     *
+     * @param key the key to look up the value type of
+     * @return estimated data type or null if no value is present, the type is
+     * unknown or an empty list is encountered as value.
+     */
+    @Nullable PersistentDataType<?, ?> getPrimitiveStorageType(Key key);
 
     /**
      * Get the set of keys present on this {@link PersistentDataContainer}
