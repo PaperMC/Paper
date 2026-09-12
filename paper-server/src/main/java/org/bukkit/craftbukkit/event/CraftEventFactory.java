@@ -12,6 +12,7 @@ import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
+import io.papermc.paper.event.entity.EntityLandEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
@@ -69,6 +70,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
@@ -2424,5 +2426,14 @@ public class CraftEventFactory {
             return PrimedTnt.NO_FUSE;
         }
         return event.getFuseTime();
+    }
+
+    public static double callEntityLandEvent(Level level, BlockPos pos, Entity entity, double fallDistance) {
+        if (EntityLandEvent.getHandlerList().getRegisteredListeners().length == 0) {
+            return fallDistance; // No listeners, skip event creation
+        }
+        EntityLandEvent event = new EntityLandEvent(entity.getBukkitEntity(), CraftBlock.at(level, pos), fallDistance);
+        event.callEvent();
+        return event.isCancelled() ? -1 : event.getFallDistance();
     }
 }
