@@ -1,12 +1,10 @@
 package io.papermc.paper.loot.number;
 
 import org.bukkit.loot.LootContext;
-import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Represents a floating point number that can be resolved against a {@link LootContext}.
  */
-@ApiStatus.Experimental
 public interface ResolvableFloat {
 
     /**
@@ -29,7 +27,7 @@ public interface ResolvableFloat {
         float getValue();
 
         default float resolve(LootContext context, float defaultValue) {
-            return getValue();
+            return this.getValue();
         }
     }
 }

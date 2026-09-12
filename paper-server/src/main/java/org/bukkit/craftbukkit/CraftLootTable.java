@@ -5,30 +5,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.context.ContextKey;
-import net.minecraft.util.context.ContextKeySet;
 import net.minecraft.world.Container;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
-import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.bukkit.craftbukkit.block.CraftBlockState;
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.inventory.Inventory;
@@ -72,7 +58,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     @Override
     public Collection<ItemStack> populateLoot(Random random, LootContext context) {
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
-        LootParams nmsContext = convertContext(context, this.getHandle().getParamSet(), this.getHandle() == LootTable.EMPTY);
+        LootParams nmsContext = CraftLootContext.createLootParams(context, this.getHandle().getParamSet(), this.getHandle() == LootTable.EMPTY);
         List<net.minecraft.world.item.ItemStack> nmsItems = this.handle.getRandomItems(nmsContext, random == null ? null : new RandomSourceWrapper(random));
         Collection<ItemStack> bukkit = new ArrayList<>(nmsItems.size());
 
@@ -90,7 +76,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     public void fillInventory(Inventory inventory, Random random, LootContext context) {
         Preconditions.checkArgument(inventory != null, "Inventory cannot be null");
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
-        LootParams nmsContext = convertContext(context, this.getHandle().getParamSet(), this.getHandle() == LootTable.EMPTY);
+        LootParams nmsContext = CraftLootContext.createLootParams(context, this.getHandle().getParamSet(), this.getHandle() == LootTable.EMPTY);
         CraftInventory craftInventory = (CraftInventory) inventory;
         Container handle = craftInventory.getInventory();
 
@@ -101,84 +87,6 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     @Override
     public NamespacedKey getKey() {
         return this.key;
-    }
-
-    public static LootParams convertContext(LootContext context, ContextKeySet paramSet, boolean empty) {
-        Preconditions.checkArgument(context != null, "LootContext cannot be null");
-        Location loc = context.getLocation();
-        Preconditions.checkArgument(loc.getWorld() != null, "LootContext.getLocation#getWorld cannot be null");
-        ServerLevel handle = ((CraftWorld) loc.getWorld()).getHandle();
-
-        LootParams.Builder builder = new LootParams.Builder(handle);
-        setMaybe(builder, paramSet, LootContextParams.ORIGIN, CraftLocation.toVec3(loc));
-
-        BlockState blockState = ((CraftBlockState) loc.getBlock().getState()).getHandle();
-        setMaybe(builder, paramSet, LootContextParams.BLOCK_STATE, blockState);
-        if (blockState.hasBlockEntity()) {
-            setMaybe(builder, paramSet, LootContextParams.BLOCK_ENTITY, handle.getBlockEntity(new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ())));
-        }
-
-        if (!empty) {
-            builder.withLuck(context.getLuck());
-
-            if (context.getLootedEntity() != null) {
-                Entity nmsLootedEntity = ((CraftEntity) context.getLootedEntity()).getHandle();
-                setMaybe(builder, paramSet, LootContextParams.THIS_ENTITY, nmsLootedEntity);
-                setMaybe(builder, paramSet, LootContextParams.DAMAGE_SOURCE, handle.damageSources().generic());
-                setMaybe(builder, paramSet, LootContextParams.ORIGIN, nmsLootedEntity.position());
-            }
-
-            if (context.getKiller() != null) {
-                Player nmsKiller = ((CraftHumanEntity) context.getKiller()).getHandle();
-                setMaybe(builder, paramSet, LootContextParams.ATTACKING_ENTITY, nmsKiller);
-                // If there is a player killer, damage source should reflect that in case loot tables use that information
-                setMaybe(builder, paramSet, LootContextParams.DAMAGE_SOURCE, handle.damageSources().playerAttack(nmsKiller));
-                setMaybe(builder, paramSet, LootContextParams.LAST_DAMAGE_PLAYER, nmsKiller); // SPIGOT-5603 - Set minecraft:killed_by_player
-                setMaybe(builder, paramSet, LootContextParams.TOOL, nmsKiller.getUseItem()); // SPIGOT-6925 - Set minecraft:match_tool
-            }
-        }
-
-        // SPIGOT-5603 - Avoid IllegalArgumentException in ContextKeySet.Builder#create
-        ContextKeySet.Builder nmsBuilder = new ContextKeySet.Builder();
-        for (ContextKey<?> param : paramSet.required()) {
-            nmsBuilder.required(param);
-        }
-        for (ContextKey<?> param : paramSet.allowed()) {
-            if (!paramSet.required().contains(param)) {
-                nmsBuilder.optional(param);
-            }
-        }
-
-        return builder.create(paramSet);
-    }
-
-    private static <T> void setMaybe(LootParams.Builder builder, ContextKeySet paramSet, ContextKey<T> param, T value) {
-        if (paramSet.required().contains(param) || paramSet.allowed().contains(param)) {
-            builder.withParameter(param, value);
-        }
-    }
-
-    public static LootContext convertContext(net.minecraft.world.level.storage.loot.LootContext info) {
-        Vec3 position = info.getOptional(LootContextParams.ORIGIN);
-        if (position == null) {
-            position = info.getOptional(LootContextParams.THIS_ENTITY).position(); // Every vanilla context has origin or this_entity, see LootContextParamSets
-        }
-        Location location = CraftLocation.toBukkit(position, info.getLevel());
-        LootContext.Builder contextBuilder = new LootContext.Builder(location);
-
-        if (info.hasParameter(LootContextParams.ATTACKING_ENTITY)) {
-            CraftEntity killer = info.getOptional(LootContextParams.ATTACKING_ENTITY).getBukkitEntity();
-            if (killer instanceof CraftHumanEntity) {
-                contextBuilder.killer((CraftHumanEntity) killer);
-            }
-        }
-
-        if (info.hasParameter(LootContextParams.THIS_ENTITY)) {
-            contextBuilder.lootedEntity(info.getOptional(LootContextParams.THIS_ENTITY).getBukkitEntity());
-        }
-
-        contextBuilder.luck(info.getLuck());
-        return contextBuilder.build();
     }
 
     @Override

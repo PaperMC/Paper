@@ -1,12 +1,10 @@
 package io.papermc.paper.loot.number;
 
 import org.bukkit.loot.LootContext;
-import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Represents an integer number that can be resolved against a {@link LootContext}.
  */
-@ApiStatus.Experimental
 public interface ResolvableInt {
 
     /**
@@ -29,7 +27,7 @@ public interface ResolvableInt {
         int getValue();
 
         default int resolve(LootContext context, int defaultValue) {
-            return getValue();
+            return this.getValue();
         }
     }
 }
