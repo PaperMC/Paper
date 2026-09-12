@@ -7,11 +7,14 @@ import com.google.common.collect.Lists;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -118,12 +121,15 @@ public class EnumEvil {
 
     @RerouteStatic("com/google/common/collect/Sets")
     public static ImmutableSet<?> immutableEnumSet(Iterable<?> iterable) {
-        return ImmutableSet.of(iterable);
+        return ImmutableSet.copyOf(iterable);
     }
 
     @RerouteStatic("com/google/common/collect/Sets")
     public static ImmutableSet<?> immutableEnumSet(@RerouteArgumentType("java/lang/Enum") Object first, @RerouteArgumentType("[java/lang/Enum") Object... rest) {
-        return ImmutableSet.of(first, rest);
+        Set<Object> set = new HashSet<>();
+        set.add(first);
+        set.addAll(Arrays.asList(rest));
+        return ImmutableSet.copyOf(set);
     }
 
     @RerouteStatic("com/google/common/base/Enums")

@@ -634,10 +634,10 @@ public class MaterialRerouting {
     // Method added pre-1.13, needs legacy rerouting (https://github.com/PaperMC/Paper/commit/3438e96192)
     public static Set<Material> getTypes(
         final com.destroystokyo.paper.event.player.PlayerArmorChangeEvent.SlotType slotType,
-        @InjectPluginVersion final ApiVersion apiVersion
+        @InjectPluginVersion final ApiVersion version
     ) {
-        if (apiVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING)) return slotType.getTypes();
-        else return mapSet(slotType.getTypes(), MaterialRerouting::transformToItemType); // Needed as pre-flattening is handled by transformToItemType
+        if (version.isNewerThanOrSameAs(ApiVersion.FLATTENING)) return slotType.getTypes();
+        else return mapSet(slotType.getTypes(), itemType -> transformFromItemType(itemType, version)); // Needed as pre-flattening is handled by transformToItemType
     }
 
     // Method added pre-1.13, needs legacy rerouting (https://github.com/PaperMC/Paper/commit/3438e96192)

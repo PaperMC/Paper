@@ -235,7 +235,7 @@ public class CraftContainer extends AbstractContainerMenu {
     }
 
     private void setupWorkbench(Container top, Container bottom) {
-        // This code copied from ContainerWorkbench
+        // This code copied from CraftingMenu
         this.addSlot(new Slot(top, 0, 124, 35));
 
         int row;
@@ -256,11 +256,11 @@ public class CraftContainer extends AbstractContainerMenu {
         for (col = 0; col < 9; ++col) {
             this.addSlot(new Slot(bottom, col, 8 + col * 18, 142));
         }
-        // End copy from ContainerWorkbench
+        // End copy from CraftingMenu
     }
 
     private void setupAnvil(Container top, Container bottom) {
-        // This code copied from ContainerAnvilAbstract
+        // This code copied from AnvilMenu
         this.addSlot(new Slot(top, 0, 27, 47));
         this.addSlot(new Slot(top, 1, 76, 47));
         this.addSlot(new Slot(top, 2, 134, 47));
@@ -277,11 +277,11 @@ public class CraftContainer extends AbstractContainerMenu {
         for (row = 0; row < 9; ++row) {
             this.addSlot(new Slot(bottom, row, 8 + row * 18, 142));
         }
-        // End copy from ContainerAnvilAbstract
+        // End copy from AnvilMenu
     }
 
     private void setupSmithing(Container top, Container bottom) {
-        // This code copied from ContainerSmithing
+        // This code copied from SmithingMenu
         this.addSlot(new Slot(top, 0, 8, 48));
         this.addSlot(new Slot(top, 1, 26, 48));
         this.addSlot(new Slot(top, 2, 44, 48));
@@ -299,11 +299,11 @@ public class CraftContainer extends AbstractContainerMenu {
         for (row = 0; row < 9; ++row) {
             this.addSlot(new Slot(bottom, row, 8 + row * 18, 142));
         }
-        // End copy from ContainerSmithing
+        // End copy from SmithingMenu
     }
 
     private void setupStoneCutter(Container top, Container bottom) {
-        // This code copied from ContainerStonecutter
+        // This code copied from StonecutterMenu
         this.addSlot(new Slot(top, 0, 20, 33));
         this.addSlot(new Slot(top, 1, 143, 33));
 
@@ -319,7 +319,7 @@ public class CraftContainer extends AbstractContainerMenu {
         for (row = 0; row < 9; ++row) {
             this.addSlot(new Slot(bottom, row, 8 + row * 18, 142));
         }
-        // End copy from ContainerSmithing
+        // End copy from StonecutterMenu
     }
 
     @Override

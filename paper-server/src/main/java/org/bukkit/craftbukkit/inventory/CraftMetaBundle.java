@@ -148,7 +148,11 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
 
     @Override
     public CraftMetaBundle clone() {
-        return (CraftMetaBundle) super.clone();
+        CraftMetaBundle clone = (CraftMetaBundle) super.clone();
+        if (this.items != null) {
+            clone.items = new ArrayList<>(this.items);
+        }
+        return clone;
     }
 
     @Override

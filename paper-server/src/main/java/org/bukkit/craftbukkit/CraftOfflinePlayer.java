@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
@@ -32,6 +33,7 @@ import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.Nullable;
 
 @SerializableAs("Player")
 public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
@@ -308,17 +310,17 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
             this.persistentDataContainerView = new io.papermc.paper.persistence.PaperPersistentDataContainerView(DATA_TYPE_REGISTRY) {
 
                 private CompoundTag getPersistentTag() {
-                    return net.minecraft.Optionull.map(CraftOfflinePlayer.this.getData(), data -> data.getCompound("BukkitValues").orElse(null));
+                    return net.minecraft.Optionull.mapOrElse(CraftOfflinePlayer.this.getData(), data -> data.getCompoundOrEmpty("BukkitValues"), CompoundTag::new);
                 }
 
                 @Override
                 public CompoundTag toTagCompound() {
-                    return java.util.Objects.requireNonNullElseGet(this.getPersistentTag(), CompoundTag::new);
+                    return this.getPersistentTag();
                 }
 
                 @Override
                 public net.minecraft.nbt.Tag getTag(String key) {
-                    return net.minecraft.Optionull.map(this.getPersistentTag(), tag -> tag.get(key));
+                    return this.getPersistentTag().get(key);
                 }
 
                 @Override

@@ -1,12 +1,11 @@
 package io.papermc.paper.attribute;
 
+import java.util.UUID;
+import net.kyori.adventure.key.Key;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
-
-import java.util.UUID;
-import java.util.Collection;
 
 public class UnmodifiableAttributeInstance extends CraftAttributeInstance {
 
@@ -15,7 +14,12 @@ public class UnmodifiableAttributeInstance extends CraftAttributeInstance {
     }
 
     @Override
-    public void setBaseValue(double d) {
+    public void setBaseValue(double value) {
+        throw new UnsupportedOperationException("Cannot modify default attributes");
+    }
+
+    @Override
+    public void removeModifier(Key key) {
         throw new UnsupportedOperationException("Cannot modify default attributes");
     }
 

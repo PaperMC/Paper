@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Bat;
@@ -36,6 +37,7 @@ public class CraftBat extends CraftAmbient implements Bat {
 
     @Override
     public void setTargetLocation(org.bukkit.Location location) {
+        Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Target location must be in same world");
         net.minecraft.core.BlockPos pos = null;
         if (location != null) {
             pos = CraftLocation.toBlockPos(location);

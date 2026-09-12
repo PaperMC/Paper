@@ -27,12 +27,12 @@ public class CraftHoglin extends CraftAnimals implements Hoglin, CraftEnemy {
 
     @Override
     public boolean isAbleToBeHunted() {
-        return this.getHandle().cannotBeHunted;
+        return !this.getHandle().cannotBeHunted;
     }
 
     @Override
     public void setIsAbleToBeHunted(boolean flag) {
-        this.getHandle().cannotBeHunted = flag;
+        this.getHandle().cannotBeHunted = !flag;
     }
 
     @Override

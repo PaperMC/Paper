@@ -72,6 +72,6 @@ public class DirectoryProviderSource implements ProviderSource<Path, List<Path>>
 
     public boolean isValidFile(Path path) {
         // Avoid loading plugins that start with a dot
-        return Files.isRegularFile(path) && !path.startsWith(".");
+        return Files.isRegularFile(path) && !path.getFileName().toString().startsWith(".");
     }
 }

@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.WanderingTrader;
@@ -57,6 +58,7 @@ public class CraftWanderingTrader extends CraftAbstractVillager implements Wande
 
     @Override
     public void setWanderingTowards(org.bukkit.Location location) {
+        Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Wandering location must be in same world");
         net.minecraft.core.BlockPos pos = null;
         if (location != null) {
             pos = CraftLocation.toBlockPos(location);

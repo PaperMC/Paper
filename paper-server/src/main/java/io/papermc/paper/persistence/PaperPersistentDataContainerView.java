@@ -14,6 +14,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataAdapterContext;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
+import org.bukkit.craftbukkit.persistence.DirtyCraftPersistentDataContainer;
 import org.bukkit.persistence.PersistentDataAdapterContext;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -100,6 +101,9 @@ public abstract class PaperPersistentDataContainerView implements PersistentData
             if (replace || !target.getRaw().containsKey(key)) {
                 target.getRaw().put(key, tag.get(key).copy());
             }
+        }
+        if (target instanceof DirtyCraftPersistentDataContainer dirtyPDC) {
+            dirtyPDC.dirty(true);
         }
     }
 

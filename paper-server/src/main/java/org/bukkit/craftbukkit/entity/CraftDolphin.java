@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.Optionull;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
@@ -43,6 +44,7 @@ public class CraftDolphin extends CraftAgeable implements Dolphin {
 
     @Override
     public void setTreasureLocation(org.bukkit.Location location) {
+        Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Treasure location must be in same world");
         this.getHandle().treasurePos = location == null ? null : CraftLocation.toBlockPos(location);
     }
 }

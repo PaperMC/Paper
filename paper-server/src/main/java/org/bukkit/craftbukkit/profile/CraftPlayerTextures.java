@@ -27,7 +27,7 @@ public final class CraftPlayerTextures implements PlayerTextures {
         if (url == null) return;
 
         Preconditions.checkArgument(url.getHost().equals(CraftPlayerTextures.MINECRAFT_HOST), "Expected host '%s' but got '%s'", CraftPlayerTextures.MINECRAFT_HOST, url.getHost());
-        Preconditions.checkArgument(url.getPath().startsWith(CraftPlayerTextures.MINECRAFT_PATH), "Expected path starting with '%s' but got '%s", CraftPlayerTextures.MINECRAFT_PATH, url.getPath());
+        Preconditions.checkArgument(url.getPath().startsWith(CraftPlayerTextures.MINECRAFT_PATH), "Expected path starting with '%s' but got '%s'", CraftPlayerTextures.MINECRAFT_PATH, url.getPath());
     }
 
     private static @Nullable URL parseUrl(@Nullable String urlString) {

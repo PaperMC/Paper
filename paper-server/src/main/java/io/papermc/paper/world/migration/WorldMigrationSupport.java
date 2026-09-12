@@ -45,8 +45,8 @@ final class WorldMigrationSupport {
             .orElse(null);
     }
 
-    static void clearLegacyPdc(final Dynamic<?> levelData) {
-        levelData.remove("BukkitValues");
+    static Dynamic<?> clearLegacyPdc(final Dynamic<?> levelData) {
+        return levelData.remove("BukkitValues");
     }
 
     static @Nullable UUID readLegacyUuid(final Path sourceRoot) {

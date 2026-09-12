@@ -135,6 +135,7 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
             for (int x = xMin; x < xMax; x++) {
                 for (int z = zMin; z < zMax; z++) {
                     section.setBlockState(x, offsetBase, z, type);
+                    this.registerBlockMetadata(type, new BlockPos(x, y, z));
                 }
             }
         }
@@ -164,11 +165,15 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
         LevelChunkSection section = this.getChunkSection(y, true);
         section.setBlockState(x, y & 0xf, z, type);
 
-        // SPIGOT-1753: Capture light blocks, for light updates
+        this.registerBlockMetadata(type, new BlockPos(x, y, z));
+    }
+
+    // SPIGOT-1753: Capture light blocks, for light updates
+    private void registerBlockMetadata(BlockState type, BlockPos pos) { // pos = sectionX/Z and absolute Y
         if (type.getLightEmission() > 0) {
-            this.lights.add(new BlockPos(x, y, z));
+            this.lights.add(pos);
         } else {
-            this.lights.remove(new BlockPos(x, y, z));
+            this.lights.remove(pos);
         }
 
         if (type.hasBlockEntity()) {
@@ -176,7 +181,7 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
                 this.tiles = new HashSet<>();
             }
 
-            this.tiles.add(new BlockPos(x, y, z));
+            this.tiles.add(pos);
         }
     }
 
