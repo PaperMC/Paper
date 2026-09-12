@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import ca.spottedleaf.moonrise.common.util.TickThread;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import io.papermc.paper.adventure.PaperAdventure;
@@ -783,6 +784,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public AttributeInstance getAttribute(Attribute attribute) {
+        TickThread.ensureTickThread(this.getHandleRaw(), "Cannot update attributes asynchronously");
         return this.getHandle().craftAttributes.getAttribute(attribute);
     }
 
