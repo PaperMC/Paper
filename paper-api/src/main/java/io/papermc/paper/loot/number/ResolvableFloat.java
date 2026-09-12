@@ -26,6 +26,10 @@ public interface ResolvableFloat {
          */
         float getValue();
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
         default float resolve(LootContext context, float defaultValue) {
             return this.getValue();
         }
