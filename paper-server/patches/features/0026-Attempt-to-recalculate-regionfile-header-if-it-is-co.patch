@@ -23,7 +23,7 @@ index 27eeb842e6b22bd12b582379eaaa76b622dfca5e..d4606e3d95a98e745cd565c0c23b2a65
                  NO_DATA,
                  HAS_DATA,
 diff --git a/net/minecraft/world/level/chunk/storage/RegionBitmap.java b/net/minecraft/world/level/chunk/storage/RegionBitmap.java
-index a6f9435a8e2a6c8cc05bd3873cb6fc0ec98973b8..d44fd9eea0ccb09c894d6431ede8a4c2aae85c5b 100644
+index 071c66f9c5ce7ea3a0e0fdf4bc76ab5a4e5234e9..3898e62e6a2087c4b3fa7d0e8cecabaca166ddf6 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionBitmap.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionBitmap.java
 @@ -9,6 +9,27 @@ import java.util.BitSet;
@@ -55,12 +55,12 @@ index a6f9435a8e2a6c8cc05bd3873cb6fc0ec98973b8..d44fd9eea0ccb09c894d6431ede8a4c2
          this.used.set(position, position + size);
      }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a881f514ad3 100644
+index 4eb206cd724d7546c91af5f5bd3ff6e76fcbd555..7ac742c57ddfc6b3ed5933e5502b9981d5a6437f 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -46,6 +46,363 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
-     @VisibleForTesting
+@@ -47,6 +47,363 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
      protected final RegionBitmap usedSectors = new RegionBitmap();
+     private boolean needsTruncation; // Paper - truncate unused region file sectors
  
 +    // Paper start - Attempt to recalculate regionfile header if it is corrupt
 +    private static long roundToSectors(long bytes) {
@@ -422,7 +422,7 @@ index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a88
      // Paper start - rewrite chunk system
      @Override
      public final ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.WriteData moonrise$startWrite(final net.minecraft.nbt.CompoundTag data, final ChunkPos pos) throws IOException {
-@@ -75,6 +432,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -76,6 +433,7 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
          }
  
          this.externalFileDir = externalFileDir;
@@ -430,7 +430,7 @@ index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a88
          this.offsets = this.header.asIntBuffer();
          this.offsets.limit(1024);
          this.header.position(4096);
-@@ -95,11 +453,13 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -96,11 +454,13 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
  
              long size = Files.size(path);
  
@@ -447,7 +447,7 @@ index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a88
                      // Spigot start
                      if (numSectors == 255) {
                          // We're maxed out, so we need to read the proper length from the section
-@@ -110,18 +470,62 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -111,18 +471,62 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
                      // Spigot end
                      if (sectorNumber < 2) {
                          LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", path, i, sectorNumber);
@@ -512,9 +512,9 @@ index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a88
 +            }
 +            // Paper end
          }
-     }
- 
-@@ -130,10 +534,34 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+         // Paper start - truncate unused region file sectors
+         this.needsTruncation = this.file.size() > (long)this.usedSectors.getUsedSectorEnd() * SECTOR_BYTES;
+@@ -134,10 +538,34 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
      }
  
      private Path getExternalChunkPath(final ChunkPos pos) {
@@ -550,7 +550,7 @@ index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a88
      public synchronized @Nullable DataInputStream getChunkDataInputStream(final ChunkPos pos) throws IOException {
          int offset = this.getOffset(pos);
          if (offset == 0) {
-@@ -155,6 +583,11 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -159,6 +587,11 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
          buffer.flip();
          if (buffer.remaining() < 5) {
              LOGGER.error("Chunk {} header is truncated: expected {} but read {}", pos, sectorsLength, buffer.remaining());
@@ -562,7 +562,7 @@ index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a88
              return null;
          }
  
-@@ -162,6 +595,11 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -166,6 +599,11 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
          byte versionId = buffer.get();
          if (length == 0) {
              LOGGER.warn("Chunk {} is allocated, but stream is missing", pos);
@@ -574,7 +574,7 @@ index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a88
              return null;
          }
  
-@@ -169,18 +607,45 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -173,18 +611,45 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
          if (isExternalStreamChunk(versionId)) {
              if (streamLength != 0) {
                  LOGGER.warn("Chunk has both internal and external streams");
@@ -622,7 +622,7 @@ index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a88
          }
      }
  
-@@ -357,9 +822,14 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
+@@ -378,9 +843,14 @@ public class RegionFile implements AutoCloseable, ca.spottedleaf.moonrise.patche
      }
  
      private ByteBuffer createExternalStub() {

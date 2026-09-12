@@ -33983,7 +33983,7 @@ index 8324ad114ddd94b9a99ac1b53332e34a39fe079a..7e205616bec7fc7973b81ca36b8f640a
      private final Long2ObjectLinkedOpenHashMap<CompletableFuture<BitSet>> regionCacheForBlender = new Long2ObjectLinkedOpenHashMap<>();
      private static final int REGION_CACHE_SIZE = 1024;
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
-index e6f83b493edd89fa104ab2e7ef13e0a2a4d3399f..7767e5420e3d2e569008747523d70147ea8d97fb 100644
+index 794504d3fb303ae164c4b4c56762d19dbcfd06a9..4abf1c4cf58a7e81731bb0e39a5f770d9d1f8f11 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -22,7 +22,7 @@ import net.minecraft.world.level.ChunkPos;
@@ -33995,9 +33995,9 @@ index e6f83b493edd89fa104ab2e7ef13e0a2a4d3399f..7767e5420e3d2e569008747523d70147
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final int SECTOR_BYTES = 4096;
      @VisibleForTesting
-@@ -45,6 +45,21 @@ public class RegionFile implements AutoCloseable {
-     @VisibleForTesting
+@@ -46,6 +46,21 @@ public class RegionFile implements AutoCloseable {
      protected final RegionBitmap usedSectors = new RegionBitmap();
+     private boolean needsTruncation; // Paper - truncate unused region file sectors
  
 +    // Paper start - rewrite chunk system
 +    @Override
@@ -34017,7 +34017,7 @@ index e6f83b493edd89fa104ab2e7ef13e0a2a4d3399f..7767e5420e3d2e569008747523d70147
      public RegionFile(final RegionStorageInfo info, final Path path, final Path externalFileDir, final boolean sync) throws IOException {
          this(info, path, externalFileDir, RegionFileVersion.getSelected(), sync);
      }
-@@ -200,6 +215,15 @@ public class RegionFile implements AutoCloseable {
+@@ -204,6 +219,15 @@ public class RegionFile implements AutoCloseable {
      }
  
      private @Nullable DataInputStream createExternalChunkInputStream(final ChunkPos pos, final byte versionId) throws IOException {
@@ -34033,7 +34033,7 @@ index e6f83b493edd89fa104ab2e7ef13e0a2a4d3399f..7767e5420e3d2e569008747523d70147
          Path externalFile = this.getExternalChunkPath(pos);
          if (!Files.isRegularFile(externalFile)) {
              LOGGER.error("External chunk path {} is not file", externalFile);
-@@ -394,9 +418,28 @@ public class RegionFile implements AutoCloseable {
+@@ -415,9 +439,28 @@ public class RegionFile implements AutoCloseable {
          }
      }
  
@@ -34063,7 +34063,7 @@ index e6f83b493edd89fa104ab2e7ef13e0a2a4d3399f..7767e5420e3d2e569008747523d70147
          public ChunkBuffer(final ChunkPos pos) {
              super(8096);
              super.write(0);
-@@ -413,7 +456,7 @@ public class RegionFile implements AutoCloseable {
+@@ -434,7 +477,7 @@ public class RegionFile implements AutoCloseable {
              int streamLength = this.count - 5 + 1;
              JvmProfiler.INSTANCE.onRegionFileWrite(RegionFile.this.info, this.pos, RegionFile.this.version, streamLength);
              result.putInt(0, streamLength);

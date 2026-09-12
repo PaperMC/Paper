@@ -1,5 +1,13 @@
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -44,6 +_,7 @@
+     private final IntBuffer timestamps;
+     @VisibleForTesting
+     protected final RegionBitmap usedSectors = new RegionBitmap();
++    private boolean needsTruncation; // Paper - truncate unused region file sectors
+ 
+     public RegionFile(final RegionStorageInfo info, final Path path, final Path externalFileDir, final boolean sync) throws IOException {
+         this(info, path, externalFileDir, RegionFileVersion.getSelected(), sync);
 @@ -83,6 +_,14 @@
                  if (offset != 0) {
                      int sectorNumber = getSectorNumber(offset);
@@ -15,6 +23,16 @@
                      if (sectorNumber < 2) {
                          LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", path, i, sectorNumber);
                          this.offsets.put(i, 0);
+@@ -98,6 +_,9 @@
+                 }
+             }
+         }
++        // Paper start - truncate unused region file sectors
++        this.needsTruncation = this.file.size() > (long)this.usedSectors.getUsedSectorEnd() * SECTOR_BYTES;
++        // Paper end - truncate unused region file sectors
+     }
+ 
+     public Path getPath() {
 @@ -117,6 +_,13 @@
  
          int sectorNumber = getSectorNumber(offset);
@@ -37,6 +55,57 @@
              return false;
          }
      }
+@@ -266,11 +_,28 @@
+         return new DataOutputStream(this.version.wrap(new RegionFile.ChunkBuffer(pos)));
+     }
+ 
+-    public void flush() throws IOException {
++    // Paper start - truncate unused region file sectors
++    public synchronized void flush() throws IOException {
+         this.file.force(true);
+-    }
+-
+-    public void clear(final ChunkPos pos) throws IOException {
++        if (!this.needsTruncation) {
++            return;
++        }
++        final long usedLength = (long)this.usedSectors.getUsedSectorEnd() * SECTOR_BYTES;
++        if (this.file.size() > usedLength) {
++            this.file.truncate(usedLength);
++            this.file.force(true);
++        }
++        this.needsTruncation = false;
++    }
++
++    private void freeSectors(final int position, final int size) {
++        final int previousEnd = this.usedSectors.getUsedSectorEnd();
++        this.usedSectors.free(position, size);
++        this.needsTruncation |= this.usedSectors.getUsedSectorEnd() < previousEnd;
++    }
++    // Paper end - truncate unused region file sectors
++
++    public synchronized void clear(final ChunkPos pos) throws IOException { // Paper - coordinate tail truncation with writes
+         int offsetIndex = getOffsetIndex(pos);
+         int offset = this.offsets.get(offsetIndex);
+         if (offset != 0) {
+@@ -278,7 +_,7 @@
+             this.timestamps.put(offsetIndex, getTimestamp());
+             this.writeHeader();
+             Files.deleteIfExists(this.getExternalChunkPath(pos));
+-            this.usedSectors.free(getSectorNumber(offset), getNumSectors(offset));
++            this.freeSectors(getSectorNumber(offset), getNumSectors(offset)); // Paper - truncate unused region file sectors
+         }
+     }
+ 
+@@ -310,7 +_,7 @@
+         this.writeHeader();
+         commitOp.run();
+         if (sectorNumber != 0) {
+-            this.usedSectors.free(sectorNumber, currentSectorCount);
++            this.freeSectors(sectorNumber, currentSectorCount); // Paper - truncate unused region file sectors
+         }
+     }
+ 
 @@ -328,6 +_,11 @@
          try (FileChannel extFile = FileChannel.open(tmpPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
              data.position(5);
@@ -49,3 +118,18 @@
          }
  
          return () -> Files.move(tmpPath, path, StandardCopyOption.REPLACE_EXISTING);
+@@ -351,12 +_,12 @@
+     }
+ 
+     @Override
+-    public void close() throws IOException {
++    public synchronized void close() throws IOException { // Paper - coordinate tail truncation with writes
+         try {
+             this.padToFullSector();
+         } finally {
+             try {
+-                this.file.force(true);
++                this.flush(); // Paper - truncate unused region file sectors
+             } finally {
+                 this.file.close();
+             }
