@@ -4084,7 +4084,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *             the type of this depends on {@link Particle#getDataType()}
      */
     default <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed, @Nullable T data) {
-        this.spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, speed, data, true); // todo this is never called actually
+        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed, data, false);
     }
 
     // Paper start - Expand Particle API
@@ -4166,7 +4166,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *              and shows to players using any vanilla client particle settings
      * @param randomizationType the type of randomization to use for the particle offsets
      */
-    <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @Nullable Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speedX, double speedY, double speedZ, @Nullable T data, boolean force, Particle.RandomizationType randomizationType);
+    <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @Nullable Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speedX, double speedY, double speedZ, @Nullable T data, boolean force, Particle.@NotNull RandomizationType randomizationType);
     // Paper end
 
     /**

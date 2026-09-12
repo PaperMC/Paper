@@ -378,10 +378,7 @@ public class ParticleBuilder implements Cloneable {
      */
     @Deprecated(since = "26.3", forRemoval = true)
     public ParticleBuilder extra(final double extra) {
-        this.speedX = extra;
-        this.speedY = extra;
-        this.speedZ = extra;
-        return this;
+        return this.speed(extra);
     }
 
     /**

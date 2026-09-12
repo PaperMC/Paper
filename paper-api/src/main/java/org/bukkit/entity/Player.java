@@ -3378,6 +3378,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param force whether to send the particle to the player in an extended
      *              range and encourage their client to render it regardless of
      *              settings
+     * @param randomizationType the type of randomization to use for the particle offsets
      */
     <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speedX, double speedY, double speedZ, @Nullable T data, boolean force, Particle.RandomizationType randomizationType);
 
