@@ -597,7 +597,7 @@
          if (success) {
              this.lastDamageSource = source;
              this.lastDamageStamp = this.level().getGameTime();
-@@ -1300,13 +_,28 @@
+@@ -1300,13 +_,37 @@
              zd = source.getSourcePosition().z() - this.getZ();
          }
  
@@ -609,9 +609,18 @@
 +        if (Math.abs(zd) > 200) {
 +            zd = Math.random() - Math.random();
 +        }
-+        // Paper end - Check distance in entity interactions
 +
-+        this.knockback(0.4F, xd, zd, source, damage, source.getDirectEntity(), source.getDirectEntity() == null ? io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.DAMAGE : io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // CraftBukkit // Paper - knockback events
++        // Paper start - knockback events
++        io.papermc.paper.event.entity.EntityKnockbackEvent.Cause cause;
++        if (source.getDirectEntity() instanceof LivingEntity living && living.isSprinting()) {
++            cause = io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_SPRINT_ATTACK;
++        } else if (source.getDirectEntity() == null) {
++            cause = io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.DAMAGE;
++        } else {
++            cause = io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK;
++        }
++        this.knockback(0.4F, xd, zd, source, damage, source.getDirectEntity(), cause);
++        // Paper end - knockback events
          if (!blocked) {
              this.indicateDamage(xd, zd);
          }
@@ -902,7 +911,7 @@
              Vec3 deltaMovement = this.getDeltaMovement();
  
              while (xd * xd + zd * zd < 1.0E-5F) {
-@@ -1651,16 +_,32 @@
+@@ -1651,16 +_,33 @@
              }
  
              Vec3 deltaVector = new Vec3(xd, 0.0, zd).normalize().scale(power);
@@ -914,13 +923,14 @@
              );
 +            // Paper start - knockback events
 +            Vec3 knockback = targetMovement.subtract(deltaMovement);
-+            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) this.getBukkitEntity(), attacker, attacker, eventCause, power, knockback);
-+            if (event.isCancelled()) {
-+                return;
++            if (!comesFromEffect) {
++                io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) this.getBukkitEntity(), attacker, attacker, eventCause, power, knockback);
++                if (event.isCancelled()) {
++                    return;
++                }
 +            }
-+
 +            this.needsSync = true;
-+            this.setDeltaMovement(deltaMovement.add(event.getKnockback().getX(), event.getKnockback().getY(), event.getKnockback().getZ()));
++            this.setDeltaMovement(deltaMovement.add(knockback.x, knockback.y, knockback.z));
 +            // Paper end - knockback events
          }
      }
@@ -1271,15 +1281,22 @@
      }
  
      private Vec3 updateFallFlyingMovement(Vec3 movement) {
-@@ -2749,7 +_,7 @@
+@@ -2748,9 +_,14 @@
+         final Entity target, final float knockback, final Vec3 oldMovement, final DamageSource damageSource, final float damage, final boolean comesFromEffect
      ) {
          if (knockback > 0.0F && target instanceof LivingEntity livingTarget) {
++            // Paper start - knockback events
++            io.papermc.paper.event.entity.EntityKnockbackEvent.Cause cause = this.isSprinting()
++                ? io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_SPRINT_ATTACK
++                : io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK;
              livingTarget.knockback(
 -                knockback, Mth.sin(this.getYRot() * Mth.DEG_TO_RAD), -Mth.cos(this.getYRot() * Mth.DEG_TO_RAD), damageSource, damage, comesFromEffect
-+                knockback, Mth.sin(this.getYRot() * Mth.DEG_TO_RAD), -Mth.cos(this.getYRot() * Mth.DEG_TO_RAD), damageSource, damage, comesFromEffect, this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK  // Paper - knockback events
++                knockback, Mth.sin(this.getYRot() * Mth.DEG_TO_RAD), -Mth.cos(this.getYRot() * Mth.DEG_TO_RAD), damageSource, damage, comesFromEffect, this, cause
              );
++            // Paper end - knockback events
              this.setDeltaMovement(this.getDeltaMovement().multiply(0.6, 1.0, 0.6));
          }
+     }
 @@ -2826,37 +_,15 @@
          profiler.pop();
          profiler.push("rangeChecks");
