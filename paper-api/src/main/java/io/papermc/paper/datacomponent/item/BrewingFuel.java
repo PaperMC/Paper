@@ -5,14 +5,12 @@ import io.papermc.paper.loot.number.ResolvableFloat;
 import io.papermc.paper.loot.number.ResolvableInt;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Describes an item that can be used as fuel for a brewing stand.
  *
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BREWING_FUEL
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface BrewingFuel {
 
