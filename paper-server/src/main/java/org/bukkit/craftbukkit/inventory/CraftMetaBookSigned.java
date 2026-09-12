@@ -365,7 +365,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
 
     @Override
     public @NotNull Book asBook() {
-        return Book.book(net.kyori.adventure.text.Component.empty(), net.kyori.adventure.text.Component.empty(), this.getPages().stream().map(net.kyori.adventure.text.Component::text).collect(Collectors.toList()));
+        return Book.book(Objects.requireNonNullElse(title(), net.kyori.adventure.text.Component.empty()), Objects.requireNonNullElse(author(), net.kyori.adventure.text.Component.empty()), pages());
     }
 
     // Spigot start
