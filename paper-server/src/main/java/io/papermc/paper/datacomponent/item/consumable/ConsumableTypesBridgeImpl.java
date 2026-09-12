@@ -1,14 +1,14 @@
 package io.papermc.paper.datacomponent.item.consumable;
 
 import com.google.common.collect.Lists;
-import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.ArrayList;
 import java.util.List;
-import net.kyori.adventure.key.Key;
 import net.minecraft.core.registries.Registries;
+import org.bukkit.Sound;
+import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -45,9 +45,9 @@ public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
     }
 
     @Override
-    public ConsumeEffect.PlaySound playSoundEffect(final Key sound) {
+    public ConsumeEffect.PlaySound playSoundEffect(final Sound sound) {
         return new PaperPlaySound(
-            new net.minecraft.world.item.consume_effects.PlaySoundConsumeEffect(PaperAdventure.resolveSound(sound))
+            new net.minecraft.world.item.consume_effects.PlaySoundConsumeEffect(CraftSound.bukkitToMinecraftHolder(sound))
         );
     }
 

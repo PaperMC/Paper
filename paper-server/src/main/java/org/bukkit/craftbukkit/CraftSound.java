@@ -5,6 +5,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.sounds.SoundEvent;
 import org.bukkit.Sound;
+import org.jspecify.annotations.Nullable;
 
 public class CraftSound extends OldEnumHolderable<Sound, SoundEvent> implements Sound {
 
@@ -28,5 +29,10 @@ public class CraftSound extends OldEnumHolderable<Sound, SoundEvent> implements 
 
     public CraftSound(Holder<SoundEvent> soundEffect) {
         super(soundEffect, count++);
+    }
+
+    @Override
+    public @Nullable Float getFixedRange() {
+        return this.getHandle().fixedRange().orElse(null);
     }
 }

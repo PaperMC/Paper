@@ -11,7 +11,7 @@ import org.bukkit.damage.DeathMessageType;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CraftDamageType extends HolderableBase<net.minecraft.world.damagesource.DamageType> implements DamageType {
+public class CraftDamageType extends HolderableBase<net.minecraft.world.damagesource.DamageType, DamageType> implements DamageType {
 
     public CraftDamageType(final Holder<net.minecraft.world.damagesource.DamageType> holder) {
         super(holder);

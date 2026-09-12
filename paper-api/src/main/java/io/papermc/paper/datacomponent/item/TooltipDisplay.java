@@ -2,6 +2,7 @@ package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.Set;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -39,5 +40,8 @@ public interface TooltipDisplay {
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder hiddenComponents(Set<DataComponentType> components);
+
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder hiddenComponents(RegistryKeySet<DataComponentType> components);
     }
 }

@@ -4,6 +4,7 @@ import io.papermc.paper.datacomponent.BuildableDataComponent;
 import io.papermc.paper.datacomponent.DataComponentBuilder;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import net.kyori.adventure.key.Key;
+import org.bukkit.Sound;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.EquipmentSlot;
 import org.jetbrains.annotations.ApiStatus;
@@ -39,12 +40,12 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
     EquipmentSlot slot();
 
     /**
-     * Gets the equip sound key.
+     * Gets the equip sound.
      *
-     * @return the equip sound key
+     * @return the equip sound
      */
     @Contract(pure = true)
-    Key equipSound();
+    Sound equipSound();
 
     /**
      * Gets the asset id if present.
@@ -117,7 +118,7 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
      * @return shear sound
      */
     @Contract(pure = true)
-    Key shearSound();
+    Sound shearSound();
 
     /**
      * Builder for {@link Equippable}.
@@ -126,13 +127,13 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
     interface Builder extends DataComponentBuilder<Equippable> {
 
         /**
-         * Sets the equip sound key for this item.
+         * Sets the equip sound for this item.
          *
-         * @param sound the equip sound key
+         * @param sound the equip sound
          * @return the builder for chaining
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder equipSound(Key sound);
+        Builder equipSound(Sound sound);
 
         /**
          * Sets the asset id for this item.
@@ -209,10 +210,10 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
         /**
          * Sets the sound that is played when shearing this equipment off an entity.
          *
-         * @param shearSound the shear sound key
+         * @param shearSound the shear sound
          * @return the builder for chaining
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder shearSound(Key shearSound);
+        Builder shearSound(Sound shearSound);
     }
 }

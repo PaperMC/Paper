@@ -53,7 +53,7 @@ public non-sealed interface MultiActionType extends DialogType {
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder exitAction(final @Nullable ActionButton exitAction);
+        Builder exitAction(@Nullable ActionButton exitAction);
 
         /**
          * Sets the number of columns to display in the dialog.
@@ -62,7 +62,7 @@ public non-sealed interface MultiActionType extends DialogType {
          * @return the builder
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder columns(final @Positive int columns);
+        Builder columns(@Positive int columns);
 
         /**
          * Builds the multi-action dialog.

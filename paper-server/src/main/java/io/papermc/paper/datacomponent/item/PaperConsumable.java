@@ -1,16 +1,16 @@
 package io.papermc.paper.datacomponent.item;
 
-import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.paper.datacomponent.item.consumable.PaperConsumableEffect;
 import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
-import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import org.bukkit.Sound;
+import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.Unmodifiable;
@@ -39,8 +39,8 @@ public record PaperConsumable(
     }
 
     @Override
-    public Key sound() {
-        return PaperAdventure.asAdventure(this.impl.sound().value().location());
+    public Sound sound() {
+        return CraftSound.minecraftHolderToBukkit(this.impl.sound());
     }
 
     @Override
@@ -85,8 +85,8 @@ public record PaperConsumable(
         }
 
         @Override
-        public Builder sound(final Key sound) {
-            this.eatSound = PaperAdventure.resolveSound(sound);
+        public Builder sound(final Sound sound) {
+            this.eatSound = CraftSound.bukkitToMinecraftHolder(sound);
             return this;
         }
 

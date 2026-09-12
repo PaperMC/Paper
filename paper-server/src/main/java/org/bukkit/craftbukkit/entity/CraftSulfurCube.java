@@ -88,7 +88,7 @@ public class CraftSulfurCube extends CraftAbstractCubeMob implements SulfurCube,
     public void setBreed(final boolean breed) {
     }
 
-    public static class CraftArchetype extends HolderableBase<SulfurCubeArchetype> implements Archetype {
+    public static class CraftArchetype extends HolderableBase<SulfurCubeArchetype, Archetype> implements Archetype {
 
         public static Archetype minecraftHolderToBukkit(Holder<SulfurCubeArchetype> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.SULFUR_CUBE_ARCHETYPE);

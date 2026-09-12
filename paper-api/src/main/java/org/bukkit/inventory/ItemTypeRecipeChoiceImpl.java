@@ -70,7 +70,7 @@ final class ItemTypeRecipeChoiceImpl extends RecipeChoice.MaterialChoice impleme
         if (this.legacyChoices == null) {
             final List<Material> choices = new ArrayList<>();
             for (final TypedKey<ItemType> itemTypeKey : this.itemTypes) {
-                choices.add(Registry.MATERIAL.getOrThrow(itemTypeKey));
+                choices.add(Registry.MATERIAL.getOrThrow(itemTypeKey.key()));
             }
             this.legacyChoices = Collections.unmodifiableList(choices);
         }

@@ -500,7 +500,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws NoSuchElementException if no tag with the given key is found
      * @throws UnsupportedOperationException    if this registry doesn't have or support tags
      * @see #hasTag(TagKey)
-     * @see #getTagValues(TagKey)
      */
     Tag<T> getTag(TagKey<T> key);
 
@@ -512,11 +511,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws NoSuchElementException        if no tag with the given key is found
      * @throws UnsupportedOperationException if this registry doesn't have or support tags
      * @see #getTag(TagKey)
-     * @see Tag#resolve(Registry)
+     * @see Tag#resolve()
+     * @deprecated use {@link Tag#resolve()} on the fetched tag
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     default Collection<T> getTagValues(final TagKey<T> key) {
-        Tag<T> tag = this.getTag(key);
-        return tag.resolve(this);
+        final Tag<T> tag = this.getTag(key);
+        return tag.resolve();
     }
 
     /**

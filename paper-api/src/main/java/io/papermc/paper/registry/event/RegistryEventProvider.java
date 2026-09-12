@@ -4,6 +4,7 @@ import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
 import io.papermc.paper.registry.RegistryBuilder;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
 import org.jetbrains.annotations.ApiStatus;
@@ -19,9 +20,11 @@ import org.jetbrains.annotations.ApiStatus;
  *
  * @param <T> registry entry type
  * @param <B> registry entry builder type
+ * @deprecated use {@link RegistryEvents#compose(RegistryKey)} and {@link RegistryEvents#entryAdd(RegistryKey)}
  */
 @ApiStatus.NonExtendable
-public interface RegistryEventProvider<T, B extends RegistryBuilder<T>> {
+@Deprecated(forRemoval = true, since = "26.3")
+public interface RegistryEventProvider<T extends RegistryElement.Buildable<T, ?, B>, B extends RegistryBuilder<T>> {
 
     /**
      * Gets the event type for {@link RegistryEntryAddEvent} which is fired just before

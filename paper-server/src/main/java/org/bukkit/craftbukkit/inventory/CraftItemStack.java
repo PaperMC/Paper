@@ -761,7 +761,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     @Override
-    public boolean matchesWithoutData(final ItemStack item, final Set<io.papermc.paper.datacomponent.DataComponentType> exclude, final boolean ignoreCount) {
+    public boolean matchesWithoutData(final ItemStack item, final Predicate<io.papermc.paper.datacomponent.DataComponentType> excludeTypes, final boolean ignoreCount) {
         // Extracted from base equals
         final CraftItemStack craftStack = getCraftStack(item);
         if (this.handle == craftStack.handle) return true;
@@ -779,20 +779,10 @@ public final class CraftItemStack extends ItemStack {
 
         // It can be assumed that the prototype is equal since the type is the same. This way all we need to check is the patch
 
-        // Fast path when excluded types is empty
-        if (exclude.isEmpty()) {
-            return left.getComponentsPatch().equals(right.getComponentsPatch());
-        }
-
-        // Collect all the NMS types into a set
-        Set<DataComponentType<?>> skippingTypes = new HashSet<>(exclude.size());
-        for (io.papermc.paper.datacomponent.DataComponentType api : exclude) {
-            skippingTypes.add(PaperDataComponentType.bukkitToMinecraft(api));
-        }
+        Predicate<DataComponentType<?>> ignoredTypes = type -> excludeTypes.test(PaperDataComponentType.minecraftToBukkit(type));
 
         // Check the patch by first stripping excluded types and then compare the trimmed patches
-        return left.getComponentsPatch().forget(skippingTypes::contains).equals(right.getComponentsPatch().forget(skippingTypes::contains));
+        return left.getComponentsPatch().forget(ignoredTypes).equals(right.getComponentsPatch().forget(ignoredTypes));
     }
-
     // Paper end - data component API
 }

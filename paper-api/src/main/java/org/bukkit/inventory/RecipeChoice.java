@@ -59,7 +59,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
     /**
      * Creates a new recipe choice based on a {@link RegistryKeySet} of item types.
-     * Can either be created via {@link RegistryKeySet#keySet(RegistryKey, TypedKey[])}
+     * Can either be created via {@link RegistryKeySet#keySet(RegistryKey, TypedKey[])}/{@link RegistryKeySet#keySet(TypedKey, TypedKey[])}
      * or obtained from {@link org.bukkit.Registry#getTag(TagKey)}.
      *
      * @param itemTypes the item types to match

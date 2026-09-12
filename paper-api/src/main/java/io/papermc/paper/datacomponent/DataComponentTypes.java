@@ -57,6 +57,7 @@ import org.bukkit.DyeColor;
 import org.bukkit.FireworkEffect;
 import org.bukkit.MusicInstrument;
 import org.bukkit.Registry;
+import org.bukkit.Sound;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Axolotl;
@@ -365,7 +366,7 @@ public final class DataComponentTypes {
      * Holds the unresolved loot table and seed of a container-like block.
      */
     public static final DataComponentType.Valued<SeededContainerLoot> CONTAINER_LOOT = valued("container_loot");
-    public static final DataComponentType.Valued<Key> BREAK_SOUND = valued("break_sound");
+    public static final DataComponentType.Valued<Sound> BREAK_SOUND = valued("break_sound");
     public static final DataComponentType.Valued<Villager.Type> VILLAGER_VARIANT = valued("villager/variant");
     public static final DataComponentType.Valued<Wolf.Variant> WOLF_VARIANT = valued("wolf/variant");
     public static final DataComponentType.Valued<Wolf.SoundVariant> WOLF_SOUND_VARIANT = valued("wolf/sound_variant");

@@ -4,6 +4,8 @@ import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
 import io.papermc.paper.registry.PaperRegistryListenerManager;
 import io.papermc.paper.registry.RegistryBuilder;
+import io.papermc.paper.registry.RegistryElement;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
 
 public class RegistryEventTypeProviderImpl implements RegistryEventTypeProvider {
@@ -13,12 +15,12 @@ public class RegistryEventTypeProviderImpl implements RegistryEventTypeProvider 
     }
 
     @Override
-    public <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> registryEntryAdd(final RegistryEventProvider<T, B> type) {
-        return PaperRegistryListenerManager.INSTANCE.getRegistryValueAddEventType(type);
+    public <API extends RegistryElement.Buildable<API, E, B>, E, B extends RegistryBuilder<API>> RegistryEntryAddEventType<API, B> registryEntryAdd(final RegistryKey<API> key) {
+        return PaperRegistryListenerManager.INSTANCE.getRegistryValueAddEventType(key);
     }
 
     @Override
-    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<T, B>> registryCompose(final RegistryEventProvider<T, B> type) {
-        return PaperRegistryListenerManager.INSTANCE.getRegistryComposeEventType(type);
+    public <API extends RegistryElement.Buildable<API, E, B>, E, B extends RegistryBuilder<API>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryComposeEvent<API, B>> registryCompose(final RegistryKey<API> key) {
+        return PaperRegistryListenerManager.INSTANCE.getRegistryComposeEventType(key);
     }
 }

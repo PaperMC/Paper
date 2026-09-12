@@ -6,6 +6,7 @@ import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.List;
 import net.kyori.adventure.key.Key;
+import org.bukkit.Sound;
 import org.bukkit.damage.DamageType;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
@@ -70,20 +71,20 @@ public interface BlocksAttacks {
     @Nullable RegistryKeySet<DamageType> bypassedBy();
 
     /**
-     * Gets the key sound to play when an attack is successfully blocked.
+     * Gets the sound to play when an attack is successfully blocked.
      *
-     * @return a key of the sound
+     * @return the sound
      */
     @Contract(pure = true)
-    @Nullable Key blockSound();
+    @Nullable Sound blockSound();
 
     /**
-     * Gets the key sound to play when the item goes on its disabled cooldown due to an attack.
+     * Gets the sound to play when the item goes on its disabled cooldown due to an attack.
      *
-     * @return a key of the sound
+     * @return the sound
      */
     @Contract(pure = true)
-    @Nullable Key disableSound();
+    @Nullable Sound disableSound();
 
     /**
      * Builder for {@link BlocksAttacks}.
@@ -109,10 +110,26 @@ public interface BlocksAttacks {
         @Contract(value = "_ -> this", mutates = "this")
         Builder bypassedBy(@Nullable RegistryKeySet<DamageType> bypassedBy);
 
+        /**
+         * Sets the sound to play when an attack is successfully blocked.
+         *
+         * @param sound the sound, or null to play no sound
+         * @return the builder for chaining
+         * @see Sound#create(net.kyori.adventure.key.Key, Float)
+         * @see Sound#create(java.util.function.Consumer)
+         */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder blockSound(@Nullable Key sound);
+        Builder blockSound(@Nullable Sound sound);
 
+        /**
+         * Sets the sound to play when the item goes on its disabled cooldown due to an attack.
+         *
+         * @param sound the sound, or null to play no sound
+         * @return the builder for chaining
+         * @see Sound#create(net.kyori.adventure.key.Key, Float)
+         * @see Sound#create(java.util.function.Consumer)
+         */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder disableSound(@Nullable Key sound);
+        Builder disableSound(@Nullable Sound sound);
     }
 }

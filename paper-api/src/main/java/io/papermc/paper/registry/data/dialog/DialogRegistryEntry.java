@@ -48,8 +48,10 @@ public interface DialogRegistryEntry {
          * <p>Not a part of the registry entry.</p>
          *
          * @return a new registry value set builder
+         * @deprecated use {@link io.papermc.paper.registry.event.RegistryFactory} on the registry event and {@link io.papermc.paper.registry.set.RegistryHolderSetBuilder}
          */
         @Contract(value = "-> new", pure = true)
+        @Deprecated(since = "26.3", forRemoval = true)
         RegistryValueSetBuilder<Dialog, DialogRegistryEntry.Builder> registryValueSet();
 
         /**

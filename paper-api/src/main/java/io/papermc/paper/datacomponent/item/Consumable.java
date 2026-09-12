@@ -6,6 +6,7 @@ import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import java.util.List;
 import net.kyori.adventure.key.Key;
+import org.bukkit.Sound;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -32,7 +33,7 @@ public interface Consumable extends BuildableDataComponent<Consumable, Consumabl
     ItemUseAnimation animation();
 
     @Contract(pure = true)
-    Key sound();
+    Sound sound();
 
     @Contract(pure = true)
     boolean hasConsumeParticles();
@@ -67,11 +68,11 @@ public interface Consumable extends BuildableDataComponent<Consumable, Consumabl
         /**
          * Sets the sound played when consuming the item.
          *
-         * @param sound the {@link Key} representing the sound to be used
+         * @param sound the sound to be used
          * @return the builder for chaining
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder sound(Key sound);
+        Builder sound(Sound sound);
 
         /**
          * Sets whether consuming the item results in particle effects.

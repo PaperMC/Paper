@@ -4,14 +4,15 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.HolderableBase;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.entity.animal.nautilus.ZombieNautilusVariant;
 import net.minecraft.world.entity.animal.nautilus.ZombieNautilus;
+import net.minecraft.world.entity.animal.nautilus.ZombieNautilusVariant;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class CraftZombieNautilus extends CraftAbstractNautilus implements org.bukkit.entity.ZombieNautilus {
+
     public CraftZombieNautilus(final CraftServer server, final ZombieNautilus entity) {
         super(server, entity);
     }
@@ -22,18 +23,18 @@ public class CraftZombieNautilus extends CraftAbstractNautilus implements org.bu
     }
 
     @Override
-    public org.bukkit.entity.ZombieNautilus.Variant getVariant() {
+    public Variant getVariant() {
         return CraftVariant.minecraftHolderToBukkit(this.getHandle().getVariant());
     }
 
     @Override
-    public void setVariant(org.bukkit.entity.ZombieNautilus.Variant variant) {
+    public void setVariant(Variant variant) {
         Preconditions.checkArgument(variant != null, "variant cannot be null");
 
         this.getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
     }
 
-    public static class CraftVariant extends HolderableBase<ZombieNautilusVariant> implements org.bukkit.entity.ZombieNautilus.Variant {
+    public static class CraftVariant extends HolderableBase<ZombieNautilusVariant, Variant> implements Variant {
 
         public static org.bukkit.entity.ZombieNautilus.Variant minecraftHolderToBukkit(Holder<ZombieNautilusVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.ZOMBIE_NAUTILUS_VARIANT);

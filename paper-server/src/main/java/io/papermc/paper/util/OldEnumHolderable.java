@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
 @SuppressWarnings({"removal", "DeprecatedIsStillUsed"})
 @Deprecated
 @NullMarked
-public abstract class OldEnumHolderable<A extends OldEnum<A>, M> extends HolderableBase<M> implements Holderable<M>, OldEnum<A>, Keyed {
+public abstract class OldEnumHolderable<A extends OldEnum<A>, M> extends HolderableBase<M, A> implements Holderable<M>, OldEnum<A>, Keyed {
 
     private final int ordinal;
     private final @Nullable String name;
@@ -59,10 +59,5 @@ public abstract class OldEnumHolderable<A extends OldEnum<A>, M> extends Holdera
 
     private void checkIsReference() {
         Preconditions.checkState(this.holder.kind() == Holder.Kind.REFERENCE, "Cannot call method for this registry item, because it is not registered.");
-    }
-
-    @Override
-    public String toString() {
-        return this.implToString();
     }
 }

@@ -1,6 +1,7 @@
 package org.bukkit.map;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryElement;
 import java.util.Locale;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -287,7 +288,7 @@ public final class MapCursor {
      * index in the file './assets/minecraft/textures/map/map_icons.png' from minecraft.jar or from a
      * resource pack.
      */
-    public interface Type extends OldEnum<Type>, Keyed {
+    public interface Type extends RegistryElement<Type>, OldEnum<Type>, Keyed {
 
         // Start generate - MapCursorType
         Type BANNER_BLACK = getType("banner_black");

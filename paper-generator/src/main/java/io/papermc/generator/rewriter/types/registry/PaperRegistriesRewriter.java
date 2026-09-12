@@ -4,6 +4,7 @@ import com.google.common.base.CaseFormat;
 import io.papermc.generator.registry.RegistryEntries;
 import io.papermc.generator.registry.RegistryEntry;
 import io.papermc.generator.rewriter.types.Types;
+import io.papermc.paper.registry.RegistryElement;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.typewriter.ClassNamed;
 import io.papermc.typewriter.replace.SearchMetadata;
@@ -11,13 +12,11 @@ import io.papermc.typewriter.replace.SearchReplaceRewriter;
 import java.lang.constant.ConstantDescs;
 import java.util.stream.Stream;
 import net.minecraft.core.registries.Registries;
-import org.bukkit.Keyed;
 import org.bukkit.Registry;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class PaperRegistriesRewriter extends SearchReplaceRewriter {
-
 
     private void appendEntry(String indent, StringBuilder builder, RegistryEntry<?> entry, boolean canBeDelayed, boolean apiOnly) {
         builder.append(indent);
@@ -60,7 +59,11 @@ public class PaperRegistriesRewriter extends SearchReplaceRewriter {
                     case MODIFIABLE -> builder.append(".modifiable(");
                     case NONE -> builder.append(".create(");
                 }
-                builder.append(this.importCollector.getShortName(this.classNamedView.findFirst(entry.apiRegistryBuilderImpl()).resolve(this.classResolver))).append("::new");
+                // the builder impl is always nested in the base entry class; reference the base entry constructor first, then the builder constructor
+                ClassNamed builderImpl = this.classNamedView.findFirst(entry.apiRegistryBuilderImpl()).resolve(this.classResolver);
+                builder.append(this.importCollector.getShortName(builderImpl.topLevel())).append("::new");
+                builder.append(", ");
+                builder.append(builderImpl.dottedNestedName()).append("::new");
                 if (entry.modificationApiSupport() == RegistryEntry.RegistryModificationApiSupport.NONE) {
                     builder.append(", ");
                     builder.append(Types.REGISTRY_MODIFICATION_API_SUPPORT.dottedNestedName()).append(".NONE");
@@ -108,7 +111,7 @@ public class PaperRegistriesRewriter extends SearchReplaceRewriter {
     private ClassNamed getImplClassName(RegistryEntry<?> entry) {
         try (Stream<ClassNamed> stream = this.classNamedView.find(entry.implClass())) {
             return stream.map(klass -> klass.resolve(this.classResolver))
-                .filter(klass -> Keyed.class.isAssignableFrom(klass.knownClass())) // todo check handleable/holderable once keyed is gone
+                .filter(klass -> RegistryElement.class.isAssignableFrom(klass.knownClass()))
                 .findFirst().orElseThrow();
         }
     }

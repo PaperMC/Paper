@@ -11,7 +11,7 @@ import org.bukkit.Sound;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CraftJukeboxSong extends HolderableBase<net.minecraft.world.item.JukeboxSong> implements JukeboxSong {
+public class CraftJukeboxSong extends HolderableBase<net.minecraft.world.item.JukeboxSong, JukeboxSong> implements JukeboxSong {
 
     public static JukeboxSong minecraftHolderToBukkit(Holder<net.minecraft.world.item.JukeboxSong> minecraft) {
         return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.JUKEBOX_SONG);

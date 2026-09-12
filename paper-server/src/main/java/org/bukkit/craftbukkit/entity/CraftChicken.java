@@ -47,7 +47,7 @@ public class CraftChicken extends CraftAnimals implements Chicken {
         this.getHandle().setSoundVariant(CraftSoundVariant.bukkitToMinecraftHolder(variant));
     }
 
-    public static class CraftVariant extends HolderableBase<ChickenVariant> implements Variant {
+    public static class CraftVariant extends HolderableBase<ChickenVariant, Variant> implements Variant {
 
         public static Variant minecraftHolderToBukkit(Holder<ChickenVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.CHICKEN_VARIANT);
@@ -62,7 +62,7 @@ public class CraftChicken extends CraftAnimals implements Chicken {
         }
     }
 
-    public static class CraftSoundVariant extends HolderableBase<ChickenSoundVariant> implements SoundVariant {
+    public static class CraftSoundVariant extends HolderableBase<ChickenSoundVariant, SoundVariant> implements SoundVariant {
 
         public static SoundVariant minecraftHolderToBukkit(Holder<ChickenSoundVariant> minecraft) {
             return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.CHICKEN_SOUND_VARIANT);

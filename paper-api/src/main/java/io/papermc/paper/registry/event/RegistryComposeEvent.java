@@ -7,7 +7,7 @@ import org.bukkit.Keyed;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * Event object for {@link RegistryEventProvider#compose()}. This
+ * Event object for {@link RegistryEvents#compose(io.papermc.paper.registry.RegistryKey)}. This
  * event is fired after a registry is loaded with its normal values.
  * It provides a way for plugins to add new objects to the registry.
  *
@@ -34,4 +34,11 @@ public interface RegistryComposeEvent<T, B extends RegistryBuilder<T>> extends R
      * @param <V> the tag value type
      */
     <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey); // TODO remove Keyed
+
+    /**
+     * Gets the factory for creating tags, holders, and holder sets.
+     *
+     * @return the registry factory
+     */
+    RegistryFactory factory();
 }
