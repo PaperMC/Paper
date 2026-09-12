@@ -96,6 +96,11 @@ public class MavenLibraryResolver implements ClassPathLibrary {
             public void transferInitiated(final TransferEvent event) throws TransferCancelledException {
                 LOGGER.info("Downloading {}", event.getResource().getRepositoryUrl() + event.getResource().getResourceName());
             }
+
+            @Override
+            public void transferFailed(final TransferEvent event) {
+                LOGGER.warn("Failed to download {}", event.getResource().getRepositoryUrl() + event.getResource().getResourceName(), event.getException());
+            }
         });
         this.session.setReadOnly();
     }
