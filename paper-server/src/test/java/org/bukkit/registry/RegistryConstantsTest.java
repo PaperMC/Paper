@@ -59,7 +59,6 @@ public class RegistryConstantsTest {
             DataComponents.CREATIVE_SLOT_LOCK,
             DataComponents.ADDITIONAL_TRADE_COST,
             // TODO - snapshot - just wanna pass this we need add this components with proper api
-            DataComponents.BLOCK_TRANSFORMER,
             DataComponents.COOKING_FUEL,
             DataComponents.COMPOSTABLE,
             DataComponents.BREWING_FUEL

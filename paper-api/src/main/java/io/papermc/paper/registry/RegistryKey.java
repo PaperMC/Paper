@@ -2,6 +2,7 @@ package io.papermc.paper.registry;
 
 import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.datacomponent.item.blocktransformer.BlockTransformer;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.entity.poi.PoiType;
 import io.papermc.paper.registry.tag.TagKey;
@@ -269,6 +270,10 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.DialogKeys
      */
     RegistryKey<Dialog> DIALOG = create("dialog");
+    /**
+     * Data-driven registry for block transformers.
+     */
+    RegistryKey<BlockTransformer> BLOCK_TRANSFORMER = create("block_transformer");
 
 
     /* ******************* *
