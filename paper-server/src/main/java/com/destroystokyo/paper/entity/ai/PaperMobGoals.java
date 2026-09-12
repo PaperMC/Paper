@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import ca.spottedleaf.moonrise.common.util.TickThread;
 import net.minecraft.world.entity.ai.goal.GoalSelector;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import org.bukkit.craftbukkit.entity.CraftMob;
@@ -18,6 +19,7 @@ public class PaperMobGoals implements MobGoals {
     @Override
     public <T extends Mob> void addGoal(T mob, int priority, Goal<T> goal) {
         CraftMob craftMob = (CraftMob) mob;
+        TickThread.ensureTickThread(craftMob.getHandleRaw(), "Cannot add goal async");
         net.minecraft.world.entity.ai.goal.Goal mojangGoal;
 
         if (goal instanceof PaperGoal<?> paperGoal) {
@@ -32,6 +34,7 @@ public class PaperMobGoals implements MobGoals {
     @Override
     public <T extends Mob> void removeGoal(T mob, Goal<T> goal) {
         CraftMob craftMob = (CraftMob) mob;
+        TickThread.ensureTickThread(craftMob.getHandleRaw(), "Cannot remove goal async");
         if (goal instanceof PaperCustomGoal) {
             getHandle(craftMob, goal.getTypes()).removeGoal((net.minecraft.world.entity.ai.goal.Goal) goal);
         } else if (goal instanceof PaperGoal) {
@@ -117,6 +120,7 @@ public class PaperMobGoals implements MobGoals {
     @Override
     public <T extends Mob> Collection<Goal<T>> getAllGoals(T mob, GoalType type) {
         CraftMob craftMob = (CraftMob) mob;
+        TickThread.ensureTickThread(craftMob.getHandleRaw(), "Cannot get all goals async");
         Set<Goal<T>> goals = new HashSet<>();
         for (WrappedGoal item : getHandle(craftMob, type).getAvailableGoals()) {
             if (!item.getGoal().hasFlag(MobGoalHelper.paperToVanilla(type))) {
@@ -136,6 +140,7 @@ public class PaperMobGoals implements MobGoals {
     @Override
     public <T extends Mob> Collection<Goal<T>> getAllGoalsWithout(T mob, GoalType type) {
         CraftMob craftMob = (CraftMob) mob;
+        TickThread.ensureTickThread(craftMob.getHandleRaw(), "Cannot get all goals async");
         Set<Goal<T>> goals = new HashSet<>();
         for (GoalType internalType : GoalType.values()) {
             if (internalType == type) {
@@ -169,6 +174,7 @@ public class PaperMobGoals implements MobGoals {
     @Override
     public <T extends Mob> Collection<Goal<T>> getRunningGoals(T mob, GoalType type) {
         CraftMob craftMob = (CraftMob) mob;
+        TickThread.ensureTickThread(craftMob.getHandleRaw(), "Cannot get running goals async");
         Set<Goal<T>> goals = new HashSet<>();
         getHandle(craftMob, type).getAvailableGoals()
             .stream().filter(WrappedGoal::isRunning)
@@ -187,6 +193,7 @@ public class PaperMobGoals implements MobGoals {
     @Override
     public <T extends Mob> Collection<Goal<T>> getRunningGoalsWithout(T mob, GoalType type) {
         CraftMob craftMob = (CraftMob) mob;
+        TickThread.ensureTickThread(craftMob.getHandleRaw(), "Cannot get running goals async");
         Set<Goal<T>> goals = new HashSet<>();
         for (GoalType internalType : GoalType.values()) {
             if (internalType == type) {
