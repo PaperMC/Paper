@@ -1,5 +1,152 @@
 --- a/net/minecraft/world/level/levelgen/structure/structures/StrongholdPieces.java
 +++ b/net/minecraft/world/level/levelgen/structure/structures/StrongholdPieces.java
+@@ -53,49 +_,28 @@
+         new StrongholdPieces.PieceWeight(StrongholdPieces.StairsDown.class, 5, 5),
+         new StrongholdPieces.PieceWeight(StrongholdPieces.FiveCrossing.class, 5, 4),
+         new StrongholdPieces.PieceWeight(StrongholdPieces.ChestCorridor.class, 5, 4),
+-        new StrongholdPieces.PieceWeight(StrongholdPieces.Library.class, 10, 2) {
+-            @Override
+-            public boolean doPlace(final int depth) {
+-                return super.doPlace(depth) && depth > 4;
+-            }
+-        },
+-        new StrongholdPieces.PieceWeight(StrongholdPieces.PortalRoom.class, 20, 1) {
+-            @Override
+-            public boolean doPlace(final int depth) {
+-                return super.doPlace(depth) && depth > 5;
+-            }
+-        }
++        new StrongholdPieces.PieceWeight(StrongholdPieces.Library.class, 10, 2, 4),
++        new StrongholdPieces.PieceWeight(StrongholdPieces.PortalRoom.class, 20, 1, 5)
+     };
+-    private static List<StrongholdPieces.PieceWeight> currentPieces;
+-    private static @Nullable Class<? extends StrongholdPieces.StrongholdPiece> imposedPiece;
+-    private static int totalWeight;
+     private static final StrongholdPieces.SmoothStoneSelector SMOOTH_STONE_SELECTOR = new StrongholdPieces.SmoothStoneSelector();
+ 
+-    public static void resetPieces() {
+-        currentPieces = Lists.newArrayList();
+-
+-        for (StrongholdPieces.PieceWeight piece : STRONGHOLD_PIECE_WEIGHTS) {
+-            piece.placeCount = 0;
+-            currentPieces.add(piece);
+-        }
+-
+-        imposedPiece = null;
+-    }
+-
+-    private static boolean updatePieceWeight() {
++    // Paper start - structure starts can be generated in parallel; the piece weight state
++    // must be per-StructureStart (StartPiece), not shared static state.
++    private static boolean updatePieceWeight(final StrongholdPieces.StartPiece startPiece) {
+         boolean hasAnyPieces = false;
+-        totalWeight = 0;
++        startPiece.totalWeight = 0;
+ 
+-        for (StrongholdPieces.PieceWeight piece : currentPieces) {
+-            if (piece.maxPlaceCount > 0 && piece.placeCount < piece.maxPlaceCount) {
++        for (StrongholdPieces.PieceWeight piece : startPiece.currentPieces) {
++            if (piece.maxPlaceCount > 0 && startPiece.placeCounts.getOrDefault(piece, 0) < piece.maxPlaceCount) {
+                 hasAnyPieces = true;
+             }
+ 
+-            totalWeight = totalWeight + piece.weight;
++            startPiece.totalWeight = startPiece.totalWeight + piece.weight;
+         }
+ 
+         return hasAnyPieces;
+     }
++    // Paper end
+ 
+     private static StrongholdPieces.@Nullable StrongholdPiece findAndCreatePieceFactory(
+         final Class<? extends StrongholdPieces.StrongholdPiece> pieceClass,
+@@ -145,15 +_,15 @@
+         final Direction direction,
+         final int depth
+     ) {
+-        if (!updatePieceWeight()) {
++        if (!updatePieceWeight(startPiece)) {
+             return null;
+         }
+ 
+-        if (imposedPiece != null) {
++        if (startPiece.imposedPiece != null) {
+             StrongholdPieces.StrongholdPiece strongholdPiece = findAndCreatePieceFactory(
+-                imposedPiece, structurePieceAccessor, random, footX, footY, footZ, direction, depth
++                startPiece.imposedPiece, structurePieceAccessor, random, footX, footY, footZ, direction, depth
+             );
+-            imposedPiece = null;
++            startPiece.imposedPiece = null;
+             if (strongholdPiece != null) {
+                 return strongholdPiece;
+             }
+@@ -163,12 +_,13 @@
+ 
+         while (numAttempts < 5) {
+             numAttempts++;
+-            int weightSelection = random.nextInt(totalWeight);
++            int weightSelection = random.nextInt(startPiece.totalWeight);
+ 
+-            for (StrongholdPieces.PieceWeight piece : currentPieces) {
++            for (StrongholdPieces.PieceWeight piece : startPiece.currentPieces) {
+                 weightSelection -= piece.weight;
+                 if (weightSelection < 0) {
+-                    if (!piece.doPlace(depth) || piece == startPiece.previousPiece) {
++                    int placeCount = startPiece.placeCounts.getOrDefault(piece, 0);
++                    if (!piece.doPlace(depth, placeCount) || piece == startPiece.previousPiece) {
+                         break;
+                     }
+ 
+@@ -176,10 +_,10 @@
+                         piece.pieceClass, structurePieceAccessor, random, footX, footY, footZ, direction, depth
+                     );
+                     if (strongholdPiece != null) {
+-                        piece.placeCount++;
++                        startPiece.placeCounts.put(piece, placeCount + 1);
+                         startPiece.previousPiece = piece;
+-                        if (!piece.isValid()) {
+-                            currentPieces.remove(piece);
++                        if (!piece.isValid(placeCount + 1)) {
++                            startPiece.currentPieces.remove(piece);
+                         }
+ 
+                         return strongholdPiece;
+@@ -754,21 +_,26 @@
+     private static class PieceWeight {
+         public final Class<? extends StrongholdPieces.StrongholdPiece> pieceClass;
+         public final int weight;
+-        public int placeCount;
+         public final int maxPlaceCount;
++        public final int minDepth;
+ 
+         public PieceWeight(final Class<? extends StrongholdPieces.StrongholdPiece> pieceClass, final int weight, final int maxPlaceCount) {
++            this(pieceClass, weight, maxPlaceCount, 0);
++        }
++
++        public PieceWeight(final Class<? extends StrongholdPieces.StrongholdPiece> pieceClass, final int weight, final int maxPlaceCount, final int minDepth) {
+             this.pieceClass = pieceClass;
+             this.weight = weight;
+             this.maxPlaceCount = maxPlaceCount;
+-        }
+-
+-        public boolean doPlace(final int depth) {
+-            return this.maxPlaceCount == 0 || this.placeCount < this.maxPlaceCount;
+-        }
+-
+-        public boolean isValid() {
+-            return this.maxPlaceCount == 0 || this.placeCount < this.maxPlaceCount;
++            this.minDepth = minDepth;
++        }
++
++        public boolean doPlace(final int depth, final int placeCount) {
++            return (this.maxPlaceCount == 0 || placeCount < this.maxPlaceCount) && (this.minDepth == 0 || depth > this.minDepth);
++        }
++
++        public boolean isValid(final int placeCount) {
++            return this.maxPlaceCount == 0 || placeCount < this.maxPlaceCount;
+         }
+     }
+ 
 @@ -900,10 +_,13 @@
                  BlockPos pos = this.getWorldPos(5, 3, 6);
                  if (chunkBB.isInside(pos)) {
@@ -18,3 +165,34 @@
                  }
              }
          }
+@@ -1268,7 +_,7 @@
+         @Override
+         public void addChildren(final StructurePiece startPiece, final StructurePieceAccessor structurePieceAccessor, final RandomSource random) {
+             if (this.isSource) {
+-                StrongholdPieces.imposedPiece = StrongholdPieces.FiveCrossing.class;
++                ((StrongholdPieces.StartPiece)startPiece).imposedPiece = StrongholdPieces.FiveCrossing.class;
+             }
+ 
+             this.generateSmallDoorChildForward((StrongholdPieces.StartPiece)startPiece, structurePieceAccessor, random, 1, 1);
+@@ -1327,8 +_,21 @@
+         public StrongholdPieces.@Nullable PortalRoom portalRoomPiece;
+         public final List<StructurePiece> pendingChildren = Lists.newArrayList();
+ 
++        // Paper start - per-structure piece weight state (see generatePieceFromSmallDoor)
++        // The weight objects in STRONGHOLD_PIECE_WEIGHTS are shared by every stronghold and cannot be
++        // copied per-StructureStart like the nether fortress weights: the Library and PortalRoom entries
++        // are anonymous subclasses overriding doPlace(depth), so copying the base class would silently
++        // drop their depth constraints. Keep the shared weights immutable (no more placeCount field) and
++        // track per-structure counts in this map instead.
++        final List<StrongholdPieces.PieceWeight> currentPieces = Lists.newArrayList();
++        final java.util.Map<StrongholdPieces.PieceWeight, Integer> placeCounts = new java.util.IdentityHashMap<>();
++        @Nullable Class<? extends StrongholdPieces.StrongholdPiece> imposedPiece;
++        int totalWeight;
++        // Paper end
++
+         public StartPiece(final RandomSource random, final int west, final int north) {
+             super(StructurePieceType.STRONGHOLD_START, 0, west, north, getRandomHorizontalDirection(random));
++            this.currentPieces.addAll(java.util.Arrays.asList(STRONGHOLD_PIECE_WEIGHTS));
+         }
+ 
+         public StartPiece(final CompoundTag tag) {
