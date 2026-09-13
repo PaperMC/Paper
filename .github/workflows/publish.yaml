@@ -1,0 +1,74 @@
+name: Publish
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: "git / setup"
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "no-reply@github.com"
+
+      - name: "git / checkout"
+        uses: "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0" # v7.0.0
+
+      - name: "java / setup"
+        uses: "actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287" # v5.3.0
+        with:
+          check-latest: true
+          distribution: zulu
+          java-version: 25
+
+      - name: "metadata / time"
+        run: |
+          echo "BUILD_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
+      - name: "gradle / setup"
+        uses: "gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92" # v6.2.0
+
+      - name: "versioning / resolve build number track"
+        id: build_number_track
+        run: |
+          echo "track=paper-$(./gradlew -q printMinecraftVersion)" >> "$GITHUB_OUTPUT"
+
+      - name: "versioning / allocate build number"
+        run: |
+          number="$(
+            curl --fail-with-body --max-time 30 -X POST \
+              -H "Authorization: Bearer $BUILD_NUMBER_TOKEN" \
+              "https://build-numbers.papermc.workers.dev/v1/tracks/$BUILD_NUMBER_TRACK/next" \
+            | jq -er '.number'
+          )"
+          echo "BUILD_NUMBER=$number" >> "$GITHUB_ENV"
+        env:
+          BUILD_NUMBER_TOKEN: ${{ secrets.BUILD_NUMBER_TOKEN }}
+          BUILD_NUMBER_TRACK: ${{ steps.build_number_track.outputs.track }}
+
+      - name: "gradle / apply patches"
+        run: ./gradlew applyPatches --stacktrace
+
+      - name: "gradle / build"
+        run: ./gradlew build --stacktrace
+
+      - name: "gradle / package"
+        run: ./gradlew createPaperclipJar generateDevelopmentBundle --stacktrace
+
+      - name: "gradle / publish to fill"
+        run: ./gradlew publishToFill --stacktrace
+        env:
+          FILL_API_KEY: "${{ secrets.FILL_API_KEY }}"
+          FILL_API_URL: "${{ secrets.FILL_API_URL }}"
+
+      - name: "gradle / publish to maven"
+        run: ./gradlew -PpublishDevBundle :paper-api:publish publishDevBundlePublicationToPaperReleasesRepository --stacktrace
+        env:
+          ORG_GRADLE_PROJECT_paperReleasesPassword: "${{ secrets.ARTIFACTORY_PASSWORD }}"
+          ORG_GRADLE_PROJECT_paperReleasesUsername: "${{ secrets.ARTIFACTORY_USERNAME }}"
