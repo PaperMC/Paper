@@ -21,9 +21,27 @@
  
      protected abstract void onOpen(final Level level, final BlockPos pos, final BlockState blockState);
  
-@@ -29,6 +_,18 @@
+@@ -23,12 +_,36 @@
+ 
+     protected abstract void openerCountChanged(final Level level, final BlockPos pos, final BlockState blockState, int previous, int current);
+ 
++    // Paper start - delay open/close callbacks
++    public boolean delayCallbacks() {
++        return false;
++    }
++    // Paper end - delay open/close callbacks
++
+     public abstract boolean isOwnContainer(final Player player);
+ 
+     public void incrementOpeners(
          final LivingEntity entity, final Level level, final BlockPos pos, final BlockState blockState, final double maxInteractionRange
      ) {
++        // Paper start - delay open/close callbacks
++        if (this.delayCallbacks()) {
++            scheduleRecheck(level, pos, blockState, 1);
++            return;
++        }
++        // Paper end - delay open/close callbacks
          int previous = this.openCount++;
 +
 +        // Paper start - Call BlockRedstoneEvent
@@ -40,10 +58,23 @@
          if (previous == 0) {
              this.onOpen(level, pos, blockState);
              level.gameEvent(entity, GameEvent.CONTAINER_OPEN, pos);
-@@ -40,7 +_,20 @@
+@@ -39,8 +_,33 @@
+         this.maxInteractionRange = Math.max(maxInteractionRange, this.maxInteractionRange);
      }
  
++    // Paper start - delay open/close callbacks
++    private LivingEntity lastActiveEntity;
++    // Paper end - delay open/close callbacks
++
      public void decrementOpeners(final LivingEntity entity, final Level level, final BlockPos pos, final BlockState blockState) {
++        // Paper start - delay open/close callbacks
++        if (this.delayCallbacks()) {
++            lastActiveEntity = entity;
++
++            scheduleRecheck(level, pos, blockState, 1);
++            return;
++        }
++        // Paper end - delay open/close callbacks
 +        if (this.openCount == 0) return; // Paper - Prevent ContainerOpenersCounter openCount from going negative
          int previous = this.openCount--;
 +
@@ -61,7 +92,7 @@
          if (this.openCount == 0) {
              this.onClose(level, pos, blockState);
              level.gameEvent(entity, GameEvent.CONTAINER_CLOSE, pos);
-@@ -74,8 +_,20 @@
+@@ -74,16 +_,45 @@
          }
  
          int openCount = containerUsers.size();
@@ -82,3 +113,43 @@
              boolean isOpen = openCount != 0;
              boolean wasOpen = prevCount != 0;
              if (isOpen && !wasOpen) {
+                 this.onOpen(level, pos, blockState);
+-                level.gameEvent(null, GameEvent.CONTAINER_OPEN, pos);
++
++                // Paper start - delay open/close callbacks
++                if (delayCallbacks() && !containerUsers.isEmpty()) {
++                    LivingEntity livingEntity = containerUsers.getFirst().getLivingEntity();
++
++                    level.gameEvent(livingEntity, GameEvent.CONTAINER_OPEN, pos);
++                } else {
++                    level.gameEvent(null, GameEvent.CONTAINER_OPEN, pos);
++                }
++                // Paper end - delay open/close callbacks
++
+             } else if (!isOpen) {
+                 this.onClose(level, pos, blockState);
+-                level.gameEvent(null, GameEvent.CONTAINER_CLOSE, pos);
++
++                // Paper start - delay open/close callbacks
++                if (delayCallbacks()) {
++                    level.gameEvent(lastActiveEntity, GameEvent.CONTAINER_CLOSE, pos);
++                } else {
++                    level.gameEvent(null, GameEvent.CONTAINER_CLOSE, pos);
++                }
++                // Paper end - delay open/close callbacks
+             }
+ 
+             this.openCount = openCount;
+@@ -100,6 +_,11 @@
+     }
+ 
+     private static void scheduleRecheck(final Level level, final BlockPos blockPos, final BlockState blockState) {
+-        level.scheduleTick(blockPos, blockState.getBlock(), 5);
++        // Paper start - delay open/close callbacks
++        scheduleRecheck(level, blockPos, blockState, 5);
++    }
++    private static void scheduleRecheck(final Level level, final BlockPos blockPos, final BlockState blockState, final int delay) {
++        level.scheduleTick(blockPos, blockState.getBlock(), delay);
++        // Paper end - delay open/close callbacks
+     }
+ }
