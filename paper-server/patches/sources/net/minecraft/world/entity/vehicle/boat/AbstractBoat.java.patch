@@ -25,7 +25,7 @@
          return true;
      }
  
-@@ -175,11 +_,30 @@
+@@ -175,11 +_,38 @@
  
      @Override
      public void push(final Entity entity) {
@@ -34,11 +34,15 @@
              if (entity.getBoundingBox().minY < this.getBoundingBox().maxY) {
 +                // CraftBukkit start
 +                if (!this.isPassengerOfSameVehicle(entity)) {
-+                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent event = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
-+                        (org.bukkit.entity.Vehicle) this.getBukkitEntity(),
-+                        entity.getBukkitEntity()
-+                    );
-+                    if (!event.callEvent()) return;
++                    // Paper start - Guard VehicleEntityCollisionEvent when no plugins listen
++                    if (org.bukkit.event.vehicle.VehicleEntityCollisionEvent.getHandlerList().getRegisteredListeners().length != 0) {
++                        org.bukkit.event.vehicle.VehicleEntityCollisionEvent event = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                            (org.bukkit.entity.Vehicle) this.getBukkitEntity(),
++                            entity.getBukkitEntity()
++                        );
++                        if (!event.callEvent()) return;
++                    }
++                    // Paper end - Guard VehicleEntityCollisionEvent when no plugins listen
 +                }
 +                // CraftBukkit end
                  super.push(entity);
@@ -46,17 +50,21 @@
          } else if (entity.getBoundingBox().minY <= this.getBoundingBox().minY) {
 +            // CraftBukkit start
 +            if (!this.isPassengerOfSameVehicle(entity)) {
-+                org.bukkit.event.vehicle.VehicleEntityCollisionEvent event = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
-+                    (org.bukkit.entity.Vehicle) this.getBukkitEntity(),
-+                    entity.getBukkitEntity()
-+                );
-+                if (!event.callEvent()) return;
++                // Paper start - Guard VehicleEntityCollisionEvent when no plugins listen
++                if (org.bukkit.event.vehicle.VehicleEntityCollisionEvent.getHandlerList().getRegisteredListeners().length != 0) {
++                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent event = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(
++                        (org.bukkit.entity.Vehicle) this.getBukkitEntity(),
++                        entity.getBukkitEntity()
++                    );
++                    if (!event.callEvent()) return;
++                }
++                // Paper end - Guard VehicleEntityCollisionEvent when no plugins listen
 +            }
 +            // CraftBukkit end
              super.push(entity);
          }
      }
-@@ -246,6 +_,18 @@
+@@ -246,6 +_,20 @@
              this.setDeltaMovement(Vec3.ZERO);
          }
  
@@ -64,9 +72,11 @@
 +        org.bukkit.Location to = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(this.position(), this.level(), this.getYRot(), this.getXRot());
 +        org.bukkit.entity.Vehicle vehicle = (org.bukkit.entity.Vehicle) this.getBukkitEntity();
 +
-+        new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle).callEvent();
++        if (org.bukkit.event.vehicle.VehicleUpdateEvent.getHandlerList().getRegisteredListeners().length != 0) { // Paper - Guard VehicleUpdateEvent when no plugins listen
++            new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle).callEvent();
++        }
 +
-+        if (this.lastLocation != null && !this.lastLocation.equals(to)) {
++        if (this.lastLocation != null && !this.lastLocation.equals(to) && org.bukkit.event.vehicle.VehicleMoveEvent.getHandlerList().getRegisteredListeners().length != 0) { // Paper - Guard VehicleMoveEvent when no plugins listen
 +            org.bukkit.event.vehicle.VehicleMoveEvent event = new org.bukkit.event.vehicle.VehicleMoveEvent(vehicle, this.lastLocation, to);
 +            event.callEvent();
 +        }

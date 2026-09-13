@@ -1,22 +1,24 @@
 --- a/net/minecraft/world/level/material/FlowingFluid.java
 +++ b/net/minecraft/world/level/material/FlowingFluid.java
-@@ -120,6 +_,15 @@
+@@ -120,6 +_,17 @@
                  Fluid newBelowFluidType = newBelowFluid.getType();
                  if (belowFluid.canBeReplacedWith(level, belowPos, newBelowFluidType, Direction.DOWN)
                      && canHoldSpecificFluid(level, belowPos, belowState, newBelowFluidType)) {
 +                    // CraftBukkit start
 +                    org.bukkit.block.Block source = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
-+                    org.bukkit.event.block.BlockFromToEvent event = new org.bukkit.event.block.BlockFromToEvent(source, org.bukkit.block.BlockFace.DOWN);
-+                    level.getCraftServer().getPluginManager().callEvent(event);
++                    if (org.bukkit.event.block.BlockFromToEvent.getHandlerList().getRegisteredListeners().length != 0) { // Paper - Guard BlockFromToEvent when no plugins listen
++                        org.bukkit.event.block.BlockFromToEvent event = new org.bukkit.event.block.BlockFromToEvent(source, org.bukkit.block.BlockFace.DOWN);
++                        level.getCraftServer().getPluginManager().callEvent(event);
 +
-+                    if (event.isCancelled()) {
-+                        return;
++                        if (event.isCancelled()) {
++                            return;
++                        }
 +                    }
 +                    // CraftBukkit end
                      this.spreadTo(level, belowPos, belowState, Direction.DOWN, newBelowFluid);
                      if (this.sourceNeighborCount(level, pos) >= 3) {
                          this.spreadToSides(level, pos, fluidState, state);
-@@ -148,7 +_,18 @@
+@@ -148,7 +_,20 @@
                  Direction spread = entry.getKey();
                  FluidState newNeighborFluid = entry.getValue();
                  BlockPos neighborPos = pos.relative(spread);
@@ -25,11 +27,13 @@
 +                if (neighborState == null) continue; // Paper - Prevent chunk loading from fluid flowing
 +                // CraftBukkit start
 +                org.bukkit.block.Block source = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
-+                org.bukkit.event.block.BlockFromToEvent event = new org.bukkit.event.block.BlockFromToEvent(source, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(spread));
-+                level.getCraftServer().getPluginManager().callEvent(event);
++                if (org.bukkit.event.block.BlockFromToEvent.getHandlerList().getRegisteredListeners().length != 0) { // Paper - Guard BlockFromToEvent when no plugins listen
++                    org.bukkit.event.block.BlockFromToEvent event = new org.bukkit.event.block.BlockFromToEvent(source, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(spread));
++                    level.getCraftServer().getPluginManager().callEvent(event);
 +
-+                if (event.isCancelled()) {
-+                    continue;
++                    if (event.isCancelled()) {
++                        continue;
++                    }
 +                }
 +                // CraftBukkit end
 +                this.spreadTo(level, neighborPos, neighborState, spread, newNeighborFluid); // Paper - Prevent chunk loading from fluid flowing
