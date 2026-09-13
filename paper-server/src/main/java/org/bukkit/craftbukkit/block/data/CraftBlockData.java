@@ -30,10 +30,12 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateHolder;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.apache.commons.lang3.mutable.MutableDouble;
 import org.bukkit.Color;
+import org.bukkit.Instrument;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.SoundGroup;
@@ -655,5 +657,12 @@ public class CraftBlockData implements BlockData {
     @Override
     public boolean isReplaceable() {
         return this.state.canBeReplaced();
+    }
+
+    @Override
+    public Instrument getInstrument() {
+        NoteBlockInstrument noteBlockInstrument = this.state.instrument();
+
+        return CraftBlockData.fromVanilla(noteBlockInstrument, Instrument.class);
     }
 }
