@@ -661,36 +661,8 @@ public class CraftBlockData implements BlockData {
 
     @Override
     public Instrument getInstrument() {
-        NoteBlockInstrument instrument = this.state.instrument();
+        NoteBlockInstrument noteBlockInstrument = this.state.instrument();
 
-        return switch (instrument) {
-            case HARP -> Instrument.PIANO;
-            case BASEDRUM -> Instrument.BASS_DRUM;
-            case SNARE -> Instrument.SNARE_DRUM;
-            case HAT -> Instrument.STICKS;
-            case BASS -> Instrument.BASS_GUITAR;
-            case FLUTE -> Instrument.FLUTE;
-            case BELL -> Instrument.BELL;
-            case GUITAR -> Instrument.GUITAR;
-            case CHIME -> Instrument.CHIME;
-            case XYLOPHONE -> Instrument.XYLOPHONE;
-            case IRON_XYLOPHONE -> Instrument.IRON_XYLOPHONE;
-            case COW_BELL -> Instrument.COW_BELL;
-            case DIDGERIDOO -> Instrument.DIDGERIDOO;
-            case BIT -> Instrument.BIT;
-            case BANJO -> Instrument.BANJO;
-            case PLING -> Instrument.PLING;
-            case TRUMPET -> Instrument.TRUMPET;
-            case TRUMPET_EXPOSED -> Instrument.TRUMPET_EXPOSED;
-            case TRUMPET_OXIDIZED -> Instrument.TRUMPET_OXIDIZED;
-            case TRUMPET_WEATHERED -> Instrument.TRUMPET_WEATHERED;
-            case ZOMBIE -> Instrument.ZOMBIE;
-            case SKELETON -> Instrument.SKELETON;
-            case CREEPER -> Instrument.CREEPER;
-            case DRAGON -> Instrument.DRAGON;
-            case WITHER_SKELETON -> Instrument.WITHER_SKELETON;
-            case PIGLIN -> Instrument.PIGLIN;
-            case CUSTOM_HEAD -> Instrument.CUSTOM_HEAD;
-        };
+        return CraftBlockData.fromVanilla(noteBlockInstrument, Instrument.class);
     }
 }
