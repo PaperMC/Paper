@@ -207,6 +207,13 @@ public class HandlerList {
     }
 
     /**
+     * {@return whether this handler list has any listeners}
+     */
+    public boolean hasListeners() {
+        return getRegisteredListeners().length != 0;
+    }
+
+    /**
      * Get a specific plugin's registered listeners associated with this
      * handler list
      *
