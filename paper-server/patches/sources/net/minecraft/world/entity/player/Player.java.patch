@@ -217,21 +217,21 @@
      }
  
      @Override
-@@ -946,15 +_,25 @@
+@@ -946,40 +_,66 @@
      }
  
      public void attack(final Entity entity) {
 -        if (!this.cannotAttack(entity)) {
-+        // Paper start - PlayerAttackEntityEvent
++        // Paper start - PrePlayerAttackEntityEvent
 +        boolean willAttack = !this.cannotAttack(entity); // Vanilla logic
-+        io.papermc.paper.event.player.PrePlayerAttackEntityEvent playerAttackEntityEvent = new io.papermc.paper.event.player.PrePlayerAttackEntityEvent(
++        io.papermc.paper.event.player.PrePlayerAttackEntityEvent prePlayerAttackEntityEvent = new io.papermc.paper.event.player.PrePlayerAttackEntityEvent(
 +            (org.bukkit.entity.Player) this.getBukkitEntity(),
 +            entity.getBukkitEntity(),
 +            willAttack
 +        );
 +
-+        if (playerAttackEntityEvent.callEvent() && willAttack) { // Logic moved to willAttack local variable.
-+        // Paper end - PlayerAttackEntityEvent
++        if (prePlayerAttackEntityEvent.callEvent() && willAttack) { // Logic moved to willAttack local variable.
++        // Paper end - PrePlayerAttackEntityEvent
              float baseDamage = this.isAutoSpinAttack() ? this.autoSpinAttackDmg : (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
              ItemStack attackingItemStack = this.getWeaponItem();
 -            DamageSource damageSource = this.createAttackSource(attackingItemStack);
@@ -245,18 +245,58 @@
 +            final float dmgFinal = magicBoost; // Paper - damage events
 +            if (!this.deflectProjectile(entity, () -> !org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(entity, dmgSourceFinal, dmgFinal, false))) {
                  if (baseDamage > 0.0F || magicBoost > 0.0F) {
++                    io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType attackType = io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.NORMAL; // Paper - PlayerAttackEntityEvent
                      boolean fullStrengthAttack = attackStrengthScale > 0.9F;
-                     boolean knockbackAttack;
-@@ -967,7 +_,9 @@
+-                    boolean knockbackAttack;
+-                    if (this.isSprinting() && fullStrengthAttack) {
+-                        this.playServerSideSound(SoundEvents.PLAYER_ATTACK_KNOCKBACK);
+-                        knockbackAttack = true;
+-                    } else {
+-                        knockbackAttack = false;
+-                    }
++                    boolean knockbackAttack = this.isSprinting() && fullStrengthAttack; // Paper - PlayerAttackEntityEvent
  
                      baseDamage += attackingItemStack.getItem().getAttackDamageBonus(entity, baseDamage, damageSource);
                      boolean criticalAttack = fullStrengthAttack && this.canCriticalAttack(entity);
 +                    criticalAttack = criticalAttack && !this.level().paperConfig().entities.behavior.disablePlayerCrits; // Paper - Toggleable player crits
                      if (criticalAttack) {
-+                        damageSource = damageSource.critical(); // Paper - critical damage API
-                         baseDamage *= 1.5F;
+-                        baseDamage *= 1.5F;
++                        attackType = io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.CRIT; // Paper - PlayerAttackEntityEvent
                      }
  
+                     float totalDamage = baseDamage + magicBoost;
+                     boolean sweepAttack = this.isSweepAttack(fullStrengthAttack, criticalAttack, knockbackAttack);
++                    // Paper start - PlayerAttackEntityEvent
++                    if (sweepAttack) {
++                        attackType = io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.SWEEP;
++                    }
++                    // Paper end - PlayerAttackEntityEvent
+                     float oldLivingEntityHealth = 0.0F;
+                     if (entity instanceof LivingEntity livingTarget) {
+                         oldLivingEntityHealth = livingTarget.getHealth();
+                     }
+ 
+                     Vec3 oldMovement = entity.getDeltaMovement();
+-                    boolean wasHurt = entity.hurtOrSimulate(damageSource, totalDamage);
++                    // Paper start - PlayerAttackEntityEvent
++                    final io.papermc.paper.event.player.PlayerAttackEntityEvent playerAttackEntityEvent = new io.papermc.paper.event.player.PlayerAttackEntityEvent((org.bukkit.entity.Player) getBukkitEntity(), entity.getBukkitEntity(), knockbackAttack, attackType);
++                    boolean allowAttack = playerAttackEntityEvent.callEvent();
++                    knockbackAttack = playerAttackEntityEvent.hasExtraKnockback();
++                    criticalAttack = false;
++                    sweepAttack = false;
++                    switch (playerAttackEntityEvent.getType()) {
++                        case CRIT -> {
++                            criticalAttack = true;
++                            baseDamage *= 1.5F;
++                            damageSource = damageSource.critical(); // Paper - critical damage API}
++                        }
++                        case SWEEP -> sweepAttack = true;
++                    }
++                    boolean wasHurt = allowAttack && entity.hurtOrSimulate(damageSource, totalDamage);
++                    // Paper end - PlayerAttackEntityEvent
+                     if (wasHurt) {
+                         this.causeExtraKnockback(
+                             entity, this.getKnockback(entity, damageSource) + (knockbackAttack ? 0.5F : 0.0F), oldMovement, damageSource, totalDamage, true
 @@ -992,7 +_,7 @@
                          this.setLastHurtMob(entity);
                          this.itemAttackInteraction(entity, attackingItemStack, damageSource, true);
