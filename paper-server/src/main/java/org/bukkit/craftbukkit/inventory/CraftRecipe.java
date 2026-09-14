@@ -6,8 +6,10 @@ import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.crafting.Ingredient;
 import org.bukkit.inventory.ItemType;
@@ -32,6 +34,9 @@ public interface CraftRecipe extends Recipe {
             stack = Ingredient.of();
         } else if (bukkit instanceof final RecipeChoice.ItemTypeChoice itemTypeChoice) {
             stack = Ingredient.of(PaperRegistrySets.convertToNms(Registries.ITEM, Conversions.global().lookup(), itemTypeChoice.itemTypes()));
+        } else if (bukkit instanceof final RecipeChoice.PredicateChoice predicateChoice) {
+            stack = Ingredient.ofStacks(Collections.singletonList(CraftItemStack.asNMSCopy(predicateChoice.getItemStack())));
+            stack.stackPredicate = nmsStack -> predicateChoice.test(CraftItemStack.asBukkitCopy(nmsStack));
         } else if (bukkit instanceof RecipeChoice.MaterialChoice) {
             stack = Ingredient.of(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map(CraftItemType::bukkitToMinecraft));
         } else if (bukkit instanceof RecipeChoice.ExactChoice) {
@@ -63,13 +68,19 @@ public interface CraftRecipe extends Recipe {
             return RecipeChoice.empty(); // Paper - null breaks API contracts
         }
 
+        if (ingredient.stackPredicate != null) {
+            net.minecraft.world.item.ItemStack stack = ingredient.itemStacks().iterator().next();
+            Predicate<org.bukkit.inventory.ItemStack> predicate = bukkitStack -> ingredient.stackPredicate.test(CraftItemStack.asNMSCopy(bukkitStack));
+            return RecipeChoice.predicateChoice(predicate, CraftItemStack.asBukkitCopy(stack));
+        }
+
         if (ingredient.isExact()) {
             List<org.bukkit.inventory.ItemStack> choices = new ArrayList<>(ingredient.itemStacks().size());
             for (net.minecraft.world.item.ItemStack i : ingredient.itemStacks()) {
                 choices.add(CraftItemStack.asBukkitCopy(i));
             }
 
-            return new RecipeChoice.ExactChoice(choices);
+            return RecipeChoice.exactChoice(choices);
         } else {
             final RegistryKeySet<ItemType> itemTypes = PaperRegistrySets.convertToApi(RegistryKey.ITEM, ingredient.values);
             return RecipeChoice.itemType(itemTypes);
