@@ -49,6 +49,7 @@ import io.papermc.paper.datacomponent.item.PaperVillagerFood;
 import io.papermc.paper.datacomponent.item.PaperWeapon;
 import io.papermc.paper.datacomponent.item.PaperWritableBookContent;
 import io.papermc.paper.datacomponent.item.PaperWrittenBookContent;
+import io.papermc.paper.datacomponent.item.blocktransformer.PaperBlockTransformer;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
@@ -189,7 +190,7 @@ public final class DataComponentAdapters {
         register(DataComponents.ATTACK_ANIMATION, PaperSwingAnimation::new);
         register(DataComponents.INTERACT_ANIMATION, PaperSwingAnimation::new);
         // registerIdentity(DataComponents.ADDITIONAL_TRADE_COST);
-        // block transformer
+        register(DataComponents.BLOCK_TRANSFORMER, PaperBlockTransformer::minecraftHolderToBukkit, PaperBlockTransformer::bukkitToMinecraftHolder);
         register(DataComponents.VILLAGER_FOOD, PaperVillagerFood::new);
         register(DataComponents.MOB_VISIBILITY, PaperMobVisibility::new);
         register(DataComponents.VILLAGER_VARIANT, CraftVillager.CraftType::minecraftHolderToBukkit, CraftVillager.CraftType::bukkitToMinecraftHolder);
