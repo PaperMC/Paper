@@ -1,5 +1,13 @@
 --- a/net/minecraft/world/level/dimension/end/EnderDragonFight.java
 +++ b/net/minecraft/world/level/dimension/end/EnderDragonFight.java
+@@ -103,6 +_,7 @@
+     public @Nullable DragonRespawnStage respawnStage;
+     private int respawnTime;
+     public List<EntityReference<EndCrystal>> respawnCrystals;
++    public boolean ignoreEmptyCrystalsToRespawn = false; // Paper
+     public static final Codec<EnderDragonFight> CODEC = RecordCodecBuilder.create(
+         i -> i.group(
+                 ExtraCodecs.optionalAlwaysPresentFieldOf(Codec.BOOL, "needs_state_scanning", true).forGetter(fight -> fight.needsStateScanning),
 @@ -155,6 +_,12 @@
          );
          this.dragonEvent.setPlayBossMusic(true).setCreateWorldFog(true);
@@ -13,6 +21,19 @@
          if (this.gateways.isEmpty()) {
              ObjectArrayList<Integer> newGateways = new ObjectArrayList<>(ContiguousSet.create(Range.closedOpen(0, 20), DiscreteDomain.integers()));
              Util.shuffle(newGateways, RandomSource.createThreadLocalInstance(seed));
+@@ -194,11 +_,10 @@
+                     .map(e -> e.getEntity(this.level, EndCrystal.class))
+                     .filter(Objects::nonNull)
+                     .toList();
+-                if (respawnCrystals.isEmpty()) {
++                if (respawnCrystals.isEmpty() && !this.ignoreEmptyCrystalsToRespawn) { // Paper
+                     this.abortRespawnSequence();
+                     return;
+                 }
+-
+                 this.respawnStage.tick(this.level, this, respawnCrystals, this.respawnTime++);
+                 this.setDirty();
+             }
 @@ -241,9 +_,9 @@
              this.dragonUUID = dragon.getUUID();
              LOGGER.info("Found that there's a dragon still alive ({})", dragon);
@@ -25,6 +46,14 @@
                  this.dragonUUID = null;
              }
          }
+@@ -276,6 +_,7 @@
+         if (stage == DragonRespawnStage.END) {
+             this.respawnStage = null;
+             this.dragonKilled = false;
++            this.ignoreEmptyCrystalsToRespawn = false; // Paper
+             EnderDragon dragon = this.createNewDragon();
+             if (dragon != null) {
+                 for (ServerPlayer player : this.dragonEvent.getPlayers()) {
 @@ -403,13 +_,20 @@
              this.dragonEvent.setVisible(false);
              this.spawnExitPortal(true);
