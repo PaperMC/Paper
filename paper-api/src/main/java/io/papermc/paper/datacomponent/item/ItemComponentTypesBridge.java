@@ -3,11 +3,9 @@ package io.papermc.paper.datacomponent.item;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.text.Filtered;
-import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import net.kyori.adventure.key.Key;
-import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.util.TriState;
 import org.bukkit.JukeboxSong;
 import org.bukkit.block.BlockType;
@@ -50,7 +48,7 @@ interface ItemComponentTypesBridge {
 
     MapDecorations.Builder mapDecorations();
 
-    MapDecorations.DecorationEntry decorationEntry(MapCursor.Type type, double x, double z, float rotation);
+    MapDecorations.DecorationEntry mapDecorationEntry(MapCursor.Type type, double x, double z, float rotation);
 
     SeededContainerLoot.Builder seededContainerLoot(Key lootTableKey);
 
@@ -64,13 +62,13 @@ interface ItemComponentTypesBridge {
 
     Fireworks.Builder fireworks();
 
+    ResolvableProfile resolvableProfile(PlayerProfile profile);
+
     ResolvableProfile.Builder resolvableProfile();
 
     ResolvableProfile.SkinPatchBuilder skinPatch();
 
     ResolvableProfile.SkinPatch emptySkinPatch();
-
-    ResolvableProfile resolvableProfile(PlayerProfile profile);
 
     BannerPatternLayers.Builder bannerPatternLayers();
 
@@ -82,7 +80,7 @@ interface ItemComponentTypesBridge {
 
     Tool.Builder tool();
 
-    Tool.Rule rule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops);
+    Tool.Rule toolRule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops);
 
     ItemAdventurePredicate.Builder itemAdventurePredicate();
 
@@ -116,6 +114,8 @@ interface ItemComponentTypesBridge {
 
     KineticWeapon.Builder kineticWeapon();
 
+    KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed);
+
     UseEffects.Builder useEffects();
 
     PiercingWeapon.Builder piercingWeapon();
@@ -124,8 +124,6 @@ interface ItemComponentTypesBridge {
 
     SwingAnimation.Builder swingAnimation();
 
-    KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed);
-
     SulfurCubeContent sulfurCubeContent(ItemStack absorbedItem);
 
     MobVisibility mobVisibility(RegistryKeySet<EntityType> targetingEntityTypes, float visibility);
@@ -133,6 +131,4 @@ interface ItemComponentTypesBridge {
     VillagerFood villagerFood(int nutrition);
 
     SignText.Builder signText();
-
-    SignText.Builder signText(List<? extends ComponentLike> messages);
 }

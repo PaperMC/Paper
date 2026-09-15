@@ -19,8 +19,8 @@ import org.jetbrains.annotations.Contract;
 public interface SignText extends BuildableDataComponent<SignText, SignText.Builder> {
 
     @Contract(value = "_ -> new", pure = true)
-    static SignText.Builder signText(final List<? extends ComponentLike> messages) {
-        return ItemComponentTypesBridge.bridge().signText(messages);
+    static SignText signText(final List<? extends ComponentLike> lines) {
+        return signText().lines(lines).build();
     }
 
     @Contract(value = "-> new", pure = true)
@@ -35,14 +35,6 @@ public interface SignText extends BuildableDataComponent<SignText, SignText.Buil
      */
     @Contract(pure = true)
     List<Component> lines();
-
-    /**
-     * Gets the lines on this sign side, filtered for the player.
-     *
-     * @return the list of messages
-     */
-    @Contract(pure = true)
-    List<Component> filteredLines();
 
     /**
      * Gets the color of the text on this sign side.
@@ -69,30 +61,22 @@ public interface SignText extends BuildableDataComponent<SignText, SignText.Buil
         /**
          * Sets the lines on this sign side.
          *
-         * @param messages the list of messages
+         * @param lines the list of messages
          * @return the builder for chaining
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder lines(List<? extends ComponentLike> messages);
+        Builder lines(List<? extends ComponentLike> lines);
 
         /**
          * Sets a line at the specified index on this sign side.
          *
          * @param index the line index
-         * @param message the message
+         * @param line the message
          * @return the builder for chaining
+         * @throws IndexOutOfBoundsException when the line does not exist
          */
         @Contract(value = "_, _ -> this", mutates = "this")
-        Builder line(int index, ComponentLike message);
-
-        /**
-         * Adds a line on this sign side.
-         *
-         * @param message the message
-         * @return the builder for chaining
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder addLine(ComponentLike message);
+        Builder line(int index, ComponentLike line);
 
         /**
          * Sets the color of the text on this sign side.

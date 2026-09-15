@@ -74,24 +74,24 @@ class ItemStackDataComponentTest {
 
     @Test
     void testMaxStackSize() {
-        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.MAX_STACK_SIZE, 32, ItemMeta.class, ItemMeta::getMaxStackSize, ItemMeta::setMaxStackSize);
+        testWithMeta(ItemStack.of(Material.STONE), DataComponentTypes.MAX_STACK_SIZE, 32, ItemMeta.class, ItemMeta::getMaxStackSize, ItemMeta::setMaxStackSize);
     }
 
     @Test
     void testMaxDamage() {
-        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.MAX_DAMAGE, 120, Damageable.class, Damageable::getMaxDamage, Damageable::setMaxDamage);
+        testWithMeta(ItemStack.of(Material.STONE), DataComponentTypes.MAX_DAMAGE, 120, Damageable.class, Damageable::getMaxDamage, Damageable::setMaxDamage);
     }
 
     @Test
     void testDamage() {
-        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.DAMAGE, 120, Damageable.class, Damageable::getDamage, Damageable::setDamage);
+        testWithMeta(ItemStack.of(Material.STONE), DataComponentTypes.DAMAGE, 120, Damageable.class, Damageable::getDamage, Damageable::setDamage);
     }
 
     @Test
     void testUnbreakable() {
-        final ItemStack stack = new ItemStack(Material.STONE);
+        final ItemStack stack = ItemStack.of(Material.STONE);
         stack.setData(DataComponentTypes.UNBREAKABLE);
-        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.UNBREAKABLE).build());
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.UNBREAKABLE));
 
         Assertions.assertTrue(stack.getItemMeta().isUnbreakable());
         Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_UNBREAKABLE));
@@ -99,26 +99,16 @@ class ItemStackDataComponentTest {
         Assertions.assertFalse(stack.getItemMeta().isUnbreakable());
     }
 
-    // @Test
-    // void testHideAdditionalTooltip() {
-    //     final ItemStack stack = new ItemStack(Material.STONE);
-    //     stack.setData(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP);
-    //
-    //     Assertions.assertTrue(stack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
-    //     stack.unsetData(DataComponentTypes.HIDE_ADDITIONAL_TOOLTIP);
-    //     Assertions.assertFalse(stack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
-    // }
-
     @Test
     void testHideTooltip() {
-        ItemStack stack = new ItemStack(Material.STONE);
-        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().hideTooltip(true).build());
+        ItemStack stack = ItemStack.of(Material.STONE);
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().hideTooltip(true));
 
         Assertions.assertEquals(stack.getItemMeta().isHideTooltip(), stack.hasData(DataComponentTypes.TOOLTIP_DISPLAY) && stack.getData(DataComponentTypes.TOOLTIP_DISPLAY).hideTooltip());
         Assertions.assertTrue(stack.getItemMeta().isHideTooltip());
         stack.unsetData(DataComponentTypes.TOOLTIP_DISPLAY);
         Assertions.assertFalse(stack.getItemMeta().isHideTooltip());
-        stack = new ItemStack(Material.STONE);
+        stack = ItemStack.of(Material.STONE);
 
         stack.unsetData(DataComponentTypes.TOOLTIP_DISPLAY);
         Assertions.assertFalse(stack.getItemMeta().isHideTooltip());
@@ -127,51 +117,51 @@ class ItemStackDataComponentTest {
 
     @Test
     void testRepairCost() {
-        final ItemStack stack = new ItemStack(Material.STONE);
+        final ItemStack stack = ItemStack.of(Material.STONE);
         testWithMeta(stack, DataComponentTypes.REPAIR_COST, 120, Repairable.class, Repairable::getRepairCost, Repairable::setRepairCost);
     }
 
     @Test
     void testCustomName() {
-        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.CUSTOM_NAME, Component.text("HELLO!!!!!!"), ItemMeta.class, ItemMeta::displayName, ItemMeta::displayName);
+        testWithMeta(ItemStack.of(Material.STONE), DataComponentTypes.CUSTOM_NAME, Component.text("HELLO!!!!!!"), ItemMeta.class, ItemMeta::displayName, ItemMeta::displayName);
     }
 
     @Test
     void testItemName() {
-        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.ITEM_NAME, Component.text("HELLO!!!!!! ITEM NAME"), ItemMeta.class, ItemMeta::itemName, ItemMeta::itemName);
+        testWithMeta(ItemStack.of(Material.STONE), DataComponentTypes.ITEM_NAME, Component.text("HELLO!!!!!! ITEM NAME"), ItemMeta.class, ItemMeta::itemName, ItemMeta::itemName);
     }
 
     @Test
     void testItemLore() {
-        List<Component> list = List.of(Component.text("1"), Component.text("2"));
-        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.LORE, ItemLore.lore().lines(list).build(), ItemLore::lines, ItemMeta.class, ItemMeta::lore, ItemMeta::lore);
+        List<Component> lines = List.of(Component.text("1"), Component.text("2"));
+        testWithMeta(ItemStack.of(Material.STONE), DataComponentTypes.LORE, ItemLore.lore().lines(lines).build(), ItemLore::lines, ItemMeta.class, ItemMeta::lore, ItemMeta::lore);
     }
 
     @Test
     void testItemRarity() {
-        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.RARITY, ItemRarity.RARE, ItemMeta.class, ItemMeta::getRarity, ItemMeta::setRarity);
+        testWithMeta(ItemStack.of(Material.STONE), DataComponentTypes.RARITY, ItemRarity.RARE, ItemMeta.class, ItemMeta::getRarity, ItemMeta::setRarity);
     }
 
     @Test
     void testItemEnchantments() {
-        final ItemStack stack = new ItemStack(Material.STONE);
-        Map<Enchantment, Integer> enchantmentIntegerMap = Map.of(Enchantment.SOUL_SPEED, 1);
-        stack.setData(DataComponentTypes.ENCHANTMENTS, ItemEnchantments.itemEnchantments(enchantmentIntegerMap));
-        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.ENCHANTMENTS).build());
+        final ItemStack stack = ItemStack.of(Material.STONE);
+        Map<Enchantment, Integer> enchantments = Map.of(Enchantment.SOUL_SPEED, 1);
+        stack.setData(DataComponentTypes.ENCHANTMENTS, ItemEnchantments.itemEnchantments(enchantments));
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.ENCHANTMENTS));
 
         Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ENCHANTS));
         Assertions.assertEquals(1, stack.getItemMeta().getEnchantLevel(Enchantment.SOUL_SPEED));
-        Assertions.assertEquals(stack.getItemMeta().getEnchants(), enchantmentIntegerMap);
+        Assertions.assertEquals(stack.getItemMeta().getEnchants(), enchantments);
         stack.unsetData(DataComponentTypes.ENCHANTMENTS);
         Assertions.assertTrue(stack.getItemMeta().getEnchants().isEmpty());
     }
 
     @Test
     void testItemAttributes() {
-        final ItemStack stack = new ItemStack(Material.STONE);
+        final ItemStack stack = ItemStack.of(Material.STONE);
         AttributeModifier modifier = new AttributeModifier(NamespacedKey.minecraft("test"), 5, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY);
-        stack.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.itemAttributes().addModifier(Attribute.ATTACK_DAMAGE, modifier).build());
-        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.ATTRIBUTE_MODIFIERS).build());
+        stack.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.itemAttributes().addModifier(Attribute.ATTACK_DAMAGE, modifier));
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.ATTRIBUTE_MODIFIERS));
 
         Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ATTRIBUTES));
         Assertions.assertEquals(modifier, ((List<AttributeModifier>) stack.getItemMeta().getAttributeModifiers(Attribute.ATTACK_DAMAGE)).getFirst());
@@ -181,12 +171,12 @@ class ItemStackDataComponentTest {
 
     @Test
     void testLegacyCustomModelData() {
-        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addFloat(1).build(), customModelData -> customModelData.floats().get(0).intValue(), ItemMeta.class, ItemMeta::getCustomModelData, ItemMeta::setCustomModelData);
+        testWithMeta(ItemStack.of(Material.STONE), DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addFloat(1).build(), customModelData -> customModelData.floats().get(0).intValue(), ItemMeta.class, ItemMeta::getCustomModelData, ItemMeta::setCustomModelData);
     }
 
     @Test
     void testEnchantmentGlintOverride() {
-        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true, ItemMeta.class, ItemMeta::getEnchantmentGlintOverride, ItemMeta::setEnchantmentGlintOverride);
+        testWithMeta(ItemStack.of(Material.STONE), DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true, ItemMeta.class, ItemMeta::getEnchantmentGlintOverride, ItemMeta::setEnchantmentGlintOverride);
     }
 
     @Test
@@ -197,7 +187,7 @@ class ItemStackDataComponentTest {
             .nutrition(1)
             .build();
 
-        final ItemStack stack = new ItemStack(Material.CROSSBOW);
+        final ItemStack stack = ItemStack.of(Material.CROSSBOW);
         stack.setData(DataComponentTypes.FOOD, properties);
 
         ItemMeta meta = stack.getItemMeta();
@@ -230,7 +220,7 @@ class ItemStackDataComponentTest {
             ))
             .build();
 
-        final ItemStack stack = new ItemStack(Material.CROSSBOW);
+        final ItemStack stack = ItemStack.of(Material.CROSSBOW);
         stack.setData(DataComponentTypes.TOOL, properties);
 
         ItemMeta meta = stack.getItemMeta();
@@ -255,7 +245,7 @@ class ItemStackDataComponentTest {
     void testJukeboxPlayable() {
         JukeboxPlayable properties = JukeboxPlayable.jukeboxPlayable(JukeboxSong.MALL).build();
 
-        final ItemStack stack = new ItemStack(Material.BEEF);
+        final ItemStack stack = ItemStack.of(Material.BEEF);
         stack.setData(DataComponentTypes.JUKEBOX_PLAYABLE, properties);
 
         ItemMeta meta = stack.getItemMeta();
@@ -269,10 +259,10 @@ class ItemStackDataComponentTest {
 
     @Test
     void testDyedColor() {
-        final ItemStack stack = new ItemStack(Material.LEATHER_CHESTPLATE);
+        final ItemStack stack = ItemStack.of(Material.LEATHER_CHESTPLATE);
         Color color = Color.BLUE;
         stack.setData(DataComponentTypes.DYED_COLOR, DyedItemColor.dyedItemColor(color));
-        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.DYED_COLOR).build());
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.DYED_COLOR));
 
         Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_DYE));
         Assertions.assertEquals(color, ((LeatherArmorMeta) stack.getItemMeta()).getColor());
@@ -282,25 +272,25 @@ class ItemStackDataComponentTest {
 
     @Test
     void testMapId() {
-        testWithMeta(new ItemStack(Material.FILLED_MAP), DataComponentTypes.MAP_ID, MapId.mapId(1), MapId::id, MapMeta.class, MapMeta::getMapId, MapMeta::setMapId);
+        testWithMeta(ItemStack.of(Material.FILLED_MAP), DataComponentTypes.MAP_ID, MapId.mapId(1), MapId::id, MapMeta.class, MapMeta::getMapId, MapMeta::setMapId);
     }
 
     @Test
     void testFireworks() {
-        testWithMeta(new ItemStack(Material.FIREWORK_ROCKET), DataComponentTypes.FIREWORKS, Fireworks.fireworks(List.of(FireworkEffect.builder().build()), 1), Fireworks::effects, FireworkMeta.class, FireworkMeta::getEffects, (fireworkMeta, effects) -> {
+        testWithMeta(ItemStack.of(Material.FIREWORK_ROCKET), DataComponentTypes.FIREWORKS, Fireworks.fireworks(List.of(FireworkEffect.builder().build()), 1), Fireworks::effects, FireworkMeta.class, FireworkMeta::getEffects, (fireworkMeta, effects) -> {
             fireworkMeta.clearEffects();
             fireworkMeta.addEffects(effects);
         });
 
-        testWithMeta(new ItemStack(Material.FIREWORK_ROCKET), DataComponentTypes.FIREWORKS, Fireworks.fireworks(List.of(FireworkEffect.builder().build()), 1), Fireworks::flightDuration, FireworkMeta.class, FireworkMeta::getPower, FireworkMeta::setPower);
+        testWithMeta(ItemStack.of(Material.FIREWORK_ROCKET), DataComponentTypes.FIREWORKS, Fireworks.fireworks(List.of(FireworkEffect.builder().build()), 1), Fireworks::flightDuration, FireworkMeta.class, FireworkMeta::getPower, FireworkMeta::setPower);
     }
 
     @Test
     void testTrim() {
-        final ItemStack stack = new ItemStack(Material.LEATHER_CHESTPLATE);
+        final ItemStack stack = ItemStack.of(Material.LEATHER_CHESTPLATE);
         ItemArmorTrim armorTrim = ItemArmorTrim.itemArmorTrim(new ArmorTrim(TrimMaterial.AMETHYST, TrimPattern.BOLT)).build();
         stack.setData(DataComponentTypes.TRIM, armorTrim);
-        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.TRIM).build());
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.TRIM));
 
         Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ARMOR_TRIM));
         Assertions.assertEquals(armorTrim.armorTrim(), ((ArmorMeta) stack.getItemMeta()).getTrim());
@@ -310,9 +300,9 @@ class ItemStackDataComponentTest {
 
     @Test
     void testChargedProjectiles() {
-        final ItemStack stack = new ItemStack(Material.CROSSBOW);
-        ItemStack projectile = new ItemStack(Material.FIREWORK_ROCKET);
-        stack.setData(DataComponentTypes.CHARGED_PROJECTILES, ChargedProjectiles.chargedProjectiles().add(projectile).build());
+        final ItemStack stack = ItemStack.of(Material.CROSSBOW);
+        ItemStack projectile = ItemStack.of(Material.FIREWORK_ROCKET);
+        stack.setData(DataComponentTypes.CHARGED_PROJECTILES, ChargedProjectiles.chargedProjectiles().add(projectile));
 
         CrossbowMeta meta = (CrossbowMeta) stack.getItemMeta();
         Assertions.assertEquals(meta.getChargedProjectiles().getFirst(), projectile);
@@ -324,8 +314,8 @@ class ItemStackDataComponentTest {
 
     @Test
     void testPot() {
-        final ItemStack stack = new ItemStack(Material.DECORATED_POT);
-        stack.setData(DataComponentTypes.POT_DECORATIONS, PotDecorations.potDecorations().back(ItemType.DANGER_POTTERY_SHERD).build());
+        final ItemStack stack = ItemStack.of(Material.DECORATED_POT);
+        stack.setData(DataComponentTypes.POT_DECORATIONS, PotDecorations.potDecorations().back(ItemType.DANGER_POTTERY_SHERD));
 
         BlockState state = ((BlockStateMeta) stack.getItemMeta()).getBlockState();
         DecoratedPot decoratedPot = (DecoratedPot) state;
@@ -333,12 +323,12 @@ class ItemStackDataComponentTest {
         Assertions.assertEquals(decoratedPot.getSherd(DecoratedPot.Side.BACK), Material.DANGER_POTTERY_SHERD);
         stack.unsetData(DataComponentTypes.POT_DECORATIONS);
         decoratedPot = (DecoratedPot) ((BlockStateMeta) stack.getItemMeta()).getBlockState();
-        Assertions.assertTrue(decoratedPot.getSherds().values().stream().allMatch((m) -> m.asItemType() == ItemType.BRICK));
+        Assertions.assertTrue(decoratedPot.getSherds().values().stream().allMatch((m) -> m == Material.BRICK));
     }
 
     @Test
     void testRecipes() {
-        final ItemStack stack = new ItemStack(Material.KNOWLEDGE_BOOK);
+        final ItemStack stack = ItemStack.of(Material.KNOWLEDGE_BOOK);
         stack.setData(DataComponentTypes.RECIPES, List.of(Key.key("paper:fun_recipe")));
 
         final ItemMeta itemMeta = stack.getItemMeta();

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.component.ChargedProjectiles;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.ItemStack;
@@ -37,14 +38,14 @@ public class CraftMetaCrossbow extends CraftMetaItem implements CrossbowMeta {
         super(patch, extraHandledComponents);
 
         getOrEmpty(patch, CraftMetaCrossbow.CHARGED_PROJECTILES).ifPresent((chargedProjectiles) -> {
-            List<net.minecraft.world.item.ItemStack> items = chargedProjectiles.itemCopies().toList();
+            List<ItemStackTemplate> items = chargedProjectiles.items();
             if (items.isEmpty()) {
                 return;
             }
 
             this.chargedProjectiles = new ArrayList<>(items.size());
-            for (net.minecraft.world.item.ItemStack item : items) {
-                this.chargedProjectiles.add(CraftItemStack.asBukkitMirror(item));
+            for (ItemStackTemplate item : items) {
+                this.chargedProjectiles.add(CraftItemStack.asBukkitCopy(item));
             }
         });
     }

@@ -338,7 +338,6 @@ public class SpigotWorldConfig {
     public int oceanSeed;
     public int outpostSeed;
     public int shipwreckSeed;
-    public int slimeSeed;
     public int endCitySeed;
     public int netherSeed;
     public int mansionSeed;
@@ -347,10 +346,12 @@ public class SpigotWorldConfig {
     public int ancientCitySeed;
     public int trailRuinsSeed;
     public int trialChambersSeed;
-    public int buriedTreasureSeed;
     public int abandonedCampSeed;
+
+    public int buriedTreasureSeed;
     public Integer mineshaftSeed;
     public Long strongholdSeed;
+    public int slimeSeed;
 
     private <N extends Number> N getSeed(String path, java.util.function.Function<String, N> toNumberFunc) {
         final String value = this.getString(path, "default");
@@ -368,7 +369,6 @@ public class SpigotWorldConfig {
         this.oceanSeed = this.getInt("seed-ocean", 14357621);
         this.outpostSeed = this.getInt("seed-outpost", 165745296);
         this.endCitySeed = this.getInt("seed-endcity", 10387313);
-        this.slimeSeed = this.getInt("seed-slime", 987234911);
         this.netherSeed = this.getInt("seed-nether", 30084232);
         this.mansionSeed = this.getInt("seed-mansion", 10387319);
         this.fossilSeed = this.getInt("seed-fossil", 14357921);
@@ -376,10 +376,12 @@ public class SpigotWorldConfig {
         this.ancientCitySeed = this.getInt("seed-ancientcity", 20083232);
         this.trailRuinsSeed = this.getInt("seed-trailruins", 83469867);
         this.trialChambersSeed = this.getInt("seed-trialchambers", 94251327);
+        this.abandonedCampSeed = this.getInt("seed-abandonedcamp", 91231127);
+
         this.buriedTreasureSeed = this.getInt("seed-buriedtreasure", 10387320); // AbstractSpreadingStructurePlacement#HIGHLY_ARBITRARY_RANDOM_SALT
         this.mineshaftSeed = this.getSeed("seed-mineshaft", Integer::parseInt);
         this.strongholdSeed = this.getSeed("seed-stronghold", Long::parseLong);
-        this.abandonedCampSeed = this.getInt("seed-abandonedcamp", 91231127);
+        this.slimeSeed = this.getInt("seed-slime", 987234911);
         this.log("Custom Map Seeds: " +
             " Village: " + this.villageSeed +
             " Desert: " + this.desertSeed +
@@ -387,10 +389,10 @@ public class SpigotWorldConfig {
             " Jungle: " + this.jungleSeed +
             " Swamp: " + this.swampSeed +
             " Monument: " + this.monumentSeed +
-            " Ocean: " + this.oceanSeed +
             " Shipwreck: " + this.shipwreckSeed +
+            " Ocean: " + this.oceanSeed +
+            " Outpost: " + this.outpostSeed +
             " End City: " + this.endCitySeed +
-            " Slime: " + this.slimeSeed +
             " Nether: " + this.netherSeed +
             " Mansion: " + this.mansionSeed +
             " Fossil: " + this.fossilSeed +
@@ -398,8 +400,11 @@ public class SpigotWorldConfig {
             " Ancient City: " + this.ancientCitySeed +
             " Trail Ruins: " + this.trailRuinsSeed +
             " Trial Chambers: " + this.trialChambersSeed +
+            " Abandoned Camp: " + this.abandonedCampSeed +
             " Buried Treasure: " + this.buriedTreasureSeed +
-            " Abandoned Camp: " + this.abandonedCampSeed
+            " Mineshaft: " + this.mineshaftSeed +
+            " Stronghold: " + this.strongholdSeed +
+            " Slime: " + this.slimeSeed
         );
     }
 

@@ -2,15 +2,11 @@ package io.papermc.paper.datacomponent.item;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.common.base.Preconditions;
-import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.text.Filtered;
-import java.util.ArrayList;
-import java.util.List;
 import net.kyori.adventure.key.Key;
-import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.component.OminousBottleAmplifier;
@@ -88,7 +84,7 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
-    public MapDecorations.DecorationEntry decorationEntry(final MapCursor.Type type, final double x, final double z, final float rotation) {
+    public MapDecorations.DecorationEntry mapDecorationEntry(final MapCursor.Type type, final double x, final double z, final float rotation) {
         return PaperMapDecorations.PaperDecorationEntry.toApi(type, x, z, rotation);
     }
 
@@ -113,7 +109,7 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
-    public Tool.Rule rule(final RegistryKeySet<BlockType> blocks, final @Nullable Float speed, final TriState correctForDrops) {
+    public Tool.Rule toolRule(final RegistryKeySet<BlockType> blocks, final @Nullable Float speed, final TriState correctForDrops) {
         return PaperItemTool.PaperRule.fromUnsafe(blocks, speed, correctForDrops);
     }
 
@@ -148,6 +144,11 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
+    public ResolvableProfile resolvableProfile(final PlayerProfile profile) {
+        return PaperResolvableProfile.toApi(profile);
+    }
+
+    @Override
     public ResolvableProfile.Builder resolvableProfile() {
         return new PaperResolvableProfile.BuilderImpl();
     }
@@ -160,11 +161,6 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     @Override
     public ResolvableProfile.SkinPatch emptySkinPatch() {
         return new PaperResolvableProfile.PaperSkinPatch(null, null, null, null);
-    }
-
-    @Override
-    public ResolvableProfile resolvableProfile(final PlayerProfile profile) {
-        return PaperResolvableProfile.toApi(profile);
     }
 
     @Override
@@ -261,6 +257,13 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
+    public KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed) {
+        return new PaperKineticWeapon.PaperKineticWeaponCondition(new net.minecraft.world.item.component.KineticWeapon.Condition(
+            maxDurationTicks, minSpeed, requireNonNegative(minRelativeSpeed, "minRelativeSpeed")
+        ));
+    }
+
+    @Override
     public UseEffects.Builder useEffects() {
         return new PaperUseEffects.BuilderImpl();
     }
@@ -281,13 +284,6 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     }
 
     @Override
-    public KineticWeapon.Condition kineticWeaponCondition(int maxDurationTicks, float minSpeed, float minRelativeSpeed) {
-        return new PaperKineticWeapon.PaperKineticWeaponCondition(new net.minecraft.world.item.component.KineticWeapon.Condition(
-            maxDurationTicks, minSpeed, requireNonNegative(minRelativeSpeed, "minRelativeSpeed")
-        ));
-    }
-
-    @Override
     public SulfurCubeContent sulfurCubeContent(final ItemStack absorbedItem) {
         Preconditions.checkArgument(absorbedItem != null, "absorbedItem cannot be null");
         Preconditions.checkArgument(!absorbedItem.isEmpty(), "absorbedItem cannot be empty");
@@ -296,8 +292,6 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
 
     @Override
     public MobVisibility mobVisibility(final RegistryKeySet<EntityType> targetingEntityTypes, final float visibility) {
-        Preconditions.checkArgument(targetingEntityTypes != null, "targetingEntityTypes cannot be null");
-        Preconditions.checkArgument(!targetingEntityTypes.isEmpty(), "targetingEntityTypes cannot be empty");
         return new PaperMobVisibility(new net.minecraft.world.item.component.MobVisibility(
             PaperRegistrySets.convertToNms(Registries.ENTITY_TYPE, Conversions.global().lookup(), targetingEntityTypes),
             requireRange(visibility, "visibility", net.minecraft.world.item.component.MobVisibility.MIN_VISIBILITY, net.minecraft.world.item.component.MobVisibility.MAX_VISIBILITY))
@@ -312,10 +306,5 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     @Override
     public SignText.Builder signText() {
         return new PaperSignText.BuilderImpl();
-    }
-
-    @Override
-    public SignText.Builder signText(final List<? extends ComponentLike> messages) {
-        return new PaperSignText.BuilderImpl(PaperAdventure.asVanilla(new ArrayList<>(ComponentLike.asComponents(messages))));
     }
 }

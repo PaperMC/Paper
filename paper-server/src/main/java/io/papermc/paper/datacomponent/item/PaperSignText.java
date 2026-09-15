@@ -2,14 +2,13 @@ package io.papermc.paper.datacomponent.item;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
-import java.util.ArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
+import net.minecraft.network.chat.CommonComponents;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.util.Handleable;
-
-import static io.papermc.paper.util.BoundChecker.requireRange;
 
 public record PaperSignText(
     net.minecraft.world.level.block.entity.SignText impl
@@ -23,11 +22,6 @@ public record PaperSignText(
     @Override
     public List<Component> lines() {
         return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.impl.getMessages(false));
-    }
-
-    @Override
-    public List<Component> filteredLines() {
-        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.impl.getMessages(true));
     }
 
     @Override
@@ -47,6 +41,13 @@ public record PaperSignText(
             .hasGlowingText(this.hasGlowingText());
     }
 
+    public static List<net.minecraft.network.chat.Component> fillWithBlankLines(final List<net.minecraft.network.chat.Component> lines) {
+        while (lines.size() < net.minecraft.world.level.block.entity.SignText.LINES) {
+            lines.add(CommonComponents.EMPTY);
+        }
+        return lines;
+    }
+
     static final class BuilderImpl implements Builder {
 
         private List<net.minecraft.network.chat.Component> lines;
@@ -61,45 +62,26 @@ public record PaperSignText(
             );
         }
 
-        BuilderImpl(List<net.minecraft.network.chat.Component> messages) {
-            this(messages, messages);
+        BuilderImpl(final List<net.minecraft.network.chat.Component> lines, final List<net.minecraft.network.chat.Component> filteredLines) {
+            this.lines = new ObjectArrayList<>(lines);
+            this.filteredLines = new ObjectArrayList<>(filteredLines);
         }
 
-        BuilderImpl(List<net.minecraft.network.chat.Component> messages, List<net.minecraft.network.chat.Component> filteredLines) {
-            this.lines = messages;
-            this.filteredLines = filteredLines;
-        }
-
-        private static void validateLineCount(final int current, final int add) {
-            final int newSize = current + add;
+        @Override
+        public Builder lines(final List<? extends ComponentLike> lines) {
             Preconditions.checkArgument(
-                newSize <= net.minecraft.world.level.block.entity.SignText.LINES,
+                lines.size() <= net.minecraft.world.level.block.entity.SignText.LINES,
                 "Cannot have more than %s lines, had %s",
-                net.minecraft.world.level.block.entity.SignText.LINES,
-                newSize
+                net.minecraft.world.level.block.entity.SignText.LINES, lines.size()
             );
-        }
 
-        @Override
-        public Builder lines(final List<? extends ComponentLike> messages) {
-            validateLineCount(0, messages.size());
-            this.lines = PaperAdventure.asVanilla(new ArrayList<>(ComponentLike.asComponents(messages)));
+            this.lines = fillWithBlankLines(PaperAdventure.asVanilla(ComponentLike.asComponents(lines)));
             return this;
         }
 
         @Override
-        public Builder line(final int index, final ComponentLike message) {
-            this.lines.set(
-                requireRange(index, "index", 0, net.minecraft.world.level.block.entity.SignText.LINES - 1),
-                PaperAdventure.asVanilla(message.asComponent())
-            );
-            return this;
-        }
-
-        @Override
-        public Builder addLine(final ComponentLike message) {
-            validateLineCount(this.lines.size(), 1);
-            this.lines.add(PaperAdventure.asVanilla(message.asComponent()));
+        public Builder line(final int index, final ComponentLike line) {
+            this.lines.set(index, PaperAdventure.asVanilla(line.asComponent()));
             return this;
         }
 
@@ -123,7 +105,7 @@ public record PaperSignText(
 
             return new PaperSignText(new net.minecraft.world.level.block.entity.SignText(
                 this.lines,
-                (this.filteredLines.isEmpty()) ? this.lines : this.filteredLines,
+                this.filteredLines.isEmpty() ? this.lines : this.filteredLines,
                 this.color,
                 this.hasGlowingText
             ));

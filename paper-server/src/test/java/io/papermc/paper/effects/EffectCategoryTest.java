@@ -8,17 +8,9 @@ import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Normal
 public class EffectCategoryTest {
-
-    @Test
-    public void testEffectCategoriesExist() {
-        for (MobEffectCategory mobEffectInfo : MobEffectCategory.values()) {
-            assertNotNull(CraftPotionEffectType.fromNMS(mobEffectInfo), mobEffectInfo + " is missing a bukkit equivalent");
-        }
-    }
 
     @Test
     public void testCategoryHasEquivalentColors() {

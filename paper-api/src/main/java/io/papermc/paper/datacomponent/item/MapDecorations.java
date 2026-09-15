@@ -27,7 +27,7 @@ public interface MapDecorations {
 
     @Contract(value = "_, _, _, _ -> new", pure = true)
     static DecorationEntry decorationEntry(final MapCursor.Type type, final double x, final double z, final float rotation) {
-        return ItemComponentTypesBridge.bridge().decorationEntry(type, x, z, rotation);
+        return ItemComponentTypesBridge.bridge().mapDecorationEntry(type, x, z, rotation);
     }
 
     /**

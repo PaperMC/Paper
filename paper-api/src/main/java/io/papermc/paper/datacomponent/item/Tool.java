@@ -42,7 +42,7 @@ public interface Tool {
      * @return A new {@link Rule} instance representing the mining rule.
      */
     static Rule rule(final RegistryKeySet<BlockType> blocks, final @Nullable Float speed, final TriState correctForDrops) {
-        return ItemComponentTypesBridge.bridge().rule(blocks, speed, correctForDrops);
+        return ItemComponentTypesBridge.bridge().toolRule(blocks, speed, correctForDrops);
     }
 
     /**
