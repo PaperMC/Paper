@@ -1,6 +1,12 @@
 package org.bukkit.craftbukkit.block;
 
 import io.papermc.paper.util.OldEnumHolderable;
+import io.papermc.paper.world.biome.BiomeClimate;
+import io.papermc.paper.world.biome.BiomeMobSpawning;
+import io.papermc.paper.world.biome.BiomeSpecialEffects;
+import io.papermc.paper.world.biome.PaperBiomeClimate;
+import io.papermc.paper.world.biome.PaperBiomeMobSpawning;
+import io.papermc.paper.world.biome.PaperBiomeSpecialEffects;
 import java.util.Objects;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -31,6 +37,21 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
         super(holder, count++);
     }
 
+    @Override
+    public BiomeClimate climate() {
+        return new PaperBiomeClimate(this.getHandle().climateSettings, this.getHandle());
+    }
+
+    @Override
+    public BiomeMobSpawning mobSpawning() {
+        return new PaperBiomeMobSpawning(this.getHandle().getMobSettings());
+    }
+
+    @Override
+    public BiomeSpecialEffects specialEffects() {
+        return new PaperBiomeSpecialEffects(this.getHandle().getSpecialEffects());
+    }
+
     /**
      * Implementation for the deprecated, API only, CUSTOM biome.
      * As per {@link #bukkitToMinecraftHolder(Biome)} it cannot be
@@ -50,6 +71,21 @@ public class CraftBiome extends OldEnumHolderable<Biome, net.minecraft.world.lev
         @Override
         public NamespacedKey getKey() {
             return LEGACY_CUSTOM_KEY;
+        }
+
+        @Override
+        public BiomeClimate climate() {
+            throw new UnsupportedOperationException("Legacy CUSTOM biome does not support climate");
+        }
+
+        @Override
+        public BiomeMobSpawning mobSpawning() {
+            throw new UnsupportedOperationException("Legacy CUSTOM biome does not support mobSpawning");
+        }
+
+        @Override
+        public BiomeSpecialEffects specialEffects() {
+            throw new UnsupportedOperationException("Legacy CUSTOM biome does not support specialEffects");
         }
 
         @Override
