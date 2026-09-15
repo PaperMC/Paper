@@ -25,7 +25,7 @@ public final class EntityUtil {
 
         return "{type=" + entity.getClass().getSimpleName() + ",id=" + entity.getId() + ",uuid=" + entity.getUUID() + ",pos=" + formatVec(entity.position())
             + ",mot=" + formatVec(entity.getDeltaMovement()) + ",aabb=" + entity.getBoundingBox() + ",removed=" + entity.getRemovalReason() + ",has_vehicle=" + (entity.getVehicle() != null)
-            + ",passenger_count=" + entity.getPassengers().size();
+            + ",passenger_count=" + entity.getPassengers().size() + "}";
     }
 
     public static String dumpEntity(final Entity entity) {
@@ -37,7 +37,7 @@ public final class EntityUtil {
         }
 
         return "{root=[" + dumpEntityWithoutReferences(entity) + "], vehicle=[" + dumpEntityWithoutReferences(entity.getVehicle())
-            + "], passengers=[" + String.join(",", passengerStrings) + "]";
+            + "], passengers=[" + String.join(",", passengerStrings) + "]}";
     }
 
     private EntityUtil() {}

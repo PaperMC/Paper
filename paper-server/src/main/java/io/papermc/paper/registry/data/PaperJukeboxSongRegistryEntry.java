@@ -35,10 +35,10 @@ public class PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry {
 
     public PaperJukeboxSongRegistryEntry(final Conversions conversions, final @Nullable JukeboxSong internal) {
         this.conversions = conversions;
-
         if (internal == null) {
             return;
         }
+
         this.soundEvent = internal.soundEvent();
         this.description = internal.description();
         this.lengthInSeconds = internal.lengthInSeconds();

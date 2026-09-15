@@ -14,7 +14,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:26.2+build.1")
+    mache("io.papermc:mache:26.3-rc-3+build.1")
     paperclip("io.papermc:paperclip:3.0.4")
 }
 
@@ -23,7 +23,7 @@ paperweight {
     gitFilePatches = false
 
     updatingMinecraft {
-        // oldPaperCommit = "d4fe85375af18bfa88f44d7c1e6a61904ae550cc"
+        //oldPaperCommit = "e5fe71723e2ffde7cc9fafc085ac3bb73e63175e"
     }
 }
 
@@ -130,7 +130,7 @@ dependencies {
     implementation("com.velocitypowered:velocity-native:4.1.0") {
         isTransitive = false
     }
-    implementation("io.netty:netty-codec-haproxy:4.2.15.Final") // Add support for proxy protocol
+    implementation("io.netty:netty-codec-haproxy:4.2.16.Final") // Add support for proxy protocol
     implementation("org.apache.logging.log4j:log4j-iostreams:2.26.0")
     implementation("org.ow2.asm:asm-commons:9.9.1")
     implementation("org.spongepowered:configurate-yaml:4.2.0")

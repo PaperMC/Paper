@@ -2,11 +2,15 @@ package io.papermc.paper.datacomponent.item;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.google.common.base.Preconditions;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
 import io.papermc.paper.registry.set.RegistryKeySet;
 import io.papermc.paper.text.Filtered;
+import java.util.ArrayList;
+import java.util.List;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.util.TriState;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.component.OminousBottleAmplifier;
@@ -14,6 +18,7 @@ import org.bukkit.JukeboxSong;
 import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
@@ -75,11 +80,6 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
     @Override
     public SuspiciousStewEffects.Builder suspiciousStewEffects() {
         return new PaperSuspiciousStewEffects.BuilderImpl();
-    }
-
-    @Override
-    public MapItemColor.Builder mapItemColor() {
-        return new PaperMapItemColor.BuilderImpl();
     }
 
     @Override
@@ -292,5 +292,30 @@ public final class ItemComponentTypesBridgesImpl implements ItemComponentTypesBr
         Preconditions.checkArgument(absorbedItem != null, "absorbedItem cannot be null");
         Preconditions.checkArgument(!absorbedItem.isEmpty(), "absorbedItem cannot be empty");
         return new PaperSulfurCubeContent(new net.minecraft.world.item.component.SulfurCubeContent(CraftItemStack.asTemplate(absorbedItem)));
+    }
+
+    @Override
+    public MobVisibility mobVisibility(final RegistryKeySet<EntityType> targetingEntityTypes, final float visibility) {
+        Preconditions.checkArgument(targetingEntityTypes != null, "targetingEntityTypes cannot be null");
+        Preconditions.checkArgument(!targetingEntityTypes.isEmpty(), "targetingEntityTypes cannot be empty");
+        return new PaperMobVisibility(new net.minecraft.world.item.component.MobVisibility(
+            PaperRegistrySets.convertToNms(Registries.ENTITY_TYPE, Conversions.global().lookup(), targetingEntityTypes),
+            requireRange(visibility, "visibility", net.minecraft.world.item.component.MobVisibility.MIN_VISIBILITY, net.minecraft.world.item.component.MobVisibility.MAX_VISIBILITY))
+        );
+    }
+
+    @Override
+    public VillagerFood villagerFood(final int nutrition) {
+        return new PaperVillagerFood(new net.minecraft.world.food.VillagerFood(requirePositive(nutrition, "nutrition")));
+    }
+
+    @Override
+    public SignText.Builder signText() {
+        return new PaperSignText.BuilderImpl();
+    }
+
+    @Override
+    public SignText.Builder signText(final List<? extends ComponentLike> messages) {
+        return new PaperSignText.BuilderImpl(PaperAdventure.asVanilla(new ArrayList<>(ComponentLike.asComponents(messages))));
     }
 }

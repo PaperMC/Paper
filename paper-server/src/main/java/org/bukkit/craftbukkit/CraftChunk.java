@@ -100,7 +100,7 @@ public class CraftChunk implements Chunk {
 
     @Override
     public String toString() {
-        return "CraftChunk{" + "x=" + this.getX() + "z=" + this.getZ() + '}';
+        return "CraftChunk{" + "x=" + this.getX() + ", z=" + this.getZ() + '}';
     }
 
     @Override

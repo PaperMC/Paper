@@ -5,18 +5,27 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import io.papermc.paper.registry.HolderableBase;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.random.Weighted;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.component.Compostable;
+import net.minecraft.world.item.component.CookingFuel;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.level.block.ComposterBlock;
-import net.minecraft.world.level.block.entity.FuelValues;
+import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt;
+import net.minecraft.world.level.storage.loot.providers.number.ints.WeightedListValue;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Registry;
 import org.bukkit.World;
@@ -43,12 +52,12 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     private final Supplier<CraftItemMetas.ItemMetaData<M>> itemMetaData;
 
-    public static Material minecraftToBukkit(Item item) {
-        return CraftMagicNumbers.getMaterial(item);
+    public static Material minecraftToBukkit(Item minecraft) {
+        return CraftMagicNumbers.getMaterial(minecraft);
     }
 
-    public static Item bukkitToMinecraft(Material material) {
-        return CraftMagicNumbers.getItem(material);
+    public static Item bukkitToMinecraft(Material bukkit) {
+        return CraftMagicNumbers.getItem(bukkit);
     }
 
     public static ItemType minecraftToBukkitNew(Item minecraft) {
@@ -103,7 +112,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
     @Override
     public ItemStack createItemStack(final int amount, final @Nullable Consumer<? super M> metaConfigurator) {
         final net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.getHandle(), amount);
-        final CraftItemStack mirror = CraftItemStack.asCraftMirror(stack);
+        final ItemStack mirror = CraftItemStack.asBukkitMirror(stack);
         if (metaConfigurator != null) {
             mirror.editMeta(this.getItemMetaClass(), metaConfigurator);
         }
@@ -162,30 +171,54 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
 
     @Override
     public boolean isFuel() {
-        return MinecraftServer.getServer().fuelValues().isFuel(new net.minecraft.world.item.ItemStack(this.getHandle()));
+        return this.getHandle().components().has(DataComponents.COOKING_FUEL);
     }
 
     @Override
     public int getBurnDuration() {
-        FuelValues fuelValues = MinecraftServer.getServer().fuelValues();
-        net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.getHandle());
-
-        if (!fuelValues.isFuel(stack)) {
+        if (!this.isFuel()) {
             return 0;
         }
 
-        return fuelValues.burnDuration(stack);
+        final ServerLevel level = ((CraftWorld) Bukkit.getWorlds().getFirst()).getHandle();
+        final LootContext lootContext = new LootContext.Builder(
+            new LootParams.Builder(level).create(LootContextParamSets.EMPTY)
+        ).create(Optional.empty());
+
+        // TODO - snapshot - this in theory return the negative case (block is not blast furnace or smoker) because need pass a block in the LootContext
+        return ResolvableInt.getFromItem(new net.minecraft.world.item.ItemStack(this.getHandle()), DataComponents.COOKING_FUEL, CookingFuel::burnTime, lootContext, 0);
     }
 
     @Override
     public boolean isCompostable() {
-        return ComposterBlock.COMPOSTABLES.containsKey(this.getHandle());
+        return this.getHandle().components().has(DataComponents.COMPOSTABLE);
     }
 
     @Override
     public float getCompostChance() {
         Preconditions.checkArgument(this.isCompostable(), "The item type " + this.getKey() + " is not compostable");
-        return ComposterBlock.COMPOSTABLES.getFloat(this.getHandle());
+        // TODO - snapshot - this cover vanilla but custom ones can break this.. maybe better deprecate this...
+        Compostable compostable = this.getHandle().components().get(DataComponents.COMPOSTABLE);
+        if (compostable.layers() instanceof ResolvableInt.Constant) {
+            // Constant (ex: [minecraft:compostable={layers:10}]) case it's the 100% of cases add layers to the composter.
+            return 1;
+        } else if (compostable.layers() instanceof ResolvableInt.Reference reference) {
+            final ServerLevel level = ((CraftWorld) Bukkit.getWorlds().getFirst()).getHandle();
+            final LootContext lootContext = new LootContext.Builder(
+                new LootParams.Builder(level).create(LootContextParamSets.EMPTY)
+            ).create(Optional.empty());
+
+            return reference.getProvider(lootContext)
+                .map(contextIntProvider -> {
+                    if (contextIntProvider instanceof WeightedListValue(net.minecraft.util.random.WeightedList<Holder<ContextIntProvider>> distribution)) {
+                        return distribution.unwrap().stream().mapToInt(Weighted::weight).max().orElse(0);
+                    } else {
+                        return 1;
+                    }
+                }).orElse(0);
+        }
+
+        return 0;
     }
 
     @Override

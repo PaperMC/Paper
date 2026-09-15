@@ -73,10 +73,8 @@ public final class FeedbackForwardingSender extends ServerCommandSender {
             Vec2.ZERO,
             respawnDimension,
             LevelBasedPermissionSet.OWNER,
-            this.getName(),
             net.minecraft.network.chat.Component.literal(this.getName()),
-            this.server.getServer(),
-            null
+            this.server.getServer()
         );
     }
 

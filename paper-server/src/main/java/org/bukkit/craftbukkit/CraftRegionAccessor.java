@@ -14,17 +14,15 @@ import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.Difficulty;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.level.MoonPhase;
 import net.minecraft.world.level.WorldGenLevel;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.level.levelgen.feature.Feature;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.RegionAccessor;
@@ -37,7 +35,6 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.entity.CraftEntityTypes;
 import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 import org.bukkit.craftbukkit.util.CraftLocation;
@@ -118,7 +115,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     @Override
     public void setBlockData(int x, int y, int z, BlockData blockData) {
         BlockPos pos = new BlockPos(x, y, z);
-        this.getHandle().setBlock(pos, ((CraftBlockData) blockData).getState(), Block.UPDATE_ALL);
+        this.getHandle().setBlockAndUpdate(pos, ((CraftBlockData) blockData).getState());
     }
 
     @Override
@@ -165,7 +162,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     public boolean generateTree(WorldGenLevel access, ChunkGenerator chunkGenerator, BlockPos pos, RandomSource random, TreeType treeType) {
-        ResourceKey<ConfiguredFeature<?, ?>> gen;
+        ResourceKey<Feature> gen;
         switch (treeType) {
             case BIG_TREE:
                 gen = TreeFeatures.FANCY_OAK;
@@ -248,7 +245,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 break;
         }
 
-        Holder<ConfiguredFeature<?, ?>> holder = access.registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE).get(gen).orElse(null);
+        Holder<Feature> holder = access.registryAccess().lookupOrThrow(Registries.FEATURE).get(gen).orElse(null);
         return holder != null && holder.value().place(access, chunkGenerator, random, pos);
     }
 
@@ -452,10 +449,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
         if (!this.isEnabled(entityTypeData.entityType())) {
             throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName() + " because it is not an enabled feature");
-        }
-
-        if (this.getHandle().getDifficulty() == Difficulty.PEACEFUL && !CraftEntityType.bukkitToMinecraft(entityTypeData.entityType()).isAllowedInPeaceful()) {
-            throw new IllegalStateException("Cannot spawn monster for " + clazz.getName() + " in Peaceful difficulty");
         }
 
         net.minecraft.world.entity.Entity entity = entityTypeData.spawnFunction().apply(new CraftEntityTypes.SpawnData(this.getHandle(), location, randomizeData, this.isNormalWorld()));

@@ -15,7 +15,7 @@ import org.junit.jupiter.params.provider.Arguments;
 public class ItemStackFireworkChargeTest extends ItemStackTest {
 
     public static Stream<Arguments> data() {
-        return StackProvider.compound(ItemStackFireworkChargeTest.operators(), "%s %s", NAME_PARAMETER, Material.FIREWORK_STAR);
+        return ItemProvider.compound(ItemStackFireworkChargeTest.operators(), "%s %s", NAME_PARAMETER, Material.FIREWORK_STAR);
     }
 
     @SuppressWarnings("unchecked")
