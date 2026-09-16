@@ -30,6 +30,7 @@ import net.minecraft.world.level.DataPackConfig;
 import net.minecraft.world.level.WorldDataConfiguration;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.CraftRegistry;
 
 public final class RegistryHelper {
 
@@ -108,6 +109,7 @@ public final class RegistryHelper {
             datapack,
             registryAccess
         );
+        CraftRegistry.setEnabledFeatures(enabledFeatures);
     }
 
     public static <T extends Keyed> Class<T> getFieldType(Class<T> apiClass, NamespacedKey key) {

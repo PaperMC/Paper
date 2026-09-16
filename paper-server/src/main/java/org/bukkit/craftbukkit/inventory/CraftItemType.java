@@ -3,8 +3,12 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
+import io.papermc.paper.inventory.CreativeModeTab;
+import io.papermc.paper.inventory.PaperCreativeModeTab;
 import io.papermc.paper.registry.HolderableBase;
+import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.minecraft.core.Holder;
@@ -220,8 +224,24 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
     }
 
     @Override
-    public CreativeCategory getCreativeCategory() {
-        return CreativeCategory.BUILDING_BLOCKS;
+    public @Nullable CreativeCategory getCreativeCategory() {
+        return this.getCreativeCategories().stream()
+            .findFirst()
+            .map(tab -> ((PaperCreativeModeTab) tab).toLegacy())
+            .orElse(null);
+    }
+
+    @Override
+    public Collection<CreativeModeTab> getCreativeCategories() {
+        final ImmutableSet.Builder<CreativeModeTab> builder = ImmutableSet.builder();
+
+        for (final CreativeModeTab tab : Registry.CREATIVE_MODE_TAB) {
+            if (tab.getType() == CreativeModeTab.Type.CATEGORY && tab.containsItem(this)) {
+                builder.add(tab);
+            }
+        }
+
+        return builder.build();
     }
 
     @Override
