@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.object.ObjectContents;
 import net.kyori.adventure.text.object.ObjectContentsLike;
@@ -64,6 +65,7 @@ import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Scoreboard;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -4076,4 +4078,38 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * clearing any fixed pose in the process.
      */
     void unsetFixedPose();
+
+    /**
+     * Gets the list of post effects that are currently applied to the player.
+     *
+     * @return an unmodifiable list of post effects
+     * @see <a href="https://minecraft.wiki/w/Shader#Post-processing_effects">Post Effects - Minecraft Wiki</a>
+     */
+    @Unmodifiable List<Key> getPostEffects();
+
+    /**
+     * Adds a post effect to the player.
+     *
+     * @param effect the key post effect to add
+     * @return true if the post effect was added, false if it was already present
+     * @see <a href="https://minecraft.wiki/w/Shader#Post-processing_effects">Post Effects - Minecraft Wiki</a>
+     */
+    boolean addPostEffect(Key effect);
+
+    /**
+     * Removes a post effect from the player.
+     *
+     * @param effect the key post effect to remove
+     * @return true if the post effect was removed, false if it was not present
+     * @see <a href="https://minecraft.wiki/w/Shader#Post-processing_effects">Post Effects - Minecraft Wiki</a>
+     */
+    boolean removePostEffect(Key effect);
+
+    /**
+     * Clears all post effects from the player.
+     *
+     * @return true if any post effects were cleared, false if there were none
+     * @see <a href="https://minecraft.wiki/w/Shader#Post-processing_effects">Post Effects - Minecraft Wiki</a>
+     */
+    boolean clearPostEffects();
 }

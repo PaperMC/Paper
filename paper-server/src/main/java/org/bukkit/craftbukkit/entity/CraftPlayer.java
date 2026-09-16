@@ -9,6 +9,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.FeatureHooks;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.connection.PluginMessageBridgeImpl;
 import io.papermc.paper.datacomponent.DataComponentTypes;
@@ -52,6 +53,7 @@ import java.util.stream.Collectors;
 import net.kyori.adventure.dialog.DialogLike;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.inventory.Book;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -3391,5 +3393,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void unsetFixedPose() {
         this.getHandle().fixedPose = false;
         this.getHandle().updatePlayerPose();
+    }
+
+    @Override
+    public List<Key> getPostEffects() {
+        return this.getHandle().getPostEffects().stream().map(PaperAdventure::asAdventure).toList();
+    }
+
+    @Override
+    public boolean addPostEffect(final Key key) {
+        Preconditions.checkArgument(key != null, "key cannot be null");
+        return this.getHandle().addPostEffect(PaperAdventure.asVanilla(key));
+    }
+
+    @Override
+    public boolean removePostEffect(final Key key) {
+        Preconditions.checkArgument(key != null, "key cannot be null");
+        return this.getHandle().removePostEffect(PaperAdventure.asVanilla(key));
+    }
+
+    @Override
+    public boolean clearPostEffects() {
+        return this.getHandle().clearPostEffects();
     }
 }
