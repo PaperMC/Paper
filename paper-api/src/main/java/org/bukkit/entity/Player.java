@@ -4088,6 +4088,15 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     @Unmodifiable List<Key> getPostEffects();
 
     /**
+     * Sets the list of post effects that are currently applied to the player.
+     *
+     * @param postEffects the list of post effects to set
+     * @return true if the post effects were changed, false if they were the same
+     * @see <a href="https://minecraft.wiki/w/Shader#Post-processing_effects">Post Effects - Minecraft Wiki</a>
+     */
+    boolean setPostEffects(List<Key> postEffects);
+
+    /**
      * Adds a post effect to the player.
      *
      * @param effect the key post effect to add

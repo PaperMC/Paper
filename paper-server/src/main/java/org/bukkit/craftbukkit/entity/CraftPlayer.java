@@ -4,6 +4,7 @@ import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
@@ -42,6 +43,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -3398,6 +3400,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     @Override
     public List<Key> getPostEffects() {
         return this.getHandle().getPostEffects().stream().map(PaperAdventure::asAdventure).toList();
+    }
+
+    @Override
+    public boolean setPostEffects(final List<Key> postEffects) {
+        Preconditions.checkArgument(postEffects != null, "postEffects cannot be null");
+        return this.getHandle().setPostEffects(postEffects.stream().filter(Objects::nonNull).map(PaperAdventure::asVanilla).distinct().toList());
     }
 
     @Override
