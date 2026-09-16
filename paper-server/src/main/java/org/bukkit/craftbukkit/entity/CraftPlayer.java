@@ -4,7 +4,6 @@ import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
@@ -41,9 +40,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -3405,7 +3404,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     @Override
     public boolean setPostEffects(final List<Key> postEffects) {
         Preconditions.checkArgument(postEffects != null, "postEffects cannot be null");
-        return this.getHandle().setPostEffects(postEffects.stream().filter(Objects::nonNull).map(PaperAdventure::asVanilla).distinct().toList());
+        final LinkedHashSet<Identifier> ids = new LinkedHashSet<>(postEffects.size());
+        for (final Key effect : postEffects) {
+            Preconditions.checkArgument(effect != null, "effects cannot be null");
+            Preconditions.checkArgument(ids.add(PaperAdventure.asVanilla(effect)), "effects cannot be duplicate");
+        }
+        return this.getHandle().setPostEffects(ids);
     }
 
     @Override
