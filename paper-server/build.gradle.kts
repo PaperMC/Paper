@@ -138,7 +138,9 @@ dependencies {
     // Deps that were previously in the API but have now been moved here for backwards compat, eventually to be removed
     runtimeOnly("commons-lang:commons-lang:2.6")
     runtimeOnly("org.xerial:sqlite-jdbc:3.49.1.0")
-    runtimeOnly("com.mysql:mysql-connector-j:9.2.0")
+    runtimeOnly("com.mysql:mysql-connector-j:9.2.0") {
+        exclude(group = "com.google.protobuf", module = "protobuf-java")
+    }
     runtimeOnly("com.lmax:disruptor:3.4.4")
     implementation("com.googlecode.json-simple:json-simple:1.1.1") { // change to runtimeOnly once Timings is removed
         isTransitive = false // includes junit
