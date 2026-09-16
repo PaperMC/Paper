@@ -3407,7 +3407,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
         final LinkedHashSet<Identifier> ids = new LinkedHashSet<>(postEffects.size());
         for (final Key effect : postEffects) {
             Preconditions.checkArgument(effect != null, "effects cannot be null");
-            Preconditions.checkArgument(ids.add(PaperAdventure.asVanilla(effect)), "effects cannot be duplicate");
+            Preconditions.checkArgument(ids.add(PaperAdventure.asVanilla(effect)), "effects cannot be duplicate [%s]", effect);
         }
         return this.getHandle().setPostEffects(ids);
     }
