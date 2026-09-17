@@ -3,13 +3,11 @@ package org.bukkit.entity.minecart;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Explosive;
 import org.bukkit.entity.Minecart;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a Minecart with TNT inside it that can explode when triggered.
  */
-@NullMarked
 public interface ExplosiveMinecart extends Minecart, Explosive {
 
     /**

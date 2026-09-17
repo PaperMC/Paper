@@ -6,7 +6,7 @@ import net.minecraft.world.entity.vehicle.minecart.MinecartTNT;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class CraftMinecartTNT extends CraftMinecart implements ExplosiveMinecart {
 
