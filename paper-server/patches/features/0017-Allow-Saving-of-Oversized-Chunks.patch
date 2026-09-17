@@ -119,19 +119,19 @@ index 7767e5420e3d2e569008747523d70147ea8d97fb..b6c6bf9b20fee63b7e2a37d949bb1e55
 +    // Paper end
  }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 134fb5c9adb3de350a2775be558727989986ebdd..bb7fcf6cc4bfc51d9984331466a0b10573a19604 100644
+index 3b5833c5aa1dfe6045cd9ea731509227907fc6d8..c4f27907774f694c6bf2129ba14e5155c838a19b 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -16,6 +16,7 @@ import net.minecraft.world.level.ChunkPos;
+@@ -19,6 +19,7 @@ import net.minecraft.world.level.ChunkPos;
  import org.jspecify.annotations.Nullable;
  
  public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.io.ChunkSystemRegionFileStorage { // Paper - rewrite chunk system
 +    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // Paper
      public static final String ANVIL_EXTENSION = ".mca";
      private static final int MAX_CACHE_SIZE = 256;
-     private final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap<>();
-@@ -241,6 +242,43 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
-         // Paper end - rewrite chunk system
+     private final Long2ObjectLinkedOpenHashMap<Optional<RegionFile>> regionCache = new Long2ObjectLinkedOpenHashMap<>();
+@@ -229,11 +230,54 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+         return Objects.requireNonNull(this.getRegionFile(pos, true));
      }
  
 +    // Paper start
@@ -172,12 +172,10 @@ index 134fb5c9adb3de350a2775be558727989986ebdd..bb7fcf6cc4bfc51d9984331466a0b105
 +    // Paper end
 +
      public @Nullable CompoundTag read(final ChunkPos pos) throws IOException {
-         // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-         RegionFile region = this.getRegionFile(pos, true);
-@@ -248,6 +286,12 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+         RegionFile region = this.getRegionFile(pos, false);
+         if (region == null) {
              return null;
          }
-         // CraftBukkit end
 +        // Paper start
 +        if (region.isOversized(pos.x(), pos.z())) {
 +            printOversizedLog("Loading Oversized Chunk!", region.getPath(), pos.x(), pos.z());
@@ -187,7 +185,7 @@ index 134fb5c9adb3de350a2775be558727989986ebdd..bb7fcf6cc4bfc51d9984331466a0b105
  
          try (DataInputStream regionChunkInputStream = region.getChunkDataInputStream(pos)) {
              return regionChunkInputStream == null ? null : NbtIo.read(regionChunkInputStream);
-@@ -283,6 +327,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -265,6 +309,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
              } else {
                  try (DataOutputStream output = region.getChunkDataOutputStream(pos)) {
                      NbtIo.write(value, output);
