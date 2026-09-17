@@ -84,6 +84,7 @@ interface RemovedConfigurations {
         path("unsupported-settings", "allow-tripwire-disarming-exploits"),
         path("commands", "fix-target-selector-tag-completion"),
         path("misc", "fix-entity-position-desync"),
+        path("misc", "send-full-pos-for-item-entities"),
         path("chunk-system", "gen-parallelism"),
         path("logging"), // server is no longer obfuscated since 26.1
         path("unsupported-settings", "compression-format"),
