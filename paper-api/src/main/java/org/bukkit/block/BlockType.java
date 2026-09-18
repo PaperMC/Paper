@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.function.Consumer;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
+import org.bukkit.Instrument;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.Registry;
@@ -2805,4 +2806,12 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      * @return false if this block never has collision, true if it <b>might</b> have collision
      */
     boolean hasCollision();
+
+    /**
+     * Gets the {@link Instrument} associated with this block.
+     * This determines the instrument sound that would be played if a Note Block were placed directly above or below this block.
+     *
+     * @return the associated instrument
+     */
+    Instrument getInstrument();
 }
