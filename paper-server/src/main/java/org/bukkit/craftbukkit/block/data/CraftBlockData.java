@@ -661,7 +661,6 @@ public class CraftBlockData implements BlockData {
 
     @Override
     public Instrument getInstrument() {
-        NoteBlockInstrument noteBlockInstrument = this.state.instrument();
-        return fromVanilla(noteBlockInstrument, Instrument.class);
+        return fromVanilla(this.state.instrument(), Instrument.class);
     }
 }

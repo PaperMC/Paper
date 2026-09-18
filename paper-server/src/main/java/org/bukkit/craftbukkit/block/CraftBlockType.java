@@ -256,7 +256,7 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
 
     @Override
     public Instrument getInstrument() {
-        NoteBlockInstrument noteBlockInstrument = this.getHandle().defaultBlockState().instrument();
-        return CraftBlockData.fromVanilla(noteBlockInstrument, Instrument.class);
+        NoteBlockInstrument instrument = this.getHandle().defaultBlockState().instrument();
+        return CraftBlockData.fromVanilla(instrument, Instrument.class);
     }
 }

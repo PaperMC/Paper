@@ -2808,8 +2808,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     boolean hasCollision();
 
     /**
-     * Gets the {@link Instrument} associated with type.
-     * This determines the instrument sound that would be played if a Note Block were placed directly above or below this type of block.
+     * Gets the {@link Instrument} associated with this block.
+     * This determines the instrument sound that would be played if a Note Block were placed directly above or below this block.
      *
      * @return the associated instrument
      */
