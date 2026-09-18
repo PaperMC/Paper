@@ -254,11 +254,9 @@ public class CraftBlockType<B extends @NonNull BlockData> extends HolderableBase
     }
     // Paper end - hasCollision API
 
-    // Paper start - getInstrument API
     @Override
     public Instrument getInstrument() {
         NoteBlockInstrument noteBlockInstrument = this.getHandle().defaultBlockState().instrument();
         return CraftBlockData.fromVanilla(noteBlockInstrument, Instrument.class);
     }
-    // Paper end - getInstrument API
 }

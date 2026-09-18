@@ -330,5 +330,6 @@ public interface BlockData extends Cloneable {
      *
      * @return the associated instrument
      */
+    @NotNull
     Instrument getInstrument();
 }
