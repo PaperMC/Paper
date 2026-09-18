@@ -15,7 +15,7 @@ public class EffectCategoryTest {
     @Test
     public void testCategoryHasEquivalentColors() {
         for (MobEffectCategory mobEffectInfo : MobEffectCategory.values()) {
-            PotionEffectType.Category bukkitEffectCategory = CraftPotionEffectType.fromNMS(mobEffectInfo);
+            PotionEffectType.Category bukkitEffectCategory = CraftPotionEffectType.fromVanilla(mobEffectInfo);
             assertEquals(bukkitEffectCategory.getColor(), NamedTextColor.NAMES.value(net.minecraft.network.chat.TextColor.fromLegacyFormat(mobEffectInfo.getTooltipFormatting()).toString()), mobEffectInfo.getTooltipFormatting().name() + " doesn't equal " + bukkitEffectCategory.getColor());
         }
     }
