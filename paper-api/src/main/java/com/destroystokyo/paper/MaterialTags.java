@@ -224,9 +224,11 @@ public class MaterialTags {
 
     /**
      * Covers all mushrooms.
+     *
+     * @deprecated in favour of {@link Tag#ITEMS_MUSHROOMS}
      */
-    public static final MaterialSetTag MUSHROOMS = new MaterialSetTag(keyFor("mushrooms"))
-        .add(Material.BROWN_MUSHROOM, Material.RED_MUSHROOM).lock();
+    @Deprecated(since = "26.3")
+    public static final MaterialSetTag MUSHROOMS = replacedBy(Tag.ITEMS_MUSHROOMS);
 
     /**
      * Covers all music disc items.
@@ -236,12 +238,14 @@ public class MaterialTags {
 
     /**
      * Covers all ores.
+     *
+     * @deprecated in favour of {@link Tag#ORES}, makes sure to also check for ancient debris if you relied on this edge case
      */
     @SuppressWarnings("unchecked")
+    @Deprecated(since = "26.3")
     public static final MaterialSetTag ORES = new MaterialSetTag(keyFor("ores"))
-        .add(Tag.COAL_ORES, Tag.COPPER_ORES, Tag.IRON_ORES, Tag.GOLD_ORES,
-            Tag.LAPIS_ORES, Tag.REDSTONE_ORES, Tag.DIAMOND_ORES, Tag.EMERALD_ORES)
-        .add(Material.ANCIENT_DEBRIS, Material.NETHER_QUARTZ_ORE).lock();
+        .add(Tag.ORES)
+        .add(Material.ANCIENT_DEBRIS).lock();
 
     /**
      * Covers all piston typed items and blocks including the piston head and moving piston.
@@ -591,7 +595,9 @@ public class MaterialTags {
      */
     @SuppressWarnings("unchecked")
     public static final MaterialSetTag COLORABLE = new MaterialSetTag(keyFor("colorable"))
-        .add(Tag.WOOL, Tag.WOOL_CARPETS, Tag.SHULKER_BOXES, Tag.BEDS, Tag.CONCRETE)
+        .add(Tag.WOOL, Tag.WOOL_CARPETS, Tag.WOOL_SLABS, Tag.WOOL_STAIRS,
+            Tag.CONCRETE_SLABS, Tag.CONCRETE_STAIRS,
+            Tag.SHULKER_BOXES, Tag.BEDS, Tag.ITEMS_CUSHIONS)
         .add(STAINED_GLASS, STAINED_GLASS_PANES)
         .lock();
 

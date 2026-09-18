@@ -112,8 +112,7 @@ public class CraftWorldInfo implements WorldInfo {
         }
 
         final BiomeSource biomeSource = this.vanillaChunkGenerator.getBiomeSource();
-        // TODO - snapshot - not sure about createCachingResolver or createUncachedResolver
-        final BiomeResolver resolver = biomeSource.createCachingResolver(randomState);
+        final BiomeResolver resolver = biomeSource.createUncachedResolver(randomState);
 
         final List<Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
             .map(CraftBiome::minecraftHolderToBukkit)

@@ -265,8 +265,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (biomeSource instanceof org.bukkit.craftbukkit.generator.CustomWorldChunkManager customBiomeSource) {
             biomeSource = customBiomeSource.vanillaBiomeSource;
         }
-        // TODO - snapshot - not sure about createCachingResolver or createUncachedResolver
-        final net.minecraft.world.level.biome.BiomeResolver resolver = biomeSource.createCachingResolver(serverCache.randomState());
+        final net.minecraft.world.level.biome.BiomeResolver resolver = biomeSource.createUncachedResolver(serverCache.randomState());
 
         final List<Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
             .map(CraftBiome::minecraftHolderToBukkit)
