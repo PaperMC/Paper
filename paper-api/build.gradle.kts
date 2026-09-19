@@ -24,6 +24,7 @@ paperCheckstyle {
 
 val annotationsVersion = "26.0.2"
 val adventureVersion = "5.2.0"
+val brigadierVersion = "1.3.11+papermc.1"
 val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
 val slf4jVersion = "2.0.17"
 val log4jVersion = "2.26.0"
@@ -63,7 +64,7 @@ dependencies {
     api("it.unimi.dsi:fastutil:8.5.18")
     api("org.apache.logging.log4j:log4j-api:$log4jVersion")
     api("org.slf4j:slf4j-api:$slf4jVersion")
-    api("com.mojang:brigadier:1.3.10")
+    api("io.papermc:brigadier:$brigadierVersion") // PaperMC fork of com.mojang:brigadier, see paper-server for the substitution
 
     // Deprecate bungeecord-chat in favor of adventure
     api("net.md-5:bungeecord-chat:$bungeeCordChatVersion") {

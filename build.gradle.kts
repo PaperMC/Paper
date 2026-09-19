@@ -67,6 +67,7 @@ subprojects {
     }
 
     repositories {
+        mavenLocal { content { includeModule("io.papermc", "brigadier") } } // TODO remove once io.papermc:brigadier is published to repo.papermc.io
         mavenCentral()
         maven(paperMavenPublicUrl)
     }
