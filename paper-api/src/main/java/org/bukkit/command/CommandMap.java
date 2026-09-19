@@ -7,7 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * @deprecated plugin developers should prefer to use the
- *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
+ *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+ *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
  */
 @Deprecated(since = "26.3")
 public interface CommandMap {

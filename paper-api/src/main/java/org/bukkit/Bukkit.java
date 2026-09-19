@@ -1080,7 +1080,8 @@ public final class Bukkit {
      * @param name the name of the command to retrieve
      * @return a plugin command if found, null otherwise
      * @deprecated plugin developers should prefer to use the
-     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
      */
     @Deprecated(since = "26.3")
     @Nullable
@@ -1352,7 +1353,8 @@ public final class Bukkit {
      *
      * @return a map of aliases to command names
      * @deprecated plugin developers should prefer to use the
-     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
      */
     @Deprecated(since = "26.3")
     @NotNull
@@ -2665,7 +2667,8 @@ public final class Bukkit {
      *
      * @return the active command map
      * @deprecated plugin developers should prefer to use the
-     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
      */
     @Deprecated(since = "26.3")
     @NotNull
@@ -2685,7 +2688,8 @@ public final class Bukkit {
      *
      * @return Whether the reload was successful
      * @deprecated plugin developers should prefer to use the
-     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
      */
     @Deprecated(since = "26.3")
     public static boolean reloadCommandAliases() {

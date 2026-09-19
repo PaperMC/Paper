@@ -6,7 +6,8 @@ import org.jetbrains.annotations.NotNull;
  * Represents a command that delegates to one or more other commands
  *
  * @deprecated plugin developers should prefer to use the
- *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
+ *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+ *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
  */
 @Deprecated(since = "26.3")
 public class MultipleCommandAlias extends Command {
