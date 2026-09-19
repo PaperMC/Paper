@@ -24996,7 +24996,7 @@ index 5e5aad112058b567214c28ccd719271f12240a35..cd5a325d37f617431ceb568a65570160
  
      @FunctionalInterface
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 4a9e9707bebe85e26d28260b389e236156ba5637..3a6410f4b061c7431ad09b23be9691160c36ef6c 100644
+index 21fc22df068725e3f3550ad85a4b5ea2acfe59ab..dccdb4a30f65a01ce44b5bc4a93bd61fbe36199a 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
 @@ -124,10 +124,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
@@ -26117,7 +26117,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..3a6410f4b061c7431ad09b23be969116
          }
  
          @Override
-@@ -1404,13 +1194,96 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1404,7 +1194,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          }
      }
  
@@ -26126,8 +26126,9 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..3a6410f4b061c7431ad09b23be969116
          public final ServerEntity serverEntity;
          private final Entity entity;
          private final int range;
-         private SectionPos lastSectionPos;
+@@ -1412,6 +1202,90 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          public final Set<ServerPlayerConnection> seenBy = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>(); // Paper - Perf: optimise map impl
+         private final Set<ServerPlayerConnection> ignoredBy = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>(); // Paper - entity tracking events
  
 +        // Paper start - optimise entity tracker
 +        private long lastChunkUpdate = -1L;
@@ -26197,6 +26198,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..3a6410f4b061c7431ad09b23be969116
 +        public final void moonrise$clearPlayers() {
 +            this.lastChunkUpdate = -1;
 +            this.lastTrackedChunk = null;
++            this.ignoredBy.clear();
 +            if (this.seenBy.isEmpty()) {
 +                return;
 +            }
@@ -26215,7 +26217,7 @@ index 4a9e9707bebe85e26d28260b389e236156ba5637..3a6410f4b061c7431ad09b23be969116
          public TrackedEntity(final Entity entity, final int range, final int updateInterval, final boolean trackDelta) {
              this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, updateInterval, trackDelta, this, this.seenBy); // Paper
              this.entity = entity;
-@@ -1522,17 +1395,24 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1530,17 +1404,24 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
          }
  
          private int getEffectiveRange() {
