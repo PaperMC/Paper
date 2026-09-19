@@ -17,7 +17,9 @@ import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
+import io.papermc.paper.entity.PaperPlayerPostEffects;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.entity.PlayerPostEffects;
 import io.papermc.paper.math.Angle;
 import io.papermc.paper.math.Position;
 import io.papermc.paper.util.MCUtil;
@@ -3391,5 +3393,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     public void unsetFixedPose() {
         this.getHandle().fixedPose = false;
         this.getHandle().updatePlayerPose();
+    }
+
+    @Override
+    public PlayerPostEffects postEffects() {
+        return new PaperPlayerPostEffects(this.getHandle());
     }
 }
