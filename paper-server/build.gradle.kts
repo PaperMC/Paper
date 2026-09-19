@@ -18,6 +18,17 @@ dependencies {
     paperclip("io.papermc:paperclip:3.0.4")
 }
 
+// Vanilla depends on com.mojang:brigadier (through mache's server classpath), ship PaperMC's binary compatible fork instead.
+// Keep the version in sync with paper-api.
+val brigadierVersion = "1.3.11+papermc.1"
+configurations.configureEach {
+    resolutionStrategy.dependencySubstitution {
+        substitute(module("com.mojang:brigadier"))
+            .using(module("io.papermc:brigadier:$brigadierVersion"))
+            .because("Paper and Velocity share PaperMC's brigadier fork")
+    }
+}
+
 paperweight {
     minecraftVersion = providers.gradleProperty("mcVersion")
     gitFilePatches = false

@@ -12,4 +12,9 @@ public final class TagParseCommandSyntaxException extends CommandSyntaxException
     public TagParseCommandSyntaxException(final String message) {
         super(EXCEPTION_TYPE, Component.literal(message));
     }
+
+    @Override
+    public boolean isRecoverable() {
+        return false; // abort parsing instead of trying sibling nodes
+    }
 }

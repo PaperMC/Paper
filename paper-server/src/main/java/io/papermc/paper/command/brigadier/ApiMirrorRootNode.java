@@ -15,6 +15,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import com.mojang.brigadier.tree.NodeAttachmentKey;
 import com.mojang.brigadier.tree.RootCommandNode;
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType;
 import io.papermc.paper.command.brigadier.argument.VanillaArgumentProviderImpl;
@@ -38,6 +39,17 @@ import org.jetbrains.annotations.Nullable;
  * This prevents certain parts of it (children) from being accessed by the api.
  */
 public abstract class ApiMirrorRootNode extends RootCommandNode<CommandSourceStack> {
+
+    /**
+     * Caches, on an API node, the NMS node it was unwrapped into.
+     * (Typed with the API source like the wrapped side; this class converts between the two with raw casts.)
+     */
+    private static final NodeAttachmentKey<CommandNode<CommandSourceStack>> UNWRAPPED_NODE = NodeAttachmentKey.create("paper:unwrapped_node");
+
+    /**
+     * Caches, on an NMS node, the API node that wraps it.
+     */
+    private static final NodeAttachmentKey<CommandNode<CommandSourceStack>> WRAPPED_NODE = NodeAttachmentKey.create("paper:wrapped_node");
 
     /**
      * Represents argument types that are allowed to exist in the api.
@@ -85,8 +97,9 @@ public abstract class ApiMirrorRootNode extends RootCommandNode<CommandSourceSta
         /*
         This node already has had an unwrapped node created, so we can assume that it's safe to reuse that cached copy.
          */
-        if (maybeWrappedNode.unwrappedCached != null) {
-            return maybeWrappedNode.unwrappedCached;
+        final CommandNode<CommandSourceStack> unwrappedCached = maybeWrappedNode.getAttachment(UNWRAPPED_NODE);
+        if (unwrappedCached != null) {
+            return unwrappedCached;
         }
 
         // convert the pure brig node into one compatible with the nms dispatcher
@@ -147,8 +160,8 @@ public abstract class ApiMirrorRootNode extends RootCommandNode<CommandSourceSta
         }
 
         // Store unwrapped node before unwrapping children to avoid infinite recursion in cyclic redirects.
-        converted.wrappedCached = pureNode;
-        pureNode.unwrappedCached = converted;
+        converted.setAttachment(WRAPPED_NODE, pureNode);
+        pureNode.setAttachment(UNWRAPPED_NODE, converted);
 
         /*
         Add the children to the node, unwrapping each child in the process.
@@ -181,8 +194,9 @@ public abstract class ApiMirrorRootNode extends RootCommandNode<CommandSourceSta
         This was most likely created by API and has a wrapped variant,
         so we can return this safely.
          */
-        if (unwrapped.wrappedCached != null) {
-            return unwrapped.wrappedCached;
+        final CommandNode<CommandSourceStack> wrappedCached = unwrapped.getAttachment(WRAPPED_NODE);
+        if (wrappedCached != null) {
+            return wrappedCached;
         }
 
         /*
@@ -191,7 +205,7 @@ public abstract class ApiMirrorRootNode extends RootCommandNode<CommandSourceSta
         restrictive access.
          */
         CommandNode<CommandSourceStack> shadow = new ShadowBrigNode(unwrapped);
-        unwrapped.wrappedCached = shadow;
+        unwrapped.setAttachment(WRAPPED_NODE, shadow);
         return shadow;
     }
 
@@ -226,13 +240,13 @@ public abstract class ApiMirrorRootNode extends RootCommandNode<CommandSourceSta
 
     // These are needed for bukkit... we should NOT allow this
     @Override
-    public void removeCommand(String name) {
-        this.getDispatcher().getRoot().removeCommand(name);
+    public void removeChildByName(String name) {
+        this.getDispatcher().getRoot().removeChildByName(name);
     }
 
     @Override
-    public void clearAll() {
-        this.getDispatcher().getRoot().clearAll();
+    public void clearChildren() {
+        this.getDispatcher().getRoot().clearChildren();
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

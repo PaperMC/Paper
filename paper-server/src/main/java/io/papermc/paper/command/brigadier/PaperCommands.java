@@ -119,8 +119,9 @@ public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwn
             }
         }
 
-        pluginLiteral.apiCommandMeta = meta.withAliases(registeredAliases);
-        node.apiCommandMeta = pluginLiteral.apiCommandMeta;
+        final APICommandMeta metaWithAliases = meta.withAliases(registeredAliases);
+        pluginLiteral.setAttachment(APICommandMeta.ATTACHMENT, metaWithAliases);
+        node.setAttachment(APICommandMeta.ATTACHMENT, metaWithAliases);
 
         registeredLabels.addAll(registeredAliases);
         return registeredLabels.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(registeredLabels);
@@ -128,18 +129,18 @@ public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwn
 
     private boolean registerCopy(final String aliasLiteral, final LiteralCommandNode<CommandSourceStack> redirectTo, final APICommandMeta meta) {
         final LiteralCommandNode<CommandSourceStack> node = PaperBrigadier.copyLiteral(aliasLiteral, redirectTo);
-        node.apiCommandMeta = meta;
+        node.setAttachment(APICommandMeta.ATTACHMENT, meta);
         return this.registerIntoDispatcher(node, false);
     }
 
     private boolean registerIntoDispatcher(final LiteralCommandNode<CommandSourceStack> node, boolean override) {
         final CommandNode<CommandSourceStack> existingChild = this.getDispatcher().getRoot().getChild(node.getLiteral());
-        if (existingChild != null && existingChild.apiCommandMeta == null && !(existingChild instanceof BukkitCommandNode)) {
+        if (existingChild != null && APICommandMeta.of(existingChild) == null && !(existingChild instanceof BukkitCommandNode)) {
             override = true; // override vanilla commands
         }
         if (existingChild == null || override) { // Avoid merging behavior. Maybe something to look into in the future
             if (override) {
-                this.getDispatcher().getRoot().removeCommand(node.getLiteral());
+                this.getDispatcher().getRoot().removeChildByName(node.getLiteral());
             }
             this.getDispatcher().getRoot().addChild(node);
             return true;

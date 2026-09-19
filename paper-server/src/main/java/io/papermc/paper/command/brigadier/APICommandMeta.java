@@ -1,5 +1,7 @@
 package io.papermc.paper.command.brigadier;
 
+import com.mojang.brigadier.tree.CommandNode;
+import com.mojang.brigadier.tree.NodeAttachmentKey;
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import java.util.Collections;
 import java.util.List;
@@ -11,6 +13,15 @@ import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public record APICommandMeta(@Nullable PluginMeta pluginMeta, @Nullable String description, List<String> aliases, @Nullable String helpCommandNamespace) {
+
+    /**
+     * Attachment key under which the meta of a node registered through the API is stored on that node.
+     */
+    public static final NodeAttachmentKey<APICommandMeta> ATTACHMENT = NodeAttachmentKey.create("paper:api_command_meta");
+
+    public static @Nullable APICommandMeta of(final CommandNode<?> node) {
+        return node.getAttachment(ATTACHMENT);
+    }
 
     public APICommandMeta(final @Nullable PluginMeta pluginMeta, final @Nullable String description) {
         this(pluginMeta, description, Collections.emptyList(), null);

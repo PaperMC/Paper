@@ -96,7 +96,7 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
     @Override
     public Command put(String key, Command value) {
         Command old = this.get(key);
-        this.getDispatcher().getRoot().removeCommand(key); // Override previous command
+        this.getDispatcher().getRoot().removeChildByName(key); // Override previous command
         if (value instanceof VanillaCommandWrapper wrapper && wrapper.getName().equals(key)) {
             // Don't break when some plugin tries to remove and add back a plugin command registered with modern API...
             this.getDispatcher().getRoot().addChild((CommandNode) wrapper.vanillaCommand);
@@ -114,7 +114,7 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
 
         Command old = this.get(key);
          if (old != null) {
-             this.getDispatcher().getRoot().removeCommand(string);
+             this.getDispatcher().getRoot().removeChildByName(string);
          }
 
         return old;
@@ -140,7 +140,7 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
 
     @Override
     public void clear() {
-        this.getDispatcher().getRoot().clearAll();
+        this.getDispatcher().getRoot().clearChildren();
     }
 
     @NotNull
