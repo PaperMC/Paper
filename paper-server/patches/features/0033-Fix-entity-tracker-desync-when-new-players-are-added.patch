@@ -48,10 +48,10 @@ index cff05f64af7f425b77cbbd7680c5cc592faa798c..0ab4080c8e30d5ee14ce5fcbac64b031
              serverEntity.getLastSentYRot(),
              entity.getType(),
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 3a6410f4b061c7431ad09b23be9691160c36ef6c..29e02b01ba7eeb7767e8dad6b3be909f08825c16 100644
+index b4d62fac8af59f98463f55f2b864343baeefc79d..3ed912fb19e1dfda7987fcf4b504aff5abccc46c 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
-@@ -1383,6 +1383,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+@@ -1413,6 +1413,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
                          ChunkMap.this.level.debugSynchronizers().startTrackingEntity(player, this.entity);
                          }
                          // Paper end - entity tracking events
@@ -60,10 +60,10 @@ index 3a6410f4b061c7431ad09b23be9691160c36ef6c..29e02b01ba7eeb7767e8dad6b3be909f
                  } else {
                      this.removePlayer(player);
 diff --git a/net/minecraft/server/level/ServerEntity.java b/net/minecraft/server/level/ServerEntity.java
-index 26822e1211194b411dd8ea75ce523133e5389e47..60af82925d2f7e605bf7340cf01f1a5668f4d725 100644
+index 267259a79c7668da85d206f9dcbde16b379e2738..e46f95b19da1c14f240ec6697f22b5e220e0a835 100644
 --- a/net/minecraft/server/level/ServerEntity.java
 +++ b/net/minecraft/server/level/ServerEntity.java
-@@ -89,6 +89,13 @@ public class ServerEntity {
+@@ -102,6 +102,13 @@ public class ServerEntity {
          this.trackedDataValues = entity.getEntityData().getNonDefaultValues();
      }
  
@@ -77,25 +77,16 @@ index 26822e1211194b411dd8ea75ce523133e5389e47..60af82925d2f7e605bf7340cf01f1a56
      public void sendChanges() {
          // Paper start - optimise collisions
          if (((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)this.entity).moonrise$isHardColliding()) {
-@@ -135,7 +142,7 @@ public class ServerEntity {
+@@ -147,7 +154,7 @@ public class ServerEntity {
              this.entity.syncPosition = false;
          }
  
--        if (this.tickCount % this.updateInterval == 0 || this.entity.needsSync || this.entity.getEntityData().isDirty()) {
-+        if (this.forceStateResync || this.tickCount % this.updateInterval == 0 || this.entity.needsSync || this.entity.getEntityData().isDirty()) { // Paper - fix desync when a player is added to the tracker
+-        if (this.entity.needsSync || this.updateInterval.test(this.tickCount) || this.entity.getEntityData().isDirty()) {
++        if (this.forceStateResync || this.entity.needsSync || this.updateInterval.test(this.tickCount) || this.entity.getEntityData().isDirty()) { // Paper - fix desync when a player is added to the tracker
              byte yRotn = Mth.packDegrees(this.entity.getYRot());
              byte xRotn = Mth.packDegrees(this.entity.getXRot());
              boolean shouldSendRotation = Math.abs(yRotn - this.lastSentYRot) >= 1 || Math.abs(xRotn - this.lastSentXRot) >= 1;
-@@ -169,7 +176,7 @@ public class ServerEntity {
-                 long ya = this.positionCodec.encodeY(currentPosition);
-                 long za = this.positionCodec.encodeZ(currentPosition);
-                 boolean deltaTooBig = xa < -32768L || xa > 32767L || ya < -32768L || ya > 32767L || za < -32768L || za > 32767L;
--                if (this.entity.getRequiresPrecisePosition()
-+                if (this.forceStateResync || this.entity.getRequiresPrecisePosition() // Paper - fix desync when a player is added to the tracker
-                     || deltaTooBig
-                     || this.teleportDelay > 400
-                     || this.wasRiding
-@@ -238,6 +245,7 @@ public class ServerEntity {
+@@ -229,6 +236,7 @@ public class ServerEntity {
              }
  
              this.entity.needsSync = false;
@@ -103,3 +94,12 @@ index 26822e1211194b411dd8ea75ce523133e5389e47..60af82925d2f7e605bf7340cf01f1a56
          }
  
          this.tickCount++;
+@@ -260,7 +268,7 @@ public class ServerEntity {
+     private @Nullable MovementPacket<ClientGamePacketListener> createMovePacket(
+         final PositionPath position, final byte yRotn, final byte xRotn, final boolean shouldSendPosition, final boolean shouldSendRotation
+     ) {
+-        if (this.entity.getRequiresPrecisePosition() || this.teleportDelay > 400 || this.wasRiding || this.wasOnGround != this.entity.onGround()) {
++        if (this.forceStateResync || this.entity.getRequiresPrecisePosition() || this.teleportDelay > 400 || this.wasRiding || this.wasOnGround != this.entity.onGround()) { // Paper - fix desync when a player is added to the tracker
+             this.wasOnGround = this.entity.onGround();
+             this.teleportDelay = 0;
+             return ClientboundEntityPositionSyncPacket.of(this.entity, position);

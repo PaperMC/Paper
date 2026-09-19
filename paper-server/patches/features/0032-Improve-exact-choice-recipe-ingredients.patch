@@ -164,10 +164,10 @@ index 0000000000000000000000000000000000000000..a9dcccefb19e6610076e1153547d2f91
 +    }
 +}
 diff --git a/net/minecraft/recipebook/ServerPlaceRecipe.java b/net/minecraft/recipebook/ServerPlaceRecipe.java
-index da0380782a846dbb2657c58668e398f36f191c6e..d5ce83d5abd4de6f014a2827780170d3341eb927 100644
+index dfa91c7515aa15b9b2e02770d7adfb87a388764a..6f0faabe7c1b6104267221a0d6da737f543939ab 100644
 --- a/net/minecraft/recipebook/ServerPlaceRecipe.java
 +++ b/net/minecraft/recipebook/ServerPlaceRecipe.java
-@@ -42,6 +42,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
+@@ -43,6 +43,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
          }
  
          StackedItemContents availableItems = new StackedItemContents();
@@ -175,7 +175,7 @@ index da0380782a846dbb2657c58668e398f36f191c6e..d5ce83d5abd4de6f014a2827780170d3
          inventory.fillStackedContents(availableItems);
          menu.fillCraftSlotsStackedContents(availableItems);
          return placer.tryPlaceRecipe(recipe, availableItems);
-@@ -100,7 +101,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
+@@ -101,7 +102,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
          }
  
          int amountToCraft = this.calculateAmountToCraft(biggestCraftableStack, recipeMatchesPlaced);
@@ -184,7 +184,7 @@ index da0380782a846dbb2657c58668e398f36f191c6e..d5ce83d5abd4de6f014a2827780170d3
          if (availableItems.canCraft(recipe.value(), amountToCraft, itemsUsedPerIngredient::add)) {
              int adjustedAmountToCraft = clampToMaxStackSize(amountToCraft, itemsUsedPerIngredient);
              if (adjustedAmountToCraft != amountToCraft) {
-@@ -119,7 +120,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
+@@ -120,7 +121,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
                  (ingredientIndex, gridIndex, gridXPos, gridYPos) -> {
                      if (ingredientIndex != -1) {
                          Slot targetGridSlot = this.inputGridSlots.get(gridIndex);
@@ -193,7 +193,7 @@ index da0380782a846dbb2657c58668e398f36f191c6e..d5ce83d5abd4de6f014a2827780170d3
                          int remainingCount = adjustedAmountToCraft;
  
                          while (remainingCount > 0) {
-@@ -134,9 +135,11 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
+@@ -135,9 +136,11 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
          }
      }
  
@@ -208,7 +208,7 @@ index da0380782a846dbb2657c58668e398f36f191c6e..d5ce83d5abd4de6f014a2827780170d3
          }
  
          return value;
-@@ -167,7 +170,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
+@@ -168,7 +171,7 @@ public class ServerPlaceRecipe<R extends Recipe<?>> {
          }
      }
  
@@ -218,10 +218,10 @@ index da0380782a846dbb2657c58668e398f36f191c6e..d5ce83d5abd4de6f014a2827780170d3
          int inventorySlotId = this.inventory.findSlotMatchingCraftingIngredient(itemInInventory, itemInTargetSlot);
          if (inventorySlotId == Inventory.NOT_FOUND_INDEX) {
 diff --git a/net/minecraft/world/entity/player/Inventory.java b/net/minecraft/world/entity/player/Inventory.java
-index 5c083f2ec110c388be951014d8e5a6eb64ded371..cd7714dffcd7e7b6d96d18a97e65fd0914a739d1 100644
+index 92ac98fb970b242cef59eb42e02dc03b69b89006..59dc40b542b537ef08b06cf1209a2b9866358431 100644
 --- a/net/minecraft/world/entity/player/Inventory.java
 +++ b/net/minecraft/world/entity/player/Inventory.java
-@@ -252,12 +252,12 @@ public class Inventory implements Container, Nameable {
+@@ -254,12 +254,12 @@ public class Inventory implements Container, Nameable {
          return !item.isDamaged() && !item.isEnchanted() && !item.has(DataComponents.CUSTOM_NAME);
      }
  
@@ -357,7 +357,7 @@ index ffaa8e450a11a01060b6847d1b66a76323f9d8ba..1ace17d8fc7e7b8b4722a1889d49233c
      }
  
 diff --git a/net/minecraft/world/item/crafting/Ingredient.java b/net/minecraft/world/item/crafting/Ingredient.java
-index 218d56fa066513fd8d9761af36bcc2873a34406b..778b38911b0d244738fd3db3b275b0c78a17339f 100644
+index e65cf7453bd40a045ae923df32de10053faa7d72..c463dae011eaeb5c0c87d3313b0058313809e4ec 100644
 --- a/net/minecraft/world/item/crafting/Ingredient.java
 +++ b/net/minecraft/world/item/crafting/Ingredient.java
 @@ -22,7 +22,7 @@ import net.minecraft.world.item.Items;
@@ -447,11 +447,11 @@ index 218d56fa066513fd8d9761af36bcc2873a34406b..778b38911b0d244738fd3db3b275b0c7
 +            return new SlotDisplay.Composite(this.itemStacks().stream().map(ItemStackTemplate::fromNonEmptyStack).<SlotDisplay>map(SlotDisplay.ItemStackSlotDisplay::new).toList());
 +        }
 +        // Paper end - show exact ingredients in recipe book
-         return (SlotDisplay)this.values
-             .unwrap()
-             .map(SlotDisplay.TagSlotDisplay::new, l -> new SlotDisplay.Composite(l.stream().map(Ingredient::displayForSingleItem).toList()));
+         return new SlotDisplay.TagSlotDisplay(this.values);
+     }
+ 
 diff --git a/net/minecraft/world/item/crafting/ShapelessRecipe.java b/net/minecraft/world/item/crafting/ShapelessRecipe.java
-index d4d4fad66be0f0c0225993026602dc61e10c6bce..53a818f14709d1978dbbc4aa7367be733a8ee47f 100644
+index d2d2de1b167d2ea49e14aacadaa94e5fd2fece40..45b8bc986a05a661ab6d1a8a7ac94efb42074374 100644
 --- a/net/minecraft/world/item/crafting/ShapelessRecipe.java
 +++ b/net/minecraft/world/item/crafting/ShapelessRecipe.java
 @@ -74,13 +74,18 @@ public class ShapelessRecipe extends NormalCraftingRecipe {

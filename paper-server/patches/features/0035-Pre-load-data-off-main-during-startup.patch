@@ -5,7 +5,7 @@ Subject: [PATCH] Pre-load data off-main during startup
 
 
 diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
-index a4d608d64b7d3477c9144d93547fd3b4f39a1b02..e2939cc39a8c103e4c4d7b01d39b5546486e4fbc 100644
+index c22cc4387e7cc5da7d38ee14ed7f187b5d9507f4..aa7f2ba4d931f98ce15c52dc2b99f07504149582 100644
 --- a/net/minecraft/server/Main.java
 +++ b/net/minecraft/server/Main.java
 @@ -102,7 +102,10 @@ public class Main {
@@ -34,31 +34,32 @@ index a4d608d64b7d3477c9144d93547fd3b4f39a1b02..e2939cc39a8c103e4c4d7b01d39b5546
              Path settingsFile = Paths.get("server.properties");
              DedicatedServerSettings settings = new DedicatedServerSettings(options); // CraftBukkit - CLI argument support
 diff --git a/net/minecraft/world/level/block/Blocks.java b/net/minecraft/world/level/block/Blocks.java
-index 3ee7f5c578e4721fd95390d76105d6f8976747a1..f94f8049572c860652c97c10ecd888ef2c338262 100644
+index 65b83bea42266e4fb1cb6f88167acf15e85075e8..71ff3e831bbe4c49e946664c7ca22634a4e9fecc 100644
 --- a/net/minecraft/world/level/block/Blocks.java
 +++ b/net/minecraft/world/level/block/Blocks.java
-@@ -5996,11 +5996,23 @@ public class Blocks {
-     }
+@@ -5937,12 +5937,24 @@ public class Blocks {
  
      static {
-+        // Paper start - Perf: Optimize block state cache initialization
-+        // initCache of the first state of every block runs directly (to make sure Blocks is always called here) before the rest are put off-thread
-+        final java.util.List<BlockState> statesToInit = new java.util.ArrayList<>();
-         for (Block block : BuiltInRegistries.BLOCK) {
-+            boolean first = true;
-             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
-                 Block.BLOCK_STATE_REGISTRY.add(state);
--                state.initCache();
-+                if (first) {
-+                    first = false;
-+                    state.initCache();
-+                } else {
-+                    statesToInit.add(state);
-+                }
+         SolidDebugger.runAndDump(() -> {
++            // Paper start - Perf: Optimize block state cache initialization
++            // initCache of the first state of every block runs directly (to make sure Blocks is always called here) before the rest are put off-thread
++            final java.util.List<BlockState> statesToInit = new java.util.ArrayList<>();
+             for (Block block : BuiltInRegistries.BLOCK) {
++                boolean first = true;
+                 for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+                     Block.BLOCK_STATE_REGISTRY.add(state);
+-                    state.initCache();
++                    if (first) {
++                        first = false;
++                        state.initCache();
++                    } else {
++                        statesToInit.add(state);
++                    }
+                 }
              }
-         }
-+        // Make sure this stays as a method reference, else the synthetic lambda method makes this blow up
-+        statesToInit.parallelStream().forEach(BlockBehaviour.BlockStateBase::initCache);
-+        // Paper end - Perf: Optimize block state cache initialization
++            // Make sure this stays as a method reference, else the synthetic lambda method makes this blow up
++            statesToInit.parallelStream().forEach(BlockBehaviour.BlockStateBase::initCache);
++            // Paper end - Perf: Optimize block state cache initialization
+         });
      }
  }
