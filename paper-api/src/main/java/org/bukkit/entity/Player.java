@@ -4083,5 +4083,5 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return the post-effects
      */
-    PlayerPostEffects getPostEffects();
+    PlayerPostEffects postEffects();
 }

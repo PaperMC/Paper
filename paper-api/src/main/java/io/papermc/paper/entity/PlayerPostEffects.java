@@ -18,7 +18,7 @@ public interface PlayerPostEffects {
      * @return an unmodifiable list of post-effects
      */
     @Unmodifiable
-    List<Key> getPostEffects();
+    List<Key> values();
 
     /**
      * Sets the list of post-effects that are currently applied to the player.
@@ -26,7 +26,7 @@ public interface PlayerPostEffects {
      * @param postEffects the list of post-effects to set
      * @return true if the post-effects were changed, false if they were the same
      */
-    boolean setPostEffects(List<Key> postEffects);
+    boolean set(List<Key> postEffects);
 
     /**
      * Adds a post-effect to the player.
@@ -34,7 +34,7 @@ public interface PlayerPostEffects {
      * @param effect the key post-effect to add
      * @return true if the post-effect was added, false if it was already present
      */
-    boolean addPostEffect(Key effect);
+    boolean add(Key effect);
 
     /**
      * Removes a post-effect from the player.
@@ -42,13 +42,13 @@ public interface PlayerPostEffects {
      * @param effect the key post-effect to remove
      * @return true if the post-effect was removed, false if it was not present
      */
-    boolean removePostEffect(Key effect);
+    boolean remove(Key effect);
 
     /**
      * Clears all post-effects from the player.
      *
      * @return true if any post-effects were cleared, false if there were none
      */
-    boolean clearPostEffects();
+    boolean clear();
 
 }

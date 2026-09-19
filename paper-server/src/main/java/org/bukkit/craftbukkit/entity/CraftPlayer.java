@@ -3396,7 +3396,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public PlayerPostEffects getPostEffects() {
+    public PlayerPostEffects postEffects() {
         return new PaperPlayerPostEffects(this.getHandle());
     }
 }
