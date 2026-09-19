@@ -9,7 +9,6 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.FeatureHooks;
-import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.connection.PluginMessageBridgeImpl;
 import io.papermc.paper.datacomponent.DataComponentTypes;
@@ -18,7 +17,9 @@ import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.dialog.PaperDialog;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
+import io.papermc.paper.entity.PaperPlayerPostEffects;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.entity.PlayerPostEffects;
 import io.papermc.paper.math.Angle;
 import io.papermc.paper.math.Position;
 import io.papermc.paper.util.MCUtil;
@@ -40,7 +41,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,7 +54,6 @@ import java.util.stream.Collectors;
 import net.kyori.adventure.dialog.DialogLike;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.inventory.Book;
-import net.kyori.adventure.key.Key;
 import net.kyori.adventure.pointer.PointersSupplier;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -3397,35 +3396,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player, PluginMessa
     }
 
     @Override
-    public List<Key> getPostEffects() {
-        return this.getHandle().getPostEffects().stream().map(PaperAdventure::asAdventure).toList();
-    }
-
-    @Override
-    public boolean setPostEffects(final List<Key> postEffects) {
-        Preconditions.checkArgument(postEffects != null, "postEffects cannot be null");
-        final LinkedHashSet<Identifier> ids = new LinkedHashSet<>(postEffects.size());
-        for (final Key effect : postEffects) {
-            Preconditions.checkArgument(effect != null, "effects cannot be null");
-            Preconditions.checkArgument(ids.add(PaperAdventure.asVanilla(effect)), "effects cannot be duplicate [%s]", effect);
-        }
-        return this.getHandle().setPostEffects(ids);
-    }
-
-    @Override
-    public boolean addPostEffect(final Key key) {
-        Preconditions.checkArgument(key != null, "key cannot be null");
-        return this.getHandle().addPostEffect(PaperAdventure.asVanilla(key));
-    }
-
-    @Override
-    public boolean removePostEffect(final Key key) {
-        Preconditions.checkArgument(key != null, "key cannot be null");
-        return this.getHandle().removePostEffect(PaperAdventure.asVanilla(key));
-    }
-
-    @Override
-    public boolean clearPostEffects() {
-        return this.getHandle().clearPostEffects();
+    public PlayerPostEffects getPostEffects() {
+        return new PaperPlayerPostEffects(this.getHandle());
     }
 }
