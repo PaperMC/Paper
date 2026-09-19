@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated use {@link io.papermc.paper.event.player.PlayerOpenSignEvent}
  */
 @Deprecated(forRemoval = true)
-@Warning
+@Warning(propagate = false)
 public class PlayerSignOpenEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

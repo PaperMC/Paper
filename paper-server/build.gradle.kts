@@ -289,6 +289,7 @@ fun TaskContainer.registerRunTask(
         systemProperty("disable.watchdog", true)
     }
     systemProperty("io.papermc.paper.suppress.sout.nags", true)
+    systemProperty("paper.alwaysPrintWarningState", true)
     systemProperty("paper.maxChatCommandInputSize", 32767)
     systemProperty("paper.disableMigrationDelay", true)
     systemProperty("paper.updatingMinecraft", providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean())
