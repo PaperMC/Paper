@@ -27,7 +27,8 @@ public interface TabCompleter {
      * @return A List of possible completions for the final argument, or null
      *     to default to the command executor
      * @deprecated plugin developers should prefer to use the
-     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
      */
     @Deprecated(since = "26.3")
     @Nullable
