@@ -10,10 +10,10 @@ hoping that at least then we don't swap chunks, and maybe recover
 them all.
 
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java b/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
-index 27eeb842e6b22bd12b582379eaaa76b622dfca5e..d4606e3d95a98e745cd565c0c23b2a657249602a 100644
+index 18eaedc587160a82b9351787830b1d57793356e4..3bb9b58ee97464687e348e23b99159226415c267 100644
 --- a/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
-@@ -1466,7 +1466,7 @@ public final class MoonriseRegionFileIO {
+@@ -1474,7 +1474,7 @@ public final class MoonriseRegionFileIO {
  
          public abstract void finishWrite(final int chunkX, final int chunkZ, final WriteData writeData) throws IOException;
  
@@ -639,10 +639,10 @@ index 3ba442ac6b823e1c6a69398abc4f116da07c32c0..3de7fd2b084c38e72d7a6bc416880a88
          return stub;
      }
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 80789d19bc160560af420564bb39edabb4956d20..63b40c420030d935bb81a219fb33defe0946e21f 100644
+index a2dd62ced02de213ffe1244b893069b93011713c..154b571b33c868c6520ab563d8cd5482f1c288c3 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -24,6 +24,32 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -27,6 +27,32 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
      private final Path folder;
      private final boolean sync;
  
@@ -675,7 +675,7 @@ index 80789d19bc160560af420564bb39edabb4956d20..63b40c420030d935bb81a219fb33defe
      // Paper start - rewrite chunk system
      private static final int REGION_SHIFT = 5;
      private static final int MAX_NON_EXISTING_CACHE = 1024 * 4;
-@@ -172,12 +198,12 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -144,12 +170,12 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
  
          if (input == null) {
              return new ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.ReadData(
@@ -690,7 +690,7 @@ index 80789d19bc160560af420564bb39edabb4956d20..63b40c420030d935bb81a219fb33defe
          );
  
          if (!(input instanceof ca.spottedleaf.moonrise.patches.chunk_system.util.stream.ExternalChunkStreamMarker)) {
-@@ -193,7 +219,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -165,7 +191,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          }
  
          return new ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.ReadData(
@@ -699,7 +699,7 @@ index 80789d19bc160560af420564bb39edabb4956d20..63b40c420030d935bb81a219fb33defe
          );
      }
  
-@@ -203,7 +229,32 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -175,7 +201,32 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          final int chunkX, final int chunkZ, final ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.ReadData readData
      ) throws IOException {
          try {
@@ -712,7 +712,7 @@ index 80789d19bc160560af420564bb39edabb4956d20..63b40c420030d935bb81a219fb33defe
 +
 +            final ChunkPos pos = new ChunkPos(chunkX, chunkZ);
 +            final ChunkPos headerChunkPos = SerializableChunkData.getChunkCoordinate(ret);
-+            final RegionFile regionFile = this.getRegionFile(pos);
++            final RegionFile regionFile = this.getRegionFile(pos, true);
 +
 +            if (regionFile.getRecalculateCount() != readData.recalculateCount()) {
 +                return null;
@@ -733,15 +733,15 @@ index 80789d19bc160560af420564bb39edabb4956d20..63b40c420030d935bb81a219fb33defe
          } finally {
              readData.input().close();
          }
-@@ -219,6 +270,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -186,6 +237,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          this.folder = folder;
          this.sync = sync;
          this.info = info;
 +        this.isChunkData = info.dfuType()[0] == net.minecraft.util.datafix.DataFixTypes.CHUNK; // Paper - recalculate region file headers
      }
  
-     @org.jetbrains.annotations.Contract("_, false -> !null") private @Nullable RegionFile getRegionFile(final ChunkPos pos, boolean existingOnly) throws IOException { // CraftBukkit
-@@ -307,7 +359,25 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+     private @Nullable RegionFile getRegionFile(final ChunkPos pos, final boolean create) throws IOException {
+@@ -293,7 +345,25 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
          // Paper end
  
          try (DataInputStream regionChunkInputStream = region.getChunkDataInputStream(pos)) {
@@ -800,10 +800,10 @@ index 590bd1ca60956e5c5be58481f97401e55f9e1aeb..4e0c9fa1eecfa9f21285b7911e25830b
          return new RegionStorageInfo(this.level, this.dimension, this.type + suffix);
      }
 diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index 470d88c5d3b701ad0148dd18f506277f4017b931..7d29fdc6548324d97ec34d476b5b48ec0bdba0d2 100644
+index 1bfb83a0194bf5d802370ae53d4cbfeca0069584..3781b2707163357bae5f5482694c94a927b54d58 100644
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-@@ -120,6 +120,18 @@ public record SerializableChunkData(
+@@ -119,6 +119,18 @@ public record SerializableChunkData(
          }
      }
      // Paper end - guard against serializing mismatching coordinates
@@ -822,7 +822,7 @@ index 470d88c5d3b701ad0148dd18f506277f4017b931..7d29fdc6548324d97ec34d476b5b48ec
  
      // Paper start - Do not let the server load chunks from newer versions
      private static final int CURRENT_DATA_VERSION = net.minecraft.SharedConstants.getCurrentVersion().dataVersion().version();
-@@ -545,7 +557,7 @@ public record SerializableChunkData(
+@@ -526,7 +538,7 @@ public record SerializableChunkData(
          tag.putInt("xPos", this.chunkPos.x());
          tag.putInt("yPos", this.minSectionY);
          tag.putInt("zPos", this.chunkPos.z());
