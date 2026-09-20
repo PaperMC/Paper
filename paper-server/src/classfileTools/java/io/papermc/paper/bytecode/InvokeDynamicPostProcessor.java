@@ -7,11 +7,9 @@ import java.lang.classfile.ClassTransform;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.Opcode;
-import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.instruction.InvokeDynamicInstruction;
 import java.lang.classfile.instruction.InvokeInstruction;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicCallSiteDesc;
@@ -21,8 +19,6 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -33,11 +29,9 @@ public final class InvokeDynamicPostProcessor {
     private static final ClassDesc EVENT_BOOTSTRAP_CLASS_DESC = ClassDesc.of("io.papermc.paper.event.EventBootstrap");
 
     private final ClassFile classFile;
-    private final List<MethodCallRewriteRule> rewriteRules;
 
-    private InvokeDynamicPostProcessor(final List<MethodCallRewriteRule> rewriteRules) {
+    private InvokeDynamicPostProcessor() {
         this.classFile = ClassFile.of();
-        this.rewriteRules = List.copyOf(rewriteRules);
     }
 
     public static void main(final String[] args) throws IOException {
@@ -45,14 +39,10 @@ public final class InvokeDynamicPostProcessor {
             throw new IllegalArgumentException("Expected at least one argument: <classes-directory>...");
         }
 
-        final InvokeDynamicPostProcessor postProcessor = new InvokeDynamicPostProcessor(defaultRules());
+        final InvokeDynamicPostProcessor postProcessor = new InvokeDynamicPostProcessor();
         for (final String arg : args) {
             postProcessor.processTree(Path.of(arg));
         }
-    }
-
-    private static List<MethodCallRewriteRule> defaultRules() {
-        return List.of();
     }
 
     private void processTree(final Path classesDirectory) throws IOException {
@@ -113,11 +103,6 @@ public final class InvokeDynamicPostProcessor {
         if (hasListenersEventRewrite.isPresent()) {
             System.out.println("found has listeners: " + instruction);
             return hasListenersEventRewrite;
-        }
-        for (final MethodCallRewriteRule rule : this.rewriteRules) {
-            if (rule.matches(instruction)) {
-                return Optional.of(rule.rewrite(instruction));
-            }
         }
         return Optional.empty();
     }
@@ -200,65 +185,4 @@ public final class InvokeDynamicPostProcessor {
         }
     }
 
-    public record MethodCallRewriteRule(MethodCallSelector selector, InvokeDynamicRewritePlan rewritePlan) {
-
-        public MethodCallRewriteRule {
-            Objects.requireNonNull(selector, "selector");
-            Objects.requireNonNull(rewritePlan, "rewritePlan");
-        }
-
-        boolean matches(final InvokeInstruction instruction) {
-            return this.selector.matches(instruction);
-        }
-
-        DynamicCallSiteDesc rewrite(final InvokeInstruction instruction) {
-            return this.rewritePlan.toDynamicCallSiteDesc(instruction);
-        }
-    }
-
-    public record MethodCallSelector(
-        Opcode opcode,
-        ClassDesc owner,
-        String methodName,
-        MethodTypeDesc methodType,
-        Boolean interfaceCall
-    ) {
-
-        boolean matches(final InvokeInstruction instruction) {
-            return (this.opcode == null || instruction.opcode() == this.opcode)
-                && (this.owner == null || instruction.owner().asSymbol().equals(this.owner))
-                && (this.methodName == null || instruction.name().stringValue().equals(this.methodName))
-                && (this.methodType == null || instruction.typeSymbol().equals(this.methodType))
-                && (this.interfaceCall == null || instruction.isInterface() == this.interfaceCall);
-        }
-    }
-
-    public record InvokeDynamicRewritePlan(
-        DirectMethodHandleDesc bootstrapMethod,
-        String invocationNameOverride,
-        MethodTypeDesc invocationTypeOverride,
-        List<ConstantDesc> bootstrapArgs
-    ) {
-
-        public InvokeDynamicRewritePlan {
-            Objects.requireNonNull(bootstrapMethod, "bootstrapMethod");
-            bootstrapArgs = List.copyOf(bootstrapArgs);
-        }
-
-        DynamicCallSiteDesc toDynamicCallSiteDesc(final InvokeInstruction instruction) {
-            final String invocationName = this.invocationNameOverride != null
-                ? this.invocationNameOverride
-                : instruction.name().stringValue();
-            final MethodTypeDesc invocationType = this.invocationTypeOverride != null
-                ? this.invocationTypeOverride
-                : instruction.typeSymbol();
-
-            return DynamicCallSiteDesc.of(
-                this.bootstrapMethod,
-                invocationName,
-                invocationType,
-                this.bootstrapArgs.toArray(ConstantDesc[]::new)
-            );
-        }
-    }
 }
