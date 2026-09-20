@@ -33,29 +33,35 @@ jobs:
         || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'publish-pr')
       )
 
-    runs-on: ubuntu-latest
+    runs-on: namespace-profile-paper
     steps:
       - if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v7
+        uses: namespacelabs/nscloud-checkout-action@v9
         with:
           # todo remove me again after the update
           ref: ${{ github.ref_name }}
           fetch-depth: 0
       - if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/checkout@v7
+        uses: namespacelabs/nscloud-checkout-action@v9
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: JDK 25
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           java-version: 25
           distribution: 'zulu'
-
+          cache: "" # namespace handles this
+      - name: Set up cache
+        uses: namespacelabs/nscloud-cache-action@v1
+        with:
+          cache: gradle
+      - name: Setup gradle build cache
+        run: |
+          nsc cache gradle setup --init-gradle /tmp/init.gradle
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          # Allow cache writes on main and dev branches
-          cache-read-only: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/dev/') }}
+          cache-disabled: true # namespace handles this
 
       - name: Configure Build
         uses: actions/github-script@v9
@@ -101,7 +107,7 @@ jobs:
           ./gradlew applyPatches --stacktrace
 
       - name: Build
-        run: ./gradlew build --stacktrace
+        run: ./gradlew --init-script=/tmp/init.gradle build --stacktrace
 
       - name: Upload Test Results
         if: always()
@@ -120,7 +126,7 @@ jobs:
 
       - name: Create Paperclip Jar
         if: fromJSON(steps.determine.outputs.result).action == 'paperclip'
-        run: ./gradlew createPaperclipJar --stacktrace
+        run: ./gradlew --init-script=/tmp/init.gradle createPaperclipJar --stacktrace
 
       - name: Upload Paperclip Jar
         if: fromJSON(steps.determine.outputs.result).action == 'paperclip'
@@ -139,7 +145,7 @@ jobs:
     name: "Event File"
     # Only run on PRs if the source branch is on someone else's repo
     if: ${{ github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name }}
-    runs-on: ubuntu-latest
+    runs-on: namespace-profile-linux-small
     steps:
       - name: Upload
         uses: actions/upload-artifact@v7
