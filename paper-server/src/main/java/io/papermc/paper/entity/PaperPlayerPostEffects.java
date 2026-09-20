@@ -3,7 +3,7 @@ package io.papermc.paper.entity;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.SequencedCollection;
 import net.kyori.adventure.key.Key;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,12 +23,12 @@ public final class PaperPlayerPostEffects implements PlayerPostEffects {
     }
 
     @Override
-    public List<Key> values() {
+    public SequencedCollection<Key> values() {
         return this.getHandle().getPostEffects().stream().map(PaperAdventure::asAdventure).toList();
     }
 
     @Override
-    public boolean set(final List<Key> postEffects) {
+    public boolean set(final SequencedCollection<Key> postEffects) {
         Preconditions.checkArgument(postEffects != null, "postEffects cannot be null");
         final LinkedHashSet<Identifier> ids = new LinkedHashSet<>(postEffects.size());
         for (final Key effect : postEffects) {
