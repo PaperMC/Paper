@@ -2,6 +2,7 @@ import io.papermc.fill.model.BuildChannel
 import io.papermc.paperweight.attribute.DevBundleOutput
 import io.papermc.paperweight.util.*
 import java.time.Instant
+import org.gradle.api.tasks.PathSensitivity
 
 plugins {
     `java-library`
@@ -9,6 +10,7 @@ plugins {
     idea
     id("io.papermc.paperweight.core")
     id("io.papermc.fill.gradle") version "1.0.12"
+    id("me.champeau.jmh") version "0.7.3"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
@@ -25,6 +27,16 @@ paperweight {
     updatingMinecraft {
         // oldPaperCommit = "d4fe85375af18bfa88f44d7c1e6a61904ae550cc"
     }
+}
+
+jmh {
+    includeTests = true
+    zip64 = true
+    profilers = listOf()
+}
+
+tasks.named("jmh") {
+    outputs.upToDateWhen { false }
 }
 
 tasks.generateDevelopmentBundle {
@@ -87,6 +99,7 @@ if (project.providers.gradleProperty("publishDevBundle").isPresent) {
 }
 
 val log4jPlugins = sourceSets.create("log4jPlugins")
+val classfileTools = sourceSets.create("classfileTools")
 configurations.named(log4jPlugins.compileClasspathConfigurationName) {
     extendsFrom(configurations.compileClasspath.get())
 }
@@ -110,6 +123,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
+    "classfileToolsImplementation"(project(":paper-api"))
     implementation("ca.spottedleaf:leafpile:1.2.0")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
@@ -260,6 +274,75 @@ sourceSets {
     }
 }
 
+val jmhSourceSet = sourceSets.named("jmh").get()
+val postprocessMainClasses = tasks.register<JavaExec>("postprocessMainClasses") {
+    group = "build"
+    description = "Post-process compiled paper-server classes using the ClassFile API"
+    val mainClassesDirectory = tasks.compileJava.flatMap { it.destinationDirectory }
+    val markerFile = layout.buildDirectory.file("markers/postprocessMainClasses")
+
+    dependsOn(tasks.compileJava, tasks.named(classfileTools.classesTaskName))
+    classpath(classfileTools.runtimeClasspath, files(mainClassesDirectory))
+    mainClass.set("io.papermc.paper.bytecode.InvokeDynamicPostProcessor")
+    javaLauncher.set(project.javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    })
+
+    inputs.dir(mainClassesDirectory).withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.file(markerFile)
+
+    doFirst {
+        setArgs(listOf(mainClassesDirectory.get().asFile.absolutePath))
+    }
+    doLast {
+        val marker = markerFile.get().asFile
+        marker.parentFile.mkdirs()
+        marker.writeText("processed")
+    }
+}
+val postprocessJmhClasses = tasks.register<JavaExec>("postprocessJmhClasses") {
+    group = "build"
+    description = "Post-process compiled JMH classes using the ClassFile API"
+    val mainClassesDirectory = tasks.compileJava.flatMap { it.destinationDirectory }
+    val testClassesDirectory = tasks.compileTestJava.flatMap { it.destinationDirectory }
+    val jmhClassesDirectory = tasks.named<JavaCompile>(jmhSourceSet.compileJavaTaskName).flatMap { it.destinationDirectory }
+    val markerFile = layout.buildDirectory.file("markers/postprocessJmhClasses")
+
+    dependsOn(tasks.named(jmhSourceSet.compileJavaTaskName), tasks.named(classfileTools.classesTaskName))
+    classpath(classfileTools.runtimeClasspath, files(mainClassesDirectory, testClassesDirectory, jmhClassesDirectory))
+    mainClass.set("io.papermc.paper.bytecode.InvokeDynamicPostProcessor")
+    javaLauncher.set(project.javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    })
+
+    inputs.dir(mainClassesDirectory).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir(testClassesDirectory).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir(jmhClassesDirectory).withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.file(markerFile)
+
+    doFirst {
+        setArgs(listOf(jmhClassesDirectory.get().asFile.absolutePath))
+    }
+    doLast {
+        val marker = markerFile.get().asFile
+        marker.parentFile.mkdirs()
+        marker.writeText("processed")
+    }
+}
+
+tasks.compileJava {
+    // finalizedBy(postprocessMainClasses)
+}
+tasks.classes {
+    dependsOn(postprocessMainClasses)
+}
+tasks.named(jmhSourceSet.compileJavaTaskName) {
+    finalizedBy(postprocessJmhClasses)
+}
+tasks.named(jmhSourceSet.classesTaskName) {
+    dependsOn(postprocessJmhClasses)
+}
+
 fun TaskContainer.registerRunTask(
     name: String,
     block: JavaExec.() -> Unit
@@ -275,7 +358,7 @@ fun TaskContainer.registerRunTask(
         // TODO - JB runtime 25 has issues with spark rn
         // vendor.set(JvmVendorSpec.JETBRAINS)
     })
-    jvmArgs(/*"-XX:+AllowEnhancedClassRedefinition", */"--enable-native-access=ALL-UNNAMED")
+    jvmArgs(/*"-XX:+AllowEnhancedClassRedefinition", */"--enable-native-access=ALL-UNNAMED", "-XX:+UnlockDiagnosticVMOptions", "-XX:CompileCommand=option,io.papermc.paper.plugin.manager.PaperEventManager::callEvent,PrintInlining")
 
     if (rootProject.childProjects["test-plugin"] != null) {
         val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
