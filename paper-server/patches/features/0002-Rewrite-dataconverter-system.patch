@@ -1696,10 +1696,10 @@ index 0000000000000000000000000000000000000000..7e5eb3fd7e5c502f33fbf98589e293d4
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/converters/blockname/ConverterAbstractBlockRename.java b/ca/spottedleaf/dataconverter/minecraft/converters/blockname/ConverterAbstractBlockRename.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e45d49ea2299504a4d2a9a37279d68c924140471
+index 0000000000000000000000000000000000000000..0421fe013b98842485c92ac76c4bce5aebb8daf2
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/converters/blockname/ConverterAbstractBlockRename.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,68 @@
 +package ca.spottedleaf.dataconverter.minecraft.converters.blockname;
 +
 +import ca.spottedleaf.converter.DataConverter;
@@ -1720,7 +1720,11 @@ index 0000000000000000000000000000000000000000..e45d49ea2299504a4d2a9a37279d68c9
 +        ConverterAbstractStringValueTypeRename.register(version, subVersion, MCTypeRegistry.BLOCK_NAME, renamer);
 +        MCTypeRegistry.BLOCK_STATE.addStructureConverter(new DataConverter<>(version, subVersion) {
 +            @Override
-+            public MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
++            public Object convert(final Object input, final long sourceVersion, final long toVersion) {
++                if (!(input instanceof MapType data)) {
++                    return null;
++                }
++
 +                final String name = data.getString("Name");
 +                if (name != null) {
 +                    final String converted = renamer.apply(name);
@@ -9302,7 +9306,7 @@ index 0000000000000000000000000000000000000000..ec3dc7f62c67a9a9191a772c95203e2e
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/datatypes/MCTypeRegistry.java b/ca/spottedleaf/dataconverter/minecraft/datatypes/MCTypeRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4fa27561debc7fbf9128ebdd1e380a9ff0ee36b8
+index 0000000000000000000000000000000000000000..5f1665ec8029b57486674c68330cbf04e4f071b4
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/datatypes/MCTypeRegistry.java
 @@ -0,0 +1,418 @@
@@ -9331,7 +9335,7 @@ index 0000000000000000000000000000000000000000..4fa27561debc7fbf9128ebdd1e380a9f
 +    public static final MCDataType ENTITY_CHUNK        = new MCDataType("EntityChunk");
 +    public static final IDDataType TILE_ENTITY         = new IDDataType("TileEntity");
 +    public static final IDDataType ITEM_STACK          = new IDDataType("ItemStack");
-+    public static final MCDataType BLOCK_STATE         = new MCDataType("BlockState");
++    public static final DynamicDataType BLOCK_STATE    = new DynamicDataType("BlockState"); // map, or since 26.3 only the block name for default states
 +    public static final MCValueType FLAT_BLOCK_STATE   = new MCValueType("FlatBlockState");
 +    public static final MCDataType DATA_COMPONENTS     = new MCDataType("DataComponents");
 +    public static final MCDataType VILLAGER_TRADE      = new MCDataType("VillagerTrade");
@@ -11206,10 +11210,10 @@ index 0000000000000000000000000000000000000000..1652c2a36245a17de6fbd923d2dc1c18
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V1450.java b/ca/spottedleaf/dataconverter/minecraft/versions/V1450.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2ef238879a0e002563535dae48c54c9a498252bf
+index 0000000000000000000000000000000000000000..c55bf0d08f1068744981e3be5bec05ea72fbc574
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V1450.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,28 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
@@ -11225,7 +11229,11 @@ index 0000000000000000000000000000000000000000..2ef238879a0e002563535dae48c54c9a
 +    public static void register() {
 +        MCTypeRegistry.BLOCK_STATE.addStructureConverter(new DataConverter<>(VERSION) {
 +            @Override
-+            public MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
++            public Object convert(final Object input, final long sourceVersion, final long toVersion) {
++                if (!(input instanceof MapType data)) {
++                    return null;
++                }
++
 +                final MapType ret = HelperBlockFlatteningV1450.flattenNBT(data);
 +                return ret == data ? null : ret.copy(); // copy to avoid problems with later state datafixers
 +            }
@@ -15481,10 +15489,10 @@ index 0000000000000000000000000000000000000000..a2f0495c05e670d100cb90d526c1785a
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V2503.java b/ca/spottedleaf/dataconverter/minecraft/versions/V2503.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c4b37eba32c2ba4d08429a08564f808325ec7771
+index 0000000000000000000000000000000000000000..37fc65ddc016ba2dde50d0d559f1ea1b4054abba
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V2503.java
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,77 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
@@ -15531,7 +15539,11 @@ index 0000000000000000000000000000000000000000..c4b37eba32c2ba4d08429a08564f8083
 +    public static void register() {
 +        MCTypeRegistry.BLOCK_STATE.addStructureConverter(new DataConverter<>(VERSION) {
 +            @Override
-+            public MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
++            public Object convert(final Object input, final long sourceVersion, final long toVersion) {
++                if (!(input instanceof MapType data)) {
++                    return null;
++                }
++
 +                if (!WALL_BLOCKS.contains(data.getString("Name"))) {
 +                    return null;
 +                }
@@ -16423,10 +16435,10 @@ index 0000000000000000000000000000000000000000..b91bcf5e6b7963b1feeb78d811d6e71c
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V2518.java b/ca/spottedleaf/dataconverter/minecraft/versions/V2518.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ab1ac06d975ffd75225f9ac4ff7fb8700c6a3c59
+index 0000000000000000000000000000000000000000..0518f9beb2eeede60112e0848406bf4d17ad89f2
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V2518.java
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,69 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
@@ -16471,7 +16483,11 @@ index 0000000000000000000000000000000000000000..ab1ac06d975ffd75225f9ac4ff7fb870
 +
 +        MCTypeRegistry.BLOCK_STATE.addStructureConverter(new DataConverter<>(VERSION) {
 +            @Override
-+            public MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
++            public Object convert(final Object input, final long sourceVersion, final long toVersion) {
++                if (!(input instanceof MapType data)) {
++                    return null;
++                }
++
 +                if (!"minecraft:jigsaw".equals(data.getString("Name"))) {
 +                    return null;
 +                }
@@ -16777,10 +16793,10 @@ index 0000000000000000000000000000000000000000..2dbf050a5c4c681b7d2ea3d1cf434c99
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V2531.java b/ca/spottedleaf/dataconverter/minecraft/versions/V2531.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e2de69027f0cfe009cfcd3166e3067948af12ba9
+index 0000000000000000000000000000000000000000..c6de9d12bbe6cdd21adcbf02e4794790f5f3ddda
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V2531.java
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,67 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
@@ -16799,7 +16815,11 @@ index 0000000000000000000000000000000000000000..e2de69027f0cfe009cfcd3166e306794
 +    public static void register() {
 +        MCTypeRegistry.BLOCK_STATE.addStructureConverter(new DataConverter<>(VERSION) {
 +            @Override
-+            public MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
++            public Object convert(final Object input, final long sourceVersion, final long toVersion) {
++                if (!(input instanceof MapType data)) {
++                    return null;
++                }
++
 +                if (!"minecraft:redstone_wire".equals(data.getString("Name"))) {
 +                    return null;
 +                }
@@ -17752,10 +17772,10 @@ index 0000000000000000000000000000000000000000..ad6c4c4427fc17d7ad743115773cb48d
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V2679.java b/ca/spottedleaf/dataconverter/minecraft/versions/V2679.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0d983d852c917c661d3fd387f97b417ed4d45e43
+index 0000000000000000000000000000000000000000..7d401d0b9599c4f87bf44bcd333aec684cc8469b
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V2679.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,42 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
@@ -17770,7 +17790,11 @@ index 0000000000000000000000000000000000000000..0d983d852c917c661d3fd387f97b417e
 +    public static void register() {
 +        MCTypeRegistry.BLOCK_STATE.addStructureConverter(new DataConverter<>(VERSION) {
 +            @Override
-+            public MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
++            public Object convert(final Object input, final long sourceVersion, final long toVersion) {
++                if (!(input instanceof MapType data)) {
++                    return null;
++                }
++
 +                if (!"minecraft:cauldron".equals(data.getString("Name"))) {
 +                    return null;
 +                }
@@ -25578,10 +25602,10 @@ index 0000000000000000000000000000000000000000..49ea26401d66ebb2678b156e45636db2
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V4294.java b/ca/spottedleaf/dataconverter/minecraft/versions/V4294.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0c0d16b04ae74badbed164a9e208a9512d87273d
+index 0000000000000000000000000000000000000000..e72b08b22d3b20feb472996e855320721da12872
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V4294.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,42 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
@@ -25596,7 +25620,11 @@ index 0000000000000000000000000000000000000000..0c0d16b04ae74badbed164a9e208a951
 +    public static void register() {
 +        MCTypeRegistry.BLOCK_STATE.addStructureConverter(new DataConverter<>(VERSION) {
 +            @Override
-+            public MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
++            public Object convert(final Object input, final long sourceVersion, final long toVersion) {
++                if (!(input instanceof MapType data)) {
++                    return null;
++                }
++
 +                if (!"minecraft:creaking_heart".equals(data.getString("Name"))) {
 +                    return null;
 +                }
@@ -26139,10 +26167,10 @@ index 0000000000000000000000000000000000000000..1796655f07a569c3ac5c798eb06eeae1
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V4305.java b/ca/spottedleaf/dataconverter/minecraft/versions/V4305.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0f53294aa6778ed57e702a5132601e31daa4d9e7
+index 0000000000000000000000000000000000000000..4a660c3982e765a27999a2e73766c4e4c3365cb3
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V4305.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,42 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
@@ -26157,7 +26185,11 @@ index 0000000000000000000000000000000000000000..0f53294aa6778ed57e702a5132601e31
 +    public static void register() {
 +        MCTypeRegistry.BLOCK_STATE.addStructureConverter(new DataConverter<>(VERSION) {
 +            @Override
-+            public MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
++            public Object convert(final Object input, final long sourceVersion, final long toVersion) {
++                if (!(input instanceof MapType data)) {
++                    return null;
++                }
++
 +                if (!"minecraft:test_block".equals(data.getString("Name"))) {
 +                    return null;
 +                }
@@ -27996,10 +28028,10 @@ index 0000000000000000000000000000000000000000..eb2f1f913fbc02aa3e01f36d11ddf8fc
 +}
 diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V5006.java b/ca/spottedleaf/dataconverter/minecraft/versions/V5006.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..394d5dbe0d5ea90fbee81414a7028310eeb0233c
+index 0000000000000000000000000000000000000000..e3443c948c59bd1808667603642f9eb126e447be
 --- /dev/null
 +++ b/ca/spottedleaf/dataconverter/minecraft/versions/V5006.java
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,32 @@
 +package ca.spottedleaf.dataconverter.minecraft.versions;
 +
 +import ca.spottedleaf.converter.DataConverter;
@@ -28018,7 +28050,11 @@ index 0000000000000000000000000000000000000000..394d5dbe0d5ea90fbee81414a7028310
 +    public static void register() {
 +        MCTypeRegistry.BLOCK_STATE.addStructureConverter(new DataConverter<>(VERSION) {
 +            @Override
-+            public @Nullable MapType convert(final MapType data, final long sourceVersion, final long toVersion) {
++            public @Nullable Object convert(final Object input, final long sourceVersion, final long toVersion) {
++                if (!(input instanceof MapType data)) {
++                    return null;
++                }
++
 +                RenameHelper.renameSingle(data, "Name", "id");
 +                RenameHelper.renameSingle(data, "Properties", "properties");
 +                return null;
