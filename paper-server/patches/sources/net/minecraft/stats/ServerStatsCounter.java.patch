@@ -31,3 +31,25 @@
          super.setValue(player, stat, count);
          this.dirty.add(stat);
      }
+@@ -129,6 +_,21 @@
+         for (Stat<?> stat : this.getDirty()) {
+             statsToSend.put(stat, this.getValue(stat));
+         }
++
++        // Paper start - Call PlayerRequestStatisticsEvent
++        if (io.papermc.paper.event.player.PlayerRequestStatisticsEvent.getHandlerList().getRegisteredListeners().length > 0) {
++            io.papermc.paper.event.player.PlayerRequestStatisticsEvent event = new io.papermc.paper.event.player.PlayerRequestStatisticsEvent(
++                player.getBukkitEntity(),
++                statsToSend.object2IntEntrySet()
++                    .stream()
++                    .collect(Object2IntOpenHashMap::new, (statsToSend1, entry) -> statsToSend1.put(io.papermc.paper.statistic.PaperStatistic.getPaperStatistic(entry.getKey()), entry.getIntValue()), Object2IntOpenHashMap::putAll)
++            );
++            if (!event.callEvent()) {
++                return;
++            }
++            statsToSend = event.getStatisticMap().object2IntEntrySet().stream().collect(Object2IntOpenHashMap::new, (statsToSend1, entry) -> statsToSend1.put(io.papermc.paper.statistic.PaperStatistic.getNMSStatistic(entry.getKey()), entry.getIntValue()), Object2IntOpenHashMap::putAll);
++        }
++        // Paper end - Call PlayerRequestStatisticsEvent
+ 
+         player.connection.send(new ClientboundAwardStatsPacket(statsToSend));
+     }
