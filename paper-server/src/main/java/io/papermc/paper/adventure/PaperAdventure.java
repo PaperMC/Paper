@@ -1,5 +1,8 @@
 package io.papermc.paper.adventure;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.JavaOps;
 import io.netty.util.AttributeKey;
@@ -10,7 +13,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -221,16 +223,18 @@ public final class PaperAdventure {
             .anyMatch(t -> t.hasAnyTranslations().toBooleanOrElse(true));
     }
 
-    private static final Map<Locale, com.mojang.serialization.Codec<Component>> LOCALIZED_CODECS = new ConcurrentHashMap<>();
+    private static final LoadingCache<Locale, com.mojang.serialization.Codec<Component>> LOCALIZED_CODECS = CacheBuilder.newBuilder()
+        .maximumSize(256)
+        .build(CacheLoader.from(locale -> AdventureCodecs.COMPONENT_CODEC.xmap(
+            component -> component, // decode
+            component -> translated(component, locale) // encode
+        )));
 
     public static com.mojang.serialization.Codec<Component> localizedCodec(final @Nullable Locale l) {
         if (l == null) {
             return AdventureCodecs.COMPONENT_CODEC;
         }
-        return LOCALIZED_CODECS.computeIfAbsent(l, locale -> AdventureCodecs.COMPONENT_CODEC.xmap(
-            component -> component, // decode
-            component -> translated(component, locale) // encode
-        ));
+        return LOCALIZED_CODECS.getUnchecked(l);
     }
 
     public static String asPlain(final Component component, final Locale locale) {
