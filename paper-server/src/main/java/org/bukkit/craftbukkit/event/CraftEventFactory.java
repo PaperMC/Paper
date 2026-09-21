@@ -12,6 +12,7 @@ import io.papermc.paper.connection.PlayerConnection;
 import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.EntityIgniteEvent;
+import io.papermc.paper.event.entity.EntityReceiveGameEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
 import io.papermc.paper.event.player.PlayerToggleEntityAgeLockEvent;
@@ -28,6 +29,7 @@ import net.minecraft.Optionull;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
@@ -74,6 +76,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SignTextSlot;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.gamerules.GameRule;
 import net.minecraft.world.level.redstone.Redstone;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -97,6 +100,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftExplosionResult;
+import org.bukkit.craftbukkit.CraftGameEvent;
 import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftRaid;
@@ -163,6 +167,7 @@ import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
 import org.bukkit.event.block.BlockMultiPlaceEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.BlockReceiveGameEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.block.BlockShearEntityEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
@@ -567,7 +572,7 @@ public class CraftEventFactory {
     public static EntityPlaceEvent callEntityPlaceEvent(Level level, BlockPos clickedPos, Direction clickedFace, net.minecraft.world.entity.player.Player player, Entity entity, InteractionHand hand) {
         Player cplayer = (player == null) ? null : (Player) player.getBukkitEntity();
         org.bukkit.block.Block clickedBlock = CraftBlock.at(level, clickedPos);
-        org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(clickedFace);
+        org.bukkit.block.BlockFace blockFace = CraftBlock.notchToBlockFace(clickedFace);
 
         EntityPlaceEvent event = new EntityPlaceEvent(entity.getBukkitEntity(), cplayer, clickedBlock, blockFace, CraftEquipmentSlot.getHand(hand));
         entity.level().getCraftServer().getPluginManager().callEvent(event);
@@ -2425,5 +2430,23 @@ public class CraftEventFactory {
             return PrimedTnt.NO_FUSE;
         }
         return event.getFuseTime();
+    }
+
+    public static BlockReceiveGameEvent createReceiveGameEvent(final ServerLevel level, final Vec3 position, final Holder<GameEvent> event, final GameEvent.Context context) {
+        return new BlockReceiveGameEvent(
+            CraftBlock.at(level, BlockPos.containing(position)),
+            CraftGameEvent.minecraftHolderToBukkit(event),
+            Optionull.map(context.sourceEntity(), Entity::getBukkitEntity),
+            Optionull.map(context.affectedState(), net.minecraft.world.level.block.state.BlockState::asBlockData)
+        );
+    }
+
+    public static EntityReceiveGameEvent createReceiveGameEvent(final Entity target, final Holder<GameEvent> event, final GameEvent.Context context) {
+        return new EntityReceiveGameEvent(
+            target.getBukkitEntity(),
+            CraftGameEvent.minecraftHolderToBukkit(event),
+            Optionull.map(context.sourceEntity(), Entity::getBukkitEntity),
+            Optionull.map(context.affectedState(), net.minecraft.world.level.block.state.BlockState::asBlockData)
+        );
     }
 }
