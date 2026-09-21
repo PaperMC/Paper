@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -52,17 +_,38 @@
+@@ -52,17 +_,37 @@
      private BlockPos delayedDestroyPos = BlockPos.ZERO;
      private int delayedTickStart;
      private int lastSentState = -1;
@@ -10,7 +10,6 @@
      public ServerPlayerGameMode(final ServerPlayer player) {
          this.player = player;
          this.level = player.level();
-+        this.gameTicks = (int) this.level.getLagCompensationTick(); // Paper - lag compensate eating; start in the same clock as tick()
      }
  
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
@@ -58,7 +57,7 @@
      }
  
      protected void setGameModeForPlayer(final GameType gameModeForPlayer, final @Nullable GameType previousGameModeForPlayer) {
-@@ -111,20 +_,27 @@
+@@ -111,10 +_,11 @@
      }
  
      public void tick() {
@@ -72,11 +71,8 @@
 +            if (blockState == null || blockState.isAir()) { // Paper - Don't allow digging into unloaded chunks
                  this.hasDelayedDestroy = false;
              } else {
--                float destroyProgress = this.incrementDestroyProgress(blockState, this.delayedDestroyPos, this.delayedTickStart);
-+                float destroyProgress = this.incrementDestroyProgress(blockState, this.delayedDestroyPos, this.gameTicks - this.delayedTickStart); // Paper - fix delayed destroy using the start tick as ticks spent destroying
-                 if (destroyProgress >= 1.0F) {
-                     this.hasDelayedDestroy = false;
-                     this.destroyBlock(this.delayedDestroyPos);
+                 float destroyProgress = this.incrementDestroyProgress(blockState, this.delayedDestroyPos, this.delayedTickStart);
+@@ -124,7 +_,13 @@
                  }
              }
          } else if (this.isDestroyingBlock) {
