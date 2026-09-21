@@ -16,42 +16,42 @@ public record PaperAdvancementDisplay(DisplayInfo handle) implements Advancement
 
     @Override
     public @NotNull Frame frame() {
-        return asPaperFrame(this.handle.getType());
+        return asPaperFrame(this.handle.type());
     }
 
     @Override
     public @NotNull Component title() {
-        return PaperAdventure.asAdventure(this.handle.getTitle());
+        return PaperAdventure.asAdventure(this.handle.title());
     }
 
     @Override
     public @NotNull Component description() {
-        return PaperAdventure.asAdventure(this.handle.getDescription());
+        return PaperAdventure.asAdventure(this.handle.description());
     }
 
     @Override
     public @NotNull ItemStack icon() {
-        return CraftItemStack.asBukkitCopy(this.handle.getIcon());
+        return CraftItemStack.asBukkitCopy(this.handle.icon());
     }
 
     @Override
     public boolean doesShowToast() {
-        return this.handle.shouldShowToast();
+        return this.handle.showToast();
     }
 
     @Override
     public boolean doesAnnounceToChat() {
-        return this.handle.shouldAnnounceChat();
+        return this.handle.announceToChat();
     }
 
     @Override
     public boolean isHidden() {
-        return this.handle.isHidden();
+        return this.handle.hidden();
     }
 
     @Override
     public @Nullable NamespacedKey backgroundPath() {
-        return this.handle.getBackground().map(asset -> CraftNamespacedKey.fromMinecraft(asset.id())).orElse(null);
+        return this.handle.background().map(asset -> CraftNamespacedKey.fromMinecraft(asset.id())).orElse(null);
     }
 
     @Override

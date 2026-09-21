@@ -28,7 +28,7 @@ public class ChunkPacketBlockController {
         return false;
     }
 
-    public ChunkPacketInfo<BlockState> getChunkPacketInfo(ClientboundLevelChunkWithLightPacket chunkPacket, LevelChunk chunk) {
+    public ChunkPacketInfo<BlockState> getChunkPacketInfo(LevelChunk chunk) {
         return null;
     }
 

@@ -157,7 +157,7 @@ public final class CraftItemFactory implements ItemFactory {
             if (reader.canRead()) {
                 throw new IllegalArgumentException("Trailing input found when parsing ItemStack: " + reader.getRemaining());
             }
-            return CraftItemStack.asCraftMirror(in.createItemStack(1));
+            return CraftItemStack.asBukkitMirror(in.createItemStack(1));
         } catch (CommandSyntaxException ex) {
             throw new IllegalArgumentException("Could not parse ItemStack: " + input, ex);
         }
@@ -194,11 +194,9 @@ public final class CraftItemFactory implements ItemFactory {
     private static ItemStack enchantItem(RandomSource source, ItemStack itemStack, int level, boolean allowTreasures) {
         Preconditions.checkArgument(itemStack != null, "ItemStack must not be null");
         Preconditions.checkArgument(!itemStack.getType().isAir(), "ItemStack must not be air");
-        itemStack = CraftItemStack.asCraftCopy(itemStack);
-        CraftItemStack craft = (CraftItemStack) itemStack;
         RegistryAccess registry = CraftRegistry.getMinecraftRegistry();
-        Optional<HolderSet.Named<Enchantment>> optional = (allowTreasures) ? Optional.empty() : registry.lookupOrThrow(Registries.ENCHANTMENT).get(EnchantmentTags.IN_ENCHANTING_TABLE);
-        return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(source, craft.handle, level, registry, optional));
+        Optional<HolderSet.Named<Enchantment>> tag = allowTreasures ? Optional.empty() : registry.lookupOrThrow(Registries.ENCHANTMENT).get(EnchantmentTags.IN_ENCHANTING_TABLE);
+        return CraftItemStack.asBukkitMirror(EnchantmentHelper.enchantItem(source, CraftItemStack.asNMSCopy(itemStack), level, registry, tag));
     }
 
     @Override
@@ -221,7 +219,7 @@ public final class CraftItemFactory implements ItemFactory {
     // TODO: DO WE NEED THIS?
     @Override
     public ItemStack ensureServerConversions(ItemStack item) {
-        return CraftItemStack.asCraftMirror(CraftItemStack.asNMSCopy(item));
+        return CraftItemStack.asBukkitMirror(CraftItemStack.asNMSCopy(item));
     }
     // Paper end - ensure server conversions API
 
@@ -290,7 +288,7 @@ public final class CraftItemFactory implements ItemFactory {
         String typeId = type.getKey().toString();
         net.minecraft.resources.Identifier typeKey = Identifier.parse(typeId);
         net.minecraft.world.entity.EntityType<?> nmsType = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(typeKey);
-        return net.minecraft.world.item.SpawnEggItem.byId(nmsType).map(net.minecraft.world.item.ItemStack::new).map(net.minecraft.world.item.ItemStack::asBukkitMirror).orElse(null);
+        return net.minecraft.world.item.SpawnEggItem.byId(nmsType).map(net.minecraft.world.item.ItemStack::new).map(CraftItemStack::asBukkitMirror).orElse(null);
     }
     // Paper end - old getSpawnEgg API
     // Paper start - enchantWithLevels API
@@ -348,7 +346,7 @@ public final class CraftItemFactory implements ItemFactory {
             registryAccess,
             possibleEnchantments
         );
-        return CraftItemStack.asCraftMirror(enchanted);
+        return CraftItemStack.asBukkitMirror(enchanted);
     }
     // Paper end - enchantWithLevels API
 }

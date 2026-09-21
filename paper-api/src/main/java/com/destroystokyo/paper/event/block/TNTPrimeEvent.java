@@ -1,6 +1,7 @@
 package com.destroystokyo.paper.event.block;
 
 import org.bukkit.Material;
+import org.bukkit.Warning;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
@@ -23,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
  * @deprecated use {@link org.bukkit.event.block.TNTPrimeEvent}
  */
 @Deprecated(forRemoval = true, since = "1.19.4")
+@Warning(propagate = false)
 public class TNTPrimeEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

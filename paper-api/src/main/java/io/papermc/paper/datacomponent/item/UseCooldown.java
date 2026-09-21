@@ -5,14 +5,12 @@ import net.kyori.adventure.key.Key;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Holds the contents of cooldown information when an item is used.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#USE_COOLDOWN
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface UseCooldown {
 

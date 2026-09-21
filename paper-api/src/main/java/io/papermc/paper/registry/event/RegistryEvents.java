@@ -1,5 +1,6 @@
 package io.papermc.paper.registry.event;
 
+import io.papermc.paper.block.pot.PotPatternType;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
@@ -7,6 +8,7 @@ import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
 import io.papermc.paper.registry.data.CowVariantRegistryEntry;
 import io.papermc.paper.registry.data.DamageTypeRegistryEntry;
+import io.papermc.paper.registry.data.DecoratedPotPatternRegistryEntry;
 import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.FrogVariantRegistryEntry;
 import io.papermc.paper.registry.data.GameEventRegistryEntry;
@@ -55,6 +57,7 @@ public final class RegistryEvents {
     public static final RegistryEventProvider<Enchantment, EnchantmentRegistryEntry.Builder> ENCHANTMENT = create(RegistryKey.ENCHANTMENT);
     public static final RegistryEventProvider<JukeboxSong, JukeboxSongRegistryEntry.Builder> JUKEBOX_SONG = create(RegistryKey.JUKEBOX_SONG);
     public static final RegistryEventProvider<PatternType, BannerPatternRegistryEntry.Builder> BANNER_PATTERN = create(RegistryKey.BANNER_PATTERN);
+    public static final RegistryEventProvider<PotPatternType, DecoratedPotPatternRegistryEntry.Builder> DECORATED_POT_PATTERN = create(RegistryKey.DECORATED_POT_PATTERN);
     public static final RegistryEventProvider<Art, PaintingVariantRegistryEntry.Builder> PAINTING_VARIANT = create(RegistryKey.PAINTING_VARIANT);
     public static final RegistryEventProvider<MusicInstrument, InstrumentRegistryEntry.Builder> INSTRUMENT = create(RegistryKey.INSTRUMENT);
     public static final RegistryEventProvider<Cat.Type, CatTypeRegistryEntry.Builder> CAT_VARIANT = create(RegistryKey.CAT_VARIANT);

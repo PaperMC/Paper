@@ -11,10 +11,11 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown when a player picks an item up from the ground
- * @deprecated {@link EntityPickupItemEvent}
+ *
+ * @deprecated use {@link EntityPickupItemEvent}
  */
 @Deprecated(since = "1.12")
-@Warning
+@Warning(propagate = false)
 public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

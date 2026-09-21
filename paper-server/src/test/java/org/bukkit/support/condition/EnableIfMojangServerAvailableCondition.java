@@ -1,6 +1,6 @@
 package org.bukkit.support.condition;
 
-import com.mojang.authlib.yggdrasil.YggdrasilEnvironment;
+import com.mojang.authlib.services.MinecraftServicesEnvironment;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
@@ -14,7 +14,7 @@ public class EnableIfMojangServerAvailableCondition implements ExecutionConditio
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext extensionContext) {
         HttpURLConnection url = null;
         try {
-            url = (HttpURLConnection) new URI(YggdrasilEnvironment.PROD.getEnvironment().servicesHost()).toURL().openConnection();
+            url = (HttpURLConnection) new URI(MinecraftServicesEnvironment.PROD.getEnvironment().discoveryUrl()).toURL().openConnection();
             url.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(1));
             url.connect();
 

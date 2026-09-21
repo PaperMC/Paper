@@ -4,6 +4,7 @@ import java.util.List;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 public interface CrossbowMeta extends ItemMeta {
 
@@ -20,7 +21,7 @@ public interface CrossbowMeta extends ItemMeta {
      * @return charged projectiles
      */
     @NotNull
-    List<ItemStack> getChargedProjectiles();
+    @Unmodifiable List<ItemStack> getChargedProjectiles();
 
     /**
      * Sets the projectiles charged on this item.

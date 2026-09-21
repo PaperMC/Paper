@@ -1,12 +1,12 @@
 package io.papermc.paper.event.entity;
 
+import java.util.List;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import java.util.List;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when two entities collide with each other.
@@ -15,6 +15,7 @@ import java.util.List;
  * Note that even if cancelled, the client may still run its own collision unless
  * disabled via player teams.
  */
+@NullMarked
 public class EntityCollideWithEntityEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -22,8 +23,8 @@ public class EntityCollideWithEntityEvent extends Event implements Cancellable {
     private final List<Entity> entities;
 
     @ApiStatus.Internal
-    public EntityCollideWithEntityEvent(@NotNull Entity entity1, @NotNull Entity entity2) {
-        entities = List.of(entity1, entity2);
+    public EntityCollideWithEntityEvent(final Entity entity1, final Entity entity2) {
+        this.entities = List.of(entity1, entity2);
     }
 
     /**
@@ -31,23 +32,22 @@ public class EntityCollideWithEntityEvent extends Event implements Cancellable {
      *
      * @return entities that are involved in this event
      */
-    public @NotNull List<Entity> getEntities() {
-        return entities;
+    public List<Entity> getEntities() {
+        return this.entities;
     }
 
     @Override
-    public @NotNull HandlerList getHandlers() {
+    public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override

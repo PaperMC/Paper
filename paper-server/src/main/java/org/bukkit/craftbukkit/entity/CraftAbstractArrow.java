@@ -148,8 +148,8 @@ public abstract class CraftAbstractArrow extends AbstractProjectile implements A
 
     // Paper start
     @Override
-    public CraftItemStack getItemStack() {
-        return CraftItemStack.asCraftMirror(this.getHandle().getPickupItem());
+    public ItemStack getItemStack() {
+        return CraftItemStack.asBukkitMirror(this.getHandle().getPickupItem());
     }
 
     @Override

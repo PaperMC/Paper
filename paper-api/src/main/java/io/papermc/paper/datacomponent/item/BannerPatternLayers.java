@@ -6,13 +6,11 @@ import org.bukkit.block.banner.Pattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Holds the layers of patterns on a banner.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BANNER_PATTERNS
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface BannerPatternLayers {
 
