@@ -3,6 +3,7 @@ package io.papermc.paper.entity;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.SequencedCollection;
 import net.kyori.adventure.key.Key;
 import net.minecraft.resources.Identifier;
@@ -23,7 +24,7 @@ public final class PaperPlayerPostEffects implements PlayerPostEffects {
     }
 
     @Override
-    public SequencedCollection<Key> values() {
+    public List<Key> values() {
         return this.getHandle().getPostEffects().stream().map(PaperAdventure::asAdventure).toList();
     }
 

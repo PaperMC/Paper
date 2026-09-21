@@ -1,5 +1,6 @@
 package io.papermc.paper.entity;
 
+import java.util.List;
 import java.util.SequencedCollection;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.Unmodifiable;
@@ -18,7 +19,7 @@ public interface PlayerPostEffects {
      * @return an unmodifiable list of post-effects
      */
     @Unmodifiable
-    SequencedCollection<Key> values();
+    List<Key> values();
 
     /**
      * Sets the list of post-effects that are currently applied to the player.
