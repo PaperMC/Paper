@@ -1,6 +1,7 @@
 package io.papermc.paper.event.entity;
 
 import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -16,7 +17,7 @@ import org.jspecify.annotations.NullMarked;
 public class EntityPotentSulfurLaunchEvent extends EntityEvent implements Cancellable {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final Location sulfurLocation;
+    private final Block sulfurBlock;
     private final Location sourceLocation;
 
     private Vector launchVelocity;
@@ -25,21 +26,21 @@ public class EntityPotentSulfurLaunchEvent extends EntityEvent implements Cancel
     @ApiStatus.Internal
     public EntityPotentSulfurLaunchEvent(
         Entity entity,
-        Location sulfurLocation,
+        Block sulfurBlock,
         Location sourceLocation,
         Vector launchVelocity
     ) {
         super(entity);
-        this.sulfurLocation = sulfurLocation;
+        this.sulfurBlock = sulfurBlock;
         this.sourceLocation = sourceLocation;
         this.launchVelocity = launchVelocity;
     }
 
     /**
-     * Gets the location of the Potent Sulfur block.
+     * Gets the Potent Sulfur block.
      */
-    public Location getSulfurLocation() {
-        return this.sulfurLocation.clone();
+    public Block getSulfurBlock() {
+        return this.sulfurBlock;
     }
 
     /**
