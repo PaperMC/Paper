@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 08:55:32 -0700
+Subject: [PATCH] fixup! Moonrise optimisation patches
+
+
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
+index 2aa7a2bb7adcd0ed53f2538368f890b75b114ecf..bbba1766ed9da671022c467a45f7de479fb6abb4 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
+@@ -375,7 +375,7 @@ public final class ChunkTaskScheduler {
+             throw new IllegalArgumentException("Cannot wait for INACCESSIBLE status");
+         }
+ 
+-        final int minLevel = 33 - (toStatus.ordinal() - 1);
++        final int minLevel = ChunkLevel.byStatus(toStatus);
+         final Long chunkReference = addTicket ? getNextChunkLoadId() : null;
+         final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
+ 
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
+index 9a9a599ef178f851ee5c783631a724013a693586..7a0006f9b56d1e43b06f9f7452e1b5bb0ec53e72 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
+@@ -1703,12 +1703,23 @@ public final class NewChunkHolder {
+                 : null;
+     }
+ 
++    public static final ThreadLocal<Boolean> DO_NOT_COPY_SAVED_DATA = ThreadLocal.withInitial(() -> {
++        return Boolean.FALSE;
++    });
++
+     private boolean saveChunk(final ChunkAccess chunk, final boolean unloading, final Completable<CompoundTag>[] chunkSave) {
+         if (!chunk.isUnsaved()) {
+             return false;
+         }
+         try {
+-            final SerializableChunkData chunkData = SerializableChunkData.copyOf(this.world, chunk);
++            final SerializableChunkData chunkData;
++
++            DO_NOT_COPY_SAVED_DATA.set(Boolean.valueOf(unloading));
++            try {
++                chunkData = SerializableChunkData.copyOf(this.world, chunk);
++            } finally {
++                DO_NOT_COPY_SAVED_DATA.set(Boolean.FALSE);
++            }
+             PlatformHooks.get().chunkSyncSave(this.world, chunk, chunkData);
+ 
+             chunk.tryMarkSaved();
+diff --git a/ca/spottedleaf/moonrise/patches/starlight/light/SWMRNibbleArray.java b/ca/spottedleaf/moonrise/patches/starlight/light/SWMRNibbleArray.java
+index 5c7b3804cdbcb0a873a0d195325c2658760a8914..240416aba0ad4649e1db401aff2565f972f5ca11 100644
+--- a/ca/spottedleaf/moonrise/patches/starlight/light/SWMRNibbleArray.java
++++ b/ca/spottedleaf/moonrise/patches/starlight/light/SWMRNibbleArray.java
+@@ -132,6 +132,10 @@ public final class SWMRNibbleArray {
+     }
+ 
+     public SaveState getSaveState() {
++        return this.getSaveState(true);
++    }
++
++    public SaveState getSaveState(final boolean copy) {
+         synchronized (this) {
+             final int state = this.stateVisible;
+             final byte[] data = this.storageVisible;
+@@ -145,7 +149,7 @@ public final class SWMRNibbleArray {
+             if (zero) {
+                 return state == INIT_STATE_INIT ? new SaveState(null, INIT_STATE_UNINIT) : null;
+             } else {
+-                return new SaveState(data.clone(), state);
++                return new SaveState(copy ? data.clone() : data, state);
+             }
+         }
+     }
+diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+index 3781b2707163357bae5f5482694c94a927b54d58..3fef98e8c3c9908c6f05ded33596cbcb18996c3d 100644
+--- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
++++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+@@ -444,6 +444,8 @@ public record SerializableChunkData(
+         final int maxLightSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMaxLightSection(level);
+         final int minBlockSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(level);
+ 
++        final boolean copy = !ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder.DO_NOT_COPY_SAVED_DATA.get().booleanValue();
++
+         final LevelChunkSection[] chunkSections = chunk.getSections();
+         final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] blockNibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getBlockNibbles();
+         final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] skyNibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getSkyNibbles();
+@@ -452,7 +454,7 @@ public record SerializableChunkData(
+             final int lightSectionIdx = lightSection - minLightSection;
+             final int blockSectionIdx = lightSection - minBlockSection;
+ 
+-            final LevelChunkSection chunkSection = (blockSectionIdx >= 0 && blockSectionIdx < chunkSections.length) ? chunkSections[blockSectionIdx].copy() : null;
++            final LevelChunkSection chunkSection = (blockSectionIdx >= 0 && blockSectionIdx < chunkSections.length) ? (copy ? chunkSections[blockSectionIdx].copy() : chunkSections[blockSectionIdx]) : null;
+             final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray.SaveState blockNibble = blockNibbles[lightSectionIdx].getSaveState();
+             final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray.SaveState skyNibble = skyNibbles[lightSectionIdx].getSaveState();
+ 
