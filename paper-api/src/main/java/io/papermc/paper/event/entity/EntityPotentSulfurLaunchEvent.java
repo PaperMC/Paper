@@ -3,7 +3,6 @@ package io.papermc.paper.event.entity;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.util.Vector;
@@ -14,14 +13,13 @@ import org.jspecify.annotations.NullMarked;
  * Called when an entity is launched upward by a Potent Sulfur geyser.
  */
 @NullMarked
-public class EntityPotentSulfurLaunchEvent extends EntityEvent implements Cancellable {
+public class EntityPotentSulfurLaunchEvent extends EntityEvent {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Block sulfurBlock;
     private final Location sourceLocation;
 
     private Vector launchVelocity;
-    private boolean cancelled;
 
     @ApiStatus.Internal
     public EntityPotentSulfurLaunchEvent(
@@ -62,16 +60,6 @@ public class EntityPotentSulfurLaunchEvent extends EntityEvent implements Cancel
      */
     public void setLaunchVelocity(Vector launchVelocity) {
         this.launchVelocity = launchVelocity.clone();
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancelled) {
-        this.cancelled = cancelled;
     }
 
     @Override
