@@ -98,4 +98,4 @@ Special Thanks To:
 All our sponsors!  
 [![Sponsor Image](https://raw.githubusercontent.com/PaperMC/papermc.io/data/sponsors.png)](https://papermc.io/sponsors)
 
-<img src="https://papermc.io/assets/misc/namespace-oss-badge.svg?project=paper" alt="CI powered by namespace badge" />
+[![CI powered by namespace badge](https://papermc.io/assets/misc/namespace-oss-badge.svg?project=paper)](https://namespace.so/github-actions/?utm_source=oss&utm_campaign=papermc)
