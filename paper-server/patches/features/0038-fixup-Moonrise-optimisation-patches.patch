@@ -1,0 +1,206 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 08:44:23 -0700
+Subject: [PATCH] fixup! Moonrise optimisation patches
+
+
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java b/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
+index 3bb9b58ee97464687e348e23b99159226415c267..775d93d35855e394e5eccf0ad80eca43b1ed9562 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
+@@ -790,6 +790,9 @@ public final class MoonriseRegionFileIO {
+             if (pendingWrite == null) {
+                 // need to add to waiters here, because the regionfile thread will use compute() to lock and check for cancellations
+                 if (!running.inProgressRead.addToAsyncWaiters(onComplete)) {
++                    if (!running.inProgressRead.written) {
++                        throw new IllegalStateException("In progress read is add-blocked but data is not written");
++                    }
+                     callbackInfo.data = running.inProgressRead.value;
+                     callbackInfo.throwable = running.inProgressRead.throwable;
+                     callbackInfo.completeNow = true;
+@@ -824,7 +827,8 @@ public final class MoonriseRegionFileIO {
+             ret.scheduleReadIO();
+         } else if (callbackInfo.completeNow) {
+             try {
+-                onComplete.accept(callbackInfo.data == null ? null : callbackInfo.data.copy(), callbackInfo.throwable);
++                final boolean copy = !(onComplete instanceof NoCopyNBTData);
++                onComplete.accept(callbackInfo.data == null ? null : (copy ? callbackInfo.data.copy() : callbackInfo.data), callbackInfo.throwable);
+             } catch (final Throwable thr) {
+                 LOGGER.error("Callback " + ConcurrentUtil.genericToString(onComplete) + " synchronously failed to handle chunk data for task " + ret.toString(), thr);
+             }
+@@ -1092,6 +1096,7 @@ public final class MoonriseRegionFileIO {
+                 // further synchronisation.
+             }
+ 
++            final boolean cancelledWrite;
+             if (canRead[0]) {
+                 RegionDataController.ReadData readData = null;
+                 Throwable throwable = null;
+@@ -1104,12 +1109,12 @@ public final class MoonriseRegionFileIO {
+                 }
+ 
+                 if (throwable != null) {
+-                    this.finishRead(null, throwable);
++                    cancelledWrite = this.finishRead(null, throwable);
+                 } else {
+                     switch (readData.result()) {
+                         case NO_DATA:
+                         case SYNC_READ: {
+-                            this.finishRead(readData.syncRead(), null);
++                            cancelledWrite = this.finishRead(readData.syncRead(), null);
+                             break;
+                         }
+                         case HAS_DATA: {
+@@ -1123,9 +1128,11 @@ public final class MoonriseRegionFileIO {
+                         }
+                     }
+                 }
++            } else {
++                cancelledWrite = this.tryAbortWrite();
+             }
+ 
+-            if (!this.tryAbortWrite()) {
++            if (!cancelledWrite) {
+                 this.scheduleWriteCompress();
+             }
+         }
+@@ -1159,14 +1166,45 @@ public final class MoonriseRegionFileIO {
+                 return;
+             }
+ 
+-            this.finishRead(compoundTag, throwable);
+-            if (!this.tryAbortWrite()) {
++            final boolean cancelledWrite = this.finishRead(compoundTag, throwable);
++            if (!cancelledWrite) {
+                 this.scheduleWriteCompress();
+             }
+         }
+ 
+-        private void finishRead(final CompoundTag compoundTag, final Throwable throwable) {
+-            this.inProgressRead.complete(this, compoundTag, throwable);
++        private boolean finishRead(final CompoundTag compoundTag, final Throwable throwable) {
++            final long chunkKey = CoordinateUtils.getChunkKey(this.chunkX, this.chunkZ);
++
++            final boolean[] canSingleComplete = new boolean[1];
++            final ChunkIOTask inMap = this.regionDataController.chunkTasks.compute(chunkKey, (final long keyInMap, final ChunkIOTask valueInMap) -> {
++                if (valueInMap == null) {
++                    throw new IllegalStateException("Read/write completed concurrently, expected this task: " + ChunkIOTask.this.toString() + ", report this!");
++                }
++                if (valueInMap != ChunkIOTask.this) {
++                    throw new IllegalStateException("Chunk task mismatch, expected this task: " + ChunkIOTask.this.toString() + ", got: " + valueInMap.toString() + ", report this!");
++                }
++
++                canSingleComplete[0] = valueInMap.inProgressRead.hasAtMostOneCallback();
++
++                if (valueInMap.inProgressWrite != null) {
++                    return valueInMap;
++                }
++
++                return null;
++            });
++
++            if (canSingleComplete[0]) {
++                this.inProgressRead.completeOne(this, compoundTag, throwable);
++            } else {
++                this.inProgressRead.complete(this, compoundTag, throwable);
++            }
++
++            if (inMap == null) {
++                this.regionDataController.endTask(this);
++                return true; // set the task value to null, indicating we're done
++            }
++            // else: inProgressWrite is present, indicating we need to write a value
++            return false;
+         }
+ 
+         public void scheduleWriteCompress() {
+@@ -1180,7 +1218,7 @@ public final class MoonriseRegionFileIO {
+                 this.currentTask = task;
+             }
+ 
+-            inProgressWrite.addToWaiters(this, (final CompoundTag data, final Throwable throwable) -> {
++            inProgressWrite.addToWaiters(this, (BiConsumer<CompoundTag, Throwable> & NoCopyNBTData) (final CompoundTag data, final Throwable throwable) -> {
+                 task.queue();
+             });
+         }
+@@ -1330,6 +1368,7 @@ public final class MoonriseRegionFileIO {
+ 
+             private static final Logger LOGGER = LoggerFactory.getLogger(InProgressRead.class);
+ 
++            private boolean written;
+             private CompoundTag value;
+             private Throwable throwable;
+             private final MultiThreadedQueue<BiConsumer<CompoundTag, Throwable>> callbacks = new MultiThreadedQueue<>();
+@@ -1346,17 +1385,44 @@ public final class MoonriseRegionFileIO {
+                 return this.callbacks.remove(callback);
+             }
+ 
++            public boolean hasAtMostOneCallback() {
++                return this.callbacks.size() <= 1;
++            }
++
++            public void completeOne(final ChunkIOTask task, final CompoundTag value, final Throwable throwable) {
++                // since the task is either cancelled (removed) or has an in-progress write,
++                // we can guarantee that the read data is only used by one consumer - eliminating
++                // the need to copy
++
++                this.callbacks.preventAdds();
++
++                final BiConsumer<CompoundTag, Throwable> consumer = this.callbacks.poll();
++                if (consumer != null) {
++                    this.completeConsumer(task, consumer, value, throwable);
++
++                    if (!this.callbacks.isEmpty()) {
++                        throw new IllegalStateException("Expected only one callback");
++                    }
++                } // else: add blocked, we are done here
++            }
++
++            private void completeConsumer(final ChunkIOTask task, final BiConsumer<CompoundTag, Throwable> consumer, final CompoundTag value, final Throwable throwable) {
++                try {
++                    consumer.accept(value, throwable);
++                } catch (final Throwable thr) {
++                    LOGGER.error("Callback " + ConcurrentUtil.genericToString(consumer) + " failed to handle chunk data (read) for task " + task.toString(), thr);
++                }
++            }
++
+             public void complete(final ChunkIOTask task, final CompoundTag value, final Throwable throwable) {
+                 this.value = value;
+                 this.throwable = throwable;
++                this.written = true;
+ 
+                 BiConsumer<CompoundTag, Throwable> consumer;
+                 while ((consumer = this.callbacks.pollOrBlockAdds()) != null) {
+-                    try {
+-                        consumer.accept(value == null ? null : value.copy(), throwable);
+-                    } catch (final Throwable thr) {
+-                        LOGGER.error("Callback " + ConcurrentUtil.genericToString(consumer) + " failed to handle chunk data (read) for task " + task.toString(), thr);
+-                    }
++                    final boolean copy = !(consumer instanceof NoCopyNBTData);
++                    this.completeConsumer(task, consumer, value == null ? null : (copy ? value.copy() : value), throwable);
+                 }
+             }
+         }
+@@ -1398,7 +1464,8 @@ public final class MoonriseRegionFileIO {
+ 
+             private void syncAccept(final ChunkIOTask task, final BiConsumer<CompoundTag, Throwable> consumer, final CompoundTag value, final Throwable throwable) {
+                 try {
+-                    consumer.accept(value == null ? null : value.copy(), throwable);
++                    final boolean copy = !(consumer instanceof NoCopyNBTData);
++                    consumer.accept(value == null ? null : (copy ? value.copy() : value), throwable);
+                 } catch (final Throwable thr) {
+                     LOGGER.error("Callback " + ConcurrentUtil.genericToString(consumer) + " failed to handle chunk data (write) for task " + task.toString(), thr);
+                 }
+@@ -1423,6 +1490,12 @@ public final class MoonriseRegionFileIO {
+         }
+     }
+ 
++    /**
++     * Use on callbacks indicating that the NBT data input is never modified. The callback is invoked
++     * with uncopied data.
++     */
++    public static interface NoCopyNBTData {}
++
+     public static abstract class RegionDataController {
+ 
+         public final RegionFileType type;
