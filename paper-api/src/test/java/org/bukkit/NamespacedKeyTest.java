@@ -37,20 +37,13 @@ public class NamespacedKeyTest {
     @Test
     public void testInvalidNamespace() {
         assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("minecraft/test", "foo").toString());
-    }
-
-    @Test
-    public void testInvalidNamespaceCasing() {
         assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("Minecraft", "foo").toString());
-    }
-
-    @Test
-    public void testInvalidKeyCasing() {
-        assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("minecraft", "Foo").toString());
+        assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("..", "foo").toString());
     }
 
     @Test
     public void testInvalidKey() {
+        assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("minecraft", "Foo").toString());
         assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("minecraft", "foo!").toString());
     }
 

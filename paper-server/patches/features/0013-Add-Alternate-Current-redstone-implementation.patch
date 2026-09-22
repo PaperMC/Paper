@@ -17,7 +17,7 @@ cannot comment on how the two compare in that aspect.
 
 Alternate Current needs the following modifications:
 * Level/ServerLevel: Each level has its own 'wire handler' that handles redstone dust power changes.
-* RedStoneWireBlock: Replace calls to vanilla's or Eigencraft's methods for handling power changes with calls to
+* RedstoneWireBlock: Replace calls to vanilla's or Eigencraft's methods for handling power changes with calls to
 Alternate Current's wire handler.
 
 diff --git a/alternate/current/wire/LevelHelper.java b/alternate/current/wire/LevelHelper.java
@@ -2194,7 +2194,7 @@ index 0000000000000000000000000000000000000000..259b301b2c8b64cb7974a235afb260e0
 +}
 diff --git a/alternate/current/wire/WireNode.java b/alternate/current/wire/WireNode.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..33cd90c30c22200a4e1ae64f40a0bf7864546b33
+index 0000000000000000000000000000000000000000..505b5e39d0b4cf2a56c1c720f0c9ab017522dc4f
 --- /dev/null
 +++ b/alternate/current/wire/WireNode.java
 @@ -0,0 +1,122 @@
@@ -2205,7 +2205,7 @@ index 0000000000000000000000000000000000000000..33cd90c30c22200a4e1ae64f40a0bf78
 +import net.minecraft.util.Mth;
 +import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.block.Blocks;
-+import net.minecraft.world.level.block.RedStoneWireBlock;
++import net.minecraft.world.level.block.RedstoneWireBlock;
 +import net.minecraft.world.level.block.state.BlockState;
 +import net.minecraft.world.level.redstone.Redstone;
 +
@@ -2254,7 +2254,7 @@ index 0000000000000000000000000000000000000000..33cd90c30c22200a4e1ae64f40a0bf78
 +
 +        this.connections = new WireConnectionManager(this);
 +
-+        this.virtualPower = this.currentPower = this.state.getValue(RedStoneWireBlock.POWER);
++        this.virtualPower = this.currentPower = this.state.getValue(RedstoneWireBlock.POWER);
 +        this.priority = priority();
 +    }
 +
@@ -2315,16 +2315,16 @@ index 0000000000000000000000000000000000000000..33cd90c30c22200a4e1ae64f40a0bf78
 +        }
 +
 +        currentPower = LevelHelper.doRedstoneEvent(level, pos, currentPower, Mth.clamp(virtualPower, Redstone.SIGNAL_MIN, Redstone.SIGNAL_MAX));
-+        state = state.setValue(RedStoneWireBlock.POWER, currentPower);
++        state = state.setValue(RedstoneWireBlock.POWER, currentPower);
 +
 +        return LevelHelper.setWireState(level, pos, state, added);
 +    }
 +}
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 10696186f7776f21a9fbcc49224d05ea2962a93a..3112f9d9788b77dca319a05c779972fd073bda61 100644
+index 7fa69d76bf2c802b538a21af40898b8abb79629e..d9daa3ea8c4dc21bbe0d0ea9f0ece3f6c6777ba4 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -236,6 +236,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -238,6 +238,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
      public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
      private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
      public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
@@ -2332,7 +2332,7 @@ index 10696186f7776f21a9fbcc49224d05ea2962a93a..3112f9d9788b77dca319a05c779972fd
  
      @Override
      public @Nullable LevelChunk getChunkIfLoaded(int x, int z) {
-@@ -2784,6 +2785,13 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -3040,6 +3041,13 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
          return this.debugSynchronizers;
      }
  
@@ -2347,10 +2347,10 @@ index 10696186f7776f21a9fbcc49224d05ea2962a93a..3112f9d9788b77dca319a05c779972fd
          return toLevel.dimension() != Level.NETHER || this.getGameRules().get(GameRules.ALLOW_ENTERING_NETHER_USING_PORTALS);
      }
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index f4386116d38e02f8feb3e8ec3f98af5ed8d0b466..d42f0b85b8bee558deebe36043dc32ef80356f5a 100644
+index efcf399ced67201525ea6e6b3bd46b93b7e1823d..a1da101177a5a4fb2b4ba5e34be165daf4d147fb 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -2161,6 +2161,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -2169,6 +2169,17 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          return this.palettedContainerFactory;
      }
  
@@ -2368,11 +2368,11 @@ index f4386116d38e02f8feb3e8ec3f98af5ed8d0b466..d42f0b85b8bee558deebe36043dc32ef
      public enum ExplosionInteraction implements StringRepresentable {
          NONE("none"),
          BLOCK("block"),
-diff --git a/net/minecraft/world/level/block/RedStoneWireBlock.java b/net/minecraft/world/level/block/RedStoneWireBlock.java
-index b75d36c519d94d666752b7bfb3c8b62a09563eb6..35e49078d8d36ae4683de26988435d971c7f0e89 100644
---- a/net/minecraft/world/level/block/RedStoneWireBlock.java
-+++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
-@@ -269,7 +269,7 @@ public class RedStoneWireBlock extends Block {
+diff --git a/net/minecraft/world/level/block/RedstoneWireBlock.java b/net/minecraft/world/level/block/RedstoneWireBlock.java
+index 9aac9443be8bfd0d49043989b3da222f132eb463..ede64a0afbcdc41e60c3f2f5917c89f09b888433 100644
+--- a/net/minecraft/world/level/block/RedstoneWireBlock.java
++++ b/net/minecraft/world/level/block/RedstoneWireBlock.java
+@@ -262,7 +262,7 @@ public class RedstoneWireBlock extends Block {
          return relativeState.isFaceSturdy(level, relativePos, Direction.UP) || relativeState.is(Blocks.HOPPER);
      }
  
@@ -2381,7 +2381,7 @@ index b75d36c519d94d666752b7bfb3c8b62a09563eb6..35e49078d8d36ae4683de26988435d97
      // The bulk of the new functionality is found in RedstoneWireTurbo.java
      io.papermc.paper.redstone.RedstoneWireTurbo turbo = new io.papermc.paper.redstone.RedstoneWireTurbo(this);
  
-@@ -353,7 +353,13 @@ public class RedStoneWireBlock extends Block {
+@@ -346,7 +346,13 @@ public class RedstoneWireBlock extends Block {
      @Override
      protected void onPlace(final BlockState state, final Level level, final BlockPos pos, final BlockState oldState, final boolean movedByPiston) {
          if (!oldState.is(state.getBlock()) && !level.isClientSide()) {
@@ -2396,7 +2396,7 @@ index b75d36c519d94d666752b7bfb3c8b62a09563eb6..35e49078d8d36ae4683de26988435d97
  
              for (Direction direction : Direction.Plane.VERTICAL) {
                  level.updateNeighborsAt(pos.relative(direction), this);
-@@ -370,7 +376,13 @@ public class RedStoneWireBlock extends Block {
+@@ -363,7 +369,13 @@ public class RedstoneWireBlock extends Block {
                  level.updateNeighborsAt(pos.relative(direction), this);
              }
  
@@ -2411,7 +2411,7 @@ index b75d36c519d94d666752b7bfb3c8b62a09563eb6..35e49078d8d36ae4683de26988435d97
              this.updateNeighborsOfNeighboringWires(level, pos);
          }
      }
-@@ -395,9 +407,15 @@ public class RedStoneWireBlock extends Block {
+@@ -388,9 +400,15 @@ public class RedstoneWireBlock extends Block {
          final BlockState state, final Level level, final BlockPos pos, final Block block, final @Nullable Orientation orientation, final boolean movedByPiston
      ) {
          if (!level.isClientSide()) {

@@ -6,7 +6,7 @@ import net.minecraft.world.level.chunk.Palette;
 
 public class ChunkPacketInfo<T> {
 
-    private final ClientboundLevelChunkWithLightPacket chunkPacket;
+    private ClientboundLevelChunkWithLightPacket chunkPacket;
     private final LevelChunk chunk;
     private final int[] bits;
     private final Object[] palettes;
@@ -14,8 +14,7 @@ public class ChunkPacketInfo<T> {
     private final Object[][] presetValues;
     private byte[] buffer;
 
-    public ChunkPacketInfo(ClientboundLevelChunkWithLightPacket chunkPacket, LevelChunk chunk) {
-        this.chunkPacket = chunkPacket;
+    public ChunkPacketInfo(LevelChunk chunk) {
         this.chunk = chunk;
         int sections = chunk.getSectionsCount();
         bits = new int[sections];
@@ -26,6 +25,10 @@ public class ChunkPacketInfo<T> {
 
     public ClientboundLevelChunkWithLightPacket getChunkPacket() {
         return chunkPacket;
+    }
+
+    public void setChunkPacket(ClientboundLevelChunkWithLightPacket chunkPacket) {
+        this.chunkPacket = chunkPacket;
     }
 
     public LevelChunk getChunk() {

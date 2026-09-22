@@ -1,5 +1,6 @@
 package com.destroystokyo.paper.event.entity;
 
+import org.bukkit.Warning;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.Cancellable;
@@ -17,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated Deprecated, use {@link org.bukkit.event.entity.ProjectileHitEvent} and check if there is a hit entity
  */
 @Deprecated(since = "1.19.3")
+@Warning(propagate = false)
 public class ProjectileCollideEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

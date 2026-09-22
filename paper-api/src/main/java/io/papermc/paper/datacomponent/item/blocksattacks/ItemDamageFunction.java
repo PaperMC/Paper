@@ -4,7 +4,6 @@ import io.papermc.paper.datacomponent.DataComponentBuilder;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Hold how much damage should be applied to the item from a given attack.
@@ -12,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BLOCKS_ATTACKS
  * @see io.papermc.paper.datacomponent.item.BlocksAttacks#itemDamage()
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface ItemDamageFunction {
 

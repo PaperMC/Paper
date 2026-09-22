@@ -8,14 +8,12 @@ import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Holds the contents of a potion (Potion, Splash Potion, Lingering Potion), or potion applied to a Tipped Arrow.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#POTION_CONTENTS
  */
-@NullMarked
 @ApiStatus.NonExtendable
 public interface PotionContents {
 

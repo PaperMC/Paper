@@ -174,9 +174,9 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
     }
 
     @Override
-    public ChunkPacketInfoAntiXray getChunkPacketInfo(ClientboundLevelChunkWithLightPacket chunkPacket, LevelChunk chunk) {
+    public ChunkPacketInfoAntiXray getChunkPacketInfo(LevelChunk chunk) {
         // Return a new instance to collect data and objects in the right state while creating the chunk packet for thread safe access later
-        return new ChunkPacketInfoAntiXray(chunkPacket, chunk, this);
+        return new ChunkPacketInfoAntiXray(chunk, this);
     }
 
     @Override

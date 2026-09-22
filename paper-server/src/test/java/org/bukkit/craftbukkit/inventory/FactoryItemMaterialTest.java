@@ -56,7 +56,7 @@ public class FactoryItemMaterialTest {
     @MethodSource("data")
     public void itemStack(Material material) {
         ItemStack bukkitStack = new ItemStack(material);
-        CraftItemStack craftStack = CraftItemStack.asCraftCopy(bukkitStack);
+        CraftItemStack craftStack = CraftItemStack.getCraftStack(bukkitStack);
         ItemMeta meta = FactoryItemMaterialTest.factory.getItemMeta(material);
         if (meta == null) {
             assertThat(material, is(Material.AIR));
@@ -93,7 +93,7 @@ public class FactoryItemMaterialTest {
 
         for (Material other : FactoryItemMaterialTest.materials) {
             final ItemStack bukkitStack = new ItemStack(other);
-            final CraftItemStack craftStack = CraftItemStack.asCraftCopy(bukkitStack);
+            final CraftItemStack craftStack = CraftItemStack.getCraftStack(bukkitStack);
             final CraftMetaItem otherMeta = (CraftMetaItem) FactoryItemMaterialTest.factory.asMetaFor(baseMeta, other);
 
             final String testName = FactoryItemMaterialTest.name(material, other);

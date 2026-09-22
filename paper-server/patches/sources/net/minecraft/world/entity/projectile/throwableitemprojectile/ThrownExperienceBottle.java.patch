@@ -1,11 +1,16 @@
 --- a/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownExperienceBottle.java
 +++ b/net/minecraft/world/entity/projectile/throwableitemprojectile/ThrownExperienceBottle.java
-@@ -41,16 +_,25 @@
+@@ -41,20 +_,31 @@
      protected void onHit(final HitResult hitResult) {
          super.onHit(hitResult);
          if (this.level() instanceof ServerLevel level) {
--            level.levelEvent(LevelEvent.PARTICLES_SPELL_POTION_SPLASH, this.blockPosition(), -13083194);
-+            // CraftBukkit - moved to after event
++            Runnable afterEvent = () -> { // Paper - delay after event
+             level.levelEvent(LevelEvent.PARTICLES_SPELL_POTION_SPLASH, this.blockPosition(), -13083194);
+             if (!this.isSilent()) {
+                 level.levelEvent(LevelEvent.SOUND_SPELL_POTION_SPLASH, this.blockPosition(), 0);
+             }
++            }; // Paper - delay after event
+ 
              int xpCount = 3 + this.random.nextInt(5) + this.random.nextInt(5);
 +            // Paper start - exp bottle event
 +            org.bukkit.event.entity.ExpBottleEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callExpBottleEvent(this, hitResult, xpCount);
@@ -22,7 +27,7 @@
 +            }
 +            // Paper start - exp bottle event
 +            if (event.getShowEffect()) {
-+                level.levelEvent(LevelEvent.PARTICLES_SPELL_POTION_SPLASH, this.blockPosition(), net.minecraft.world.item.alchemy.PotionContents.BASE_POTION_COLOR);
++                afterEvent.run();
 +            }
 +            // Paper end - exp bottle event
  

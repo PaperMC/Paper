@@ -2621,7 +2621,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the potion brewer.
      *
      * @return the potion brewer
+     * @deprecated since mojang introduced data driven brewing recipes, this type no longer offers anything that isn't
+     * covered by existing recipe and potion type API
+     * @see org.bukkit.inventory.BrewingRecipe
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
     // Paper end
 
