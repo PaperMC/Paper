@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 02:29:27 -0700
+Subject: [PATCH] fixup! Moonrise optimisation patches
+
+
+diff --git a/net/minecraft/world/phys/shapes/BitSetDiscreteVoxelShape.java b/net/minecraft/world/phys/shapes/BitSetDiscreteVoxelShape.java
+index 0815741cb832b4be90c95747ca2b24f3a2a81f4f..b23a4a226a370c3ac535282e28c00e6e4dc130c1 100644
+--- a/net/minecraft/world/phys/shapes/BitSetDiscreteVoxelShape.java
++++ b/net/minecraft/world/phys/shapes/BitSetDiscreteVoxelShape.java
+@@ -204,27 +204,27 @@ public final class BitSetDiscreteVoxelShape extends DiscreteVoxelShape {
+                 indexX = indexY;
+                 for (int x = 0; x < sizeX; ++x, indexX += incX) {
+                     for (int zIdx = indexX, endIndex = indexX + sizeZ; zIdx < endIndex; ) {
+-                        final int firstSetZ = ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.firstSet(bitset, zIdx, endIndex);
++                        final int firstSetZ = ca.spottedleaf.common.util.FlatBitsetUtil.firstSet(bitset, zIdx, endIndex);
+ 
+                         if (firstSetZ == -1) {
+                             break;
+                         }
+ 
+-                        int lastSetZ = ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.firstClear(bitset, firstSetZ, endIndex);
++                        int lastSetZ = ca.spottedleaf.common.util.FlatBitsetUtil.firstClear(bitset, firstSetZ, endIndex);
+                         if (lastSetZ == -1) {
+                             lastSetZ = endIndex;
+                         }
+ 
+-                        ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.clearRange(bitset, firstSetZ, lastSetZ);
++                        ca.spottedleaf.common.util.FlatBitsetUtil.clearRange(bitset, firstSetZ, lastSetZ);
+ 
+                         // try to merge neighbouring on the X axis
+                         int endX = x + 1; // exclusive
+                         for (int neighbourIdxStart = firstSetZ + incX, neighbourIdxEnd = lastSetZ + incX;
+-                             endX < sizeX && ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.isRangeSet(bitset, neighbourIdxStart, neighbourIdxEnd);
++                             endX < sizeX && ca.spottedleaf.common.util.FlatBitsetUtil.isRangeSet(bitset, neighbourIdxStart, neighbourIdxEnd);
+                              neighbourIdxStart += incX, neighbourIdxEnd += incX) {
+ 
+                             ++endX;
+-                            ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.clearRange(bitset, neighbourIdxStart, neighbourIdxEnd);
++                            ca.spottedleaf.common.util.FlatBitsetUtil.clearRange(bitset, neighbourIdxStart, neighbourIdxEnd);
+                         }
+ 
+                         // try to merge neighbouring on the Y axis
+@@ -238,7 +238,7 @@ public final class BitSetDiscreteVoxelShape extends DiscreteVoxelShape {
+                             // test the whole XZ range
+                             for (int testX = x, start = firstSetZY, end = lastSetZY; testX < endX;
+                                  ++testX, start += incX, end += incX) {
+-                                if (!ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.isRangeSet(bitset, start, end)) {
++                                if (!ca.spottedleaf.common.util.FlatBitsetUtil.isRangeSet(bitset, start, end)) {
+                                     break y_merge;
+                                 }
+                             }
+@@ -248,7 +248,7 @@ public final class BitSetDiscreteVoxelShape extends DiscreteVoxelShape {
+                             // passed, so we can clear it
+                             for (int testX = x, start = firstSetZY, end = lastSetZY; testX < endX;
+                                  ++testX, start += incX, end += incX) {
+-                                ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.clearRange(bitset, start, end);
++                                ca.spottedleaf.common.util.FlatBitsetUtil.clearRange(bitset, start, end);
+                             }
+                         }
+ 
+diff --git a/net/minecraft/world/phys/shapes/VoxelShape.java b/net/minecraft/world/phys/shapes/VoxelShape.java
+index ddc562fbdeb2070212019bb23962538795d05ff6..cbf479b7337a78b9980926b8ba984c4546bf9c3d 100644
+--- a/net/minecraft/world/phys/shapes/VoxelShape.java
++++ b/net/minecraft/world/phys/shapes/VoxelShape.java
+@@ -361,7 +361,7 @@ public abstract class VoxelShape implements ca.spottedleaf.moonrise.patches.coll
+                     for (int x = sMinX; x < sMaxX; ++x) {
+                         for (int y = sMinY; y < sMaxY; ++y) {
+                             final int baseIndex = y*sizeZ + x*(sizeZ*sizeY);
+-                            if (!ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.isRangeSet(bitset, baseIndex + sMinZ, baseIndex + sMaxZ)) {
++                            if (!ca.spottedleaf.common.util.FlatBitsetUtil.isRangeSet(bitset, baseIndex + sMinZ, baseIndex + sMaxZ)) {
+                                 ret = Boolean.FALSE;
+                                 break check_full;
+                             }

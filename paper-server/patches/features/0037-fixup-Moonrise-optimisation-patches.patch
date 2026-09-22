@@ -1,0 +1,245 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 22 Sep 2026 08:40:38 -0700
+Subject: [PATCH] fixup! Moonrise optimisation patches
+
+
+diff --git a/ca/spottedleaf/moonrise/patches/bitstorage/PaletteReadoutCache.java b/ca/spottedleaf/moonrise/patches/bitstorage/PaletteReadoutCache.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7d4a48a6a94f63ca793994eae162d7f3abadba83
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/bitstorage/PaletteReadoutCache.java
+@@ -0,0 +1,111 @@
++package ca.spottedleaf.moonrise.patches.bitstorage;
++
++import ca.spottedleaf.common.util.IntegerUtil;
++import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
++import net.minecraft.util.BitStorage;
++import net.minecraft.util.SimpleBitStorage;
++import net.minecraft.util.ZeroBitStorage;
++import net.minecraft.world.level.chunk.Palette;
++import java.util.Arrays;
++import java.util.Objects;
++
++public final class PaletteReadoutCache {
++
++    public static final int MAX_BIT_STORAGE_SIZE = 4096;
++    public static final int MAX_BIT_STORAGE_BITS = 12;
++    static {
++        if ((1 << MAX_BIT_STORAGE_BITS) != MAX_BIT_STORAGE_SIZE) {
++            throw new IllegalStateException();
++        }
++    }
++
++    public final Object[] newPalette = new Object[MAX_BIT_STORAGE_SIZE];
++    public int newPaletteCount;
++    public final long[] copyCache = new long[MAX_BIT_STORAGE_SIZE];
++    public final int[] reEncoded = new int[MAX_BIT_STORAGE_SIZE];
++    private final int[] newPaletteMapping = new int[MAX_BIT_STORAGE_SIZE];
++    private final Int2IntOpenHashMap newPaletteMappingLarge = new Int2IntOpenHashMap(MAX_BIT_STORAGE_SIZE, 0.5f);
++
++    public SimpleBitStorage repack(final int bits, final int size) {
++        // note: reEcoded len does not need to be size exactly; it must be > size
++        return new SimpleBitStorage(bits, size, this.reEncoded);
++    }
++
++    public boolean readout(final BitStorage src, final Palette<?> srcPalette) {
++        if (src instanceof ZeroBitStorage || srcPalette.getSize() == 1) {
++            return false;
++        }
++
++        final int srcSize = src.getSize();
++
++        if (srcSize > MAX_BIT_STORAGE_SIZE) {
++            throw new UnsupportedOperationException();
++        }
++        final long[] srcRaw = src.getRaw();
++        final int srcCount = src.getSize();
++        final int srcBits = src.getBits();
++        final int srcValuesPerElement = (Long.SIZE / srcBits);
++        final long srcMask = IntegerUtil.getLongMask(srcBits);
++
++        final long[] cpy = this.copyCache;
++        Objects.checkFromToIndex(0, srcRaw.length, cpy.length);
++
++        final int[] newPaletteMapping;
++        final Int2IntOpenHashMap newPaletteMappingLarge;
++        if ((srcMask + 1) > this.newPaletteMapping.length) {
++            newPaletteMapping = null;
++            newPaletteMappingLarge = this.newPaletteMappingLarge;
++
++            newPaletteMappingLarge.clear();
++        } else {
++            newPaletteMapping = this.newPaletteMapping;
++            newPaletteMappingLarge = null;
++
++            Arrays.fill(newPaletteMapping, 0, (int)(srcMask + 1), -1);
++        }
++
++        final int[] reEncoded = this.reEncoded;
++        Objects.checkFromToIndex(0, srcSize, reEncoded.length);
++
++        final Object[] newPalette = this.newPalette;
++        Objects.checkFromToIndex(0, srcSize, newPalette.length);
++
++        int rem = srcCount;
++        int reEncodeIndex = 0;
++        int nextPaletteId = 0;
++        for (int i = 0, len = srcRaw.length; i < len; ++i) {
++            long value = srcRaw[i];
++            cpy[i] = value;
++
++            for (int k = 0, len2 = Math.min(rem, srcValuesPerElement); k < len2; ++k, --rem) {
++                final int decoded = (int)(value & srcMask);
++                value >>>= srcBits;
++
++                final int mapped = newPaletteMapping != null ? newPaletteMapping[decoded] : newPaletteMappingLarge.getOrDefault(decoded, -1);
++                if (mapped != -1) {
++                    reEncoded[reEncodeIndex++] = mapped;
++                    continue;
++                }
++
++
++                final int computedMapping = nextPaletteId++;
++                newPalette[computedMapping] = srcPalette.valueFor(decoded);
++                reEncoded[reEncodeIndex++] = computedMapping;
++
++                if (newPaletteMapping != null) {
++                    newPaletteMapping[decoded] = computedMapping;
++                } else {
++                    newPaletteMappingLarge.put(decoded, computedMapping);
++                }
++            }
++        }
++
++        if (rem != 0) {
++            throw new IllegalStateException();
++        }
++
++        this.newPaletteCount = nextPaletteId;
++
++        return true;
++    }
++}
+diff --git a/net/minecraft/world/level/chunk/PalettedContainer.java b/net/minecraft/world/level/chunk/PalettedContainer.java
+index 9c4eb6c151307240f3fa7f5053d48bded003edbe..55037971b2631100ac5fd5fd8157adbbc0604d36 100644
+--- a/net/minecraft/world/level/chunk/PalettedContainer.java
++++ b/net/minecraft/world/level/chunk/PalettedContainer.java
+@@ -344,30 +344,104 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+         return DataResult.success(new PalettedContainer<>(strategy, storedConfiguration, storage, palette, paletteEntries, defaultValue, presetValues)); // Paper - Anti-Xray - Add preset values
+     }
+ 
++    // Paper start - optimise PalettedContainer packing
++    private static final ThreadLocal<ca.spottedleaf.moonrise.patches.bitstorage.PaletteReadoutCache> READOUT_CACHE = ThreadLocal.withInitial(() -> {
++        return new ca.spottedleaf.moonrise.patches.bitstorage.PaletteReadoutCache();
++    });
++    private static final boolean DEBUG_PACKING = false;
++    private static <T> void validate(List<T> palette, long[] data, int bits,
++                                     BitStorage againstStorage, Palette<T> againstPalette) {
++        BitStorage storage = data == null ? new ZeroBitStorage(againstStorage.getSize()) :
++            new SimpleBitStorage(bits, againstStorage.getSize(), data);
++
++        for (int i = 0; i < storage.getSize(); ++i) {
++            T expect = againstPalette.valueFor(againstStorage.get(i));
++            T got = palette.get(storage.get(i));
++
++            if (expect != got) {
++                throw new IllegalStateException();
++            }
++        }
++    }
++    // Paper end - optimise PalettedContainer packing
++
+     @Override
+     public synchronized PalettedContainerRO.PackedData<T> pack(final Strategy<T> strategy) { // Paper - synchronize
++        // Paper start - optimise PalettedContainer packing
+         this.acquire();
+ 
+         try {
+-            BitStorage currentStorage = this.data.storage;
+-            Palette<T> currentPalette = this.data.palette;
+-            HashMapPalette<T> newPalette = new HashMapPalette<>(currentStorage.getBits());
+-            int entryCount = strategy.entryCount();
+-            int[] newContents = reencodeContents(currentStorage, currentPalette, newPalette);
+-            Configuration storedConfiguration = strategy.getConfigurationForPaletteSize(newPalette.getSize());
+-            int bitsOnDisc = storedConfiguration.bitsInStorage();
+-            Optional<LongStream> values;
+-            if (bitsOnDisc != 0) {
+-                SimpleBitStorage storage = new SimpleBitStorage(bitsOnDisc, entryCount, newContents);
+-                values = Optional.of(Arrays.stream(storage.getRaw()));
++            final PalettedContainer.Data<T> data = this.data;
++
++            final BitStorage storage = data.storage();
++            final Palette<T> palette = data.palette();
++
++            final ca.spottedleaf.moonrise.patches.bitstorage.PaletteReadoutCache readoutCache = READOUT_CACHE.get();
++
++            final boolean zero = !readoutCache.readout(storage, palette);
++
++            final int newPaletteSize = zero ? 1 : readoutCache.newPaletteCount;
++            final List<T> newPalette = new java.util.ArrayList<>(newPaletteSize);
++            final long[] dataArray;
++            final Configuration configuration = strategy.getConfigurationForPaletteSize(newPaletteSize);
++            final int bitsToUse = configuration.bitsInStorage();
++            if (zero) {
++                newPalette.add(palette.valueFor(0));
++                if (bitsToUse == 0) {
++                    dataArray = null;
++                } else {
++                    dataArray = new SimpleBitStorage(bitsToUse, storage.getSize()).getRaw();
++                }
+             } else {
+-                values = Optional.empty();
++                if (bitsToUse != 0 && newPaletteSize == palette.getSize() && bitsToUse == storage.getBits()) {
++                    // palette and bits are identical, so we can just use the old data
++
++                    final List<T> oldPalette = new java.util.ArrayList<>(newPaletteSize);
++                    for (int i = 0; i < newPaletteSize; ++i) {
++                        oldPalette.add(palette.valueFor(i));
++                    }
++
++                    // avoid holding references to palette entries
++                    Arrays.fill(readoutCache.newPalette, 0, newPaletteSize, null);
++
++                    // we need to use the copy cache here, as some bad mods may write to the container off-thread which
++                    // may leave the palette desynced
++
++                    final long[] cpy = Arrays.copyOf(readoutCache.copyCache, storage.getRaw().length);
++
++                    if (DEBUG_PACKING) {
++                        validate(oldPalette, cpy, bitsToUse, storage, palette);
++                    }
++
++                    return new PalettedContainerRO.PackedData<>(oldPalette, Optional.of(Arrays.stream(cpy)), bitsToUse);
++                } else {
++                    final Object[] newPaletteRaw = readoutCache.newPalette;
++                    java.util.Objects.checkFromToIndex(0, readoutCache.newPaletteCount, newPaletteRaw.length);
++                    for (int i = 0, len = readoutCache.newPaletteCount; i < len; ++i) {
++                        final T entry = (T)newPaletteRaw[i];
++                        // avoid holding references to palette entries
++                        newPaletteRaw[i] = null;
++                        newPalette.add(entry);
++                    }
++
++                    if (bitsToUse == 0) {
++                        dataArray = null;
++                    } else {
++                        dataArray = readoutCache.repack(bitsToUse, storage.getSize()).getRaw();
++                    }
++                }
++            }
++
++            if (DEBUG_PACKING) {
++                validate(newPalette, dataArray, bitsToUse, storage, palette);
+             }
+ 
+-            return new PalettedContainerRO.PackedData<>(newPalette.getEntries(), values, bitsOnDisc);
++            // why does this trash use streams...?
++            return new PalettedContainerRO.PackedData<>(newPalette, dataArray == null ? Optional.empty() : Optional.of(Arrays.stream(dataArray)), bitsToUse);
+         } finally {
+             this.release();
+         }
++        // Paper end - optimise PalettedContainer packing
+     }
+ 
+     private static <T> int[] reencodeContents(final BitStorage storage, final Palette<T> oldPalette, final Palette<T> newPalette) {
