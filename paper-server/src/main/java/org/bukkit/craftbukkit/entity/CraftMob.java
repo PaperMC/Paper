@@ -67,7 +67,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
 
     @Override
     public LivingEntity getTarget() {
-        return (LivingEntity) Optionull.map(this.getHandle().getTarget(), Entity::getBukkitEntity);
+        return Optionull.map(this.getHandle().getTarget(), net.minecraft.world.entity.LivingEntity::getBukkitEntity);
     }
 
     @Override

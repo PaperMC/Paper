@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated Use the more generic {@link PlayerBucketEntityEvent}
  */
 @Deprecated(since = "1.16.5")
-@Warning
+@Warning(propagate = false)
 public class PlayerBucketFishEvent extends PlayerBucketEntityEvent {
 
     @ApiStatus.Internal

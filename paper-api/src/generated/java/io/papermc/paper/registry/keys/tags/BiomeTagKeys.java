@@ -40,6 +40,132 @@ public final class BiomeTagKeys {
     public static final TagKey<Biome> ALLOWS_TROPICAL_FISH_SPAWNS_AT_ANY_HEIGHT = create(key("allows_tropical_fish_spawns_at_any_height"));
 
     /**
+     * {@code #minecraft:has_structure/abandoned_camp_bamboo_jungle}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_BAMBOO_JUNGLE = create(key("has_structure/abandoned_camp_bamboo_jungle"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_birch_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_BIRCH_FOREST = create(key("has_structure/abandoned_camp_birch_forest"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_cherry_grove}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_CHERRY_GROVE = create(key("has_structure/abandoned_camp_cherry_grove"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_dappled_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_DAPPLED_FOREST = create(key("has_structure/abandoned_camp_dappled_forest"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_flower_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_FLOWER_FOREST = create(key("has_structure/abandoned_camp_flower_forest"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_FOREST = create(key("has_structure/abandoned_camp_forest"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_meadow}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_MEADOW = create(key("has_structure/abandoned_camp_meadow"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_old_growth_birch_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_OLD_GROWTH_BIRCH_FOREST = create(key("has_structure/abandoned_camp_old_growth_birch_forest"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_old_growth_pine_taiga}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_OLD_GROWTH_PINE_TAIGA = create(key("has_structure/abandoned_camp_old_growth_pine_taiga"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_old_growth_spruce_taiga}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_OLD_GROWTH_SPRUCE_TAIGA = create(key("has_structure/abandoned_camp_old_growth_spruce_taiga"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_pale_garden}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_PALE_GARDEN = create(key("has_structure/abandoned_camp_pale_garden"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_savanna}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_SAVANNA = create(key("has_structure/abandoned_camp_savanna"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_snowy_taiga}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_SNOWY_TAIGA = create(key("has_structure/abandoned_camp_snowy_taiga"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_sparse_jungle}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_SPARSE_JUNGLE = create(key("has_structure/abandoned_camp_sparse_jungle"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_swamp}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_SWAMP = create(key("has_structure/abandoned_camp_swamp"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_taiga}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_TAIGA = create(key("has_structure/abandoned_camp_taiga"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_windswept_forest}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_WINDSWEPT_FOREST = create(key("has_structure/abandoned_camp_windswept_forest"));
+
+    /**
+     * {@code #minecraft:has_structure/abandoned_camp_wooded_badlands}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> HAS_STRUCTURE_ABANDONED_CAMP_WOODED_BADLANDS = create(key("has_structure/abandoned_camp_wooded_badlands"));
+
+    /**
      * {@code #minecraft:has_structure/ancient_city}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions

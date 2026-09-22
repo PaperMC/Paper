@@ -2,6 +2,7 @@ package org.bukkit.event.player;
 
 import com.google.common.base.Preconditions;
 import org.bukkit.Location;
+import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -15,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * @deprecated use {@link com.destroystokyo.paper.event.player.PlayerSetSpawnEvent}
  */
 @Deprecated(forRemoval = true)
+@Warning(propagate = false)
 public class PlayerSpawnChangeEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();

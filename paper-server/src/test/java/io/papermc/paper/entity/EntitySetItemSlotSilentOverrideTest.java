@@ -24,7 +24,7 @@ public class EntitySetItemSlotSilentOverrideTest {
         try (ScanResult scanResult = new ClassGraph()
             .enableClassInfo()
             .enableMethodInfo()
-            .whitelistPackages("net.minecraft")
+            .acceptPackages("net.minecraft")
             .scan()
         ) {
             for (final ClassInfo subclass : scanResult.getSubclasses(LivingEntity.class.getName())) {

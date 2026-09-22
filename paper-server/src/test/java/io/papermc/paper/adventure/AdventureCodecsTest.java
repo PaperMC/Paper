@@ -49,6 +49,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
 
+import static io.papermc.paper.adventure.AdventureCodecs.BINARY_TAG_HOLDER_CODEC;
 import static io.papermc.paper.adventure.AdventureCodecs.CLICK_EVENT_CODEC;
 import static io.papermc.paper.adventure.AdventureCodecs.COMPONENT_CODEC;
 import static io.papermc.paper.adventure.AdventureCodecs.HOVER_EVENT_CODEC;
@@ -114,7 +115,7 @@ class AdventureCodecsTest {
     }
 
     static List<ClickEvent.Action<?>> clickEventActions() {
-        final var skip = Set.of(ClickEvent.Action.OPEN_FILE, ClickEvent.Action.SHOW_DIALOG, ClickEvent.Action.CUSTOM);
+        final var skip = Set.of(ClickEvent.Action.OPEN_FILE, ClickEvent.Action.SHOW_DIALOG);
         return ClickEvent.Action.NAMES.values().stream().filter(
             action -> !skip.contains(action)
         ).toList();
@@ -133,7 +134,7 @@ class AdventureCodecsTest {
             case ClickEvent.Action.ShowDialog _, ClickEvent.Action.OpenFile _ -> throw new IllegalArgumentException();
         };
         final Tag result = CLICK_EVENT_CODEC.encodeStart(NbtOps.INSTANCE, event).result().orElseThrow(() -> new RuntimeException("Failed to encode ClickEvent: " + event));
-        final net.minecraft.network.chat.ClickEvent nms = net.minecraft.network.chat.ClickEvent.CODEC.decode(NbtOps.INSTANCE, result).result().orElseThrow().getFirst();
+        final net.minecraft.network.chat.ClickEvent nms = net.minecraft.network.chat.ClickEvent.CODEC.parse(NbtOps.INSTANCE, result).result().orElseThrow();
         assertEquals(event.action().toString(), nms.action().getSerializedName());
         switch (nms) {
             case net.minecraft.network.chat.ClickEvent.OpenUrl(URI uri) ->
@@ -148,7 +149,11 @@ class AdventureCodecsTest {
                 assertEquals(((ClickEvent.Payload.Int) event.payload()).integer(), page);
             case net.minecraft.network.chat.ClickEvent.Custom(Identifier id, Optional<Tag> payload) -> {
                 assertEquals(((ClickEvent.Payload.Custom) event.payload()).key().toString(), id.toString());
-                assertEquals(((ClickEvent.Payload.Custom) event.payload()).nbt(), payload.orElseThrow().asString());
+                final Optional<BinaryTagHolder> convertedPayload = payload.flatMap(p -> BINARY_TAG_HOLDER_CODEC.parse(NbtOps.INSTANCE, p).result());
+                assertEquals(
+                    Optional.ofNullable(((ClickEvent.Payload.Custom) event.payload()).nbt()),
+                    convertedPayload
+                );
             }
             default -> throw new AssertionError("Unexpected ClickEvent type: " + nms.getClass());
         }

@@ -1,0 +1,16 @@
+--- a/net/minecraft/server/network/ServerCommandSuggestionsProvider.java
++++ b/net/minecraft/server/network/ServerCommandSuggestionsProvider.java
+@@ -47,6 +_,13 @@
+                     MinecraftServer server = this.player.level().getServer();
+                     CommandDispatcher<CommandSourceStack> dispatcher = server.getCommands().getDispatcher();
+                     ParseResults<CommandSourceStack> parse = dispatcher.parse(reader, this.player.createCommandSourceStack());
++                    // Paper start - Handle non-recoverable exceptions
++                    if (!parse.getExceptions().isEmpty()
++                        && parse.getExceptions().values().stream().anyMatch(e -> e instanceof io.papermc.paper.brigadier.TagParseCommandSyntaxException)) {
++                        this.player.connection.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM);
++                        return;
++                    }
++                    // Paper end - Handle non-recoverable exceptions
+                     if (this.lastRequest.get() != null) {
+                         return;
+                     }

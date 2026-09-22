@@ -253,7 +253,6 @@ public abstract class CraftParticle<D> implements Keyed {
             add("instant_effect", spellFunction);
             add("geyser", geyser);
             add("geyser_plume", geyser);
-            add("geyser", geyser);
             add("geyser_base", geyserBase);
             add("geyser_poof", geyserBase);
         }
