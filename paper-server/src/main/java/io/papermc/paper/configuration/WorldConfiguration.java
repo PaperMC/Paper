@@ -27,6 +27,7 @@ import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -200,6 +201,11 @@ public class WorldConfiguration extends ConfigurationPart {
                 map.put(EntityTypes.SNOWBALL, IntOr.Disabled.DISABLED);
                 map.put(EntityTypes.LLAMA_SPIT, IntOr.Disabled.DISABLED);
             });
+
+            @PostProcess
+            public void makeDespawnRangesEnumMap() {
+                this.despawnRanges = new EnumMap<>(this.despawnRanges);
+            }
 
             @PostProcess
             public void precomputeDespawnDistances() throws SerializationException {
