@@ -6,7 +6,7 @@ Subject: [PATCH] Optimise collision checking in player move packet handling
 Move collision logic to just the hasNewCollision call instead of getCubes + hasNewCollision
 
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index f01fede96872749f1ac664d0c53c2ef3617bed0e..ce2120d187454921bde6b7bd1787bc313d0ef17b 100644
+index a9d37a5f1d878046e4ce545d68103be579e91ded..f7bedc32de8b686e3e1ed0677d4e9c31c036ebb8 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -647,6 +647,7 @@ public class ServerGamePacketListenerImpl
@@ -71,7 +71,7 @@ index f01fede96872749f1ac664d0c53c2ef3617bed0e..ce2120d187454921bde6b7bd1787bc31
      }
  
      @Override
-@@ -1570,7 +1605,7 @@ public class ServerGamePacketListenerImpl
+@@ -1578,7 +1613,7 @@ public class ServerGamePacketListenerImpl
                      }
                  }
  
@@ -80,7 +80,7 @@ index f01fede96872749f1ac664d0c53c2ef3617bed0e..ce2120d187454921bde6b7bd1787bc31
                  xDist = targetX - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
                  yDist = targetY - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
                  zDist = targetZ - this.lastGoodZ; // Paper - diff on change, used for checking large move vectors above
-@@ -1600,6 +1635,7 @@ public class ServerGamePacketListenerImpl
+@@ -1608,6 +1643,7 @@ public class ServerGamePacketListenerImpl
  
                  this.player.move(MoverType.PLAYER, new Vec3(xDist, yDist, zDist));
                  this.player.onGround = isOnGround; // CraftBukkit - SPIGOT-5810, SPIGOT-5835, SPIGOT-6828: reset by this.player.move
@@ -88,7 +88,7 @@ index f01fede96872749f1ac664d0c53c2ef3617bed0e..ce2120d187454921bde6b7bd1787bc31
                  // Paper start - prevent position desync
                  if (this.awaitingPositionFromClient != null) {
                      return; // ... thanks Mojang for letting move calls teleport across dimensions.
-@@ -1633,7 +1669,17 @@ public class ServerGamePacketListenerImpl
+@@ -1641,7 +1677,17 @@ public class ServerGamePacketListenerImpl
                  }
  
                  // Paper start - Add fail move event
@@ -107,7 +107,7 @@ index f01fede96872749f1ac664d0c53c2ef3617bed0e..ce2120d187454921bde6b7bd1787bc31
                  if (!allowMovement) {
                      io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
                          targetX, targetY, targetZ, targetYRot, targetXRot, false);
-@@ -1781,7 +1827,7 @@ public class ServerGamePacketListenerImpl
+@@ -1789,7 +1835,7 @@ public class ServerGamePacketListenerImpl
  
      private boolean updateAwaitingTeleport() {
          if (this.awaitingPositionFromClient != null) {
@@ -116,7 +116,7 @@ index f01fede96872749f1ac664d0c53c2ef3617bed0e..ce2120d187454921bde6b7bd1787bc31
                  this.awaitingTeleportTime = this.tickCount;
                  this.teleport(
                      this.awaitingPositionFromClient.x,
-@@ -1800,6 +1846,34 @@ public class ServerGamePacketListenerImpl
+@@ -1808,6 +1854,34 @@ public class ServerGamePacketListenerImpl
          }
      }
  

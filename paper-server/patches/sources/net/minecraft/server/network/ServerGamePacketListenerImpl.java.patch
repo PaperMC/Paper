@@ -382,7 +382,7 @@
          this.player.getRecipeBook().setBookSetting(packet.getBookType(), packet.isOpen(), packet.isFiltering());
      }
  
-@@ -610,8 +_,82 @@
+@@ -610,18 +_,100 @@
          }
      }
  
@@ -465,7 +465,18 @@
          int clientId = packet.id();
          this.commandSuggestionsProvider
              .request(packet.command())
-@@ -621,7 +_,7 @@
+-            .thenAccept(suggestions -> this.send(new ClientboundCommandSuggestionsPacket(clientId, suggestions)));
++            .thenAccept(suggestions -> {
++                // Paper start
++                com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, packet.command());
++                suggestEvent.setCancelled(suggestions.isEmpty());
++                if (suggestEvent.callEvent()) {
++                    this.send(new ClientboundCommandSuggestionsPacket(clientId, ServerCommandSuggestionsProvider.limitSuggestionCount(suggestEvent.getSuggestions())));
++                }
++                // Paper end
++            });
+     }
+ 
      @Override
      public void handleSetCommandBlock(final ServerboundSetCommandBlockPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
