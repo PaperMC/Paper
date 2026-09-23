@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import net.kyori.adventure.inventory.Book;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.core.component.DataComponentPatch;
@@ -370,7 +369,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
 
     @Override
     public @NotNull Book asBook() {
-        return Book.book(net.kyori.adventure.text.Component.empty(), net.kyori.adventure.text.Component.empty(), this.getPages().stream().map(net.kyori.adventure.text.Component::text).collect(Collectors.toList()));
+        return Book.book(net.kyori.adventure.text.Component.empty(), net.kyori.adventure.text.Component.empty(), this.pages());
     }
 
     // Spigot start
