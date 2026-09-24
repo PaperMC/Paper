@@ -1,6 +1,7 @@
 package org.bukkit.block;
 
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a captured state of a potent sulfur block.
@@ -16,27 +17,49 @@ import org.jspecify.annotations.NullMarked;
 public interface PotentSulfur extends TileState {
 
     /**
-     * Gets the eruption mode of this geyser.
+     * Gets the eruption mode this geyser follows.
+     * <p>
+     * This is the {@link #getEruptionModeOverride() eruption mode override} if one is set.
+     * Otherwise, it is determined by the block below the geyser in the world, like in
+     * vanilla: a magma block causes {@link EruptionMode#PERIODIC periodic} eruptions, lava
+     * causes {@link EruptionMode#CONTINUOUS continuous} eruptions, and any other block
+     * causes {@link EruptionMode#NEVER no} eruptions.
+     * <p>
+     * The eruption mode describes how the geyser behaves while it has a valid water column
+     * above it, see {@link PotentSulfur}. Use the block's
+     * {@link org.bukkit.block.data.type.PotentSulfur#getPotentSulfurState() state} to see
+     * what the geyser is doing right now.
      *
      * @return the eruption mode
+     * @throws IllegalStateException if no override is set and this block state is not placed
      */
     EruptionMode getEruptionMode();
 
     /**
-     * Sets the eruption mode of this geyser, overriding the behavior normally
+     * Gets the eruption mode override of this geyser.
+     *
+     * @return the eruption mode override, or {@code null} if the eruption mode is
+     *     determined by the block below, like in vanilla
+     * @see #getEruptionMode()
+     */
+    @Nullable EruptionMode getEruptionModeOverride();
+
+    /**
+     * Sets the eruption mode override of this geyser, replacing the behavior normally
      * determined by the block below it.
      * <p>
-     * The mode is persistent and applied to the block in the world once this
+     * The override is persistent and applied to the block in the world once this
      * state is {@link #update() updated}.
      * <p>
-     * The mode only has an effect while the geyser has a valid water column
+     * The override only has an effect while the geyser has a valid water column
      * above it, see {@link PotentSulfur}. Without a water source block directly
      * above it, the block stays {@link org.bukkit.block.data.type.PotentSulfur.State#DRY dry}
-     * and the mode is applied once water is added.
+     * and the override is applied once water is added.
      *
-     * @param mode the eruption mode
+     * @param mode the eruption mode override, or {@code null} to let the block below
+     *     determine the eruption mode, like in vanilla
      */
-    void setEruptionMode(EruptionMode mode);
+    void setEruptionModeOverride(@Nullable EruptionMode mode);
 
     /**
      * Makes this geyser erupt once, regardless of the block below it and its
@@ -63,21 +86,25 @@ public interface PotentSulfur extends TileState {
      */
     enum EruptionMode {
         /**
-         * Eruptions are determined by the block below, like in vanilla: magma blocks
-         * cause periodic eruptions and lava causes continuous eruptions.
-         */
-        DEFAULT,
-        /**
          * The geyser never erupts on its own. The block will be
          * {@link org.bukkit.block.data.type.PotentSulfur.State#WET wet}.
+         * <p>
+         * In vanilla, this is the case for any block below the geyser other than magma blocks and lava.
          */
         NEVER,
         /**
-         * The geyser periodically erupts, as if there was a magma block below it.
+         * The geyser periodically erupts, alternating between
+         * {@link org.bukkit.block.data.type.PotentSulfur.State#DORMANT dormant} and
+         * {@link org.bukkit.block.data.type.PotentSulfur.State#ERUPTING erupting}.
+         * <p>
+         * In vanilla, this is caused by a magma block below the geyser.
          */
         PERIODIC,
         /**
-         * The geyser continuously erupts, as if there was lava below it.
+         * The geyser continuously erupts. The block will be
+         * {@link org.bukkit.block.data.type.PotentSulfur.State#CONTINUOUS continuous}.
+         * <p>
+         * In vanilla, this is caused by lava below the geyser.
          */
         CONTINUOUS
     }

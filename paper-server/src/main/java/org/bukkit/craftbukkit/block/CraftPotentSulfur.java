@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.block;
 
-import com.google.common.base.Preconditions;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.PotentSulfurBlock;
@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.entity.PotentSulfurBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.PotentSulfurState;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.material.FluidState;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.PotentSulfur;
@@ -30,13 +31,23 @@ public class CraftPotentSulfur extends CraftBlockEntityState<PotentSulfurBlockEn
 
     @Override
     public EruptionMode getEruptionMode() {
-        return this.getSnapshot().eruptionMode;
+        final EruptionMode override = this.getEruptionModeOverride();
+        if (override != null) {
+            return override;
+        }
+
+        this.requirePlaced();
+        return vanillaEruptionMode(this.getWorldHandle(), this.getPosition());
     }
 
     @Override
-    public void setEruptionMode(EruptionMode mode) {
-        Preconditions.checkArgument(mode != null, "mode cannot be null");
-        this.getSnapshot().eruptionMode = mode;
+    public @Nullable EruptionMode getEruptionModeOverride() {
+        return this.getSnapshot().eruptionModeOverride;
+    }
+
+    @Override
+    public void setEruptionModeOverride(@Nullable EruptionMode mode) {
+        this.getSnapshot().eruptionModeOverride = mode;
     }
 
     @Override
@@ -108,7 +119,7 @@ public class CraftPotentSulfur extends CraftBlockEntityState<PotentSulfurBlockEn
             return null;
         }
 
-        final EruptionMode mode = blockEntity.eruptionMode;
+        final EruptionMode mode = blockEntity.eruptionModeOverride;
         if (mode == EruptionMode.CONTINUOUS) {
             blockEntity.forcedEruption = false;
             return state.setValue(PotentSulfurBlock.STATE, PotentSulfurState.CONTINUOUS);
@@ -117,6 +128,10 @@ public class CraftPotentSulfur extends CraftBlockEntityState<PotentSulfurBlockEn
         final PotentSulfurState currentState = state.getValue(PotentSulfurBlock.STATE);
         if (blockEntity.forcedEruption && currentState == PotentSulfurState.ERUPTING) {
             return state;
+        }
+
+        if (mode == null) {
+            return null;
         }
 
         return switch (mode) {
@@ -144,16 +159,35 @@ public class CraftPotentSulfur extends CraftBlockEntityState<PotentSulfurBlockEn
         return PotentSulfurBlock.validBlockState(state.setValue(PotentSulfurBlock.STATE, PotentSulfurState.DORMANT), level, pos).getValue(PotentSulfurBlock.STATE);
     }
 
-    public static EruptionMode parseEruptionMode(final @Nullable String mode, final BlockPos pos) {
+    public static @Nullable EruptionMode parseEruptionMode(final @Nullable String mode, final BlockPos pos) {
         if (mode == null) {
-            return EruptionMode.DEFAULT;
+            return null;
         }
 
         try {
             return EruptionMode.valueOf(mode);
         } catch (final IllegalArgumentException ignored) {
             LOGGER.error("Unknown eruption mode {} for potent sulfur at {}", mode, pos);
-            return EruptionMode.DEFAULT;
+            return null;
         }
+    }
+
+    // mirrors the block below checks in PotentSulfurBlock#validBlockState
+    private static EruptionMode vanillaEruptionMode(final LevelReader level, final BlockPos pos) {
+        final BlockState belowState = level.getBlockState(pos.below());
+        final FluidState belowFluidState = belowState.getFluidState();
+        if (!belowFluidState.isEmpty() && !belowFluidState.isSource()) {
+            return EruptionMode.NEVER;
+        }
+
+        if (belowState.is(BlockTags.CAUSES_CONTINUOUS_GEYSER_ERUPTIONS)) {
+            return EruptionMode.CONTINUOUS;
+        }
+
+        if (belowState.is(BlockTags.CAUSES_PERIODIC_GEYSER_ERUPTIONS)) {
+            return EruptionMode.PERIODIC;
+        }
+
+        return EruptionMode.NEVER;
     }
 }
