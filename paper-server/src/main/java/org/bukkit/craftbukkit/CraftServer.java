@@ -1462,11 +1462,6 @@ public final class CraftServer implements Server {
         };
         if (toAdd == null) return false;
         toAdd.addToRecipeManager();
-        // Paper start - API for updating recipes on clients
-        if (true || resendRecipes) { // Always needs to be resent now... TODO
-            this.playerList.reloadRecipes();
-        }
-        // Paper end - API for updating recipes on clients
         return true;
     }
 
