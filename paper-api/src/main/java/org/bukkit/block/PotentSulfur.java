@@ -1,5 +1,7 @@
 package org.bukkit.block;
 
+import org.jspecify.annotations.NullMarked;
+
 /**
  * Represents a captured state of a potent sulfur block.
  * <p>
@@ -10,6 +12,7 @@ package org.bukkit.block;
  * this class. Without a water column, a geyser does not count down, erupt, launch entities
  * or apply nausea, regardless of its {@link #getEruptionMode() eruption mode}.
  */
+@NullMarked
 public interface PotentSulfur extends TileState {
 
     /**
