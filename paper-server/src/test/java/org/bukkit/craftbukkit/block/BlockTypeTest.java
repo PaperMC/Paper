@@ -21,4 +21,13 @@ public class BlockTypeTest {
             assertThat(actual, is(expected));
         }
     }
+
+    @Test
+    public void testOcclusionMatchesDefaultBlockData() throws Exception {
+        for (Field f : BlockType.class.getDeclaredFields()) {
+            BlockType type = (BlockType) f.get(null);
+
+            assertThat(type.isOccluding(), is(type.createBlockData().isOccluding()), type.getKey() + " should match its default BlockData occlusion");
+        }
+    }
 }
