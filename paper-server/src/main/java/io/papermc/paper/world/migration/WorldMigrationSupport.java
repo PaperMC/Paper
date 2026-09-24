@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.NbtException;
@@ -88,6 +90,9 @@ final class WorldMigrationSupport {
             return;
         }
 
+        boolean pathsWithConflicts = false;
+        final HashMap<Path, Path> migrationPaths = new HashMap<>();
+
         for (final String directory : DIMENSION_DIRECTORIES) {
             final Path source = sourceDimensionRoot.resolve(directory);
             if (!Files.exists(source)) {
@@ -95,38 +100,21 @@ final class WorldMigrationSupport {
             }
 
             final Path target = targetDimensionPath.resolve(directory);
-            LOGGER.info("Migrating world directory from {} to {}", source, target);
-            mergeMove(source, target);
-        }
-    }
-
-    private static void mergeMove(final Path source, final Path target) throws IOException {
-        if (Files.isDirectory(source)) {
-            Files.createDirectories(target);
-            try (final var entries = Files.list(source)) {
-                for (final Path child : entries.toList()) {
-                    mergeMove(child, target.resolve(child.getFileName().toString()));
-                }
+            if (Files.exists(target)) {
+                pathsWithConflicts = true;
+                LOGGER.error("The folder '{}' already exists for dimension {}", directory, targetDimensionPath);
+                continue;
             }
-            tryDeleteIfEmpty(source);
-            return;
+            migrationPaths.put(source, target);
         }
 
-        if (Files.exists(target)) {
-            throw new IOException("Refusing to overwrite existing migrated file " + target + " while moving " + source);
+        if (pathsWithConflicts) {
+            throw new IOException("Refusing to overwrite dimension directories in " + targetDimensionPath + " while migrating from " + sourceDimensionRoot);
         }
 
-        Files.createDirectories(target.getParent());
-        Files.move(source, target);
-    }
-
-    private static void tryDeleteIfEmpty(final Path path) throws IOException {
-        try (final var entries = Files.list(path)) {
-            if (entries.findAny().isPresent()) {
-                return;
-            }
+        for (Map.Entry<Path, Path> entry : migrationPaths.entrySet()) {
+            Files.move(entry.getKey(), entry.getValue());
         }
-        Files.deleteIfExists(path);
     }
 
     record LevelDataResult(@Nullable Dynamic<?> dataTag, boolean fatalError) {}
