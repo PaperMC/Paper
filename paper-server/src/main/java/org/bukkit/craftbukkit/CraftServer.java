@@ -1461,6 +1461,7 @@ public final class CraftServer implements Server {
             case null, default -> null;
         };
         if (toAdd == null) return false;
+        // addToRecipeManager() calls reloadRecipes() already
         toAdd.addToRecipeManager();
         return true;
     }
@@ -1639,6 +1640,7 @@ public final class CraftServer implements Server {
 
         // Paper start - resend recipes on successful removal
         final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
+        // removeRecipe(...) calls reloadRecipes() already
         final boolean removed = this.getServer().getRecipeManager().removeRecipe(id);
         return removed;
         // Paper end - resend recipes on successful removal
