@@ -31,7 +31,7 @@ public class EntityPotentSulfurLaunchEvent extends EntityEvent {
         super(entity);
         this.sulfurBlock = sulfurBlock;
         this.sourceLocation = sourceLocation;
-        this.launchVelocity = launchVelocity.clone();
+        this.launchVelocity = launchVelocity;
     }
 
     /**
