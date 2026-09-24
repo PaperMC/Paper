@@ -19,7 +19,7 @@ public class EntityPotentSulfurLaunchEvent extends EntityEvent {
     private final Block sulfurBlock;
     private final Location sourceLocation;
 
-    private Vector launchVelocity;
+    private final Vector launchVelocity;
 
     @ApiStatus.Internal
     public EntityPotentSulfurLaunchEvent(
@@ -31,7 +31,7 @@ public class EntityPotentSulfurLaunchEvent extends EntityEvent {
         super(entity);
         this.sulfurBlock = sulfurBlock;
         this.sourceLocation = sourceLocation;
-        this.launchVelocity = launchVelocity;
+        this.launchVelocity = launchVelocity.clone();
     }
 
     /**
@@ -53,13 +53,6 @@ public class EntityPotentSulfurLaunchEvent extends EntityEvent {
      */
     public Vector getLaunchVelocity() {
         return this.launchVelocity.clone();
-    }
-
-    /**
-     * Changes the velocity that will be added to the entity.
-     */
-    public void setLaunchVelocity(Vector launchVelocity) {
-        this.launchVelocity = launchVelocity.clone();
     }
 
     @Override
