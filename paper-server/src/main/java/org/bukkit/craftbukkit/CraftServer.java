@@ -1640,9 +1640,6 @@ public final class CraftServer implements Server {
         // Paper start - resend recipes on successful removal
         final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
         final boolean removed = this.getServer().getRecipeManager().removeRecipe(id);
-        if (removed/* && resendRecipes*/) { // TODO Always need to resend them rn - deprecate this method?
-            this.playerList.reloadRecipes();
-        }
         return removed;
         // Paper end - resend recipes on successful removal
     }
