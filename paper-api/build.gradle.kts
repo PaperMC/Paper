@@ -32,7 +32,9 @@ val apiAndDocs = configurations.dependencyScope("apiAndDocs")
 configurations.api {
     extendsFrom(apiAndDocs)
 }
-val javadocSourcepath = configurations.register("javadocSourcepath") {
+val javadocSourcepath = configurations.dependencyScope("javadocSourcepath")
+val javadocSourcepathResolvable = configurations.register("javadocSourcepathResolvable") {
+    extendsFrom(javadocSourcepath)
     attributes {
         attribute(Category.CATEGORY_ATTRIBUTE, named(Category.DOCUMENTATION))
         attribute(Bundling.BUNDLING_ATTRIBUTE, named(Bundling.EXTERNAL))
@@ -42,7 +44,10 @@ val javadocSourcepath = configurations.register("javadocSourcepath") {
 }
 
 // Configure mockito agent that is needed in newer Java versions
-val mockitoAgent = configurations.register("mockitoAgent")
+val mockitoAgent = configurations.dependencyScope("mockitoAgent")
+val mockitoAgentResolvable = configurations.resolvable("mockitoAgentResolvable") {
+    extendsFrom(mockitoAgent)
+}
 abstract class MockitoAgentProvider : CommandLineArgumentProvider {
     @get:CompileClasspath
     abstract val fileCollection: ConfigurableFileCollection
@@ -215,8 +220,8 @@ tasks.withType<Javadoc>().configureEach {
     )
     options.tags(projectCustomJavadocTags.map { it.toOptionString() })
 
-    inputs.files(javadocSourcepath).ignoreEmptyDirectories().withPropertyName(javadocSourcepath.name + "-configuration")
-    val javadocSourcepathElements = javadocSourcepath.map { it.elements }
+    inputs.files(javadocSourcepathResolvable).ignoreEmptyDirectories().withPropertyName(javadocSourcepathResolvable.name + "-configuration")
+    val javadocSourcepathElements = javadocSourcepathResolvable.map { it.elements }
     doFirst {
         options.addStringOption(
             "sourcepath",
@@ -242,7 +247,7 @@ tasks.test {
 
     // configure mockito agent that is needed in newer java versions
     val provider = objects.newInstance<MockitoAgentProvider>()
-    provider.fileCollection.from(mockitoAgent)
+    provider.fileCollection.from(mockitoAgentResolvable)
     jvmArgumentProviders.add(provider)
 }
 

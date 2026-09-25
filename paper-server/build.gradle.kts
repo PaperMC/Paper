@@ -101,7 +101,10 @@ configurations.consumable("runtimeConfiguration") {
 }
 
 // Configure mockito agent that is needed in newer java versions
-val mockitoAgent = configurations.register("mockitoAgent")
+val mockitoAgent = configurations.dependencyScope("mockitoAgent")
+val mockitoAgentResolvable = configurations.resolvable("mockitoAgentResolvable") {
+    extendsFrom(mockitoAgent)
+}
 abstract class MockitoAgentProvider : CommandLineArgumentProvider {
     @get:CompileClasspath
     abstract val fileCollection: ConfigurableFileCollection
@@ -245,7 +248,7 @@ tasks.test {
 
     // Configure mockito agent that is needed in newer java versions
     val provider = objects.newInstance<MockitoAgentProvider>()
-    provider.fileCollection.from(mockitoAgent)
+    provider.fileCollection.from(mockitoAgentResolvable)
     jvmArgumentProviders.add(provider)
 }
 
