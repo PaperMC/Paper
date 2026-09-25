@@ -33,7 +33,7 @@ configurations.api {
     extendsFrom(apiAndDocs)
 }
 val javadocSourcepath = configurations.dependencyScope("javadocSourcepath")
-val javadocSourcepathResolvable = configurations.register("javadocSourcepathResolvable") {
+val javadocSourcepathResolvable = configurations.resolvable("javadocSourcepathResolvable") {
     extendsFrom(javadocSourcepath)
     attributes {
         attribute(Category.CATEGORY_ATTRIBUTE, named(Category.DOCUMENTATION))
@@ -220,7 +220,7 @@ tasks.withType<Javadoc>().configureEach {
     )
     options.tags(projectCustomJavadocTags.map { it.toOptionString() })
 
-    inputs.files(javadocSourcepathResolvable).ignoreEmptyDirectories().withPropertyName(javadocSourcepathResolvable.name + "-configuration")
+    inputs.files(javadocSourcepathResolvable).ignoreEmptyDirectories().withPropertyName(javadocSourcepath.name + "-configuration")
     val javadocSourcepathElements = javadocSourcepathResolvable.map { it.elements }
     doFirst {
         options.addStringOption(
