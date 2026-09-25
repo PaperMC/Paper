@@ -28,11 +28,11 @@ val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
 val slf4jVersion = "2.0.17"
 val log4jVersion = "2.26.0"
 
-val apiAndDocs: Configuration by configurations.creating
+val apiAndDocs: Configuration = configurations.create("apiAndDocs")
 configurations.api {
     extendsFrom(apiAndDocs)
 }
-val javadocSourcepath: Configuration by configurations.creating {
+val javadocSourcepath: Configuration = configurations.create("javadocSourcepath") {
     attributes {
         attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
         attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
@@ -251,7 +251,7 @@ tasks.compileTestJava {
     options.compilerArgs.add("-parameters")
 }
 
-val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+val scanJarForBadCalls = tasks.register<io.papermc.paperweight.tasks.ScanJarForBadCalls>("scanJarForBadCalls") {
     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
     jarToScan.set(tasks.jar.flatMap { it.archiveFile })
     classpath.from(configurations.compileClasspath)
