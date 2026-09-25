@@ -1638,12 +1638,10 @@ public final class CraftServer implements Server {
     public boolean removeRecipe(NamespacedKey recipeKey, boolean resendRecipes) {
         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
 
-        // Paper start - resend recipes on successful removal
         final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
         // removeRecipe(...) calls reloadRecipes() already
         final boolean removed = this.getServer().getRecipeManager().removeRecipe(id);
         return removed;
-        // Paper end - resend recipes on successful removal
     }
 
     @Override
