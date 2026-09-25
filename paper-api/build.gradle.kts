@@ -28,16 +28,16 @@ val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
 val slf4jVersion = "2.0.17"
 val log4jVersion = "2.26.0"
 
-val apiAndDocs: Configuration = configurations.create("apiAndDocs")
+val apiAndDocs = configurations.dependencyScope("apiAndDocs")
 configurations.api {
     extendsFrom(apiAndDocs)
 }
-val javadocSourcepath: Configuration = configurations.create("javadocSourcepath") {
+val javadocSourcepath = configurations.register("javadocSourcepath") {
     attributes {
-        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
-        attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
-        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.SOURCES))
-        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+        attribute(Category.CATEGORY_ATTRIBUTE, named(Category.DOCUMENTATION))
+        attribute(Bundling.BUNDLING_ATTRIBUTE, named(Bundling.EXTERNAL))
+        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, named(DocsType.SOURCES))
+        attribute(Usage.USAGE_ATTRIBUTE, named(Usage.JAVA_RUNTIME))
     }
 }
 
@@ -144,7 +144,7 @@ configurations {
 }
 
 configure<PublishingExtension> {
-    publications.create<MavenPublication>("maven") {
+    publications.register<MavenPublication>("maven") {
         // For Brigadier API
         outgoingVariants.forEach {
             suppressPomMetadataWarningsFor(it)
@@ -178,7 +178,7 @@ abstract class GenerateApiVersioningFile : DefaultTask() {
 val generateApiVersioningFile = tasks.register<GenerateApiVersioningFile>("generateApiVersioningFile") {
     outputFile.set(layout.buildDirectory.file("apiVersioning.json"))
     projectVersion.set(project.version.toString())
-    apiVersion.set(rootProject.providers.gradleProperty("apiVersion"))
+    apiVersion.set(providers.gradleProperty("apiVersion"))
 }
 
 tasks.jar {
@@ -216,11 +216,11 @@ tasks.withType<Javadoc>().configureEach {
     options.tags(projectCustomJavadocTags.map { it.toOptionString() })
 
     inputs.files(javadocSourcepath).ignoreEmptyDirectories().withPropertyName(javadocSourcepath.name + "-configuration")
-    val javadocSourcepathElements = javadocSourcepath.elements
+    val javadocSourcepathElements = javadocSourcepath.map { it.elements }
     doFirst {
         options.addStringOption(
             "sourcepath",
-            javadocSourcepathElements.get().map { it.asFile }.joinToString(separator = File.pathSeparator, transform = File::getPath)
+            javadocSourcepathElements.get().get().map { it.asFile }.joinToString(separator = File.pathSeparator, transform = File::getPath)
         )
     }
 
