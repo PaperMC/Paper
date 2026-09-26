@@ -92,6 +92,7 @@ public class GlobalConfiguration extends ConfigurationPart {
             public Component flyingVehicle = Component.translatable("multiplayer.disconnect.flying");
         }
 
+        public @Nullable Component motd = null;
         public Component noPermission = Component.text("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", NamedTextColor.RED);
         public boolean useDisplayNameInQuitMessage = false;
     }
