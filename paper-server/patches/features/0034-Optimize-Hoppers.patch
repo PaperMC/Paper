@@ -59,41 +59,6 @@ index b675e9322234761a69e71e9e8b9d41364caf34b6..c3bf41af0273e902f881cc070fcef6dd
              profiler.push(() -> level + " " + level.dimension().identifier());
              profiler.push("tick");
  
-diff --git a/net/minecraft/world/CompoundContainer.java b/net/minecraft/world/CompoundContainer.java
-index 42bf1a147b55a01dbbbd3d3ab94cdcfa873600a6..c02945e48bf9519d8b9e5010e1011cf7244135e2 100644
---- a/net/minecraft/world/CompoundContainer.java
-+++ b/net/minecraft/world/CompoundContainer.java
-@@ -102,6 +102,13 @@ public class CompoundContainer implements Container {
-         }
-     }
- 
-+    // Paper start - Perf: Optimize Hoppers
-+    @Override
-+    public Container getDirectContainer(int slot) {
-+        return slot >= this.container1.getContainerSize() ? this.container2 : this.container1;
-+    }
-+    // Paper end - Perf: Optimize Hoppers
-+
-     @Override
-     public int getMaxStackSize() {
-         return Math.min(this.container1.getMaxStackSize(), this.container2.getMaxStackSize()); // CraftBukkit - check both sides
-diff --git a/net/minecraft/world/Container.java b/net/minecraft/world/Container.java
-index 6e08d50794c4af4405f3e164a3fd46f376b3f78f..6954d414877eb6ac9bd8352401ee8b8fa25ace6e 100644
---- a/net/minecraft/world/Container.java
-+++ b/net/minecraft/world/Container.java
-@@ -31,6 +31,12 @@ public interface Container extends Clearable, Iterable<ItemStack>, SlotProvider
- 
-     void setItem(int slot, ItemStack itemStack);
- 
-+    // Paper start - Perf: Optimize Hoppers
-+    default Container getDirectContainer(int slot) {
-+        return this;
-+    }
-+    // Paper end - Perf: Optimize Hoppers
-+
-     int getMaxStackSize(); // CraftBukkit
- 
-     default int getMaxStackSize(final ItemStack itemStack) {
 diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
 index 4ad6def926393a83abddee39d7f547a368a979c9..00861318771cd184c9f75a9a036deee9ec2ba310 100644
 --- a/net/minecraft/world/item/ItemStack.java
@@ -139,7 +104,7 @@ index d3f17088d8f0592ef1231cf3f8bb3ca83170de0b..ddda24a55201de2136fc6dd2cb863d60
          }
      }
 diff --git a/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 79f5ff289db0bd5bcdbe79e60e8114331efa68cf..1b0d7877e6906a8cc83772d8644354b8610b0775 100644
+index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..17c28fbedde81aaf792508af1d0e33ef521e4ef0 100644
 --- a/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -142,6 +142,43 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
@@ -201,7 +166,7 @@ index 79f5ff289db0bd5bcdbe79e60e8114331efa68cf..1b0d7877e6906a8cc83772d8644354b8
                  changed |= action.getAsBoolean();
              }
  
-@@ -179,67 +217,218 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -179,67 +217,223 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
          return true;
      }
  
@@ -252,10 +217,10 @@ index 79f5ff289db0bd5bcdbe79e60e8114331efa68cf..1b0d7877e6906a8cc83772d8644354b8
 +                }
 +                origItemStack.setCount(originalItemCount);
 +            }
-         }
++        }
 +        if (foundItem && level.paperConfig().hopper.cooldownWhenFull) { // Inventory was full - cooldown
 +            hopper.setCooldown(level.spigotConfig.hopperTransfer);
-+        }
+         }
 +        return false;
 +    }
  
@@ -314,7 +279,12 @@ index 79f5ff289db0bd5bcdbe79e60e8114331efa68cf..1b0d7877e6906a8cc83772d8644354b8
 +            return true;
 +        }
 +        origItemStack.setCount(originalItemCount);
-+        container.getDirectContainer(i).setChanged();
++
++        Container updatedContainer = container;
++        if (container instanceof net.minecraft.world.CompoundContainer compoundContainer) {
++            updatedContainer = i >= compoundContainer.container1.getContainerSize() ? compoundContainer.container2 : compoundContainer.container1;
++        }
++        updatedContainer.setChanged();
 +
 +        if (level.paperConfig().hopper.cooldownWhenFull) {
 +            applyCooldown(hopper);
@@ -347,11 +317,6 @@ index 79f5ff289db0bd5bcdbe79e60e8114331efa68cf..1b0d7877e6906a8cc83772d8644354b8
 +            return itemStack;
 +        }
 +    }
-+
-+    @Nullable
-+    private static ItemStack callPullMoveEvent(final Hopper hopper, final Container container, final ItemStack itemstack) {
-+        final org.bukkit.inventory.Inventory sourceInventory = getInventory(container);
-+        final org.bukkit.inventory.Inventory destination = getInventory(hopper);
  
 -                org.bukkit.event.inventory.InventoryMoveItemEvent event = new org.bukkit.event.inventory.InventoryMoveItemEvent(
 -                    self.getOwner().getInventory(),
@@ -362,6 +327,11 @@ index 79f5ff289db0bd5bcdbe79e60e8114331efa68cf..1b0d7877e6906a8cc83772d8644354b8
 -                if (!event.callEvent()) {
 -                    self.setItem(slot, original);
 -                    self.setCooldown(level.spigotConfig.hopperTransfer); // Delay hopper checks // Spigot
++    @Nullable
++    private static ItemStack callPullMoveEvent(final Hopper hopper, final Container container, final ItemStack itemstack) {
++        final org.bukkit.inventory.Inventory sourceInventory = getInventory(container);
++        final org.bukkit.inventory.Inventory destination = getInventory(hopper);
++
 +        // Mirror is safe as no plugins ever use this item
 +        final io.papermc.paper.event.inventory.PaperInventoryMoveItemEvent event = new io.papermc.paper.event.inventory.PaperInventoryMoveItemEvent(sourceInventory, org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitMirror(itemstack), destination, false);
 +        final boolean result = event.callEvent();
@@ -468,7 +438,7 @@ index 79f5ff289db0bd5bcdbe79e60e8114331efa68cf..1b0d7877e6906a8cc83772d8644354b8
      }
  
      private static int[] getSlots(final Container container, final Direction direction) {
-@@ -292,6 +481,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -292,6 +486,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
          Container container = getSourceContainer(level, hopper, blockPos, blockState);
          if (container != null) {
              Direction direction = Direction.DOWN;
@@ -476,7 +446,7 @@ index 79f5ff289db0bd5bcdbe79e60e8114331efa68cf..1b0d7877e6906a8cc83772d8644354b8
  
              for (int slot : getSlots(container, direction)) {
                  if (tryTakeInItemFromSlot(hopper, container, slot, direction, level)) { // Spigot
-@@ -319,54 +509,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -319,54 +514,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      private static boolean tryTakeInItemFromSlot(final Hopper hopper, final Container container, final int slot, final Direction direction, final Level level) { // Spigot
          ItemStack itemStack = container.getItem(slot);
          if (!itemStack.isEmpty() && canTakeItemFromContainer(hopper, container, itemStack, slot, direction)) {
@@ -532,7 +502,7 @@ index 79f5ff289db0bd5bcdbe79e60e8114331efa68cf..1b0d7877e6906a8cc83772d8644354b8
          }
  
          return false;
-@@ -375,13 +518,15 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -375,13 +523,15 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      public static boolean addItem(final Container container, final ItemEntity entity) {
          boolean changed = false;
          // CraftBukkit start
@@ -549,7 +519,7 @@ index 79f5ff289db0bd5bcdbe79e60e8114331efa68cf..1b0d7877e6906a8cc83772d8644354b8
          ItemStack copy = entity.getItem().copy();
          ItemStack result = addItem(null, container, copy, null);
          if (result.isEmpty()) {
-@@ -440,7 +585,9 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -440,7 +590,9 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
                      itemStack = itemStack.split(container.getMaxStackSize());
                  }
                  // Spigot end
@@ -559,7 +529,7 @@ index 79f5ff289db0bd5bcdbe79e60e8114331efa68cf..1b0d7877e6906a8cc83772d8644354b8
                  itemStack = leftover; // Paper - Make hoppers respect inventory max stack size
                  success = true;
              } else if (canMergeItems(current, itemStack)) {
-@@ -526,14 +673,22 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -526,14 +678,22 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      }
  
      public static @Nullable Container getContainerAt(final Level level, final BlockPos pos) {
@@ -584,7 +554,7 @@ index 79f5ff289db0bd5bcdbe79e60e8114331efa68cf..1b0d7877e6906a8cc83772d8644354b8
              result = getEntityContainer(level, x, y, z);
          }
  
-@@ -557,14 +712,14 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -557,14 +717,14 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      }
  
      private static @Nullable Container getEntityContainer(final Level level, final double x, final double y, final double z) {
