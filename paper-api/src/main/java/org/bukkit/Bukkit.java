@@ -1352,11 +1352,7 @@ public final class Bukkit {
      * Gets a list of command aliases defined in the server properties.
      *
      * @return a map of aliases to command names
-     * @apiNote plugin developers should prefer to use the
-     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
-     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
-    @ApiStatus.Obsolete(since = "26.3")
     @NotNull
     public static Map<String, String[]> getCommandAliases() {
         return server.getCommandAliases();
@@ -2683,11 +2679,7 @@ public final class Bukkit {
      * Reload the Command Aliases in commands.yml
      *
      * @return Whether the reload was successful
-     * @apiNote plugin developers should prefer to use the
-     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
-     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
-    @ApiStatus.Obsolete(since = "26.3")
     public static boolean reloadCommandAliases() {
         return server.reloadCommandAliases();
     }
