@@ -104,7 +104,7 @@ index d3f17088d8f0592ef1231cf3f8bb3ca83170de0b..ddda24a55201de2136fc6dd2cb863d60
          }
      }
 diff --git a/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa08ae9ec08 100644
+index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..17c28fbedde81aaf792508af1d0e33ef521e4ef0 100644
 --- a/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -142,6 +142,43 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
@@ -166,7 +166,7 @@ index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa0
                  changed |= action.getAsBoolean();
              }
  
-@@ -179,67 +217,218 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -179,67 +217,223 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
          return true;
      }
  
@@ -217,10 +217,10 @@ index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa0
 +                }
 +                origItemStack.setCount(originalItemCount);
 +            }
-         }
++        }
 +        if (foundItem && level.paperConfig().hopper.cooldownWhenFull) { // Inventory was full - cooldown
 +            hopper.setCooldown(level.spigotConfig.hopperTransfer);
-+        }
+         }
 +        return false;
 +    }
  
@@ -231,7 +231,6 @@ index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa0
 +        ItemStack movedItem = origItemStack;
 +        final int originalItemCount = origItemStack.getCount();
 +        final int movedItemCount = Math.min(level.spigotConfig.hopperAmount, originalItemCount);
-+        container.setChanged(); // original logic always marks source inv as changed even if no move happens.
 +        movedItem.setCount(movedItemCount);
 +
 +        if (!skipPullModeEventFire) {
@@ -281,6 +280,12 @@ index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa0
 +        }
 +        origItemStack.setCount(originalItemCount);
 +
++        Container updatedContainer = container;
++        if (container instanceof net.minecraft.world.CompoundContainer compoundContainer) {
++            updatedContainer = i >= compoundContainer.container1.getContainerSize() ? compoundContainer.container2 : compoundContainer.container1;
++        }
++        updatedContainer.setChanged();
++
 +        if (level.paperConfig().hopper.cooldownWhenFull) {
 +            applyCooldown(hopper);
 +        }
@@ -312,7 +317,16 @@ index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa0
 +            return itemStack;
 +        }
 +    }
-+
+ 
+-                org.bukkit.event.inventory.InventoryMoveItemEvent event = new org.bukkit.event.inventory.InventoryMoveItemEvent(
+-                    self.getOwner().getInventory(),
+-                    oitemstack,
+-                    destinationInventory,
+-                    true
+-                );
+-                if (!event.callEvent()) {
+-                    self.setItem(slot, original);
+-                    self.setCooldown(level.spigotConfig.hopperTransfer); // Delay hopper checks // Spigot
 +    @Nullable
 +    private static ItemStack callPullMoveEvent(final Hopper hopper, final Container container, final ItemStack itemstack) {
 +        final org.bukkit.inventory.Inventory sourceInventory = getInventory(container);
@@ -356,16 +370,7 @@ index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa0
 +            blockEntity.setCooldown(blockEntity.getLevel().spigotConfig.hopperTransfer);
 +        }
 +    }
- 
--                org.bukkit.event.inventory.InventoryMoveItemEvent event = new org.bukkit.event.inventory.InventoryMoveItemEvent(
--                    self.getOwner().getInventory(),
--                    oitemstack,
--                    destinationInventory,
--                    true
--                );
--                if (!event.callEvent()) {
--                    self.setItem(slot, original);
--                    self.setCooldown(level.spigotConfig.hopperTransfer); // Delay hopper checks // Spigot
++
 +    private static boolean allMatch(Container container, Direction direction, java.util.function.BiPredicate<ItemStack, Integer> test) {
 +        if (container instanceof WorldlyContainer worldlyContainer) {
 +            for (int slot : worldlyContainer.getSlotsForFace(direction)) {
@@ -433,7 +438,7 @@ index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa0
      }
  
      private static int[] getSlots(final Container container, final Direction direction) {
-@@ -292,6 +481,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -292,6 +486,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
          Container container = getSourceContainer(level, hopper, blockPos, blockState);
          if (container != null) {
              Direction direction = Direction.DOWN;
@@ -441,7 +446,7 @@ index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa0
  
              for (int slot : getSlots(container, direction)) {
                  if (tryTakeInItemFromSlot(hopper, container, slot, direction, level)) { // Spigot
-@@ -319,54 +509,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -319,54 +514,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      private static boolean tryTakeInItemFromSlot(final Hopper hopper, final Container container, final int slot, final Direction direction, final Level level) { // Spigot
          ItemStack itemStack = container.getItem(slot);
          if (!itemStack.isEmpty() && canTakeItemFromContainer(hopper, container, itemStack, slot, direction)) {
@@ -497,7 +502,7 @@ index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa0
          }
  
          return false;
-@@ -375,13 +518,15 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -375,13 +523,15 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      public static boolean addItem(final Container container, final ItemEntity entity) {
          boolean changed = false;
          // CraftBukkit start
@@ -514,7 +519,7 @@ index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa0
          ItemStack copy = entity.getItem().copy();
          ItemStack result = addItem(null, container, copy, null);
          if (result.isEmpty()) {
-@@ -440,7 +585,9 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -440,7 +590,9 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
                      itemStack = itemStack.split(container.getMaxStackSize());
                  }
                  // Spigot end
@@ -524,7 +529,7 @@ index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa0
                  itemStack = leftover; // Paper - Make hoppers respect inventory max stack size
                  success = true;
              } else if (canMergeItems(current, itemStack)) {
-@@ -526,14 +673,22 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -526,14 +678,22 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      }
  
      public static @Nullable Container getContainerAt(final Level level, final BlockPos pos) {
@@ -549,7 +554,7 @@ index 30f681ba31c3b7997ef0d1d6153e9339fb4b2d3b..86f005e755f58f9f6a674a5065444fa0
              result = getEntityContainer(level, x, y, z);
          }
  
-@@ -557,14 +712,14 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+@@ -557,14 +717,14 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
      }
  
      private static @Nullable Container getEntityContainer(final Level level, final double x, final double y, final double z) {
