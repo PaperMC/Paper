@@ -53,7 +53,7 @@ if (project.providers.gradleProperty("publishDevBundle").isPresent) {
     val runtime = configurations.consumable("serverRuntimeClasspath") {
         attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
         attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
-        extendsFrom(configurations.runtimeClasspath.get())
+        extendsFrom(configurations.runtimeClasspath)
     }
     devBundleComponent.addVariantsFromConfiguration(runtime) {
         mapToMavenScope("runtime")
@@ -62,7 +62,7 @@ if (project.providers.gradleProperty("publishDevBundle").isPresent) {
     val compile = configurations.consumable("serverCompileClasspath") {
         attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
         attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_API))
-        extendsFrom(configurations.compileClasspath.get())
+        extendsFrom(configurations.compileClasspath)
     }
     devBundleComponent.addVariantsFromConfiguration(compile) {
         mapToMavenScope("compile")
@@ -79,7 +79,7 @@ if (project.providers.gradleProperty("publishDevBundle").isPresent) {
     }
 
     publishing {
-        publications.create<MavenPublication>("devBundle") {
+        publications.register<MavenPublication>("devBundle") {
             artifactId = "dev-bundle"
             from(devBundleComponent)
         }
@@ -88,17 +88,23 @@ if (project.providers.gradleProperty("publishDevBundle").isPresent) {
 
 val log4jPlugins = sourceSets.create("log4jPlugins")
 configurations.named(log4jPlugins.compileClasspathConfigurationName) {
-    extendsFrom(configurations.compileClasspath.get())
+    extendsFrom(configurations.compileClasspath)
 }
-val alsoShade: Configuration = configurations.create("alsoShade")
+val alsoShade = configurations.dependencyScope("alsoShade")
+val alsoShadeResolvable = configurations.resolvable("alsoShadeResolvable") {
+    extendsFrom(alsoShade)
+}
 
 configurations.consumable("runtimeConfiguration") {
     attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
-    extendsFrom(configurations.getByName(sourceSets.main.get().runtimeElementsConfigurationName))
+    extendsFrom(configurations.named(sourceSets.main.get().runtimeElementsConfigurationName))
 }
 
 // Configure mockito agent that is needed in newer java versions
-val mockitoAgent = configurations.register("mockitoAgent")
+val mockitoAgent = configurations.dependencyScope("mockitoAgent")
+val mockitoAgentResolvable = configurations.resolvable("mockitoAgentResolvable") {
+    extendsFrom(mockitoAgent)
+}
 abstract class MockitoAgentProvider : CommandLineArgumentProvider {
     @get:CompileClasspath
     abstract val fileCollection: ConfigurableFileCollection
@@ -161,8 +167,8 @@ dependencies {
 
 tasks.jar {
     manifest {
-        val git = Git(rootProject.layout.projectDirectory.path)
-        val mcVersion = rootProject.providers.gradleProperty("mcVersion").get()
+        val git = Git(isolated.rootProject.projectDirectory.path)
+        val mcVersion = providers.gradleProperty("mcVersion").get()
         val build = System.getenv("BUILD_NUMBER") ?: null
         val buildTime = providers.environmentVariable("BUILD_STARTED_AT").map(Instant::parse).orElse(Instant.EPOCH).get()
         val gitHash = git.exec(providers, "rev-parse", "--short=7", "HEAD").get().trim()
@@ -221,7 +227,7 @@ tasks.check {
 // Use TCA for console improvements
 tasks.jar {
     val archiveOperations = services.archiveOperations
-    from(alsoShade.elements.map {
+    from(alsoShadeResolvable.flatMap { it.elements.map {
         it.map { f ->
             if (f.asFile.isFile) {
                 archiveOperations.zipTree(f.asFile)
@@ -229,7 +235,7 @@ tasks.jar {
                 f.asFile
             }
         }
-    })
+    }})
 }
 
 tasks.test {
@@ -242,7 +248,7 @@ tasks.test {
 
     // Configure mockito agent that is needed in newer java versions
     val provider = objects.newInstance<MockitoAgentProvider>()
-    provider.fileCollection.from(mockitoAgent)
+    provider.fileCollection.from(mockitoAgentResolvable)
     jvmArgumentProviders.add(provider)
 }
 
@@ -267,7 +273,7 @@ fun TaskContainer.registerRunTask(
     group = "runs"
     mainClass.set("org.bukkit.craftbukkit.Main")
     standardInput = System.`in`
-    workingDir = rootProject.layout.projectDirectory
+    workingDir = isolated.rootProject.projectDirectory
         .dir(providers.gradleProperty("paper.runWorkDir").getOrElse("run"))
         .asFile
     javaLauncher.set(project.javaToolchains.launcherFor {
