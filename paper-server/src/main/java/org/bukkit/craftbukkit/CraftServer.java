@@ -1665,7 +1665,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @Deprecated
     public Map<String, String[]> getCommandAliases() {
         ConfigurationSection section = this.commandsConfiguration.getConfigurationSection("aliases");
         Map<String, String[]> result = new LinkedHashMap<>();
@@ -2861,7 +2860,6 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    @Deprecated
     public boolean reloadCommandAliases() {
         Set<String> removals = getCommandAliases().keySet().stream()
                 .map(key -> key.toLowerCase(java.util.Locale.ENGLISH))

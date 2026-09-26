@@ -312,10 +312,10 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @deprecated plugin developers should prefer to use the
      *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
-     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
     @Override
-    @Deprecated(since = "26.3")
+    @Deprecated(since = "26.4")
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         return false;
     }
@@ -325,10 +325,10 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @deprecated plugin developers should prefer to use the
      *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
-     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
     @Override
-    @Deprecated(since = "26.3")
+    @Deprecated(since = "26.4")
     public @Nullable List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         return null;
     }
@@ -344,9 +344,9 @@ public abstract class JavaPlugin extends PluginBase {
      * @see #registerCommand(String, String, Collection, BasicCommand)
      * @deprecated plugin developers should prefer to use the
      *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
-     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
-    @Deprecated(since = "26.3")
+    @Deprecated(since = "26.4")
     public @Nullable PluginCommand getCommand(String name) {
         if (this.isBeingEnabled && !(pluginMeta instanceof PluginDescriptionFile)) {
             throw new UnsupportedOperationException("""

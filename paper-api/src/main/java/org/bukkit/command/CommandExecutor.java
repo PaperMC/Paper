@@ -7,9 +7,9 @@ import org.jetbrains.annotations.NotNull;
  *
  * @deprecated plugin developers should prefer to use the
  *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
- *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
+ *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
  */
-@Deprecated(since = "26.3")
+@Deprecated(since = "26.4")
 public interface CommandExecutor {
 
     /**
@@ -27,6 +27,6 @@ public interface CommandExecutor {
      *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
      *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
      */
-    @Deprecated(since = "26.3")
+    @Deprecated(since = "26.4")
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args);
 }
