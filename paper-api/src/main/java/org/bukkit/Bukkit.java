@@ -2662,7 +2662,7 @@ public final class Bukkit {
      * Gets the active {@link org.bukkit.command.CommandMap}
      *
      * @return the active command map
-     * @deprecated plugin developers should prefer to use the
+     * @apiNote plugin developers should prefer to use the
      *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
      *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
