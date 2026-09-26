@@ -1,0 +1,34 @@
+name: Release 26.3
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  checks: write
+  contents: read
+
+jobs:
+  release:
+    runs-on: namespace-profile-linux-default
+    timeout-minutes: 30
+    env:
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - name: "git / checkout"
+        uses: namespacelabs/nscloud-checkout-action@66f2dc6f6c42a8ac6c4e53473c4840006822831e # v9.0.1
+
+      - uses: papermc/ci/build@main
+
+      - uses: papermc/ci/build-paper@main
+
+      - uses: papermc/ci/publish-paper@main
+        with:
+          fill_api_url: ${{ secrets.FILL_API_URL }}
+          fill_api_key: ${{ secrets.FILL_API_KEY }}
+          maven_username: ${{ secrets.ARTIFACTORY_USERNAME }}
+          maven_password: ${{ secrets.ARTIFACTORY_PASSWORD }}
+          maven_tasks: :paper-api:publish publishDevBundlePublicationToPaperReleasesRepository
+
+      - uses: papermc/ci/upload-test-results@main
