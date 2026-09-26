@@ -5,14 +5,17 @@
 # of the PR relating to this action.
 
 name: Build Paper
+
 on:
-  push:
   pull_request:
     types:
       - opened
       - reopened
       - synchronize
       - labeled
+  push:
+    branches-ignore:
+      - main
 
 jobs:
   build:
@@ -35,49 +38,38 @@ jobs:
 
     runs-on: namespace-profile-linux-default
     steps:
-      - if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v7
+      - name: "git / checkout (push)"
+        uses: namespacelabs/nscloud-checkout-action@66f2dc6f6c42a8ac6c4e53473c4840006822831e # v9.0.1
         with:
-          # todo remove me again after the update
-          ref: ${{ github.ref_name }}
           fetch-depth: 0
-      - if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/checkout@v7
+          ref: ${{ github.ref_name }}
+
+      - name: "git / checkout (pull request)"
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: namespacelabs/nscloud-checkout-action@66f2dc6f6c42a8ac6c4e53473c4840006822831e # v9.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: JDK 25
-        uses: actions/setup-java@v5
-        with:
-          java-version: 25
-          distribution: 'zulu'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          # Allow cache writes on main and dev branches
-          cache-read-only: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/dev/') }}
+      # todo: cache-read-only: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/dev/') }}
+      - uses: papermc/ci/build@main
 
       - name: Configure Build
         uses: actions/github-script@v9
         id: determine
-        env:
-          REF_NAME: "${{ github.ref_name }}"
-          REF_TYPE: "${{ github.ref_type }}"
-          EVENT: "${{ toJSON(github.event) }}"
-          EVENT_TYPE: "${{ github.event_name }}"
         with:
           script: |
-            const {owner, repo} = context.repo;
-            const event_name = `${process.env.EVENT_TYPE}`;
-            const event = JSON.parse(`${process.env.EVENT}`);
-            const ref_type = `${process.env.REF_TYPE}`;
-            const ref_name = `${process.env.REF_NAME}`;
+            const { owner, repo } = context.repo;
             const result = {
               action: "build"
             };
 
-            if (event_name === "push" && ref_type === "branch") {
-              const {data: pulls} = await github.rest.pulls.list({ owner, repo, head: `${owner}:${ref_name}`, state: "open" });
+            if (context.eventName === "push" && process.env.GITHUB_REF_TYPE === "branch") {
+              const { data: pulls } = await github.rest.pulls.list({
+                owner,
+                repo,
+                head: `${owner}:${process.env.GITHUB_REF_NAME}`,
+                state: "open"
+              });
               const pull = pulls.find((pr) => !!pr.labels.find((l) => l.name === "publish-pr"));
               if (pull) {
                 result["pr"] = pull.number;
@@ -85,8 +77,8 @@ jobs:
                 core.notice(`This is a push action but to a branch with an open PR with the build paperclip label (${JSON.stringify(result)})`);
                 return result;
               }
-            } else if (event_name === "pull_request" && event.pull_request.labels.find((l) => l.name === "publish-pr")) {
-              result["pr"] = event.pull_request.number;
+            } else if (context.eventName === "pull_request" && context.payload.pull_request.labels.find((l) => l.name === "publish-pr")) {
+              result["pr"] = context.payload.pull_request.number;
               result["action"] = "paperclip";
               core.notice(`This is a pull request action with a build paperclip label (${JSON.stringify(result)})`);
               return result;
@@ -94,37 +86,24 @@ jobs:
             core.notice("This will not build a paperclip jar");
             return result;
 
-      - name: Apply Patches
-        run: |
-          git config --global user.email "no-reply@github.com"
-          git config --global user.name "GitHub Actions"
-          ./gradlew applyPatches --stacktrace
+      - uses: papermc/ci/build-paper@main
 
-      - name: Build
-        run: ./gradlew build --stacktrace
-
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: Test Results
-          path: |
-            **/build/test-results/test/TEST-*.xml
+      - uses: papermc/ci/upload-test-results@main
 
       - name: Publish Checkstyle Report
-        uses: Juuxel/publish-checkstyle-report@v3
-        if: failure() || success()
+        if: ${{ failure() || success() }}
+        uses: Juuxel/publish-checkstyle-report@16e2829b4f75e652523ab9baf32276bd3de62202 # v3.0.0
         with:
           reports: |
             */build/reports/checkstyle/*.xml
 
-      - name: Create Paperclip Jar
+      - name: "gradle / package"
         if: fromJSON(steps.determine.outputs.result).action == 'paperclip'
         run: ./gradlew createPaperclipJar --stacktrace
 
-      - name: Upload Paperclip Jar
+      - name: "upload / paperclip"
         if: fromJSON(steps.determine.outputs.result).action == 'paperclip'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: paper-${{ fromJSON(steps.determine.outputs.result).pr }}
           path: paper-server/build/libs/paper-paperclip-*.jar
@@ -135,14 +114,15 @@ jobs:
         with:
           # TODO fallback for failing javadoc
           publishing-task: ":paper-api:publishAllPublicationsTo_githubPackages_PRsRepository publishDevBundlePublicationTo_githubPackages_PRsRepository -PpublishDevBundle"
+
   event_file:
     name: "Event File"
     # Only run on PRs if the source branch is on someone else's repo
     if: ${{ github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name }}
     runs-on: namespace-profile-linux-small
     steps:
-      - name: Upload
-        uses: actions/upload-artifact@v7
+      - name: "upload / event data"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: Event File
+          name: event-data
           path: ${{ github.event_path }}
