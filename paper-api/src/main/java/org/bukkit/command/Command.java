@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
  *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
  */
-@Deprecated(since = "26.3")
+@Deprecated(since = "26.4")
 public abstract class Command {
     private String name;
     private String nextLabel;

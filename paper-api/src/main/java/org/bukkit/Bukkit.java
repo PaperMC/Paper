@@ -1371,11 +1371,7 @@ public final class Bukkit {
      * Sets the radius, in blocks, around each worlds spawn point to protect.
      *
      * @param value new spawn radius, or 0 if none
-     * @deprecated has not functioned for a long time as the spawn radius is defined by the server.properties file.
-     * There is no API replacement for this method. It is generally recommended to implement "protection"-like behaviour
-     * via events or third-party plugin APIs.
      */
-    @Deprecated(since = "1.21.4", forRemoval = true)
     public static void setSpawnRadius(int value) {
         server.setSpawnRadius(value);
     }
@@ -2838,7 +2834,11 @@ public final class Bukkit {
      * Gets the potion brewer.
      *
      * @return the potion brewer
+     * @deprecated since mojang introduced data driven brewing recipes, this type no longer offers anything that isn't
+     * covered by existing recipe and potion type API
+     * @see org.bukkit.inventory.BrewingRecipe
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     public static @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer() {
         return server.getPotionBrewer();
     }

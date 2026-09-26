@@ -997,7 +997,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return a plugin command if found, null otherwise
      * @deprecated plugin developers should prefer to use the
      *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
-     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
     @Deprecated(since = "26.4")
     @Nullable
@@ -2629,7 +2629,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the potion brewer.
      *
      * @return the potion brewer
+     * @deprecated since mojang introduced data driven brewing recipes, this type no longer offers anything that isn't
+     * covered by existing recipe and potion type API
+     * @see org.bukkit.inventory.BrewingRecipe
      */
+    @Deprecated(since = "26.3", forRemoval = true)
     @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
     // Paper end
 
