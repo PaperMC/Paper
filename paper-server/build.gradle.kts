@@ -90,9 +90,9 @@ val log4jPlugins = sourceSets.create("log4jPlugins")
 configurations.named(log4jPlugins.compileClasspathConfigurationName) {
     extendsFrom(configurations.compileClasspath.get())
 }
-val alsoShade: Configuration by configurations.creating
+val alsoShade: Configuration = configurations.create("alsoShade")
 
-val runtimeConfiguration by configurations.consumable("runtimeConfiguration") {
+configurations.consumable("runtimeConfiguration") {
     attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
     extendsFrom(configurations.getByName(sourceSets.main.get().runtimeElementsConfigurationName))
 }
@@ -110,7 +110,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:leafpile:1.2.0")
+    implementation("ca.spottedleaf:leafpile:1.2.2")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -209,7 +209,7 @@ tasks.withType<JavaCompile>().configureEach {
     options.forkOptions.memoryMaximumSize = "1G"
 }
 
-val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+val scanJarForBadCalls = tasks.register<io.papermc.paperweight.tasks.ScanJarForBadCalls>("scanJarForBadCalls") {
     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
     jarToScan.set(tasks.jar.flatMap { it.archiveFile })
     classpath.from(configurations.compileClasspath)

@@ -697,6 +697,123 @@ index 15c181961eb669a0ffde86c256078859f4419f23..4baf46256e90a87d684e57ff623076a8
 -}
 \ No newline at end of file
 +}
+diff --git a/ca/spottedleaf/moonrise/patches/bitstorage/PaletteReadoutCache.java b/ca/spottedleaf/moonrise/patches/bitstorage/PaletteReadoutCache.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7d4a48a6a94f63ca793994eae162d7f3abadba83
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/patches/bitstorage/PaletteReadoutCache.java
+@@ -0,0 +1,111 @@
++package ca.spottedleaf.moonrise.patches.bitstorage;
++
++import ca.spottedleaf.common.util.IntegerUtil;
++import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
++import net.minecraft.util.BitStorage;
++import net.minecraft.util.SimpleBitStorage;
++import net.minecraft.util.ZeroBitStorage;
++import net.minecraft.world.level.chunk.Palette;
++import java.util.Arrays;
++import java.util.Objects;
++
++public final class PaletteReadoutCache {
++
++    public static final int MAX_BIT_STORAGE_SIZE = 4096;
++    public static final int MAX_BIT_STORAGE_BITS = 12;
++    static {
++        if ((1 << MAX_BIT_STORAGE_BITS) != MAX_BIT_STORAGE_SIZE) {
++            throw new IllegalStateException();
++        }
++    }
++
++    public final Object[] newPalette = new Object[MAX_BIT_STORAGE_SIZE];
++    public int newPaletteCount;
++    public final long[] copyCache = new long[MAX_BIT_STORAGE_SIZE];
++    public final int[] reEncoded = new int[MAX_BIT_STORAGE_SIZE];
++    private final int[] newPaletteMapping = new int[MAX_BIT_STORAGE_SIZE];
++    private final Int2IntOpenHashMap newPaletteMappingLarge = new Int2IntOpenHashMap(MAX_BIT_STORAGE_SIZE, 0.5f);
++
++    public SimpleBitStorage repack(final int bits, final int size) {
++        // note: reEcoded len does not need to be size exactly; it must be > size
++        return new SimpleBitStorage(bits, size, this.reEncoded);
++    }
++
++    public boolean readout(final BitStorage src, final Palette<?> srcPalette) {
++        if (src instanceof ZeroBitStorage || srcPalette.getSize() == 1) {
++            return false;
++        }
++
++        final int srcSize = src.getSize();
++
++        if (srcSize > MAX_BIT_STORAGE_SIZE) {
++            throw new UnsupportedOperationException();
++        }
++        final long[] srcRaw = src.getRaw();
++        final int srcCount = src.getSize();
++        final int srcBits = src.getBits();
++        final int srcValuesPerElement = (Long.SIZE / srcBits);
++        final long srcMask = IntegerUtil.getLongMask(srcBits);
++
++        final long[] cpy = this.copyCache;
++        Objects.checkFromToIndex(0, srcRaw.length, cpy.length);
++
++        final int[] newPaletteMapping;
++        final Int2IntOpenHashMap newPaletteMappingLarge;
++        if ((srcMask + 1) > this.newPaletteMapping.length) {
++            newPaletteMapping = null;
++            newPaletteMappingLarge = this.newPaletteMappingLarge;
++
++            newPaletteMappingLarge.clear();
++        } else {
++            newPaletteMapping = this.newPaletteMapping;
++            newPaletteMappingLarge = null;
++
++            Arrays.fill(newPaletteMapping, 0, (int)(srcMask + 1), -1);
++        }
++
++        final int[] reEncoded = this.reEncoded;
++        Objects.checkFromToIndex(0, srcSize, reEncoded.length);
++
++        final Object[] newPalette = this.newPalette;
++        Objects.checkFromToIndex(0, srcSize, newPalette.length);
++
++        int rem = srcCount;
++        int reEncodeIndex = 0;
++        int nextPaletteId = 0;
++        for (int i = 0, len = srcRaw.length; i < len; ++i) {
++            long value = srcRaw[i];
++            cpy[i] = value;
++
++            for (int k = 0, len2 = Math.min(rem, srcValuesPerElement); k < len2; ++k, --rem) {
++                final int decoded = (int)(value & srcMask);
++                value >>>= srcBits;
++
++                final int mapped = newPaletteMapping != null ? newPaletteMapping[decoded] : newPaletteMappingLarge.getOrDefault(decoded, -1);
++                if (mapped != -1) {
++                    reEncoded[reEncodeIndex++] = mapped;
++                    continue;
++                }
++
++
++                final int computedMapping = nextPaletteId++;
++                newPalette[computedMapping] = srcPalette.valueFor(decoded);
++                reEncoded[reEncodeIndex++] = computedMapping;
++
++                if (newPaletteMapping != null) {
++                    newPaletteMapping[decoded] = computedMapping;
++                } else {
++                    newPaletteMappingLarge.put(decoded, computedMapping);
++                }
++            }
++        }
++
++        if (rem != 0) {
++            throw new IllegalStateException();
++        }
++
++        this.newPaletteCount = nextPaletteId;
++
++        return true;
++    }
++}
 diff --git a/ca/spottedleaf/moonrise/patches/block_counting/BlockCountingBitStorage.java b/ca/spottedleaf/moonrise/patches/block_counting/BlockCountingBitStorage.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..93bc56daec4526f373c84763b8c7ccb4a30e800b
@@ -1141,10 +1258,10 @@ index 0000000000000000000000000000000000000000..a814512fcfb85312474ae2c2c2144384
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java b/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..27eeb842e6b22bd12b582379eaaa76b622dfca5e
+index 0000000000000000000000000000000000000000..6dd6b4fb79870da6d3bf54dc813ae685237d1f0e
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/io/MoonriseRegionFileIO.java
-@@ -0,0 +1,1488 @@
+@@ -0,0 +1,1561 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.io;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -1937,6 +2054,9 @@ index 0000000000000000000000000000000000000000..27eeb842e6b22bd12b582379eaaa76b6
 +            if (pendingWrite == null) {
 +                // need to add to waiters here, because the regionfile thread will use compute() to lock and check for cancellations
 +                if (!running.inProgressRead.addToAsyncWaiters(onComplete)) {
++                    if (!running.inProgressRead.written) {
++                        throw new IllegalStateException("In progress read is add-blocked but data is not written");
++                    }
 +                    callbackInfo.data = running.inProgressRead.value;
 +                    callbackInfo.throwable = running.inProgressRead.throwable;
 +                    callbackInfo.completeNow = true;
@@ -1971,7 +2091,8 @@ index 0000000000000000000000000000000000000000..27eeb842e6b22bd12b582379eaaa76b6
 +            ret.scheduleReadIO();
 +        } else if (callbackInfo.completeNow) {
 +            try {
-+                onComplete.accept(callbackInfo.data == null ? null : callbackInfo.data.copy(), callbackInfo.throwable);
++                final boolean copy = !(onComplete instanceof NoCopyNBTData);
++                onComplete.accept(callbackInfo.data == null ? null : (copy ? callbackInfo.data.copy() : callbackInfo.data), callbackInfo.throwable);
 +            } catch (final Throwable thr) {
 +                LOGGER.error("Callback " + ConcurrentUtil.genericToString(onComplete) + " synchronously failed to handle chunk data for task " + ret.toString(), thr);
 +            }
@@ -2239,6 +2360,7 @@ index 0000000000000000000000000000000000000000..27eeb842e6b22bd12b582379eaaa76b6
 +                // further synchronisation.
 +            }
 +
++            final boolean cancelledWrite;
 +            if (canRead[0]) {
 +                RegionDataController.ReadData readData = null;
 +                Throwable throwable = null;
@@ -2251,12 +2373,12 @@ index 0000000000000000000000000000000000000000..27eeb842e6b22bd12b582379eaaa76b6
 +                }
 +
 +                if (throwable != null) {
-+                    this.finishRead(null, throwable);
++                    cancelledWrite = this.finishRead(null, throwable);
 +                } else {
 +                    switch (readData.result()) {
 +                        case NO_DATA:
 +                        case SYNC_READ: {
-+                            this.finishRead(readData.syncRead(), null);
++                            cancelledWrite = this.finishRead(readData.syncRead(), null);
 +                            break;
 +                        }
 +                        case HAS_DATA: {
@@ -2270,9 +2392,11 @@ index 0000000000000000000000000000000000000000..27eeb842e6b22bd12b582379eaaa76b6
 +                        }
 +                    }
 +                }
++            } else {
++                cancelledWrite = this.tryAbortWrite();
 +            }
 +
-+            if (!this.tryAbortWrite()) {
++            if (!cancelledWrite) {
 +                this.scheduleWriteCompress();
 +            }
 +        }
@@ -2306,14 +2430,45 @@ index 0000000000000000000000000000000000000000..27eeb842e6b22bd12b582379eaaa76b6
 +                return;
 +            }
 +
-+            this.finishRead(compoundTag, throwable);
-+            if (!this.tryAbortWrite()) {
++            final boolean cancelledWrite = this.finishRead(compoundTag, throwable);
++            if (!cancelledWrite) {
 +                this.scheduleWriteCompress();
 +            }
 +        }
 +
-+        private void finishRead(final CompoundTag compoundTag, final Throwable throwable) {
-+            this.inProgressRead.complete(this, compoundTag, throwable);
++        private boolean finishRead(final CompoundTag compoundTag, final Throwable throwable) {
++            final long chunkKey = CoordinateUtils.getChunkKey(this.chunkX, this.chunkZ);
++
++            final boolean[] canSingleComplete = new boolean[1];
++            final ChunkIOTask inMap = this.regionDataController.chunkTasks.compute(chunkKey, (final long keyInMap, final ChunkIOTask valueInMap) -> {
++                if (valueInMap == null) {
++                    throw new IllegalStateException("Read/write completed concurrently, expected this task: " + ChunkIOTask.this.toString() + ", report this!");
++                }
++                if (valueInMap != ChunkIOTask.this) {
++                    throw new IllegalStateException("Chunk task mismatch, expected this task: " + ChunkIOTask.this.toString() + ", got: " + valueInMap.toString() + ", report this!");
++                }
++
++                canSingleComplete[0] = valueInMap.inProgressRead.hasAtMostOneCallback();
++
++                if (valueInMap.inProgressWrite != null) {
++                    return valueInMap;
++                }
++
++                return null;
++            });
++
++            if (canSingleComplete[0]) {
++                this.inProgressRead.completeOne(this, compoundTag, throwable);
++            } else {
++                this.inProgressRead.complete(this, compoundTag, throwable);
++            }
++
++            if (inMap == null) {
++                this.regionDataController.endTask(this);
++                return true; // set the task value to null, indicating we're done
++            }
++            // else: inProgressWrite is present, indicating we need to write a value
++            return false;
 +        }
 +
 +        public void scheduleWriteCompress() {
@@ -2327,7 +2482,7 @@ index 0000000000000000000000000000000000000000..27eeb842e6b22bd12b582379eaaa76b6
 +                this.currentTask = task;
 +            }
 +
-+            inProgressWrite.addToWaiters(this, (final CompoundTag data, final Throwable throwable) -> {
++            inProgressWrite.addToWaiters(this, (BiConsumer<CompoundTag, Throwable> & NoCopyNBTData) (final CompoundTag data, final Throwable throwable) -> {
 +                task.queue();
 +            });
 +        }
@@ -2469,6 +2624,7 @@ index 0000000000000000000000000000000000000000..27eeb842e6b22bd12b582379eaaa76b6
 +
 +            private static final Logger LOGGER = LoggerFactory.getLogger(InProgressRead.class);
 +
++            private boolean written;
 +            private CompoundTag value;
 +            private Throwable throwable;
 +            private final MultiThreadedQueue<BiConsumer<CompoundTag, Throwable>> callbacks = new MultiThreadedQueue<>();
@@ -2485,17 +2641,44 @@ index 0000000000000000000000000000000000000000..27eeb842e6b22bd12b582379eaaa76b6
 +                return this.callbacks.remove(callback);
 +            }
 +
++            public boolean hasAtMostOneCallback() {
++                return this.callbacks.size() <= 1;
++            }
++
++            public void completeOne(final ChunkIOTask task, final CompoundTag value, final Throwable throwable) {
++                // since the task is either cancelled (removed) or has an in-progress write,
++                // we can guarantee that the read data is only used by one consumer - eliminating
++                // the need to copy
++
++                this.callbacks.preventAdds();
++
++                final BiConsumer<CompoundTag, Throwable> consumer = this.callbacks.poll();
++                if (consumer != null) {
++                    this.completeConsumer(task, consumer, value, throwable);
++
++                    if (!this.callbacks.isEmpty()) {
++                        throw new IllegalStateException("Expected only one callback");
++                    }
++                } // else: add blocked, we are done here
++            }
++
++            private void completeConsumer(final ChunkIOTask task, final BiConsumer<CompoundTag, Throwable> consumer, final CompoundTag value, final Throwable throwable) {
++                try {
++                    consumer.accept(value, throwable);
++                } catch (final Throwable thr) {
++                    LOGGER.error("Callback " + ConcurrentUtil.genericToString(consumer) + " failed to handle chunk data (read) for task " + task.toString(), thr);
++                }
++            }
++
 +            public void complete(final ChunkIOTask task, final CompoundTag value, final Throwable throwable) {
 +                this.value = value;
 +                this.throwable = throwable;
++                this.written = true;
 +
 +                BiConsumer<CompoundTag, Throwable> consumer;
 +                while ((consumer = this.callbacks.pollOrBlockAdds()) != null) {
-+                    try {
-+                        consumer.accept(value == null ? null : value.copy(), throwable);
-+                    } catch (final Throwable thr) {
-+                        LOGGER.error("Callback " + ConcurrentUtil.genericToString(consumer) + " failed to handle chunk data (read) for task " + task.toString(), thr);
-+                    }
++                    final boolean copy = !(consumer instanceof NoCopyNBTData);
++                    this.completeConsumer(task, consumer, value == null ? null : (copy ? value.copy() : value), throwable);
 +                }
 +            }
 +        }
@@ -2537,7 +2720,8 @@ index 0000000000000000000000000000000000000000..27eeb842e6b22bd12b582379eaaa76b6
 +
 +            private void syncAccept(final ChunkIOTask task, final BiConsumer<CompoundTag, Throwable> consumer, final CompoundTag value, final Throwable throwable) {
 +                try {
-+                    consumer.accept(value == null ? null : value.copy(), throwable);
++                    final boolean copy = !(consumer instanceof NoCopyNBTData);
++                    consumer.accept(value == null ? null : (copy ? value.copy() : value), throwable);
 +                } catch (final Throwable thr) {
 +                    LOGGER.error("Callback " + ConcurrentUtil.genericToString(consumer) + " failed to handle chunk data (write) for task " + task.toString(), thr);
 +                }
@@ -2561,6 +2745,12 @@ index 0000000000000000000000000000000000000000..27eeb842e6b22bd12b582379eaaa76b6
 +            }
 +        }
 +    }
++
++    /**
++     * Use on callbacks indicating that the NBT data input is never modified. The callback is invoked
++     * with uncopied data.
++     */
++    public static interface NoCopyNBTData {}
 +
 +    public static abstract class RegionDataController {
 +
@@ -6659,10 +6849,10 @@ index 0000000000000000000000000000000000000000..78659864651362de4fc104cbeb3e2e9a
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e418820359c430b91bb91eb65d137b9cdbe2db4b
+index 0000000000000000000000000000000000000000..1e05aab0a259bd0073c4761e419edf90fb175814
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1568 @@
+@@ -0,0 +1,1570 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -6686,6 +6876,7 @@ index 0000000000000000000000000000000000000000..e418820359c430b91bb91eb65d137b9c
 +import ca.spottedleaf.moonrise.patches.chunk_system.ticket.ChunkSystemTicketType;
 +import ca.spottedleaf.moonrise.patches.chunk_system.util.ChunkSystemSortedArraySet;
 +import ca.spottedleaf.moonrise.patches.chunk_system.util.stream.TicketSet;
++import ca.spottedleaf.moonrise.patches.chunk_system.world.ChunkSystemServerChunkCache;
 +import com.google.gson.JsonArray;
 +import com.google.gson.JsonObject;
 +import com.mojang.logging.LogUtils;
@@ -7809,6 +8000,7 @@ index 0000000000000000000000000000000000000000..e418820359c430b91bb91eb65d137b9c
 +    private void removeChunkHolder(final NewChunkHolder holder) {
 +        holder.onUnload();
 +        this.autoSaveQueue.remove(holder);
++        ((ChunkSystemServerChunkCache)this.world.getChunkSource()).moonrise$chunkHolderUnload(holder);
 +        PlatformHooks.get().onChunkHolderDelete(this.world, holder.vanillaChunkHolder);
 +        this.chunkHolders.remove(CoordinateUtils.getChunkKey(holder.chunkX, holder.chunkZ));
 +    }
@@ -8233,7 +8425,7 @@ index 0000000000000000000000000000000000000000..e418820359c430b91bb91eb65d137b9c
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2aa7a2bb7adcd0ed53f2538368f890b75b114ecf
+index 0000000000000000000000000000000000000000..bbba1766ed9da671022c467a45f7de479fb6abb4
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
 @@ -0,0 +1,1046 @@
@@ -8614,7 +8806,7 @@ index 0000000000000000000000000000000000000000..2aa7a2bb7adcd0ed53f2538368f890b7
 +            throw new IllegalArgumentException("Cannot wait for INACCESSIBLE status");
 +        }
 +
-+        final int minLevel = 33 - (toStatus.ordinal() - 1);
++        final int minLevel = ChunkLevel.byStatus(toStatus);
 +        final Long chunkReference = addTicket ? getNextChunkLoadId() : null;
 +        final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
 +
@@ -9697,10 +9889,10 @@ index 0000000000000000000000000000000000000000..7f75cc224d1dea04405f19880b6a1b57
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9a9a599ef178f851ee5c783631a724013a693586
+index 0000000000000000000000000000000000000000..7a0006f9b56d1e43b06f9f7452e1b5bb0ec53e72
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
-@@ -0,0 +1,1975 @@
+@@ -0,0 +1,1986 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.completable.CallbackCompletable;
@@ -11406,12 +11598,23 @@ index 0000000000000000000000000000000000000000..9a9a599ef178f851ee5c783631a72401
 +                : null;
 +    }
 +
++    public static final ThreadLocal<Boolean> DO_NOT_COPY_SAVED_DATA = ThreadLocal.withInitial(() -> {
++        return Boolean.FALSE;
++    });
++
 +    private boolean saveChunk(final ChunkAccess chunk, final boolean unloading, final Completable<CompoundTag>[] chunkSave) {
 +        if (!chunk.isUnsaved()) {
 +            return false;
 +        }
 +        try {
-+            final SerializableChunkData chunkData = SerializableChunkData.copyOf(this.world, chunk);
++            final SerializableChunkData chunkData;
++
++            DO_NOT_COPY_SAVED_DATA.set(Boolean.valueOf(unloading));
++            try {
++                chunkData = SerializableChunkData.copyOf(this.world, chunk);
++            } finally {
++                DO_NOT_COPY_SAVED_DATA.set(Boolean.FALSE);
++            }
 +            PlatformHooks.get().chunkSyncSave(this.world, chunk, chunkData);
 +
 +            chunk.tryMarkSaved();
@@ -15900,12 +16103,13 @@ index 0000000000000000000000000000000000000000..ea6b6ed27b212719feb31610faac9748
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/world/ChunkSystemServerChunkCache.java b/ca/spottedleaf/moonrise/patches/chunk_system/world/ChunkSystemServerChunkCache.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4b9e2fa963c14f65f15407c1814c543c2999ea32
+index 0000000000000000000000000000000000000000..bfd4a1fbfcfdc3aa90a59784b28ee077dbc26f4d
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/world/ChunkSystemServerChunkCache.java
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,14 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.world;
 +
++import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder;
 +import net.minecraft.world.level.chunk.LevelChunk;
 +
 +public interface ChunkSystemServerChunkCache {
@@ -15913,6 +16117,8 @@ index 0000000000000000000000000000000000000000..4b9e2fa963c14f65f15407c1814c543c
 +    public void moonrise$setFullChunk(final int chunkX, final int chunkZ, final LevelChunk chunk);
 +
 +    public LevelChunk moonrise$getFullChunkIfLoaded(final int chunkX, final int chunkZ);
++
++    public void moonrise$chunkHolderUnload(final NewChunkHolder chunkHolder);
 +
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_tick_iteration/ChunkTickConstants.java b/ca/spottedleaf/moonrise/patches/chunk_tick_iteration/ChunkTickConstants.java
@@ -19647,10 +19853,10 @@ index 0000000000000000000000000000000000000000..29563672f4b0e5e13625193125656549
 +}
 diff --git a/ca/spottedleaf/moonrise/patches/starlight/light/SWMRNibbleArray.java b/ca/spottedleaf/moonrise/patches/starlight/light/SWMRNibbleArray.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5c7b3804cdbcb0a873a0d195325c2658760a8914
+index 0000000000000000000000000000000000000000..240416aba0ad4649e1db401aff2565f972f5ca11
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/patches/starlight/light/SWMRNibbleArray.java
-@@ -0,0 +1,441 @@
+@@ -0,0 +1,445 @@
 +package ca.spottedleaf.moonrise.patches.starlight.light;
 +
 +import net.minecraft.world.level.chunk.DataLayer;
@@ -19785,6 +19991,10 @@ index 0000000000000000000000000000000000000000..5c7b3804cdbcb0a873a0d195325c2658
 +    }
 +
 +    public SaveState getSaveState() {
++        return this.getSaveState(true);
++    }
++
++    public SaveState getSaveState(final boolean copy) {
 +        synchronized (this) {
 +            final int state = this.stateVisible;
 +            final byte[] data = this.storageVisible;
@@ -19798,7 +20008,7 @@ index 0000000000000000000000000000000000000000..5c7b3804cdbcb0a873a0d195325c2658
 +            if (zero) {
 +                return state == INIT_STATE_INIT ? new SaveState(null, INIT_STATE_UNINIT) : null;
 +            } else {
-+                return new SaveState(data.clone(), state);
++                return new SaveState(copy ? data.clone() : data, state);
 +            }
 +        }
 +    }
@@ -26889,7 +27099,7 @@ index a701288146a1d7cd258faae69f959edf466ec71c..3509df9dd423b38d1ca3e4a420d1352a
      }
  
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace51f7af6f 100644
+index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..a6fb79a70de177fcc027ddb0c5ae6fe3ed3c0407 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
 @@ -54,7 +54,7 @@ import net.minecraft.world.level.storage.SavedDataStorage;
@@ -26901,7 +27111,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
      private static final Logger LOGGER = LogUtils.getLogger();
      private final DistanceManager distanceManager;
      private final ServerLevel level;
-@@ -81,6 +81,105 @@ public class ServerChunkCache extends ChunkSource {
+@@ -81,6 +81,110 @@ public class ServerChunkCache extends ChunkSource {
      }
      long chunkFutureAwaitCounter;
      // Paper end
@@ -26920,6 +27130,11 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
 +    @Override
 +    public final LevelChunk moonrise$getFullChunkIfLoaded(final int chunkX, final int chunkZ) {
 +        return this.fullChunks.get(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
++    }
++
++    @Override
++    public void moonrise$chunkHolderUnload(final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder chunkHolder) {
++        this.chunkHoldersToBroadcast.remove(chunkHolder.vanillaChunkHolder);
 +    }
 +
 +    private ChunkAccess syncLoad(final int chunkX, final int chunkZ, final ChunkStatus toStatus) {
@@ -27007,7 +27222,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
  
      public ServerChunkCache(
          final ServerLevel level,
-@@ -138,13 +237,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -138,13 +242,7 @@ public class ServerChunkCache extends ChunkSource {
      }
      // CraftBukkit end
      // Paper start
@@ -27022,7 +27237,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
  
      @Nullable
      public ChunkAccess getChunkAtImmediately(int x, int z) {
-@@ -209,65 +302,41 @@ public class ServerChunkCache extends ChunkSource {
+@@ -209,65 +307,41 @@ public class ServerChunkCache extends ChunkSource {
  
      @Override
      public @Nullable ChunkAccess getChunk(final int x, final int z, final ChunkStatus targetStatus, final boolean loadOrGenerate) {
@@ -27108,7 +27323,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
      }
  
      private void clearCache() {
-@@ -295,53 +364,62 @@ public class ServerChunkCache extends ChunkSource {
+@@ -295,53 +369,62 @@ public class ServerChunkCache extends ChunkSource {
      private CompletableFuture<ChunkResult<ChunkAccess>> getChunkFutureMainThread(
          final int x, final int z, final ChunkStatus targetStatus, final boolean loadOrGenerate
      ) {
@@ -27205,7 +27420,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
      }
  
      @Override
-@@ -354,28 +432,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -354,28 +437,18 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      public boolean runDistanceManagerUpdates() {
@@ -27240,7 +27455,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
          this.chunkMap.saveAllChunks(flushStorage);
      }
  
-@@ -386,17 +454,15 @@ public class ServerChunkCache extends ChunkSource {
+@@ -386,17 +459,15 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      public void close(boolean save) throws IOException {
@@ -27261,7 +27476,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
          gameprofilerfiller.push("purge");
-@@ -420,6 +486,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -420,6 +491,7 @@ public class ServerChunkCache extends ChunkSource {
          this.runDistanceManagerUpdates();
          profiler.popPush("chunks");
          if (tickChunks) {
@@ -27269,7 +27484,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
              this.tickChunks();
              this.chunkMap.tick();
          }
-@@ -449,7 +516,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -449,7 +521,7 @@ public class ServerChunkCache extends ChunkSource {
          profiler.push("broadcast");
  
          for (ChunkHolder chunkHolder : this.chunkHoldersToBroadcast) {
@@ -27278,7 +27493,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
              if (chunk != null) {
                  chunkHolder.broadcastChanges(chunk);
              }
-@@ -488,7 +555,10 @@ public class ServerChunkCache extends ChunkSource {
+@@ -488,7 +560,10 @@ public class ServerChunkCache extends ChunkSource {
              profiler.popPush("filteringSpawningChunks");
              this.chunkMap.collectSpawningChunks(spawningChunks);
              profiler.popPush("shuffleSpawningChunks");
@@ -27289,7 +27504,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
              profiler.popPush("tickSpawningChunks");
  
              for (LevelChunk chunk : spawningChunks) {
-@@ -499,7 +569,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -499,7 +574,7 @@ public class ServerChunkCache extends ChunkSource {
          }
  
          profiler.popPush("tickTickingChunks");
@@ -27298,7 +27513,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
          if (doMobSpawning) {
              profiler.popPush("customSpawners");
              this.level.tickCustomSpawners(this.spawnEnemies);
-@@ -511,22 +581,25 @@ public class ServerChunkCache extends ChunkSource {
+@@ -511,22 +586,25 @@ public class ServerChunkCache extends ChunkSource {
      private void tickSpawningChunk(final LevelChunk chunk, final List<MobCategory> spawningCategories, final NaturalSpawner.SpawnState spawnCookie) {
          ChunkPos chunkPos = chunk.getPos();
          chunk.incrementInhabitedTime();
@@ -27329,7 +27544,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
      }
  
      @Override
-@@ -584,19 +657,11 @@ public class ServerChunkCache extends ChunkSource {
+@@ -584,19 +662,11 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      public CompletableFuture<?> addTicketAndLoadWithRadius(final TicketType type, final ChunkPos pos, final int radius) {
@@ -27354,7 +27569,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
      }
  
      public void addTicketWithRadius(final TicketType type, final ChunkPos pos, final int radius) {
-@@ -656,6 +721,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -656,6 +726,12 @@ public class ServerChunkCache extends ChunkSource {
          this.chunkMap.setServerViewDistance(newDistance);
      }
  
@@ -27367,7 +27582,7 @@ index 10ff01be97664df1c7ac8ff90bbdbbc0b584977c..2dec44b08e6932da87c88233743e7ace
      public void setSimulationDistance(final int simulationDistance) {
          this.distanceManager.updateSimulationDistance(simulationDistance);
      }
-@@ -735,18 +806,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -735,18 +811,12 @@ public class ServerChunkCache extends ChunkSource {
  
          @Override
          protected boolean pollTask() {
@@ -27405,7 +27620,7 @@ index e7ddd956a7f942f682f60062eecf0fad95b18749..267259a79c7668da85d206f9dcbde16b
          List<Entity> passengers = this.entity.getPassengers();
          if (!passengers.equals(this.lastPassengers)) {
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 1ae0e8fe43b3c4598e684ca95d430747e5c581bd..a20c7ed74a54c08b43fdf778fbf6eab4293ea0c6 100644
+index 47a0e17e4fed94828e02c7f4159d32195158f6cc..46e7478bd96e42487cf0fc467b6b9b83f2887d10 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -183,7 +183,7 @@ import net.minecraft.world.waypoints.WaypointTransmitter;
@@ -28894,7 +29109,7 @@ index 3271c83bd103bea9b9ffcd6882b52896ea4da770..f6601bc30fa37a309923ea9883b04233
                  PrepareSpawnTask.this.loadListener.updateFocus(this.spawnLevel.dimension(), spawnChunk);
              }
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index c7d3c19e7df2ca11a04684849762c81020236ae8..b5c7affd9ac2f071992e5621a1cf3dfd335930b1 100644
+index b1bf82288596b686dfb4e19d274a6a623fbe1667..010c6c7e9bf59408bdac22a01f05fe2e8fbafe41 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
 @@ -986,8 +986,8 @@ public abstract class PlayerList {
@@ -28908,7 +29123,7 @@ index c7d3c19e7df2ca11a04684849762c81020236ae8..b5c7affd9ac2f071992e5621a1cf3dfd
          // Paper end - view distances
          if (level.isRaining()) {
              // CraftBukkit start - handle player weather
-@@ -1200,7 +1200,7 @@ public abstract class PlayerList {
+@@ -1203,7 +1203,7 @@ public abstract class PlayerList {
  
      public void setViewDistance(final int viewDistance) {
          this.viewDistance = viewDistance;
@@ -28917,7 +29132,7 @@ index c7d3c19e7df2ca11a04684849762c81020236ae8..b5c7affd9ac2f071992e5621a1cf3dfd
  
          for (ServerLevel level : this.server.getAllLevels()) {
              level.getChunkSource().setViewDistance(viewDistance);
-@@ -1209,7 +1209,7 @@ public abstract class PlayerList {
+@@ -1212,7 +1212,7 @@ public abstract class PlayerList {
  
      public void setSimulationDistance(final int simulationDistance) {
          this.simulationDistance = simulationDistance;
@@ -33519,7 +33734,7 @@ index 9b9119afd89f60cd88c3d1e6ec4857b92e95ff11..eec56782be6e6e2c483e7435ff136bf8
  
      boolean maybeHas(Predicate<T> predicate);
 diff --git a/net/minecraft/world/level/chunk/PalettedContainer.java b/net/minecraft/world/level/chunk/PalettedContainer.java
-index 9591b8644da987a6e2dc77bb7388b99566a855e3..a799c2e24b9990b1dc9b8608231a9801d4036493 100644
+index 9591b8644da987a6e2dc77bb7388b99566a855e3..9213568da8d590b2f81ba3a51e216ec395badb31 100644
 --- a/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -24,7 +24,7 @@ import org.jspecify.annotations.Nullable;
@@ -33629,7 +33844,125 @@ index 9591b8644da987a6e2dc77bb7388b99566a855e3..a799c2e24b9990b1dc9b8608231a9801
          } finally {
              this.release();
          }
-@@ -317,7 +354,43 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+@@ -223,30 +260,104 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+         return DataResult.success(new PalettedContainer<>(strategy, storedConfiguration, storage, palette));
+     }
+ 
++    // Paper start - optimise PalettedContainer packing
++    private static final ThreadLocal<ca.spottedleaf.moonrise.patches.bitstorage.PaletteReadoutCache> READOUT_CACHE = ThreadLocal.withInitial(() -> {
++        return new ca.spottedleaf.moonrise.patches.bitstorage.PaletteReadoutCache();
++    });
++    private static final boolean DEBUG_PACKING = false;
++    private static <T> void validate(List<T> palette, long[] data, int bits,
++                                     BitStorage againstStorage, Palette<T> againstPalette) {
++        BitStorage storage = data == null ? new ZeroBitStorage(againstStorage.getSize()) :
++            new SimpleBitStorage(bits, againstStorage.getSize(), data);
++
++        for (int i = 0; i < storage.getSize(); ++i) {
++            T expect = againstPalette.valueFor(againstStorage.get(i));
++            T got = palette.get(storage.get(i));
++
++            if (expect != got) {
++                throw new IllegalStateException();
++            }
++        }
++    }
++    // Paper end - optimise PalettedContainer packing
++
+     @Override
+     public synchronized PalettedContainerRO.PackedData<T> pack(final Strategy<T> strategy) { // Paper - synchronize
++        // Paper start - optimise PalettedContainer packing
+         this.acquire();
+ 
+         try {
+-            BitStorage currentStorage = this.data.storage;
+-            Palette<T> currentPalette = this.data.palette;
+-            HashMapPalette<T> newPalette = new HashMapPalette<>(currentStorage.getBits());
+-            int entryCount = strategy.entryCount();
+-            int[] newContents = reencodeContents(currentStorage, currentPalette, newPalette);
+-            Configuration storedConfiguration = strategy.getConfigurationForPaletteSize(newPalette.getSize());
+-            int bitsOnDisc = storedConfiguration.bitsInStorage();
+-            Optional<LongStream> values;
+-            if (bitsOnDisc != 0) {
+-                SimpleBitStorage storage = new SimpleBitStorage(bitsOnDisc, entryCount, newContents);
+-                values = Optional.of(Arrays.stream(storage.getRaw()));
++            final PalettedContainer.Data<T> data = this.data;
++
++            final BitStorage storage = data.storage();
++            final Palette<T> palette = data.palette();
++
++            final ca.spottedleaf.moonrise.patches.bitstorage.PaletteReadoutCache readoutCache = READOUT_CACHE.get();
++
++            final boolean zero = !readoutCache.readout(storage, palette);
++
++            final int newPaletteSize = zero ? 1 : readoutCache.newPaletteCount;
++            final List<T> newPalette = new java.util.ArrayList<>(newPaletteSize);
++            final long[] dataArray;
++            final Configuration configuration = strategy.getConfigurationForPaletteSize(newPaletteSize);
++            final int bitsToUse = configuration.bitsInStorage();
++            if (zero) {
++                newPalette.add(palette.valueFor(0));
++                if (bitsToUse == 0) {
++                    dataArray = null;
++                } else {
++                    dataArray = new SimpleBitStorage(bitsToUse, storage.getSize()).getRaw();
++                }
+             } else {
+-                values = Optional.empty();
++                if (bitsToUse != 0 && newPaletteSize == palette.getSize() && bitsToUse == storage.getBits()) {
++                    // palette and bits are identical, so we can just use the old data
++
++                    final List<T> oldPalette = new java.util.ArrayList<>(newPaletteSize);
++                    for (int i = 0; i < newPaletteSize; ++i) {
++                        oldPalette.add(palette.valueFor(i));
++                    }
++
++                    // avoid holding references to palette entries
++                    Arrays.fill(readoutCache.newPalette, 0, newPaletteSize, null);
++
++                    // we need to use the copy cache here, as some bad mods may write to the container off-thread which
++                    // may leave the palette desynced
++
++                    final long[] cpy = Arrays.copyOf(readoutCache.copyCache, storage.getRaw().length);
++
++                    if (DEBUG_PACKING) {
++                        validate(oldPalette, cpy, bitsToUse, storage, palette);
++                    }
++
++                    return new PalettedContainerRO.PackedData<>(oldPalette, Optional.of(Arrays.stream(cpy)), bitsToUse);
++                } else {
++                    final Object[] newPaletteRaw = readoutCache.newPalette;
++                    java.util.Objects.checkFromToIndex(0, readoutCache.newPaletteCount, newPaletteRaw.length);
++                    for (int i = 0, len = readoutCache.newPaletteCount; i < len; ++i) {
++                        final T entry = (T)newPaletteRaw[i];
++                        // avoid holding references to palette entries
++                        newPaletteRaw[i] = null;
++                        newPalette.add(entry);
++                    }
++
++                    if (bitsToUse == 0) {
++                        dataArray = null;
++                    } else {
++                        dataArray = readoutCache.repack(bitsToUse, storage.getSize()).getRaw();
++                    }
++                }
+             }
+ 
+-            return new PalettedContainerRO.PackedData<>(newPalette.getEntries(), values, bitsOnDisc);
++            if (DEBUG_PACKING) {
++                validate(newPalette, dataArray, bitsToUse, storage, palette);
++            }
++
++            // why does this trash use streams...?
++            return new PalettedContainerRO.PackedData<>(newPalette, dataArray == null ? Optional.empty() : Optional.of(Arrays.stream(dataArray)), bitsToUse);
+         } finally {
+             this.release();
+         }
++        // Paper end - optimise PalettedContainer packing
+     }
+ 
+     private static <T> int[] reencodeContents(final BitStorage storage, final Palette<T> oldPalette, final Palette<T> newPalette) {
+@@ -317,7 +428,43 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          void accept(final T entry, final int count);
      }
  
@@ -34558,7 +34891,7 @@ index 2412c31426bbf0a4f8102bf7ce307a4a93935f52..4bc70852449459037d293d2813c1c733
  
      private record PackedChunk<T>(Int2ObjectMap<T> sectionsByY, boolean versionChanged) {
 diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index 9ae8f31c3ed39ed2f2a93a7eb95ea2f93f97adc8..f099aa45853b4e21b4a6e8052fa6848da6c4ed0b 100644
+index 9ae8f31c3ed39ed2f2a93a7eb95ea2f93f97adc8..5b311dc7f0a9d7cb202011302920478977f27bb0 100644
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 @@ -145,7 +145,7 @@ public record SerializableChunkData(
@@ -34676,7 +35009,7 @@ index 9ae8f31c3ed39ed2f2a93a7eb95ea2f93f97adc8..f099aa45853b4e21b4a6e8052fa6848d
      }
  
      private static void logErrors(final ChunkPos pos, final int sectionY, final String message) {
-@@ -361,21 +424,44 @@ public record SerializableChunkData(
+@@ -361,21 +424,46 @@ public record SerializableChunkData(
  
          ChunkPos pos = chunk.getPos();
          List<SerializableChunkData.SectionData> sectionData = new ArrayList<>();
@@ -34698,6 +35031,8 @@ index 9ae8f31c3ed39ed2f2a93a7eb95ea2f93f97adc8..f099aa45853b4e21b4a6e8052fa6848d
 +        final int maxLightSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMaxLightSection(level);
 +        final int minBlockSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(level);
 +
++        final boolean copy = !ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder.DO_NOT_COPY_SAVED_DATA.get().booleanValue();
++
 +        final LevelChunkSection[] chunkSections = chunk.getSections();
 +        final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] blockNibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getBlockNibbles();
 +        final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] skyNibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getSkyNibbles();
@@ -34706,13 +35041,13 @@ index 9ae8f31c3ed39ed2f2a93a7eb95ea2f93f97adc8..f099aa45853b4e21b4a6e8052fa6848d
 +            final int lightSectionIdx = lightSection - minLightSection;
 +            final int blockSectionIdx = lightSection - minBlockSection;
 +
-+            final LevelChunkSection chunkSection = (blockSectionIdx >= 0 && blockSectionIdx < chunkSections.length) ? chunkSections[blockSectionIdx].copy() : null;
++            final LevelChunkSection chunkSection = (blockSectionIdx >= 0 && blockSectionIdx < chunkSections.length) ? (copy ? chunkSections[blockSectionIdx].copy() : chunkSections[blockSectionIdx]) : null;
 +            final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray.SaveState blockNibble = blockNibbles[lightSectionIdx].getSaveState();
 +            final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray.SaveState skyNibble = skyNibbles[lightSectionIdx].getSaveState();
 +
 +            if (chunkSection == null && blockNibble == null && skyNibble == null) {
 +                continue;
-+            }
+             }
 +
 +            final SerializableChunkData.SectionData section = new SerializableChunkData.SectionData(
 +                lightSection, chunkSection,
@@ -34726,7 +35061,7 @@ index 9ae8f31c3ed39ed2f2a93a7eb95ea2f93f97adc8..f099aa45853b4e21b4a6e8052fa6848d
 +
 +            if (skyNibble != null) {
 +                ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)section).starlight$setSkyLightState(skyNibble.state);
-             }
++            }
 +
 +            sectionData.add(section);
          }
@@ -34734,7 +35069,7 @@ index 9ae8f31c3ed39ed2f2a93a7eb95ea2f93f97adc8..f099aa45853b4e21b4a6e8052fa6848d
  
          List<CompoundTag> blockEntities = new ArrayList<>(chunk.getBlockEntitiesPos().size());
  
-@@ -466,6 +552,19 @@ public record SerializableChunkData(
+@@ -466,6 +554,19 @@ public record SerializableChunkData(
                  sectionTag.putByteArray("SkyLight", section.skyLight.getData());
              }
  
@@ -34754,7 +35089,7 @@ index 9ae8f31c3ed39ed2f2a93a7eb95ea2f93f97adc8..f099aa45853b4e21b4a6e8052fa6848d
              if (!sectionTag.isEmpty()) {
                  sectionTag.putByte("Y", (byte)section.y);
                  sectionTags.add(sectionTag);
-@@ -497,6 +596,14 @@ public record SerializableChunkData(
+@@ -497,6 +598,14 @@ public record SerializableChunkData(
              tag.put("ChunkBukkitValues", this.persistentDataContainer);
          }
          // CraftBukkit end
@@ -34769,7 +35104,7 @@ index 9ae8f31c3ed39ed2f2a93a7eb95ea2f93f97adc8..f099aa45853b4e21b4a6e8052fa6848d
          return tag;
      }
  
-@@ -644,6 +751,60 @@ public record SerializableChunkData(
+@@ -644,6 +753,60 @@ public record SerializableChunkData(
          }
      }
  
@@ -35701,7 +36036,7 @@ index cbc68e86fd31ad787b6e66ed35d98c85dd9fe364..a4502aa85f907ae532e44b46d065c324
  
      @Override
 diff --git a/net/minecraft/world/phys/shapes/BitSetDiscreteVoxelShape.java b/net/minecraft/world/phys/shapes/BitSetDiscreteVoxelShape.java
-index 810cc86e66c8f5ec050a5cc63dcf0b254b263131..0815741cb832b4be90c95747ca2b24f3a2a81f4f 100644
+index 810cc86e66c8f5ec050a5cc63dcf0b254b263131..b23a4a226a370c3ac535282e28c00e6e4dc130c1 100644
 --- a/net/minecraft/world/phys/shapes/BitSetDiscreteVoxelShape.java
 +++ b/net/minecraft/world/phys/shapes/BitSetDiscreteVoxelShape.java
 @@ -4,13 +4,13 @@ import java.util.BitSet;
@@ -35789,7 +36124,7 @@ index 810cc86e66c8f5ec050a5cc63dcf0b254b263131..0815741cb832b4be90c95747ca2b24f3
 +                indexX = indexY;
 +                for (int x = 0; x < sizeX; ++x, indexX += incX) {
 +                    for (int zIdx = indexX, endIndex = indexX + sizeZ; zIdx < endIndex; ) {
-+                        final int firstSetZ = ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.firstSet(bitset, zIdx, endIndex);
++                        final int firstSetZ = ca.spottedleaf.common.util.FlatBitsetUtil.firstSet(bitset, zIdx, endIndex);
 +
 +                        if (firstSetZ == -1) {
 +                            break;
@@ -35803,21 +36138,21 @@ index 810cc86e66c8f5ec050a5cc63dcf0b254b263131..0815741cb832b4be90c95747ca2b24f3
 -                            shape.clearZStrip(lastStartZ, z, endX + 1, y);
 -                            endX++;
 +
-+                        int lastSetZ = ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.firstClear(bitset, firstSetZ, endIndex);
++                        int lastSetZ = ca.spottedleaf.common.util.FlatBitsetUtil.firstClear(bitset, firstSetZ, endIndex);
 +                        if (lastSetZ == -1) {
 +                            lastSetZ = endIndex;
 +                        }
 +
-+                        ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.clearRange(bitset, firstSetZ, lastSetZ);
++                        ca.spottedleaf.common.util.FlatBitsetUtil.clearRange(bitset, firstSetZ, lastSetZ);
 +
 +                        // try to merge neighbouring on the X axis
 +                        int endX = x + 1; // exclusive
 +                        for (int neighbourIdxStart = firstSetZ + incX, neighbourIdxEnd = lastSetZ + incX;
-+                             endX < sizeX && ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.isRangeSet(bitset, neighbourIdxStart, neighbourIdxEnd);
++                             endX < sizeX && ca.spottedleaf.common.util.FlatBitsetUtil.isRangeSet(bitset, neighbourIdxStart, neighbourIdxEnd);
 +                             neighbourIdxStart += incX, neighbourIdxEnd += incX) {
 +
 +                            ++endX;
-+                            ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.clearRange(bitset, neighbourIdxStart, neighbourIdxEnd);
++                            ca.spottedleaf.common.util.FlatBitsetUtil.clearRange(bitset, neighbourIdxStart, neighbourIdxEnd);
                          }
  
 -                        while (shape.isXZRectangleFull(x, endX + 1, lastStartZ, z, endY + 1)) {
@@ -35834,7 +36169,7 @@ index 810cc86e66c8f5ec050a5cc63dcf0b254b263131..0815741cb832b4be90c95747ca2b24f3
 +                            // test the whole XZ range
 +                            for (int testX = x, start = firstSetZY, end = lastSetZY; testX < endX;
 +                                 ++testX, start += incX, end += incX) {
-+                                if (!ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.isRangeSet(bitset, start, end)) {
++                                if (!ca.spottedleaf.common.util.FlatBitsetUtil.isRangeSet(bitset, start, end)) {
 +                                    break y_merge;
 +                                }
                              }
@@ -35845,7 +36180,7 @@ index 810cc86e66c8f5ec050a5cc63dcf0b254b263131..0815741cb832b4be90c95747ca2b24f3
 +                            // passed, so we can clear it
 +                            for (int testX = x, start = firstSetZY, end = lastSetZY; testX < endX;
 +                                 ++testX, start += incX, end += incX) {
-+                                ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.clearRange(bitset, start, end);
++                                ca.spottedleaf.common.util.FlatBitsetUtil.clearRange(bitset, start, end);
 +                            }
                          }
  
@@ -36390,7 +36725,7 @@ index ec7834b53788f95ab7956c22bddfa38c4ee4e2f2..a612ace0b4e128c05196400b125a12a8
  
      private static DiscreteVoxelShape makeSlice(final DiscreteVoxelShape delegate, final Direction.Axis axis, final int point) {
 diff --git a/net/minecraft/world/phys/shapes/VoxelShape.java b/net/minecraft/world/phys/shapes/VoxelShape.java
-index 9b210edf1f28285fc206644c5d81c7d05ea5a578..ddc562fbdeb2070212019bb23962538795d05ff6 100644
+index 9b210edf1f28285fc206644c5d81c7d05ea5a578..cbf479b7337a78b9980926b8ba984c4546bf9c3d 100644
 --- a/net/minecraft/world/phys/shapes/VoxelShape.java
 +++ b/net/minecraft/world/phys/shapes/VoxelShape.java
 @@ -18,60 +18,545 @@ import net.minecraft.world.phys.Vec3;
@@ -36742,7 +37077,7 @@ index 9b210edf1f28285fc206644c5d81c7d05ea5a578..ddc562fbdeb2070212019bb239625387
 +                    for (int x = sMinX; x < sMaxX; ++x) {
 +                        for (int y = sMinY; y < sMaxY; ++y) {
 +                            final int baseIndex = y*sizeZ + x*(sizeZ*sizeY);
-+                            if (!ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.isRangeSet(bitset, baseIndex + sMinZ, baseIndex + sMaxZ)) {
++                            if (!ca.spottedleaf.common.util.FlatBitsetUtil.isRangeSet(bitset, baseIndex + sMinZ, baseIndex + sMaxZ)) {
 +                                ret = Boolean.FALSE;
 +                                break check_full;
 +                            }

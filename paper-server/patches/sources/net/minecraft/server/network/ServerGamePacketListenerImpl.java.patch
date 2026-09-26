@@ -318,7 +318,7 @@
 +
 +                // Prevent 40 event-calls for less than a single pixel of movement >.>
 +                double delta = Mth.square(this.lastPosX - to.getX()) + Mth.square(this.lastPosY - to.getY()) + Mth.square(this.lastPosZ - to.getZ());
-+                float deltaAngle = Math.abs(this.lastYRot - to.getYaw()) + Math.abs(this.lastXRot - to.getPitch());
++                float deltaAngle = Math.abs(Mth.wrapDegrees(this.lastYRot - to.getYaw())) + Math.abs(this.lastXRot - to.getPitch());
 +
 +                if ((delta > 1.0F / 256 || deltaAngle > 10.0F) && !this.player.isImmobile()) {
 +                    this.lastPosX = to.getX();
@@ -382,7 +382,7 @@
          this.player.getRecipeBook().setBookSetting(packet.getBookType(), packet.isOpen(), packet.isFiltering());
      }
  
-@@ -610,8 +_,82 @@
+@@ -610,18 +_,98 @@
          }
      }
  
@@ -452,8 +452,7 @@
 +            }
 +            com.mojang.brigadier.suggestion.Suggestions suggestions = builder.buildFuture().join();
 +            com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, packet.command());
-+            suggestEvent.setCancelled(suggestions.isEmpty());
-+            if (suggestEvent.callEvent()) {
++            if (suggestEvent.callEvent() && !suggestEvent.getSuggestions().isEmpty()) { // prevents [<args>] from showing for plugins with nothing more to offer
 +                this.connection.send(new ClientboundCommandSuggestionsPacket(
 +                    packet.id(), ServerCommandSuggestionsProvider.limitSuggestionCount(suggestEvent.getSuggestions())
 +                ));
@@ -465,7 +464,17 @@
          int clientId = packet.id();
          this.commandSuggestionsProvider
              .request(packet.command())
-@@ -621,7 +_,7 @@
+-            .thenAccept(suggestions -> this.send(new ClientboundCommandSuggestionsPacket(clientId, suggestions)));
++            .thenAccept(suggestions -> {
++                // Paper start
++                com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent suggestEvent = new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendSuggestionsEvent(this.getCraftPlayer(), suggestions, packet.command());
++                if (suggestEvent.callEvent() && !suggestEvent.getSuggestions().isEmpty()) { // prevents [<args>] from showing for plugins with nothing more to offer
++                    this.send(new ClientboundCommandSuggestionsPacket(clientId, ServerCommandSuggestionsProvider.limitSuggestionCount(suggestEvent.getSuggestions())));
++                }
++                // Paper end
++            });
+     }
+ 
      @Override
      public void handleSetCommandBlock(final ServerboundSetCommandBlockPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.level());
@@ -878,7 +887,7 @@
 +
 +                    // Prevent 40 event-calls for less than a single pixel of movement >.>
 +                    double delta = Mth.square(this.lastPosX - to.getX()) + Mth.square(this.lastPosY - to.getY()) + Mth.square(this.lastPosZ - to.getZ());
-+                    float deltaAngle = Math.abs(this.lastYRot - to.getYaw()) + Math.abs(this.lastXRot - to.getPitch());
++                    float deltaAngle = Math.abs(Mth.wrapDegrees(this.lastYRot - to.getYaw())) + Math.abs(this.lastXRot - to.getPitch());
 +
 +                    if ((delta > 1.0F / 256 || deltaAngle > 10.0F) && !this.player.isImmobile()) {
 +                        this.lastPosX = to.getX();
