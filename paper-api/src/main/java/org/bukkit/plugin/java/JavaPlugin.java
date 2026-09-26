@@ -31,6 +31,7 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginBase;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -309,16 +310,26 @@ public abstract class JavaPlugin extends PluginBase {
 
     /**
      * {@inheritDoc}
+     *
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
     @Override
+    @ApiStatus.Obsolete(since = "26.3")
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         return false;
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
     @Override
+    @ApiStatus.Obsolete(since = "26.3")
     public @Nullable List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         return null;
     }
@@ -332,7 +343,11 @@ public abstract class JavaPlugin extends PluginBase {
      * @return the plugin command if found, otherwise null
      * @throws UnsupportedOperationException if this plugin is a paper plugin and the method is called in {@link #onEnable()}
      * @see #registerCommand(String, String, Collection, BasicCommand)
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
+    @ApiStatus.Obsolete(since = "26.3")
     public @Nullable PluginCommand getCommand(String name) {
         if (this.isBeingEnabled && !(pluginMeta instanceof PluginDescriptionFile)) {
             throw new UnsupportedOperationException("""

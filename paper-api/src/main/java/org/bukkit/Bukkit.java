@@ -1079,7 +1079,11 @@ public final class Bukkit {
      *
      * @param name the name of the command to retrieve
      * @return a plugin command if found, null otherwise
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended.
      */
+    @ApiStatus.Obsolete(since = "26.3")
     @Nullable
     public static PluginCommand getPluginCommand(@NotNull String name) {
         return server.getPluginCommand(name);
@@ -2654,7 +2658,11 @@ public final class Bukkit {
      * Gets the active {@link org.bukkit.command.CommandMap}
      *
      * @return the active command map
+     * @apiNote plugin developers should prefer to use the
+     *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
+     *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
      */
+    @ApiStatus.Obsolete(since = "26.3")
     @NotNull
     public static org.bukkit.command.CommandMap getCommandMap() {
         return server.getCommandMap();
