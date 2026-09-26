@@ -2,6 +2,7 @@ package io.papermc.paper.connection;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.Nullable;
 
@@ -62,4 +63,19 @@ public interface PlayerConnection {
      * @return the player's proxy address, null if the server doesn't have Proxy Protocol enabled, or the player didn't connect to an HAProxy instance
      */
     @Nullable InetSocketAddress getHAProxyAddress();
+
+    /**
+     * Gets a stable identifier for this connection that remains the same
+     * throughout its entire lifecycle, from the initial handshake until the
+     * connection is closed or the player fully joins the server.
+     *
+     * <p>This identifier is unique per connection and can be used to reliably
+     * correlate data collected during earlier connection stages (e.g. handshake
+     * or login) with the player that eventually joins the server, without
+     * relying on the client's IP address.</p>
+     *
+     * @return the stable connection identifier
+     */
+    UUID getConnectionId();
+
 }

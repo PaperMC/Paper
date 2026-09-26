@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Umbre11as <olegumbre11a@yandex.ru>
+Date: Sun, 30 Aug 2026 05:00:22 +0300
+Subject: [PATCH] Add stable connection identifier API
+
+
+diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
+index 9fbc7e93712672dbab67f931e2aee447d803607b..e952765eb0e9a5a41b6b5948a9b3b85f4d4b2b49 100644
+--- a/net/minecraft/network/Connection.java
++++ b/net/minecraft/network/Connection.java
+@@ -93,6 +93,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     public java.net.InetSocketAddress virtualHost;
+     private static boolean enableExplicitFlush = Boolean.getBoolean("paper.explicit-flush"); // Paper - Disable explicit connection flushing
+     // Paper end
++    // Paper start - stable connection identifier
++    private final UUID connectionId = UUID.randomUUID();
++
++    public UUID getConnectionId() {
++        return this.connectionId;
++    }
++    // Paper end - stable connection identifier
+     // Paper start - add utility methods
+     public final net.minecraft.server.level.ServerPlayer getPlayer() {
+         if (this.packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl impl) {
+diff --git a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+index 649f9646abb1bd84f1f22409aee09d2a4d27e581..4826053a4bd2c2449d70d64170262cfbc2125b16 100644
+--- a/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+@@ -122,7 +122,7 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+             if (com.destroystokyo.paper.event.player.PlayerHandshakeEvent.getHandlerList().getRegisteredListeners().length != 0) { // Hello? Can you hear me?
+                 java.net.SocketAddress socketAddress = this.connection.getRemoteAddress();
+                 String hostnameOfRemote = socketAddress instanceof java.net.InetSocketAddress ? ((java.net.InetSocketAddress) socketAddress).getHostString() : java.net.InetAddress.getLoopbackAddress().getHostAddress();
+-                com.destroystokyo.paper.event.player.PlayerHandshakeEvent event = new com.destroystokyo.paper.event.player.PlayerHandshakeEvent(packet.hostName(), hostnameOfRemote, !proxyLogicEnabled);
++                com.destroystokyo.paper.event.player.PlayerHandshakeEvent event = new com.destroystokyo.paper.event.player.PlayerHandshakeEvent(this.connection.getConnectionId(), packet.hostName(), hostnameOfRemote, !proxyLogicEnabled);
+                 if (event.callEvent()) {
+                     // If we've failed somehow, let the client know so and go no further.
+                     if (event.isFailed()) {

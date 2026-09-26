@@ -6,14 +6,15 @@ import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.util.CachedServerIcon;
 
+import java.util.UUID;
 import javax.annotation.Nullable;
 
 class PaperServerListPingEventImpl extends PaperServerListPingEvent {
 
     private final MinecraftServer server;
 
-    PaperServerListPingEventImpl(MinecraftServer server, StatusClient client, int protocolVersion, @Nullable CachedServerIcon icon) {
-        super(client, server.motd(), server.getPlayerCount(), server.getMaxPlayers(),
+    PaperServerListPingEventImpl(UUID connectionId, MinecraftServer server, StatusClient client, int protocolVersion, @Nullable CachedServerIcon icon) {
+        super(connectionId, client, server.motd(), server.getPlayerCount(), server.getMaxPlayers(),
                 server.getServerModName() + ' ' + server.getServerVersion(), protocolVersion, icon);
         this.server = server;
     }
