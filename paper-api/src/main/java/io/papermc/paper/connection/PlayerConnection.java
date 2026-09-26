@@ -41,6 +41,8 @@ public interface PlayerConnection {
     /**
      * Gets the real client address of the player. If the connection is behind a proxy,
      * this will be the actual player’s IP address extracted from the proxy handshake.
+     * If the player is connecting through a Unix domain socket and the proxy has not
+     * forwarded the player's IP address yet, this will be the loopback address.
      *
      * @return the client {@link InetSocketAddress}
      */
