@@ -16,16 +16,15 @@ import org.bukkit.command.defaults.HelpCommand;
 import org.bukkit.command.defaults.ReloadCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @apiNote plugin developers should prefer to use the
+ * @deprecated plugin developers should prefer to use the
  *     <a href="https://docs.papermc.io/paper/dev/command-api/basics/introduction/">Brigadier command API</a>.
  *     For a direct alternative to Bukkit commands, <a href="https://docs.papermc.io/paper/dev/command-api/misc/basic-command/">Basic commands</a> are recommended
  */
-@ApiStatus.Obsolete(since = "26.3")
+@Deprecated(since = "26.4")
 public class SimpleCommandMap implements CommandMap {
     protected final Map<String, Command> knownCommands;
     private final Server server;
