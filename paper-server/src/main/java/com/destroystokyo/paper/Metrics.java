@@ -1,5 +1,6 @@
 package com.destroystokyo.paper;
 
+import io.papermc.paper.configuration.GlobalConfiguration;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -8,6 +9,7 @@ import org.bukkit.plugin.Plugin;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.spigotmc.SpigotConfig;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.ByteArrayOutputStream;
@@ -23,14 +25,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
 /**
  * bStats collects some data for plugin authors.
- *
- * Check out https://bstats.org/ to learn more about bStats!
+ * <p>
+ * Check out <a href="https://bstats.org/">bstats.org</a> to learn more about bStats!
  */
 public class Metrics {
 
@@ -602,7 +602,7 @@ public class Metrics {
                 }));
 
                 metrics.addCustomChart(new Metrics.SingleLineChart("players", () -> Bukkit.getOnlinePlayers().size()));
-                metrics.addCustomChart(new Metrics.SimplePie("online_mode", () -> Bukkit.getOnlineMode() ? "online" : "offline"));
+                metrics.addCustomChart(new Metrics.SimplePie("online_mode", () -> Bukkit.getServerConfig().isProxyOnlineMode() ? "online" : "offline"));
                 final String paperVersion;
                 final String implVersion = org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion();
                 if (implVersion != null) {
@@ -619,26 +619,7 @@ public class Metrics {
                     Map<String, Integer> entry = new HashMap<>();
                     entry.put(javaVersion, 1);
 
-                    // http://openjdk.java.net/jeps/223
-                    // Java decided to change their versioning scheme and in doing so modified the java.version system
-                    // property to return $major[.$minor][.$security][-ea], as opposed to 1.$major.0_$identifier
-                    // we can handle pre-9 by checking if the "major" is equal to "1", otherwise, 9+
-                    String majorVersion = javaVersion.split("\\.")[0];
-                    String release;
-
-                    int indexOf = javaVersion.lastIndexOf('.');
-
-                    if (majorVersion.equals("1")) {
-                        release = "Java " + javaVersion.substring(0, indexOf);
-                    } else {
-                        // of course, it really wouldn't be all that simple if they didn't add a quirk, now would it
-                        // valid strings for the major may potentially include values such as -ea to deannotate a pre release
-                        Matcher versionMatcher = Pattern.compile("\\d+").matcher(majorVersion);
-                        if (versionMatcher.find()) {
-                            majorVersion = versionMatcher.group(0);
-                        }
-                        release = "Java " + majorVersion;
-                    }
+                    String release = "Java " + Runtime.version().feature();
                     map.put(release, entry);
 
                     return map;
@@ -672,6 +653,23 @@ public class Metrics {
                         map.put("26-50", entry);
                     } else {
                         map.put("50+ \uD83D\uDE2D", entry); // :cry:
+                    }
+
+                    return map;
+                }));
+
+                metrics.addCustomChart(new Metrics.DrilldownPie("proxy_online_mode", () -> {
+                    final Map<String, Map<String, Integer>> map = new HashMap<>();
+
+                    final Map<String, Integer> entry = new HashMap<>();
+                    entry.put(Bukkit.getServer().getServerConfig().isProxyOnlineMode() ? "Online" : "Offline", 1);
+
+                    if (GlobalConfiguration.get().proxies.velocity.enabled) {
+                        map.put("Velocity", entry);
+                    } else if (SpigotConfig.bungee) {
+                        map.put("BungeeCord", entry);
+                    } else {
+                        map.put("None", entry);
                     }
 
                     return map;
