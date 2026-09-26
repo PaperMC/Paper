@@ -110,9 +110,10 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf.leafpile:common:1.2.3")
-    implementation("ca.spottedleaf.leafpile:concurrentutil:1.2.3")
-    implementation("ca.spottedleaf.leafpile:converter:1.2.3")
+    implementation(platform("ca.spottedleaf.leafpile:bom:1.2.4"))
+    implementation("ca.spottedleaf.leafpile:common")
+    implementation("ca.spottedleaf.leafpile:concurrentutil")
+    implementation("ca.spottedleaf.leafpile:converter")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
