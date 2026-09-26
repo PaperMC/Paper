@@ -1461,12 +1461,8 @@ public final class CraftServer implements Server {
             case null, default -> null;
         };
         if (toAdd == null) return false;
+        // addToRecipeManager() calls reloadRecipes() already
         toAdd.addToRecipeManager();
-        // Paper start - API for updating recipes on clients
-        if (true || resendRecipes) { // Always needs to be resent now... TODO
-            this.playerList.reloadRecipes();
-        }
-        // Paper end - API for updating recipes on clients
         return true;
     }
 
@@ -1642,14 +1638,10 @@ public final class CraftServer implements Server {
     public boolean removeRecipe(NamespacedKey recipeKey, boolean resendRecipes) {
         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
 
-        // Paper start - resend recipes on successful removal
         final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> id = CraftNamespacedKey.toResourceKey(Registries.RECIPE, recipeKey);
+        // removeRecipe(...) calls reloadRecipes() already
         final boolean removed = this.getServer().getRecipeManager().removeRecipe(id);
-        if (removed/* && resendRecipes*/) { // TODO Always need to resend them rn - deprecate this method?
-            this.playerList.reloadRecipes();
-        }
         return removed;
-        // Paper end - resend recipes on successful removal
     }
 
     @Override

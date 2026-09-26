@@ -1129,8 +1129,10 @@ public final class Bukkit {
      * @param recipe the recipe to add
      * @param resendRecipes true to update the client with the full set of recipes
      * @return true if the recipe was added, false if it wasn't for some reason
+     * @deprecated use addRecipe(Recipe) instead, as recipes will always be resent
      */
     @Contract("null, _ -> false")
+    @Deprecated
     public static boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
         return server.addRecipe(recipe, resendRecipes);
     }
