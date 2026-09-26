@@ -1,0 +1,47 @@
+--- a/net/minecraft/world/level/block/entity/PotentSulfurBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/PotentSulfurBlockEntity.java
+@@ -47,6 +_,8 @@
+     private static final float GEYSER_LAUNCH_FORCE = 0.2F;
+     public int waitingCountdown = -1;
+     public long eruptionTick = -1L;
++    public org.bukkit.block.PotentSulfur.@Nullable EruptionMode eruptionModeOverride; // Paper - eruption mode API
++    public boolean forcedEruption; // Paper - eruption mode API
+     public static BlockEntityTicker<PotentSulfurBlockEntity> SERVER_NAUSEA_EFFECT_TICKER = (level, pos, state, potentSulfur) -> {
+         if (level.getGameTime() % 10L == 0L) {
+             BlockPos sourceBlock = findNoxiousGasSourceBlock(level, pos);
+@@ -103,8 +_,9 @@
+                     PotentSulfurState stateToSet = state.getValue(PotentSulfurBlock.STATE) == PotentSulfurState.DORMANT
+                         ? PotentSulfurState.ERUPTING
+                         : PotentSulfurState.DORMANT;
++                    stateToSet = org.bukkit.craftbukkit.block.CraftPotentSulfur.stateAfterEruption(entity, stateToSet, state, level, pos); // Paper - eruption mode API
+                     level.setBlockAndUpdate(pos, state.setValue(PotentSulfurBlock.STATE, stateToSet));
+-                    if (stateToSet == PotentSulfurState.DORMANT) {
++                    if (stateToSet == PotentSulfurState.DORMANT || stateToSet == PotentSulfurState.WET) { // Paper - eruption mode API
+                         level.gameEvent(GameEvent.BLOCK_DEACTIVATE, pos, GameEvent.Context.of(state));
+                     }
+                 }
+@@ -141,12 +_,24 @@
+     protected void saveAdditional(final ValueOutput output) {
+         super.saveAdditional(output);
+         output.putInt("countdown", this.waitingCountdown);
++        // Paper start - eruption mode API
++        if (this.eruptionModeOverride != null) {
++            output.putString("Paper.EruptionModeOverride", this.eruptionModeOverride.name());
++        }
++        if (this.forcedEruption) {
++            output.putBoolean("Paper.ForcedEruption", true);
++        }
++        // Paper end - eruption mode API
+     }
+ 
+     @Override
+     protected void loadAdditional(final ValueInput input) {
+         super.loadAdditional(input);
+         input.getInt("countdown").ifPresent(value -> this.waitingCountdown = value);
++        // Paper start - eruption mode API
++        this.eruptionModeOverride = org.bukkit.craftbukkit.block.CraftPotentSulfur.parseEruptionMode(input.getString("Paper.EruptionModeOverride").orElse(null), this.worldPosition);
++        this.forcedEruption = input.getBooleanOr("Paper.ForcedEruption", false);
++        // Paper end - eruption mode API
+     }
+ 
+     @Override
